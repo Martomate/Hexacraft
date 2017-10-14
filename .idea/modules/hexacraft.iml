@@ -22,5 +22,32 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.12.3:jar" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../lib/jnbt-1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/joml-1.9.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/lwjgl-glfw.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/lwjgl-opengl.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/lwjgl.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/minimal-json-0.9.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <NATIVE>
+          <root url="file://$MODULE_DIR$/../../lib/natives-linux" />
+          <root url="file://$MODULE_DIR$/../../lib/natives-mac" />
+          <root url="file://$MODULE_DIR$/../../lib/natives-windows" />
+        </NATIVE>
+        <SOURCES>
+          <root url="jar://$USER_HOME$/Dropbox/Java/jnbt-code-2.zip!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/joml/joml-1.9.4-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/joml/joml-1.9.4-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl/lwjgl-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl-glfw/lwjgl-glfw-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl-opengl/lwjgl-opengl-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Dropbox/Java/minimal-json-0.9.4-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
