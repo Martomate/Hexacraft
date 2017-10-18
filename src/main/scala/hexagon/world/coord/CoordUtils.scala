@@ -48,7 +48,7 @@ object CoordUtils {
     val zz = z - zInt
     val yInt = math.floor(y).toInt
 
-    (BlockRelWorld(xInt, yInt, zInt), new BlockCoord(xx, y - yInt, zz, false))
+    (BlockRelWorld(xInt, yInt, zInt, world), new BlockCoord(xx, y - yInt, zz, world, false))
   }
   
   def toBlockCoords(vec: BlockCoord): (BlockRelWorld, BlockCoord) = {
@@ -85,15 +85,15 @@ object CoordUtils {
     val zz = z - zInt
     val yInt = math.floor(y).toInt
 
-    (BlockRelWorld(xInt, yInt, zInt), new BlockCoord(xx, y - yInt, zz, false))
+    (BlockRelWorld(xInt, yInt, zInt, vec.world), new BlockCoord(xx, y - yInt, zz, vec.world, false))
   }
 
   def fromBlockCoords(world: World, camera: Camera, blockPos: BlockRelWorld, position: CylCoord, _result: Vector3d): Vector3d =
-    fromBlockCoords(world, camera, BlockCoord(blockPos.x, blockPos.y, blockPos.z), position, _result)
+    fromBlockCoords(world, camera, BlockCoord(blockPos.x, blockPos.y, blockPos.z, world), position, _result)
 
   def fromBlockCoords(world: World, camera: Camera, blockPos: BlockCoord, position: CylCoord, _result: Vector3d): Vector3d = {
     val pos = if (_result != null) _result else new Vector3d()
-    (blockPos.toCylCoord + position).toNormalCoord(CylCoord(camera.position)) into pos
+    (blockPos.toCylCoord + position).toNormalCoord(CylCoord(camera.position, world)) into pos
   }
 
   def fitZ(z: Double, circumference: Double): Double = {

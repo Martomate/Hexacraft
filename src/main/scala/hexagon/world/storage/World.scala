@@ -37,15 +37,6 @@ import org.jnbt.ByteTag
 import org.joml.Quaterniond
 
 object World {
-  /** Max-value: 20 */
-  val worldSize = 7
-  val ringSize = 1 << worldSize
-  val ringSizeMask = ringSize - 1
-  val totalSize = 16 * ringSize
-  val totalSizeMask = totalSize - 1
-  val hexAngle = (2 * math.Pi) / totalSize
-  val radius = CoordUtils.y60 / hexAngle
-  val circumference = totalSize * CoordUtils.y60
   val chunksLoadedPerTick = 2
   val chunkRenderUpdatesPerTick = 1
   val ticksBetweenColumnLoading = 5
@@ -60,10 +51,10 @@ class World(val saveDir: File) {
    * worldGen references and methods
    * might rename this class to WorldStorage, and make another class World
    */
-  
-  val nbtData = {
+
+  val nbtData: CompoundTag = {
     val file = new File(saveDir, "world.dat")
-    if (file.isFile()) {
+    if (file.isFile) {
       val stream = new NBTInputStream(new FileInputStream(file))
       val nbt = stream.readTag().asInstanceOf[CompoundTag]
       stream.close()
@@ -75,12 +66,24 @@ class World(val saveDir: File) {
       new CompoundTag("world", map)
     }
   }
-  val worldGenSettings = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
+
+  private val generalSettings: CompoundTag = nbtData.getValue.get("general").asInstanceOf[CompoundTag]
+  private val worldGenSettings: CompoundTag = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
+
+  /** Max-value: 20 */
+  val worldSize = NBTUtil.getByte(generalSettings, "worldSize", 7)
+  val ringSize: Int = 1 << worldSize
+  val ringSizeMask: Int = ringSize - 1
+  val totalSize: Int = 16 * ringSize
+  val totalSizeMask: Int = totalSize - 1
+  val hexAngle: Double = (2 * math.Pi) / totalSize
+  val radius: Double = CoordUtils.y60 / hexAngle
+  val circumference: Double = totalSize * CoordUtils.y60
 
   var renderDistance: Double = 8 * CoordUtils.y60
 
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
-  val columnsAtEdge = MutableSet.empty[ColumnRelWorld]
+  val columnsAtEdge: MutableSet[ColumnRelWorld] = MutableSet.empty[ColumnRelWorld]
   
   private val randomGenSeed = NBTUtil.getLong(worldGenSettings, "seed", new Random().nextLong)
   private val random = new Random(randomGenSeed)
@@ -111,7 +114,7 @@ class World(val saveDir: File) {
   }
 
   private def makeChunkToLoadTuple(coords: ChunkRelWorld) = {
-    val cyl = BlockCoord(coords.X * 16 + 8, coords.Y * 16 + 8, coords.Z * 16 + 8).toCylCoord()
+    val cyl = BlockCoord(coords.X * 16 + 8, coords.Y * 16 + 8, coords.Z * 16 + 8, this).toCylCoord
     val cDir = cyl.toNormalCoord(chunkLoadingOrigin).toVector3d.normalize()
     val dot = chunkLoadingDirection.dot(cDir)
     
@@ -125,7 +128,7 @@ class World(val saveDir: File) {
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
   
   def getHeight(x: Int, z: Int): Int = {
-    val coords = ColumnRelWorld(x >> 4, z >> 4)
+    val coords = ColumnRelWorld(x >> 4, z >> 4, this)
     getColumn(coords).getOrElse {
       val col = new ChunkColumn(coords, this)
       columns(coords.value) = col
@@ -135,7 +138,7 @@ class World(val saveDir: File) {
   }
 
   def tick(camera: Camera): Unit = {
-    chunkLoadingOrigin = CylCoord(player.position.x, player.position.y, player.position.z)
+    chunkLoadingOrigin = CylCoord(player.position.x, player.position.y, player.position.z, this)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.invViewMatr)
     chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z)// new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
 
@@ -153,7 +156,7 @@ class World(val saveDir: File) {
     }
     loadColumnsCountdown -= 1
     for (_ <- 1 to World.chunksLoadedPerTick) {
-      if (!chunksToLoad.isEmpty) {
+      if (chunksToLoad.nonEmpty) {
         val chunkToLoad = chunksToLoad.dequeue()._2
         getColumn(chunkToLoad.getColumnRelWorld).foreach(col => {
           val ch = chunkToLoad.getChunkRelColumn
@@ -174,7 +177,7 @@ class World(val saveDir: File) {
     }
     
     for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
-      if (!chunkRenderUpdateQueue.isEmpty) {
+      if (chunkRenderUpdateQueue.nonEmpty) {
         val chunk = chunkRenderUpdateQueue.dequeue()._2
         getChunk(chunk).foreach(_.doRenderUpdate())
       }
@@ -186,14 +189,14 @@ class World(val saveDir: File) {
   private def updateLoadedColumns(): Unit = {
     val rDistSq = math.pow(renderDistance, 2)
     val origin = {
-      val temp = chunkLoadingOrigin.toBlockCoord()
+      val temp = chunkLoadingOrigin.toBlockCoord
       new Vector2d(temp.x / 16, temp.z / 16)
     }
     def inSight(col: ColumnRelWorld): Boolean = {
       col.distSq(origin) <= rDistSq
     }
 
-    val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt)
+    val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt, this)
     if (!columns.contains(here.value)) {
       columns(here.value) = new ChunkColumn(here, this)
       columnsAtEdge += here
@@ -205,7 +208,7 @@ class World(val saveDir: File) {
         columns.remove(col.value).get.unload()
         columnsToRemove += col
         for (offset <- ChunkColumn.neighbors) {
-          val col2 = ColumnRelWorld(col.X + offset._1, col.Z + offset._2)
+          val col2 = ColumnRelWorld(col.X + offset._1, col.Z + offset._2, this)
           if (columns.contains(col2.value)) {
             columnsToAdd += col2
           }
@@ -213,7 +216,7 @@ class World(val saveDir: File) {
       } else {
         var surrounded = true
         for (offset <- ChunkColumn.neighbors) {
-          val col2 = ColumnRelWorld(col.X + offset._1, col.Z + offset._2)
+          val col2 = ColumnRelWorld(col.X + offset._1, col.Z + offset._2, this)
           if (inSight(col2)) {
             if (!columns.contains(col2.value)) {
               columnsToAdd += col2
@@ -232,15 +235,18 @@ class World(val saveDir: File) {
 
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
-        NBTUtil.makeCompoundTag("gen", Seq(
-            new LongTag("seed", randomGenSeed),
-            new DoubleTag("blockGenScale", blockGenerator.scale),
-            new DoubleTag("heightMapGenScale", heightMapGenerator.scale),
-            new DoubleTag("blockDensityGenScale", blockDensityGenerator.scale),
-            new DoubleTag("biomeHeightGenScale", biomeHeightGenerator.scale),
-            new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenerator.scale)
-        )),
-        player.toNBT()
+      NBTUtil.makeCompoundTag("general", Seq(
+        new ByteTag("worldSize", worldSize.toByte)
+      )),
+      NBTUtil.makeCompoundTag("gen", Seq(
+          new LongTag("seed", randomGenSeed),
+          new DoubleTag("blockGenScale", blockGenerator.scale),
+          new DoubleTag("heightMapGenScale", heightMapGenerator.scale),
+          new DoubleTag("blockDensityGenScale", blockDensityGenerator.scale),
+          new DoubleTag("biomeHeightGenScale", biomeHeightGenerator.scale),
+          new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenerator.scale)
+      )),
+      player.toNBT()
     ))
     
     NBTUtil.saveTag(worldTag, new File(saveDir, "world.dat"))

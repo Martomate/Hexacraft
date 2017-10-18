@@ -2,16 +2,20 @@ package hexagon.util
 
 import java.io.File
 
-
-
-import org.jnbt.CompoundTag
-import org.jnbt.DoubleTag
-import org.jnbt.LongTag
-import org.jnbt.Tag
-import org.jnbt.NBTOutputStream
+import org.jnbt._
 import java.io.FileOutputStream
 
 object NBTUtil {
+  def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
+    if (tag == null) default
+    else {
+      tag.getValue.get(key) match {
+        case t: ByteTag => t.getValue.byteValue()
+        case _ => default
+      }
+    }
+  }
+
   def getLong(tag: CompoundTag, key: String, default: =>Long): Long = {
     if (tag == null) default
     else {

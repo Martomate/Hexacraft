@@ -46,7 +46,7 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     blockTypes(coords.value) = 0
   }
   def allBlocks: Seq[BlockState] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i => 
-    new BlockState(BlockRelChunk(i).withChunk(chunk.coords), Block.byId(blockTypes(i))))
+    new BlockState(BlockRelChunk(i, chunk.world).withChunk(chunk.coords), Block.byId(blockTypes(i))))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
   def toDense(): DenseChunkStorage = this
@@ -90,7 +90,7 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
     val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue
     for (i <- 0 until blocks.size) {
       if (blocks(i) != 0) {
-        setBlock(new BlockState(BlockRelWorld(i), Block.byId(blocks(i))))
+        setBlock(new BlockState(BlockRelWorld(i, chunk.world), Block.byId(blocks(i))))
       }
     }
   }

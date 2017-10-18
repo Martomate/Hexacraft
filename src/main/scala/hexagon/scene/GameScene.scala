@@ -61,9 +61,9 @@ class GameScene extends Scene {
     camera.setProjMatrix(blockShader)
     camera.setProjMatrix(blockSideShader)
     camera.setProjMatrix(selectedBlockShader)
-    blockShader.setUniform1f("totalSize", World.totalSize)
-    blockSideShader.setUniform1f("totalSize", World.totalSize)
-    selectedBlockShader.setUniform1f("totalSize", World.totalSize)
+    blockShader.setUniform1f("totalSize", world.totalSize)
+    blockSideShader.setUniform1f("totalSize", world.totalSize)
+    selectedBlockShader.setUniform1f("totalSize", world.totalSize)
     skyShader.setUniformMat4("invProjMatr", camera.invProjMatr)
     skyShader.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y)
     crosshairShader.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y)
@@ -150,8 +150,8 @@ class GameScene extends Scene {
             val coords = coords1.offset(offset._1, offset._2, offset._3)
             if (world.getBlock(coords).isEmpty) {
               val blockType = playerInputHandler.player.blockInHand
-              val skewCoords = BlockCoord(coords.x, coords.y, coords.z).toSkewCylCoord()
-              if (!HexBox.collides(blockType.bounds, skewCoords, playerInputHandler.player.bounds, CylCoord(camera.position))) {
+              val skewCoords = BlockCoord(coords.x, coords.y, coords.z, world).toSkewCylCoord
+              if (!HexBox.collides(blockType.bounds, skewCoords, playerInputHandler.player.bounds, CylCoord(camera.position, world))) {
                 world.setBlock(new BlockState(coords, blockType))
               }
             }

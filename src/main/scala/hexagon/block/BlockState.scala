@@ -20,14 +20,15 @@ object BlockState {
   val vertices = {
     val ints = Seq(1, 2, 0, 3, 5, 4)
 
-    (0 to 1).map(s =>
-      (0 until 6).map(i => {
-        val v = i * Math.PI / 3
-        val x = Math.cos(v).toFloat
-        val z = Math.sin(v).toFloat
-        new CylCoord(x * 0.5, (1 - s) * 0.5, z * 0.5, false)
-      })
-    ).flatten
+    for {
+      s <- 0 to 1
+      i <- 0 until 6
+    } yield {
+      val v = i * Math.PI / 3
+      val x = Math.cos(v).toFloat
+      val z = Math.sin(v).toFloat
+      new CylCoord(x * 0.5, (1 - s) * 0.5, z * 0.5, null, false)
+    }
   }
 
   def getVertices(side: Int): Seq[CylCoord] = side match {
@@ -42,9 +43,9 @@ class BlockState(val coord: BlockRelWorld, val blockType: Block) {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coord.cx + i, coord.cy + j, coord.cz + k)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      chunk.getBlock(BlockRelChunk(i2, j2, k2))
+      chunk.getBlock(BlockRelChunk(i2, j2, k2, coord.world))
     } else {
-      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2))
+      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coord.world))
     }
   }
 }

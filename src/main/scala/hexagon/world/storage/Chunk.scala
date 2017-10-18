@@ -39,7 +39,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   
   val neighbors: Array[Option[Chunk]] = Array.tabulate(8)(i => {
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
-    val c2 = ChunkRelWorld(coords.X + dx, coords.Y + dy, coords.Z + dz)
+    val c2 = ChunkRelWorld(coords.X + dx, coords.Y + dy, coords.Z + dz, world)
     world.getChunk(c2) match {
       case Some(chunk) =>
         chunk.neighbors((i + 4) % 8) = Some(this)
@@ -63,7 +63,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       val column = world.getColumn(coords.getColumnRelWorld).get
       
       val noiseInterp = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => {
-        val c = BlockCoord(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4).toCylCoord()
+        val c = BlockCoord(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, world).toCylCoord
         world.blockGenerator.genNoiseFromCyl(c) + world.blockDensityGenerator.genNoiseFromCyl(c) * 0.4
       })
   
@@ -71,7 +71,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
         val noise = noiseInterp(i, j, k)
         val yToGo = coords.Y * 16 + j - column.heightMap(i)(k)
         val limit = if (yToGo < -6) -0.4 else if (yToGo < 0) -0.4 - (6 + yToGo) * 0.025 else 4
-        if (noise > limit) storage.setBlock(new BlockState(BlockRelChunk(i, j, k).withChunk(coords),
+        if (noise > limit) storage.setBlock(new BlockState(BlockRelChunk(i, j, k, world).withChunk(coords),
                       if (yToGo < -5) Block.Stone else if (yToGo < -1) Block.Dirt else Block.Grass))
       }
     }

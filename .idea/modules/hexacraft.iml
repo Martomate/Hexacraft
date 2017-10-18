@@ -22,8 +22,13 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.12.3:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-reflect:2.12.3:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang.modules:scala-parser-combinators_2.12:1.0.4:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang.modules:scala-xml_2.12:1.0.5:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scalactic:scalactic_2.12:3.0.4:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scalatest:scalatest_2.12:3.0.4:jar" level="project" />
     <orderEntry type="module-library">
-      <library>
+      <library name="SBT: unmanaged-jars">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../lib/jnbt-1.1.jar!/" />
           <root url="jar://$MODULE_DIR$/../../lib/joml-1.9.4.jar!/" />
@@ -33,20 +38,7 @@
           <root url="jar://$MODULE_DIR$/../../lib/minimal-json-0.9.4.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <NATIVE>
-          <root url="file://$MODULE_DIR$/../../lib/natives-linux" />
-          <root url="file://$MODULE_DIR$/../../lib/natives-mac" />
-          <root url="file://$MODULE_DIR$/../../lib/natives-windows" />
-        </NATIVE>
-        <SOURCES>
-          <root url="jar://$USER_HOME$/Dropbox/Java/jnbt-code-2.zip!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/joml/joml-1.9.4-sources.jar!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/joml/joml-1.9.4-sources.jar!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl/lwjgl-sources.jar!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl-glfw/lwjgl-glfw-sources.jar!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/lwjgl3/lwjgl-opengl/lwjgl-opengl-sources.jar!/" />
-          <root url="jar://$USER_HOME$/Dropbox/Java/minimal-json-0.9.4-sources.jar!/" />
-        </SOURCES>
+        <SOURCES />
       </library>
     </orderEntry>
   </component>
