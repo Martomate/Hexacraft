@@ -1,24 +1,13 @@
 package hexagon.world.storage
 
-import hexagon.world.coord.BlockRelChunk
-import hexagon.world.coord.ChunkRelWorld
-import hexagon.world.render.ChunkRenderer
-import scala.concurrent.Future
-import hexagon.world.coord.BlockCoord
-import hexagon.world.coord.CylCoord
-import hexagon.world.gen.noise.NoiseInterpolator3D
-import hexagon.block.Block
-import java.io.FileInputStream
-import org.jnbt.CompoundTag
-import org.jnbt.NBTInputStream
-import java.io.File
-import org.jnbt.Tag
-import org.jnbt.StringTag
-import org.jnbt.ByteArrayTag
-import org.jnbt.NBTOutputStream
-import java.io.FileOutputStream
+import java.io.{File, FileInputStream}
+
+import hexagon.block.{Block, BlockState}
 import hexagon.util.NBTUtil
-import hexagon.block.BlockState
+import hexagon.world.coord.{BlockCoord, BlockRelChunk, ChunkRelWorld}
+import hexagon.world.gen.noise.NoiseInterpolator3D
+import hexagon.world.render.ChunkRenderer
+import org.jnbt.{CompoundTag, NBTInputStream}
 
 object Chunk {
   val neighborOffsets = Seq(
@@ -43,7 +32,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     world.getChunk(c2) match {
       case Some(chunk) =>
         chunk.neighbors((i + 4) % 8) = Some(this)
-        chunk.requestRenderUpdate
+        chunk.requestRenderUpdate()
         Some(chunk)
       case None => None
     }
@@ -54,7 +43,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   {
     val file = new File(world.saveDir, "chunks/" + coords.value + ".dat")
-    if (file.isFile()) {
+    if (file.isFile) {
       val stream = new NBTInputStream(new FileInputStream(file))
       val nbt = stream.readTag().asInstanceOf[CompoundTag]
       stream.close()
@@ -90,7 +79,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     val blockCoord = block.coord.getBlockRelChunk
     val before = getBlock(blockCoord)
     storage.setBlock(block)
-    if (before == None || before.get != block) {
+    if (before.isEmpty || before.get != block) {
       onBlockModified(blockCoord)
     }
     true
@@ -110,7 +99,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
     for (i <- 0 until 8) {
       val off = Chunk.neighborOffsets(i)
-      if (off._1 * xx == 1 || off._2 * yy == 1 || off._3 * zz == 1) neighbors(i).foreach(_.requestRenderUpdate)
+      if (off._1 * xx == 1 || off._2 * yy == 1 || off._3 * zz == 1) neighbors(i).foreach(_.requestRenderUpdate())
     }
     
     needsToSave = true
@@ -136,23 +125,23 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
           if (!isEmpty) _renderer = Some(new ChunkRenderer(this))
       }
 
-      renderer.foreach(_.updateContent)
+      renderer.foreach(_.updateContent())
     }
   }
 
   def tick(): Unit = {
     if (storage.isDense) {
       if (storage.numBlocks < 48) {
-        storage = storage.toSparse()
+        storage = storage.toSparse
       }
     } else {
       if (storage.numBlocks > 64) {
-        storage = storage.toDense()
+        storage = storage.toDense
       }
     }
   }
 
-  def isEmpty(): Boolean = {
+  def isEmpty: Boolean = {
     storage.numBlocks == 0
   }
 
@@ -162,8 +151,8 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       NBTUtil.saveTag(chunkTag, new File(world.saveDir, "chunks/" + coords.value + ".dat"))
     }
     
-    neighbors.foreach(c => c.foreach(_.requestRenderUpdate))
-    renderer.foreach(_.unload)
+    neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))
+    renderer.foreach(_.unload())
     // and other stuff
   }
 

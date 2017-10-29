@@ -21,8 +21,8 @@ class ChunkRenderer(chunk: Chunk) {
   private val blockSideRenderers = Seq.tabulate(6)(s => new BlockRenderer(s + 2, 0))
   private val allBlockRenderers = blockRenderers ++ blockSideRenderers
 
-  val blockShader = Shader.getShader("block").get
-  val blockSideShader = Shader.getShader("blockSide").get
+  val blockShader = Shader.get("block").get
+  val blockSideShader = Shader.get("blockSide").get
   val blockTexture = TextureArray.getTextureArray("blocks")
 
   // TODO: Make it so that if a block should be removed from a vbo it finds the index in the vbo and moves the last block to that index.

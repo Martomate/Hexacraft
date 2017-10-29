@@ -1,39 +1,31 @@
-package hexagon.scene;
+package hexagon.scene
 
 import java.io.File
 
-import scala.collection.Seq
-
+import hexagon.{Camera, HexBox, Main}
+import hexagon.block.BlockState
+import hexagon.gui.menu.pause.PauseMenuScene
+import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
+import hexagon.resource.Shader
+import hexagon.world.coord.{BlockCoord, CylCoord, RayTracer}
+import hexagon.world.render.WorldRenderer
+import hexagon.world.storage.World
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
 
-import hexagon.Camera
-import hexagon.HexBox
-import hexagon.Main
-import hexagon.block.Block
-import hexagon.block.BlockState
-import hexagon.renderer.NoDepthTest
-import hexagon.renderer.Renderer
-import hexagon.renderer.VAOBuilder
-import hexagon.renderer.VBO
-import hexagon.resource.Shader
-import hexagon.world.coord.BlockCoord
-import hexagon.world.coord.CylCoord
-import hexagon.world.coord.RayTracer
-import hexagon.world.render.WorldRenderer
-import hexagon.world.storage.World
+import scala.collection.Seq
 
 
 class GameScene extends Scene {
   // Camera, player, mousepicker, world, etc.
 
-  val blockShader = Shader.getShader("block").get
-  val blockSideShader = Shader.getShader("blockSide").get
-  val selectedBlockShader = Shader.getShader("selectedBlock").get
-  val skyShader = Shader.getShader("sky").get
-  val crosshairShader = Shader.getShader("crosshair").get
+  val blockShader: Shader = Shader.get("block").get
+  val blockSideShader: Shader = Shader.get("blockSide").get
+  val selectedBlockShader: Shader = Shader.get("selectedBlock").get
+  val skyShader: Shader = Shader.get("sky").get
+  val crosshairShader: Shader = Shader.get("crosshair").get
 
   private val crosshairVAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
@@ -50,7 +42,7 @@ class GameScene extends Scene {
   private var leftMouseButtonCountdown = 0
   private var rightMouseButtonCountdown = 0
   
-  setUniforms
+  setUniforms()
   
   def onReloadedResources(): Unit = {
     setUniforms()
@@ -71,8 +63,8 @@ class GameScene extends Scene {
 
   def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean = {
     if (action == GLFW_PRESS) {
-      /* if (key == GLFW_KEY_ESCAPE) Main.pushScene(new PauseMenuScene)
-      else */ if (key == GLFW_KEY_M) {
+      if (key == GLFW_KEY_ESCAPE) Main.pushScene(new PauseMenuScene)
+      else if (key == GLFW_KEY_M) {
         playerInputHandler.moveWithMouse = !playerInputHandler.moveWithMouse
         glfwSetInputMode(Main.window, GLFW_CURSOR, if (playerInputHandler.moveWithMouse) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
         Main.updateMousePos()
@@ -127,7 +119,7 @@ class GameScene extends Scene {
   def tick(): Unit = {
     playerInputHandler.tick()
     camera.setPositionAndRotation(playerInputHandler.player)
-    camera.updateCoords
+    camera.updateCoords()
     camera.updateViewMatrix
     camera.updateUniforms(blockShader)
     camera.updateUniforms(blockSideShader)

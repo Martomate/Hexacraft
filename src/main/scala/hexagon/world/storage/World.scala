@@ -71,7 +71,7 @@ class World(val saveDir: File) {
   private val worldGenSettings: CompoundTag = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
 
   /** Max-value: 20 */
-  val worldSize = NBTUtil.getByte(generalSettings, "worldSize", 7)
+  val worldSize: Int = NBTUtil.getByte(generalSettings, "worldSize", 7)
   val ringSize: Int = 1 << worldSize
   val ringSizeMask: Int = ringSize - 1
   val totalSize: Int = 16 * ringSize
@@ -246,7 +246,7 @@ class World(val saveDir: File) {
           new DoubleTag("biomeHeightGenScale", biomeHeightGenerator.scale),
           new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenerator.scale)
       )),
-      player.toNBT()
+      player.toNBT
     ))
     
     NBTUtil.saveTag(worldTag, new File(saveDir, "world.dat"))

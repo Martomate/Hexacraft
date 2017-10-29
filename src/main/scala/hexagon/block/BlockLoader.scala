@@ -12,7 +12,7 @@ object BlockLoader {
   private var texIdxMap: Map[String, Int] = _
   
   def init(): Unit = {
-    TextureArray.registerTextureArray("blocks", BlockTexture.blockTextureSize, new ResourceWrapper(loadAllBlockTextures))
+    TextureArray.registerTextureArray("blocks", BlockTexture.blockTextureSize, new ResourceWrapper(loadAllBlockTextures()))
   }
   
   def loadAllBlockTextures(): Seq[Array[Int]] = {
@@ -29,7 +29,7 @@ object BlockLoader {
     
     val dir = new File("res/textures/blocks")
     for (f <- dir.listFiles()) {
-      if (f.isFile()) {
+      if (f.isFile) {
         val lastDot = f.getName.lastIndexOf('.')
         val name = f.getName.substring(0, lastDot)
         nameToIdx += name -> images.size

@@ -31,3 +31,11 @@ trait NoDepthTest extends Renderer {
     GL11.glEnable(GL11.GL_DEPTH_TEST)
   }
 }
+
+trait Blending extends Renderer {
+  override def render(): Unit = {
+    GL11.glEnable(GL11.GL_BLEND)
+    super.render()
+    GL11.glDisable(GL11.GL_BLEND)
+  }
+}

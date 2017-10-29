@@ -17,10 +17,10 @@ import hexagon.block.BlockState
 import hexagon.world.storage.World
 
 class WorldRenderer(world: World) {
-  val blockShader = Shader.getShader("block").get
-  val blockSideShader = Shader.getShader("blockSide").get
-  val skyShader = Shader.getShader("sky").get
-  val selectedBlockShader = Shader.getShader("selectedBlock").get
+  val blockShader = Shader.get("block").get
+  val blockSideShader = Shader.get("blockSide").get
+  val skyShader = Shader.get("sky").get
+  val selectedBlockShader = Shader.get("selectedBlock").get
 
   private val skyVAO: VAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest

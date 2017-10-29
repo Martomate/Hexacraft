@@ -62,7 +62,7 @@ class ShaderBuilder(name: String) {
     } catch {
       case e: IOException =>
         e.printStackTrace()
-        Main.destroy
+        Main.tryQuit()
         System.exit(1)
     }
 

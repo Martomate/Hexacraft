@@ -2,31 +2,20 @@ package hexagon
 
 import java.io.File
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.joml.Vector2d
-import org.joml.Vector2dc
-import org.joml.Vector2f
-import org.joml.Vector2i
-import org.lwjgl.glfw.Callbacks
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFW._
-import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
-import org.lwjgl.system.Configuration
-import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil
-
+import hexagon.block.{Block, BlockLoader}
+import hexagon.font.TextMaster
+import hexagon.gui.menu.main.MainMenuScene
 import hexagon.renderer.VAO
-import hexagon.resource.Resource
-import hexagon.resource.Shader
-import hexagon.block.Block
+import hexagon.resource.{Resource, Shader}
 import hexagon.scene.Scene
-import hexagon.scene.MainMenuScene
-import hexagon.scene.GameScene
-import hexagon.block.BlockLoader
 import hexagon.util.OSUtils
+import org.joml.{Vector2d, Vector2dc, Vector2f, Vector2i}
+import org.lwjgl.glfw.GLFW._
+import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
+import org.lwjgl.opengl.{GL, GL11, GL13}
+import org.lwjgl.system.{Configuration, MemoryStack, MemoryUtil}
+
+import scala.collection.mutable.ArrayBuffer
 
 object Main {
   {
@@ -35,13 +24,13 @@ object Main {
     Configuration.LIBRARY_PATH.set(file.getAbsolutePath)
   }
 
-  val saveFolder: File = new File(OSUtils.appdataPath, ".hexagon")
+  val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   val windowSize = new Vector2i(960, 540)
   private val prevWindowSize = new Vector2i()
   private val prevWindowPos = new Vector2i()
 
-  val window = initWindow()
+  val window: Long = initWindow()
   private var fullscreen = false
   private var vsync = true
 
@@ -52,8 +41,8 @@ object Main {
   private val doublePtrY = MemoryUtil.memAllocDouble(1)
   private val intPtrX = MemoryUtil.memAllocInt(1)
   private val intPtrY = MemoryUtil.memAllocInt(1)
-  def mousePos: Vector2dc = _mousePos.toImmutable()
-  def mouseMoved: Vector2dc = _mouseMoved.toImmutable()
+  def mousePos: Vector2dc = _mousePos.toImmutable
+  def mouseMoved: Vector2dc = _mouseMoved.toImmutable
   def normalizedMousePos: Vector2f = new Vector2f((mousePos.x / windowSize.x * 2 - 1).toFloat, (mousePos.y / windowSize.y * 2 - 1).toFloat)
 
   private val sceneList = ArrayBuffer.empty[Scene]
@@ -63,7 +52,7 @@ object Main {
     }
   }
   def popScene(): Unit = {
-    if (sceneList.size > 0) {
+    if (sceneList.nonEmpty) {
       val index = sceneList.size - 1
       sceneList(index).unload()
       sceneList.remove(index)
@@ -83,7 +72,7 @@ object Main {
       val currentTime = System.nanoTime
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
-      for (i <- 0 until delta) {
+      for (_ <- 0 until delta) {
         tick()
         ticks += 1
         titleTicker += 1
@@ -97,7 +86,7 @@ object Main {
             }
           } else if (frames < 50) {
             if (vsync) {
-              vsync = false;
+              vsync = false
               glfwSwapInterval(0)
             }
           }
@@ -129,20 +118,21 @@ object Main {
       }
       // Poll for window events. The key callback will only be
       // invoked during this call.
-      glfwPollEvents
+      glfwPollEvents()
     }
   }
 
   private def render(): Unit = {
     sceneList.foreach(_.render())
+
     VAO.unbindVAO()
   }
 
   private def tick(): Unit = {
-    glfwGetCursorPos(window, doublePtrX, doublePtrY);
+    glfwGetCursorPos(window, doublePtrX, doublePtrY)
     val oldMouseX = _mousePos.x
     val oldMouseY = _mousePos.y
-    _mousePos.set(doublePtrX.get(0), windowSize.y - doublePtrY.get(0));
+    _mousePos.set(doublePtrX.get(0), windowSize.y - doublePtrY.get(0))
     _mouseMoved.set(_mousePos.x - oldMouseX, _mousePos.y - oldMouseY)
     
     sceneList.foreach(_.tick()) // TODO: should maybe be reversed
@@ -154,7 +144,6 @@ object Main {
     BlockLoader.init()// this loads it to memory
     Block.init()
     pushScene(new MainMenuScene)
-    pushScene(new GameScene)
     updateMousePos()
     loop()
 
@@ -172,37 +161,37 @@ object Main {
   private def processKeys(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit = { // action: 0 = release, 1 = press, 2 = repeat
     if (key == GLFW.GLFW_KEY_F3 && action == GLFW.GLFW_RELEASE) {
       Resource.reloadAllResources()
-      sceneList.foreach(_.onReloadedResources)
+      sceneList.foreach(_.onReloadedResources())
     }
     if (key == GLFW.GLFW_KEY_F11 && action == GLFW.GLFW_RELEASE) {
-      val monitor = glfwGetPrimaryMonitor();
-      val mode = glfwGetVideoMode(monitor);
+      val monitor = glfwGetPrimaryMonitor()
+      val mode = glfwGetVideoMode(monitor)
       
       if (!fullscreen) {
-        prevWindowSize.set(windowSize);
-        glfwGetWindowPos(window, intPtrX, intPtrY);
-        prevWindowPos.set(intPtrX.get(0), intPtrY.get(0));
+        prevWindowSize.set(windowSize)
+        glfwGetWindowPos(window, intPtrX, intPtrY)
+        prevWindowPos.set(intPtrX.get(0), intPtrY.get(0))
         
         
-        _mousePos.add(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y);
+        _mousePos.add(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
         
         val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
-        glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate());
+        glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
         updateMousePos()
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
         
-        fullscreen = true;
+        fullscreen = true
       } else {
-        _mousePos.sub(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y);
+        _mousePos.sub(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
         
         val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
-        glfwSetWindowMonitor(window, 0, prevWindowPos.x, prevWindowPos.y, prevWindowSize.x, prevWindowSize.y, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(window, 0, prevWindowPos.x, prevWindowPos.y, prevWindowSize.x, prevWindowSize.y, GLFW_DONT_CARE)
         updateMousePos()
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
         
-        fullscreen = false;
+        fullscreen = false
       }
     }
     sceneList.reverseIterator.forall(!_.processKeys(key, scancode, action, mods))
@@ -232,7 +221,7 @@ object Main {
     if (!glfwInit) throw new IllegalStateException("Unable to initialize GLFW")
 
     // Configure GLFW
-    glfwDefaultWindowHints // optional, the current window hints are already the default
+    glfwDefaultWindowHints() // optional, the current window hints are already the default
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE) // the window will stay hidden after creation
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) // the window will be resizable
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
@@ -241,7 +230,7 @@ object Main {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFW_SAMPLES, 1)
 
-    val window = glfwCreateWindow(windowSize.x, windowSize.y, "Hexagon", 0, 0)
+    val window = glfwCreateWindow(windowSize.x, windowSize.y, "Hexacraft", 0, 0)
     if (window == 0) throw new RuntimeException("Failed to create the GLFW window")
 
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
@@ -286,8 +275,12 @@ object Main {
     GL11.glEnable(GL11.GL_CULL_FACE)
   }
 
+  def tryQuit(): Unit = {
+    glfwSetWindowShouldClose(window, true)
+  }
+
   def destroy(): Unit = {
-    while (sceneList.size > 0) popScene()
+    while (sceneList.nonEmpty) popScene()
 
     Resource.freeAllResources()
   }

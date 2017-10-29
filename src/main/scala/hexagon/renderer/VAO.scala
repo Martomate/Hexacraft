@@ -19,6 +19,8 @@ class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VB
       GL30.glBindVertexArray(vaoID)
     }
   }
+
+  def id = vaoID
   
   protected def reload(): Unit = ()
 

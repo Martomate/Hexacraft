@@ -7,17 +7,17 @@ sealed trait OS {
 
 case object Windows extends OS {
   val name = "Windows"
-  def appdataPath = System.getenv("appdata")
+  def appdataPath: String = System.getenv("appdata")
 }
 
 case object Mac extends OS {
   val name = "Mac"
-  def appdataPath = System.getProperty("user.home")
+  def appdataPath: String = System.getProperty("user.home")
 }
 
 case object Linux extends OS {
   val name = "Linux"
-  def appdataPath = System.getProperty("user.home")
+  def appdataPath: String = System.getProperty("user.home")
 }
 
 object OSUtils {
@@ -29,6 +29,6 @@ object OSUtils {
     else Linux
   }
   
-  def appdataPath = os.appdataPath
-  def nativesPath = "lib/natives-" + os.name.toLowerCase()
+  def appdataPath: String = os.appdataPath
+  def nativesPath: String = "lib/natives-" + os.name.toLowerCase()
 }

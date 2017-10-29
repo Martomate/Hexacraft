@@ -1,19 +1,9 @@
 package hexagon.world.storage
 
-import hexagon.world.coord.ColumnRelWorld
-import hexagon.world.coord.ChunkRelColumn
-import hexagon.world.coord.BlockRelColumn
-import hexagon.Camera
-import hexagon.world.coord.CylCoord
-import org.joml.Vector2d
-import hexagon.world.coord.CoordUtils
-import hexagon.world.coord.ChunkRelWorld
-import org.joml.Vector3d
-import scala.concurrent.Future
-import hexagon.world.coord.BlockCoord
-import hexagon.world.gen.noise.NoiseInterpolator2D
-import hexagon.world.gen.noise.NoiseInterpolator2D
 import hexagon.block.BlockState
+import hexagon.world.coord.{BlockCoord, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
+import hexagon.world.gen.noise.NoiseInterpolator2D
+import org.joml.Vector2d
 
 object ChunkColumn {
   val neighbors = Seq(
@@ -52,7 +42,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   def getBlock(coords: BlockRelColumn): Option[BlockState] = getChunk(coords.getChunkRelColumn).flatMap(_.getBlock(coords.getBlockRelChunk))
 
   def tick(): Unit = {
-    chunks.values.foreach(_.tick)
+    chunks.values.foreach(_.tick())
   }
 
   private[storage] def updateLoadedChunks(): Unit = {
@@ -71,7 +61,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         if (inSight(below)) world.addChunkToLoadingQueue(below.withColumn(coords))
         now
       } else {
-        chunks.remove(bottomChunk.value).foreach(_.unload)
+        chunks.remove(bottomChunk.value).foreach(_.unload())
         now - dir
       }
     }
@@ -91,6 +81,6 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   }
 
   def unload(): Unit = {
-    chunks.values.foreach(_.unload)
+    chunks.values.foreach(_.unload())
   }
 }

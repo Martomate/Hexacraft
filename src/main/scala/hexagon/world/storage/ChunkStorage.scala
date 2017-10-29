@@ -19,8 +19,8 @@ trait ChunkStorage {
   def numBlocks: Int
 
   def isDense: Boolean
-  def toDense(): DenseChunkStorage
-  def toSparse(): SparseChunkStorage
+  def toDense: DenseChunkStorage
+  def toSparse: SparseChunkStorage
   
   def fromNBT(nbt: CompoundTag): Unit
   def toNBT: Seq[Tag]
@@ -49,8 +49,8 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     new BlockState(BlockRelChunk(i, chunk.world).withChunk(chunk.coords), Block.byId(blockTypes(i))))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
-  def toDense(): DenseChunkStorage = this
-  def toSparse(): SparseChunkStorage = {
+  def toDense: DenseChunkStorage = this
+  def toSparse: SparseChunkStorage = {
     val sparse = new SparseChunkStorage(chunk)
     for (b <- allBlocks) sparse.setBlock(b)
     sparse
@@ -58,7 +58,7 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
 
   def fromNBT(nbt: CompoundTag): Unit = {
     val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue
-    for (i <- 0 until blockTypes.size) {
+    for (i <- blockTypes.indices) {
       blockTypes(i) = blocks(i)
       if (blockTypes(i) != 0) _numBlocks += 1
     }
@@ -79,12 +79,12 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
   def allBlocks: Seq[BlockState] = blocks.values.toSeq
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
-  def toDense(): DenseChunkStorage = {
+  def toDense: DenseChunkStorage = {
     val dense = new DenseChunkStorage(chunk)
     for (b <- blocks) dense.setBlock(b._2)
     dense
   }
-  def toSparse(): SparseChunkStorage = this
+  def toSparse: SparseChunkStorage = this
 
   def fromNBT(nbt: CompoundTag): Unit = {
     val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue

@@ -30,7 +30,7 @@ class Player(val world: World) {
     position.set(startCoords.x, startCoords.y - bounds.bottom + 2, startCoords.z)
   }
   
-  def toNBT(): CompoundTag = {
+  def toNBT: CompoundTag = {
     def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(name, Seq(
         new DoubleTag("x", vector.x),
         new DoubleTag("y", vector.y),

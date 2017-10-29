@@ -17,8 +17,8 @@ object BlockState {
       ( 0, 0,-1),
       ( 1, 0,-1))
 
-  val vertices = {
-    val ints = Seq(1, 2, 0, 3, 5, 4)
+  val vertices: Seq[CylCoord] = {
+    //val ints = Seq(1, 2, 0, 3, 5, 4)
 
     for {
       s <- 0 to 1
