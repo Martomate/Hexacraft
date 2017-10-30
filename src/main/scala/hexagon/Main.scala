@@ -3,8 +3,7 @@ package hexagon
 import java.io.File
 
 import hexagon.block.{Block, BlockLoader}
-import hexagon.font.TextMaster
-import hexagon.gui.menu.main.MainMenuScene
+import hexagon.gui.menu.main.MainMenu
 import hexagon.renderer.VAO
 import hexagon.resource.{Resource, Shader}
 import hexagon.scene.Scene
@@ -12,7 +11,7 @@ import hexagon.util.OSUtils
 import org.joml.{Vector2d, Vector2dc, Vector2f, Vector2i}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
-import org.lwjgl.opengl.{GL, GL11, GL13}
+import org.lwjgl.opengl.{GL, GL11}
 import org.lwjgl.system.{Configuration, MemoryStack, MemoryUtil}
 
 import scala.collection.mutable.ArrayBuffer
@@ -32,7 +31,7 @@ object Main {
 
   val window: Long = initWindow()
   private var fullscreen = false
-  private var vsync = true
+  private var vsync = false
 
   private val _mousePos = new Vector2d()
   private val _mouseMoved = new Vector2d()
@@ -57,6 +56,14 @@ object Main {
       sceneList(index).unload()
       sceneList.remove(index)
     }
+  }
+
+  def popScenesUntil(predicate: Scene => Boolean): Unit = {
+    while (sceneList.nonEmpty && !predicate(sceneList.last)) popScene()
+  }
+
+  def popScenesUntilMainMenu(): Unit = {
+    popScenesUntil(_.isInstanceOf[MainMenu])
   }
   
   def updateMousePos(): Unit = {
@@ -114,7 +121,7 @@ object Main {
             (if (vsync) "vsync" else "")
         ).filter(!_.isEmpty).mkString("   |   ")
         
-        glfwSetWindowTitle(window, "Hexagon   |   " + debugInfo)
+        glfwSetWindowTitle(window, "Hexacraft   |   " + debugInfo)
       }
       // Poll for window events. The key callback will only be
       // invoked during this call.
@@ -143,7 +150,7 @@ object Main {
     Shader.init()
     BlockLoader.init()// this loads it to memory
     Block.init()
-    pushScene(new MainMenuScene)
+    pushScene(new MainMenu)
     updateMousePos()
     loop()
 
@@ -197,6 +204,10 @@ object Main {
     sceneList.reverseIterator.forall(!_.processKeys(key, scancode, action, mods))
   }
 
+  private def processChar(window: Long, character: Int): Unit = {
+    sceneList.reverseIterator.forall(!_.processChar(character))
+  }
+
   private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
     sceneList.reverseIterator.forall(!_.processMouseButtons(button, action, mods))
   }
@@ -235,6 +246,7 @@ object Main {
 
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
     glfwSetKeyCallback(window, processKeys)
+    glfwSetCharCallback(window, processChar)
     glfwSetMouseButtonCallback(window, processMouseButtons)
     glfwSetWindowSizeCallback(window, (window, width, height) => resizeWindow(width, height))
 

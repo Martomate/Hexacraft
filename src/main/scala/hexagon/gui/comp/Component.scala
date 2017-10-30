@@ -26,6 +26,7 @@ abstract class Component(protected val location: LocationInfo) extends MouseMove
   def onMouseMoveEvent(x: Double, y: Double): Unit = Unit
   def onMouseClickEvent(button: Int, action: Int, mods: Int): Unit = Unit
   def onKeyEvent(key: Int, scancode: Int, action: Int, mods: Int): Unit = Unit
+  def onCharEvent(character: Int): Unit = Unit
 
   def unload(): Unit = {
     textMaster.unload()

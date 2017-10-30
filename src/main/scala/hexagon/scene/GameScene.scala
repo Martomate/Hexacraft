@@ -4,7 +4,7 @@ import java.io.File
 
 import hexagon.{Camera, HexBox, Main}
 import hexagon.block.BlockState
-import hexagon.gui.menu.pause.PauseMenuScene
+import hexagon.gui.menu.pause.PauseMenu
 import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexagon.resource.Shader
 import hexagon.world.coord.{BlockCoord, CylCoord, RayTracer}
@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL11
 import scala.collection.Seq
 
 
-class GameScene extends Scene {
+class GameScene(saveFolder: File) extends Scene {
   // Camera, player, mousepicker, world, etc.
 
   val blockShader: Shader = Shader.get("block").get
@@ -30,7 +30,7 @@ class GameScene extends Scene {
   private val crosshairVAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
-  val world = new World(new File(Main.saveFolder, "saves/The World"))
+  val world = new World(saveFolder)
   val worldRenderer = new WorldRenderer(world)
 
   val camera = new Camera(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f, world)
@@ -41,6 +41,8 @@ class GameScene extends Scene {
   private var rightMouseButtonDown = false
   private var leftMouseButtonCountdown = 0
   private var rightMouseButtonCountdown = 0
+
+  private var isPaused: Boolean = false
   
   setUniforms()
   
@@ -63,13 +65,13 @@ class GameScene extends Scene {
 
   def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean = {
     if (action == GLFW_PRESS) {
-      if (key == GLFW_KEY_ESCAPE) Main.pushScene(new PauseMenuScene)
-      else if (key == GLFW_KEY_M) {
+      if (key == GLFW_KEY_ESCAPE) {
+        Main.pushScene(new PauseMenu(this))
+        setPaused(true)
+      } else if (key == GLFW_KEY_M) {
         playerInputHandler.moveWithMouse = !playerInputHandler.moveWithMouse
-        glfwSetInputMode(Main.window, GLFW_CURSOR, if (playerInputHandler.moveWithMouse) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
+        setMouseCursorInvisible(playerInputHandler.moveWithMouse)
         Main.updateMousePos()
-      } else if (key == GLFW_KEY_ENTER) {
-        Main.popScene()
       } else if (key == GLFW_KEY_F) {
         playerInputHandler.player.flying = !playerInputHandler.player.flying
       } else if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
@@ -77,6 +79,20 @@ class GameScene extends Scene {
       }
     }
     true
+  }
+
+  def processChar(character: Int): Boolean = true
+
+  def setPaused(paused: Boolean): Unit = {
+    if (paused != isPaused) {
+      isPaused = paused
+
+      setMouseCursorInvisible(!paused && playerInputHandler.moveWithMouse)
+    }
+  }
+
+  private def setMouseCursorInvisible(invisible: Boolean): Unit = {
+    glfwSetInputMode(Main.window, GLFW_CURSOR, if (invisible) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
   }
 
   def processMouseButtons(button: Int, action: Int, mods: Int): Boolean = {
@@ -117,7 +133,7 @@ class GameScene extends Scene {
   }
 
   def tick(): Unit = {
-    playerInputHandler.tick()
+    if (!isPaused) playerInputHandler.tick()
     camera.setPositionAndRotation(playerInputHandler.player)
     camera.updateCoords()
     camera.updateViewMatrix
@@ -131,7 +147,7 @@ class GameScene extends Scene {
 
     // MousePicker
     mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
-    worldRenderer.setSelectedBlockAndSide(mousePicker.trace(c => world.getBlock(c).isDefined))
+    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).isDefined) else None)
 
     if (leftMouseButtonCountdown == 0) {
       if (leftMouseButtonDown) {
@@ -174,6 +190,6 @@ class GameScene extends Scene {
   def unload(): Unit = {
     world.unload()
     crosshairVAO.free()
-    glfwSetInputMode(Main.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL)
+    setMouseCursorInvisible(false)
   }
 }

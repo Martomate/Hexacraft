@@ -20,7 +20,7 @@ class InstancedRenderer(override val vao: VAO, override val mode: Int) extends R
 
   def render(count: Int, primCount: Int): Unit = {
     vao.bind()
-    GL31.glDrawArraysInstanced(mode, 0, count, primCount);
+    GL31.glDrawArraysInstanced(mode, 0, count, primCount)
   }
 }
 

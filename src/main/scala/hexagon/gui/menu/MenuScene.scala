@@ -1,21 +1,20 @@
 package hexagon.gui.menu
 
-import hexagon.Main
-import hexagon.gui.comp.Component
-import hexagon.resource.Shader
-import hexagon.scene.{GameScene, Scene}
-import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+import hexagon.gui.comp.{Component, LocationInfo}
+import hexagon.resource.TextureSingle
+import hexagon.scene.Scene
 
 import scala.collection.mutable.ArrayBuffer
 
 abstract class MenuScene extends Scene {
-  protected val imageShader: Shader = Shader.get("image").get
-
   private val components: ArrayBuffer[Component] = ArrayBuffer.empty[Component]
 
   protected def addComponent(comp: Component): Unit = components.append(comp)
 
+  protected var hasDefaultBackground: Boolean = true
+
   override def render(): Unit = {
+    if (hasDefaultBackground) Component.drawImage(MenuScene.entireBackground, TextureSingle.getTexture("textures/gui/menu/background"))
     components.foreach(_.render())
   }
 
@@ -28,8 +27,17 @@ abstract class MenuScene extends Scene {
     true
   }
 
+  def processChar(character: Int): Boolean = {
+    components.foreach(_.onCharEvent(character))
+    true
+  }
+
   def processMouseButtons(button: Int, action: Int, mods: Int): Boolean = {
     components.foreach(_.onMouseClickEvent(button, action, mods))
     true
   }
+}
+
+object MenuScene {
+  val entireBackground: LocationInfo = LocationInfo(0, 0, 1, 1)
 }

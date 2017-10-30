@@ -62,7 +62,6 @@ class World(val saveDir: File) {
     }
     else {
       val map = new java.util.HashMap[String, Tag]()
-      map.put("name", new StringTag("name", "The world"))
       new CompoundTag("world", map)
     }
   }
@@ -236,7 +235,8 @@ class World(val saveDir: File) {
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
       NBTUtil.makeCompoundTag("general", Seq(
-        new ByteTag("worldSize", worldSize.toByte)
+        new ByteTag("worldSize", worldSize.toByte),
+        new ByteTag("name", worldSize.toByte)
       )),
       NBTUtil.makeCompoundTag("gen", Seq(
           new LongTag("seed", randomGenSeed),

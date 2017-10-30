@@ -10,6 +10,7 @@ import hexagon.Main
 trait Scene {
   /** Returns true to consume the event */
   def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean
+  def processChar(character: Int): Boolean
   def processMouseButtons(button: Int, action: Int, mods: Int): Boolean
   def windowResized(w: Int, h: Int): Unit = {}
   def render(): Unit

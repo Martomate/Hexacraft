@@ -20,19 +20,19 @@ class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VB
     }
   }
 
-  def id = vaoID
+  def id: Int = vaoID
   
   protected def reload(): Unit = ()
 
   def unload(): Unit = {
     GL30.glDeleteVertexArrays(vaoID)
-    vbos.foreach(_.unload)
+    vbos.foreach(_.unload())
   }
 }
 
 class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
   private val vbos = ArrayBuffer.empty[VBO]
-  val vaoID = GL30.glGenVertexArrays()
+  val vaoID: Int = GL30.glGenVertexArrays()
   GL30.glBindVertexArray(vaoID)
 
   def addVBO(vbo: VBO): VAOBuilder = {
