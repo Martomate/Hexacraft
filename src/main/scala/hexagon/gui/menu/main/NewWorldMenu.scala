@@ -1,23 +1,58 @@
 package hexagon.gui.menu.main
 
 import java.io.File
+import java.net.URL
+import java.nio.file.Paths
 
 import hexagon.Main
-import hexagon.gui.comp.{Button, LocationInfo, TextField}
+import hexagon.gui.comp._
 import hexagon.gui.menu.MenuScene
 import hexagon.scene.GameScene
+import hexagon.world.WorldSettings
+import org.joml.{Vector3f, Vector4f}
+
+import scala.util.Try
 
 class NewWorldMenu extends MenuScene{
   // TODO: add textfields and other settings
-  private val nameTF = new TextField(LocationInfo(0.3f, 0.55f, 0.4f, 0.1f))
+  addComponent(new Label("World name", LocationInfo(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  private val nameTF = new TextField(LocationInfo(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 1.5f)
   addComponent(nameTF)
+  addComponent(new Label("World size", LocationInfo(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  private val sizeTF = new TextField(LocationInfo(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 1.5f)
+  addComponent(sizeTF)
+  addComponent(new Label("World seed", LocationInfo(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  private val seedTF = new TextField(LocationInfo(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 1.5f)
+  addComponent(seedTF)
 
   addComponent(new Button("Cancel", LocationInfo(0.3f, 0.1f, 0.19f, 0.1f))({ Main.popScene() }))
   addComponent(new Button("Create world", LocationInfo(0.51f, 0.1f, 0.19f, 0.1f))({
-    Main.popScenesUntilMainMenu()
-    Main.pushScene(new GameScene(new File(Main.saveFolder, "saves/" + nameTF.text)))
-  }))
+    try {
+      val (name, file) = {
+        val filteredName = nameTF.text.filter(c => c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' ')
+        val nameBase = if (filteredName.trim.nonEmpty) filteredName else "New World"
+        val savesFolder = new File(Main.saveFolder, "saves")
 
+        var name: String = null
+        var file: File = null
+        var count = 0
+        do {
+          count += 1
+          name = if (count == 1) nameBase else nameBase + " " + count
+          file = new File(savesFolder, name)
+        } while (file.exists())
+
+        (name, file)
+      }
+      val size = Try(sizeTF.text.toByte).toOption.filter(s => s >= 0 && s <= 20)
+      val seed = Some(seedTF.text).filter(_.nonEmpty).map(_.##.toLong)
+      Main.popScenesUntilMainMenu()
+      Main.pushScene(new GameScene(file, WorldSettings(Some(nameTF.text), size, seed)))
+    } catch {
+      case _: Exception =>
+        // TODO: complain about the input
+    }
+  }))
 
   override def onReloadedResources(): Unit = ()
 }

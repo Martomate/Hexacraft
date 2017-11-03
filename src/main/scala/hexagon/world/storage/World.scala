@@ -1,40 +1,18 @@
 package hexagon.world.storage
 
-import java.io.File
-import java.io.FileInputStream
+import java.io.{File, FileInputStream}
 import java.util.Random
 
-import scala.collection.mutable.{ Set => MutableSet }
-
-import org.jnbt.CompoundTag
-import org.jnbt.LongTag
-import org.jnbt.NBTInputStream
-import org.jnbt.StringTag
-import org.jnbt.Tag
-
-import hexagon.util.NBTUtil
-import hexagon.world.coord.ColumnRelWorld
-import hexagon.world.coord.CoordUtils
-import hexagon.world.coord.BlockRelWorld
-import hexagon.world.coord.CylCoord
-import hexagon.world.coord.ChunkRelWorld
-import org.jnbt.NBTOutputStream
-import java.util.concurrent.Executors
-import java.io.FileOutputStream
-import hexagon.world.gen.noise.NoiseGenerator4D
-import hexagon.world.coord.BlockCoord
-import org.joml.Vector4d
-import org.joml.Vector3d
-import scala.concurrent.ExecutionContext
-import hexagon.world.gen.noise.NoiseGenerator3D
-import org.joml.Vector2d
-import scala.collection.mutable.PriorityQueue
-import org.jnbt.DoubleTag
-import hexagon.block.BlockState
 import hexagon.Camera
-import hexagon.world.Player
-import org.jnbt.ByteTag
-import org.joml.Quaterniond
+import hexagon.block.BlockState
+import hexagon.util.NBTUtil
+import hexagon.world.coord._
+import hexagon.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D}
+import hexagon.world.{Player, WorldSettings}
+import org.jnbt._
+import org.joml.{Vector2d, Vector3d, Vector4d}
+
+import scala.collection.mutable.{PriorityQueue, Set => MutableSet}
 
 object World {
   val chunksLoadedPerTick = 2
@@ -42,7 +20,7 @@ object World {
   val ticksBetweenColumnLoading = 5
 }
 
-class World(val saveDir: File) {
+class World(val saveDir: File, worldSettings: WorldSettings) {
   /* blockStorage
    * other world contents
    * methods for world interaction
@@ -70,7 +48,7 @@ class World(val saveDir: File) {
   private val worldGenSettings: CompoundTag = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
 
   /** Max-value: 20 */
-  val worldSize: Int = NBTUtil.getByte(generalSettings, "worldSize", 7)
+  val worldSize: Int = NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7))
   val ringSize: Int = 1 << worldSize
   val ringSizeMask: Int = ringSize - 1
   val totalSize: Int = 16 * ringSize
@@ -84,7 +62,7 @@ class World(val saveDir: File) {
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
   val columnsAtEdge: MutableSet[ColumnRelWorld] = MutableSet.empty[ColumnRelWorld]
   
-  private val randomGenSeed = NBTUtil.getLong(worldGenSettings, "seed", new Random().nextLong)
+  private val randomGenSeed = NBTUtil.getLong(worldGenSettings, "seed", worldSettings.seed.getOrElse(new Random().nextLong))
   private val random = new Random(randomGenSeed)
   private[storage] val blockGenerator                = new NoiseGenerator4D(random, 8, NBTUtil.getDouble(worldGenSettings, "blockGenScale", 0.1))
   private[storage] val heightMapGenerator            = new NoiseGenerator3D(random, 8, NBTUtil.getDouble(worldGenSettings, "heightMapGenScale", 0.02))

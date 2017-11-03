@@ -18,7 +18,7 @@ abstract class MenuScene extends Scene {
     components.foreach(_.render())
   }
 
-  override def tick(): Unit = ()
+  override def tick(): Unit = components.foreach(_.tick())
 
   def unload(): Unit = ()
 

@@ -5,6 +5,8 @@ import hexagon.font.TextMaster;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.util.List;
+
 /**
  * Represents a piece of text in the game.
  * 
@@ -27,6 +29,7 @@ public class GUIText {
 	private FontType font;
 
 	private boolean centerText = false;
+	private List<Double> lineWidths;
 
 	/**
 	 * Creates a new text, loads the text's quads into a VAO, and adds the text
@@ -98,6 +101,10 @@ public class GUIText {
 	 */
 	public int getNumberOfLines() {
 		return numberOfLines;
+	}
+
+	public double getLineWidth(int line) {
+		return lineWidths.get(line);
 	}
 
 	/**
@@ -176,4 +183,7 @@ public class GUIText {
 		return textString;
 	}
 
+	public <R> void setLineWidths(List<Double> lineWidths) {
+		this.lineWidths = lineWidths;
+	}
 }

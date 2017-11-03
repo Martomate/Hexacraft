@@ -6,6 +6,7 @@ import hexagon.Main
 import hexagon.gui.comp.{Button, Label, LocationInfo}
 import hexagon.gui.menu.MenuScene
 import hexagon.scene.GameScene
+import hexagon.world.WorldSettings
 
 class WorldChooserMenu extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo(0, 0.85f, 1, 0.15f), 3).withColor(1, 1, 1))
@@ -13,7 +14,7 @@ class WorldChooserMenu extends MenuScene {
     case (f, i) =>
       new Button(f.getName, LocationInfo(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f))({
         Main.popScenesUntilMainMenu()
-        Main.pushScene(new GameScene(f))
+        Main.pushScene(new GameScene(f, WorldSettings.none))
       })
   }.foreach(addComponent)
 

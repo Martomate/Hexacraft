@@ -7,6 +7,7 @@ import hexagon.block.BlockState
 import hexagon.gui.menu.pause.PauseMenu
 import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexagon.resource.Shader
+import hexagon.world.WorldSettings
 import hexagon.world.coord.{BlockCoord, CylCoord, RayTracer}
 import hexagon.world.render.WorldRenderer
 import hexagon.world.storage.World
@@ -18,7 +19,7 @@ import org.lwjgl.opengl.GL11
 import scala.collection.Seq
 
 
-class GameScene(saveFolder: File) extends Scene {
+class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   // Camera, player, mousepicker, world, etc.
 
   val blockShader: Shader = Shader.get("block").get
@@ -30,7 +31,7 @@ class GameScene(saveFolder: File) extends Scene {
   private val crosshairVAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
-  val world = new World(saveFolder)
+  val world = new World(saveFolder, worldSettings)
   val worldRenderer = new WorldRenderer(world)
 
   val camera = new Camera(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f, world)

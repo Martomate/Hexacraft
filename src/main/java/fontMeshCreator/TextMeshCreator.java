@@ -3,6 +3,7 @@ package fontMeshCreator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TextMeshCreator {
 
@@ -57,6 +58,7 @@ public class TextMeshCreator {
 
 	private TextMeshData createQuadVertices(GUIText text, List<Line> lines) {
 		text.setNumberOfLines(lines.size());
+		text.setLineWidths(lines.stream().map(Line::getLineLength).collect(Collectors.toList()));
 		double curserX = 0f;
 		double curserY = 0f;
 		List<Float> vertices = new ArrayList<Float>();

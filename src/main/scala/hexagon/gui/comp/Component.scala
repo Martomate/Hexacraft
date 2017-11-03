@@ -19,6 +19,10 @@ abstract class Component(protected val location: LocationInfo) extends MouseMove
     textMaster.removeText(text)
   }
 
+  def tick(): Unit = {
+
+  }
+
   def render(): Unit = {
     textMaster.render()
   }
@@ -59,8 +63,8 @@ object Component {
     Component.rectRenderer.render()
   }
 
-  def makeText(text: String, location: LocationInfo, textSize: Float): GUIText = {
-    val guiText = new GUIText(text, textSize, Component.font, new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize), location.w, true)
+  def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): GUIText = {
+    val guiText = new GUIText(text, textSize, Component.font, new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize), location.w, centered)
     guiText.setColour(0.9f, 0.9f, 0.9f)
     guiText
   }
