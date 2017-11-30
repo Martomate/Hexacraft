@@ -35,6 +35,26 @@ object NBTUtil {
       }
     }
   }
+
+  def getString(tag: CompoundTag, key: String, default: =>String): String = {
+    if (tag == null) default
+    else {
+      tag.getValue.get(key) match {
+        case t: StringTag => t.getValue
+        case _ => default
+      }
+    }
+  }
+
+  def getString(tag: CompoundTag, key: String): Option[String] = {
+    if (tag == null) None
+    else {
+      tag.getValue.get(key) match {
+        case t: StringTag => Some(t.getValue)
+        case _ => None
+      }
+    }
+  }
   
   def getTag(tag: CompoundTag, name: String): Option[Tag] = {
     if (tag == null) None

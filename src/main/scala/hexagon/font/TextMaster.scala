@@ -10,8 +10,8 @@ class TextMaster {
   private val texts = mutable.HashMap.empty[FontType, ArrayBuffer[GUIText]]
   private val renderer = new FontRenderer()
 
-  def render(): Unit = {
-    renderer.render(texts)
+  def render(xoffset: Float, yoffset: Float): Unit = {
+    renderer.render(texts, xoffset, yoffset)
   }
 
   def loadText(text: GUIText): Unit = {

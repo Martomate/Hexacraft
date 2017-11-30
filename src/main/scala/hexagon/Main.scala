@@ -3,6 +3,8 @@ package hexagon
 import java.io.File
 
 import hexagon.block.{Block, BlockLoader}
+import hexagon.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
+import hexagon.gui.comp.GUITransformation
 import hexagon.gui.menu.main.MainMenu
 import hexagon.renderer.VAO
 import hexagon.resource.{Resource, Shader}
@@ -71,6 +73,13 @@ object Main {
     _mousePos.set(doublePtrX.get(0), windowSize.y - doublePtrY.get(0))
   }
 
+  def moveMouse(pos: (Float, Float)): Unit = {
+    val dx = _mousePos.x - prevWindowPos.x
+    val dy = _mousePos.y - prevWindowPos.y
+    _mousePos.x = pos._1 * windowSize.x
+    _mousePos.y = pos._2 * windowSize.y
+  }
+
   def loop(): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
@@ -130,7 +139,7 @@ object Main {
   }
 
   private def render(): Unit = {
-    sceneList.foreach(_.render())
+    sceneList.foreach(_.render(GUITransformation(0, 0)))
 
     VAO.unbindVAO()
   }
@@ -201,15 +210,19 @@ object Main {
         fullscreen = false
       }
     }
-    sceneList.reverseIterator.forall(!_.processKeys(key, scancode, action, mods))
+    sceneList.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
   }
 
   private def processChar(window: Long, character: Int): Unit = {
-    sceneList.reverseIterator.forall(!_.processChar(character))
+    sceneList.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
   }
 
   private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
-    sceneList.reverseIterator.forall(!_.processMouseButtons(button, action, mods))
+    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * 0.5f + 0.5f, normalizedMousePos.y * 0.5f + 0.5f))))
+  }
+
+  private def processScroll(window: Long, xoffset: Double, yoffset: Double): Unit = {
+    sceneList.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xoffset.toFloat, yoffset.toFloat)))
   }
 
   private def resizeWindow(width: Int, height: Int): Unit = {
@@ -248,7 +261,8 @@ object Main {
     glfwSetKeyCallback(window, processKeys)
     glfwSetCharCallback(window, processChar)
     glfwSetMouseButtonCallback(window, processMouseButtons)
-    glfwSetWindowSizeCallback(window, (window, width, height) => resizeWindow(width, height))
+    glfwSetWindowSizeCallback(window, (_, width, height) => resizeWindow(width, height))
+    glfwSetScrollCallback(window, processScroll)
 
     // Get the thread stack and push a new frame
     {

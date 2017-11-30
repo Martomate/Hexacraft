@@ -1,5 +1,7 @@
 package hexagon.event
 
 trait MouseMoveListener {
-  def onMouseMoveEvent(x: Double, y: Double): Unit
+  def onMouseMoveEvent(event: MouseMoveEvent): Unit
 }
+case class MouseMoveEvent(x: Double, y: Double)
+case class ScrollEvent(xoffset: Float, yoffset: Float)

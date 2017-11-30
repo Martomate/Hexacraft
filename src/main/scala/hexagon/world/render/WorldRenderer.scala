@@ -17,10 +17,10 @@ import hexagon.block.BlockState
 import hexagon.world.storage.World
 
 class WorldRenderer(world: World) {
-  val blockShader = Shader.get("block").get
-  val blockSideShader = Shader.get("blockSide").get
-  val skyShader = Shader.get("sky").get
-  val selectedBlockShader = Shader.get("selectedBlock").get
+  private val blockShader = Shader.get("block").get
+  private val blockSideShader = Shader.get("blockSide").get
+  private val skyShader = Shader.get("sky").get
+  private val selectedBlockShader = Shader.get("selectedBlock").get
 
   private val skyVAO: VAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
@@ -29,7 +29,7 @@ class WorldRenderer(world: World) {
     .addVBO(VBO(25).floats(0, 3).create().fillFloats(0, {
       val expandFn: CylCoord => Seq[Float] = v => Seq((v.x * 1.0025).toFloat, ((v.y - 0.25) * 1.0025 + 0.25).toFloat, (v.z * 1.0025).toFloat)
       val fn: Int => Seq[Float] = s => BlockState.getVertices(s + 2).flatMap(expandFn)
-      Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices(0)) ++ Seq(1, 3, 5).flatMap(fn)
+      Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
     }))
     .addVBO(VBO(1, divisor = 1).ints(1, 3).floats(2, 3).create()).create()
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
@@ -67,9 +67,14 @@ class WorldRenderer(world: World) {
       c.renderer.foreach(_.renderBlockSides())
     }))
 
-    if (getSelectedSide != None) {
+    if (getSelectedSide.isDefined) {
       selectedBlockShader.enable()
       selectedBlockRenderer.render()
     }
+  }
+
+  def unload(): Unit = {
+    skyVAO.free()
+    selectedBlockVAO.free()
   }
 }

@@ -4,6 +4,8 @@ import java.io.File
 
 import hexagon.{Camera, HexBox, Main}
 import hexagon.block.BlockState
+import hexagon.event.{KeyEvent, MouseClickEvent}
+import hexagon.gui.comp.GUITransformation
 import hexagon.gui.menu.pause.PauseMenu
 import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexagon.resource.Shader
@@ -22,13 +24,13 @@ import scala.collection.Seq
 class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   // Camera, player, mousepicker, world, etc.
 
-  val blockShader: Shader = Shader.get("block").get
-  val blockSideShader: Shader = Shader.get("blockSide").get
-  val selectedBlockShader: Shader = Shader.get("selectedBlock").get
-  val skyShader: Shader = Shader.get("sky").get
-  val crosshairShader: Shader = Shader.get("crosshair").get
+  private val blockShader: Shader = Shader.get("block").get
+  private val blockSideShader: Shader = Shader.get("blockSide").get
+  private val selectedBlockShader: Shader = Shader.get("selectedBlock").get
+  private val skyShader: Shader = Shader.get("sky").get
+  private val crosshairShader: Shader = Shader.get("crosshair").get
 
-  private val crosshairVAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
+  private val crosshairVAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
   val world = new World(saveFolder, worldSettings)
@@ -47,7 +49,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   
   setUniforms()
   
-  def onReloadedResources(): Unit = {
+  override def onReloadedResources(): Unit = {
     setUniforms()
     world.columns.values.foreach(_.chunks.values.foreach(_.requestRenderUpdate()))
   }
@@ -64,25 +66,25 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     crosshairShader.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y)
   }
 
-  def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean = {
-    if (action == GLFW_PRESS) {
-      if (key == GLFW_KEY_ESCAPE) {
-        Main.pushScene(new PauseMenu(this))
-        setPaused(true)
-      } else if (key == GLFW_KEY_M) {
-        playerInputHandler.moveWithMouse = !playerInputHandler.moveWithMouse
-        setMouseCursorInvisible(playerInputHandler.moveWithMouse)
-        Main.updateMousePos()
-      } else if (key == GLFW_KEY_F) {
-        playerInputHandler.player.flying = !playerInputHandler.player.flying
-      } else if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
-        playerInputHandler.player.selectedItemSlot = key - GLFW_KEY_1
+  override def onKeyEvent(event: KeyEvent): Boolean = {
+    if (event.action == GLFW_PRESS) {
+      event.key match {
+        case GLFW_KEY_ESCAPE =>
+          Main.pushScene(new PauseMenu(this))
+          setPaused(true)
+        case GLFW_KEY_M =>
+          playerInputHandler.moveWithMouse = !playerInputHandler.moveWithMouse
+          setMouseCursorInvisible(playerInputHandler.moveWithMouse)
+          Main.updateMousePos()
+        case GLFW_KEY_F =>
+          playerInputHandler.player.flying = !playerInputHandler.player.flying
+        case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
+          playerInputHandler.player.selectedItemSlot = key - GLFW_KEY_1
+        case _ =>
       }
     }
     true
   }
-
-  def processChar(character: Int): Boolean = true
 
   def setPaused(paused: Boolean): Unit = {
     if (paused != isPaused) {
@@ -96,11 +98,13 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     glfwSetInputMode(Main.window, GLFW_CURSOR, if (invisible) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
   }
 
-  def processMouseButtons(button: Int, action: Int, mods: Int): Boolean = {
-    if (button == 0) {
-      rightMouseButtonDown = action != GLFW.GLFW_RELEASE
-    } else if (button == 1) {
-      leftMouseButtonDown = action != GLFW.GLFW_RELEASE
+  override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
+    event.button match {
+      case 0 =>
+        rightMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+      case 1 =>
+        leftMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+      case _ =>
     }
     true
   }
@@ -123,17 +127,17 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     s")    R: (${math.toDegrees(camera.rotation.x).toFloat}, ${math.toDegrees(camera.rotation.y).toFloat}, ${math.toDegrees(camera.rotation.z).toFloat}" + 
     s")    v=${(100 * world.renderDistance).toInt / 100f}"
 
-  def render(): Unit = {
+  override def render(transformation: GUITransformation): Unit = {
     // render world etc.
     worldRenderer.render(camera)
 
-    if (playerInputHandler.moveWithMouse) {
+    if (!isPaused && playerInputHandler.moveWithMouse) {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
   }
 
-  def tick(): Unit = {
+  override def tick(): Unit = {
     if (!isPaused) playerInputHandler.tick()
     camera.setPositionAndRotation(playerInputHandler.player)
     camera.updateCoords()
@@ -188,8 +192,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     world.tick(camera)
   }
 
-  def unload(): Unit = {
+  override def unload(): Unit = {
     world.unload()
+    worldRenderer.unload()
     crosshairVAO.free()
     setMouseCursorInvisible(false)
   }

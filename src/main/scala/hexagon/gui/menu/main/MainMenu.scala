@@ -19,6 +19,4 @@ class MainMenu extends MenuScene {
     Main.tryQuit()
   }))
 
-  override def onReloadedResources(): Unit = ()
-
 }

@@ -1,14 +1,14 @@
 package hexagon.gui.comp
 
 import fontMeshCreator.{FontType, GUIText}
-import hexagon.event.{KeyListener, MouseClickListener, MouseMoveListener}
+import hexagon.event._
 import hexagon.font.{Fonts, TextMaster}
 import hexagon.renderer._
 import hexagon.resource.{Shader, TextureSingle}
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
 
-abstract class Component(protected val location: LocationInfo) extends MouseMoveListener with MouseClickListener with KeyListener{
+abstract class Component(protected val location: LocationInfo) {
   private val textMaster = new TextMaster()
 
   protected def addText(text: GUIText): Unit = {
@@ -19,18 +19,18 @@ abstract class Component(protected val location: LocationInfo) extends MouseMove
     textMaster.removeText(text)
   }
 
-  def tick(): Unit = {
+  def tick(): Unit = ()
 
+  def render(transformation: GUITransformation): Unit = {
+    textMaster.render(transformation.x, transformation.y)
   }
 
-  def render(): Unit = {
-    textMaster.render()
-  }
-
-  def onMouseMoveEvent(x: Double, y: Double): Unit = Unit
-  def onMouseClickEvent(button: Int, action: Int, mods: Int): Unit = Unit
-  def onKeyEvent(key: Int, scancode: Int, action: Int, mods: Int): Unit = Unit
-  def onCharEvent(character: Int): Unit = Unit
+  def onMouseMoveEvent(event: MouseMoveEvent): Boolean = false
+  def onMouseClickEvent(event: MouseClickEvent): Boolean = false
+  def onScrollEvent(event: ScrollEvent): Boolean = false
+  def onKeyEvent(event: KeyEvent): Boolean = false
+  def onCharEvent(event: CharEvent): Boolean = false
+  def onReloadedResources(): Unit = ()
 
   def unload(): Unit = {
     textMaster.unload()
@@ -46,18 +46,18 @@ object Component {
   private val imageShader: Shader = Shader.get("image").get
   private val colorShader: Shader = Shader.get("color").get
 
-  def drawImage(location: LocationInfo, image: TextureSingle): Unit = {
+  def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit = {
     imageShader.enable()
     image.bind()
-    val mat = new Matrix4f().translate(location.x, location.y, 0).scale(location.w, location.h, 1)
+    val mat = new Matrix4f().translate(location.x + xoffset, location.y + yoffset, 0).scale(location.w, location.h, 1)
     imageShader.setUniformMat4("transformationMatrix", mat)
     Component.rectRenderer.render()
   }
 
-  def drawRect(location: LocationInfo, color: Vector4f): Unit = {
+  def drawRect(location: LocationInfo, xoffset: Float, yoffset: Float, color: Vector4f): Unit = {
     colorShader.enable()
 
-    val mat = new Matrix4f().translate(location.x, location.y, 0).scale(location.w, location.h, 1)
+    val mat = new Matrix4f().translate(location.x + xoffset, location.y + yoffset, 0).scale(location.w, location.h, 1)
     colorShader.setUniformMat4("transformationMatrix", mat)
     colorShader.setUniform4f("col", color)
     Component.rectRenderer.render()

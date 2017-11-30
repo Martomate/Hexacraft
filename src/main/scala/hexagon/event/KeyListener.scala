@@ -1,6 +1,9 @@
 package hexagon.event
 
 trait KeyListener {
-  def onKeyEvent(key: Int, scancode: Int, action: Int, mods: Int): Unit
-  def onCharEvent(character: Int): Unit
+  def onKeyEvent(event: KeyEvent): Unit
+  def onCharEvent(event: CharEvent): Unit
 }
+
+case class KeyEvent(key: Int, scancode: Int, action: Int, mods: Int)
+case class CharEvent(character: Int)

@@ -47,6 +47,8 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   private val generalSettings: CompoundTag = nbtData.getValue.get("general").asInstanceOf[CompoundTag]
   private val worldGenSettings: CompoundTag = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
 
+  val worldName: String = NBTUtil.getString(generalSettings, "worldName", worldSettings.name.getOrElse(saveDir.getName))
+
   /** Max-value: 20 */
   val worldSize: Int = NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7))
   val ringSize: Int = 1 << worldSize
@@ -214,7 +216,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
       NBTUtil.makeCompoundTag("general", Seq(
         new ByteTag("worldSize", worldSize.toByte),
-        new ByteTag("name", worldSize.toByte)
+        new StringTag("name", worldName)
       )),
       NBTUtil.makeCompoundTag("gen", Seq(
           new LongTag("seed", randomGenSeed),
@@ -231,7 +233,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
     
     chunksToLoad.clear
     loadColumnsCountdown = -1
-    columns.values.foreach(_.unload)
+    columns.values.foreach(_.unload())
     columns.clear
   }
 }

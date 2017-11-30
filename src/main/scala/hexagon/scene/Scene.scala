@@ -1,21 +1,15 @@
 package hexagon.scene
 
-import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
-import org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE
-import org.lwjgl.glfw.GLFW.GLFW_PRESS
+import hexagon.event._
+import hexagon.gui.comp.{Component, LocationInfo}
 
-import hexagon.resource.Shader
-import hexagon.Main
-
-trait Scene {
-  /** Returns true to consume the event */
-  def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean
-  def processChar(character: Int): Boolean
-  def processMouseButtons(button: Int, action: Int, mods: Int): Boolean
-  def windowResized(w: Int, h: Int): Unit = {}
-  def render(): Unit
-  def tick(): Unit
-  def unload(): Unit
-  def onReloadedResources(): Unit
+abstract class Scene extends Component(LocationInfo(0, 0, 1, 1)) {
+  def windowResized(w: Int, h: Int): Unit = ()
   def windowTitle: String = ""
+
+  override def onMouseMoveEvent(event: MouseMoveEvent): Boolean = true
+  override def onMouseClickEvent(event: MouseClickEvent): Boolean = true
+  override def onScrollEvent(event: ScrollEvent): Boolean = true
+  override def onKeyEvent(event: KeyEvent): Boolean = true
+  override def onCharEvent(event: CharEvent): Boolean = true
 }

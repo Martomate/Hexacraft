@@ -1,6 +1,7 @@
 package hexagon.gui.comp
 
 import fontMeshCreator.GUIText
+import hexagon.event.{CharEvent, KeyEvent, MouseClickEvent}
 import org.joml.{Vector3f, Vector4f}
 import org.lwjgl.glfw.GLFW
 
@@ -77,26 +78,30 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
     }
   }
 
-  override def render(): Unit = {
-    Component.drawRect(location, bgColor)
-    super.render()
+  override def render(transformation: GUITransformation): Unit = {
+    Component.drawRect(location, transformation.x, transformation.y, bgColor)
+    super.render(transformation)
   }
 
-  override def onCharEvent(character: Int): Unit = {
-    if (focused) setText(_text + character.toChar)
+  override def onCharEvent(event: CharEvent): Boolean = {
+    if (focused) {
+      setText(_text + event.character.toChar)
+      true
+    } else false
   }
 
-  override def onKeyEvent(key: Int, scancode: Int, action: Int, mods: Int): Unit = {
-    if (focused && action != GLFW.GLFW_RELEASE) {
-      if (key == GLFW.GLFW_KEY_BACKSPACE) {
+  override def onKeyEvent(event: KeyEvent): Boolean = {
+    if (focused && event.action != GLFW.GLFW_RELEASE) {
+      if (event.key == GLFW.GLFW_KEY_BACKSPACE) {
         if (_text.length > 0) setText(_text.substring(0, _text.length - 1))
       }
     }
-    super.onKeyEvent(key, scancode, action, mods)
+    super.onKeyEvent(event)
   }
 
-  override def onMouseClickEvent(button: Int, action: Int, mods: Int): Unit = {
-    focused = location.containsMouse
-    super.onMouseClickEvent(button, action, mods)
+  override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
+    focused = location.containsPoint(event.mousePos)
+    if (!focused) super.onMouseClickEvent(event)
+    else true
   }
 }

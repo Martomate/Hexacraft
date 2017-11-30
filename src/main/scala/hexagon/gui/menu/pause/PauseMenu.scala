@@ -1,6 +1,7 @@
 package hexagon.gui.menu.pause
 
 import hexagon.Main
+import hexagon.event.KeyEvent
 import hexagon.gui.comp.{Button, LocationInfo}
 import hexagon.gui.menu.MenuScene
 import hexagon.scene.GameScene
@@ -12,8 +13,7 @@ class PauseMenu(game: GameScene) extends MenuScene {
     unpause()
   }))
   addComponent(new Button("Back to menu", LocationInfo(0.4f, 0.25f, 0.2f, 0.1f))({
-    Main.popScene()
-    Main.popScene()
+    Main.popScenesUntilMainMenu()
   }))
   hasDefaultBackground = false
 
@@ -22,9 +22,11 @@ class PauseMenu(game: GameScene) extends MenuScene {
     game.setPaused(false)
   }
 
-  override def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean = {
-    if (action == GLFW.GLFW_PRESS && key == GLFW.GLFW_KEY_ESCAPE) unpause()
-    super.processKeys(key, scancode, action, mods)
+  override def onKeyEvent(event: KeyEvent): Boolean = {
+    if (event.action == GLFW.GLFW_PRESS && event.key == GLFW.GLFW_KEY_ESCAPE) {
+      unpause()
+      true
+    } else super.onKeyEvent(event)
   }
 
   override def onReloadedResources(): Unit = ()

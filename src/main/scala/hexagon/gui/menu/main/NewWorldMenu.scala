@@ -1,17 +1,16 @@
 package hexagon.gui.menu.main
 
 import java.io.File
-import java.net.URL
-import java.nio.file.Paths
+import java.lang.String
 
 import hexagon.Main
 import hexagon.gui.comp._
 import hexagon.gui.menu.MenuScene
 import hexagon.scene.GameScene
 import hexagon.world.WorldSettings
-import org.joml.{Vector3f, Vector4f}
 
-import scala.util.Try
+import scala.util.{Random, Try}
+import scala.util.hashing.Hashing
 
 class NewWorldMenu extends MenuScene{
   // TODO: add textfields and other settings
@@ -29,7 +28,7 @@ class NewWorldMenu extends MenuScene{
   addComponent(new Button("Create world", LocationInfo(0.51f, 0.1f, 0.19f, 0.1f))({
     try {
       val (name, file) = {
-        val filteredName = nameTF.text.filter(c => c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' ')
+        val filteredName = nameTF.text.map(c => if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' ') c else '_')
         val nameBase = if (filteredName.trim.nonEmpty) filteredName else "New World"
         val savesFolder = new File(Main.saveFolder, "saves")
 
@@ -45,7 +44,7 @@ class NewWorldMenu extends MenuScene{
         (name, file)
       }
       val size = Try(sizeTF.text.toByte).toOption.filter(s => s >= 0 && s <= 20)
-      val seed = Some(seedTF.text).filter(_.nonEmpty).map(_.##.toLong)
+      val seed = Some(seedTF.text).filter(_.nonEmpty).map(s => new Random(s.## << 32L | s.reverse.##).nextLong())
       Main.popScenesUntilMainMenu()
       Main.pushScene(new GameScene(file, WorldSettings(Some(nameTF.text), size, seed)))
     } catch {
@@ -54,5 +53,4 @@ class NewWorldMenu extends MenuScene{
     }
   }))
 
-  override def onReloadedResources(): Unit = ()
 }

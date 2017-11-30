@@ -1,41 +1,17 @@
 package hexagon.gui.menu
 
-import hexagon.gui.comp.{Component, LocationInfo}
+import hexagon.gui.comp.{Component, GUITransformation, LocationInfo, SubComponents}
 import hexagon.resource.TextureSingle
 import hexagon.scene.Scene
 
-import scala.collection.mutable.ArrayBuffer
-
-abstract class MenuScene extends Scene {
-  private val components: ArrayBuffer[Component] = ArrayBuffer.empty[Component]
-
-  protected def addComponent(comp: Component): Unit = components.append(comp)
-
+abstract class MenuScene extends Scene with SubComponents {
   protected var hasDefaultBackground: Boolean = true
 
-  override def render(): Unit = {
-    if (hasDefaultBackground) Component.drawImage(MenuScene.entireBackground, TextureSingle.getTexture("textures/gui/menu/background"))
-    components.foreach(_.render())
+  override def render(transformation: GUITransformation): Unit = {
+    if (hasDefaultBackground) Component.drawImage(MenuScene.entireBackground, transformation.x, transformation.y, TextureSingle.getTexture("textures/gui/menu/background"))
+    super.render(transformation)
   }
 
-  override def tick(): Unit = components.foreach(_.tick())
-
-  def unload(): Unit = ()
-
-  def processKeys(key: Int, scancode: Int, action: Int, mods: Int): Boolean = {
-    components.foreach(_.onKeyEvent(key, scancode, action, mods))
-    true
-  }
-
-  def processChar(character: Int): Boolean = {
-    components.foreach(_.onCharEvent(character))
-    true
-  }
-
-  def processMouseButtons(button: Int, action: Int, mods: Int): Boolean = {
-    components.foreach(_.onMouseClickEvent(button, action, mods))
-    true
-  }
 }
 
 object MenuScene {
