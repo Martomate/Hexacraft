@@ -1,0 +1,7 @@
+# Generated
+target/*
+project/target/*
+project/project/*
+
+# IntelliJ IDEA
+.idea/*
