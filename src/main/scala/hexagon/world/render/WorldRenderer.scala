@@ -22,7 +22,7 @@ class WorldRenderer(world: World) {
   private val skyShader = Shader.get("sky").get
   private val selectedBlockShader = Shader.get("selectedBlock").get
 
-  private val skyVAO: VAO = new VAOBuilder(8).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
+  private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
   private val selectedBlockVAO: VAO = new VAOBuilder(25)
