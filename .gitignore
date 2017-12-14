@@ -35,7 +35,7 @@ cmake-build-debug/
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
+out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -47,7 +47,7 @@ atlassian-ide-plugin.xml
 .idea/replstate.xml
 
 # Ruby plugin and RubyMine
-/.rakeTasks
+.rakeTasks
 
 # Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
