@@ -2,6 +2,7 @@ package fontMeshCreator;
 
 
 import hexagon.font.TextMaster;
+import hexagon.renderer.VAO;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -18,7 +19,7 @@ public class GUIText {
 	private String textString;
 	private float fontSize;
 
-	private int textMeshVao;
+	private VAO textMeshVao;
 	private int vertexCount;
 	private Vector3f colour = new Vector3f(0f, 0f, 0f);
 
@@ -58,13 +59,52 @@ public class GUIText {
 	 */
 	public GUIText(String text, float fontSize, FontType font, Vector2f position, float maxLineLength,
 			boolean centered) {
-		this.textString = text;
+	    this.textString = text;
 		this.fontSize = fontSize;
 		this.font = font;
 		this.position = position;
 		this.lineMaxSize = maxLineLength;
 		this.centerText = centered;
+		update();
 	}
+
+	public GUIText setFontSize(float fontSize) {
+	    if (this.fontSize != fontSize) {
+            this.fontSize = fontSize;
+            update();
+        }
+        return this;
+    }
+
+	public GUIText setText(String text) {
+	    if (!this.textString.equals(text)) {
+            this.textString = text;
+            update();
+        }
+        return this;
+    }
+
+    public GUIText setTextAndFitSize(String text, float startSize) {
+        this.textString = text;
+        float factor = 0.8f;
+        this.fontSize = startSize;
+        update();
+        while (numberOfLines > 1) {
+            this.fontSize *= factor;
+            update();
+        }
+        return this;
+    }
+
+	private void update() {
+        TextMeshData data = font.loadText(this);
+        VAO vao = TextMaster.loadVAO(data.getVertexPositions(), data.getTextureCoords());
+        setMeshInfo(vao, data.getVertexCount());
+    }
+
+    public String getText() {
+	    return textString;
+    }
 
 	/**
 	 * @return The font used by this text.
@@ -83,8 +123,9 @@ public class GUIText {
 	 * @param b
 	 *            - blue value, between 0 and 1.
 	 */
-	public void setColour(float r, float g, float b) {
+	public GUIText setColour(float r, float g, float b) {
 		colour.set(r, g, b);
+		return this;
 	}
 
 	/**
@@ -121,7 +162,7 @@ public class GUIText {
 	 *         the quads on which the text will be rendered.
 	 */
 	public int getMesh() {
-		return textMeshVao;
+		return textMeshVao.id();
 	}
 
 	/**
@@ -133,7 +174,8 @@ public class GUIText {
 	 * @param verticesCount
 	 *            - the total number of vertices in all of the quads.
 	 */
-	public void setMeshInfo(int vao, int verticesCount) {
+	public void setMeshInfo(VAO vao, int verticesCount) {
+	    if (textMeshVao != null) textMeshVao.free();
 		this.textMeshVao = vao;
 		this.vertexCount = verticesCount;
 	}
@@ -148,7 +190,7 @@ public class GUIText {
 	/**
 	 * @return the font size of the text (a font size of 1 is normal).
 	 */
-	protected float getFontSize() {
+	public float getFontSize() {
 		return fontSize;
 	}
 
@@ -183,7 +225,11 @@ public class GUIText {
 		return textString;
 	}
 
-	public <R> void setLineWidths(List<Double> lineWidths) {
+	public void setLineWidths(List<Double> lineWidths) {
 		this.lineWidths = lineWidths;
 	}
+
+	public void unload() {
+	    textMeshVao.free();
+    }
 }

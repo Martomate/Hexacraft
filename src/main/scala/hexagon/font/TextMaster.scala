@@ -16,9 +16,7 @@ class TextMaster {
 
   def loadText(text: GUIText): Unit = {
     val font = text.getFont
-    val data = font.loadText(text)
-    val vao = loadVAO(data.getVertexPositions, data.getTextureCoords)
-    text.setMeshInfo(vao.id, data.getVertexCount)
+
     var textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[GUIText])
     textBatch += text
   }
@@ -36,13 +34,18 @@ class TextMaster {
     for {
       font <- texts.keys
       text <- texts(font)
-    } removeText(text)
+    } {
+      text.unload()
+    }
+    texts.clear()
   }
+}
 
-  private def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]) = {
+object TextMaster {
+  def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]) = {
     new VAOBuilder(vertexPositions.length, 1)
-      .addVBO(VBO.apply(vertexPositions.length).floats(0, 2).create().fillFloats(0, vertexPositions))
-      .addVBO(VBO.apply(textureCoords.length).floats(1, 2).create().fillFloats(0, textureCoords))
-      .create()
+    .addVBO(VBO.apply(vertexPositions.length).floats(0, 2).create().fillFloats(0, vertexPositions))
+    .addVBO(VBO.apply(textureCoords.length).floats(1, 2).create().fillFloats(0, textureCoords))
+    .create()
   }
 }

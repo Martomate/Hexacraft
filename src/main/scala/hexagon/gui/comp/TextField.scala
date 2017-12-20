@@ -9,49 +9,33 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
   private val bgColor = new Vector4f(0.5f)
   private val borderColor = new Vector4f(0.7f)// unused
   private val textColor = new Vector3f(1.0f)
-  private var _text: String = _
-  private var guiText: GUIText = _
-  private var fontSize: Float = maxFontSize
-
-  private var focused: Boolean = false
-
-  private var cursorText = Component.makeText("|", location, maxFontSize)
-  cursorText.setColour(textColor.x, textColor.y, textColor.z)
+  private val guiText: GUIText = Component.makeText(initText, location, maxFontSize, centered).setColour(textColor.x, textColor.y, textColor.z)
+  private var cursorText = Component.makeText("|", location, maxFontSize).setColour(textColor.x, textColor.y, textColor.z)
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
 
+  private var focused: Boolean = false
+
+  addText(guiText)
   setText(initText)
 
   def setText(newText: String): Unit = {
-    val prevGuiText = guiText
-    val prevFontSize = fontSize
-    if (guiText != null) removeText(guiText)
-    fontSize = maxFontSize
-    guiText = Component.makeText(newText, location, fontSize, centered)
-    guiText.setColour(textColor.x, textColor.y, textColor.z)
+    val prevText = text
+    val prevFontSize = guiText.getFontSize
     try {
-      addText(guiText)
-      while (guiText.getNumberOfLines > 1) {
-        removeText(guiText)
-        fontSize *= 0.8f
-        guiText = Component.makeText(newText, location, fontSize, centered)
-        guiText.setColour(textColor.x, textColor.y, textColor.z)
-        addText(guiText)
-      }
-      _text = newText
+      guiText.setTextAndFitSize(newText, maxFontSize)
     } catch {
       case _: Exception =>
         println(s"$newText contains unsupported characters")
-        guiText = prevGuiText
-        fontSize = prevFontSize
-        if (guiText != null) addText(guiText)
+        guiText.setTextAndFitSize(prevText, prevFontSize)
     }
     if (cursorTextVisible) removeText(cursorText)
+    val fontSize = guiText.getFontSize
     cursorText = Component.makeText("|", LocationInfo(location.x + location.w / 2f + guiText.getLineWidth(0).toFloat / 2f - fontSize * 0.002f, location.y + fontSize * 0.002f, location.h / 5, location.h), fontSize * 1.1f, false)
     cursorText.setColour(textColor.x, textColor.y, textColor.z)
     if (cursorTextVisible) addText(cursorText)
   }
-  def text: String = _text
+  def text: String = guiText.getText
 
   def setBackgroundColor(r: Float, g: Float, b: Float, a: Float): Unit = bgColor.set(r, g, b, a)
   def setBorderColor(r: Float, g: Float, b: Float, a: Float): Unit = borderColor.set(r, g, b, a)
@@ -85,7 +69,7 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
 
   override def onCharEvent(event: CharEvent): Boolean = {
     if (focused) {
-      setText(_text + event.character.toChar)
+      setText(text + event.character.toChar)
       true
     } else false
   }
@@ -93,7 +77,7 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
   override def onKeyEvent(event: KeyEvent): Boolean = {
     if (focused && event.action != GLFW.GLFW_RELEASE) {
       if (event.key == GLFW.GLFW_KEY_BACKSPACE) {
-        if (_text.length > 0) setText(_text.substring(0, _text.length - 1))
+        if (text.length > 0) setText(text.substring(0, text.length - 1))
       }
     }
     super.onKeyEvent(event)
