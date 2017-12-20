@@ -175,38 +175,39 @@ object Main {
   }
 
   private def processKeys(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit = { // action: 0 = release, 1 = press, 2 = repeat
-    if (key == GLFW.GLFW_KEY_F3 && action == GLFW.GLFW_RELEASE) {
+    if (key == GLFW_KEY_R && action == GLFW_PRESS && GLFW.glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
       Resource.reloadAllResources()
       sceneList.foreach(_.onReloadedResources())
+      println("Reloaded resources")
     }
-    if (key == GLFW.GLFW_KEY_F11 && action == GLFW.GLFW_RELEASE) {
+    if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
       val monitor = glfwGetPrimaryMonitor()
       val mode = glfwGetVideoMode(monitor)
-      
+
       if (!fullscreen) {
         prevWindowSize.set(windowSize)
         glfwGetWindowPos(window, intPtrX, intPtrY)
         prevWindowPos.set(intPtrX.get(0), intPtrY.get(0))
-        
-        
+
+
         _mousePos.add(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
-        
+
         val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
         glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
         updateMousePos()
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
-        
+
         fullscreen = true
       } else {
         _mousePos.sub(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
-        
+
         val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
         glfwSetWindowMonitor(window, 0, prevWindowPos.x, prevWindowPos.y, prevWindowSize.x, prevWindowSize.y, GLFW_DONT_CARE)
         updateMousePos()
         if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
-        
+
         fullscreen = false
       }
     }

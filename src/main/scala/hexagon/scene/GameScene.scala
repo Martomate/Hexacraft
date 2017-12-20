@@ -46,6 +46,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private var rightMouseButtonCountdown = 0
 
   private var isPaused: Boolean = false
+
+  private var debugScene: DebugScene = _
   
   setUniforms()
   
@@ -78,6 +80,12 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
           Main.updateMousePos()
         case GLFW_KEY_F =>
           playerInputHandler.player.flying = !playerInputHandler.player.flying
+        case GLFW_KEY_F7 =>
+          println("debug")
+          if (debugScene != null) {
+            debugScene.unload()
+            debugScene = null
+          } else debugScene = new DebugScene(this)
         case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
           playerInputHandler.player.selectedItemSlot = key - GLFW_KEY_1
         case _ =>
@@ -121,11 +129,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     crosshairShader.setUniform2f("windowSize", width, height)
   }
   
-  override def windowTitle: String = 
-         s"P: (${camera.position.x.toFloat}, ${camera.position.y.toFloat}, ${camera.position.z.toFloat}" + 
-    s")    C: (${camera.blockCoords.x.toInt >> 4}, ${camera.blockCoords.y.toInt >> 4}, ${camera.blockCoords.z.toInt >> 4}" + 
-    s")    R: (${math.toDegrees(camera.rotation.x).toFloat}, ${math.toDegrees(camera.rotation.y).toFloat}, ${math.toDegrees(camera.rotation.z).toFloat}" + 
-    s")    v=${(100 * world.renderDistance).toInt / 100f}"
+  override def windowTitle: String = ""
 
   override def render(transformation: GUITransformation): Unit = {
     // render world etc.
@@ -135,6 +139,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
+
+    if (debugScene != null) debugScene.render(transformation)
   }
 
   override def tick(): Unit = {
@@ -190,6 +196,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
       rightMouseButtonCountdown -= 1
     }
     world.tick(camera)
+
+    if (debugScene != null) debugScene.tick()
   }
 
   override def unload(): Unit = {
@@ -197,5 +205,6 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     worldRenderer.unload()
     crosshairVAO.free()
     setMouseCursorInvisible(false)
+    if (debugScene != null) debugScene.unload()
   }
 }
