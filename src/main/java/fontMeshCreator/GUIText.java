@@ -29,7 +29,7 @@ public class GUIText {
 
 	private FontType font;
 
-	private boolean centerText = false;
+	private boolean centerText;
 	private List<Double> lineWidths;
 
 	/**
@@ -146,6 +146,12 @@ public class GUIText {
 
 	public double getLineWidth(int line) {
 		return lineWidths.get(line);
+	}
+
+	public GUIText setPosition(float x, float y) {
+		position.x = x;
+		position.y = y;
+		return this;
 	}
 
 	/**

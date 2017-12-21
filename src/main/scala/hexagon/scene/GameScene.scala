@@ -81,7 +81,6 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
         case GLFW_KEY_F =>
           playerInputHandler.player.flying = !playerInputHandler.player.flying
         case GLFW_KEY_F7 =>
-          println("debug")
           if (debugScene != null) {
             debugScene.unload()
             debugScene = null
