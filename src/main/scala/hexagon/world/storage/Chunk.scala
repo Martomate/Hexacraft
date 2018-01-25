@@ -4,10 +4,12 @@ import java.io.{File, FileInputStream}
 
 import hexagon.block.{Block, BlockState}
 import hexagon.util.NBTUtil
-import hexagon.world.coord.{BlockCoord, BlockRelChunk, ChunkRelWorld}
+import hexagon.world.coord.{BlockCoord, BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexagon.world.gen.noise.NoiseInterpolator3D
 import hexagon.world.render.ChunkRenderer
 import org.jnbt.{CompoundTag, NBTInputStream}
+
+import scala.collection.mutable
 
 object Chunk {
   val neighborOffsets = Seq(
@@ -40,6 +42,8 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   private var storage: ChunkStorage = new DenseChunkStorage(this)
   private var needsToSave = false
+
+  private val needsBlockUpdate = mutable.TreeSet.empty[Long]
 
   {
     val file = new File(world.saveDir, "chunks/" + coords.value + ".dat")
@@ -99,10 +103,32 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
     for (i <- 0 until 8) {
       val off = Chunk.neighborOffsets(i)
-      if (off._1 * xx == 1 || off._2 * yy == 1 || off._3 * zz == 1) neighbors(i).foreach(_.requestRenderUpdate())
+      val c2 = BlockRelChunk((coords.cx + off._1 + 16) % 16, (coords.cy + off._2 + 16) % 16, (coords.cz + off._3 + 16) % 16, world)
+      if (off._1 * xx == 1 || off._2 * yy == 1 || off._3 * zz == 1) {
+        neighbors(i).foreach(n => {
+          n.requestRenderUpdate()
+          n.requestBlockUpdate(c2)
+        })
+      }
+      else requestBlockUpdate(c2)
     }
-    
+
+    requestBlockUpdate(coords)
     needsToSave = true
+  }
+
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = {
+    if (!needsBlockUpdate(coords.value)) {
+      needsBlockUpdate(coords.value) = true
+      world.addToBlockUpdateList(coords.withChunk(this.coords))
+    }
+  }
+
+  def doBlockUpdate(coords: BlockRelChunk): Unit = {
+    if (needsBlockUpdate(coords.value)) {
+      needsBlockUpdate(coords.value) = false
+      getBlock(coords).foreach(b => b.blockType.doUpdate(coords.withChunk(this.coords)))
+    }
   }
   
   def requestRenderUpdate(): Unit = {

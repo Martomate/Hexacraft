@@ -7,6 +7,7 @@ in vec3 position;
 // Per instance
 in ivec3 blockPos;
 in vec3 color;
+in float blockHeight;
 
 flat out vec3 fragColor;
 
@@ -21,7 +22,7 @@ void main() {
 	
 	mat4 matrix = projMatrix * viewMatrix;
 	
-	vec3 pos = vec3(blockPos.x * 0.75 + position.x, blockPos.y * 0.5 + position.y, (blockPos.x * 0.5 + blockPos.z) + position.z / y60);
+	vec3 pos = vec3(blockPos.x * 0.75 + position.x, blockPos.y * 0.5 + position.y * blockHeight, (blockPos.x * 0.5 + blockPos.z) + position.z / y60);
 	pos.z = mod(mod(pos.z + totalSize / 2, totalSize) - cam.z / y60, totalSize) - totalSize / 2;
 	float mult = exp((pos.y - cam.y) / radius);
 	float v = pos.z * angleHalfHexagon;

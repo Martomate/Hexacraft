@@ -12,6 +12,7 @@ import hexagon.world.{Player, WorldSettings}
 import org.jnbt._
 import org.joml.{Vector2d, Vector3d, Vector4d}
 
+import scala.collection.mutable
 import scala.collection.mutable.{PriorityQueue, Set => MutableSet}
 
 object World {
@@ -76,13 +77,17 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
   private[storage] var chunkLoadingOrigin: CylCoord = _
   private[storage] val chunkLoadingDirection: Vector3d = new Vector3d()
-  private val chunksToLoad = PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+  private val chunksToLoad = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
   // val chunkLoader = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
-  private val chunkRenderUpdateQueue = PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+  private val chunkRenderUpdateQueue = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+
+  private val blocksToUpdate = mutable.Queue.empty[BlockRelWorld]
   
   val player = new Player(this)
   player.fromNBT(nbtData.getValue.get("player").asInstanceOf[CompoundTag])
-  
+
+
+  def addToBlockUpdateList(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
   
   def addRenderUpdate(coords: ChunkRelWorld): Unit = {
     chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
@@ -105,6 +110,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   def getBlock(coords: BlockRelWorld): Option[BlockState] = getColumn(coords.getColumnRelWorld).flatMap(_.getBlock(coords.getBlockRelColumn))
   def setBlock(block: BlockState): Boolean = getChunk(block.coord.getChunkRelWorld).fold(false)(_.setBlock(block))
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
+  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
   
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4, this)
@@ -117,6 +123,12 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   }
 
   def tick(camera: Camera): Unit = {
+    val blocksToUpdateLen = blocksToUpdate.size
+    for (i <- 0 until blocksToUpdateLen) {
+      val c = blocksToUpdate.dequeue()
+      getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
+    }
+
     chunkLoadingOrigin = CylCoord(player.position.x, player.position.y, player.position.z, this)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.invViewMatr)
     chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z)// new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))

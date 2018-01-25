@@ -34,7 +34,7 @@ object BlockState {
   def getVertices(side: Int): Seq[CylCoord] = side match {
     case 0 => vertices.take(6)
     case 1 => vertices.takeRight(6).reverse
-    case _ => Seq(vertices(side-2), vertices(side-2 + 6), vertices((side-1 + 6) % 6 + 6), vertices((side-1 + 6) % 6))
+    case _ => Seq(vertices(side-2), vertices(side-2 + 6), vertices((side-1) % 6 + 6), vertices((side-1) % 6))
   }
 }
 

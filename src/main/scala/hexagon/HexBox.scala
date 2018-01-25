@@ -9,6 +9,8 @@ import hexagon.world.coord.SkewCylCoord
 import org.joml.Vector3d
 import java.text.NumberFormat
 
+import scala.collection.Seq
+
 object HexBox {
   private val reflectionDirs = Vector(
       ( 0, -1,  0),
@@ -32,7 +34,7 @@ object HexBox {
 
 /** radius is the big radius of the hexagon */
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
-  val smallRadius = radius * CoordUtils.y60
+  val smallRadius: Double = radius * CoordUtils.y60
   
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
   def afterCollision(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
@@ -59,8 +61,9 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
               val coords = BlockRelWorld(bc.x + x, y, bc.z + z, world)
               world.getChunk(coords.getChunkRelWorld) match {
                 case Some(chunk) =>
-                  chunk.getBlock(coords.getBlockRelChunk).map(_.blockType).foreach(blockType => {
-                    val dist = distanceToCollision(skewCoord, skewVelocity, blockType.bounds, new BlockCoord(bc.x + x, y, bc.z + z, world, false).toSkewCylCoord)
+                  val blockState = chunk.getBlock(coords.getBlockRelChunk)
+                  blockState.map(_.blockType).foreach(blockType => {
+                    val dist = distanceToCollision(skewCoord, skewVelocity, blockType.bounds(blockState.get), new BlockCoord(bc.x + x, y, bc.z + z, world, false).toSkewCylCoord)
                     if (dist._1 < maxDistTuple._1) {
                       maxDistTuple = dist
                     }
@@ -118,5 +121,19 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
       if (distBeforeMin._1 <= 0) (math.min(minInZip._1, 1), minInZip._2)
       else (0, -1)
     } else (1, -1)
+  }
+
+  def vertices: Seq[CylCoord] = {
+    //val ints = Seq(1, 2, 0, 3, 5, 4)
+
+    for {
+      s <- 0 to 1
+      i <- 0 until 6
+    } yield {
+      val v = i * Math.PI / 3
+      val x = Math.cos(v).toFloat
+      val z = Math.sin(v).toFloat
+      new CylCoord(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, null, false)
+    }
   }
 }

@@ -60,7 +60,10 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue
     for (i <- blockTypes.indices) {
       blockTypes(i) = blocks(i)
-      if (blockTypes(i) != 0) _numBlocks += 1
+      if (blockTypes(i) != 0) {
+        _numBlocks += 1
+        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
+      }
     }
   }
 
@@ -91,6 +94,7 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
     for (i <- 0 until blocks.size) {
       if (blocks(i) != 0) {
         setBlock(new BlockState(BlockRelWorld(i, chunk.world), Block.byId(blocks(i))))
+        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }
   }

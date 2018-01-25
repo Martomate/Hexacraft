@@ -169,8 +169,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
             if (world.getBlock(coords).isEmpty) {
               val blockType = playerInputHandler.player.blockInHand
               val skewCoords = BlockCoord(coords.x, coords.y, coords.z, world).toSkewCylCoord
-              if (!HexBox.collides(blockType.bounds, skewCoords, playerInputHandler.player.bounds, CylCoord(camera.position, world))) {
-                world.setBlock(new BlockState(coords, blockType))
+              val state = new BlockState(coords, blockType)
+              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoord(camera.position, world))) {
+                world.setBlock(state)
               }
             }
           case _ =>

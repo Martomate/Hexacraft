@@ -1,11 +1,11 @@
 package hexagon.world.render
 
-import scala.collection.mutable.BitSet
+import java.util.Random
 
+import scala.collection.mutable.BitSet
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
-
 import hexagon.block.Block
 import hexagon.renderer.InstancedRenderer
 import hexagon.renderer.VAO
@@ -15,6 +15,8 @@ import hexagon.resource.Shader
 import hexagon.resource.TextureArray
 import hexagon.block.BlockState
 import hexagon.world.storage.Chunk
+
+import scala.collection.mutable
 
 class ChunkRenderer(chunk: Chunk) {
   private val blockRenderers = Seq.tabulate(2)(s => new BlockRenderer(s, 0))
@@ -32,14 +34,18 @@ class ChunkRenderer(chunk: Chunk) {
   // This reduced system should NOT be used when the chunk has just been created.
   def updateContent(): Unit = {
     val blocks = chunk.blocks.allBlocks
-    val sidesToRender = Seq.fill(8)(new BitSet(16 * 16 * 16))
+    val sidesToRender = Seq.fill(8)(new mutable.BitSet(16 * 16 * 16))
     val sidesCount = new Array[Int](8)
     for (b <- blocks) {
       val c = b.coord.getBlockRelChunk
       for (s <- BlockState.neighborOffsets.indices) {
-        if (b.neighbor(s, chunk).filter(_.blockType != Block.Air).isEmpty) {
+        if (b.neighbor(s, chunk).forall(_.blockType.isTransparent)) {
           sidesToRender(s)(c.value) = true
           sidesCount(s) += 1
+          if (s > 1 && b.blockType.isTransparent) {
+            sidesToRender(0)(c.value) = true
+            sidesCount(0) += 1
+          } // render the top side
         }
       }
     }
@@ -51,6 +57,7 @@ class ChunkRenderer(chunk: Chunk) {
         if (sidesToRender(r.side)(block.coord.getBlockRelChunk.value)) {
           r.instances += 1
           Seq(block.coord.x, block.coord.y, block.coord.z, block.blockType.blockTex(r.side)).foreach(buf.putInt)
+          buf.putFloat(block.blockType.blockHeight(block))
         }
       }
       buf.flip()
@@ -58,24 +65,13 @@ class ChunkRenderer(chunk: Chunk) {
     }
   }
 
-  def renderBlocks(): Unit = {
-    blockTexture.bind()
-    for (r <- blockRenderers) {
-      blockShader.setUniform1i("side", r.side)
-      r.renderer.render(r.instances)
-    }
-  }
-
-  def renderBlockSides(): Unit = {
-    blockTexture.bind()
-    for (r <- blockSideRenderers) {
-      blockSideShader.setUniform1i("side", r.side)
-      r.renderer.render(r.instances)
-    }
+  def renderBlockSide(side: Int): Unit = {
+    val r = if (side < 2) blockRenderers(side) else blockSideRenderers(side - 2)
+    r.renderer.render(r.instances)
   }
 
   def unload(): Unit = {
-    allBlockRenderers.foreach(_.unload)
+    allBlockRenderers.foreach(_.unload())
   }
 
   class BlockRenderer(val side: Int, init_maxInstances: Int) {
@@ -84,7 +80,7 @@ class ChunkRenderer(chunk: Chunk) {
 
     val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
       .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW, 0).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
-      .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).ints(3, 3).ints(4, 1).create()).create()
+      .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).ints(3, 3).ints(4, 1).floats(5, 1).create()).create()
 
     val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
 

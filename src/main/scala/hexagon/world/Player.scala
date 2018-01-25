@@ -20,7 +20,7 @@ class Player(val world: World) {
   val rotation = new Vector3d
   var flying = false
   var selectedItemSlot: Int = 0
-  val inventory = Seq(Block.Dirt, Block.Grass, Block.Sand, Block.Stone) ++ Seq.fill(5)(Block.Air)
+  val inventory = Seq(Block.Dirt, Block.Grass, Block.Sand, Block.Stone, Block.Water) ++ Seq.fill(4)(Block.Air)
   def blockInHand = inventory(selectedItemSlot)// TODO: temporary, make inventory system
   
   {
