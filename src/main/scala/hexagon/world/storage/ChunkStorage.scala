@@ -7,6 +7,7 @@ import org.jnbt.Tag
 import org.jnbt.ByteArrayTag
 import hexagon.world.coord.BlockRelWorld
 import hexagon.block.BlockState
+import hexagon.util.{DefaultArray, NBTUtil}
 
 trait ChunkStorage {
   def blockType(coord: BlockRelChunk): Block
@@ -28,17 +29,19 @@ trait ChunkStorage {
 
 class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
   private val blockTypes = new Array[Byte](16 * 16 * 16)
+  private val metadata = new Array[Byte](16 * 16 * 16)
   private var _numBlocks = 0
 
   def blockType(coord: BlockRelChunk): Block = Block.byId(blockTypes(coord.value))
   def getBlock(coord: BlockRelChunk): Option[BlockState] = {
     val _type = blockTypes(coord.value)
-    if (_type != 0) Some(new BlockState(coord.withChunk(chunk.coords), Block.byId(_type))) else None
+    if (_type != 0) Some(new BlockState(coord.withChunk(chunk.coords), Block.byId(_type), metadata(coord.value))) else None
   }
   def setBlock(block: BlockState): Unit = {
-    val idx = block.coord.getBlockRelChunk.value
+    val idx = block.coords.getBlockRelChunk.value
     if (blockTypes(idx) == 0) _numBlocks += 1
     blockTypes(idx) = block.blockType.id
+    metadata(idx) = block.metadata
     if (blockTypes(idx) == 0) _numBlocks -= 1
   }
   def removeBlock(coords: BlockRelChunk): Unit = {
@@ -46,7 +49,7 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     blockTypes(coords.value) = 0
   }
   def allBlocks: Seq[BlockState] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i => 
-    new BlockState(BlockRelChunk(i, chunk.world).withChunk(chunk.coords), Block.byId(blockTypes(i))))
+    new BlockState(BlockRelChunk(i, chunk.world).withChunk(chunk.coords), Block.byId(blockTypes(i)), metadata(i)))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
   def toDense: DenseChunkStorage = this
@@ -57,18 +60,22 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
   }
 
   def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue
+    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+
     for (i <- blockTypes.indices) {
       blockTypes(i) = blocks(i)
+      metadata(i) = meta(i)
       if (blockTypes(i) != 0) {
         _numBlocks += 1
-        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
+//        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }
   }
 
   def toNBT: Seq[Tag] = {
-    Seq(new ByteArrayTag("blocks", blockTypes))
+    Seq(new ByteArrayTag("blocks", blockTypes),
+        new ByteArrayTag("metadata", metadata))
   }
 }
 
@@ -77,7 +84,7 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
 
   def blockType(coord: BlockRelChunk): Block = blocks.get(coord.value.toShort).map(_.blockType).getOrElse(Block.Air)
   def getBlock(coord: BlockRelChunk): Option[BlockState] = blocks.get(coord.value.toShort)
-  def setBlock(block: BlockState): Unit = blocks(block.coord.getBlockRelChunk.value.toShort) = block
+  def setBlock(block: BlockState): Unit = blocks(block.coords.getBlockRelChunk.value.toShort) = block
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
   def allBlocks: Seq[BlockState] = blocks.values.toSeq
   def numBlocks: Int = blocks.size
@@ -90,17 +97,21 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
   def toSparse: SparseChunkStorage = this
 
   def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks = nbt.getValue.get("blocks").asInstanceOf[ByteArrayTag].getValue
-    for (i <- 0 until blocks.size) {
+    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+
+    for (i <- blocks.indices) {
       if (blocks(i) != 0) {
-        setBlock(new BlockState(BlockRelWorld(i, chunk.world), Block.byId(blocks(i))))
-        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
+        setBlock(new BlockState(BlockRelWorld(i, chunk.world), Block.byId(blocks(i)), meta(i)))
+//        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }
   }
 
   def toNBT: Seq[Tag] = {
-    val arr = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
-    Seq(new ByteArrayTag("blocks", arr))
+    val ids = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
+    val meta = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
+    Seq(new ByteArrayTag("blocks", ids),
+        new ByteArrayTag("metadata", meta))
   }
 }

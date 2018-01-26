@@ -37,12 +37,12 @@ class ChunkRenderer(chunk: Chunk) {
     val sidesToRender = Seq.fill(8)(new mutable.BitSet(16 * 16 * 16))
     val sidesCount = new Array[Int](8)
     for (b <- blocks) {
-      val c = b.coord.getBlockRelChunk
+      val c = b.coords.getBlockRelChunk
       for (s <- BlockState.neighborOffsets.indices) {
-        if (b.neighbor(s, chunk).forall(_.blockType.isTransparent)) {
+        if (b.neighbor(s, chunk).forall(bs => bs.blockType.isTransparent(bs, if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2))) {
           sidesToRender(s)(c.value) = true
           sidesCount(s) += 1
-          if (s > 1 && b.blockType.isTransparent) {
+          if (s > 1 && b.blockType.isTransparent(b, s)) {
             sidesToRender(0)(c.value) = true
             sidesCount(0) += 1
           } // render the top side
@@ -54,9 +54,9 @@ class ChunkRenderer(chunk: Chunk) {
       r.instances = 0
       val buf = BufferUtils.createByteBuffer(sidesCount(r.side) * allBlockRenderers(r.side).vao.vbos(1).stride)
       for (block <- blocks) {
-        if (sidesToRender(r.side)(block.coord.getBlockRelChunk.value)) {
+        if (sidesToRender(r.side)(block.coords.getBlockRelChunk.value)) {
           r.instances += 1
-          Seq(block.coord.x, block.coord.y, block.coord.z, block.blockType.blockTex(r.side)).foreach(buf.putInt)
+          Seq(block.coords.x, block.coords.y, block.coords.z, block.blockType.blockTex(r.side)).foreach(buf.putInt)
           buf.putFloat(block.blockType.blockHeight(block))
         }
       }

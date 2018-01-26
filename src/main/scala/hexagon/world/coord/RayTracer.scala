@@ -1,14 +1,9 @@
 package hexagon.world.coord
 
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector3i
-import org.joml.Vector4f
 import hexagon.Camera
-import hexagon.world.storage.World
-import org.joml.Matrix3f
 import hexagon.block.BlockState
-import org.joml.Vector3d
+import hexagon.world.storage.World
+import org.joml.{Vector2f, Vector3d, Vector4f}
 
 
 class RayTracer(world: World, camera: Camera, maxDistance: Double) {

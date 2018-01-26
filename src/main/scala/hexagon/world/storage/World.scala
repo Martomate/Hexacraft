@@ -17,7 +17,7 @@ import scala.collection.mutable.{PriorityQueue, Set => MutableSet}
 
 object World {
   val chunksLoadedPerTick = 2
-  val chunkRenderUpdatesPerTick = 1
+  val chunkRenderUpdatesPerTick = 2
   val ticksBetweenColumnLoading = 5
 }
 
@@ -108,7 +108,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
   def getBlock(coords: BlockRelWorld): Option[BlockState] = getColumn(coords.getColumnRelWorld).flatMap(_.getBlock(coords.getBlockRelColumn))
-  def setBlock(block: BlockState): Boolean = getChunk(block.coord.getChunkRelWorld).fold(false)(_.setBlock(block))
+  def setBlock(block: BlockState): Boolean = getChunk(block.coords.getChunkRelWorld).fold(false)(_.setBlock(block))
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
   def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
   

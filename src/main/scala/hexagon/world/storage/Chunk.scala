@@ -80,7 +80,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def getBlock(coords: BlockRelChunk): Option[BlockState] = storage.getBlock(coords)
 
   def setBlock(block: BlockState): Boolean = {
-    val blockCoord = block.coord.getBlockRelChunk
+    val blockCoord = block.coords.getBlockRelChunk
     val before = getBlock(blockCoord)
     storage.setBlock(block)
     if (before.isEmpty || before.get != block) {
@@ -127,7 +127,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def doBlockUpdate(coords: BlockRelChunk): Unit = {
     if (needsBlockUpdate(coords.value)) {
       needsBlockUpdate(coords.value) = false
-      getBlock(coords).foreach(b => b.blockType.doUpdate(coords.withChunk(this.coords)))
+      getBlock(coords).foreach(b => b.blockType.doUpdate(b))
     }
   }
   

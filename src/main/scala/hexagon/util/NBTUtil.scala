@@ -5,6 +5,8 @@ import java.io.File
 import org.jnbt._
 import java.io.FileOutputStream
 
+import scala.collection.mutable
+
 object NBTUtil {
   def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
     if (tag == null) default
@@ -65,7 +67,7 @@ object NBTUtil {
       }
     }
   }
-  
+
   def getCompoundTag(tag: CompoundTag, name: String): Option[CompoundTag] = {
     if (tag == null) None
     else {
@@ -75,7 +77,11 @@ object NBTUtil {
       }
     }
   }
-  
+
+  def getByteArray(tag: CompoundTag, name: String): Option[mutable.WrappedArray[Byte]] = {
+    NBTUtil.getTag(tag, name).map(_.asInstanceOf[ByteArrayTag].getValue)
+  }
+
   def makeCompoundTag(name: String, children: Seq[Tag]): CompoundTag = {
     val map = new java.util.HashMap[String, Tag]()
     for (tag <- children) map.put(tag.getName, tag)
@@ -91,6 +97,6 @@ object NBTUtil {
       val nbtOut = new NBTOutputStream(new FileOutputStream(nbtFile))
       nbtOut.writeTag(tag)
       nbtOut.close()
-    }).start
+    }).start()
   }
 }
