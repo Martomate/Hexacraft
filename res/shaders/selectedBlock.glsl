@@ -1,3 +1,4 @@
+#shader vert
 #define PI 3.141592653589793
 #define y60 0.866025403784439
 
@@ -19,16 +20,16 @@ uniform vec3 cam;
 void main() {
 	float angleHalfHexagon = PI / totalSize * 2;
 	float radius = y60 / angleHalfHexagon;
-	
+
 	mat4 matrix = projMatrix * viewMatrix;
-	
+
 	vec3 pos = vec3(blockPos.x * 0.75 + position.x, blockPos.y * 0.5 + position.y * blockHeight, (blockPos.x * 0.5 + blockPos.z) + position.z / y60);
-	pos.z = mod(mod(pos.z + totalSize / 2, totalSize) - cam.z / y60, totalSize) - totalSize / 2;
+	pos.z -= cam.z / y60;
 	float mult = exp((pos.y - cam.y) / radius);
 	float v = pos.z * angleHalfHexagon;
 	float z = sin(v);
 	float y = cos(v);
-	
+
 	float scale = radius / sqrt(z*z+y*y);
 	y *= scale;
 	z *= scale;
@@ -36,4 +37,14 @@ void main() {
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);
 	fragColor = color;
+}
+
+#shader frag
+
+flat in vec3 fragColor;
+
+out vec4 color;
+
+void main() {
+	color = vec4(fragColor, 1);
 }

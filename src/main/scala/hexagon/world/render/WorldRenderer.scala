@@ -80,7 +80,7 @@ class WorldRenderer(world: World) {
   }
 
   for (side <- 0 until 8) {
-    registerRenderingJob(new RenderingJob(_.renderBlockSide(side), () => {
+    registerRenderingJob(RenderingJob(_.renderBlockSide(side), () => {
       blockTexture.bind()
       val sh = if (side < 2) blockShader else blockSideShader
       sh.enable()

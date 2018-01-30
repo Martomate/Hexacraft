@@ -139,7 +139,12 @@ object Main {
   }
 
   private def render(): Unit = {
-    sceneList.foreach(_.render(GUITransformation(0, 0)))
+    def render(idx: Int): Unit = {
+      if (idx >= 0 && !sceneList(idx).isOpaque) render(idx-1)
+
+      sceneList(idx).render(GUITransformation(0, 0))
+    }
+    render(sceneList.size - 1)
 
     VAO.unbindVAO()
   }
@@ -161,6 +166,7 @@ object Main {
     Block.init()
     pushScene(new MainMenu)
     updateMousePos()
+    Shader.foreach(_.setUniform2f("windowSize", windowSize.x, windowSize.y))
     loop()
 
     destroy()
@@ -235,6 +241,7 @@ object Main {
       }
       windowSize.set(width, height)
     }
+    Shader.foreach(_.setUniform2f("windowSize", windowSize.x, windowSize.y))
   }
 
   private def initWindow(): Long = {

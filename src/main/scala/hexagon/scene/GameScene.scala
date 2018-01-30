@@ -2,10 +2,10 @@ package hexagon.scene
 
 import java.io.File
 
-import hexagon.{Camera, HexBox, Main}
 import hexagon.block.BlockState
-import hexagon.event.{KeyEvent, MouseClickEvent}
-import hexagon.gui.comp.GUITransformation
+import hexagon.event.{KeyEvent, MouseClickEvent, ScrollEvent}
+import hexagon.gui.comp.{GUITransformation, LocationInfo}
+import hexagon.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import hexagon.gui.menu.pause.PauseMenu
 import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexagon.resource.Shader
@@ -13,7 +13,8 @@ import hexagon.world.WorldSettings
 import hexagon.world.coord.{BlockCoord, CylCoord, RayTracer}
 import hexagon.world.render.WorldRenderer
 import hexagon.world.storage.World
-import org.joml.Vector2f
+import hexagon.{Camera, HexBox, Main}
+import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
@@ -26,6 +27,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
 
   private val blockShader: Shader = Shader.get("block").get
   private val blockSideShader: Shader = Shader.get("blockSide").get
+  private val guiBlockShader: Shader = Shader.get("gui_block").get
+  private val guiBlockSideShader: Shader = Shader.get("gui_blockSide").get
   private val selectedBlockShader: Shader = Shader.get("selectedBlock").get
   private val skyShader: Shader = Shader.get("sky").get
   private val crosshairShader: Shader = Shader.get("crosshair").get
@@ -33,12 +36,17 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private val crosshairVAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
+
   val world = new World(saveFolder, worldSettings)
   val worldRenderer = new WorldRenderer(world)
 
   val camera = new Camera(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f, world)
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(world.player)
+
+  private val toolbar = new Toolbar(LocationInfo(0.05f, 0.035f, 0.9f, 0.095f), world.player.inventory)
+  private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f)(_ => world.player.blockInHand)
+  blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
   private var leftMouseButtonDown = false
   private var rightMouseButtonDown = false
@@ -50,6 +58,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private var debugScene: DebugScene = _
   
   setUniforms()
+  toolbar.setSelectedIndex(world.player.selectedItemSlot)
+  setUseMouse(true)
   
   override def onReloadedResources(): Unit = {
     setUniforms()
@@ -59,13 +69,17 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private def setUniforms(): Unit = {
     camera.setProjMatrix(blockShader)
     camera.setProjMatrix(blockSideShader)
+    camera.setProjMatrix(guiBlockShader)
+    camera.setProjMatrix(guiBlockSideShader)
     camera.setProjMatrix(selectedBlockShader)
+
     blockShader.setUniform1f("totalSize", world.totalSize)
     blockSideShader.setUniform1f("totalSize", world.totalSize)
     selectedBlockShader.setUniform1f("totalSize", world.totalSize)
+
     skyShader.setUniformMat4("invProjMatr", camera.invProjMatr)
-    skyShader.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y)
-    crosshairShader.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y)
+
+    Shader.foreach(_.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y))
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {
@@ -75,9 +89,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
           Main.pushScene(new PauseMenu(this))
           setPaused(true)
         case GLFW_KEY_M =>
-          playerInputHandler.moveWithMouse = !playerInputHandler.moveWithMouse
-          setMouseCursorInvisible(playerInputHandler.moveWithMouse)
-          Main.updateMousePos()
+          setUseMouse(!playerInputHandler.moveWithMouse)
         case GLFW_KEY_F =>
           playerInputHandler.player.flying = !playerInputHandler.player.flying
         case GLFW_KEY_F7 =>
@@ -86,11 +98,33 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
             debugScene = null
           } else debugScene = new DebugScene(this)
         case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
-          playerInputHandler.player.selectedItemSlot = key - GLFW_KEY_1
+          val idx = key - GLFW_KEY_1
+          playerInputHandler.player.selectedItemSlot = idx
+          blockInHandRenderer.updateContent()
+          toolbar.setSelectedIndex(idx)
         case _ =>
       }
     }
     true
+  }
+
+  def setUseMouse(useMouse: Boolean): Unit = {
+    playerInputHandler.moveWithMouse = useMouse
+    setMouseCursorInvisible(playerInputHandler.moveWithMouse)
+    Main.updateMousePos()
+  }
+
+  override def onScrollEvent(event: ScrollEvent): Boolean = {
+    if (playerInputHandler.moveWithMouse) {
+      val dy = -math.signum(event.yoffset).toInt
+      if (dy != 0) {
+        val itemSlot = (playerInputHandler.player.selectedItemSlot + dy + 9) % 9
+        playerInputHandler.player.selectedItemSlot = itemSlot
+        blockInHandRenderer.updateContent()
+        toolbar.setSelectedIndex(itemSlot)
+      }
+      true
+    } else super.onScrollEvent(event)
   }
 
   def setPaused(paused: Boolean): Unit = {
@@ -119,13 +153,14 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def windowResized(width: Int, height: Int): Unit = {
     camera.aspect = width.toFloat / height
     camera.updateProjMatrix
+
     camera.setProjMatrix(blockShader)
     camera.setProjMatrix(blockSideShader)
+    camera.setProjMatrix(guiBlockShader)
+    camera.setProjMatrix(guiBlockSideShader)
     camera.setProjMatrix(selectedBlockShader)
 
     skyShader.setUniformMat4("invProjMatr", camera.invProjMatr)
-    skyShader.setUniform2f("windowSize", width, height)
-    crosshairShader.setUniform2f("windowSize", width, height)
   }
   
   override def windowTitle: String = ""
@@ -138,6 +173,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
+
+    blockInHandRenderer.render(transformation)
+    toolbar.render(transformation)
 
     if (debugScene != null) debugScene.render(transformation)
   }

@@ -46,51 +46,47 @@ class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_
   override def onUpdated(bs: BlockState): Unit = {
     val coords = bs.coords
     val world = coords.world
-    var depth: Int = bs.metadata & 0xff
+    var depth: Int = bs.metadata & 0x1f
     val blocks = BlockState.neighborOffsets.map(off => BlockRelWorld(coords.x + off._1, coords.y + off._2, coords.z + off._3, world))
     val bottomCoords = blocks.find(_.y == coords.y - 1).get
     val bottomBS = world.getBlock(bottomCoords)
     if (!bottomBS.exists(_.blockType != Block.Air)) {
       world.setBlock(new BlockState(bottomCoords, this, depth.toByte))
-      depth = 0xff
-      println("Down")
+      depth = 0x1f
     } else if (bottomBS.exists(_.blockType == this) && bottomBS.get.metadata != 0) {
-      val totalLevel = (0xff - depth) + (0xff - (bottomBS.get.metadata & 0xff))
-      world.setBlock(new BlockState(bottomCoords, this, (0xff - math.min(totalLevel, 0xff)).toByte))
-      depth = 0xff - math.max(totalLevel - 0xff, 0)
-//      println("Down")
+      val totalLevel = (0x1f - depth) + (0x1f - (bottomBS.get.metadata & 0x1f))
+      world.setBlock(new BlockState(bottomCoords, this, (0x1f - math.min(totalLevel, 0x1f)).toByte))
+      depth = 0x1f - math.max(totalLevel - 0x1f, 0)
     } else {
       blocks.filter(_.y == coords.y).map(c => world.getBlock(c).getOrElse(new BlockState(c, Block.Air))).foreach(ns => {
         if (ns.blockType == Block.Air) {
           val belowNeighborBlock = world.getBlock(BlockRelWorld(ns.coords.x, ns.coords.y - 1, ns.coords.z, world))
           val belowNeighbor = belowNeighborBlock.map(_.blockType).getOrElse(Block.Air)
-          if (depth < 0xfe || (depth == 0xfe && (belowNeighbor == Block.Air || (belowNeighbor == this && belowNeighborBlock.get.metadata != 0)))) {
-            world.setBlock(new BlockState(ns.coords, this, 0xfe.toByte))
+          if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Block.Air || (belowNeighbor == this && belowNeighborBlock.get.metadata != 0)))) {
+            world.setBlock(new BlockState(ns.coords, this, 0x1e.toByte))
             depth += 1
-//            println("Air side")
           }
         } else if (ns.blockType == this) {
-          val nsDepth: Int = ns.metadata & 0xff
-          if (depth < 0xff) {
+          val nsDepth: Int = ns.metadata & 0x1f
+          if (depth < 0x1f) {
             if (nsDepth - 1 > depth) {
               world.setBlock(new BlockState(ns.coords, this, (nsDepth - 1).toByte))
               depth += 1
-              //            println(s"Water side. Depth: $depth, $nsDepth")
             }
           }
         }
       })
     }
 
-    if (depth == 0xff)
+    if (depth >= 0x1f)
       world.removeBlock(coords)
-    else if (depth != (bs.metadata & 0xff))
+    else if (depth != (bs.metadata & 0x1f))
       world.setBlock(new BlockState(coords, this, depth.toByte))
   }
 
   override def isTransparent(blockState: BlockState, side: Int): Boolean = blockState.metadata != 0
 
-  override def blockHeight(blockState: BlockState): Float = 1f - (blockState.metadata & 0xff) / 0xff.toFloat
+  override def blockHeight(blockState: BlockState): Float = 1f - (blockState.metadata & 0x1f) / 0x1f.toFloat
 
   override def canBeRendered: Boolean = false
 }

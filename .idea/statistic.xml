@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Statistic">
+    <option name="fileTypes" value="class;svn-base;svn-work;Extra;gif;pdn;dll;dylib;fnt;so;png;jpg;jpeg;bmp;tga;tiff;ear;war;zip;jar;iml;iws;ipr;bz2;gz;" />
+    <option name="separateTabsFileTypes" value="java;xml;css;html;js;scala;properties;jsp;txt;php;php4;php5;phtml;inc;" />
+    <option name="excludedDirectories">
+      <list>
+        <option value="$PROJECT_DIR$/.idea" />
+        <option value="$PROJECT_DIR$/target" />
+        <option value="$PROJECT_DIR$/project" />
+        <option value="$PROJECT_DIR$/out" />
+      </list>
+    </option>
+  </component>
+</project>

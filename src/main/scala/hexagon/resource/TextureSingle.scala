@@ -24,8 +24,12 @@ object TextureSingle {
 
 class TextureSingle(val name: String) extends Resource {
   private var texID: Int = _
+  private var texWidth: Int = _
+  private var texHeight: Int = _
 
-  def id = texID
+  def id: Int = texID
+  def width: Int = texWidth
+  def height: Int = texHeight
 
   TextureSingle.textures += name -> this
 
@@ -35,6 +39,8 @@ class TextureSingle(val name: String) extends Resource {
     val image = ImageIO.read(new File("res/" + name + ".png"))
     val width = image.getWidth
     val height = image.getHeight
+    texWidth = width
+    texHeight = height
     val pix = image.getRGB(0, 0, width, height, null, 0, width)
     val buf = BufferUtils.createByteBuffer(pix.length * 4)
     for (i <- 0 until pix.size) buf.put((pix(i) >> 16).toByte).put((pix(i) >> 8).toByte).put((pix(i) >> 0).toByte).put((pix(i) >> 24).toByte)

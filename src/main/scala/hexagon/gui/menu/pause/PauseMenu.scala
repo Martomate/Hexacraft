@@ -17,6 +17,8 @@ class PauseMenu(game: GameScene) extends MenuScene {
   }))
   hasDefaultBackground = false
 
+  override def isOpaque: Boolean = false
+
   private def unpause(): Unit = {
     Main.popScene()
     game.setPaused(false)

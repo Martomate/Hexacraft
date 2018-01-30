@@ -1,9 +1,6 @@
 package hexagon.renderer
 
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL31
+import org.lwjgl.opengl.{GL11, GL31}
 
 class Renderer(val vao: VAO, val mode: Int) {
   def render(): Unit = render(vao.maxCount)
@@ -13,7 +10,7 @@ class Renderer(val vao: VAO, val mode: Int) {
   }
 }
 
-class InstancedRenderer(override val vao: VAO, override val mode: Int) extends Renderer(vao, mode) {
+class InstancedRenderer(_vao: VAO, _mode: Int) extends Renderer(_vao, _mode) {
   override def render(): Unit = render(vao.maxCount, vao.maxPrimCount)
 
   override def render(primCount: Int): Unit = render(vao.maxCount, primCount)
