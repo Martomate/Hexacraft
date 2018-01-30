@@ -15,9 +15,11 @@ object Shader {
 
   def init(): Unit = {
     cleanUp()
-    Shader("block")("position", "texCoords", "normal", "blockPos", "blockTex")("isSide" -> "0")
-    Shader("blockSide", fileName = "block")("position", "texCoords", "normal", "blockPos", "blockTex")("isSide" -> "1")
-    Shader("selectedBlock")("position", "blockPos", "color")()
+    Shader("block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "0")
+    Shader("blockSide", fileName = "block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
+    Shader("gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "0")
+    Shader("gui_blockSide", fileName = "gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
+    Shader("selectedBlock")("position", "blockPos", "color", "blockHeight")()
     Shader("sky")("position")()
     Shader("crosshair")("position")()
     Shader("image")("position")()
@@ -39,30 +41,29 @@ object Shader {
 
   def cleanUp(): Unit = {
     unload()
-    shaders.values.foreach(_.unload)
+    shaders.values.foreach(_.unload())
     shaders.clear()
   }
 
   def apply(name: String,
-            fileName: String = null,
-            shaderParts: Seq[String] = Seq("vert", "frag"))
+            fileName: String = null)
            (attribs: String*)
            (defines: (String, String)*)
-           : Shader = new Shader(name, if (fileName != null) fileName else name, shaderParts, attribs, defines)
+           : Shader = new Shader(name, if (fileName != null) fileName else name, attribs, defines)
 }
 
-class Shader(val name: String, fileName: String, shaderParts: Seq[String], attribs: Seq[String], defines: Seq[(String, String)]) extends Resource {
+class Shader(val name: String, fileName: String, attribs: Seq[String], defines: Seq[(String, String)]) extends Resource {
   private var shaderID: Int = _
   private val uniformLocations = collection.mutable.Map.empty[String, Int]
   private val attributeLocations = collection.mutable.Map.empty[String, Int]
   Shader.shaders += name -> this
 
-  load
+  load()
   
   protected def load(): Unit = {
-    var b = ShaderBuilder.start(name)
+    val b = ShaderBuilder.start(name)
     b.setDefines(defines)
-    for (p <- shaderParts) b = b.load(p, s"$fileName.$p")
+    b.loadAll(fileName + ".glsl")
     shaderID = b.bindAttribs(attribs: _*).attatchAll().linkAndFinish()._2
 
     uniformLocations.clear()
@@ -94,8 +95,8 @@ class Shader(val name: String, fileName: String, shaderParts: Seq[String], attri
     GL20.glBindAttribLocation(shaderID, loc, name)
   }
 
-  private def setUniform(name: String)(func: Int => Unit) = {
-    enable
+  private def setUniform(name: String)(func: Int => Unit): Unit = {
+    enable()
     val loc = getUniformLocation(name)
     if (loc != -1) func(loc)
   }
@@ -127,7 +128,7 @@ class Shader(val name: String, fileName: String, shaderParts: Seq[String], attri
   }
   
   protected def unload(): Unit = {
-    if (Shader.activeShader == this) Shader.unload();
+    if (Shader.activeShader == this) Shader.unload()
     GL20.glDeleteProgram(shaderID)
     shaderID = 0
   }

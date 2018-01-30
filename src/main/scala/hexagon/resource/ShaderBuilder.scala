@@ -33,7 +33,14 @@ class ShaderBuilder(name: String) {
   def load(shaderType: String): ShaderBuilder = load(shaderType, name + '.' + shaderType)
 
   def load(shaderType: String, path: String): ShaderBuilder = {
-    val t: Int = shaderType match {
+    getShaderType(shaderType) match {
+      case -1 => this
+      case t  => load(t, path)
+    }
+  }
+
+  def getShaderType(shaderType: String): Int = {
+    shaderType match {
       case "vs" | "vert" => GL20.GL_VERTEX_SHADER
       case "fs" | "frag" => GL20.GL_FRAGMENT_SHADER
       case "gs" | "geom" => GL32.GL_GEOMETRY_SHADER
@@ -43,16 +50,12 @@ class ShaderBuilder(name: String) {
         System.err.println("Shadertype '" + shaderType + "' not supported.")
         -1
     }
-    t match {
-      case -1 => this
-      case _  => load(t, path)
-    }
   }
 
-  def load(shaderType: Int, path: String): ShaderBuilder = {
-    val shaderID = GL20.glCreateShader(shaderType)
-    val source = new StringBuilder("#version 330 core\n\n" + definesText)
+  def header: String = "#version 330 core\n\n" + definesText
 
+  def loadSource(path: String): String = {
+    val source = new StringBuilder()
     try {
       val reader = new BufferedReader(new FileReader(prefix + path))
       reader.lines.forEach(line => {
@@ -65,8 +68,30 @@ class ShaderBuilder(name: String) {
         Main.tryQuit()
         System.exit(1)
     }
+    source.toString()
+  }
 
-    GL20.glShaderSource(shaderID, source)
+  def loadAll(path: String): ShaderBuilder = {
+    val s = loadSource(path)
+    for (part <- s.split("#shader ")) {
+      val newLineIdx = part.indexOf('\n')
+      if (newLineIdx != -1) {
+        val shaderType = part.substring(0, newLineIdx)
+        val source = part.substring(newLineIdx + 1)
+        loadShader(getShaderType(shaderType), source)
+      }
+    }
+    this
+  }
+
+  def load(shaderType: Int, path: String): ShaderBuilder = {
+    loadShader(shaderType, loadSource(path))
+  }
+
+  def loadShader(shaderType: Int, source: String): ShaderBuilder = {
+    val shaderID = GL20.glCreateShader(shaderType)
+
+    GL20.glShaderSource(shaderID, header + source)
     GL20.glCompileShader(shaderID)
     if (GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
       val shaderTypeName = if (shaderType == GL20.GL_VERTEX_SHADER) {
@@ -76,7 +101,7 @@ class ShaderBuilder(name: String) {
       } else {
         "Shader"
       }
-      System.err.println(s"$shaderTypeName failed to compile ($path).\nError log:\n"
+      System.err.println(s"$shaderTypeName failed to compile ($name).\nError log:\n"
         + GL20.glGetShaderInfoLog(shaderID, GL20.glGetShaderi(shaderID, GL20.GL_INFO_LOG_LENGTH)))
     }
     shaders.put(shaderType, shaderID)

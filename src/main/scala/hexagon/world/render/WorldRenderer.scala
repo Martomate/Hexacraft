@@ -2,7 +2,6 @@ package hexagon.world.render
 
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-
 import hexagon.Camera
 import hexagon.renderer.InstancedRenderer
 import hexagon.renderer.NoDepthTest
@@ -10,17 +9,22 @@ import hexagon.renderer.Renderer
 import hexagon.renderer.VAO
 import hexagon.renderer.VAOBuilder
 import hexagon.renderer.VBO
-import hexagon.resource.Shader
+import hexagon.resource.{Shader, TextureArray}
 import hexagon.world.coord.BlockRelWorld
 import hexagon.world.coord.CylCoord
 import hexagon.block.BlockState
 import hexagon.world.storage.World
+
+import scala.collection.mutable.ArrayBuffer
 
 class WorldRenderer(world: World) {
   private val blockShader = Shader.get("block").get
   private val blockSideShader = Shader.get("blockSide").get
   private val skyShader = Shader.get("sky").get
   private val selectedBlockShader = Shader.get("selectedBlock").get
+  private val blockTexture = TextureArray.getTextureArray("blocks")
+
+  private val renderingJobs = ArrayBuffer.empty[RenderingJob]
 
   private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
@@ -31,7 +35,7 @@ class WorldRenderer(world: World) {
       val fn: Int => Seq[Float] = s => BlockState.getVertices(s + 2).flatMap(expandFn)
       Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
     }))
-    .addVBO(VBO(1, divisor = 1).ints(1, 3).floats(2, 3).create()).create()
+    .addVBO(VBO(1, divisor = 1).ints(1, 3).floats(2, 3).floats(3, 1).create()).create()
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
 
   private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
@@ -45,7 +49,9 @@ class WorldRenderer(world: World) {
 
       blockAndSide match {
         case Some((coords, Some(_))) =>
-          val buf = BufferUtils.createByteBuffer(6 * 4).putInt(coords.x).putInt(coords.y).putInt(coords.z).putFloat(0).putFloat(0).putFloat(0)
+          val blockState = world.getBlock(coords).get
+          val buf = BufferUtils.createByteBuffer(7 * 4).putInt(coords.x).putInt(coords.y).putInt(coords.z).putFloat(0).putFloat(0).putFloat(0)
+          buf.putFloat(blockState.blockType.blockHeight(blockState))
           buf.flip()
           selectedBlockVAO.vbos(1).fill(0, buf)
         case _ =>
@@ -57,15 +63,15 @@ class WorldRenderer(world: World) {
     skyShader.enable()
     skyRenderer.render()
 
-    blockShader.enable()
-    world.columns.values.foreach(_.chunks.values.foreach(c => {
-      c.renderer.foreach(_.renderBlocks())
-    }))
+    val chunkRenderers = world.columns.values.flatMap(_.chunks.values.map(_.renderer))
 
-    blockSideShader.enable()
-    world.columns.values.foreach(_.chunks.values.foreach(c => {
-      c.renderer.foreach(_.renderBlockSides())
-    }))
+    for (job <- renderingJobs) {
+      job.setup()
+
+      for (r <- chunkRenderers) {
+        if (r.isDefined) job(r.get)
+      }
+    }
 
     if (getSelectedSide.isDefined) {
       selectedBlockShader.enable()
@@ -73,8 +79,25 @@ class WorldRenderer(world: World) {
     }
   }
 
+  for (side <- 0 until 8) {
+    registerRenderingJob(RenderingJob(_.renderBlockSide(side), () => {
+      blockTexture.bind()
+      val sh = if (side < 2) blockShader else blockSideShader
+      sh.enable()
+      sh.setUniform1i("side", side)
+    }))
+  }
+
+  def registerRenderingJob(job: RenderingJob): Unit = {
+    renderingJobs += job
+  }
+
   def unload(): Unit = {
     skyVAO.free()
     selectedBlockVAO.free()
   }
+}
+
+case class RenderingJob(job: ChunkRenderer => Unit, setup: () => Unit) {
+  def apply(r: ChunkRenderer): Unit = job(r)
 }

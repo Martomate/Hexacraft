@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="SBT: org.scala-lang:scala-reflect:2.12.3:jar">
+  <library name="sbt: org.scala-lang:scala-reflect:2.12.3:jar">
     <CLASSES>
       <root url="jar://$USER_HOME$/.sbt/boot/scala-2.12.3/lib/scala-reflect.jar!/" />
     </CLASSES>

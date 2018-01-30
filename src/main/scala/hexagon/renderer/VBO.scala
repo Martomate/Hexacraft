@@ -13,7 +13,7 @@ import org.lwjgl.opengl.GL33
 import hexagon.resource.Resource
 
 class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
-  val vboID = GL15.glGenBuffers()
+  val vboID: Int = GL15.glGenBuffers()
   GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
 
   private trait SomeChannel
@@ -24,13 +24,13 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
   private var totalStride = 0
 
   def ints(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_INT): VBOBuilder = {
-    channels += new IntChannel(index, dims, elementSize, _type, totalStride)
+    channels += IntChannel(index, dims, elementSize, _type, totalStride)
     totalStride += dims * elementSize
     this
   }
 
   def floats(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_FLOAT, normalized: Boolean = false): VBOBuilder = {
-    channels += new FloatChannel(index, dims, elementSize, _type, normalized, totalStride)
+    channels += FloatChannel(index, dims, elementSize, _type, normalized, totalStride)
     totalStride += dims * elementSize
     this
   }
@@ -38,9 +38,9 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
   def create(): VBO = {
     val realChannels = channels.map {
       case IntChannel(index, dims, elementSize, _type, offset) =>
-        new VBOChannelInt(index, dims, elementSize, _type, totalStride, offset, divisor)
+        VBOChannelInt(index, dims, elementSize, _type, totalStride, offset, divisor)
       case FloatChannel(index, dims, elementSize, _type, normalized, offset) =>
-        new VBOChannelFloat(index, dims, elementSize, _type, normalized, totalStride, offset, divisor)
+        VBOChannelFloat(index, dims, elementSize, _type, normalized, totalStride, offset, divisor)
     }
     val vbo = new VBO(vboID, count, totalStride, vboUsage, realChannels)
     vbo
@@ -53,7 +53,7 @@ object VBO {
   private var boundVBO: VBO = _
 }
 
-class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, val channels: Seq[VBOChannel]) extends Resource {
+class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
   var _count: Int = init_count
   def count: Int = _count
   

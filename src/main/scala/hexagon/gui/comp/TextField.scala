@@ -7,10 +7,9 @@ import org.lwjgl.glfw.GLFW
 
 class TextField(_location: LocationInfo, initText: String = "", centered: Boolean = true, maxFontSize: Float = 2f) extends Component(_location) {
   private val bgColor = new Vector4f(0.5f)
-  private val borderColor = new Vector4f(0.7f)// unused
   private val textColor = new Vector3f(1.0f)
   private val guiText: GUIText = Component.makeText(initText, location, maxFontSize, centered).setColour(textColor.x, textColor.y, textColor.z)
-  private var cursorText = Component.makeText("|", location, maxFontSize).setColour(textColor.x, textColor.y, textColor.z)
+  private var cursorText = Component.makeText("|", LocationInfo(location.x + location.w / 2f - maxFontSize * 0.002f, location.y + maxFontSize * 0.002f, location.h / 5, location.h), maxFontSize, false).setColour(textColor.x, textColor.y, textColor.z)
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
 
@@ -31,14 +30,13 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
     }
     if (cursorTextVisible) removeText(cursorText)
     val fontSize = guiText.getFontSize
-    cursorText = Component.makeText("|", LocationInfo(location.x + location.w / 2f + guiText.getLineWidth(0).toFloat / 2f - fontSize * 0.002f, location.y + fontSize * 0.002f, location.h / 5, location.h), fontSize * 1.1f, false)
-    cursorText.setColour(textColor.x, textColor.y, textColor.z)
+    cursorText.setPosition(location.x + location.w / 2f + guiText.getLineWidth(0).toFloat / 2f - fontSize * 0.002f, cursorText.getPosition.y)
+    cursorText.setFontSize(fontSize * 1.1f)
     if (cursorTextVisible) addText(cursorText)
   }
   def text: String = guiText.getText
 
   def setBackgroundColor(r: Float, g: Float, b: Float, a: Float): Unit = bgColor.set(r, g, b, a)
-  def setBorderColor(r: Float, g: Float, b: Float, a: Float): Unit = borderColor.set(r, g, b, a)
   def setTextColor(r: Float, g: Float, b: Float): Unit = textColor.set(r, g, b)
 
   override def tick(): Unit = {

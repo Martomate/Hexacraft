@@ -34,18 +34,18 @@ object BlockState {
   def getVertices(side: Int): Seq[CylCoord] = side match {
     case 0 => vertices.take(6)
     case 1 => vertices.takeRight(6).reverse
-    case _ => Seq(vertices(side-2), vertices(side-2 + 6), vertices((side-1 + 6) % 6 + 6), vertices((side-1 + 6) % 6))
+    case _ => Seq(vertices(side-2), vertices(side-2 + 6), vertices((side-1) % 6 + 6), vertices((side-1) % 6))
   }
 }
 
-class BlockState(val coord: BlockRelWorld, val blockType: Block) {
+class BlockState(val coords: BlockRelWorld, val blockType: Block, val metadata: Byte = 0) {
   def neighbor(side: Int, chunk: Chunk): Option[BlockState] = {
     val (i, j, k) = BlockState.neighborOffsets(side)
-    val (i2, j2, k2) = (coord.cx + i, coord.cy + j, coord.cz + k)
+    val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      chunk.getBlock(BlockRelChunk(i2, j2, k2, coord.world))
+      chunk.getBlock(BlockRelChunk(i2, j2, k2, coords.world))
     } else {
-      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coord.world))
+      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coords.world))
     }
   }
 }

@@ -12,11 +12,13 @@ import hexagon.world.{Player, WorldSettings}
 import org.jnbt._
 import org.joml.{Vector2d, Vector3d, Vector4d}
 
+import scala.collection.mutable
 import scala.collection.mutable.{PriorityQueue, Set => MutableSet}
 
 object World {
   val chunksLoadedPerTick = 2
-  val chunkRenderUpdatesPerTick = 1
+  val chunkRenderUpdatesPerTick = 2
+  val ticksBetweenBlockUpdates = 5
   val ticksBetweenColumnLoading = 5
 }
 
@@ -76,13 +78,17 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
   private[storage] var chunkLoadingOrigin: CylCoord = _
   private[storage] val chunkLoadingDirection: Vector3d = new Vector3d()
-  private val chunksToLoad = PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+  private val chunksToLoad = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
   // val chunkLoader = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
-  private val chunkRenderUpdateQueue = PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+  private val chunkRenderUpdateQueue = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+
+  private val blocksToUpdate = mutable.Queue.empty[BlockRelWorld]
   
   val player = new Player(this)
   player.fromNBT(nbtData.getValue.get("player").asInstanceOf[CompoundTag])
-  
+
+
+  def addToBlockUpdateList(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
   
   def addRenderUpdate(coords: ChunkRelWorld): Unit = {
     chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
@@ -101,10 +107,11 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
-  def getChunk(coords: ChunkRelWorld): Option[Chunk] = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
+  def getChunk(coords: ChunkRelWorld): Option[Chunk] =      getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
   def getBlock(coords: BlockRelWorld): Option[BlockState] = getColumn(coords.getColumnRelWorld).flatMap(_.getBlock(coords.getBlockRelColumn))
-  def setBlock(block: BlockState): Boolean = getChunk(block.coord.getChunkRelWorld).fold(false)(_.setBlock(block))
+  def setBlock(block: BlockState): Boolean =  getChunk(block.coords.getChunkRelWorld).fold(false)(_.setBlock(block))
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
+  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
   
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4, this)
@@ -123,6 +130,13 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
     if (loadColumnsCountdown == 0) {
       loadColumnsCountdown = World.ticksBetweenColumnLoading
+
+      // TODO: this is a temporary placement
+      val blocksToUpdateLen = blocksToUpdate.size
+      for (i <- 0 until blocksToUpdateLen) {
+        val c = blocksToUpdate.dequeue()
+        getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
+      }
       
       val rDistSq = (renderDistance * 16) * (renderDistance * 16)
 

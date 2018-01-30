@@ -1,15 +1,9 @@
 package hexagon.world.coord
 
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector3i
-import org.joml.Vector4f
-
 import hexagon.Camera
-import hexagon.world.storage.World
-import org.joml.Matrix3f
 import hexagon.block.BlockState
-import org.joml.Vector3d
+import hexagon.world.storage.World
+import org.joml.{Vector2f, Vector3d, Vector4f}
 
 
 class RayTracer(world: World, camera: Camera, maxDistance: Double) {
@@ -32,9 +26,38 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
   }
 
   def trace(blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
-    def toTheRight(PA: Vector3d, PB: Vector3d): Boolean = PA.dot(PB.cross(ray, new Vector3d())) <= 0
+    def toTheRight(PA: Vector3d, PB: Vector3d): Boolean = PA.dot(PB.cross(ray, new Vector3d)) <= 0
 
-    def traceIt(current: BlockRelWorld): Option[(BlockRelWorld, Option[Int])] = {
+    def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = {
+      world.getBlock(hitBlockCoords).map(b => b.blockType.bounds(b).vertices.map(v => CoordUtils.fromBlockCoords(world, camera, hitBlockCoords, v, new Vector3d))) match {
+        case Some(points) =>
+          val PA = new Vector3d
+          val PB = new Vector3d
+
+          (0 until 8).exists(side => {
+            val seq = if (side < 2) {
+              for (index <- 0 until 6) yield {
+                PA set points(index + 6 * side)
+                PB set points((index + 1) % 6 + 6 * side)
+
+                toTheRight(PA, PB)
+              }
+            } else {
+              val order = Seq(0, 1, 3, 2)
+              for (index <- 0 until 4) yield {
+                PA set points((order(index) % 2 + side - 2) % 6 + 6 * (order(index) / 2))
+                PB set points((order((index + 1) % 4) % 2 + side - 2) % 6 + 6 * (order((index + 1) % 4) / 2))
+
+                toTheRight(PA, PB)
+              }
+            }
+            !seq.exists(_ != seq(0))
+          })
+        case None => false
+      }
+    }
+
+    def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
       val points = BlockState.vertices.map(v => CoordUtils.fromBlockCoords(world, camera, current, v, new Vector3d))
 
       val PA = new Vector3d(points(0 + 6))
@@ -58,28 +81,28 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
       } else 0
 
       if (side == 0) {
-        points((index + 1) % 6).sub(points(index), PA);
-        points((index + 5) % 6).sub(points(index), PB);
+        points((index + 1) % 6).sub(points(index), PA)
+        points((index + 5) % 6).sub(points(index), PB)
       } else if (side == 1) {
-        points((index + 5) % 6 + 6).sub(points(index + 6), PA);
-        points((index + 1) % 6 + 6).sub(points(index + 6), PB);
+        points((index + 5) % 6 + 6).sub(points(index + 6), PA)
+        points((index + 1) % 6 + 6).sub(points(index + 6), PB)
       } else {
-        points((index + 1) % 6 + 6).sub(points(index + 6), PA);
-        points(index).sub(points(index + 6), PB);
+        points((index + 1) % 6 + 6).sub(points(index + 6), PA)
+        points(index).sub(points(index + 6), PB)
       }
 
       val pointOnSide = points(if (side == 0) index else index + 6)
       val normal = PA.cross(PB, new Vector3d())
 
       if (ray.dot(normal) <= 0) { // TODO: this is a temporary fix for rayloops
-        val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)); // abs may be needed (a/-0)
+        val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
         if (distance <= maxDistance * CoordUtils.y60) {
           val offsets = BlockState.neighborOffsets(side)
-          val hitBlockCoords = BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3, world);
-          if (blockFoundFn(hitBlockCoords)) {
-            val hoverSide = if (side < 2) 1 - side else (side + 1) % 6 + 2; // (side - 2 + 3) % 6 + 2
+          val hitBlockCoords = BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3, world)
+          if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
+            val hoverSide = if (side < 2) 1 - side else (side + 1) % 6 + 2 // (side - 2 + 3) % 6 + 2
             Some(hitBlockCoords, Some(hoverSide))
-          } else traceIt(hitBlockCoords)
+          } else traceIt(hitBlockCoords, blockFoundFn)
         } else None
       } else {
         System.err.println("At least one bug has not been figured out yet! (Rayloops in RayTracer.trace.traceIt)")
@@ -88,7 +111,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
     }
 
     if (!rayValid) None
-    else if (blockFoundFn(camera.blockCoords)) Some(camera.blockCoords, None)
-    else traceIt(camera.blockCoords)
+    else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords)) Some(camera.blockCoords, None)
+    else traceIt(camera.blockCoords, blockFoundFn)
   }
 }

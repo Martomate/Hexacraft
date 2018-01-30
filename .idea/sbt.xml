@@ -12,6 +12,8 @@
           </set>
         </option>
         <option name="sbtVersion" value="1.0.2" />
+        <option name="useAutoImport" value="true" />
+        <option name="useOurOwnAutoImport" value="true" />
         <option name="useSbtShell" value="true" />
       </SbtProjectSettings>
     </option>

@@ -29,6 +29,8 @@ class DebugScene(gameScene: GameScene) extends Scene {
   addLabel("Other")
   addDebugText("viewDist", "viewDistance")
 
+  override def isOpaque: Boolean = false
+
   private def addLabel(text: String): Unit = {
     yOff += 0.02f
     addText(Component.makeText(text, LocationInfo(0.01f, 0.95f - yOff, 0.2f, 0.05f), 1, false))
