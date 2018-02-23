@@ -4,7 +4,7 @@ import java.io.{File, FileInputStream}
 
 import hexagon.block.{Block, BlockState}
 import hexagon.util.NBTUtil
-import hexagon.world.coord.{BlockCoord, BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import hexagon.world.coord.{BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexagon.world.gen.noise.NoiseInterpolator3D
 import hexagon.world.render.ChunkRenderer
 import org.jnbt.{CompoundTag, NBTInputStream}
@@ -12,7 +12,7 @@ import org.jnbt.{CompoundTag, NBTInputStream}
 import scala.collection.mutable
 
 object Chunk {
-  val neighborOffsets = Seq(
+  val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
     (0, 1, 0),
     (1, 0, 0),
     (0, 0, 1),
@@ -56,7 +56,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       val column = world.getColumn(coords.getColumnRelWorld).get
       
       val noiseInterp = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => {
-        val c = BlockCoord(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, world).toCylCoord
+        val c = BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, world).toCylCoord
         world.blockGenerator.genNoiseFromCyl(c) + world.blockDensityGenerator.genNoiseFromCyl(c) * 0.4
       })
   

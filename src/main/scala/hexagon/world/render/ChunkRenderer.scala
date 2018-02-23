@@ -82,7 +82,7 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
   def maxInstances: Int = _maxInstances
 
   val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
-    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW, 0).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
+    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
     .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).ints(3, 3).ints(4, 1).floats(5, 1).create()).create()
 
   val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
@@ -132,7 +132,7 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
 
 class FlatBlockRenderer(val _side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
   override val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
-    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW, 0).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
+    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
     .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).floats(3, 2).ints(4, 1).floats(5, 1).create()).create()
 
   override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest

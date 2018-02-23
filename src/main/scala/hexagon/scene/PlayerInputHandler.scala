@@ -6,7 +6,7 @@ import org.lwjgl.glfw.GLFW._
 
 import hexagon.HexBox
 import hexagon.Main
-import hexagon.world.coord.BlockCoord
+import hexagon.world.coord.BlockCoords
 import hexagon.world.storage.World
 import hexagon.world.Player
 
@@ -14,7 +14,7 @@ class PlayerInputHandler(val player: Player) {
   var moveWithMouse = false
 
   def tick(): Unit = {
-    updatePlayer
+    updatePlayer()
   }
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
   private def updatePlayer(): Unit = {
@@ -70,7 +70,7 @@ class PlayerInputHandler(val player: Player) {
     if (player.rotation.x < -math.Pi / 2) {
       player.rotation.x = -(math.Pi / 2)
     } else if (player.rotation.x > math.Pi / 2) {
-      player.rotation.x = (math.Pi / 2)
+      player.rotation.x = math.Pi / 2
     }
 
     if (player.rotation.y < 0) {

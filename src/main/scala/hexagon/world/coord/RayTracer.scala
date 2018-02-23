@@ -94,7 +94,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
       val pointOnSide = points(if (side == 0) index else index + 6)
       val normal = PA.cross(PB, new Vector3d())
 
-      if (ray.dot(normal) <= 0) { // TODO: this is a temporary fix for rayloops
+      if (ray.dot(normal) <= 0) { // TODO: this is a temporary fix for ray-loops
         val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
         if (distance <= maxDistance * CoordUtils.y60) {
           val offsets = BlockState.neighborOffsets(side)

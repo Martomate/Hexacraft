@@ -74,8 +74,8 @@ object Main {
   }
 
   def moveMouse(pos: (Float, Float)): Unit = {
-    val dx = _mousePos.x - prevWindowPos.x
-    val dy = _mousePos.y - prevWindowPos.y
+    //val dx = _mousePos.x - prevWindowPos.x
+    //val dy = _mousePos.y - prevWindowPos.y
     _mousePos.x = pos._1 * windowSize.x
     _mousePos.y = pos._2 * windowSize.y
   }
@@ -300,9 +300,6 @@ object Main {
   private def initGL(): Unit = {
     GL.createCapabilities()
 
-//  Display.create(new PixelFormat.withSamples(2).withDepthBits(24), new ContextAttribs(3, 3))//samples = 2 or 4
-
-//  GL11.glClearColor(0.1f, 0.2f, 0.7f, 1)
 //  GL11.glEnable(GL13.GL_MULTISAMPLE)
     GL11.glEnable(GL11.GL_DEPTH_TEST)
     GL11.glDepthFunc(GL11.GL_LEQUAL)

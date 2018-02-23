@@ -7,12 +7,12 @@ object Resource {
   private val resources = ArrayBuffer.empty[Resource]
 
   def freeAllResources(): Unit = {
-    resources.foreach(_.unload)
+    resources.foreach(_.unload())
     resources.clear()
   }
   
   def reloadAllResources(): Unit = {
-    resources.foreach(_.reload)
+    resources.foreach(_.reload())
   }
 }
 

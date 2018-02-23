@@ -11,7 +11,7 @@ import hexagon.renderer.VAOBuilder
 import hexagon.renderer.VBO
 import hexagon.resource.{Shader, TextureArray}
 import hexagon.world.coord.BlockRelWorld
-import hexagon.world.coord.CylCoord
+import hexagon.world.coord.CylCoords
 import hexagon.block.BlockState
 import hexagon.world.storage.World
 
@@ -31,7 +31,7 @@ class WorldRenderer(world: World) {
 
   private val selectedBlockVAO: VAO = new VAOBuilder(25)
     .addVBO(VBO(25).floats(0, 3).create().fillFloats(0, {
-      val expandFn: CylCoord => Seq[Float] = v => Seq((v.x * 1.0025).toFloat, ((v.y - 0.25) * 1.0025 + 0.25).toFloat, (v.z * 1.0025).toFloat)
+      val expandFn: CylCoords => Seq[Float] = v => Seq((v.x * 1.0025).toFloat, ((v.y - 0.25) * 1.0025 + 0.25).toFloat, (v.z * 1.0025).toFloat)
       val fn: Int => Seq[Float] = s => BlockState.getVertices(s + 2).flatMap(expandFn)
       Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
     }))

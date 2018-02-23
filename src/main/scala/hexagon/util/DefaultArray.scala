@@ -8,6 +8,9 @@ class DefaultArray[T](_size: Int, val default: T) extends Seq[T] {
     var idx = 0
 
     override def hasNext: Boolean = idx < _size
-    override def next(): T = default
+    override def next(): T = {
+      idx += 1
+      default
+    }
   }
 }

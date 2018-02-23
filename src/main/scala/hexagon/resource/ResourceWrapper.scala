@@ -4,7 +4,7 @@ class ResourceWrapper[T](make: =>T) extends Resource {
   private var elem: T = _
   def get: T = elem
   
-  reload
+  reload()
   
   def reload(): Unit = {
     elem = make

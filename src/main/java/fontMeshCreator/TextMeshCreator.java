@@ -18,8 +18,7 @@ public class TextMeshCreator {
 
 	protected TextMeshData createTextMesh(GUIText text) {
 		List<Line> lines = createStructure(text);
-		TextMeshData data = createQuadVertices(text, lines);
-		return data;
+		return createQuadVertices(text, lines);
 	}
 
 	private List<Line> createStructure(GUIText text) {

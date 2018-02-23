@@ -61,7 +61,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   val radius: Double = CoordUtils.y60 / hexAngle
   val circumference: Double = totalSize * CoordUtils.y60
 
-  var renderDistance: Double = 8 * CoordUtils.y60
+  val renderDistance: Double = 8 * CoordUtils.y60
 
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
   val columnsAtEdge: MutableSet[ColumnRelWorld] = MutableSet.empty[ColumnRelWorld]
@@ -76,7 +76,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
   private var loadColumnsCountdown = 0
 
-  private[storage] var chunkLoadingOrigin: CylCoord = _
+  private[storage] var chunkLoadingOrigin: CylCoords = _
   private[storage] val chunkLoadingDirection: Vector3d = new Vector3d()
   private val chunksToLoad = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
   // val chunkLoader = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
@@ -99,7 +99,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   }
 
   private def makeChunkToLoadTuple(coords: ChunkRelWorld) = {
-    val cyl = BlockCoord(coords.X * 16 + 8, coords.Y * 16 + 8, coords.Z * 16 + 8, this).toCylCoord
+    val cyl = BlockCoords(coords.X * 16 + 8, coords.Y * 16 + 8, coords.Z * 16 + 8, this).toCylCoord
     val cDir = cyl.toNormalCoord(chunkLoadingOrigin).toVector3d.normalize()
     val dot = chunkLoadingDirection.dot(cDir)
     
@@ -124,7 +124,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   }
 
   def tick(camera: Camera): Unit = {
-    chunkLoadingOrigin = CylCoord(player.position.x, player.position.y, player.position.z, this)
+    chunkLoadingOrigin = CylCoords(player.position.x, player.position.y, player.position.z, this)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.invViewMatr)
     chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z)// new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
 
@@ -133,7 +133,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
       // TODO: this is a temporary placement
       val blocksToUpdateLen = blocksToUpdate.size
-      for (i <- 0 until blocksToUpdateLen) {
+      for (_ <- 0 until blocksToUpdateLen) {
         val c = blocksToUpdate.dequeue()
         getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
       }

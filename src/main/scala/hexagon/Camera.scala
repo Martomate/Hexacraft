@@ -1,27 +1,24 @@
 package hexagon
 
-import org.joml.Matrix4f
-import org.joml.Vector3d
-import org.joml.Vector3f
-
+import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 import hexagon.resource.Shader
-import hexagon.world.coord.BlockCoord
+import hexagon.world.coord.BlockCoords
 import hexagon.world.coord.BlockRelWorld
 import hexagon.world.coord.CoordUtils
 import hexagon.world.storage.World
 import hexagon.world.Player
 
 object Camera {
-  val unitX = new Vector3f(1, 0, 0).toImmutable()
-  val unitY = new Vector3f(0, 1, 0).toImmutable()
-  val unitZ = new Vector3f(0, 0, 1).toImmutable()
+  val unitX: Vector3fc = new Vector3f(1, 0, 0).toImmutable
+  val unitY: Vector3fc = new Vector3f(0, 1, 0).toImmutable
+  val unitZ: Vector3fc = new Vector3f(0, 0, 1).toImmutable
 }
 
 class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float, val world: World) {
   val position = new Vector3d
   val rotation = new Vector3f
   var blockCoords: BlockRelWorld = _
-  var placeInBlock: BlockCoord = _
+  var placeInBlock: BlockCoords = _
   val projMatrix = new Matrix4f
   val viewMatrix = new Matrix4f
   val invProjMatr = new Matrix4f
@@ -33,8 +30,8 @@ class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float,
   }
   val setProjMatrix: Shader => Unit = _.setUniformMat4("projMatrix", projMatrix)
 
-  updateViewMatrix
-  updateProjMatrix
+  updateViewMatrix()
+  updateProjMatrix()
 
   def setPosition(vec: Vector3d): Unit = setPosition(vec.x, vec.y, vec.z)
   
@@ -73,7 +70,7 @@ class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float,
     rotation.z += z
   }
 
-  def updateViewMatrix: Unit = {
+  def updateViewMatrix(): Unit = {
     viewMatrix.identity()
     viewMatrix.rotate(rotation.z, Camera.unitZ)
     viewMatrix.rotate(rotation.x, Camera.unitX)
@@ -81,7 +78,7 @@ class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float,
     viewMatrix.invert(invViewMatr)
   }
 
-  def updateProjMatrix: Unit = {
+  def updateProjMatrix(): Unit = {
     projMatrix.identity()
     projMatrix.perspective(fov, aspect, near, far)
     projMatrix.invert(invProjMatr)

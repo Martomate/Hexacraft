@@ -19,7 +19,7 @@ object TextureSingle {
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
   }
 
-  def getTexture(name: String): TextureSingle = textures.get(name).getOrElse(new TextureSingle(name))
+  def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
 }
 
 class TextureSingle(val name: String) extends Resource {
@@ -48,17 +48,11 @@ class TextureSingle(val name: String) extends Resource {
     texID = GL11.glGenTextures()
     bind()
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf)
-/*    if (GL.getCapabilities().GL_EXT_texture_filter_anisotropic) {
-      val amt = Math.min(16f, GL11.glGetFloat(EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));
-      GL11.glTexParameterf(GL11.GL_TEXTURE_2D, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, amt);
-    } else {
-      println("Anisotropic filtering is not supported :(");
-    }*/
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR) // _MIPMAP_LINEAR)
+
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
-//    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
   }
   
   protected def reload(): Unit = {
@@ -74,7 +68,7 @@ class TextureSingle(val name: String) extends Resource {
   }
 
   def unload(): Unit = {
-    if (TextureSingle.boundTexture == this) TextureSingle.unbind();
+    if (TextureSingle.boundTexture == this) TextureSingle.unbind()
     GL11.glDeleteTextures(texID)
   }
 }

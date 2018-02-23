@@ -9,7 +9,7 @@ import org.jnbt.CompoundTag
 import org.jnbt.DoubleTag
 import org.jnbt.ByteTag
 import hexagon.util.NBTUtil
-import hexagon.world.coord.BlockCoord
+import hexagon.world.coord.BlockCoords
 import hexagon.block.Block
 import org.jnbt.ShortTag
 
@@ -28,7 +28,7 @@ class Player(val world: World) {
   {
     val startX = (math.random * 100 - 50).toInt
     val startZ = (math.random * 100 - 50).toInt
-    val startCoords = BlockCoord(startX, world.getHeight(startX, startZ), startZ, world).toCylCoord
+    val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ, world).toCylCoord
     position.set(startCoords.x, startCoords.y - bounds.bottom + 2, startCoords.z)
   }
   

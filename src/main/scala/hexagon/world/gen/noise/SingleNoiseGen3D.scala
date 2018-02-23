@@ -43,16 +43,7 @@ class SingleNoiseGen3D(random: Random) {// Apparently SimplexNoise exists in jom
     val ab = perm(a + iy + 1) + iz
     val ba = perm(b + iy    ) + iz
     val bb = perm(b + iy + 1) + iz
-/*
-    lerp(w, lerp(v, lerp(u, grad(perm(perm(perm(ix    ) + iy    ) + iz    ), x  , y  , z   ),
-                            grad(perm(perm(perm(ix + 1) + iy    ) + iz    ), x-1, y  , z   )),
-                    lerp(u, grad(perm(perm(perm(ix    ) + iy + 1) + iz    ), x  , y-1, z   ),
-                            grad(perm(perm(perm(ix + 1) + iy + 1) + iz    ), x-1, y-1, z   ))),
-            lerp(v, lerp(u, grad(perm(perm(perm(ix    ) + iy    ) + iz + 1), x  , y  , z-1 ),
-                            grad(perm(perm(perm(ix + 1) + iy    ) + iz + 1), x-1, y  , z-1 )),
-                    lerp(u, grad(perm(perm(perm(ix    ) + iy + 1) + iz + 1), x  , y-1, z-1 ),
-                            grad(perm(perm(perm(ix + 1) + iy + 1) + iz + 1), x-1, y-1, z-1 ))))
-*/
+
     lerp(w, lerp(v, lerp(u, grad(perm(aa    ), x  , y  , z   ),
                             grad(perm(ba    ), x-1, y  , z   )),
                     lerp(u, grad(perm(ab    ), x  , y-1, z   ),

@@ -1,7 +1,7 @@
 package hexagon.font
 
 import fontMeshCreator.{FontType, GUIText}
-import hexagon.renderer.{VAOBuilder, VBO}
+import hexagon.renderer.{VAO, VAOBuilder, VBO}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -42,7 +42,7 @@ class TextMaster {
 }
 
 object TextMaster {
-  def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]) = {
+  def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]): VAO = {
     new VAOBuilder(vertexPositions.length, 1)
     .addVBO(VBO.apply(vertexPositions.length).floats(0, 2).create().fillFloats(0, vertexPositions))
     .addVBO(VBO.apply(textureCoords.length).floats(1, 2).create().fillFloats(0, textureCoords))

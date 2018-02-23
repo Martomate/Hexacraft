@@ -10,7 +10,7 @@ import hexagon.gui.menu.pause.PauseMenu
 import hexagon.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexagon.resource.Shader
 import hexagon.world.WorldSettings
-import hexagon.world.coord.{BlockCoord, CylCoord, RayTracer}
+import hexagon.world.coord.{BlockCoords, CylCoords, RayTracer}
 import hexagon.world.render.WorldRenderer
 import hexagon.world.storage.World
 import hexagon.{Camera, HexBox, Main}
@@ -23,7 +23,7 @@ import scala.collection.Seq
 
 
 class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
-  // Camera, player, mousepicker, world, etc.
+  // Camera, player, mouse-picker, world, etc.
 
   private val blockShader: Shader = Shader.get("block").get
   private val blockSideShader: Shader = Shader.get("blockSide").get
@@ -152,7 +152,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
 
   override def windowResized(width: Int, height: Int): Unit = {
     camera.aspect = width.toFloat / height
-    camera.updateProjMatrix
+    camera.updateProjMatrix()
 
     camera.setProjMatrix(blockShader)
     camera.setProjMatrix(blockSideShader)
@@ -184,7 +184,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     if (!isPaused) playerInputHandler.tick()
     camera.setPositionAndRotation(playerInputHandler.player)
     camera.updateCoords()
-    camera.updateViewMatrix
+    camera.updateViewMatrix()
     camera.updateUniforms(blockShader)
     camera.updateUniforms(blockSideShader)
     camera.updateUniforms(selectedBlockShader)
@@ -206,9 +206,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
             val coords = coords1.offset(offset._1, offset._2, offset._3)
             if (world.getBlock(coords).isEmpty) {
               val blockType = playerInputHandler.player.blockInHand
-              val skewCoords = BlockCoord(coords.x, coords.y, coords.z, world).toSkewCylCoord
+              val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world).toSkewCylCoord
               val state = new BlockState(coords, blockType)
-              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoord(camera.position, world))) {
+              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world))) {
                 world.setBlock(state)
               }
             }
@@ -223,7 +223,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
       if (rightMouseButtonDown) {
         rightMouseButtonCountdown = 10
         worldRenderer.getSelectedBlockAndSide match {
-          case Some((coords, side)) =>
+          case Some((coords, _)) =>
             if (world.getBlock(coords).isDefined) {
               world.removeBlock(coords)
             }

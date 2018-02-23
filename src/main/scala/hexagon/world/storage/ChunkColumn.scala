@@ -1,12 +1,12 @@
 package hexagon.world.storage
 
 import hexagon.block.BlockState
-import hexagon.world.coord.{BlockCoord, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
+import hexagon.world.coord.{BlockCoords, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
 import hexagon.world.gen.noise.NoiseInterpolator2D
 import org.joml.Vector2d
 
 object ChunkColumn {
-  val neighbors = Seq(
+  val neighbors: Seq[(Int, Int)] = Seq(
     (1, 0),
     (0, 1),
     (-1, 0),
@@ -24,7 +24,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
 
   private[storage] val heightMap = {
     val interp = new NoiseInterpolator2D(4, 4, (i, j) => {
-      val c = BlockCoord(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world).toCylCoord
+      val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world).toCylCoord
       val height = world.biomeHeightGenerator.genNoiseFromCylXZ(c)
       val heightVariation = world.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
       world.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100

@@ -9,7 +9,7 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
   private val bgColor = new Vector4f(0.5f)
   private val textColor = new Vector3f(1.0f)
   private val guiText: GUIText = Component.makeText(initText, location, maxFontSize, centered).setColour(textColor.x, textColor.y, textColor.z)
-  private var cursorText = Component.makeText("|", LocationInfo(location.x + location.w / 2f - maxFontSize * 0.002f, location.y + maxFontSize * 0.002f, location.h / 5, location.h), maxFontSize, false).setColour(textColor.x, textColor.y, textColor.z)
+  private val cursorText = Component.makeText("|", LocationInfo(location.x + location.w / 2f - maxFontSize * 0.002f, location.y + maxFontSize * 0.002f, location.h / 5, location.h), maxFontSize, centered = false).setColour(textColor.x, textColor.y, textColor.z)
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
 

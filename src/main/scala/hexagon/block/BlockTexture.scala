@@ -8,15 +8,15 @@ object BlockTexture {
 
 class BlockTexture(name: String) extends Resource {
   private var _indices: Seq[Int] = _
-  def indices = _indices
+  def indices: Seq[Int] = _indices
   
-  load
+  load()
 
   def load(): Unit = {
     _indices = BlockLoader.loadBlockType(name)
   }
   
-  def reload(): Unit = load// TODO: this does not work. Make the new resource-loading-system instead of fixing this here
+  def reload(): Unit = load()// TODO: this does not work. Make the new resource-loading-system instead of fixing this here
   
   def unload(): Unit = ()
 }

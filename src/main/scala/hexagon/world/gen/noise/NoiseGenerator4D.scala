@@ -2,7 +2,7 @@ package hexagon.world.gen.noise
 
 import java.util.Random
 import hexagon.world.storage.World
-import hexagon.world.coord.CylCoord
+import hexagon.world.coord.CylCoords
 
 class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
   private[this] val noiseGens = Seq.fill(numOctaves)(new SingleNoiseGen4D(random))
@@ -18,7 +18,7 @@ class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
     result
   }
 
-  def genNoiseFromCyl(c: CylCoord): Double = {
+  def genNoiseFromCyl(c: CylCoords): Double = {
     val angle = c.z / c.world.radius
     genNoise(c.x, c.y, math.sin(angle) * c.world.radius, math.cos(angle) * c.world.radius)
   }

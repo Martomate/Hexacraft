@@ -35,7 +35,7 @@ class SingleNoiseGen4D(random: Random) {// Apparently SimplexNoise exists in jom
 
   private def grad(hash: Int, x: Double, y: Double, z: Double, w: Double): Double = {
     val h = hash & 31
-    grad4(h * 4 + 0) * x + grad4(h * 4 + 1) * y + grad4(h * 4 + 2) * z + grad4(h * 4 + 3) * w;
+    grad4(h * 4 + 0) * x + grad4(h * 4 + 1) * y + grad4(h * 4 + 2) * z + grad4(h * 4 + 3) * w
   }
 
   private def fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)

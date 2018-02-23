@@ -68,7 +68,7 @@ class ShaderBuilder(name: String) {
         Main.tryQuit()
         System.exit(1)
     }
-    source.toString()
+    source.toString
   }
 
   def loadAll(path: String): ShaderBuilder = {

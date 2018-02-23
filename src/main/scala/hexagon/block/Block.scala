@@ -9,7 +9,7 @@ object Block {
   private val blocks = new Array[Block](maxBlocks)
   def byId(id: Byte): Block = blocks(id)
   
-  val Air       = BlockAir
+  val Air: Block= BlockAir
   val Stone     = new Block(1, "stone", "Stone")
   val Grass     = new Block(2, "grass", "Grass")
   val Dirt      = new Block(3, "dirt", "Dirt")
