@@ -2,13 +2,11 @@ package fontMeshCreator;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import hexagon.Main;
-import hexagon.util.FileUtils;
+import hexacraft.Main;
+import hexacraft.util.FileUtils;
 
 /**
  * Provides functionality for getting the values from a font file.
