@@ -52,7 +52,7 @@ At the moment this project hardly contains any tests (unit tests), but that will
 
 The game was created in spring of 2015 by **Martin Jakobsson** ([Martomate](https://github.com/Martomate)).
 
-More than two years later the game moved to GitHub and since then anyone has had the chance to contribute. Every contributor will be listed in this section.
+Almost three years later the game moved to GitHub and since then anyone has had the chance to contribute. Every contributor will be listed in this section.
 
 ## Licence
 
