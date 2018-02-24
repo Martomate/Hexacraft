@@ -1,8 +1,8 @@
 package fontMeshCreator;
 
 
-import hexagon.font.TextMaster;
-import hexagon.renderer.VAO;
+import hexacraft.font.TextMaster;
+import hexacraft.renderer.VAO;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
