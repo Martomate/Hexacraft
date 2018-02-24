@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Class-Path: . lib/jnbt-1.1.jar lib/joml-1.9.4.jar lib/lwjgl-glfw.jar lib/lwjgl-opengl.jar lib/lwjgl.jar lib/minimal-json-0.9.4.jar lib/scala-library.jar
-Main-Class: hexacraft.Main
-
