@@ -1,13 +1,9 @@
 package hexagon.world.storage
 
-import hexagon.world.coord.BlockRelChunk
-import hexagon.block.Block
-import org.jnbt.CompoundTag
-import org.jnbt.Tag
-import org.jnbt.ByteArrayTag
-import hexagon.world.coord.BlockRelWorld
-import hexagon.block.BlockState
+import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
+import hexagon.block.{Block, BlockState}
 import hexagon.util.{DefaultArray, NBTUtil}
+import hexagon.world.coord.{BlockRelChunk, BlockRelWorld}
 
 trait ChunkStorage {
   def blockType(coord: BlockRelChunk): Block
@@ -24,7 +20,7 @@ trait ChunkStorage {
   def toSparse: SparseChunkStorage
   
   def fromNBT(nbt: CompoundTag): Unit
-  def toNBT: Seq[Tag]
+  def toNBT: Seq[Tag[_]]
 }
 
 class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
@@ -73,7 +69,7 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     }
   }
 
-  def toNBT: Seq[Tag] = {
+  def toNBT: Seq[Tag[_]] = {
     Seq(new ByteArrayTag("blocks", blockTypes),
         new ByteArrayTag("metadata", metadata))
   }
@@ -108,7 +104,7 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
     }
   }
 
-  def toNBT: Seq[Tag] = {
+  def toNBT: Seq[Tag[_]] = {
     val ids = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
     val meta = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
     Seq(new ByteArrayTag("blocks", ids),

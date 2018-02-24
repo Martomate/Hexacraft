@@ -1,17 +1,11 @@
 package hexagon.world
 
-import org.joml.Vector3d
-import org.joml.Vector3f
-
+import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
 import hexagon.HexBox
-import hexagon.world.storage.World
-import org.jnbt.CompoundTag
-import org.jnbt.DoubleTag
-import org.jnbt.ByteTag
 import hexagon.util.NBTUtil
 import hexagon.world.coord.BlockCoords
-import hexagon.block.Block
-import org.jnbt.ShortTag
+import hexagon.world.storage.World
+import org.joml.Vector3d
 
 class Player(val world: World) {
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
@@ -43,7 +37,7 @@ class Player(val world: World) {
         makeVectorTag("position", position),
         makeVectorTag("rotation", rotation),
         makeVectorTag("velocity", velocity),
-        new ByteTag("flying", if (flying) 1 else 0),
+        new ByteTag("flying", flying),
         new ShortTag("selectedItemSlot", selectedItemSlot.toShort)
     ))
   }

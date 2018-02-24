@@ -4,7 +4,29 @@ version := "0.1"
 
 scalaVersion := "2.12.3"
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.4"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.4" % "test"
+enablePlugins(JavaAppPackaging)
+enablePlugins(LauncherJarPlugin)
+
+val lwjglVersion = "3.1.1"
+
+libraryDependencies ++= Seq(
+  "org.scalactic" %% "scalactic" % "3.0.4",
+  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+  "org.joml" % "joml" % "1.9.4",
+  "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.4",
+  "com.flowpowered" % "flow-nbt" % "1.0.0",
+  "org.lwjgl" % "lwjgl" % lwjglVersion,
+  "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-windows",
+  "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-linux",
+  "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-macos",
+  "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
+  "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-windows",
+  "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-linux",
+  "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-macos",
+  "org.lwjgl" % "lwjgl-opengl" % lwjglVersion,
+  "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-windows",
+  "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-linux",
+  "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-macos"
+)
 
 organization := "com.martomate"

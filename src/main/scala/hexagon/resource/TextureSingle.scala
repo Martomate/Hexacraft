@@ -1,7 +1,10 @@
 package hexagon.resource
 
 import java.io.File
+import java.nio.file.Files
 import javax.imageio.ImageIO
+
+import hexagon.util.FileUtils
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
@@ -36,7 +39,7 @@ class TextureSingle(val name: String) extends Resource {
   load()
 
   def load(): Unit = {
-    val image = ImageIO.read(new File("res/" + name + ".png"))
+    val image = ImageIO.read(FileUtils.getResourceFile(name + ".png").get)
     val width = image.getWidth
     val height = image.getHeight
     texWidth = width

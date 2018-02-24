@@ -3,17 +3,18 @@ package hexagon.world.storage
 import java.io.{File, FileInputStream}
 import java.util.Random
 
+import com.flowpowered.nbt._
+import com.flowpowered.nbt.stream.NBTInputStream
 import hexagon.Camera
 import hexagon.block.BlockState
 import hexagon.util.NBTUtil
 import hexagon.world.coord._
 import hexagon.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D}
 import hexagon.world.{Player, WorldSettings}
-import org.jnbt._
 import org.joml.{Vector2d, Vector3d, Vector4d}
 
 import scala.collection.mutable
-import scala.collection.mutable.{PriorityQueue, Set => MutableSet}
+import scala.collection.mutable.{Set => MutableSet}
 
 object World {
   val chunksLoadedPerTick = 2
@@ -41,8 +42,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
       nbt
     }
     else {
-      val map = new java.util.HashMap[String, Tag]()
-      new CompoundTag("world", map)
+      new CompoundTag("world", new CompoundMap())
     }
   }
 

@@ -1,9 +1,8 @@
 package hexagon.font
 
-import java.io.File
-
 import fontMeshCreator.FontType
 import hexagon.resource.TextureSingle
+import hexagon.util.FileUtils
 
 import scala.collection.mutable
 
@@ -15,7 +14,7 @@ object Fonts {
   def loadFont(name: String, path: String): FontType = {
     if (fonts contains name) fonts(name)
     else {
-      val f = new FontType(TextureSingle.getTexture(path).id, new File("res/" + path + ".fnt"))
+      val f = new FontType(TextureSingle.getTexture(path).id, FileUtils.getResourceFile(path + ".fnt").get)
       fonts(name) = f
       f
     }

@@ -2,12 +2,13 @@ package hexagon.world.storage
 
 import java.io.{File, FileInputStream}
 
+import com.flowpowered.nbt.CompoundTag
+import com.flowpowered.nbt.stream.NBTInputStream
 import hexagon.block.{Block, BlockState}
 import hexagon.util.NBTUtil
-import hexagon.world.coord.{BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import hexagon.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld}
 import hexagon.world.gen.noise.NoiseInterpolator3D
 import hexagon.world.render.ChunkRenderer
-import org.jnbt.{CompoundTag, NBTInputStream}
 
 import scala.collection.mutable
 

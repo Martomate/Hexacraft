@@ -1,15 +1,11 @@
 package hexagon.resource
 
-import java.io.BufferedReader
-import java.io.FileReader
-import java.io.IOException
-
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL32
-import org.lwjgl.opengl.GL40
+import java.io.{BufferedReader, FileReader, IOException}
+import java.nio.file.Files
 
 import hexagon.Main
+import hexagon.util.FileUtils
+import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
 
 object ShaderBuilder {
   def start(name: String): ShaderBuilder = new ShaderBuilder(name)
@@ -18,7 +14,7 @@ object ShaderBuilder {
 class ShaderBuilder(name: String) {
   private val shaders = collection.mutable.Map.empty[Int, Int]
   private val programID = GL20.glCreateProgram()
-  private var prefix = "res/shaders/"
+  private var prefix = "shaders/"
   private var definesText = ""
 
   def setPrefix(newPrefix: String): ShaderBuilder = {
@@ -57,7 +53,7 @@ class ShaderBuilder(name: String) {
   def loadSource(path: String): String = {
     val source = new StringBuilder()
     try {
-      val reader = new BufferedReader(new FileReader(prefix + path))
+      val reader = FileUtils.getBufferedReader(FileUtils.getResourceFile(prefix + path).get)
       reader.lines.forEach(line => {
         source.append(line).append('\n')
       })

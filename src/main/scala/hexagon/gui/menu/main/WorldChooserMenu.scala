@@ -2,13 +2,14 @@ package hexagon.gui.menu.main
 
 import java.io.{File, FileInputStream}
 
+import com.flowpowered.nbt.CompoundTag
+import com.flowpowered.nbt.stream.NBTInputStream
 import hexagon.Main
 import hexagon.gui.comp.{Button, Label, LocationInfo, ScrollPane}
 import hexagon.gui.menu.MenuScene
 import hexagon.scene.GameScene
 import hexagon.util.NBTUtil
 import hexagon.world.WorldSettings
-import org.jnbt.{CompoundTag, NBTInputStream}
 
 class WorldChooserMenu extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo(0, 0.85f, 1, 0.15f), 3).withColor(1, 1, 1))

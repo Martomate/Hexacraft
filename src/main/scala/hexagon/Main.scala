@@ -22,7 +22,7 @@ object Main {
   {
     var file = new File("lib/natives")
     if (!file.exists) file = new File(OSUtils.nativesPath)
-    Configuration.LIBRARY_PATH.set(file.getAbsolutePath)
+    if (file.exists()) Configuration.LIBRARY_PATH.set(file.getAbsolutePath)
   }
 
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")

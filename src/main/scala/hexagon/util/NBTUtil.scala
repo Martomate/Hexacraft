@@ -1,9 +1,10 @@
 package hexagon.util
 
 import java.io.File
-
-import org.jnbt._
 import java.io.FileOutputStream
+
+import com.flowpowered.nbt._
+import com.flowpowered.nbt.stream.NBTOutputStream
 
 import scala.collection.mutable
 
@@ -58,11 +59,11 @@ object NBTUtil {
     }
   }
   
-  def getTag(tag: CompoundTag, name: String): Option[Tag] = {
+  def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
     if (tag == null) None
     else {
       tag.getValue.get(name) match {
-        case t: Tag => Some(t)
+        case t: Tag[_] => Some(t)
         case _ => None
       }
     }
@@ -82,13 +83,13 @@ object NBTUtil {
     NBTUtil.getTag(tag, name).map(_.asInstanceOf[ByteArrayTag].getValue)
   }
 
-  def makeCompoundTag(name: String, children: Seq[Tag]): CompoundTag = {
-    val map = new java.util.HashMap[String, Tag]()
-    for (tag <- children) map.put(tag.getName, tag)
+  def makeCompoundTag(name: String, children: Seq[Tag[_]]): CompoundTag = {
+    val map = new CompoundMap()
+    for (tag <- children) map.put(tag)
     new CompoundTag(name, map)
   }
   
-  def saveTag(tag: Tag, nbtFile: File): Unit = {
+  def saveTag(tag: Tag[_], nbtFile: File): Unit = {
     new Thread(() => {
       if (!nbtFile.exists()) {
         nbtFile.getParentFile.mkdirs()
