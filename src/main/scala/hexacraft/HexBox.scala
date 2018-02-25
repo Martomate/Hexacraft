@@ -26,9 +26,9 @@ object HexBox {
   
   def collides(box1: HexBox, pos1: SkewCylCoords, box2: HexBox, pos2: CylCoords): Boolean = {
     val (bc, fc) = CoordUtils.toBlockCoords(pos2.toBlockCoord)
-    val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, pos1.world, false).toSkewCylCoord
+    val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, pos1.cylSize, false).toSkewCylCoord
     
-    box1.distanceToCollision(pos1, new SkewCylCoords(0, 0, 0, pos1.world), box2, skewCoord)._1 == 0
+    box1.distanceToCollision(pos1, new SkewCylCoords(0, 0, 0, pos1.cylSize), box2, skewCoord)._1 == 0
   }
 }
 
@@ -50,20 +50,20 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   
   private def _collides(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
-      val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, world, false).toBlockCoord)
-      val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, world, false).toSkewCylCoord
-      val skewVelocity = new CylCoords(velocity.x, velocity.y, velocity.z, world, false).toSkewCylCoord
+      val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, world.size, false).toBlockCoord)
+      val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, world.size, false).toSkewCylCoord
+      val skewVelocity = new CylCoords(velocity.x, velocity.y, velocity.z, world.size, false).toSkewCylCoord
       var maxDistTuple: (Double, Int) = (1d, -1)
       for (y <- math.floor((skewCoord.y + bottom) * 2).toInt to math.floor((skewCoord.y + top) * 2).toInt) {
         for (x <- -1 to 1) {
           for (z <- -1 to 1) {
             if (x * z != 1) {// corners
-              val coords = BlockRelWorld(bc.x + x, y, bc.z + z, world)
+              val coords = BlockRelWorld(bc.x + x, y, bc.z + z, world.size)
               world.getChunk(coords.getChunkRelWorld) match {
                 case Some(chunk) =>
                   val blockState = chunk.getBlock(coords.getBlockRelChunk)
                   blockState.map(_.blockType).foreach(blockType => {
-                    val dist = distanceToCollision(skewCoord, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world, false).toSkewCylCoord)
+                    val dist = distanceToCollision(skewCoord, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world.size, false).toSkewCylCoord)
                     if (dist._1 < maxDistTuple._1) {
                       maxDistTuple = dist
                     }

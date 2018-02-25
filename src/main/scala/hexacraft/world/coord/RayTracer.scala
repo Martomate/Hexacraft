@@ -98,7 +98,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
         val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
         if (distance <= maxDistance * CoordUtils.y60) {
           val offsets = BlockState.neighborOffsets(side)
-          val hitBlockCoords = BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3, world)
+          val hitBlockCoords = BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3, world.size)
           if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
             val hoverSide = if (side < 2) 1 - side else (side + 1) % 6 + 2 // (side - 2 + 3) % 6 + 2
             Some(hitBlockCoords, Some(hoverSide))

@@ -39,8 +39,8 @@ class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float,
     position.x = x
     position.y = y
     position.z = z
-    position.z %= world.circumference
-    if (position.z < 0) position.z += world.circumference
+    position.z %= world.size.circumference
+    if (position.z < 0) position.z += world.size.circumference
   }
   
   def setPositionAndRotation(player: Player): Unit = {
@@ -52,8 +52,8 @@ class Camera(var fov: Float, var aspect: Float, val near: Float, val far: Float,
     position.x += x
     position.y += y
     position.z += z
-    position.z %= world.circumference
-    if (position.z < 0) position.z += world.circumference
+    position.z %= world.size.circumference
+    if (position.z < 0) position.z += world.size.circumference
   }
   
   def setRotation(vec: Vector3f): Unit = setRotation(vec.x, vec.y, vec.z)

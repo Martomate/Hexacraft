@@ -3,7 +3,8 @@ package hexacraft.block
 import hexacraft.world.coord.BlockRelWorld
 import hexacraft.world.coord.CylCoords
 import hexacraft.world.coord.BlockRelChunk
-import hexacraft.world.storage.Chunk
+import hexacraft.world.storage.{Chunk, World}
+
 import scala.collection.Seq
 
 object BlockState {
@@ -38,14 +39,14 @@ object BlockState {
   }
 }
 
-class BlockState(val coords: BlockRelWorld, val blockType: Block, val metadata: Byte = 0) {
+class BlockState(val coords: BlockRelWorld, val world: World, val blockType: Block, val metadata: Byte = 0) {
   def neighbor(side: Int, chunk: Chunk): Option[BlockState] = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      chunk.getBlock(BlockRelChunk(i2, j2, k2, coords.world))
+      chunk.getBlock(BlockRelChunk(i2, j2, k2, coords.cylSize))
     } else {
-      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coords.world))
+      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coords.cylSize))
     }
   }
 }
