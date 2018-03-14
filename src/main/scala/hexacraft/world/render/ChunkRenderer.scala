@@ -25,7 +25,7 @@ class ChunkRenderer(chunk: Chunk) {
     for (b <- blocks) {
       val c = b.coords.getBlockRelChunk
       for (s <- BlockState.neighborOffsets.indices) {
-        if (b.neighbor(s, chunk).forall(bs => bs.blockType.isTransparent(bs, if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2))) {
+        if (b.neighbor(s, chunk).forall(bs => bs.blockType.isTransparent(bs, oppositeSide(s)))) {
           sidesToRender(s)(c.value) = true
           sidesCount(s) += 1
           if (s > 1 && b.blockType.isTransparent(b, s)) {
@@ -35,14 +35,23 @@ class ChunkRenderer(chunk: Chunk) {
         }
       }
     }
-    for (side <- 0 until 8) blockRenderers.updateContent(side, sidesCount(side), buf => {
-      for (block <- blocks) {
-        if (sidesToRender(side)(block.coords.getBlockRelChunk.value)) {
-          Seq(block.coords.x, block.coords.y, block.coords.z, block.blockType.blockTex(side)).foreach(buf.putInt)
-          buf.putFloat(block.blockType.blockHeight(block))
+    for (side <- 0 until 8) {
+      blockRenderers.updateContent(side, sidesCount(side), buf => {
+        for (block <- blocks) {
+          if (sidesToRender(side)(block.coords.getBlockRelChunk.value)) {
+            buf.putInt(block.coords.x)
+            buf.putInt(block.coords.y)
+            buf.putInt(block.coords.z)
+            buf.putInt(block.blockType.blockTex(side))
+            buf.putFloat(block.blockType.blockHeight(block))
+          }
         }
-      }
-    })
+      })
+    }
+  }
+
+  private def oppositeSide(s: Int) = {
+    if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2
   }
 
   def renderBlockSide(side: Int): Unit = blockRenderers.renderBlockSide(side)

@@ -84,16 +84,13 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
     this
   }
 
-  def fillFloats(start: Int, content: Seq[Float]): VBO = {
-    val buf = BufferUtils.createByteBuffer(content.size * 4)
-    content.foreach(buf.putFloat)
-    buf.flip()
-    fill(start, buf)
-  }
+  def fillFloats(start: Int, content: Seq[Float]): VBO = fillWith(start, content, 4, _.putFloat)
 
-  def fillInts(start: Int, content: Seq[Int]): VBO = {
-    val buf = BufferUtils.createByteBuffer(content.size * 4)
-    content.foreach(buf.putInt)
+  def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
+
+  private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
+    val buf = BufferUtils.createByteBuffer(content.size * tSize)
+    content.foreach(howToFill(buf))
     buf.flip()
     fill(start, buf)
   }

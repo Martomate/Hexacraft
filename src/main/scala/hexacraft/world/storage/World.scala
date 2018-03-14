@@ -23,6 +23,12 @@ object World {
   val ticksBetweenColumnLoading = 5
 }
 
+trait ReadableWorld {
+  def getColumn(coords: ColumnRelWorld): Option[ChunkColumn]
+  def getChunk(coords: ChunkRelWorld): Option[Chunk]
+  def getBlock(coords: BlockRelWorld): Option[BlockState]
+}
+
 class World(val saveDir: File, worldSettings: WorldSettings) {
   /* blockStorage
    * other world contents
@@ -40,14 +46,12 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
       val nbt = stream.readTag().asInstanceOf[CompoundTag]
       stream.close()
       nbt
-    }
-    else {
+    } else {
       new CompoundTag("world", new CompoundMap())
     }
   }
 
   private val generalSettings: CompoundTag = nbtData.getValue.get("general").asInstanceOf[CompoundTag]
-  private val worldGenSettings: CompoundTag = nbtData.getValue.get("gen").asInstanceOf[CompoundTag]
 
   val worldName: String = NBTUtil.getString(generalSettings, "worldName", worldSettings.name.getOrElse(saveDir.getName))
   val size: CylinderSize = new CylinderSize(NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7)))
@@ -57,13 +61,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
   val columnsAtEdge: MutableSet[ColumnRelWorld] = MutableSet.empty[ColumnRelWorld]
 
-  private val randomGenSeed = NBTUtil.getLong(worldGenSettings, "seed", worldSettings.seed.getOrElse(new Random().nextLong))
-  private val random = new Random(randomGenSeed)
-  private[storage] val blockGenerator                = new NoiseGenerator4D(random, 8, NBTUtil.getDouble(worldGenSettings, "blockGenScale", 0.1))
-  private[storage] val heightMapGenerator            = new NoiseGenerator3D(random, 8, NBTUtil.getDouble(worldGenSettings, "heightMapGenScale", 0.02))
-  private[storage] val blockDensityGenerator         = new NoiseGenerator4D(random, 4, NBTUtil.getDouble(worldGenSettings, "blockDensityGenScale", 0.01))
-  private[storage] val biomeHeightGenerator          = new NoiseGenerator3D(random, 4, NBTUtil.getDouble(worldGenSettings, "biomeHeightMapGenScale", 0.002))
-  private[storage] val biomeHeightVariationGenerator = new NoiseGenerator3D(random, 4, NBTUtil.getDouble(worldGenSettings, "biomeHeightVariationGenScale", 0.002))
+  val worldGenerator = new WorldGenerator(nbtData.getValue.get("gen").asInstanceOf[CompoundTag], worldSettings)
 
   private var loadColumnsCountdown = 0
 
@@ -116,7 +114,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
   def tick(camera: Camera): Unit = {
     chunkLoadingOrigin = CylCoords(player.position.x, player.position.y, player.position.z, size)
-    val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.invViewMatr)
+    val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.view.invMatrix)
     chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z)// new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
 
     if (loadColumnsCountdown == 0) {
@@ -223,14 +221,7 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
         new ByteTag("worldSize", size.worldSize.toByte),
         new StringTag("name", worldName)
       )),
-      NBTUtil.makeCompoundTag("gen", Seq(
-        new LongTag("seed", randomGenSeed),
-        new DoubleTag("blockGenScale", blockGenerator.scale),
-        new DoubleTag("heightMapGenScale", heightMapGenerator.scale),
-        new DoubleTag("blockDensityGenScale", blockDensityGenerator.scale),
-        new DoubleTag("biomeHeightGenScale", biomeHeightGenerator.scale),
-        new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenerator.scale)
-      )),
+      worldGenerator.saveInTag(),
       player.toNBT
     ))
 

@@ -3,10 +3,18 @@ package hexacraft.world.coord
 import hexacraft.world.storage.CylinderSize
 import org.joml.Vector2d
 
+abstract class AbstractIntegerCoord[T](val value: T) {
+  override def equals(o: Any): Boolean = o match {
+    case c: AbstractIntegerCoord[T] => c.value == value
+    case _ => false
+  }
+}
+
 object BlockRelChunk {
   def apply(x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelChunk = BlockRelChunk((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf), cylSize)
+  def offset(c: BlockRelChunk, x: Int, y: Int, z: Int): BlockRelChunk = apply(c.cx + x, c.cy + y, c.cz + z, c.cylSize)
 }
-case class BlockRelChunk(value: Int, cylSize: CylinderSize) { // xyz
+case class BlockRelChunk(_value: Int, cylSize: CylinderSize) extends AbstractIntegerCoord(_value) { // xyz
 
   def withChunk(chunk: ChunkRelColumn) = BlockRelColumn(chunk.value << 12 | value, cylSize)
   def withChunk(chunk: ChunkRelWorld) = BlockRelWorld(chunk.value << 12 | value, cylSize)
@@ -19,7 +27,7 @@ case class BlockRelChunk(value: Int, cylSize: CylinderSize) { // xyz
 object BlockRelColumn {
   def apply(Y: Int, x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelColumn = BlockRelColumn((Y & 0xfff) << 12 | ((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)), cylSize)
 }
-case class BlockRelColumn(value: Int, cylSize: CylinderSize) { // YYYxyz
+case class BlockRelColumn(_value: Int, cylSize: CylinderSize) extends AbstractIntegerCoord(_value) { // YYYxyz
   def withColumn(column: ColumnRelWorld) = BlockRelWorld(column.value << 24L | value, cylSize)
 
   def getBlockRelChunk = BlockRelChunk(value & 0xfff, cylSize)
@@ -42,7 +50,7 @@ object BlockRelWorld {
     BlockRelWorld((X & 0xfffff) << 44L | (Z & cylSize.ringSizeMask) << 24 | (Y & 0xfff) << 12 | (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf), cylSize)
   def apply(x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelWorld = BlockRelWorld(x >> 4, y >> 4, z >> 4, x & 15, y & 15, z & 15, cylSize)
 }
-case class BlockRelWorld(value: Long, cylSize: CylinderSize) { // XXXXXZZZZZYYYxyz
+case class BlockRelWorld(_value: Long, cylSize: CylinderSize) extends AbstractIntegerCoord(_value) { // XXXXXZZZZZYYYxyz
   def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt, cylSize)
   def getBlockRelColumn = BlockRelColumn((value & 0xffffff).toInt, cylSize)
   def getChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt, cylSize)
@@ -66,8 +74,9 @@ case class BlockRelWorld(value: Long, cylSize: CylinderSize) { // XXXXXZZZZZYYYx
 
 object ChunkRelWorld {
   def apply(X: Long, Y: Int, Z: Int, cylSize: CylinderSize): ChunkRelWorld = ChunkRelWorld((X & 0xfffff) << 32 | (Z & cylSize.ringSizeMask) << 12 | (Y & 0xfff), cylSize)
+  def offset(c: ChunkRelWorld, x: Int, y: Int, z: Int): ChunkRelWorld = apply(c.X + x, c.Y + y, c.Z + z, c.cylSize)
 }
-case class ChunkRelWorld(value: Long, cylSize: CylinderSize) { // XXXXXZZZZZYYY
+case class ChunkRelWorld(_value: Long, cylSize: CylinderSize) extends AbstractIntegerCoord(_value) { // XXXXXZZZZZYYY
   def getChunkRelColumn = ChunkRelColumn((value & 0xfff).toInt, cylSize)
   def getColumnRelWorld = ColumnRelWorld(value >>> 12, cylSize)
 
@@ -79,7 +88,7 @@ case class ChunkRelWorld(value: Long, cylSize: CylinderSize) { // XXXXXZZZZZYYY
 object ColumnRelWorld {
   def apply(X: Long, Z: Int, cylSize: CylinderSize): ColumnRelWorld = ColumnRelWorld((X & 0xfffff) << 20 | (Z & cylSize.ringSizeMask), cylSize)
 }
-case class ColumnRelWorld(value: Long, cylSize: CylinderSize) { // XXXXXZZZZZ
+case class ColumnRelWorld(_value: Long, cylSize: CylinderSize) extends AbstractIntegerCoord(_value) { // XXXXXZZZZZ
   def X: Int = (value >> 8).toInt >> 12
   def Z: Int = (value << 12).toInt >> 12
 

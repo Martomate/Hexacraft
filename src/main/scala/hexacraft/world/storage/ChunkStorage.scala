@@ -3,12 +3,12 @@ package hexacraft.world.storage
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import hexacraft.block.{Block, BlockState}
 import hexacraft.util.{DefaultArray, NBTUtil}
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 trait ChunkStorage {
-  def blockType(coord: BlockRelChunk): Block
+  def blockType(coords: BlockRelChunk): Block
 
-  def getBlock(coord: BlockRelChunk): Option[BlockState]
+  def getBlock(coords: BlockRelChunk): Option[BlockState]
   def setBlock(block: BlockState): Unit
   def removeBlock(coords: BlockRelChunk): Unit
 
@@ -23,15 +23,15 @@ trait ChunkStorage {
   def toNBT: Seq[Tag[_]]
 }
 
-class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
+class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   private val blockTypes = new Array[Byte](16 * 16 * 16)
   private val metadata = new Array[Byte](16 * 16 * 16)
   private var _numBlocks = 0
 
-  def blockType(coord: BlockRelChunk): Block = Block.byId(blockTypes(coord.value))
-  def getBlock(coord: BlockRelChunk): Option[BlockState] = {
-    val _type = blockTypes(coord.value)
-    if (_type != 0) Some(new BlockState(coord.withChunk(chunk.coords), chunk.world, Block.byId(_type), metadata(coord.value))) else None
+  def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
+  def getBlock(coords: BlockRelChunk): Option[BlockState] = {
+    val _type = blockTypes(coords.value)
+    if (_type != 0) Some(new BlockState(coords.withChunk(chunkCoords), Block.byId(_type), metadata(coords.value))) else None
   }
   def setBlock(block: BlockState): Unit = {
     val idx = block.coords.getBlockRelChunk.value
@@ -45,12 +45,12 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
     blockTypes(coords.value) = 0
   }
   def allBlocks: Seq[BlockState] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i => 
-    new BlockState(BlockRelChunk(i, chunk.world.size).withChunk(chunk.coords), chunk.world, Block.byId(blockTypes(i)), metadata(i)))
+    new BlockState(BlockRelChunk(i, chunkCoords.cylSize).withChunk(chunkCoords), Block.byId(blockTypes(i)), metadata(i)))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
   def toDense: DenseChunkStorage = this
   def toSparse: SparseChunkStorage = {
-    val sparse = new SparseChunkStorage(chunk)
+    val sparse = new SparseChunkStorage(chunkCoords)
     for (b <- allBlocks) sparse.setBlock(b)
     sparse
   }
@@ -75,18 +75,21 @@ class DenseChunkStorage(chunk: Chunk) extends ChunkStorage {
   }
 }
 
-class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
+class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   private val blocks = scala.collection.mutable.Map.empty[Short, BlockState]
 
-  def blockType(coord: BlockRelChunk): Block = blocks.get(coord.value.toShort).map(_.blockType).getOrElse(Block.Air)
-  def getBlock(coord: BlockRelChunk): Option[BlockState] = blocks.get(coord.value.toShort)
-  def setBlock(block: BlockState): Unit = blocks(block.coords.getBlockRelChunk.value.toShort) = block
+  def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Block.Air)
+  def getBlock(coords: BlockRelChunk): Option[BlockState] = blocks.get(coords.value.toShort)
+  def setBlock(block: BlockState): Unit = {
+    if (block.blockType != Block.Air) blocks(block.coords.getBlockRelChunk.value.toShort) = block
+    else removeBlock(block.coords.getBlockRelChunk)
+  }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
   def allBlocks: Seq[BlockState] = blocks.values.toSeq
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
   def toDense: DenseChunkStorage = {
-    val dense = new DenseChunkStorage(chunk)
+    val dense = new DenseChunkStorage(chunkCoords)
     for (b <- blocks) dense.setBlock(b._2)
     dense
   }
@@ -98,7 +101,7 @@ class SparseChunkStorage(chunk: Chunk) extends ChunkStorage {
 
     for (i <- blocks.indices) {
       if (blocks(i) != 0) {
-        setBlock(new BlockState(BlockRelWorld(i, chunk.world.size), chunk.world, Block.byId(blocks(i)), meta(i)))
+        setBlock(new BlockState(BlockRelWorld(i, chunkCoords.cylSize), Block.byId(blocks(i)), meta(i)))
 //        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }

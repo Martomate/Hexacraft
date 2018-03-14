@@ -39,7 +39,7 @@ object BlockState {
   }
 }
 
-class BlockState(val coords: BlockRelWorld, val world: World, val blockType: Block, val metadata: Byte = 0) {
+case class BlockState(coords: BlockRelWorld, blockType: Block, metadata: Byte = 0) {
   def neighbor(side: Int, chunk: Chunk): Option[BlockState] = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)

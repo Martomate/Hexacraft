@@ -25,9 +25,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   private[storage] val heightMap = {
     val interp = new NoiseInterpolator2D(4, 4, (i, j) => {
       val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world.size).toCylCoord
-      val height = world.biomeHeightGenerator.genNoiseFromCylXZ(c)
-      val heightVariation = world.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
-      world.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
+      val height = world.worldGenerator.biomeHeightGenerator.genNoiseFromCylXZ(c)
+      val heightVariation = world.worldGenerator.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
+      world.worldGenerator.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
     })
     
     for (x <- 0 until 16) yield {
