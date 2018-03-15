@@ -1,6 +1,8 @@
 package fontMeshCreator;
 
 import java.io.File;
+import java.net.URL;
+import java.nio.file.Path;
 
 /**
  * Represents a font. It holds the font's texture atlas as well as having the
@@ -24,7 +26,7 @@ public class FontType {
 	 *            - the font file containing information about each character in
 	 *            the texture atlas.
 	 */
-	public FontType(int textureAtlas, File fontFile) {
+	public FontType(int textureAtlas, URL fontFile) {
 		this.textureAtlas = textureAtlas;
 		this.loader = new TextMeshCreator(fontFile);
 	}

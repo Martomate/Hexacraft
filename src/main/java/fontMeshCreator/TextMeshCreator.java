@@ -1,6 +1,8 @@
 package fontMeshCreator;
 
 import java.io.File;
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,14 +14,13 @@ public class TextMeshCreator {
 
 	private MetaFile metaData;
 
-	protected TextMeshCreator(File metaFile) {
+	protected TextMeshCreator(URL metaFile) {
 		metaData = new MetaFile(metaFile);
 	}
 
 	protected TextMeshData createTextMesh(GUIText text) {
 		List<Line> lines = createStructure(text);
-		TextMeshData data = createQuadVertices(text, lines);
-		return data;
+		return createQuadVertices(text, lines);
 	}
 
 	private List<Line> createStructure(GUIText text) {
