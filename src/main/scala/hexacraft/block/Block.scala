@@ -2,6 +2,7 @@ package hexacraft.block
 
 import hexacraft.HexBox
 import hexacraft.world.coord.BlockRelWorld
+import hexacraft.world.storage.World
 
 object Block {
   private val maxBlocks = 256
@@ -23,7 +24,7 @@ object Block {
 class Block(val id: Byte, val name: String, val displayName: String) {
   Block.blocks(id) = this
   
-  protected val texture = new BlockTexture(name)
+  protected lazy val texture = new BlockTexture(name)
   def bounds(blockState: BlockState) = new HexBox(0.5f, 0, 0.5f * blockHeight(blockState))
   
   def blockTex(side: Int): Int = texture.indices(side)
@@ -33,8 +34,8 @@ class Block(val id: Byte, val name: String, val displayName: String) {
 
   def blockHeight(blockState: BlockState): Float = 1.0f
 
-  final def doUpdate(bs: BlockState): Unit = onUpdated(bs)
-  protected def onUpdated(bs: BlockState): Unit = ()
+  final def doUpdate(bs: BlockState, world: World): Unit = onUpdated(bs, world)
+  protected def onUpdated(bs: BlockState, world: World): Unit = ()
 }
 
 object BlockAir extends Block(0, "air", "Air") {
@@ -43,11 +44,10 @@ object BlockAir extends Block(0, "air", "Air") {
 }
 
 class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
-  override def onUpdated(bs: BlockState): Unit = {
+  override def onUpdated(bs: BlockState, world: World): Unit = {
     val coords = bs.coords
-    val world = coords.world
     var depth: Int = bs.metadata & 0x1f
-    val blocks = BlockState.neighborOffsets.map(off => BlockRelWorld(coords.x + off._1, coords.y + off._2, coords.z + off._3, world))
+    val blocks = BlockState.neighborOffsets.map(off => BlockRelWorld(coords.x + off._1, coords.y + off._2, coords.z + off._3, world.size))
     val bottomCoords = blocks.find(_.y == coords.y - 1).get
     val bottomBS = world.getBlock(bottomCoords)
     if (!bottomBS.exists(_.blockType != Block.Air)) {
@@ -60,7 +60,7 @@ class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_
     } else {
       blocks.filter(_.y == coords.y).map(c => world.getBlock(c).getOrElse(new BlockState(c, Block.Air))).foreach(ns => {
         if (ns.blockType == Block.Air) {
-          val belowNeighborBlock = world.getBlock(BlockRelWorld(ns.coords.x, ns.coords.y - 1, ns.coords.z, world))
+          val belowNeighborBlock = world.getBlock(BlockRelWorld(ns.coords.x, ns.coords.y - 1, ns.coords.z, world.size))
           val belowNeighbor = belowNeighborBlock.map(_.blockType).getOrElse(Block.Air)
           if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Block.Air || (belowNeighbor == this && belowNeighborBlock.get.metadata != 0)))) {
             world.setBlock(new BlockState(ns.coords, this, 0x1e.toByte))

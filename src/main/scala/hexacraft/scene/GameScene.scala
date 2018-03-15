@@ -13,7 +13,7 @@ import hexacraft.world.WorldSettings
 import hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.storage.World
-import hexacraft.{Camera, HexBox, Main}
+import hexacraft._
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
@@ -40,7 +40,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   val world = new World(saveFolder, worldSettings)
   val worldRenderer = new WorldRenderer(world)
 
-  val camera = new Camera(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f, world)
+  val camera = new Camera(new CameraProjection(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f), world.size)
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(world.player)
 
@@ -73,11 +73,11 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     camera.setProjMatrix(guiBlockSideShader)
     camera.setProjMatrix(selectedBlockShader)
 
-    blockShader.setUniform1f("totalSize", world.totalSize)
-    blockSideShader.setUniform1f("totalSize", world.totalSize)
-    selectedBlockShader.setUniform1f("totalSize", world.totalSize)
+    blockShader.setUniform1f("totalSize", world.size.totalSize)
+    blockSideShader.setUniform1f("totalSize", world.size.totalSize)
+    selectedBlockShader.setUniform1f("totalSize", world.size.totalSize)
 
-    skyShader.setUniformMat4("invProjMatr", camera.invProjMatr)
+    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
     Shader.foreach(_.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y))
   }
@@ -151,7 +151,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   }
 
   override def windowResized(width: Int, height: Int): Unit = {
-    camera.aspect = width.toFloat / height
+    camera.proj.aspect = width.toFloat / height
     camera.updateProjMatrix()
 
     camera.setProjMatrix(blockShader)
@@ -160,7 +160,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     camera.setProjMatrix(guiBlockSideShader)
     camera.setProjMatrix(selectedBlockShader)
 
-    skyShader.setUniformMat4("invProjMatr", camera.invProjMatr)
+    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
   }
   
   override def windowTitle: String = ""
@@ -188,7 +188,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     camera.updateUniforms(blockShader)
     camera.updateUniforms(blockSideShader)
     camera.updateUniforms(selectedBlockShader)
-    skyShader.setUniformMat4("invViewMatr", camera.invViewMatr)
+    skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
     skyShader.setUniform3f("sun", 0, 1, -1)
     blockShader.setUniform3f("sun", 0, 1, -1)
     blockSideShader.setUniform3f("sun", 0, 1, -1)
@@ -206,9 +206,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
             val coords = coords1.offset(offset._1, offset._2, offset._3)
             if (world.getBlock(coords).isEmpty) {
               val blockType = playerInputHandler.player.blockInHand
-              val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world).toSkewCylCoord
+              val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoord
               val state = new BlockState(coords, blockType)
-              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world))) {
+              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
                 world.setBlock(state)
               }
             }
