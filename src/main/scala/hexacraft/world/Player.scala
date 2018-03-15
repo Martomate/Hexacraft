@@ -22,7 +22,7 @@ class Player(val world: World) {
   {
     val startX = (math.random * 100 - 50).toInt
     val startZ = (math.random * 100 - 50).toInt
-    val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ, world).toCylCoord
+    val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ, world.size).toCylCoord
     position.set(startCoords.x, startCoords.y - bounds.bottom + 2, startCoords.z)
   }
   

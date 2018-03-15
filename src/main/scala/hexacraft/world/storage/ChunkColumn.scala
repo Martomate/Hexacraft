@@ -24,10 +24,10 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
 
   private[storage] val heightMap = {
     val interp = new NoiseInterpolator2D(4, 4, (i, j) => {
-      val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world).toCylCoord
-      val height = world.biomeHeightGenerator.genNoiseFromCylXZ(c)
-      val heightVariation = world.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
-      world.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
+      val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world.size).toCylCoord
+      val height = world.worldGenerator.biomeHeightGenerator.genNoiseFromCylXZ(c)
+      val heightVariation = world.worldGenerator.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
+      world.worldGenerator.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
     })
     
     for (x <- 0 until 16) yield {
@@ -55,9 +55,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
     }
     
     def newTopOrBottom(now: Int, dir: Int): Int = {
-      val bottomChunk = ChunkRelColumn(now & 0xfff, world)
+      val bottomChunk = ChunkRelColumn(now & 0xfff, world.size)
       if (inSight(bottomChunk)) {
-        val below = ChunkRelColumn((now + dir) & 0xfff, world)
+        val below = ChunkRelColumn((now + dir) & 0xfff, world.size)
         if (inSight(below)) world.addChunkToLoadingQueue(below.withColumn(coords))
         now
       } else {
@@ -73,8 +73,8 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         
         if (newTop != top || newBottom != bottom) topAndBottomChunks = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
-        val ground = ChunkRelColumn((heightMap(8)(8) >> 4) & 0xfff, world)
-        val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, world)
+        val ground = ChunkRelColumn((heightMap(8)(8) >> 4) & 0xfff, world.size)
+        val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, world.size)
         
         if (inSight(first)) world.addChunkToLoadingQueue(first.withColumn(coords))
     }

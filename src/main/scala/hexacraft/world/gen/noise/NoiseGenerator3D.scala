@@ -19,7 +19,7 @@ class NoiseGenerator3D(random: Random, val numOctaves: Int, val scale: Double) {
   }
 
   def genNoiseFromCylXZ(c: CylCoords): Double = {
-    val angle = c.z / c.world.radius
-    genNoise(c.x, math.sin(angle) * c.world.radius, math.cos(angle) * c.world.radius)
+    val angle = c.z / c.cylSize.radius
+    genNoise(c.x, math.sin(angle) * c.cylSize.radius, math.cos(angle) * c.cylSize.radius)
   }
 }

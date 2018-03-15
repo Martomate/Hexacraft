@@ -25,54 +25,27 @@ object Chunk {
 }
 
 class Chunk(val coords: ChunkRelWorld, val world: World) {
-  /* block information arrays
-   * methods for updating blocks
-   */
-  
   val neighbors: Array[Option[Chunk]] = Array.tabulate(8)(i => {
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
-    val c2 = ChunkRelWorld(coords.X + dx, coords.Y + dy, coords.Z + dz, world)
-    world.getChunk(c2) match {
-      case Some(chunk) =>
-        chunk.neighbors((i + 4) % 8) = Some(this)
-        chunk.requestRenderUpdate()
-        Some(chunk)
-      case None => None
-    }
+    val c2 = ChunkRelWorld.offset(coords, dx, dy, dz)
+    val chunkOpt = Option(world).flatMap(_.getChunk(c2))
+    chunkOpt.foreach(chunk => {
+      chunk.neighbors((i + 4) % 8) = Some(this)
+      chunk.requestRenderUpdate()
+    })
+    chunkOpt
   })
 
-  private var storage: ChunkStorage = new DenseChunkStorage(this)
+  private val generator = new ChunkGenerator(this)
+  private val chunkData = generator.loadData()
+
+  private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
 
   private val needsBlockUpdate = mutable.TreeSet.empty[Long]
 
-  {
-    val file = new File(world.saveDir, "chunks/" + coords.value + ".dat")
-    if (file.isFile) {
-      val stream = new NBTInputStream(new FileInputStream(file))
-      val nbt = stream.readTag().asInstanceOf[CompoundTag]
-      stream.close()
-      storage.fromNBT(nbt)
-    } else {
-      val column = world.getColumn(coords.getColumnRelWorld).get
-      
-      val noiseInterp = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => {
-        val c = BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, world).toCylCoord
-        world.blockGenerator.genNoiseFromCyl(c) + world.blockDensityGenerator.genNoiseFromCyl(c) * 0.4
-      })
-  
-      for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
-        val noise = noiseInterp(i, j, k)
-        val yToGo = coords.Y * 16 + j - column.heightMap(i)(k)
-        val limit = if (yToGo < -6) -0.4 else if (yToGo < 0) -0.4 - (6 + yToGo) * 0.025 else 4
-        if (noise > limit) storage.setBlock(new BlockState(BlockRelChunk(i, j, k, world).withChunk(coords),
-                      if (yToGo < -5) Block.Stone else if (yToGo < -1) Block.Dirt else Block.Grass))
-      }
-    }
-  }
-
   private var needsRenderingUpdate = true
-  private var _renderer: Option[ChunkRenderer] = Some(new ChunkRenderer(this))
+  private var _renderer: Option[ChunkRenderer] = None
   def renderer: Option[ChunkRenderer] = _renderer
   doRenderUpdate()
 
@@ -97,15 +70,25 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   }
 
   private def onBlockModified(coords: BlockRelChunk): Unit = {
+    def affectableChunkOffset(where: Byte): Int = if (where == 0) -1 else if (where == 15) 1 else 0
+
+    def isInNeighborChunk(chunkOffset: (Int, Int, Int)) = {
+      val xx = affectableChunkOffset(coords.cx)
+      val yy = affectableChunkOffset(coords.cy)
+      val zz = affectableChunkOffset(coords.cz)
+
+      chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
+    }
+
+    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = BlockRelChunk.offset(c, off._1, off._2, off._3)
+
+
     requestRenderUpdate()
-    val xx = if (coords.cx == 0) -1 else if (coords.cx == 15) 1 else 0
-    val yy = if (coords.cy == 0) -1 else if (coords.cy == 15) 1 else 0
-    val zz = if (coords.cz == 0) -1 else if (coords.cz == 15) 1 else 0
 
     for (i <- 0 until 8) {
       val off = Chunk.neighborOffsets(i)
-      val c2 = BlockRelChunk((coords.cx + off._1 + 16) % 16, (coords.cy + off._2 + 16) % 16, (coords.cz + off._3 + 16) % 16, world)
-      if (off._1 * xx == 1 || off._2 * yy == 1 || off._3 * zz == 1) {
+      val c2 = offsetCoords(coords, off)
+      if (isInNeighborChunk(off)) {
         neighbors(i).foreach(n => {
           n.requestRenderUpdate()
           n.requestBlockUpdate(c2)
@@ -128,7 +111,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def doBlockUpdate(coords: BlockRelChunk): Unit = {
     if (needsBlockUpdate(coords.value)) {
       needsBlockUpdate(coords.value) = false
-      getBlock(coords).foreach(b => b.blockType.doUpdate(b))
+      getBlock(coords).foreach(b => b.blockType.doUpdate(b, world))
     }
   }
   
@@ -157,15 +140,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   }
 
   def tick(): Unit = {
-    if (storage.isDense) {
-      if (storage.numBlocks < 48) {
-        storage = storage.toSparse
-      }
-    } else {
-      if (storage.numBlocks > 64) {
-        storage = storage.toDense
-      }
-    }
+    chunkData.optimizeStorage()
   }
 
   def isEmpty: Boolean = {
