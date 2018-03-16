@@ -104,39 +104,38 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
 
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4, size)
-    getColumn(coords).getOrElse {
-      val col = new ChunkColumn(coords, this)
-      columns(coords.value) = col
-      columnsAtEdge += coords
-      col
-    }.heightMap(x & 15)(z & 15)
+    ensureColumnExists(coords)
+    getColumn(coords).get.heightMap(x & 15)(z & 15)
   }
 
   def tick(camera: Camera): Unit = {
+    setChunkLoadingCenterAndDirection(camera)
+
+    loadChunkColumns()
+
+    loadChunks()
+
+    performChunkRenderUpdates()
+
+    columns.values.foreach(_.tick())
+  }
+
+  private def setChunkLoadingCenterAndDirection(camera: Camera) = {
     chunkLoadingOrigin = CylCoords(player.position.x, player.position.y, player.position.z, size)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.view.invMatrix)
-    chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z)// new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
+    chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
+  }
 
-    if (loadColumnsCountdown == 0) {
-      loadColumnsCountdown = World.ticksBetweenColumnLoading
-
-      // TODO: this is a temporary placement
-      val blocksToUpdateLen = blocksToUpdate.size
-      for (_ <- 0 until blocksToUpdateLen) {
-        val c = blocksToUpdate.dequeue()
-        getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
+  private def performChunkRenderUpdates(): Unit = {
+    for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
+      if (chunkRenderUpdateQueue.nonEmpty) {
+        val chunk = chunkRenderUpdateQueue.dequeue()._2
+        getChunk(chunk).foreach(_.doRenderUpdate())
       }
-
-      val rDistSq = (renderDistance * 16) * (renderDistance * 16)
-
-      //      chunksToLoad.enqueue(chunksToLoad.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
-      chunksToLoad.clear()
-      chunkRenderUpdateQueue.enqueue(chunkRenderUpdateQueue.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
-
-      updateLoadedColumns()
-      columns.values.foreach(_.updateLoadedChunks())
     }
-    loadColumnsCountdown -= 1
+  }
+
+  private def loadChunks(): Unit = {
     for (_ <- 1 to World.chunksLoadedPerTick) {
       if (chunksToLoad.nonEmpty) {
         val chunkToLoad = chunksToLoad.dequeue()._2
@@ -157,15 +156,37 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
         })
       }
     }
+  }
 
-    for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
-      if (chunkRenderUpdateQueue.nonEmpty) {
-        val chunk = chunkRenderUpdateQueue.dequeue()._2
-        getChunk(chunk).foreach(_.doRenderUpdate())
-      }
+  private def loadChunkColumns(): Unit = {
+    if (loadColumnsCountdown == 0) {
+      loadColumnsCountdown = World.ticksBetweenColumnLoading
+
+      // TODO: this is a temporary placement
+      performBlockUpdates()
+
+      filterChunkRenderUpdateQueue()
+
+      updateLoadedColumns()
+      columns.values.foreach(_.updateLoadedChunks())
     }
+    loadColumnsCountdown -= 1
+  }
 
-    columns.values.foreach(_.tick())
+  private def filterChunkRenderUpdateQueue(): Unit = {
+    val rDistSq = (renderDistance * 16) * (renderDistance * 16)
+
+    //      chunksToLoad.enqueue(chunksToLoad.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
+    chunksToLoad.clear()
+    chunkRenderUpdateQueue.enqueue(chunkRenderUpdateQueue.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
+  }
+
+  private def performBlockUpdates(): Unit = {
+    val blocksToUpdateLen = blocksToUpdate.size
+    for (_ <- 0 until blocksToUpdateLen) {
+      val c = blocksToUpdate.dequeue()
+      getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
+    }
   }
 
   private def updateLoadedColumns(): Unit = {
@@ -179,10 +200,8 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
     }
 
     val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt, size)
-    if (!columns.contains(here.value)) {
-      columns(here.value) = new ChunkColumn(here, this)
-      columnsAtEdge += here
-    }
+    ensureColumnExists(here)
+
     val columnsToRemove = MutableSet.empty[ColumnRelWorld]
     val columnsToAdd = MutableSet.empty[ColumnRelWorld]
     for (col <- columnsAtEdge) {
@@ -213,6 +232,13 @@ class World(val saveDir: File, worldSettings: WorldSettings) {
     }
     columnsAtEdge ++= columnsToAdd
     columnsAtEdge --= columnsToRemove
+  }
+
+  private def ensureColumnExists(here: ColumnRelWorld) = {
+    if (!columns.contains(here.value)) {
+      columns(here.value) = new ChunkColumn(here, this)
+      columnsAtEdge += here
+    }
   }
 
   def unload(): Unit = {

@@ -35,7 +35,7 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
       for (y <- 0 until h) {
         for (x <- 0 until w) {
           val blockToDraw = blockProvider(x)
-          buf.putFloat(x * separation + xOff).putFloat(y * separation + yOff).putInt(blockToDraw.blockTex(side)).putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
+          if (blockToDraw.canBeRendered) buf.putFloat(x * separation + xOff).putFloat(y * separation + yOff).putInt(blockToDraw.blockTex(side)).putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
         }
       }
     })
