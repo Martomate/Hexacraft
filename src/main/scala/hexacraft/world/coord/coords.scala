@@ -83,6 +83,8 @@ case class ChunkRelWorld(_value: Long, cylSize: CylinderSize) extends AbstractIn
   def X: Int = (value >> 20).toInt >> 12
   def Z: Int = value.toInt >> 12
   def Y: Int = (value << 20).toInt >> 20
+
+  def withBlockCoords(i: Int, j: Int, k: Int): BlockRelWorld = BlockRelWorld(X * 16 + i, Y * 16 + j, Z * 16 + k, cylSize)
 }
 
 object ColumnRelWorld {

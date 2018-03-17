@@ -12,7 +12,7 @@ import hexacraft.resource.Shader
 import hexacraft.world.WorldSettings
 import hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
 import hexacraft.world.render.WorldRenderer
-import hexacraft.world.storage.World
+import hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
 import hexacraft._
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
@@ -37,7 +37,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
 
-  val world = new World(saveFolder, worldSettings)
+  val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
   val worldRenderer = new WorldRenderer(world)
 
   val camera = new Camera(new CameraProjection(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f), world.size)

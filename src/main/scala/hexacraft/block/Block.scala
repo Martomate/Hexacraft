@@ -60,7 +60,7 @@ class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_
     } else {
       blocks.filter(_.y == coords.y).map(c => world.getBlock(c).getOrElse(new BlockState(c, Block.Air))).foreach(ns => {
         if (ns.blockType == Block.Air) {
-          val belowNeighborBlock = world.getBlock(BlockRelWorld(ns.coords.x, ns.coords.y - 1, ns.coords.z, world.size))
+          val belowNeighborBlock = world.getBlock(ns.coords.offset(0, -1, 0))
           val belowNeighbor = belowNeighborBlock.map(_.blockType).getOrElse(Block.Air)
           if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Block.Air || (belowNeighbor == this && belowNeighborBlock.get.metadata != 0)))) {
             world.setBlock(new BlockState(ns.coords, this, 0x1e.toByte))

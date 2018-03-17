@@ -14,21 +14,12 @@ object ChunkColumn {
 }
 
 class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
-  /* chunks
-   * method for loading/unloading top and bottom chunk
-  */
-
   val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
   private[storage] var chunkLoading: Option[Int] = None
 
   private[storage] val heightMap = {
-    val interp = new NoiseInterpolator2D(4, 4, (i, j) => {
-      val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world.size).toCylCoord
-      val height = world.worldGenerator.biomeHeightGenerator.genNoiseFromCylXZ(c)
-      val heightVariation = world.worldGenerator.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
-      world.worldGenerator.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
-    })
+    val interp = world.worldGenerator.getHeightmapInterpolator(coords)
     
     for (x <- 0 until 16) yield {
       for (z <- 0 until 16) yield {
@@ -36,7 +27,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
       }
     }
   }
-  
+
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
 
   def getBlock(coords: BlockRelColumn): Option[BlockState] = getChunk(coords.getChunkRelColumn).flatMap(_.getBlock(coords.getBlockRelChunk))

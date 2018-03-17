@@ -38,12 +38,14 @@ class ChunkRenderer(chunk: Chunk) {
     for (side <- 0 until 8) {
       blockRenderers.updateContent(side, sidesCount(side), buf => {
         for (block <- blocks) {
-          if (sidesToRender(side)(block.coords.getBlockRelChunk.value)) {
-            buf.putInt(block.coords.x)
-            buf.putInt(block.coords.y)
-            buf.putInt(block.coords.z)
-            buf.putInt(block.blockType.blockTex(side))
-            buf.putFloat(block.blockType.blockHeight(block))
+          val coords = block.coords
+          if (sidesToRender(side)(coords.getBlockRelChunk.value)) {
+            buf.putInt(coords.x)
+            buf.putInt(coords.y)
+            buf.putInt(coords.z)
+            val blockType = block.blockType
+            buf.putInt(blockType.blockTex(side))
+            buf.putFloat(blockType.blockHeight(block))
           }
         }
       })

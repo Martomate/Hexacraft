@@ -1,13 +1,10 @@
 package hexacraft.world.storage
 
-import java.io.{File, FileInputStream}
+import java.io.File
 
-import com.flowpowered.nbt.CompoundTag
-import com.flowpowered.nbt.stream.NBTInputStream
-import hexacraft.block.{Block, BlockState}
+import hexacraft.block.BlockState
 import hexacraft.util.NBTUtil
-import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld}
-import hexacraft.world.gen.noise.NoiseInterpolator3D
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.render.ChunkRenderer
 
 import scala.collection.mutable
@@ -25,7 +22,7 @@ object Chunk {
 }
 
 class Chunk(val coords: ChunkRelWorld, val world: World) {
-  val neighbors: Array[Option[Chunk]] = Array.tabulate(8)(i => {
+  val neighbors: Array[Option[Chunk]] = Array.tabulate(8){ i =>
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
     val c2 = ChunkRelWorld.offset(coords, dx, dy, dz)
     val chunkOpt = Option(world).flatMap(_.getChunk(c2))
@@ -34,7 +31,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       chunk.requestRenderUpdate()
     })
     chunkOpt
-  })
+  }
 
   private val generator = new ChunkGenerator(this)
   private val chunkData = generator.loadData()
@@ -43,8 +40,10 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   private var needsToSave = false
 
   private val needsBlockUpdate = mutable.TreeSet.empty[Long]
+  private var needsBlockUpdateListener: BlockRelWorld => Unit = world.addToBlockUpdateList
 
   private var needsRenderingUpdate = true
+  private var needsRenderingUpdateListener: ChunkRelWorld => Unit = world.addRenderUpdate
   private var _renderer: Option[ChunkRenderer] = None
   def renderer: Option[ChunkRenderer] = _renderer
   doRenderUpdate()
@@ -54,11 +53,11 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def getBlock(coords: BlockRelChunk): Option[BlockState] = storage.getBlock(coords)
 
   def setBlock(block: BlockState): Boolean = {
-    val blockCoord = block.coords.getBlockRelChunk
-    val before = getBlock(blockCoord)
+    val blockCoords = block.coords.getBlockRelChunk
+    val before = getBlock(blockCoords)
     storage.setBlock(block)
     if (before.isEmpty || before.get != block) {
-      onBlockModified(blockCoord)
+      onBlockModified(blockCoords)
     }
     true
   }
@@ -104,7 +103,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def requestBlockUpdate(coords: BlockRelChunk): Unit = {
     if (!needsBlockUpdate(coords.value)) {
       needsBlockUpdate(coords.value) = true
-      world.addToBlockUpdateList(coords.withChunk(this.coords))
+      needsBlockUpdateListener(coords.withChunk(this.coords))
     }
   }
 
@@ -118,24 +117,29 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def requestRenderUpdate(): Unit = {
     if (!needsRenderingUpdate) {
       needsRenderingUpdate = true
-      world.addRenderUpdate(coords)
+      needsRenderingUpdateListener(coords)
     }
   }
   
   def doRenderUpdate(): Unit = {
     if (needsRenderingUpdate) {
       needsRenderingUpdate = false
-      renderer match {
-        case Some(r) =>
-          if (isEmpty) {
-            r.unload()
-            _renderer = None
-          }
-        case None =>
-          if (!isEmpty) _renderer = Some(new ChunkRenderer(this))
-      }
+
+      removeRendererIfUnused()
 
       renderer.foreach(_.updateContent())
+    }
+  }
+
+  private def removeRendererIfUnused(): Unit = {
+    renderer match {
+      case Some(r) =>
+        if (isEmpty) {
+          r.unload()
+          _renderer = None
+        }
+      case None =>
+        if (!isEmpty) _renderer = Some(new ChunkRenderer(this))
     }
   }
 
@@ -143,14 +147,12 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     chunkData.optimizeStorage()
   }
 
-  def isEmpty: Boolean = {
-    storage.numBlocks == 0
-  }
+  def isEmpty: Boolean = storage.numBlocks == 0
 
   def unload(): Unit = {
     if (needsToSave) {
       val chunkTag = NBTUtil.makeCompoundTag("chunk", storage.toNBT)// Add more tags with ++
-      NBTUtil.saveTag(chunkTag, new File(world.saveDir, "chunks/" + coords.value + ".dat"))
+      generator.saveData(chunkTag)
     }
     
     neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))

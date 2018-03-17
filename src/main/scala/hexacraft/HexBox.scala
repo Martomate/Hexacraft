@@ -35,9 +35,23 @@ object HexBox {
 /** radius is the big radius of the hexagon */
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   val smallRadius: Double = radius * CoordUtils.y60
+
+  def vertices: Seq[CylCoords] = {
+    //val ints = Seq(1, 2, 0, 3, 5, 4)
+
+    for {
+      s <- 0 to 1
+      i <- 0 until 6
+    } yield {
+      val v = i * Math.PI / 3
+      val x = Math.cos(v).toFloat
+      val z = Math.sin(v).toFloat
+      new CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, null, false)
+    }
+  }
   
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
-  def afterCollision(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
+  def positionAndVelocityAfterCollision(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
     var result = (pos, velocity)
     val parts = (velocity.length * 10).toInt + 1
     velocity.div(parts)
@@ -51,10 +65,10 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   private def _collides(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
       val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, world.size, false).toBlockCoord)
-      val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, world.size, false).toSkewCylCoord
+      val skewCoords = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, world.size, false).toSkewCylCoord
       val skewVelocity = new CylCoords(velocity.x, velocity.y, velocity.z, world.size, false).toSkewCylCoord
       var maxDistTuple: (Double, Int) = (1d, -1)
-      for (y <- math.floor((skewCoord.y + bottom) * 2).toInt to math.floor((skewCoord.y + top) * 2).toInt) {
+      for (y <- math.floor((skewCoords.y + bottom) * 2).toInt to math.floor((skewCoords.y + top) * 2).toInt) {
         for (x <- -1 to 1) {
           for (z <- -1 to 1) {
             if (x * z != 1) {// corners
@@ -63,7 +77,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
                 case Some(chunk) =>
                   val blockState = chunk.getBlock(coords.getBlockRelChunk)
                   blockState.map(_.blockType).foreach(blockType => {
-                    val dist = distanceToCollision(skewCoord, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world.size, false).toSkewCylCoord)
+                    val dist = distanceToCollision(skewCoords, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world.size, false).toSkewCylCoord)
                     if (dist._1 < maxDistTuple._1) {
                       maxDistTuple = dist
                     }
@@ -121,19 +135,5 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
       if (distBeforeMin._1 <= 0) (math.min(minInZip._1, 1), minInZip._2)
       else (0, -1)
     } else (1, -1)
-  }
-
-  def vertices: Seq[CylCoords] = {
-    //val ints = Seq(1, 2, 0, 3, 5, 4)
-
-    for {
-      s <- 0 to 1
-      i <- 0 until 6
-    } yield {
-      val v = i * Math.PI / 3
-      val x = Math.cos(v).toFloat
-      val z = Math.sin(v).toFloat
-      new CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, null, false)
-    }
   }
 }

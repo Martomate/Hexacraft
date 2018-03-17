@@ -1,9 +1,8 @@
 package hexacraft.block
 
-import hexacraft.world.coord.BlockRelWorld
-import hexacraft.world.coord.CylCoords
-import hexacraft.world.coord.BlockRelChunk
-import hexacraft.world.storage.{Chunk, World}
+import hexacraft.HexBox
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, CylCoords}
+import hexacraft.world.storage.Chunk
 
 import scala.collection.Seq
 
@@ -18,19 +17,7 @@ object BlockState {
       ( 0, 0,-1),
       ( 1, 0,-1))
 
-  val vertices: Seq[CylCoords] = {
-    //val ints = Seq(1, 2, 0, 3, 5, 4)
-
-    for {
-      s <- 0 to 1
-      i <- 0 until 6
-    } yield {
-      val v = i * Math.PI / 3
-      val x = Math.cos(v).toFloat
-      val z = Math.sin(v).toFloat
-      new CylCoords(x * 0.5, (1 - s) * 0.5, z * 0.5, null, false)
-    }
-  }
+  val vertices: Seq[CylCoords] = new HexBox(0.5f, 0, 0.5f).vertices
 
   def getVertices(side: Int): Seq[CylCoords] = side match {
     case 0 => vertices.take(6)
@@ -46,7 +33,7 @@ case class BlockState(coords: BlockRelWorld, blockType: Block, metadata: Byte = 
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
       chunk.getBlock(BlockRelChunk(i2, j2, k2, coords.cylSize))
     } else {
-      chunk.world.getBlock(BlockRelWorld(chunk.coords.X * 16 + i2, chunk.coords.Y * 16 + j2, chunk.coords.Z * 16 + k2, coords.cylSize))
+      chunk.world.getBlock(chunk.coords.withBlockCoords(i2, j2, k2))
     }
   }
 }
