@@ -135,9 +135,9 @@ class World(val worldSettings: WorldSettingsProvider) {
   }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
-  def getChunk(coords: ChunkRelWorld): Option[Chunk] =      getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
+  def getChunk(coords: ChunkRelWorld): Option[Chunk]      = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
   def getBlock(coords: BlockRelWorld): Option[BlockState] = getColumn(coords.getColumnRelWorld).flatMap(_.getBlock(coords.getBlockRelColumn))
-  def setBlock(block: BlockState): Boolean =  getChunk(block.coords.getChunkRelWorld).fold(false)(_.setBlock(block))
+  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
   def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
 

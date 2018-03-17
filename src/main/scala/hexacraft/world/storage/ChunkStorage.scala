@@ -9,10 +9,10 @@ trait ChunkStorage {
   def blockType(coords: BlockRelChunk): Block
 
   def getBlock(coords: BlockRelChunk): Option[BlockState]
-  def setBlock(block: BlockState): Unit
+  def setBlock(coords: BlockRelChunk, block: BlockState): Unit
   def removeBlock(coords: BlockRelChunk): Unit
 
-  def allBlocks: Seq[BlockState]
+  def allBlocks: Seq[(BlockRelChunk, BlockState)]
   def numBlocks: Int
 
   def isDense: Boolean
@@ -31,10 +31,10 @@ class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
   def getBlock(coords: BlockRelChunk): Option[BlockState] = {
     val _type = blockTypes(coords.value)
-    if (_type != 0) Some(new BlockState(coords.withChunk(chunkCoords), Block.byId(_type), metadata(coords.value))) else None
+    if (_type != 0) Some(new BlockState(Block.byId(_type), metadata(coords.value))) else None
   }
-  def setBlock(block: BlockState): Unit = {
-    val idx = block.coords.getBlockRelChunk.value
+  def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
+    val idx = coords.value
     if (blockTypes(idx) == 0) _numBlocks += 1
     blockTypes(idx) = block.blockType.id
     metadata(idx) = block.metadata
@@ -44,14 +44,14 @@ class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
     if (blockTypes(coords.value) != 0) _numBlocks -= 1
     blockTypes(coords.value) = 0
   }
-  def allBlocks: Seq[BlockState] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i => 
-    new BlockState(BlockRelChunk(i, chunkCoords.cylSize).withChunk(chunkCoords), Block.byId(blockTypes(i)), metadata(i)))
+  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i =>
+    (BlockRelChunk(i, chunkCoords.cylSize), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
   def toDense: DenseChunkStorage = this
   def toSparse: SparseChunkStorage = {
     val sparse = new SparseChunkStorage(chunkCoords)
-    for (b <- allBlocks) sparse.setBlock(b)
+    for ((i, b) <- allBlocks) sparse.setBlock(i, b)
     sparse
   }
 
@@ -80,17 +80,17 @@ class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
 
   def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Block.Air)
   def getBlock(coords: BlockRelChunk): Option[BlockState] = blocks.get(coords.value.toShort)
-  def setBlock(block: BlockState): Unit = {
-    if (block.blockType != Block.Air) blocks(block.coords.getBlockRelChunk.value.toShort) = block
-    else removeBlock(block.coords.getBlockRelChunk)
+  def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
+    if (block.blockType != Block.Air) blocks(coords.value.toShort) = block
+    else removeBlock(coords)
   }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
-  def allBlocks: Seq[BlockState] = blocks.values.toSeq
+  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1, chunkCoords.cylSize), t._2))
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
   def toDense: DenseChunkStorage = {
     val dense = new DenseChunkStorage(chunkCoords)
-    for (b <- blocks) dense.setBlock(b._2)
+    for ((i, b) <- blocks) dense.setBlock(BlockRelChunk(i, chunkCoords.cylSize), b)
     dense
   }
   def toSparse: SparseChunkStorage = this
@@ -101,7 +101,7 @@ class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
 
     for (i <- blocks.indices) {
       if (blocks(i) != 0) {
-        setBlock(new BlockState(BlockRelWorld(i, chunkCoords.cylSize), Block.byId(blocks(i)), meta(i)))
+        setBlock(BlockRelChunk(i, chunkCoords.cylSize), new BlockState(Block.byId(blocks(i)), meta(i)))
 //        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }

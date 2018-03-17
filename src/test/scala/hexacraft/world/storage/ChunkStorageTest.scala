@@ -3,7 +3,7 @@ package hexacraft.world.storage
 import com.flowpowered.nbt.ByteArrayTag
 import hexacraft.block.{Block, BlockState}
 import hexacraft.util.NBTUtil
-import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import org.scalatest.FunSuite
 
 abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => ChunkStorage) extends FunSuite {
@@ -14,23 +14,23 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
 
   test("One block") {
     val storage = makeStorage(null)
-    storage.setBlock(new BlockState(coords350, Block.Dirt))
-    storage.setBlock(new BlockState(coords350, Block.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
     assertResult(1)(storage.numBlocks)
   }
 
   test("Many blocks") {
     val storage = makeStorage(null)
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
-      storage.setBlock(new BlockState(BlockRelWorld(i, j, k, cylSize), Block.Dirt))
+      storage.setBlock(BlockRelChunk(i, j, k, cylSize), new BlockState(Block.Dirt))
 
     assertResult(16*16*16)(storage.numBlocks)
   }
 
   test("Air doesn't count as a block") {
     val storage = makeStorage(null)
-    storage.setBlock(new BlockState(coords350, Block.Dirt))
-    storage.setBlock(new BlockState(coords350, Block.Air))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Air))
     assertResult(0)(storage.numBlocks)
   }
 
@@ -71,7 +71,6 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     assertResult(Block.Stone)(block.blockType)
     assertResult(2)(block.metadata)
     assertResult(2)(block.metadata)
-    assertResult(coords350)(block.coords)
   }
 
   test("getBlock for non-existing block") {
@@ -82,9 +81,11 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
 
   test("allBlocks returns all blocks") {
     val storage = makeStorageDirtStone
+    val storageSize = storage.numBlocks
+
     val all = storage.allBlocks
-    assertResult(2)(all.size)
-    for (b <- all) assertResult(Some(b))(storage.getBlock(b.coords.getBlockRelChunk))
+    assertResult(storageSize)(all.size)
+    for ((c, b) <- all) assertResult(Some(b))(storage.getBlock(c))
   }
 
   test("fromNBT with correct tag") {
@@ -163,8 +164,8 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
 
   protected def makeStorageDirtStone: ChunkStorage = {
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
-    storage.setBlock(new BlockState(coords359, Block.Dirt, 6))
-    storage.setBlock(new BlockState(coords350, Block.Stone, 2))
+    storage.setBlock(coords359.getBlockRelChunk, new BlockState(Block.Dirt, 6))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Stone, 2))
     storage
   }
 }

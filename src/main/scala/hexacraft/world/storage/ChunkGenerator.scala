@@ -22,7 +22,7 @@ class ChunkGenerator(chunk: Chunk) {
         val noise = blockNoise(i, j, k)
         val yToGo = coords.Y * 16 + j - column.heightMap(i)(k)
         val limit = limitForBlockNoise(yToGo)
-        if (noise > limit) storage.setBlock(new BlockState(BlockRelChunk(i, j, k, world.size).withChunk(coords), getBlockAtDepth(yToGo)))
+        if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, world.size), new BlockState(getBlockAtDepth(yToGo)))
       }
     }
     val data = new ChunkData

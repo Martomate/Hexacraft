@@ -22,10 +22,9 @@ class ChunkRenderer(chunk: Chunk) {
     val blocks = chunk.blocks.allBlocks
     val sidesToRender = Seq.fill(8)(new mutable.BitSet(16 * 16 * 16))
     val sidesCount = new Array[Int](8)
-    for (b <- blocks) {
-      val c = b.coords.getBlockRelChunk
+    for ((c, b) <- blocks) {
       for (s <- BlockState.neighborOffsets.indices) {
-        if (b.neighbor(s, chunk).forall(bs => bs.blockType.isTransparent(bs, oppositeSide(s)))) {
+        if (b.neighbor(s, c.withChunk(chunk.coords), chunk).forall(bs => bs.blockType.isTransparent(bs, oppositeSide(s)))) {
           sidesToRender(s)(c.value) = true
           sidesCount(s) += 1
           if (s > 1 && b.blockType.isTransparent(b, s)) {
@@ -37,9 +36,9 @@ class ChunkRenderer(chunk: Chunk) {
     }
     for (side <- 0 until 8) {
       blockRenderers.updateContent(side, sidesCount(side), buf => {
-        for (block <- blocks) {
-          val coords = block.coords
-          if (sidesToRender(side)(coords.getBlockRelChunk.value)) {
+        for ((bCoords, block) <- blocks) {
+          val coords = bCoords.withChunk(chunk.coords)
+          if (sidesToRender(side)(bCoords.value)) {
             buf.putInt(coords.x)
             buf.putInt(coords.y)
             buf.putInt(coords.z)
