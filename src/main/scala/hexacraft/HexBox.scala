@@ -9,6 +9,8 @@ import hexacraft.world.coord.SkewCylCoords
 import org.joml.Vector3d
 import java.text.NumberFormat
 
+import hexacraft.block.Block
+
 import scala.collection.Seq
 
 object HexBox {
@@ -75,7 +77,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
               val coords = BlockRelWorld(bc.x + x, y, bc.z + z, world.size)
               world.getChunk(coords.getChunkRelWorld) match {
                 case Some(chunk) =>
-                  val blockState = chunk.getBlock(coords.getBlockRelChunk)
+                  val blockState = Some(chunk.getBlock(coords.getBlockRelChunk)).filter(_.blockType != Block.Air)
                   blockState.map(_.blockType).foreach(blockType => {
                     val dist = distanceToCollision(skewCoords, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world.size, false).toSkewCylCoord)
                     if (dist._1 < maxDistTuple._1) {

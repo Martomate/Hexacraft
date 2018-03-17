@@ -1,14 +1,14 @@
 package hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
-import hexacraft.block.{Block, BlockState}
+import hexacraft.block.{Block, BlockAir, BlockState}
 import hexacraft.util.{DefaultArray, NBTUtil}
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
 trait ChunkStorage {
   def blockType(coords: BlockRelChunk): Block
 
-  def getBlock(coords: BlockRelChunk): Option[BlockState]
+  def getBlock(coords: BlockRelChunk): BlockState
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit
   def removeBlock(coords: BlockRelChunk): Unit
 
@@ -29,9 +29,9 @@ class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   private var _numBlocks = 0
 
   def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
-  def getBlock(coords: BlockRelChunk): Option[BlockState] = {
+  def getBlock(coords: BlockRelChunk): BlockState = {
     val _type = blockTypes(coords.value)
-    if (_type != 0) Some(new BlockState(Block.byId(_type), metadata(coords.value))) else None
+    if (_type != 0) new BlockState(Block.byId(_type), metadata(coords.value)) else BlockAir.State
   }
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
     val idx = coords.value
@@ -79,7 +79,7 @@ class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   private val blocks = scala.collection.mutable.Map.empty[Short, BlockState]
 
   def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Block.Air)
-  def getBlock(coords: BlockRelChunk): Option[BlockState] = blocks.get(coords.value.toShort)
+  def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockAir.State)
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
     if (block.blockType != Block.Air) blocks(coords.value.toShort) = block
     else removeBlock(coords)

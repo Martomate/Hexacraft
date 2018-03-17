@@ -2,7 +2,7 @@ package hexacraft.scene
 
 import java.io.File
 
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockState}
 import hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import hexacraft.gui.comp.{GUITransformation, LocationInfo}
 import hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
@@ -48,10 +48,10 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f)(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
-  private var leftMouseButtonDown = false
   private var rightMouseButtonDown = false
-  private var leftMouseButtonCountdown = 0
+  private var leftMouseButtonDown = false
   private var rightMouseButtonCountdown = 0
+  private var leftMouseButtonCountdown = 0
 
   private var isPaused: Boolean = false
 
@@ -146,9 +146,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     event.button match {
       case 0 =>
-        rightMouseButtonDown = event.action != GLFW.GLFW_RELEASE
-      case 1 =>
         leftMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+      case 1 =>
+        rightMouseButtonDown = event.action != GLFW.GLFW_RELEASE
       case _ =>
     }
     true
@@ -198,15 +198,6 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
 
     updateMousePicker()
 
-    if (leftMouseButtonCountdown == 0) {
-      if (leftMouseButtonDown) {
-        leftMouseButtonCountdown = 10
-        performLeftMouseClick
-      }
-    } else {
-      leftMouseButtonCountdown -= 1
-    }
-
     if (rightMouseButtonCountdown == 0) {
       if (rightMouseButtonDown) {
         rightMouseButtonCountdown = 10
@@ -215,6 +206,15 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     } else {
       rightMouseButtonCountdown -= 1
     }
+
+    if (leftMouseButtonCountdown == 0) {
+      if (leftMouseButtonDown) {
+        leftMouseButtonCountdown = 10
+        performLeftMouseClick
+      }
+    } else {
+      leftMouseButtonCountdown -= 1
+    }
     world.tick(camera)
 
     if (debugScene != null) debugScene.tick()
@@ -222,25 +222,25 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
 
   private def updateMousePicker(): Unit = {
     mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
-    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).isDefined) else None)
+    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Block.Air) else None)
   }
 
-  private def performRightMouseClick = {
+  private def performLeftMouseClick = {
     worldRenderer.getSelectedBlockAndSide match {
       case Some((coords, _)) =>
-        if (world.getBlock(coords).isDefined) {
+        if (world.getBlock(coords).blockType != Block.Air) {
           world.removeBlock(coords)
         }
       case _ =>
     }
   }
 
-  private def performLeftMouseClick = {
+  private def performRightMouseClick = {
     worldRenderer.getSelectedBlockAndSide match {
       case Some((coords1, Some(side))) =>
         val offset = BlockState.neighborOffsets(side)
         val coords = coords1.offset(offset._1, offset._2, offset._3)
-        if (world.getBlock(coords).isEmpty) {
+        if (world.getBlock(coords).blockType == Block.Air) {
           val blockType = playerInputHandler.player.blockInHand
           val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoord
           val state = new BlockState(blockType)

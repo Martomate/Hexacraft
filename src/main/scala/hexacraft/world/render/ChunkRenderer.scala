@@ -24,7 +24,8 @@ class ChunkRenderer(chunk: Chunk) {
     val sidesCount = new Array[Int](8)
     for ((c, b) <- blocks) {
       for (s <- BlockState.neighborOffsets.indices) {
-        if (b.neighbor(s, c.withChunk(chunk.coords), chunk).forall(bs => bs.blockType.isTransparent(bs, oppositeSide(s)))) {
+        val bs = b.neighbor(s, c.withChunk(chunk.coords), chunk)
+        if (bs.blockType.isTransparent(bs, oppositeSide(s))) {
           sidesToRender(s)(c.value) = true
           sidesCount(s) += 1
           if (s > 1 && b.blockType.isTransparent(b, s)) {

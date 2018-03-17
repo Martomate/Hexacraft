@@ -2,7 +2,7 @@ package hexacraft.world.storage
 
 import java.io.File
 
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockState}
 import hexacraft.util.NBTUtil
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.render.ChunkRenderer
@@ -50,12 +50,12 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   def blocks: ChunkStorage = storage
 
-  def getBlock(coords: BlockRelChunk): Option[BlockState] = storage.getBlock(coords)
+  def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean = {
     val before = getBlock(blockCoords)
     storage.setBlock(blockCoords, block)
-    if (before.isEmpty || before.get != block) {
+    if (before.blockType == Block.Air || before != block) {
       onBlockModified(blockCoords)
     }
     true
@@ -109,7 +109,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def doBlockUpdate(coords: BlockRelChunk): Unit = {
     if (needsBlockUpdate(coords.value)) {
       needsBlockUpdate(coords.value) = false
-      getBlock(coords).foreach(b => b.blockType.doUpdate(coords.withChunk(this.coords), world))
+      getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
     }
   }
   

@@ -35,20 +35,20 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   }
 
   test("blockType for existing block") {
-    val storage: ChunkStorage = makeStorageDirtStone
+    val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     assertResult(Block.Stone)(storage.blockType(coords350.getBlockRelChunk))
   }
 
   test("blockType for non-existing block") {
-    val storage: ChunkStorage = makeStorageDirtStone
+    val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
 
     assertResult(Block.Air)(storage.blockType(coords351.getBlockRelChunk))
   }
 
   test("Remove existing block") {
-    val storage: ChunkStorage = makeStorageDirtStone
+    val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords350.getBlockRelChunk)
     assertResult(Block.Air)(storage.blockType(coords350.getBlockRelChunk))
@@ -56,7 +56,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   }
 
   test("Remove non-existing block") {
-    val storage: ChunkStorage = makeStorageDirtStone
+    val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords351.getBlockRelChunk)
     assertResult(Block.Stone)(storage.blockType(coords350.getBlockRelChunk))
@@ -64,28 +64,26 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   }
 
   test("getBlock for existing block") {
-    val storage = makeStorageDirtStone
-    val blockOpt = storage.getBlock(coords350.getBlockRelChunk)
-    assert(blockOpt.isDefined)
-    val block = blockOpt.get
+    val storage = makeStorage_Dirt359_Stone350
+    val block = storage.getBlock(coords350.getBlockRelChunk)
     assertResult(Block.Stone)(block.blockType)
     assertResult(2)(block.metadata)
     assertResult(2)(block.metadata)
   }
 
   test("getBlock for non-existing block") {
-    val storage = makeStorageDirtStone
-    val blockOpt = storage.getBlock(coords351.getBlockRelChunk)
-    assert(blockOpt.isEmpty)
+    val storage = makeStorage_Dirt359_Stone350
+    val block = storage.getBlock(coords351.getBlockRelChunk)
+    assertResult(Block.Air)(block.blockType)
   }
 
   test("allBlocks returns all blocks") {
-    val storage = makeStorageDirtStone
+    val storage = makeStorage_Dirt359_Stone350
     val storageSize = storage.numBlocks
 
     val all = storage.allBlocks
     assertResult(storageSize)(all.size)
-    for ((c, b) <- all) assertResult(Some(b))(storage.getBlock(c))
+    for ((c, b) <- all) assertResult(b)(storage.getBlock(c))
   }
 
   test("fromNBT with correct tag") {
@@ -136,7 +134,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   }
 
   test("toNBT works") {
-    val storage = makeStorageDirtStone
+    val storage = makeStorage_Dirt359_Stone350
     val nbt = storage.toNBT
     assertResult(2)(nbt.size)
 
@@ -162,7 +160,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   protected def coords359: BlockRelWorld = coordsAt(3, 5, 9)
   protected def coordsAt(x: Int, y: Int, z: Int): BlockRelWorld = BlockRelWorld(x, y, z, cylSize)
 
-  protected def makeStorageDirtStone: ChunkStorage = {
+  protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
     storage.setBlock(coords359.getBlockRelChunk, new BlockState(Block.Dirt, 6))
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Stone, 2))
@@ -182,7 +180,7 @@ class SparseChunkStorageTest extends ChunkStorageTest(new SparseChunkStorage(_))
   }
 
   test("toDense gives back DenseStorage") {
-    val storage = makeStorageDirtStone
+    val storage = makeStorage_Dirt359_Stone350
     val dense = storage.toDense
     assert(dense.isInstanceOf[DenseChunkStorage])
     assertResult(2)(dense.numBlocks)
@@ -201,7 +199,7 @@ class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage(_)) {
   }
 
   test("toSparse gives back SparseStorage") {
-    val storage = makeStorageDirtStone
+    val storage = makeStorage_Dirt359_Stone350
     val sparse = storage.toSparse
     assert(sparse.isInstanceOf[SparseChunkStorage])
     assertResult(2)(sparse.numBlocks)

@@ -27,7 +27,7 @@ object BlockState {
 }
 
 case class BlockState(blockType: Block, metadata: Byte = 0) {
-  def neighbor(side: Int, coords: BlockRelWorld, chunk: Chunk): Option[BlockState] = {
+  def neighbor(side: Int, coords: BlockRelWorld, chunk: Chunk): BlockState = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {

@@ -1,6 +1,6 @@
 package hexacraft.world.storage
 
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockAir, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
 import hexacraft.world.gen.noise.NoiseInterpolator2D
 import org.joml.Vector2d
@@ -30,7 +30,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
 
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
 
-  def getBlock(coords: BlockRelColumn): Option[BlockState] = getChunk(coords.getChunkRelColumn).flatMap(_.getBlock(coords.getBlockRelChunk))
+  def getBlock(coords: BlockRelColumn): BlockState = {
+    getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
+  }
 
   def tick(): Unit = {
     chunks.values.foreach(_.tick())

@@ -49,7 +49,7 @@ class WorldRenderer(world: World) {
 
       blockAndSide match {
         case Some((coords, Some(_))) =>
-          val blockState = world.getBlock(coords).get
+          val blockState = world.getBlock(coords)
           val buf = BufferUtils.createByteBuffer(7 * 4).putInt(coords.x).putInt(coords.y).putInt(coords.z).putFloat(0).putFloat(0).putFloat(0)
           buf.putFloat(blockState.blockType.blockHeight(blockState))
           buf.flip()
