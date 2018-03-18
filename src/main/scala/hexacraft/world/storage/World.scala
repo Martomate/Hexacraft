@@ -127,7 +127,7 @@ class World(val worldSettings: WorldSettingsProvider) {
   }
 
   private def makeChunkToLoadTuple(coords: ChunkRelWorld) = {
-    val cyl = BlockCoords(coords.X * 16 + 8, coords.Y * 16 + 8, coords.Z * 16 + 8, size).toCylCoord
+    val cyl = BlockCoords(coords.withBlockCoords(8, 8, 8), size).toCylCoord
     val cDir = cyl.toNormalCoord(chunkLoadingOrigin).toVector3d.normalize()
     val dot = chunkLoadingDirection.dot(cDir)
 
@@ -178,7 +178,7 @@ class World(val worldSettings: WorldSettingsProvider) {
     for (_ <- 1 to World.chunksLoadedPerTick) {
       if (chunksToLoad.nonEmpty) {
         val chunkToLoad = chunksToLoad.dequeue()._2
-        getColumn(chunkToLoad.getColumnRelWorld).foreach(col => {
+        getColumn(chunkToLoad.getColumnRelWorld).foreach { col =>
           val ch = chunkToLoad.getChunkRelColumn
           val chY = ch.Y
           val topBottomChange = col.topAndBottomChunks match {
@@ -192,7 +192,7 @@ class World(val worldSettings: WorldSettingsProvider) {
             col.topAndBottomChunks = topBottomChange
             col.chunks(ch.value) = new Chunk(chunkToLoad, this)
           }
-        })
+        }
       }
     }
   }

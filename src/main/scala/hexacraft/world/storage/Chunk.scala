@@ -24,7 +24,7 @@ object Chunk {
 class Chunk(val coords: ChunkRelWorld, val world: World) {
   val neighbors: Array[Option[Chunk]] = Array.tabulate(8){ i =>
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
-    val c2 = ChunkRelWorld.offset(coords, dx, dy, dz)
+    val c2 = coords.offset(dx, dy, dz)
     val chunkOpt = Option(world).flatMap(_.getChunk(c2))
     chunkOpt.foreach(chunk => {
       chunk.neighbors((i + 4) % 8) = Some(this)
@@ -78,7 +78,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
     }
 
-    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = BlockRelChunk.offset(c, off._1, off._2, off._3)
+    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = c.offset(off._1, off._2, off._3)
 
 
     requestRenderUpdate()
