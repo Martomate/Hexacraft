@@ -142,6 +142,16 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     }
   }
 
+  def neighborBlock(side: Int, coords: BlockRelWorld): BlockState = {
+    val (i, j, k) = BlockState.neighborOffsets(side)
+    val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
+    if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
+      getBlock(BlockRelChunk(i2, j2, k2, coords.cylSize))
+    } else {
+      world.getBlock(this.coords.withBlockCoords(i2, j2, k2))
+    }
+  }
+
   def tick(): Unit = {
     chunkData.optimizeStorage()
   }
@@ -158,11 +168,4 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     renderer.foreach(_.unload())
     // and other stuff
   }
-
-  //  def render(): Unit = {
-  // TODO: implement system (in Loader) for rendering stuff, like e.g. blocks, with instancing etc. Then: render a block!
-  // It might be a good idea to keep a lot i the buffer and then change the buffer in-place when blocks are added/removed
-  // It might also be a good idea to have several buffers so that waiting time can be reduced
-  // Consider using GL30.glMapBufferRange(target, offset, length, access)
-  //  }
 }

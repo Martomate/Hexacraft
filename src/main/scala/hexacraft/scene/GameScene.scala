@@ -242,7 +242,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
         val coords = coords1.offset(offset._1, offset._2, offset._3)
         if (world.getBlock(coords).blockType == Block.Air) {
           val blockType = playerInputHandler.player.blockInHand
-          val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoord
+          val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoords
           val state = new BlockState(blockType)
           if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
             world.setBlock(coords, state)

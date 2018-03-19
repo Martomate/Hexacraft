@@ -39,7 +39,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   }
 
   private[storage] def updateLoadedChunks(): Unit = {
-    val origin = world.chunkLoadingOrigin.toBlockCoord.toVector3d.div(16)
+    val origin = world.chunkLoadingOrigin.toBlockCoords.toVector3d.div(16)
     val xzDist = math.sqrt(coords.distSq(new Vector2d(origin.x, origin.z)))
 
     def inSight(chunk: ChunkRelColumn): Boolean = {

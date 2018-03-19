@@ -17,14 +17,14 @@ class WorldGenerator(worldGenSettings: WorldGenSettings, worldSize: CylinderSize
   private val biomeHeightVariationGenerator = new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
 
   def getHeightmapInterpolator(coords: ColumnRelWorld): NoiseInterpolator2D = new NoiseInterpolator2D(4, 4, (i, j) => {
-    val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, worldSize).toCylCoord
+    val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, worldSize).toCylCoords
     val height = biomeHeightGenerator.genNoiseFromCylXZ(c)
     val heightVariation = biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
     heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
   })
 
   def getBlockInterpolator(coords: ChunkRelWorld): NoiseInterpolator3D = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => {
-    val c = BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, worldSize).toCylCoord
+    val c = BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, worldSize).toCylCoords
     blockGenerator.genNoiseFromCyl(c) + blockDensityGenerator.genNoiseFromCyl(c) * 0.4
   })
 
