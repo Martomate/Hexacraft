@@ -84,6 +84,6 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     focused = location.containsPoint(event.mousePos)
     if (!focused) super.onMouseClickEvent(event)
-    else true
+    else false
   }
 }

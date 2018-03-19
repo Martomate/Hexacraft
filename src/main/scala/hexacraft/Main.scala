@@ -45,6 +45,7 @@ object Main {
   def mousePos: Vector2dc = _mousePos.toImmutable
   def mouseMoved: Vector2dc = _mouseMoved.toImmutable
   def normalizedMousePos: Vector2f = new Vector2f((mousePos.x / windowSize.x * 2 - 1).toFloat, (mousePos.y / windowSize.y * 2 - 1).toFloat)
+  def aspectRatio: Float = windowSize.x.toFloat / windowSize.y
 
   private val sceneList = ArrayBuffer.empty[Scene]
   def pushScene(scene: Scene): Unit = {
@@ -234,7 +235,7 @@ object Main {
   }
 
   private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
-    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * 0.5f + 0.5f, normalizedMousePos.y * 0.5f + 0.5f))))
+    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * 0.5f * windowSize.x / windowSize.y + 0.5f, normalizedMousePos.y * 0.5f + 0.5f))))
   }
 
   private def processScroll(window: Long, xoffset: Double, yoffset: Double): Unit = {
