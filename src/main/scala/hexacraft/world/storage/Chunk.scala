@@ -21,6 +21,11 @@ object Chunk {
     (1, 0, -1))
 }
 
+trait ChunkEventListener {
+  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit
+  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit
+}
+
 class Chunk(val coords: ChunkRelWorld, val world: World) {
   val neighbors: Array[Option[Chunk]] = Array.tabulate(8){ i =>
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
@@ -39,11 +44,11 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
 
-  private val needsBlockUpdate = mutable.TreeSet.empty[Long]
-  private var needsBlockUpdateListener: BlockRelWorld => Unit = world.addToBlockUpdateList
+  private val eventListener: ChunkEventListener = world
 
+  private val needsBlockUpdate = mutable.TreeSet.empty[Long]
   private var needsRenderingUpdate = true
-  private var needsRenderingUpdateListener: ChunkRelWorld => Unit = world.addRenderUpdate
+
   private var _renderer: Option[ChunkRenderer] = None
   def renderer: Option[ChunkRenderer] = _renderer
   doRenderUpdate()
@@ -102,7 +107,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def requestBlockUpdate(coords: BlockRelChunk): Unit = {
     if (!needsBlockUpdate(coords.value)) {
       needsBlockUpdate(coords.value) = true
-      needsBlockUpdateListener(coords.withChunk(this.coords))
+      eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords))
     }
   }
 
@@ -116,7 +121,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def requestRenderUpdate(): Unit = {
     if (!needsRenderingUpdate) {
       needsRenderingUpdate = true
-      needsRenderingUpdateListener(coords)
+      eventListener.onChunkNeedsRenderUpdate(coords)
     }
   }
   

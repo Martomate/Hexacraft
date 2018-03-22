@@ -18,7 +18,13 @@ object World {
   val ticksBetweenColumnLoading = 5
 }
 
-class World(val worldSettings: WorldSettingsProvider) {
+trait BlockSetAndGet {
+  def getBlock(coords: BlockRelWorld): BlockState
+  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean
+  def removeBlock(coords: BlockRelWorld): Boolean
+}
+
+class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener with BlockSetAndGet {
   def worldName: String = worldSettings.name
   val size: CylinderSize = worldSettings.size
 
@@ -156,9 +162,9 @@ class World(val worldSettings: WorldSettingsProvider) {
   player.fromNBT(worldSettings.playerNBT)
 
 
-  def addToBlockUpdateList(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
+  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
-  def addRenderUpdate(coords: ChunkRelWorld): Unit = {
+  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = {
     chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
   }
 
