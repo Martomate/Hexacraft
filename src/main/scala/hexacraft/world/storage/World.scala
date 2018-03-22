@@ -3,13 +3,13 @@ package hexacraft.world.storage
 import com.flowpowered.nbt._
 import hexacraft.Camera
 import hexacraft.block.{BlockAir, BlockState}
-import hexacraft.util.NBTUtil
+import hexacraft.util.{NBTUtil, TickableTimer}
 import hexacraft.world.Player
 import hexacraft.world.coord._
 import org.joml.{Vector2d, Vector3d, Vector4d}
 
 import scala.collection.mutable
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.{ArrayBuffer, Set => MutableSet}
 
 object World {
   val chunksLoadedPerTick = 2
@@ -24,6 +24,11 @@ trait BlockSetAndGet {
   def removeBlock(coords: BlockRelWorld): Boolean
 }
 
+trait ChunkAddedOrRemovedListener {
+  def onChunkAdded(chunk: Chunk): Unit
+  def onChunkRemoved(chunk: Chunk): Unit
+}
+
 class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener with BlockSetAndGet {
   def worldName: String = worldSettings.name
   val size: CylinderSize = worldSettings.size
@@ -35,7 +40,6 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
   val columnsAtEdge: mutable.Set[ColumnRelWorld] = mutable.Set.empty[ColumnRelWorld]
 
-  private var loadColumnsCountdown = 0
   private[storage] var chunkLoadingOrigin: CylCoords = _
   private[storage] val chunkLoadingDirection: Vector3d = new Vector3d()
   private val chunksToLoad = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
@@ -141,7 +145,9 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
         if (topBottomChange.isDefined) {
           col.topAndBottomChunks = topBottomChange
-          col.chunks(ch.value) = new Chunk(chunkToLoad, this)
+          val newChunk = new Chunk(chunkToLoad, this)
+          col.chunks(ch.value) = newChunk
+          chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(newChunk))
         }
       }
     }
@@ -160,6 +166,9 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   val player = new Player(this)
   player.fromNBT(worldSettings.playerNBT)
+
+  private[storage] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
+  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
 
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
@@ -184,7 +193,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   def tick(camera: Camera): Unit = {
     setChunkLoadingCenterAndDirection(camera)
 
-    loadChunkColumns()
+    loadColumnsTimer.tick()
 
     loadChunks()
 
@@ -202,19 +211,13 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     }
   }
 
-  private def loadChunkColumns(): Unit = {
-    if (loadColumnsCountdown == 0) {
-      loadColumnsCountdown = World.ticksBetweenColumnLoading
+  private val loadColumnsTimer: TickableTimer = TickableTimer(World.ticksBetweenColumnLoading) {
+    performBlockUpdates()
 
-      // TODO: this is a temporary placement
-      performBlockUpdates()
+    filterChunkRenderUpdateQueue()
 
-      filterChunkRenderUpdateQueue()
-
-      updateLoadedColumns()
-      columns.values.foreach(_.updateLoadedChunks())
-    }
-    loadColumnsCountdown -= 1
+    updateLoadedColumns()
+    columns.values.foreach(_.updateLoadedChunks())
   }
 
   private def filterChunkRenderUpdateQueue(): Unit = {
@@ -253,7 +256,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     worldSettings.saveState(worldTag)
 
     chunksToLoad.clear
-    loadColumnsCountdown = -1
+    loadColumnsTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear
   }

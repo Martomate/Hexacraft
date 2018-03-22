@@ -14,6 +14,7 @@ import hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
 import hexacraft._
+import hexacraft.util.TickableTimer
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
@@ -48,10 +49,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f)(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
-  private var rightMouseButtonDown = false
-  private var leftMouseButtonDown = false
-  private var rightMouseButtonCountdown = 0
-  private var leftMouseButtonCountdown = 0
+  private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick)
+  private val leftMouseButtonTimer = TickableTimer(10, initActive = false)(performLeftMouseClick)
 
   private var isPaused: Boolean = false
 
@@ -146,9 +145,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     event.button match {
       case 0 =>
-        leftMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+        leftMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
       case 1 =>
-        rightMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+        rightMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
       case _ =>
     }
     true
@@ -198,23 +197,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
 
     updateMousePicker()
 
-    if (rightMouseButtonCountdown == 0) {
-      if (rightMouseButtonDown) {
-        rightMouseButtonCountdown = 10
-        performRightMouseClick
-      }
-    } else {
-      rightMouseButtonCountdown -= 1
-    }
+    rightMouseButtonTimer.tick()
+    leftMouseButtonTimer.tick()
 
-    if (leftMouseButtonCountdown == 0) {
-      if (leftMouseButtonDown) {
-        leftMouseButtonCountdown = 10
-        performLeftMouseClick
-      }
-    } else {
-      leftMouseButtonCountdown -= 1
-    }
     world.tick(camera)
 
     if (debugScene != null) debugScene.tick()

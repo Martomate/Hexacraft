@@ -54,7 +54,10 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         if (inSight(below)) world.addChunkToLoadingQueue(below.withColumn(coords))
         now
       } else {
-        chunks.remove(bottomChunk.value).foreach(_.unload())
+        chunks.remove(bottomChunk.value).foreach{c =>
+          world.chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+          c.unload()
+        }
         now - dir
       }
     }
@@ -74,6 +77,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   }
 
   def unload(): Unit = {
-    chunks.values.foreach(_.unload())
+    chunks.values.foreach{c =>
+      world.chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+      c.unload()
+    }
   }
 }

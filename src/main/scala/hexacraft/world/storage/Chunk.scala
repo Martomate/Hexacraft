@@ -1,7 +1,5 @@
 package hexacraft.world.storage
 
-import java.io.File
-
 import hexacraft.block.{Block, BlockState}
 import hexacraft.util.NBTUtil
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
@@ -147,7 +145,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     }
   }
 
-  def neighborBlock(side: Int, coords: BlockRelWorld): BlockState = {
+  def neighborBlock(side: Int, coords: BlockRelChunk): BlockState = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
@@ -171,6 +169,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     
     neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))
     renderer.foreach(_.unload())
+    _renderer = None
     // and other stuff
   }
 }

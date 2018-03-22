@@ -13,11 +13,11 @@ import hexacraft.resource.{Shader, TextureArray}
 import hexacraft.world.coord.BlockRelWorld
 import hexacraft.world.coord.CylCoords
 import hexacraft.block.BlockState
-import hexacraft.world.storage.World
+import hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, World}
 
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: World) {
+class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
   private val blockShader = Shader.get("block").get
   private val blockSideShader = Shader.get("blockSide").get
   private val skyShader = Shader.get("sky").get
@@ -59,16 +59,18 @@ class WorldRenderer(world: World) {
     }
   }
 
+  world.addChunkAddedOrRemovedListener(this)
+  private val chunks: ArrayBuffer[Chunk] = ArrayBuffer.empty
+
   def render(camera: Camera): Unit = {
     skyShader.enable()
     skyRenderer.render()
 
-    val chunkRenderers = world.columns.values.flatMap(_.chunks.values.map(_.renderer))
-
     for (job <- renderingJobs) {
       job.setup()
 
-      for (r <- chunkRenderers) {
+      for (c <- chunks) {
+        val r = c.renderer
         if (r.isDefined) job(r.get)
       }
     }
@@ -95,6 +97,13 @@ class WorldRenderer(world: World) {
   def unload(): Unit = {
     skyVAO.free()
     selectedBlockVAO.free()
+  }
+
+  override def onChunkAdded(chunk: Chunk): Unit = {
+    chunks += chunk
+  }
+  override def onChunkRemoved(chunk: Chunk): Unit = {
+    chunks -= chunk
   }
 }
 
