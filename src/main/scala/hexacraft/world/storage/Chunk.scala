@@ -1,7 +1,7 @@
 package hexacraft.world.storage
 
 import hexacraft.block.{Block, BlockState}
-import hexacraft.util.NBTUtil
+import hexacraft.util.{NBTUtil, RunOnToggle, RunOnToggleWithIndex}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.render.ChunkRenderer
 
@@ -44,11 +44,18 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   private val eventListener: ChunkEventListener = world
 
-  private val needsBlockUpdate = mutable.TreeSet.empty[Long]
-  private var needsRenderingUpdate = true
-
   private var _renderer: Option[ChunkRenderer] = None
   def renderer: Option[ChunkRenderer] = _renderer
+  private val needsRenderingUpdateToggle = new RunOnToggle({
+    removeRendererIfUnused()
+    renderer.foreach(_.updateContent())
+  }, eventListener.onChunkNeedsRenderUpdate(coords))
+
+  private val needsBlockUpdateToggle = new RunOnToggleWithIndex[BlockRelChunk](_.value)(
+    coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world),
+    coords => eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords))
+  )
+
   doRenderUpdate()
 
   def blocks: ChunkStorage = storage
@@ -102,36 +109,11 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     needsToSave = true
   }
 
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = {
-    if (!needsBlockUpdate(coords.value)) {
-      needsBlockUpdate(coords.value) = true
-      eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords))
-    }
-  }
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
+  def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.deactivate(coords)
 
-  def doBlockUpdate(coords: BlockRelChunk): Unit = {
-    if (needsBlockUpdate(coords.value)) {
-      needsBlockUpdate(coords.value) = false
-      getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
-    }
-  }
-  
-  def requestRenderUpdate(): Unit = {
-    if (!needsRenderingUpdate) {
-      needsRenderingUpdate = true
-      eventListener.onChunkNeedsRenderUpdate(coords)
-    }
-  }
-  
-  def doRenderUpdate(): Unit = {
-    if (needsRenderingUpdate) {
-      needsRenderingUpdate = false
-
-      removeRendererIfUnused()
-
-      renderer.foreach(_.updateContent())
-    }
-  }
+  def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
+  def doRenderUpdate(): Unit = needsRenderingUpdateToggle.deactivate()
 
   private def removeRendererIfUnused(): Unit = {
     renderer match {
