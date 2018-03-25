@@ -54,14 +54,9 @@ class Player(val world: World) {
       NBTUtil.getCompoundTag(tag, "position").foreach(p => setVector(p, position))
       NBTUtil.getCompoundTag(tag, "rotation").foreach(p => setVector(p, rotation))
       NBTUtil.getCompoundTag(tag, "velocity").foreach(p => setVector(p, velocity))
-      tag.getValue.get("flying") match {
-        case t: ByteTag => flying = t.getValue.byteValue() != 0
-        case _ =>
-      }
-      tag.getValue.get("selectedItemSlot") match {
-        case s: ShortTag => selectedItemSlot = s.getValue.shortValue()
-        case _ =>
-      }
+
+      flying = NBTUtil.getByte(tag, "flying", 0) != 0
+      selectedItemSlot = NBTUtil.getShort(tag, "selectedItemSlot", 0)
     }
   }
 }

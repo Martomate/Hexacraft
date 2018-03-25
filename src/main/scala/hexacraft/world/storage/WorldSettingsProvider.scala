@@ -46,15 +46,7 @@ class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings)
   def playerNBT: CompoundTag = nbtData.getValue.get("player").asInstanceOf[CompoundTag]
 
   def loadState(path: String): CompoundTag = {
-    val file = new File(saveDir, path)
-    if (file.isFile) {
-      val stream = new NBTInputStream(new FileInputStream(file))
-      val nbt = stream.readTag().asInstanceOf[CompoundTag]
-      stream.close()
-      nbt
-    } else {
-      new CompoundTag("", new CompoundMap())
-    }
+    NBTUtil.loadTag(new File(saveDir, path))
   }
 
   def saveState(tag: CompoundTag, path: String = "world.dat"): Unit = {

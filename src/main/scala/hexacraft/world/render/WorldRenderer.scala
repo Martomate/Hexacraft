@@ -70,8 +70,7 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
       job.setup()
 
       for (c <- chunks) {
-        val r = c.renderer
-        if (r.isDefined) job(r.get)
+        job(c.renderer)
       }
     }
 

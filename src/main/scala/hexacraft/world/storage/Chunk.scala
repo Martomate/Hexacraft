@@ -1,11 +1,9 @@
 package hexacraft.world.storage
 
 import hexacraft.block.{Block, BlockState}
-import hexacraft.util.{NBTUtil, RunOnToggle, RunOnToggleWithIndex}
+import hexacraft.util.{NBTUtil, PreparableRunner, PreparableRunnerWithIndex}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.render.ChunkRenderer
-
-import scala.collection.mutable
 
 object Chunk {
   val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
@@ -44,16 +42,16 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   private val eventListener: ChunkEventListener = world
 
-  private var _renderer: Option[ChunkRenderer] = None
-  def renderer: Option[ChunkRenderer] = _renderer
-  private val needsRenderingUpdateToggle = new RunOnToggle({
-    removeRendererIfUnused()
-    renderer.foreach(_.updateContent())
-  }, eventListener.onChunkNeedsRenderUpdate(coords))
+  val renderer: ChunkRenderer = new ChunkRenderer(this)
 
-  private val needsBlockUpdateToggle = new RunOnToggleWithIndex[BlockRelChunk](_.value)(
-    coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world),
-    coords => eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords))
+  private val needsRenderingUpdateToggle = new PreparableRunner(
+    eventListener.onChunkNeedsRenderUpdate(coords),
+    renderer.updateContent()
+  )
+
+  private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
+    coords => eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords)),
+    coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
   )
 
   doRenderUpdate()
@@ -109,23 +107,11 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     needsToSave = true
   }
 
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
-  def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.deactivate(coords)
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.prepare(coords)
+  def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
 
-  def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
-  def doRenderUpdate(): Unit = needsRenderingUpdateToggle.deactivate()
-
-  private def removeRendererIfUnused(): Unit = {
-    renderer match {
-      case Some(r) =>
-        if (isEmpty) {
-          r.unload()
-          _renderer = None
-        }
-      case None =>
-        if (!isEmpty) _renderer = Some(new ChunkRenderer(this))
-    }
-  }
+  def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.prepare()
+  def doRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
 
   def neighborBlock(side: Int, coords: BlockRelChunk): BlockState = {
     val (i, j, k) = BlockState.neighborOffsets(side)
@@ -150,8 +136,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     }
     
     neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))
-    renderer.foreach(_.unload())
-    _renderer = None
+    renderer.unload()
     // and other stuff
   }
 }
