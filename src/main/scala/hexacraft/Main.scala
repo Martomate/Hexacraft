@@ -42,8 +42,8 @@ object Main {
   private val doublePtrY = MemoryUtil.memAllocDouble(1)
   private val intPtrX = MemoryUtil.memAllocInt(1)
   private val intPtrY = MemoryUtil.memAllocInt(1)
-  def mousePos: Vector2dc = _mousePos.toImmutable
-  def mouseMoved: Vector2dc = _mouseMoved.toImmutable
+  def mousePos: Vector2dc = new Vector2d(_mousePos)
+  def mouseMoved: Vector2dc = new Vector2d(_mouseMoved)
   def normalizedMousePos: Vector2f = new Vector2f((mousePos.x / windowSize.x * 2 - 1).toFloat, (mousePos.y / windowSize.y * 2 - 1).toFloat)
   def aspectRatio: Float = windowSize.x.toFloat / windowSize.y
 
