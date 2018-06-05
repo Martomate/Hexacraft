@@ -15,7 +15,6 @@ public class TextMeshData {
 	protected TextMeshData(float[] vertexPositions, float[] textureCoords){
 		this.vertexPositions = vertexPositions;
 		this.textureCoords = textureCoords;
-		System.out.println(Arrays.toString(vertexPositions));
 	}
 
 	public float[] getVertexPositions() {
