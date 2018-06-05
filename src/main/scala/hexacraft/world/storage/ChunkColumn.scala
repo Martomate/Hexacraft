@@ -1,6 +1,6 @@
 package hexacraft.world.storage
 
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockAir, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
 import hexacraft.world.gen.noise.NoiseInterpolator2D
 import org.joml.Vector2d
@@ -14,21 +14,12 @@ object ChunkColumn {
 }
 
 class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
-  /* chunks
-   * method for loading/unloading top and bottom chunk
-  */
-
   val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
   private[storage] var chunkLoading: Option[Int] = None
 
   private[storage] val heightMap = {
-    val interp = new NoiseInterpolator2D(4, 4, (i, j) => {
-      val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, world.size).toCylCoord
-      val height = world.worldGenerator.biomeHeightGenerator.genNoiseFromCylXZ(c)
-      val heightVariation = world.worldGenerator.biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
-      world.worldGenerator.heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
-    })
+    val interp = world.worldGenerator.getHeightmapInterpolator(coords)
     
     for (x <- 0 until 16) yield {
       for (z <- 0 until 16) yield {
@@ -36,17 +27,19 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
       }
     }
   }
-  
+
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
 
-  def getBlock(coords: BlockRelColumn): Option[BlockState] = getChunk(coords.getChunkRelColumn).flatMap(_.getBlock(coords.getBlockRelChunk))
+  def getBlock(coords: BlockRelColumn): BlockState = {
+    getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
+  }
 
   def tick(): Unit = {
     chunks.values.foreach(_.tick())
   }
 
   private[storage] def updateLoadedChunks(): Unit = {
-    val origin = world.chunkLoadingOrigin.toBlockCoord.toVector3d.div(16)
+    val origin = world.chunkLoadingOrigin.toBlockCoords.toVector3d.div(16)
     val xzDist = math.sqrt(coords.distSq(new Vector2d(origin.x, origin.z)))
 
     def inSight(chunk: ChunkRelColumn): Boolean = {
@@ -61,7 +54,10 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         if (inSight(below)) world.addChunkToLoadingQueue(below.withColumn(coords))
         now
       } else {
-        chunks.remove(bottomChunk.value).foreach(_.unload())
+        chunks.remove(bottomChunk.value).foreach{c =>
+          world.chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+          c.unload()
+        }
         now - dir
       }
     }
@@ -81,6 +77,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   }
 
   def unload(): Unit = {
-    chunks.values.foreach(_.unload())
+    chunks.values.foreach{c =>
+      world.chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+      c.unload()
+    }
   }
 }

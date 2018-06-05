@@ -4,26 +4,29 @@ import java.util.Random
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import hexacraft.util.NBTUtil
-import hexacraft.world.WorldSettings
-import hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D}
+import hexacraft.world.coord.{BlockCoords, ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
 
-class WorldGenerator(worldGenSettings: CompoundTag, worldSettings: WorldSettings) {
-  private val randomGenSeed = NBTUtil.getLong(worldGenSettings, "seed", worldSettings.seed.getOrElse(new Random().nextLong))
+class WorldGenerator(worldGenSettings: WorldGenSettings, worldSize: CylinderSize) {
+  private val randomGenSeed = worldGenSettings.seed
   private val random = new Random(randomGenSeed)
-  private[storage] val blockGenerator                = new NoiseGenerator4D(random, 8, NBTUtil.getDouble(worldGenSettings, "blockGenScale", 0.1))
-  private[storage] val heightMapGenerator            = new NoiseGenerator3D(random, 8, NBTUtil.getDouble(worldGenSettings, "heightMapGenScale", 0.02))
-  private[storage] val blockDensityGenerator         = new NoiseGenerator4D(random, 4, NBTUtil.getDouble(worldGenSettings, "blockDensityGenScale", 0.01))
-  private[storage] val biomeHeightGenerator          = new NoiseGenerator3D(random, 4, NBTUtil.getDouble(worldGenSettings, "biomeHeightMapGenScale", 0.002))
-  private[storage] val biomeHeightVariationGenerator = new NoiseGenerator3D(random, 4, NBTUtil.getDouble(worldGenSettings, "biomeHeightVariationGenScale", 0.002))
+  private val blockGenerator                = new NoiseGenerator4D(random, 8, worldGenSettings.blockGenScale)
+  private val heightMapGenerator            = new NoiseGenerator3D(random, 8, worldGenSettings.heightMapGenScale)
+  private val blockDensityGenerator         = new NoiseGenerator4D(random, 4, worldGenSettings.blockDensityGenScale)
+  private val biomeHeightGenerator          = new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightMapGenScale)
+  private val biomeHeightVariationGenerator = new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
 
-  def saveInTag(): CompoundTag = {
-    NBTUtil.makeCompoundTag("gen", Seq(
-      new LongTag("seed", randomGenSeed),
-      new DoubleTag("blockGenScale", blockGenerator.scale),
-      new DoubleTag("heightMapGenScale", heightMapGenerator.scale),
-      new DoubleTag("blockDensityGenScale", blockDensityGenerator.scale),
-      new DoubleTag("biomeHeightGenScale", biomeHeightGenerator.scale),
-      new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenerator.scale)
-    ))
-  }
+  def getHeightmapInterpolator(coords: ColumnRelWorld): NoiseInterpolator2D = new NoiseInterpolator2D(4, 4, (i, j) => {
+    val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4, worldSize).toCylCoords
+    val height = biomeHeightGenerator.genNoiseFromCylXZ(c)
+    val heightVariation = biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
+    heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
+  })
+
+  def getBlockInterpolator(coords: ChunkRelWorld): NoiseInterpolator3D = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => {
+    val c = BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4, worldSize).toCylCoords
+    blockGenerator.genNoiseFromCyl(c) + blockDensityGenerator.genNoiseFromCyl(c) * 0.4
+  })
+
+  def toNBT: CompoundTag = worldGenSettings.toNBT
 }

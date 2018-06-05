@@ -97,7 +97,7 @@ class PlayerInputHandler(val player: Player) {
     if (!player.flying) {
       player.velocity.y -= 9.82 / 60
       player.velocity.div(60)
-      val (pos, vel) = player.bounds.afterCollision(player.position, player.velocity, player.world)
+      val (pos, vel) = player.bounds.positionAndVelocityAfterCollision(player.position, player.velocity, player.world)
       player.position.set(pos)
       player.velocity.set(vel)
       player.velocity.mul(60)

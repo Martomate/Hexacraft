@@ -9,9 +9,9 @@ import hexacraft.world.storage.CylinderSize
 import hexacraft.world.Player
 
 object Camera {
-  val unitX: Vector3fc = new Vector3f(1, 0, 0).toImmutable
-  val unitY: Vector3fc = new Vector3f(0, 1, 0).toImmutable
-  val unitZ: Vector3fc = new Vector3f(0, 0, 1).toImmutable
+  val unitX: Vector3fc = new Vector3f(1, 0, 0)
+  val unitY: Vector3fc = new Vector3f(0, 1, 0)
+  val unitZ: Vector3fc = new Vector3f(0, 0, 1)
 }
 
 class CameraProjection(var fov: Float, var aspect: Float, val near: Float, val far: Float) {

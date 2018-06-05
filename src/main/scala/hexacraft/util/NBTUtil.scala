@@ -1,10 +1,9 @@
 package hexacraft.util
 
-import java.io.File
-import java.io.FileOutputStream
+import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.flowpowered.nbt._
-import com.flowpowered.nbt.stream.NBTOutputStream
+import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 
 import scala.collection.mutable
 
@@ -14,6 +13,16 @@ object NBTUtil {
     else {
       tag.getValue.get(key) match {
         case t: ByteTag => t.getValue.byteValue()
+        case _ => default
+      }
+    }
+  }
+
+  def getShort(tag: CompoundTag, key: String, default: =>Short): Short = {
+    if (tag == null) default
+    else {
+      tag.getValue.get(key) match {
+        case t: ShortTag => t.getValue.shortValue()
         case _ => default
       }
     }
@@ -99,5 +108,16 @@ object NBTUtil {
       nbtOut.writeTag(tag)
       nbtOut.close()
     }).start()
+  }
+
+  def loadTag(file: File): CompoundTag = {
+    if (file.isFile) {
+      val stream = new NBTInputStream(new FileInputStream(file))
+      val nbt = stream.readTag().asInstanceOf[CompoundTag]
+      stream.close()
+      nbt
+    } else {
+      new CompoundTag("", new CompoundMap())
+    }
   }
 }

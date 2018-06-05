@@ -1,7 +1,7 @@
 package hexacraft.world.coord
 
 import hexacraft.Camera
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockState}
 import hexacraft.world.storage.World
 import org.joml.{Vector2f, Vector3d, Vector4f}
 
@@ -91,7 +91,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
   }
 
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
-    case Some(block) =>
+    case block if block.blockType != Block.Air =>
       val points = for (v <- block.blockType.bounds(block).vertices) yield {
         CoordUtils.fromBlockCoords(world.size, camera.view, hitBlockCoords, v, new Vector3d)
       }
@@ -106,7 +106,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
         }
         allElementsSame(seq)
       })
-    case None => false
+    case _ => false
   }
 
   private def allElementsSame(seq: immutable.IndexedSeq[Boolean]) = {

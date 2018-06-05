@@ -51,7 +51,7 @@ object CoordUtils {
 
   def fromBlockCoords(reference: CylCoords, blockPos: BlockCoords, position: CylCoords, _result: Vector3d): Vector3d = {
     val pos = if (_result != null) _result else new Vector3d()
-    (blockPos.toCylCoord + position).toNormalCoord(reference) into pos
+    (blockPos.toCylCoords + position).toNormalCoords(reference) into pos
   }
 
   def fitZ(z: Double, circumference: Double): Double = {

@@ -1,16 +1,9 @@
 package hexacraft.world.storage
 
-import java.io.{File, FileInputStream}
-
-import com.flowpowered.nbt.CompoundTag
-import com.flowpowered.nbt.stream.NBTInputStream
 import hexacraft.block.{Block, BlockState}
-import hexacraft.util.NBTUtil
-import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld}
-import hexacraft.world.gen.noise.NoiseInterpolator3D
+import hexacraft.util.{NBTUtil, PreparableRunner, PreparableRunnerWithIndex}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.render.ChunkRenderer
-
-import scala.collection.mutable
 
 object Chunk {
   val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
@@ -24,17 +17,22 @@ object Chunk {
     (1, 0, -1))
 }
 
+trait ChunkEventListener {
+  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit
+  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit
+}
+
 class Chunk(val coords: ChunkRelWorld, val world: World) {
-  val neighbors: Array[Option[Chunk]] = Array.tabulate(8)(i => {
+  val neighbors: Array[Option[Chunk]] = Array.tabulate(8){ i =>
     val (dx, dy, dz) = Chunk.neighborOffsets(i)
-    val c2 = ChunkRelWorld.offset(coords, dx, dy, dz)
+    val c2 = coords.offset(dx, dy, dz)
     val chunkOpt = Option(world).flatMap(_.getChunk(c2))
     chunkOpt.foreach(chunk => {
       chunk.neighbors((i + 4) % 8) = Some(this)
       chunk.requestRenderUpdate()
     })
     chunkOpt
-  })
+  }
 
   private val generator = new ChunkGenerator(this)
   private val chunkData = generator.loadData()
@@ -42,23 +40,31 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
 
-  private val needsBlockUpdate = mutable.TreeSet.empty[Long]
+  private val eventListener: ChunkEventListener = world
 
-  private var needsRenderingUpdate = true
-  private var _renderer: Option[ChunkRenderer] = None
-  def renderer: Option[ChunkRenderer] = _renderer
+  val renderer: ChunkRenderer = new ChunkRenderer(this)
+
+  private val needsRenderingUpdateToggle = new PreparableRunner(
+    eventListener.onChunkNeedsRenderUpdate(coords),
+    renderer.updateContent()
+  )
+
+  private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
+    coords => eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords)),
+    coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
+  )
+
   doRenderUpdate()
 
   def blocks: ChunkStorage = storage
 
-  def getBlock(coords: BlockRelChunk): Option[BlockState] = storage.getBlock(coords)
+  def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
-  def setBlock(block: BlockState): Boolean = {
-    val blockCoord = block.coords.getBlockRelChunk
-    val before = getBlock(blockCoord)
-    storage.setBlock(block)
-    if (before.isEmpty || before.get != block) {
-      onBlockModified(blockCoord)
+  def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean = {
+    val before = getBlock(blockCoords)
+    storage.setBlock(blockCoords, block)
+    if (before.blockType == Block.Air || before != block) {
+      onBlockModified(blockCoords)
     }
     true
   }
@@ -80,7 +86,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
     }
 
-    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = BlockRelChunk.offset(c, off._1, off._2, off._3)
+    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = c.offset(off._1, off._2, off._3)
 
 
     requestRenderUpdate()
@@ -101,41 +107,19 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     needsToSave = true
   }
 
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = {
-    if (!needsBlockUpdate(coords.value)) {
-      needsBlockUpdate(coords.value) = true
-      world.addToBlockUpdateList(coords.withChunk(this.coords))
-    }
-  }
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.prepare(coords)
+  def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
 
-  def doBlockUpdate(coords: BlockRelChunk): Unit = {
-    if (needsBlockUpdate(coords.value)) {
-      needsBlockUpdate(coords.value) = false
-      getBlock(coords).foreach(b => b.blockType.doUpdate(b, world))
-    }
-  }
-  
-  def requestRenderUpdate(): Unit = {
-    if (!needsRenderingUpdate) {
-      needsRenderingUpdate = true
-      world.addRenderUpdate(coords)
-    }
-  }
-  
-  def doRenderUpdate(): Unit = {
-    if (needsRenderingUpdate) {
-      needsRenderingUpdate = false
-      renderer match {
-        case Some(r) =>
-          if (isEmpty) {
-            r.unload()
-            _renderer = None
-          }
-        case None =>
-          if (!isEmpty) _renderer = Some(new ChunkRenderer(this))
-      }
+  def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.prepare()
+  def doRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
 
-      renderer.foreach(_.updateContent())
+  def neighborBlock(side: Int, coords: BlockRelChunk): BlockState = {
+    val (i, j, k) = BlockState.neighborOffsets(side)
+    val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
+    if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
+      getBlock(BlockRelChunk(i2, j2, k2, coords.cylSize))
+    } else {
+      world.getBlock(this.coords.withBlockCoords(i2, j2, k2))
     }
   }
 
@@ -143,25 +127,16 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     chunkData.optimizeStorage()
   }
 
-  def isEmpty: Boolean = {
-    storage.numBlocks == 0
-  }
+  def isEmpty: Boolean = storage.numBlocks == 0
 
   def unload(): Unit = {
     if (needsToSave) {
       val chunkTag = NBTUtil.makeCompoundTag("chunk", storage.toNBT)// Add more tags with ++
-      NBTUtil.saveTag(chunkTag, new File(world.saveDir, "chunks/" + coords.value + ".dat"))
+      generator.saveData(chunkTag)
     }
     
     neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))
-    renderer.foreach(_.unload())
+    renderer.unload()
     // and other stuff
   }
-
-  //  def render(): Unit = {
-  // TODO: implement system (in Loader) for rendering stuff, like e.g. blocks, with instancing etc. Then: render a block!
-  // It might be a good idea to keep a lot i the buffer and then change the buffer in-place when blocks are added/removed
-  // It might also be a good idea to have several buffers so that waiting time can be reduced
-  // Consider using GL30.glMapBufferRange(target, offset, length, access)
-  //  }
 }

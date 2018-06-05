@@ -2,9 +2,9 @@ package hexacraft.scene
 
 import java.io.File
 
-import hexacraft.block.BlockState
+import hexacraft.block.{Block, BlockState}
 import hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import hexacraft.gui.comp.{GUITransformation, LocationInfo}
+import hexacraft.gui.comp.{GUITransformation, LocationInfo, LocationInfoIdentity}
 import hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import hexacraft.gui.menu.pause.PauseMenu
 import hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
@@ -12,8 +12,9 @@ import hexacraft.resource.Shader
 import hexacraft.world.WorldSettings
 import hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
 import hexacraft.world.render.WorldRenderer
-import hexacraft.world.storage.World
+import hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
 import hexacraft._
+import hexacraft.util.TickableTimer
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
@@ -37,21 +38,19 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
 
-  val world = new World(saveFolder, worldSettings)
+  val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
   val worldRenderer = new WorldRenderer(world)
 
   val camera = new Camera(new CameraProjection(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f), world.size)
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(world.player)
 
-  private val toolbar = new Toolbar(LocationInfo(0.05f, 0.035f, 0.9f, 0.095f), world.player.inventory)
+  private val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), world.player.inventory)
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f)(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
-  private var leftMouseButtonDown = false
-  private var rightMouseButtonDown = false
-  private var leftMouseButtonCountdown = 0
-  private var rightMouseButtonCountdown = 0
+  private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick)
+  private val leftMouseButtonTimer = TickableTimer(10, initActive = false)(performLeftMouseClick)
 
   private var isPaused: Boolean = false
 
@@ -67,11 +66,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   }
 
   private def setUniforms(): Unit = {
-    camera.setProjMatrix(blockShader)
-    camera.setProjMatrix(blockSideShader)
-    camera.setProjMatrix(guiBlockShader)
-    camera.setProjMatrix(guiBlockSideShader)
-    camera.setProjMatrix(selectedBlockShader)
+    setProjMatrixForAll()
 
     blockShader.setUniform1f("totalSize", world.size.totalSize)
     blockSideShader.setUniform1f("totalSize", world.size.totalSize)
@@ -80,6 +75,14 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
     Shader.foreach(_.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y))
+  }
+
+  private def setProjMatrixForAll(): Unit = {
+    camera.setProjMatrix(blockShader)
+    camera.setProjMatrix(blockSideShader)
+    camera.setProjMatrix(guiBlockShader)
+    camera.setProjMatrix(guiBlockSideShader)
+    camera.setProjMatrix(selectedBlockShader)
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {
@@ -142,9 +145,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     event.button match {
       case 0 =>
-        rightMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+        leftMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
       case 1 =>
-        leftMouseButtonDown = event.action != GLFW.GLFW_RELEASE
+        rightMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
       case _ =>
     }
     true
@@ -154,11 +157,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     camera.proj.aspect = width.toFloat / height
     camera.updateProjMatrix()
 
-    camera.setProjMatrix(blockShader)
-    camera.setProjMatrix(blockSideShader)
-    camera.setProjMatrix(guiBlockShader)
-    camera.setProjMatrix(guiBlockSideShader)
-    camera.setProjMatrix(selectedBlockShader)
+    setProjMatrixForAll()
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
   }
@@ -166,18 +165,21 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def windowTitle: String = ""
 
   override def render(transformation: GUITransformation): Unit = {
-    // render world etc.
     worldRenderer.render(camera)
 
-    if (!isPaused && playerInputHandler.moveWithMouse) {
-      crosshairShader.enable()
-      crosshairRenderer.render()
-    }
+    renderCrosshair()
 
     blockInHandRenderer.render(transformation)
     toolbar.render(transformation)
 
     if (debugScene != null) debugScene.render(transformation)
+  }
+
+  private def renderCrosshair(): Unit = {
+    if (!isPaused && playerInputHandler.moveWithMouse) {
+      crosshairShader.enable()
+      crosshairRenderer.render()
+    }
   }
 
   override def tick(): Unit = {
@@ -193,49 +195,46 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     blockShader.setUniform3f("sun", 0, 1, -1)
     blockSideShader.setUniform3f("sun", 0, 1, -1)
 
-    // MousePicker
-    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
-    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).isDefined) else None)
+    updateMousePicker()
 
-    if (leftMouseButtonCountdown == 0) {
-      if (leftMouseButtonDown) {
-        leftMouseButtonCountdown = 10
-        worldRenderer.getSelectedBlockAndSide match {
-          case Some((coords1, Some(side))) =>
-            val offset = BlockState.neighborOffsets(side)
-            val coords = coords1.offset(offset._1, offset._2, offset._3)
-            if (world.getBlock(coords).isEmpty) {
-              val blockType = playerInputHandler.player.blockInHand
-              val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoord
-              val state = new BlockState(coords, blockType)
-              if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
-                world.setBlock(state)
-              }
-            }
-          case _ =>
-        }
-      }
-    } else {
-      leftMouseButtonCountdown -= 1
-    }
+    rightMouseButtonTimer.tick()
+    leftMouseButtonTimer.tick()
 
-    if (rightMouseButtonCountdown == 0) {
-      if (rightMouseButtonDown) {
-        rightMouseButtonCountdown = 10
-        worldRenderer.getSelectedBlockAndSide match {
-          case Some((coords, _)) =>
-            if (world.getBlock(coords).isDefined) {
-              world.removeBlock(coords)
-            }
-          case _ =>
-        }
-      }
-    } else {
-      rightMouseButtonCountdown -= 1
-    }
     world.tick(camera)
 
     if (debugScene != null) debugScene.tick()
+  }
+
+  private def updateMousePicker(): Unit = {
+    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
+    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Block.Air) else None)
+  }
+
+  private def performLeftMouseClick = {
+    worldRenderer.getSelectedBlockAndSide match {
+      case Some((coords, _)) =>
+        if (world.getBlock(coords).blockType != Block.Air) {
+          world.removeBlock(coords)
+        }
+      case _ =>
+    }
+  }
+
+  private def performRightMouseClick = {
+    worldRenderer.getSelectedBlockAndSide match {
+      case Some((coords1, Some(side))) =>
+        val offset = BlockState.neighborOffsets(side)
+        val coords = coords1.offset(offset._1, offset._2, offset._3)
+        if (world.getBlock(coords).blockType == Block.Air) {
+          val blockType = playerInputHandler.player.blockInHand
+          val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoords
+          val state = new BlockState(blockType)
+          if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
+            world.setBlock(coords, state)
+          }
+        }
+      case _ =>
+    }
   }
 
   override def unload(): Unit = {

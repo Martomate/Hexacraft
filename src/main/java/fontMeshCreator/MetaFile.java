@@ -26,8 +26,6 @@ public class MetaFile {
 	private static final String SPLITTER = " ";
 	private static final String NUMBER_SEPARATOR = ",";
 
-	private double aspectRatio;
-
 	private double verticalPerPixelSize;
 	private double horizontalPerPixelSize;
 	private double spaceWidth;
@@ -47,7 +45,6 @@ public class MetaFile {
 	 *            - the font file.
 	 */
 	protected MetaFile(URL file) {
-		this.aspectRatio = (double) Main.windowSize().x / (double) Main.windowSize().y;
 		openFile(file);
 		loadPaddingData();
 		loadLineSizes();
@@ -162,7 +159,7 @@ public class MetaFile {
 		processNextLine();
 		int lineHeightPixels = getValueOfVariable("lineHeight") - paddingHeight;
 		verticalPerPixelSize = TextMeshCreator.LINE_HEIGHT / (double) lineHeightPixels;
-		horizontalPerPixelSize = verticalPerPixelSize / aspectRatio;
+		horizontalPerPixelSize = verticalPerPixelSize;
 	}
 
 	/**
