@@ -12,8 +12,8 @@ float aspectRatio = windowSize.x / windowSize.y;
 float aspectSize = imageSize.x / imageSize.y;
 
 void main() {
-	gl_Position = transformationMatrix * vec4((position * 2 - 1), 0.0, 1.0);
-//	gl_Position.xy *= vec2(aspectSize / aspectRatio, 1);
+	gl_Position = transformationMatrix * vec4(position, 0.0, 1.0);
+	gl_Position.xy *= vec2(1 / aspectRatio, 1);
 	textureCoords = vec2(position.x, 1 - position.y);
 }
 

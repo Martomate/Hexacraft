@@ -89,10 +89,10 @@ public class TextMeshCreator {
 		double y = curserY + (character.getyOffset() * fontSize);
 		double maxX = x + (character.getSizeX() * fontSize);
 		double maxY = y + (character.getSizeY() * fontSize);
-		double properX = (2 * x) - 1;
-		double properY = (-2 * y) + 1;
-		double properMaxX = (2 * maxX) - 1;
-		double properMaxY = (-2 * maxY) + 1;
+		double properX = x;
+		double properY = -y;
+		double properMaxX = maxX;
+		double properMaxY = -maxY;
 		addVertices(vertices, properX, properY, properMaxX, properMaxY);
 	}
 

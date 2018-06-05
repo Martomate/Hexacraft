@@ -1,6 +1,7 @@
 package hexacraft.gui.menu
 
-import hexacraft.gui.comp.{Component, GUITransformation, LocationInfo, SubComponents}
+import hexacraft.Main
+import hexacraft.gui.comp._
 import hexacraft.resource.TextureSingle
 import hexacraft.scene.Scene
 
@@ -15,5 +16,5 @@ abstract class MenuScene extends Scene with SubComponents {
 }
 
 object MenuScene {
-  val entireBackground: LocationInfo = LocationInfo(0, 0, 1, 1)
+  def entireBackground: LocationInfo = new LocationInfoIdentity(-Main.aspectRatio, -1, Main.aspectRatio * 2, 2)
 }

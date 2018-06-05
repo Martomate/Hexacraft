@@ -14,13 +14,13 @@ import scala.util.hashing.Hashing
 
 class NewWorldMenu extends MenuScene{
   // TODO: add text fields and other settings
-  addComponent(new Label("World name", LocationInfo(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  addComponent(new Label("World name", LocationInfo(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false).withColor(1, 1, 1))
   private val nameTF = new TextField(LocationInfo(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 1.5f)
   addComponent(nameTF)
-  addComponent(new Label("World size", LocationInfo(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  addComponent(new Label("World size", LocationInfo(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false).withColor(1, 1, 1))
   private val sizeTF = new TextField(LocationInfo(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 1.5f)
   addComponent(sizeTF)
-  addComponent(new Label("World seed", LocationInfo(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 1.5f, false).withColor(1, 1, 1))
+  addComponent(new Label("World seed", LocationInfo(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false).withColor(1, 1, 1))
   private val seedTF = new TextField(LocationInfo(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 1.5f)
   addComponent(seedTF)
 

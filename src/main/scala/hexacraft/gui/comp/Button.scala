@@ -6,7 +6,7 @@ import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 
 class Button(text: String, _location: LocationInfo)(clickAction: =>Unit) extends Component(_location) {
-  addText(Component.makeText(text, location, 2.0f).setTextAndFitSize(text, 2.0f))
+  addText(Component.makeText(text, location, 4.0f).setTextAndFitSize(text, 4.0f))
 
   override def render(transformation: GUITransformation): Unit = {
     if (location.containsMouse(transformation.x, transformation.y)) {

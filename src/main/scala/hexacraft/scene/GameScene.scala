@@ -4,7 +4,7 @@ import java.io.File
 
 import hexacraft.block.{Block, BlockState}
 import hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import hexacraft.gui.comp.{GUITransformation, LocationInfo}
+import hexacraft.gui.comp.{GUITransformation, LocationInfo, LocationInfoIdentity}
 import hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import hexacraft.gui.menu.pause.PauseMenu
 import hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
@@ -45,7 +45,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(world.player)
 
-  private val toolbar = new Toolbar(LocationInfo(0.05f, 0.035f, 0.9f, 0.095f), world.player.inventory)
+  private val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), world.player.inventory)
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f)(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 

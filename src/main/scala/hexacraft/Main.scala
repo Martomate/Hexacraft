@@ -235,7 +235,7 @@ object Main {
   }
 
   private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
-    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * 0.5f * windowSize.x / windowSize.y + 0.5f, normalizedMousePos.y * 0.5f + 0.5f))))
+    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * aspectRatio, normalizedMousePos.y))))
   }
 
   private def processScroll(window: Long, xoffset: Double, yoffset: Double): Unit = {

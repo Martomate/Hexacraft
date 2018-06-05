@@ -1,6 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
+import hexacraft.event._
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 
@@ -45,6 +45,12 @@ class ScrollPane(_location: LocationInfo) extends Component(_location) {
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     if (containsMouse) {
       components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xoffset, -yoffset)))
+    } else false
+  }
+
+  override def onMouseMoveEvent(event: MouseMoveEvent): Boolean = {
+    if (containsMouse) {
+      components.exists(_.onMouseMoveEvent(event))
     } else false
   }
 

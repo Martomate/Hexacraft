@@ -1,13 +1,13 @@
 package hexacraft.gui.inventory
 
-import hexacraft.gui.comp.{Component, GUITransformation, LocationInfo, SubComponents}
+import hexacraft.gui.comp._
 import hexacraft.world.Inventory
 import org.joml.{Matrix4f, Vector4f}
 
 class Toolbar(_locationInfo: LocationInfo, inventory: Inventory) extends Component(_locationInfo) with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
-  private val selectedBox = LocationInfo(location.x + location.h * 0.05f, location.y + location.h * 0.05f, location.w / 9 - location.h * 0.1f, location.h - location.h * 0.1f)
+  private val selectedBox = new LocationInfoIdentity(location.x + location.h * 0.05f, location.y + location.h * 0.05f, location.w / 9 - location.h * 0.1f, location.h - location.h * 0.1f)
   private var selectedIndex = 0
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 

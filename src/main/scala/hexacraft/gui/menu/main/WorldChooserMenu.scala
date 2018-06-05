@@ -12,7 +12,7 @@ import hexacraft.util.NBTUtil
 import hexacraft.world.WorldSettings
 
 class WorldChooserMenu extends MenuScene {
-  addComponent(new Label("Choose world", LocationInfo(0, 0.85f, 1, 0.15f), 3).withColor(1, 1, 1))
+  addComponent(new Label("Choose world", LocationInfo(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
   private val scrollPane = new ScrollPane(LocationInfo(0.285f, 0.225f, 0.43f, 0.635f))
   getWorlds.zipWithIndex.map {
     case (f, i) =>
