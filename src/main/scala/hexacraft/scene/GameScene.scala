@@ -160,6 +160,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     setProjMatrixForAll()
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
+
+    if (debugScene != null) debugScene.windowResized(width, height)
   }
   
   override def windowTitle: String = ""
