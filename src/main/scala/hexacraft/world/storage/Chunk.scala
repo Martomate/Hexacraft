@@ -1,9 +1,9 @@
 package hexacraft.world.storage
 
-import hexacraft.block.{Block, BlockState}
+import hexacraft.block.{Block, BlockAir, BlockState}
 import hexacraft.util.{NBTUtil, PreparableRunner, PreparableRunnerWithIndex}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import hexacraft.world.render.ChunkRenderer
+import hexacraft.world.render.{ChunkRenderer, LightPropagator}
 
 object Chunk {
   val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
@@ -57,6 +57,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   doRenderUpdate()
 
   def blocks: ChunkStorage = storage
+  def column: ChunkColumn = world.getColumn(coords.getColumnRelWorld).get
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
@@ -66,12 +67,19 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     if (before.blockType == Block.Air || before != block) {
       onBlockModified(blockCoords)
     }
+    LightPropagator.removeTorchlight(this, blockCoords)
+    LightPropagator.removeSunlight(this, blockCoords)
+    if (block.blockType.lightEmitted != 0) {
+      LightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
+    }
     true
   }
 
   def removeBlock(coords: BlockRelChunk): Boolean = {
     storage.removeBlock(coords)
     onBlockModified(coords)
+    LightPropagator.removeTorchlight(this, coords)
+    LightPropagator.updateSunlight(this, coords)
     true
   }
 
@@ -114,12 +122,18 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def doRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
 
   def neighborBlock(side: Int, coords: BlockRelChunk): BlockState = {
+    val n = neighbor(side, coords)
+    n._2.map(_.getBlock(n._1)).getOrElse(BlockAir.State)
+  }
+
+  def neighbor(side: Int, coords: BlockRelChunk): (BlockRelChunk, Option[Chunk]) = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
+    val c2 = BlockRelChunk(i2, j2, k2, coords.cylSize)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      getBlock(BlockRelChunk(i2, j2, k2, coords.cylSize))
+      (c2, Some(this))
     } else {
-      world.getBlock(this.coords.withBlockCoords(i2, j2, k2))
+      (c2, world.getChunk(this.coords.withBlockCoords(i2, j2, k2).getChunkRelWorld))
     }
   }
 

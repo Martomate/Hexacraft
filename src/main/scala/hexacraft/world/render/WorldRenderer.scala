@@ -1,5 +1,7 @@
 package hexacraft.world.render
 
+import java.util
+
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import hexacraft.Camera
@@ -10,11 +12,11 @@ import hexacraft.renderer.VAO
 import hexacraft.renderer.VAOBuilder
 import hexacraft.renderer.VBO
 import hexacraft.resource.{Shader, TextureArray}
-import hexacraft.world.coord.BlockRelWorld
-import hexacraft.world.coord.CylCoords
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, CylCoords}
 import hexacraft.block.BlockState
 import hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, World}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
@@ -57,6 +59,11 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
         case _ =>
       }
     }
+  }
+
+  def getBrightness(block: BlockRelWorld): Float = {
+    if (block != null) world.getChunk(block.getChunkRelWorld).map(_.renderer.getBrightness(block.getBlockRelChunk)).getOrElse(1.0f)
+    else 1.0f
   }
 
   world.addChunkAddedOrRemovedListener(this)

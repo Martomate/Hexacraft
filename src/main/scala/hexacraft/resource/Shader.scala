@@ -15,7 +15,7 @@ object Shader {
 
   def init(): Unit = {
     cleanUp()
-    Shader("block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "0")
+    Shader("block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight", "brightness")("isSide" -> "0")
     Shader("blockSide", fileName = "block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
     Shader("gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "0")
     Shader("gui_blockSide", fileName = "gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")

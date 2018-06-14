@@ -48,15 +48,24 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     chunksToLoad.enqueue(makeChunkToLoadTuple(coords))
   }
 
-  private def makeChunkToLoadTuple(coords: ChunkRelWorld) = {
-    val cyl = BlockCoords(coords.withBlockCoords(8, 8, 8), size).toCylCoords
-    val cDir = cyl.toNormalCoords(chunkLoadingOrigin).toVector3d.normalize()
-    val dot = chunkLoadingDirection.dot(cDir)
+  private def makeChunkToLoadTuple(coords: ChunkRelWorld): (Double, ChunkRelWorld) = {
+    val corners = for {
+      i <- 0 to 1
+      j <- 0 to 1
+      k <- 0 to 1
+    } yield (15 * i, 15 * j, 15 * k)
+    val dist = ((corners :+ (8, 8, 8)) map {
+      t =>
+        val cyl = BlockCoords(coords.withBlockCoords(t._1, t._2, t._3), size).toCylCoords
+        val cDir = cyl.toNormalCoords(chunkLoadingOrigin).toVector3d.normalize()
+        val dot = chunkLoadingDirection.dot(cDir)
+        chunkLoadingOrigin.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
+    }).min
 
-    (chunkLoadingOrigin.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25, coords)
+    (dist, coords)
   }
 
-  private def setChunkLoadingCenterAndDirection(camera: Camera) = {
+  private def setChunkLoadingCenterAndDirection(camera: Camera): Vector3d = {
     chunkLoadingOrigin = CylCoords(player.position.x, player.position.y, player.position.z, size)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.view.invMatrix)
     chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
@@ -78,7 +87,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     val columnsToAdd = MutableSet.empty[ColumnRelWorld]
     val columnsToRemove = MutableSet.empty[ColumnRelWorld]
 
-    def fillInEdgeWithExistingNeighbors(col: ColumnRelWorld) = {
+    def fillInEdgeWithExistingNeighbors(col: ColumnRelWorld): Unit = {
       for (offset <- ChunkColumn.neighbors) {
         val col2 = col.offset(offset._1, offset._2)
         if (columns.contains(col2.value)) {
@@ -87,7 +96,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
       }
     }
 
-    def expandEdgeWhereInSightAndReturnSurrounded(col: ColumnRelWorld) = {
+    def expandEdgeWhereInSightAndReturnSurrounded(col: ColumnRelWorld): Boolean = {
       var surrounded = true
       for (offset <- ChunkColumn.neighbors) {
         val col2 = col.offset(offset._1, offset._2)
@@ -103,7 +112,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
       surrounded
     }
 
-    def shouldRemoveColAfterManagingEdgeAt(col: ColumnRelWorld) = {
+    def shouldRemoveColAfterManagingEdgeAt(col: ColumnRelWorld): Boolean = {
       if (!inSight(col)) {
         columns.remove(col.value).get.unload()
         fillInEdgeWithExistingNeighbors(col)
@@ -124,13 +133,13 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   }
 
   private def loadChunks(): Unit = {
-    def topBottomChangeWhenExists(chY: Int, top: Int, bottom: Int) = {
+    def topBottomChangeWhenExists(chY: Int, top: Int, bottom: Int): Option[(Int, Int)] = {
       if (chY == top + 1) Some((chY, bottom))
       else if (chY == bottom - 1) Some((top, chY))
       else None
     }
 
-    def getTopBottomChange(col: ChunkColumn, chY: Int) = {
+    def getTopBottomChange(col: ChunkColumn, chY: Int): Option[(Int, Int)] = {
       col.topAndBottomChunks match {
         case None => Some((chY, chY))
         case Some((top, bottom)) =>
@@ -138,7 +147,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
       }
     }
 
-    def manageTopBottomFor(chunkToLoad: ChunkRelWorld) = {
+    def manageTopBottomFor(chunkToLoad: ChunkRelWorld): Unit = {
       getColumn(chunkToLoad.getColumnRelWorld).foreach { col =>
         val ch = chunkToLoad.getChunkRelColumn
         val topBottomChange = getTopBottomChange(col, ch.Y)
@@ -160,7 +169,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     }
   }
 
-  private val chunkRenderUpdateQueue = mutable.PriorityQueue.empty[(Double, ChunkRelWorld)](Ordering.by(-_._1))
+  private val chunkRenderUpdateQueue: mutable.PriorityQueue[(Double, ChunkRelWorld)] = mutable.PriorityQueue.empty(Ordering.by(-_._1))
 
   private val blocksToUpdate = mutable.Queue.empty[BlockRelWorld]
 
@@ -174,7 +183,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
   def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = {
-    chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
+    if (!chunkRenderUpdateQueue.exists(_._2 == coords)) chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
   }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
@@ -187,7 +196,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4, size)
     ensureColumnExists(coords)
-    getColumn(coords).get.heightMap(x & 15)(z & 15)
+    getColumn(coords).get.heightMap(x & 15, z & 15)
   }
 
   def tick(camera: Camera): Unit = {
@@ -203,10 +212,16 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   }
 
   private def performChunkRenderUpdates(): Unit = {
+//    println("Chunks: " + columns.map(_._2.chunks.values.size).sum)
+//    if (chunkRenderUpdateQueue.nonEmpty) println(chunkRenderUpdateQueue.size)
     for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
       if (chunkRenderUpdateQueue.nonEmpty) {
-        val chunk = chunkRenderUpdateQueue.dequeue()._2
-        getChunk(chunk).foreach(_.doRenderUpdate())
+        var chunk: Option[Chunk] = None
+        do {
+          chunk = getChunk(chunkRenderUpdateQueue.dequeue()._2)
+        } while (chunk.isEmpty && chunkRenderUpdateQueue.nonEmpty)
+
+        chunk.foreach(_.doRenderUpdate())
       }
     }
   }
@@ -236,7 +251,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     }
   }
 
-  private def ensureColumnExists(here: ColumnRelWorld) = {
+  private def ensureColumnExists(here: ColumnRelWorld): Unit = {
     if (!columns.contains(here.value)) {
       columns(here.value) = new ChunkColumn(here, this)
       columnsAtEdge += here

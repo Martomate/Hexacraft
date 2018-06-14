@@ -23,6 +23,8 @@ case class BlockRelChunk(private val _value: Int, cylSize: CylinderSize) extends
   def cz: Byte = (value >> 0 & 0xf).toByte
 
   def offset(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk(cx + x, cy + y, cz + z, cylSize)
+
+  override def toString: String = s"($cx, $cy, $cz)"
 }
 
 object BlockRelColumn {

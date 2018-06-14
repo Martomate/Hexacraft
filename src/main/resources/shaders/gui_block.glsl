@@ -11,10 +11,12 @@ in vec3 normal;
 in vec2 blockPos;
 in int blockTex;
 in float blockHeight;
+in float brightness;
 
 out FragIn {
 	vec2 texCoords;
 	flat int blockTex;
+	flat float brightness;
 	vec3 normal;
 } fragIn;
 
@@ -36,6 +38,7 @@ void main() {
 	gl_Position.z = 0;
 	fragIn.texCoords = texCoords;
 	fragIn.blockTex = blockTex;
+	fragIn.brightness = brightness;
 }
 
 #shader frag
@@ -44,13 +47,13 @@ void main() {
 in FragIn {
 	vec2 texCoords;
 	flat int blockTex;
+	flat float brightness;
 	vec3 normal;
 } fragIn;
 
 out vec4 color;
 
 uniform sampler2DArray texSampler;
-uniform float glow = 1.0;
 uniform int side;
 uniform int texSize = 32;
 
@@ -109,5 +112,5 @@ void main() {
 
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
-	color.rgb *= glow * visibility;
+	color.rgb *= fragIn.brightness * visibility;
 }

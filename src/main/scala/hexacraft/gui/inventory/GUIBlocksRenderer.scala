@@ -6,7 +6,7 @@ import hexacraft.resource.{Shader, TextureArray}
 import hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 import org.joml.Matrix4f
 
-class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Float = 0, yOff: Float = 0)(blockProvider: Int => Block) {
+class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Float = 0, yOff: Float = 0, initBrightnessFunc: (Int, Int) => Float = (_, _) => 1.0f)(blockProvider: Int => Block) {
   private val guiBlockRenderer = new BlockRendererCollection(s => new FlatBlockRenderer(s, 0))
   private val guiBlockShader: Shader = Shader.get("gui_block").get
   private val guiBlockSideShader: Shader = Shader.get("gui_blockSide").get
@@ -14,6 +14,9 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
 
   private var viewMatrix = new Matrix4f
   def setViewMatrix(matr: Matrix4f): Unit = viewMatrix = matr
+
+  private var brightnessFunc: (Int, Int) => Float = initBrightnessFunc
+  def setBrightnessFunc(func: (Int, Int) => Float): Unit = brightnessFunc = func
 
   updateContent()
 
@@ -31,13 +34,19 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
   }
 
   def updateContent(): Unit = {
-    for (side <- 0 until 8) guiBlockRenderer.updateContent(side, 9*9, buf => {
+    for (side <- 0 until 8) guiBlockRenderer.updateContent(side, 9*9) { buf =>
       for (y <- 0 until h) {
         for (x <- 0 until w) {
           val blockToDraw = blockProvider(x)
-          if (blockToDraw.canBeRendered) buf.putFloat(x * separation + xOff).putFloat(y * separation + yOff).putInt(blockToDraw.blockTex(side)).putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
+          if (blockToDraw.canBeRendered) {
+            buf.putFloat(x * separation + xOff)
+            buf.putFloat(y * separation + yOff)
+            buf.putInt(blockToDraw.blockTex(side))
+            buf.putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
+            buf.putFloat(brightnessFunc(x, y))
+          }
         }
       }
-    })
+    }
   }
 }

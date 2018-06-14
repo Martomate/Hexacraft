@@ -20,7 +20,7 @@ class ChunkGenerator(chunk: Chunk) {
 
       for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
         val noise = blockNoise(i, j, k)
-        val yToGo = coords.Y * 16 + j - column.heightMap(i)(k)
+        val yToGo = coords.Y * 16 + j - column.heightMap(i, k)
         val limit = limitForBlockNoise(yToGo)
         if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, world.size), new BlockState(getBlockAtDepth(yToGo)))
       }

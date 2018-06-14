@@ -14,7 +14,7 @@ object Block {
   val Stone     = new Block(1, "stone", "Stone")
   val Grass     = new Block(2, "grass", "Grass")
   val Dirt      = new Block(3, "dirt", "Dirt")
-  val Sand      = new Block(4, "sand", "Sand")
+  val Sand      = new Block(4, "sand", "Sand") with EmittingLight
   val Water     = new BlockFluid(5, "water", "Water")
 
   def init(): Unit = {
@@ -32,6 +32,8 @@ class Block(val id: Byte, val name: String, val displayName: String) {
 
   def isTransparent(blockState: BlockState, side: Int): Boolean = false
 
+  def lightEmitted: Byte = 0
+
   def blockHeight(blockState: BlockState): Float = 1.0f
 
   final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet): Unit = onUpdated(coords, world)
@@ -43,6 +45,10 @@ object BlockAir extends Block(0, "air", "Air") {
 
   override def canBeRendered: Boolean = false
   override def isTransparent(blockState: BlockState, side: Int): Boolean = true
+}
+
+trait EmittingLight extends Block {
+  override def lightEmitted: Byte = 14
 }
 
 class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {

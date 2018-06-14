@@ -40,5 +40,17 @@ class ChunkRelWorldTest extends FunSuite {
     assertResult(532L << 32 | (-17L & 15) << 12 | (-14 & 0xfff))(ChunkRelWorld(532, -14, -17, size).value)
   }
 
+  test("withBlockCoords works") {
+    var c = ChunkRelWorld(532, -14, 17, size).withBlockCoords(0, 0, 0)
+    assertResult(532 * 16)(c.x)
+    assertResult(-14 * 16)(c.y)
+    assertResult(  1 * 16)(c.z)
+
+    c = ChunkRelWorld(532, -14, 17, size).withBlockCoords(-4, 71, -12345)
+    assertResult(532 * 16 -  4)(c.x)
+    assertResult(-14 * 16 + 71)(c.y)
+    assertResult( (17 * 16 - 12345) & size.totalSizeMask)(c.z)
+  }
+
   private def size = new CylinderSize(4)
 }

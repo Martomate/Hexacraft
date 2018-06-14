@@ -18,7 +18,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
   private[storage] var chunkLoading: Option[Int] = None
 
-  private[storage] val heightMap = {
+  private val _heightMap = {// TODO: Make this reflect the real world and save it in a file
     val interp = world.worldGenerator.getHeightmapInterpolator(coords)
     
     for (x <- 0 until 16) yield {
@@ -26,6 +26,10 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         interp(x, z).toInt
       }
     }
+  }
+
+  def heightMap(x: Int, z: Int): Int = {
+    _heightMap(x)(z)
   }
 
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
@@ -69,7 +73,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         
         if (newTop != top || newBottom != bottom) topAndBottomChunks = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
-        val ground = ChunkRelColumn((heightMap(8)(8) >> 4) & 0xfff, world.size)
+        val ground = ChunkRelColumn((heightMap(8, 8) >> 4) & 0xfff, world.size)
         val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, world.size)
         
         if (inSight(first)) world.addChunkToLoadingQueue(first.withColumn(coords))
