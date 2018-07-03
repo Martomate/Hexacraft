@@ -5,10 +5,12 @@ import hexacraft.block.{Block, BlockState}
 import hexacraft.world.coord.BlockRelChunk
 
 class ChunkGenerator(chunk: Chunk) {
+  private def filePath: String = "data/" + chunk.coords.getColumnRelWorld.value + "/" + chunk.coords.getChunkRelColumn.value + ".dat"
+
   def loadData(): ChunkData = {
     val world = chunk.world
     val coords = chunk.coords
-    val nbt = world.worldSettings.loadState("chunks/" + coords.value + ".dat")
+    val nbt = world.worldSettings.loadState(filePath)
 
     val storage: ChunkStorage = new DenseChunkStorage(chunk.coords)
     if (!nbt.getValue.isEmpty) {
@@ -20,7 +22,7 @@ class ChunkGenerator(chunk: Chunk) {
 
       for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
         val noise = blockNoise(i, j, k)
-        val yToGo = coords.Y * 16 + j - column.heightMap(i, k)
+        val yToGo = coords.Y * 16 + j - column.generatedHeightMap(i)(k)
         val limit = limitForBlockNoise(yToGo)
         if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, world.size), new BlockState(getBlockAtDepth(yToGo)))
       }
@@ -31,7 +33,7 @@ class ChunkGenerator(chunk: Chunk) {
   }
 
   def saveData(data: CompoundTag): Unit = {
-    chunk.world.worldSettings.saveState(data, "chunks/" + chunk.coords.value + ".dat")
+    chunk.world.worldSettings.saveState(data, filePath)
   }
 
   private def getBlockAtDepth(yToGo: Int) = {

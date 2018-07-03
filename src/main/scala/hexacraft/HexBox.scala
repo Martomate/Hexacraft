@@ -14,7 +14,7 @@ import hexacraft.block.Block
 import scala.collection.Seq
 
 object HexBox {
-  private val reflectionDirs = Vector(
+  private val reflectionDirs = IndexedSeq(
       ( 0, -1,  0),
       ( 0,  1,  0),
       (-1,  0,  0),
@@ -38,7 +38,7 @@ object HexBox {
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   val smallRadius: Double = radius * CoordUtils.y60
 
-  def vertices: Seq[CylCoords] = {
+  def vertices: IndexedSeq[CylCoords] = {
     //val ints = Seq(1, 2, 0, 3, 5, 4)
 
     for {

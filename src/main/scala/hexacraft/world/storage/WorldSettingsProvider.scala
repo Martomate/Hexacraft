@@ -1,12 +1,12 @@
 package hexacraft.world.storage
 
-import java.io.{File, FileInputStream}
+import java.io.File
 import java.util.Random
 
-import com.flowpowered.nbt.{CompoundMap, CompoundTag, DoubleTag, LongTag}
-import com.flowpowered.nbt.stream.NBTInputStream
+import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import hexacraft.util.NBTUtil
 import hexacraft.world.WorldSettings
+import hexacraft.worldsave.WorldSave
 
 class WorldGenSettings(val nbt: CompoundTag, val defaultSettings: WorldSettings) {
   val seed                        : Long   = NBTUtil.getLong  (nbt, "seed", defaultSettings.seed.getOrElse(new Random().nextLong))
@@ -37,6 +37,7 @@ trait WorldSettingsProvider {
 }
 
 class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings) extends WorldSettingsProvider {
+  WorldSave(saveDir)// TODO: Use this class instead of all the current stuff
   private val nbtData: CompoundTag = loadState("world.dat")
   private val generalSettings: CompoundTag = nbtData.getValue.get("general").asInstanceOf[CompoundTag]
 

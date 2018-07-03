@@ -92,6 +92,10 @@ object NBTUtil {
     NBTUtil.getTag(tag, name).map(_.asInstanceOf[ByteArrayTag].getValue)
   }
 
+  def getShortArray(tag: CompoundTag, name: String): Option[mutable.WrappedArray[Short]] = {
+    NBTUtil.getTag(tag, name).map(_.asInstanceOf[ShortArrayTag].getValue)
+  }
+
   def makeCompoundTag(name: String, children: Seq[Tag[_]]): CompoundTag = {
     val map = new CompoundMap()
     for (tag <- children) map.put(tag)

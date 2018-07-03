@@ -1,6 +1,6 @@
 package hexacraft.world.render
 
-import hexacraft.block.{BlockAir, BlockState}
+import hexacraft.block.BlockState
 import hexacraft.world.coord.BlockRelChunk
 import hexacraft.world.storage.Chunk
 
@@ -10,11 +10,11 @@ object LightPropagator {
 
   def initBrightnesses(chunk: Chunk, lights: mutable.HashMap[BlockRelChunk, BlockState]): Unit = {
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, Chunk)]
-    val queueSun = mutable.Queue.empty[(BlockRelChunk, Chunk)]
-    val queueSun2 = mutable.Queue.empty[(BlockRelChunk, Chunk)]
+    val queueSun15 = mutable.Queue.empty[(BlockRelChunk, Chunk)]
+    val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     for ((c, b) <- lights) {
       chunk.renderer.setTorchlight(c, b.blockType.lightEmitted)
-      queueTorch += c -> chunk
+      queueTorch += ((c, chunk))
     }
 
     def enqueueIfTransparent(coords: BlockRelChunk, neigh: Chunk): Unit = {
@@ -22,7 +22,7 @@ object LightPropagator {
       if (neigh.coords.Y * 16 + coords.cy > neigh.column.heightMap(coords.cx, coords.cz)) {
         if (block.blockType.isTransparent(block, 0) && block.blockType.isTransparent(block, 1)) {
           neigh.renderer.setSunlight(coords, 15)
-          queueSun += ((coords, neigh))
+          queueSun15 += ((coords, neigh))
         }
       }
     }
@@ -49,7 +49,7 @@ object LightPropagator {
               }
               val lightHere = neigh.renderer.getSunlight(c2c)
               if (lightHere > 0 && lightHere < 15) {
-                queueSun2 += ((c2c, neigh))
+                queueSunFromNeighbor += ((c2c, neigh))
               }
             case _ =>
               if (t._2 == 16 && (t._1 & ~15 | t._3 & ~15) == 0) {
@@ -61,8 +61,8 @@ object LightPropagator {
     }
 
     propagateTorchlight(queueTorch)
-    propagateSunlight(queueSun)
-    propagateSunlight(queueSun2)
+    propagateSunlight(queueSun15)
+    propagateSunlight(queueSunFromNeighbor)
   }
 
   def addTorchlight(chunk: Chunk, coords: BlockRelChunk, value: Int): Unit = {
@@ -112,7 +112,7 @@ object LightPropagator {
               } else {
                 lightQueue += ((c2, neigh))
               }
-            }
+            } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
           case _ =>
         }
       }
@@ -147,7 +147,7 @@ object LightPropagator {
               } else {
                 lightQueue += ((c2, neigh))
               }
-            }
+            } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
           case _ =>
         }
       }
@@ -180,7 +180,7 @@ object LightPropagator {
                   neigh.renderer.setTorchlight(c2, nextLevel)
                   queue += ((c2, neigh))
                 }
-              }
+              } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
             case _ =>
           }
         }
@@ -213,7 +213,7 @@ object LightPropagator {
                 if (thisSLevel < nextS) {
                   neigh.renderer.setSunlight(c2, nextS)
                   queue += ((c2, neigh))
-                }
+                } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
               }
             case _ =>
           }

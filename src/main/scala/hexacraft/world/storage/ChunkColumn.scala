@@ -1,8 +1,9 @@
 package hexacraft.world.storage
 
+import com.flowpowered.nbt.ShortArrayTag
 import hexacraft.block.{Block, BlockAir, BlockState}
-import hexacraft.world.coord.{BlockCoords, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
-import hexacraft.world.gen.noise.NoiseInterpolator2D
+import hexacraft.util.NBTUtil
+import hexacraft.world.coord.{BlockRelChunk, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
 import org.joml.Vector2d
 
 object ChunkColumn {
@@ -18,17 +19,29 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
   private[storage] var chunkLoading: Option[Int] = None
 
-  private val _heightMap = {// TODO: Make this reflect the real world and save it in a file
+  private[storage] val generatedHeightMap = {
     val interp = world.worldGenerator.getHeightmapInterpolator(coords)
-    
+
     for (x <- 0 until 16) yield {
       for (z <- 0 until 16) yield {
-        interp(x, z).toInt
+        interp(x, z).toShort
       }
     }
   }
 
-  def heightMap(x: Int, z: Int): Int = {
+  private def saveFilePath: String = "data/" + coords.value + "/column.dat"
+
+  private val _heightMap: IndexedSeq[Array[Short]] = {
+    val columnNBT = world.worldSettings.loadState(saveFilePath)
+    NBTUtil.getShortArray(columnNBT, "heightMap") match {
+      case Some(heightNBT) =>
+        for (x <- 0 until 16) yield Array.tabulate(16)(z => heightNBT.array((x << 4) | z))
+      case None =>
+        for (x <- 0 until 16) yield Array.tabulate(16)(z => generatedHeightMap(x)(z))
+    }
+  }
+
+  def heightMap(x: Int, z: Int): Short = {
     _heightMap(x)(z)
   }
 
@@ -36,6 +49,50 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
 
   def getBlock(coords: BlockRelColumn): BlockState = {
     getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
+  }
+
+  def onSetBlock(coords: BlockRelColumn, block: BlockState): Unit = {
+    val height = heightMap(coords.cx, coords.cz)
+    if (block.blockType == Block.Air) {
+      if (coords.y == height) {
+        // remove and find the next highest
+        var y: Int = height
+        var ch: Option[Chunk] = None
+        do {
+          y -= 1
+          ch = getChunk(ChunkRelColumn(y >> 4, coords.cylSize))
+          ch match {
+            case Some(chunk) =>
+              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
+                ch = None
+              else
+                y -= 1
+            case None =>
+              y = Short.MinValue
+          }//.filter(_.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
+        } while (ch.isDefined)
+
+        _heightMap(coords.cx)(coords.cz) = y.toShort
+      }
+    } else {
+      if (coords.y > height) {
+        _heightMap(coords.cx)(coords.cz) = coords.y.toShort
+      }
+    }
+  }
+
+  def onChunkLoaded(chunk: Chunk): Unit = {
+    val yy = chunk.coords.Y * 16
+    for (x <- 0 until 16) {
+      for (z <- 0 until 16) {
+        val height = heightMap(x, z)
+        (yy + 15 to yy by -1).filter(_ > height).find(y =>
+          chunk.getBlock(BlockRelChunk(x, y, z, chunk.coords.cylSize)).blockType != Block.Air
+        ).foreach(h => {
+          _heightMap(x)(z) = h.toShort
+        })
+      }
+    }
   }
 
   def tick(): Unit = {
@@ -73,7 +130,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
         
         if (newTop != top || newBottom != bottom) topAndBottomChunks = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
-        val ground = ChunkRelColumn((heightMap(8, 8) >> 4) & 0xfff, world.size)
+        val ground = ChunkRelColumn((generatedHeightMap(8)(8) >> 4) & 0xfff, world.size)
         val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, world.size)
         
         if (inSight(first)) world.addChunkToLoadingQueue(first.withColumn(coords))
@@ -85,5 +142,9 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
       world.chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
       c.unload()
     }
+
+    world.worldSettings.saveState(NBTUtil.makeCompoundTag("column", Seq(
+      new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))
+    )), saveFilePath)
   }
 }

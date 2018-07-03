@@ -7,7 +7,7 @@ import hexacraft.world.storage.Chunk
 import scala.collection.Seq
 
 object BlockState {
-  val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
+  val neighborOffsets: Seq[(Int, Int, Int)] = IndexedSeq(
       ( 0, 1, 0),
       ( 0,-1, 0),
       ( 1, 0, 0),

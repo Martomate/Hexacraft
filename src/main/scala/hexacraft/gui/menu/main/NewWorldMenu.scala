@@ -44,7 +44,7 @@ class NewWorldMenu extends MenuScene{
         (name, file)
       }
       val size = Try(sizeTF.text.toByte).toOption.filter(s => s >= 0 && s <= 20)
-      val seed = Some(seedTF.text).filter(_.nonEmpty).map(s => new Random(s.## << 32L | s.reverse.##).nextLong())
+      val seed = Some(seedTF.text).filter(_.nonEmpty).map(s => new Random(s.##.toLong << 32 | s.reverse.##).nextLong())
       Main.popScenesUntilMainMenu()
       Main.pushScene(new GameScene(file, WorldSettings(Some(nameTF.text), size, seed)))
     } catch {

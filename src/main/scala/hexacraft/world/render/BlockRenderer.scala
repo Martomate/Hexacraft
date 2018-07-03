@@ -7,9 +7,9 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.{GL11, GL15}
 
 class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {
-  val blockRenderers: Seq[T] = Seq.tabulate(2)(s => rendererFactory(s))
+  val blockRenderers:     Seq[T] = Seq.tabulate(2)(s => rendererFactory(s))
   val blockSideRenderers: Seq[T] = Seq.tabulate(6)(s => rendererFactory(s + 2))
-  val allBlockRenderers: Seq[T] = blockRenderers ++ blockSideRenderers
+  val allBlockRenderers:  Seq[T] = blockRenderers ++ blockSideRenderers
 
   def renderBlockSide(side: Int): Unit = {
     val r = allBlockRenderers(side)
@@ -33,10 +33,21 @@ class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {
 class BlockRenderer(val side: Int, init_maxInstances: Int) {
   private var _maxInstances = init_maxInstances
   def maxInstances: Int = _maxInstances
+  private def verticesPerInstance = if (side < 2) 6 else 4
 
-  val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
-    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
-    .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).ints(3, 3).ints(4, 1).floats(5, 1).floats(6, 1).create()).create()
+  val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+    .addVBO(VBO(verticesPerInstance, GL15.GL_STATIC_DRAW)
+      .floats(0, 3)
+      .floats(1, 2)
+      .floats(2, 3)
+      .create().fillFloats(0, setupBlockVBO(side)))
+    .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+      .ints(3, 3)
+      .ints(4, 1)
+      .floats(5, 1)
+      .floats(6, 1)
+      .create())
+    .create()
 
   val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
 

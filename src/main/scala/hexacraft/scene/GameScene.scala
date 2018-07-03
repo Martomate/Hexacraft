@@ -2,7 +2,7 @@ package hexacraft.scene
 
 import java.io.File
 
-import hexacraft.block.{Block, BlockState}
+import hexacraft.block.{Block, BlockAir, BlockState}
 import hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import hexacraft.gui.comp.{GUITransformation, LocationInfo, LocationInfoIdentity}
 import hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
@@ -10,7 +10,7 @@ import hexacraft.gui.menu.pause.PauseMenu
 import hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import hexacraft.resource.Shader
 import hexacraft.world.WorldSettings
-import hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
 import hexacraft._
@@ -88,6 +88,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   override def onKeyEvent(event: KeyEvent): Boolean = {
     if (event.action == GLFW_PRESS) {
       event.key match {
+        case GLFW_KEY_B =>
+          val newCoords = camera.blockCoords.offset(0, -4, 0)
+          if (world.getBlock(newCoords).blockType == Block.Air) world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
           Main.pushScene(new PauseMenu(this))
           setPaused(true)

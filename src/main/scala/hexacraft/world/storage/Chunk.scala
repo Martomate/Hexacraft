@@ -54,7 +54,9 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
   )
 
+  column.onChunkLoaded(this)
   doRenderUpdate()
+  neighbors.foreach(_.foreach(_.requestRenderUpdate()))// TODO: This didn't help against black sides on blocks on the edge of some chunks before the first block update
 
   def blocks: ChunkStorage = storage
   def column: ChunkColumn = world.getColumn(coords.getColumnRelWorld).get
@@ -72,6 +74,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     if (block.blockType.lightEmitted != 0) {
       LightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
     }
+    column.onSetBlock(blockCoords.withChunk(coords.getChunkRelColumn), block)
     true
   }
 
@@ -80,6 +83,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     onBlockModified(coords)
     LightPropagator.removeTorchlight(this, coords)
     LightPropagator.updateSunlight(this, coords)
+    column.onSetBlock(coords.withChunk(this.coords.getChunkRelColumn), BlockAir.State)
     true
   }
 

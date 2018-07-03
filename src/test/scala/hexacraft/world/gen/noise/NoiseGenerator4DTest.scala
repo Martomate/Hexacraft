@@ -28,7 +28,7 @@ class NoiseGenerator4DTest extends FunSuite {
     val gen = new NoiseGenerator4D(new Random(rand.nextLong), 4, 0.01)
 
     val scale = 100
-    var result = gen.genNoise(0, 0, 0, 0)
+    val result = gen.genNoise(0, 0, 0, 0)
 
     val different = (1 to 10).exists(_ => {
       val x = rand.nextDouble * scale

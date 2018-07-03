@@ -29,8 +29,8 @@ class ChunkRenderer(chunk: Chunk) {
         LightPropagator.initBrightnesses(chunk, lights)
       }
 
-      val sidesToRender = Seq.fill(8)(new mutable.BitSet(16 * 16 * 16))
-      val sideBrightness = Seq.fill(8)(new Array[Float](16*16*16))
+      val sidesToRender = Vector.fill(8)(new Array[Boolean](16 * 16 * 16))
+      val sideBrightness = Vector.fill(8)(new Array[Float](16 * 16 * 16))
       val sidesCount = new Array[Int](8)
       for ((c, b) <- blocks) {
         for (s <- BlockState.neighborOffsets.indices) {

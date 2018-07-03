@@ -40,6 +40,7 @@ case class BlockRelColumn(private val _value: Int, cylSize: CylinderSize) extend
   def cx: Byte = (value >> 8 & 0xf).toByte
   def cy: Byte = (value >> 4 & 0xf).toByte
   def cz: Byte = (value >> 0 & 0xf).toByte
+  def y: Int = Y * 16 + cy
 }
 
 case class ChunkRelColumn(private val _value: Int, cylSize: CylinderSize) extends AbstractIntegerCoords(_value & 0xfff) { // YYY
@@ -88,6 +89,8 @@ case class ChunkRelWorld(private val _value: Long, cylSize: CylinderSize) extend
 
   def offset(x: Int, y: Int, z: Int): ChunkRelWorld = ChunkRelWorld(X + x, Y + y, Z + z, cylSize)
   def withBlockCoords(i: Int, j: Int, k: Int): BlockRelWorld = BlockRelWorld(X * 16 + i, Y * 16 + j, Z * 16 + k, cylSize)
+
+  override def toString: String = s"($X, $Y, $Z)"
 }
 
 object ColumnRelWorld {

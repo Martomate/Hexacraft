@@ -6,14 +6,15 @@ import hexacraft.block.{BlockAir, BlockState}
 import hexacraft.util.{NBTUtil, TickableTimer}
 import hexacraft.world.Player
 import hexacraft.world.coord._
+import hexacraft.worldsave.WorldSave
 import org.joml.{Vector2d, Vector3d, Vector4d}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, Set => MutableSet}
+import scala.collection.mutable.{ArrayBuffer, Set}
 
 object World {
   val chunksLoadedPerTick = 2
-  val chunkRenderUpdatesPerTick = 2
+  val chunkRenderUpdatesPerTick = 1
   val ticksBetweenBlockUpdates = 5
   val ticksBetweenColumnLoading = 5
 }
@@ -84,8 +85,8 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt, size)
     ensureColumnExists(here)
 
-    val columnsToAdd = MutableSet.empty[ColumnRelWorld]
-    val columnsToRemove = MutableSet.empty[ColumnRelWorld]
+    val columnsToAdd = mutable.Set.empty[ColumnRelWorld]
+    val columnsToRemove = mutable.Set.empty[ColumnRelWorld]
 
     def fillInEdgeWithExistingNeighbors(col: ColumnRelWorld): Unit = {
       for (offset <- ChunkColumn.neighbors) {
@@ -170,8 +171,10 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   }
 
   private val chunkRenderUpdateQueue: mutable.PriorityQueue[(Double, ChunkRelWorld)] = mutable.PriorityQueue.empty(Ordering.by(-_._1))
+  private val chunkRenderUpdateSet: mutable.HashSet[ChunkRelWorld] = mutable.HashSet.empty
 
   private val blocksToUpdate = mutable.Queue.empty[BlockRelWorld]
+  private val blocksToUpdateSet = mutable.HashSet.empty[BlockRelWorld]
 
   val player = new Player(this)
   player.fromNBT(worldSettings.playerNBT)
@@ -180,10 +183,12 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
 
 
-  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
+  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = if (blocksToUpdateSet.add(coords)) blocksToUpdate.enqueue(coords)
 
   def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = {
-    if (!chunkRenderUpdateQueue.exists(_._2 == coords)) chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
+    if (chunkRenderUpdateSet.add(coords)) {
+      chunkRenderUpdateQueue.enqueue(makeChunkToLoadTuple(coords))
+    }
   }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
@@ -218,7 +223,9 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
       if (chunkRenderUpdateQueue.nonEmpty) {
         var chunk: Option[Chunk] = None
         do {
-          chunk = getChunk(chunkRenderUpdateQueue.dequeue()._2)
+          val coords = chunkRenderUpdateQueue.dequeue()._2
+          chunk = getChunk(coords)
+          chunkRenderUpdateSet -= coords
         } while (chunk.isEmpty && chunkRenderUpdateQueue.nonEmpty)
 
         chunk.foreach(_.doRenderUpdate())
@@ -240,13 +247,18 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
     //        chunksToLoad.enqueue(          chunksToLoad.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
     chunksToLoad.clear()
-    chunkRenderUpdateQueue.enqueue(chunkRenderUpdateQueue.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq): _*)
+
+    val newContent = chunkRenderUpdateQueue.dequeueAll.map(c => makeChunkToLoadTuple(c._2)).filter(c => c._1 <= rDistSq)
+    chunkRenderUpdateSet.clear()
+    chunkRenderUpdateQueue.enqueue(newContent: _*)
+    chunkRenderUpdateSet ++= newContent.map(_._2)
   }
 
   private def performBlockUpdates(): Unit = {
     val blocksToUpdateLen = blocksToUpdate.size
     for (_ <- 0 until blocksToUpdateLen) {
       val c = blocksToUpdate.dequeue()
+      blocksToUpdateSet -= c
       getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
     }
   }
@@ -260,6 +272,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
+      new ShortTag("version", WorldSave.LatestVersion),
       NBTUtil.makeCompoundTag("general", Seq(
         new ByteTag("worldSize", size.worldSize.toByte),
         new StringTag("name", worldName)
