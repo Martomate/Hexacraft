@@ -1,6 +1,8 @@
 package hexacraft.util
 
-class DefaultArray[T](_size: Int, val default: T) extends Seq[T] {
+class ConstantSeq[T](_size: Int, val default: T) extends IndexedSeq[T] {
+  require(_size >= 0, "Size cannot be negative")
+
   def length: Int = _size
   def apply(index: Int): T = default
 

@@ -2,7 +2,7 @@ package hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import hexacraft.block.{Block, BlockAir, BlockState}
-import hexacraft.util.{DefaultArray, NBTUtil}
+import hexacraft.util.{ConstantSeq, NBTUtil}
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
 trait ChunkStorage {
@@ -56,8 +56,8 @@ class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   }
 
   def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new DefaultArray[Byte](16*16*16, 0))
-    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
+    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
 
     for (i <- blockTypes.indices) {
       blockTypes(i) = blocks(i)
@@ -96,8 +96,8 @@ class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
   def toSparse: SparseChunkStorage = this
 
   def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new DefaultArray[Byte](16*16*16, 0))
-    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new DefaultArray[Byte](16*16*16, 0))
+    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
+    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
 
     for (i <- blocks.indices) {
       if (blocks(i) != 0) {

@@ -1,8 +1,8 @@
 package hexacraft.util
 
-class TickableTimer private (period: Int, delay: Int = 0, initActive: Boolean = true, action: =>Unit) {
-  require(period >= 0)
-  require(delay >= 0)
+class TickableTimer private (period: Int, delay: Int, initActive: Boolean, action: =>Unit) {
+  require(period > 0, "The period may not be negative")
+  require(delay >= 0, "The delay may not be negative")
 
   private var time = delay
   var active: Boolean = initActive
@@ -11,7 +11,7 @@ class TickableTimer private (period: Int, delay: Int = 0, initActive: Boolean = 
     if (time > 0) time -= 1
     else if (active) {
       action
-      time = period
+      time = period - 1
     }
   }
 }
