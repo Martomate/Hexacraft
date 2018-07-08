@@ -1,17 +1,15 @@
 name := "Hexacraft"
-
+organization := "com.martomate"
 version := "0.8"
+scalaVersion := "2.12.6"
 
-scalaVersion := "2.12.3"
-
-enablePlugins(JavaAppPackaging)
 enablePlugins(LauncherJarPlugin)
 
-val lwjglVersion = "3.1.1"
+val lwjglVersion = "3.1.6"
 
 libraryDependencies ++= Seq(
-  "org.scalactic" %% "scalactic" % "3.0.4",
-  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+  "org.scalactic" %% "scalactic" % "3.0.5",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.joml" % "joml" % "1.9.9",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.4",
   "com.flowpowered" % "flow-nbt" % "1.0.0",
@@ -28,5 +26,3 @@ libraryDependencies ++= Seq(
   "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-linux",
   "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-macos"
 )
-
-organization := "com.martomate"

@@ -5,8 +5,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import hexacraft.Main;
-import hexacraft.util.FileUtils;
+import com.martomate.hexacraft.Main;
+import com.martomate.hexacraft.util.FileUtils;
 
 /**
  * Provides functionality for getting the values from a font file.
