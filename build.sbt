@@ -1,6 +1,6 @@
 name := "Hexacraft"
 organization := "com.martomate"
-version := "0.8"
+version := "0.9-SNAPSHOT"
 scalaVersion := "2.12.6"
 
 enablePlugins(LauncherJarPlugin)
