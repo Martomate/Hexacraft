@@ -17,17 +17,46 @@ Official website: http://www.martomate.com/games/Hexacraft
 
 ## Installation
 
+The game requires Java 8 (or later) to be installed. If it's not installed you can get it [here](https://java.com).
+
 ### Version 0.7 and earlier
 Up to version 0.7 the game was shipped as a couple of folders and a jar file.
 To get started, just run `Hexacraft.jar` (or Hexagon.jar in early versions) either by **double-clicking** it or using the terminal.
 In the terminal you would run `java -jar Hexacraft.jar`
 
-### Version 0.8 and later
-This will soon be determined (since 0.8 hasn't come out yet)
+### Version 0.8
+In this version you can run the game in any of the following ways.
+- Run `bin/hexacraft.bat` (Windows)
+- Run `bin/hexacraft` (Mac/Linux)
+- Double click `lib/com.martomate.hexacraft-0.8-launcher.jar` (like in the previous version)
 
 ## Usage
 
-### TODO: Controls
+### Controls
+The controls are almost the same as in Minecraft.
+
+#### Movement:
+- Movement - WASD
+- Camera rotation - Mouse or arrow keys, PgUp, PgDn
+- Jump - Space
+- Fly - F
+- Fly up - Space
+- Fly down - Left Shift
+- Walk slow - Left Ctrl
+- Walk fast - Left Alt
+- Walk superfast - Right Ctrl
+
+#### Other useful controls
+- Select hotbar slot - 1 ... 9, scroll wheel
+- Place block - Right click
+- Remove block - Left click
+- Pause - Escape
+- Fullscreen - F11
+
+#### Extra
+- Free the mouse - M
+- Debug info - F7
+- Place block under your feet - B
 
 ### Worlds are saved
 The program works very similarly to Minecraft (at least when it comes to saving worlds).
@@ -36,7 +65,7 @@ You can create as many worlds as you like and they will be saved on your compute
 
 ## Contributing
 
-### THe GitHub repository
+### The GitHub repository
 
 To contribute you need to fork the develop-branch of the project. To make changes I would recommend that you make many small commits rather than one big at the end, since it will make it easy to see which commit introduced what (assuming that you provide good commit-messages). When you are done with a feature you can create a pull-request. Please note that you can still add commits to an active pull-request, which might be needed to fix merge conflicts.
 
