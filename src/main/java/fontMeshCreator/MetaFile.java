@@ -5,8 +5,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import hexacraft.Main;
-import hexacraft.util.FileUtils;
+import com.martomate.hexacraft.Main;
+import com.martomate.hexacraft.util.FileUtils;
 
 /**
  * Provides functionality for getting the values from a font file.
@@ -25,8 +25,6 @@ public class MetaFile {
 
 	private static final String SPLITTER = " ";
 	private static final String NUMBER_SEPARATOR = ",";
-
-	private double aspectRatio;
 
 	private double verticalPerPixelSize;
 	private double horizontalPerPixelSize;
@@ -47,7 +45,6 @@ public class MetaFile {
 	 *            - the font file.
 	 */
 	protected MetaFile(URL file) {
-		this.aspectRatio = (double) Main.windowSize().x / (double) Main.windowSize().y;
 		openFile(file);
 		loadPaddingData();
 		loadLineSizes();
@@ -162,7 +159,7 @@ public class MetaFile {
 		processNextLine();
 		int lineHeightPixels = getValueOfVariable("lineHeight") - paddingHeight;
 		verticalPerPixelSize = TextMeshCreator.LINE_HEIGHT / (double) lineHeightPixels;
-		horizontalPerPixelSize = verticalPerPixelSize / aspectRatio;
+		horizontalPerPixelSize = verticalPerPixelSize;
 	}
 
 	/**
