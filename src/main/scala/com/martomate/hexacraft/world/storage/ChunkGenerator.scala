@@ -4,11 +4,10 @@ import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.BlockRelChunk
 
-class ChunkGenerator(chunk: Chunk) {
+class ChunkGenerator(chunk: Chunk, world: World) {
   private def filePath: String = "data/" + chunk.coords.getColumnRelWorld.value + "/" + chunk.coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {
-    val world = chunk.world
     val coords = chunk.coords
     val nbt = world.worldSettings.loadState(filePath)
 
@@ -33,7 +32,7 @@ class ChunkGenerator(chunk: Chunk) {
   }
 
   def saveData(data: CompoundTag): Unit = {
-    chunk.world.worldSettings.saveState(data, filePath)
+    world.worldSettings.saveState(data, filePath)
   }
 
   private def getBlockAtDepth(yToGo: Int) = {

@@ -257,6 +257,24 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     }
   }
 
+  def neighbor(side: Int, chunk: Chunk, coords: BlockRelChunk): (BlockRelChunk, Option[Chunk]) = {
+    val (i, j, k) = BlockState.neighborOffsets(side)
+    val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
+    val c2 = BlockRelChunk(i2, j2, k2, coords.cylSize)
+    if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
+      (c2, Some(chunk))
+    } else {
+      (c2, getChunk(chunk.coords.withBlockCoords(i2, j2, k2).getChunkRelWorld))
+    }
+  }
+
+  def neighborChunk(chunk: Chunk, side: Int): Option[Chunk] = {
+    val (dx, dy, dz) = Chunk.neighborOffsets(side)
+    getChunk(chunk.coords.offset(dx, dy, dz))
+  }
+
+  def neighborChunks(chunk: Chunk): Iterable[Chunk] = Iterable.tabulate(8)(i => neighborChunk(chunk, i)).flatten
+
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
       new ShortTag("version", WorldSave.LatestVersion),

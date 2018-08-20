@@ -22,19 +22,13 @@ trait ChunkEventListener {
   def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit
 }
 
-class Chunk(val coords: ChunkRelWorld, val world: World) {
-  val neighbors: Array[Option[Chunk]] = Array.tabulate(8){ i =>
-    val (dx, dy, dz) = Chunk.neighborOffsets(i)
-    val c2 = coords.offset(dx, dy, dz)
-    val chunkOpt = Option(world).flatMap(_.getChunk(c2))
-    chunkOpt.foreach(chunk => {
-      chunk.neighbors((i + 4) % 8) = Some(this)
-      chunk.requestRenderUpdate()
-    })
-    chunkOpt
-  }
+class Chunk(val coords: ChunkRelWorld, world: World) {
+  private def neighbors: Iterable[Chunk] = Option(world).flatMap(_.neighborChunks(this))
+  private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(this, side))
 
-  private val generator = new ChunkGenerator(this)
+  neighbors.foreach(_.requestRenderUpdate())
+
+  private val generator = new ChunkGenerator(this, world)
   private val chunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -42,7 +36,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   private val eventListener: ChunkEventListener = world
 
-  val renderer: ChunkRenderer = new ChunkRenderer(this)
+  val renderer: ChunkRenderer = new ChunkRenderer(this, world)
 
   private val needsRenderingUpdateToggle = new PreparableRunner(
     eventListener.onChunkNeedsRenderUpdate(coords),
@@ -56,7 +50,6 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   column.onChunkLoaded(this)
   doRenderUpdate()
-  neighbors.foreach(_.foreach(_.requestRenderUpdate()))// TODO: This didn't help against black sides on blocks on the edge of some chunks before the first block update
 
   def blocks: ChunkStorage = storage
   def column: ChunkColumn = world.getColumn(coords.getColumnRelWorld).get
@@ -69,10 +62,10 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
     if (before.blockType == Block.Air || before != block) {
       onBlockModified(blockCoords)
     }
-    LightPropagator.removeTorchlight(this, blockCoords)
-    LightPropagator.removeSunlight(this, blockCoords)
+    LightPropagator.removeTorchlight(world, this, blockCoords)
+    LightPropagator.removeSunlight(world, this, blockCoords)
     if (block.blockType.lightEmitted != 0) {
-      LightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
+      LightPropagator.addTorchlight(world, this, blockCoords, block.blockType.lightEmitted)
     }
     column.onSetBlock(blockCoords.withChunk(coords.getChunkRelColumn), block)
     true
@@ -81,8 +74,8 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
   def removeBlock(coords: BlockRelChunk): Boolean = {
     storage.removeBlock(coords)
     onBlockModified(coords)
-    LightPropagator.removeTorchlight(this, coords)
-    LightPropagator.updateSunlight(this, coords)
+    LightPropagator.removeTorchlight(world, this, coords)
+    LightPropagator.updateSunlight(world, this, coords)
     column.onSetBlock(coords.withChunk(this.coords.getChunkRelColumn), BlockAir.State)
     true
   }
@@ -107,7 +100,7 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
       val off = Chunk.neighborOffsets(i)
       val c2 = offsetCoords(coords, off)
       if (isInNeighborChunk(off)) {
-        neighbors(i).foreach(n => {
+        neighborChunk(i).foreach(n => {
           n.requestRenderUpdate()
           n.requestBlockUpdate(c2)
         })
@@ -124,22 +117,6 @@ class Chunk(val coords: ChunkRelWorld, val world: World) {
 
   def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.prepare()
   def doRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
-
-  def neighborBlock(side: Int, coords: BlockRelChunk): BlockState = {
-    val n = neighbor(side, coords)
-    n._2.map(_.getBlock(n._1)).getOrElse(BlockAir.State)
-  }
-
-  def neighbor(side: Int, coords: BlockRelChunk): (BlockRelChunk, Option[Chunk]) = {
-    val (i, j, k) = BlockState.neighborOffsets(side)
-    val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
-    val c2 = BlockRelChunk(i2, j2, k2, coords.cylSize)
-    if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      (c2, Some(this))
-    } else {
-      (c2, world.getChunk(this.coords.withBlockCoords(i2, j2, k2).getChunkRelWorld))
-    }
-  }
 
   def tick(): Unit = {
     chunkData.optimizeStorage()
