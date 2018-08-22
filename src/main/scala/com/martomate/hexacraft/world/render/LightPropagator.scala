@@ -13,7 +13,7 @@ object LightPropagator {
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     for ((c, b) <- lights) {
-      chunk.renderer.setTorchlight(c, b.blockType.lightEmitted)
+      chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
       queueTorch += ((c, chunk))
     }
 
@@ -21,7 +21,7 @@ object LightPropagator {
       val block = neigh.getBlock(coords)
       if (neigh.coords.Y * 16 + coords.cy > neigh.column.heightMap(coords.cx, coords.cz)) {
         if (block.blockType.isTransparent(block, 0) && block.blockType.isTransparent(block, 1)) {
-          neigh.renderer.setSunlight(coords, 15)
+          neigh.lighting.setSunlight(coords, 15)
           queueSun15 += ((coords, neigh))
         }
       }
@@ -41,13 +41,13 @@ object LightPropagator {
           val c2c = c2.getBlockRelChunk
           world.getChunk(c2.getChunkRelWorld) match {
             case Some(neigh) =>
-              if (neigh.renderer.getTorchlight(c2c) > 1) {
+              if (neigh.lighting.getTorchlight(c2c) > 1) {
                 queueTorch += ((c2c, neigh))
               }
               if (t._2 == 16 && (t._1 & ~15 | t._3 & ~15) == 0) {
                 enqueueIfTransparent(c2c, neigh)
               }
-              val lightHere = neigh.renderer.getSunlight(c2c)
+              val lightHere = neigh.lighting.getSunlight(c2c)
               if (lightHere > 0 && lightHere < 15) {
                 queueSunFromNeighbor += ((c2c, neigh))
               }
@@ -66,25 +66,25 @@ object LightPropagator {
   }
 
   def addTorchlight(world: World, chunk: Chunk, coords: BlockRelChunk, value: Int): Unit = {
-    chunk.renderer.setTorchlight(coords, value)
+    chunk.lighting.setTorchlight(coords, value)
     val queue = mutable.Queue(coords -> chunk)
     propagateTorchlight(world, queue)
   }
 
   def updateSunlight(world: World, chunk: Chunk, coords: BlockRelChunk): Unit = {
-    chunk.renderer.setSunlight(coords, 0)
+    chunk.lighting.setSunlight(coords, 0)
     removeSunlight(world, chunk, coords)
   }
 
   def removeTorchlight(world: World, chunk: Chunk, coords: BlockRelChunk): Unit = {
-    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.renderer.getTorchlight(coords)))
-    chunk.renderer.setTorchlight(coords, 0)
+    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.lighting.getTorchlight(coords)))
+    chunk.lighting.setTorchlight(coords, 0)
     propagateTorchlightRemoval(world, queue)
   }
 
   def removeSunlight(world: World, chunk: Chunk, coords: BlockRelChunk): Unit = {
-    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.renderer.getSunlight(coords)))
-    chunk.renderer.setSunlight(coords, 0)
+    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.lighting.getSunlight(coords)))
+    chunk.lighting.setSunlight(coords, 0)
     propagateSunlightRemoval(world, queue)
   }
 
@@ -104,11 +104,11 @@ object LightPropagator {
       for (s <- BlockState.neighborOffsets.indices) {
         world.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
-            val thisLevel = neigh.renderer.getTorchlight(c2)
+            val thisLevel = neigh.lighting.getTorchlight(c2)
             if (thisLevel != 0) {
               if (thisLevel < level) {
                 queue += ((c2, neigh, thisLevel))
-                neigh.renderer.setTorchlight(c2, 0)
+                neigh.lighting.setTorchlight(c2, 0)
               } else {
                 lightQueue += ((c2, neigh))
               }
@@ -139,11 +139,11 @@ object LightPropagator {
       for (s <- BlockState.neighborOffsets.indices) {
         world.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
-            val thisLevel = neigh.renderer.getSunlight(c2)
+            val thisLevel = neigh.lighting.getSunlight(c2)
             if (thisLevel != 0) {
               if (thisLevel < level || (s == 1 && level == 15)) {
                 queue += ((c2, neigh, thisLevel))
-                neigh.renderer.setSunlight(c2, 0)
+                neigh.lighting.setSunlight(c2, 0)
               } else {
                 lightQueue += ((c2, neigh))
               }
@@ -165,7 +165,7 @@ object LightPropagator {
       val here = top._1
       val chunk = top._2
 
-      val nextLevel = chunk.renderer.getTorchlight(here) - 1
+      val nextLevel = chunk.lighting.getTorchlight(here) - 1
 
       if (nextLevel > 0) {
         chunksNeedingRenderUpdate += chunk
@@ -175,9 +175,9 @@ object LightPropagator {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
               if (block.blockType.isTransparent(block, oppositeSide(s))) {
-                val thisTLevel = neigh.renderer.getTorchlight(c2)
+                val thisTLevel = neigh.lighting.getTorchlight(c2)
                 if (thisTLevel < nextLevel) {
-                  neigh.renderer.setTorchlight(c2, nextLevel)
+                  neigh.lighting.setTorchlight(c2, nextLevel)
                   queue += ((c2, neigh))
                 }
               } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
@@ -198,7 +198,7 @@ object LightPropagator {
       val here = top._1
       val chunk = top._2
 
-      val nextLevel = chunk.renderer.getSunlight(here) - 1
+      val nextLevel = chunk.lighting.getSunlight(here) - 1
 
       if (nextLevel > 0) {
         chunksNeedingRenderUpdate += chunk
@@ -208,10 +208,10 @@ object LightPropagator {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
               if (block.blockType.isTransparent(block, oppositeSide(s))) {
-                val thisSLevel = neigh.renderer.getSunlight(c2)
+                val thisSLevel = neigh.lighting.getSunlight(c2)
                 val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
                 if (thisSLevel < nextS) {
-                  neigh.renderer.setSunlight(c2, nextS)
+                  neigh.lighting.setSunlight(c2, nextS)
                   queue += ((c2, neigh))
                 } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
               }

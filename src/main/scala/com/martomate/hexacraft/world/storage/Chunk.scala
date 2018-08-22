@@ -1,9 +1,12 @@
 package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
-import com.martomate.hexacraft.util.{NBTUtil, PreparableRunner, PreparableRunnerWithIndex}
+import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
+import com.martomate.hexacraft.world.ChunkLighting
 import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.render.{ChunkRenderer, LightPropagator}
+
+import scala.collection.mutable.ArrayBuffer
 
 object Chunk {
   val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
@@ -22,34 +25,32 @@ trait ChunkEventListener {
   def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit
 }
 
-class Chunk(val coords: ChunkRelWorld, world: World) {
-  private def neighbors: Iterable[Chunk] = Option(world).flatMap(_.neighborChunks(this))
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) {
+  private def neighbors: Iterable[Chunk] = Option(world).map(_.neighborChunks(this)).getOrElse(Iterable.empty)
   private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(this, side))
 
   neighbors.foreach(_.requestRenderUpdate())
 
-  private val generator = new ChunkGenerator(this, world)
-  private val chunkData = generator.loadData()
+  private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
 
-  private val eventListener: ChunkEventListener = world
+  private val eventListeners: ArrayBuffer[ChunkEventListener] = ArrayBuffer.empty
+  def addEventListener(listener: ChunkEventListener): Unit = eventListeners += listener
+  def removeEventListener(listener: ChunkEventListener): Unit = eventListeners -= listener
+  addEventListener(world)
 
   val renderer: ChunkRenderer = new ChunkRenderer(this, world)
-
-  private val needsRenderingUpdateToggle = new PreparableRunner(
-    eventListener.onChunkNeedsRenderUpdate(coords),
-    renderer.updateContent()
-  )
+  val lighting: ChunkLighting = new ChunkLighting
 
   private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
-    coords => eventListener.onBlockNeedsUpdate(coords.withChunk(this.coords)),
+    coords => eventListeners.foreach(_.onBlockNeedsUpdate(coords.withChunk(this.coords))),
     coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
   )
 
   column.onChunkLoaded(this)
-  doRenderUpdate()
+  requestRenderUpdate()
 
   def blocks: ChunkStorage = storage
   def column: ChunkColumn = world.getColumn(coords.getColumnRelWorld).get
@@ -115,8 +116,7 @@ class Chunk(val coords: ChunkRelWorld, world: World) {
   def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.prepare(coords)
   def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
 
-  def requestRenderUpdate(): Unit = needsRenderingUpdateToggle.prepare()
-  def doRenderUpdate(): Unit = needsRenderingUpdateToggle.activate()
+  def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 
   def tick(): Unit = {
     chunkData.optimizeStorage()
@@ -130,8 +130,7 @@ class Chunk(val coords: ChunkRelWorld, world: World) {
       generator.saveData(chunkTag)
     }
     
-    neighbors.foreach(c => c.foreach(_.requestRenderUpdate()))
-    renderer.unload()
-    // and other stuff
+    neighbors.foreach(_.requestRenderUpdate())
+    removeEventListener(world)
   }
 }

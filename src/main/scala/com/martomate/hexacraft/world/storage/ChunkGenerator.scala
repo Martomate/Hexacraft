@@ -2,16 +2,15 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.block.{Block, BlockState}
-import com.martomate.hexacraft.world.coord.BlockRelChunk
+import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
-class ChunkGenerator(chunk: Chunk, world: World) {
-  private def filePath: String = "data/" + chunk.coords.getColumnRelWorld.value + "/" + chunk.coords.getChunkRelColumn.value + ".dat"
+class ChunkGenerator(coords: ChunkRelWorld, world: World) {
+  private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {
-    val coords = chunk.coords
     val nbt = world.worldSettings.loadState(filePath)
 
-    val storage: ChunkStorage = new DenseChunkStorage(chunk.coords)
+    val storage: ChunkStorage = new DenseChunkStorage(coords)
     if (!nbt.getValue.isEmpty) {
       storage.fromNBT(nbt)
     } else {

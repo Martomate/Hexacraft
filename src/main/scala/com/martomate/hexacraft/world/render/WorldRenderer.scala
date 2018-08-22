@@ -1,20 +1,13 @@
 package com.martomate.hexacraft.world.render
 
-import java.util
-
+import com.martomate.hexacraft.Camera
+import com.martomate.hexacraft.block.BlockState
+import com.martomate.hexacraft.renderer._
+import com.martomate.hexacraft.resource.{Shader, TextureArray}
+import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, CylCoords}
+import com.martomate.hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, World}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import com.martomate.hexacraft.Camera
-import com.martomate.hexacraft.renderer.InstancedRenderer
-import com.martomate.hexacraft.renderer.NoDepthTest
-import com.martomate.hexacraft.renderer.Renderer
-import com.martomate.hexacraft.renderer.VAO
-import com.martomate.hexacraft.renderer.VAOBuilder
-import com.martomate.hexacraft.renderer.VBO
-import com.martomate.hexacraft.resource.{Shader, TextureArray}
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, CylCoords}
-import com.martomate.hexacraft.block.BlockState
-import com.martomate.hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, World}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -61,13 +54,14 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
     }
   }
 
-  def getBrightness(block: BlockRelWorld): Float = {
-    if (block != null) world.getChunk(block.getChunkRelWorld).map(_.renderer.getBrightness(block.getBlockRelChunk)).getOrElse(1.0f)
-    else 1.0f
-  }
-
   world.addChunkAddedOrRemovedListener(this)
-  private val chunks: ArrayBuffer[Chunk] = ArrayBuffer.empty
+  private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
+
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance)
+
+  def tick(camera: Camera): Unit = {
+    chunkRenderUpdater.update(camera)
+  }
 
   def render(camera: Camera): Unit = {
     skyShader.enable()
@@ -76,8 +70,8 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
     for (job <- renderingJobs) {
       job.setup()
 
-      for (c <- chunks) {
-        job(c.renderer)
+      for (r <- chunkRenderers.values) {
+        job(r)
       }
     }
 
@@ -106,10 +100,12 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
   }
 
   override def onChunkAdded(chunk: Chunk): Unit = {
-    chunks += chunk
+    chunkRenderers += chunk.coords -> chunk.renderer
+    chunk.addEventListener(chunkRenderUpdater)
   }
   override def onChunkRemoved(chunk: Chunk): Unit = {
-    chunks -= chunk
+    chunkRenderers.remove(chunk.coords).foreach(_.unload())
+    chunk.removeEventListener(chunkRenderUpdater)
   }
 }
 

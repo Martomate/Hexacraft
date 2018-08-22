@@ -1,16 +1,10 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
-import com.martomate.hexacraft.world.coord.BlockRelChunk
 import com.martomate.hexacraft.world.storage.{Chunk, World}
-
-import scala.collection.mutable
 
 class ChunkRenderer(chunk: Chunk, world: World) {
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None
-
-  private val brightness: Array[Byte] = new Array(16*16*16)
-  private var brightnessInitialized: Boolean = false
 
   def updateContent(): Unit = {
     onlyKeepBlockRenderersIfChunkNotEmpty()
@@ -18,15 +12,8 @@ class ChunkRenderer(chunk: Chunk, world: World) {
     if (!chunk.isEmpty) {
       val blocks = chunk.blocks.allBlocks
 
-      if (!brightnessInitialized) {
-        brightnessInitialized = true
-        val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
-
-        for ((c, b) <- blocks) {
-          if (b.blockType.lightEmitted != 0) lights(c) = b
-        }
-
-        LightPropagator.initBrightnesses(chunk, world, lights)
+      if (!chunk.lighting.initialized) {
+        chunk.lighting.init(chunk, world, blocks)
       }
 
       val sidesToRender = Vector.fill(8)(new Array[Boolean](16 * 16 * 16))
@@ -38,7 +25,7 @@ class ChunkRenderer(chunk: Chunk, world: World) {
           val bs = neigh.map(_.getBlock(c2)).getOrElse(BlockAir.State)
           if (bs.blockType.isTransparent(bs, oppositeSide(s))) {
             sidesToRender(s)(c.value) = true
-            sideBrightness(s)(c.value) = neigh.map(_.renderer.getBrightness(c2)).getOrElse(0f)
+            sideBrightness(s)(c.value) = neigh.map(_.lighting.getBrightness(c2)).getOrElse(0f)
             sidesCount(s) += 1
             if (s > 1 && b.blockType.isTransparent(b, s)) {
               sidesToRender(0)(c.value) = true
@@ -64,28 +51,9 @@ class ChunkRenderer(chunk: Chunk, world: World) {
           }
         }
       }
-    } else if (!brightnessInitialized) {
-      brightnessInitialized = true
-      LightPropagator.initBrightnesses(chunk, world, mutable.HashMap.empty)
+    } else if (!chunk.lighting.initialized) {
+      chunk.lighting.init(chunk, world, Seq.empty)
     }
-  }
-
-
-
-  def setSunlight(coords: BlockRelChunk, value: Int): Unit = {
-    brightness(coords.value) = (brightness(coords.value) & 0xf | value << 4).toByte
-  }
-
-  def getSunlight(coords: BlockRelChunk): Byte = {
-    ((brightness(coords.value) >> 4) & 0xf).toByte
-  }
-
-  def setTorchlight(coords: BlockRelChunk, value: Int): Unit = {
-    brightness(coords.value) = (brightness(coords.value) & 0xf0 | value).toByte
-  }
-
-  def getTorchlight(coords: BlockRelChunk): Byte = {
-    (brightness(coords.value) & 0xf).toByte
   }
 
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {
@@ -103,10 +71,6 @@ class ChunkRenderer(chunk: Chunk, world: World) {
   }
 
   def renderBlockSide(side: Int): Unit = blockRenderers.foreach(_.renderBlockSide(side))
-
-  def getBrightness(block: BlockRelChunk): Float = {
-    math.min((getTorchlight(block) + getSunlight(block)) / 15f, 1.0f)
-  }
 
   def unload(): Unit = {
     blockRenderers.foreach(_.unload())

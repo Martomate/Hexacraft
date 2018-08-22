@@ -7,7 +7,7 @@ import com.martomate.hexacraft.util.{NBTUtil, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.Player
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.worldsave.WorldSave
-import org.joml.{Vector2d, Vector3d, Vector4d}
+import org.joml.Vector2d
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -41,41 +41,12 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
   val columnsAtEdge: mutable.Set[ColumnRelWorld] = mutable.Set.empty[ColumnRelWorld]
 
-  private[storage] var chunkLoadingOrigin: CylCoords = _
-  private[storage] val chunkLoadingDirection: Vector3d = new Vector3d()
-  private val chunksToLoad: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
-
-  def addChunkToLoadingQueue(coords: ChunkRelWorld): Unit = {
-    chunksToLoad.enqueue(coords)
-  }
-
-  private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
-    val corners = for {
-      i <- 0 to 1
-      j <- 0 to 1
-      k <- 0 to 1
-    } yield (15 * i, 15 * j, 15 * k)
-    val dist = ((corners :+ (8, 8, 8)) map {
-      t =>
-        val cyl = BlockCoords(coords.withBlockCoords(t._1, t._2, t._3), size).toCylCoords
-        val cDir = cyl.toNormalCoords(chunkLoadingOrigin).toVector3d.normalize()
-        val dot = chunkLoadingDirection.dot(cDir)
-        chunkLoadingOrigin.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
-    }).min
-
-    dist
-  }
-
-  private def setChunkLoadingCenterAndDirection(camera: Camera): Vector3d = {
-    chunkLoadingOrigin = CylCoords(player.position.x, player.position.y, player.position.z, size)
-    val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.view.invMatrix)
-    chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
-  }
+  private val chunkLoader: ChunkLoader = new ChunkLoader(this)
 
   private def updateLoadedColumns(): Unit = {
     val rDistSq = math.pow(renderDistance, 2)
     val origin = {
-      val temp = chunkLoadingOrigin.toBlockCoords
+      val temp = chunkLoader.chunkLoadingOrigin.toBlockCoords
       new Vector2d(temp.x / 16, temp.z / 16)
     }
     def inSight(col: ColumnRelWorld): Boolean = {
@@ -133,43 +104,6 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     columnsAtEdge --= columnsToRemove
   }
 
-  private def loadChunks(): Unit = {
-    def topBottomChangeWhenExists(chY: Int, top: Int, bottom: Int): Option[(Int, Int)] = {
-      if (chY == top + 1) Some((chY, bottom))
-      else if (chY == bottom - 1) Some((top, chY))
-      else None
-    }
-
-    def getTopBottomChange(col: ChunkColumn, chY: Int): Option[(Int, Int)] = {
-      col.topAndBottomChunks match {
-        case None => Some((chY, chY))
-        case Some((top, bottom)) =>
-          topBottomChangeWhenExists(chY, top, bottom)
-      }
-    }
-
-    def manageTopBottomFor(chunkToLoad: ChunkRelWorld): Boolean = {// returns true if it loaded a non-empty chunk
-      getColumn(chunkToLoad.getColumnRelWorld).exists { col =>
-        val ch = chunkToLoad.getChunkRelColumn
-        val topBottomChange = getTopBottomChange(col, ch.Y)
-
-        if (topBottomChange.isDefined) {
-          col.topAndBottomChunks = topBottomChange
-          val newChunk = new Chunk(chunkToLoad, this)
-          col.chunks(ch.value) = newChunk
-          chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(newChunk))
-          !newChunk.isEmpty
-        } else false
-      }
-    }
-
-    for (_ <- 1 to World.chunksLoadedPerTick) {
-      while (!chunksToLoad.isEmpty && !manageTopBottomFor(chunksToLoad.dequeue())) {}
-    }
-  }
-
-  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
-
   private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
 
   val player: Player = new Player(this)
@@ -181,9 +115,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
-  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = {
-    chunkRenderUpdateQueue.enqueue(coords)
-  }
+  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ()
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
   def getChunk(coords: ChunkRelWorld): Option[Chunk]      = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
@@ -199,47 +131,20 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   }
 
   def tick(camera: Camera): Unit = {
-    setChunkLoadingCenterAndDirection(camera)
+    chunkLoader.tick(camera)
 
+    blockUpdateTimer.tick()
     loadColumnsTimer.tick()
-
-    loadChunks()
-
-    performChunkRenderUpdates()
 
     columns.values.foreach(_.tick())
   }
 
-  private def performChunkRenderUpdates(): Unit = {
-//    println("Chunks: " + columns.map(_._2.chunks.values.size).sum)
-//    if (chunkRenderUpdateQueue.nonEmpty) println(chunkRenderUpdateQueue.size)
-    for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
-      if (!chunkRenderUpdateQueue.isEmpty) {
-        var chunk: Option[Chunk] = None
-        do {
-          val coords = chunkRenderUpdateQueue.dequeue()
-          chunk = getChunk(coords)
-        } while (chunk.isEmpty && !chunkRenderUpdateQueue.isEmpty)
-
-        chunk.foreach(_.doRenderUpdate())
-      }
-    }
+  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates) {
+    performBlockUpdates()
   }
 
   private val loadColumnsTimer: TickableTimer = TickableTimer(World.ticksBetweenColumnLoading) {
-    performBlockUpdates()
-
-    filterChunkRenderUpdateQueue()
-
     updateLoadedColumns()
-    columns.values.foreach(_.updateLoadedChunks())
-  }
-
-  private def filterChunkRenderUpdateQueue(): Unit = {
-    val rDistSq = (renderDistance * 16) * (renderDistance * 16)
-
-    chunksToLoad.reprioritizeAndFilter(_._1 <= rDistSq)
-    chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
   }
 
   private def performBlockUpdates(): Unit = {
@@ -275,6 +180,11 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   def neighborChunks(chunk: Chunk): Iterable[Chunk] = Iterable.tabulate(8)(i => neighborChunk(chunk, i)).flatten
 
+  def getBrightness(block: BlockRelWorld): Float = {
+    if (block != null) getChunk(block.getChunkRelWorld).map(_.lighting.getBrightness(block.getBlockRelChunk)).getOrElse(1.0f)
+    else 1.0f
+  }
+
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
       new ShortTag("version", WorldSave.LatestVersion),
@@ -288,7 +198,8 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
     worldSettings.saveState(worldTag)
 
-    chunksToLoad.clear()
+    chunkLoader.unload()
+    blockUpdateTimer.active = false
     loadColumnsTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear

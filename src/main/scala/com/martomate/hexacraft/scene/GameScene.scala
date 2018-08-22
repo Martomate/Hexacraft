@@ -46,7 +46,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   val playerInputHandler = new PlayerInputHandler(world.player)
 
   private val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), world.player.inventory)
-  private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => worldRenderer.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
+  private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
   private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick)
@@ -208,6 +208,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     leftMouseButtonTimer.tick()
 
     world.tick(camera)
+    worldRenderer.tick(camera)
 
     if (debugScene != null) debugScene.tick()
   }
