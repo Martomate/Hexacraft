@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.gui.comp
 
-import fontMeshCreator.GUIText
 import com.martomate.hexacraft.event.MouseClickEvent
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW

@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.block
 
 import com.martomate.hexacraft.HexBox
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, CylCoords}
-import com.martomate.hexacraft.world.storage.Chunk
+import com.martomate.hexacraft.world.coord.CylCoords
 
 import scala.collection.Seq
 

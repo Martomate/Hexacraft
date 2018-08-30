@@ -1,17 +1,9 @@
 package com.martomate.hexacraft
 
-import com.martomate.hexacraft.world.coord.CylCoords
-import com.martomate.hexacraft.world.storage.World
-import com.martomate.hexacraft.world.coord.CoordUtils
-import com.martomate.hexacraft.world.coord.BlockCoords
-import com.martomate.hexacraft.world.coord.BlockRelWorld
-import com.martomate.hexacraft.world.coord.SkewCylCoords
-import org.joml.Vector3d
-import java.text.NumberFormat
-
 import com.martomate.hexacraft.block.Block
-
-import scala.collection.Seq
+import com.martomate.hexacraft.world.coord._
+import com.martomate.hexacraft.world.storage.World
+import org.joml.Vector3d
 
 object HexBox {
   private val reflectionDirs = IndexedSeq(

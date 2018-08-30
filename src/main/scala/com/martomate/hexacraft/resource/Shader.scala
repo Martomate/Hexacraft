@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.resource
 
-import scala.collection.Seq
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20
+
+import scala.collection.Seq
 
 object Shader {
   private var activeShader: Shader = _

@@ -4,7 +4,6 @@ import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
-import org.joml.Vector2d
 
 object ChunkColumn {
   val neighbors: Seq[(Int, Int)] = Seq(
@@ -15,8 +14,10 @@ object ChunkColumn {
 }
 
 class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
-  val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
+  private val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
+
+  def isEmpty: Boolean = chunks.isEmpty
 
   private[storage] val generatedHeightMap = {
     val interp = world.worldGenerator.getHeightmapInterpolator(coords)
@@ -45,6 +46,13 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   }
 
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
+  def setChunk(chunk: Chunk): Unit = {
+    val coords = chunk.coords.getChunkRelColumn
+    if (!chunks.put(coords.value, chunk).contains(chunk)) {
+      onChunkLoaded(chunk)
+    }
+  }
+  def removeChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.remove(coords.value)
 
   def getBlock(coords: BlockRelColumn): BlockState = {
     getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
@@ -96,6 +104,10 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
 
   def tick(): Unit = {
     chunks.values.foreach(_.tick())
+  }
+
+  def onReloadedResources(): Unit = {
+    chunks.values.foreach(_.requestRenderUpdate())
   }
 
   def unload(): Unit = {

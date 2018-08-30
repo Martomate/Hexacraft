@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
 import com.martomate.hexacraft.world.ChunkLighting
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.render.{ChunkRenderer, LightPropagator}
 
 import scala.collection.mutable.ArrayBuffer
@@ -18,11 +18,6 @@ object Chunk {
     (-1, 0, 0),
     (0, 0, -1),
     (1, 0, -1))
-}
-
-trait ChunkEventListener {
-  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit
-  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit
 }
 
 class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) {
@@ -49,7 +44,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) 
     coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
   )
 
-  column.onChunkLoaded(this)
   requestRenderUpdate()
 
   def blocks: ChunkStorage = storage

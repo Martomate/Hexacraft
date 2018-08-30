@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.coord
 
+import com.martomate.hexacraft.world.storage.CylinderSize
 import com.martomate.hexacraft.{Camera, CameraView}
-import com.martomate.hexacraft.world.storage.{CylinderSize, World}
 import org.joml.Vector3d
 
 object CoordUtils {

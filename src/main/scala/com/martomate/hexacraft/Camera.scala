@@ -1,12 +1,10 @@
 package com.martomate.hexacraft
 
-import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 import com.martomate.hexacraft.resource.Shader
-import com.martomate.hexacraft.world.coord.BlockCoords
-import com.martomate.hexacraft.world.coord.BlockRelWorld
-import com.martomate.hexacraft.world.coord.CoordUtils
-import com.martomate.hexacraft.world.storage.CylinderSize
 import com.martomate.hexacraft.world.Player
+import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils}
+import com.martomate.hexacraft.world.storage.CylinderSize
+import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 
 object Camera {
   val unitX: Vector3fc = new Vector3f(1, 0, 0)

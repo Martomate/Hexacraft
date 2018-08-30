@@ -1,14 +1,8 @@
 package com.martomate.hexacraft.scene
 
-import org.joml.Vector3d
-import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW._
-
-import com.martomate.hexacraft.HexBox
 import com.martomate.hexacraft.Main
-import com.martomate.hexacraft.world.coord.BlockCoords
-import com.martomate.hexacraft.world.storage.World
 import com.martomate.hexacraft.world.Player
+import org.lwjgl.glfw.GLFW._
 
 class PlayerInputHandler(val player: Player) {
   var moveWithMouse = false

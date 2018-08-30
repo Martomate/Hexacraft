@@ -2,19 +2,19 @@ package com.martomate.hexacraft.scene
 
 import java.io.File
 
-import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
+import com.martomate.hexacraft._
+import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import com.martomate.hexacraft.gui.comp.{GUITransformation, LocationInfo, LocationInfoIdentity}
+import com.martomate.hexacraft.gui.comp.{GUITransformation, LocationInfoIdentity}
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import com.martomate.hexacraft.resource.Shader
+import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.WorldSettings
-import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, RayTracer}
+import com.martomate.hexacraft.world.coord.{BlockCoords, CylCoords, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
-import com.martomate.hexacraft._
-import com.martomate.hexacraft.util.TickableTimer
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
@@ -62,7 +62,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
   
   override def onReloadedResources(): Unit = {
     setUniforms()
-    world.columns.values.foreach(_.chunks.values.foreach(_.requestRenderUpdate()))
+    world.onReloadedResources()
   }
 
   private def setUniforms(): Unit = {

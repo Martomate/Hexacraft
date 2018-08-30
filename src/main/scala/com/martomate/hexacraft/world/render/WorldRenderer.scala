@@ -57,7 +57,7 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
   world.addChunkAddedOrRemovedListener(this)
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance)
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance, world.size)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)

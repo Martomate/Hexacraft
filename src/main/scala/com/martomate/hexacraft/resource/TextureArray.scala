@@ -1,11 +1,7 @@
 package com.martomate.hexacraft.resource
 
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.{GL11, GL12, GL30}
 
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]

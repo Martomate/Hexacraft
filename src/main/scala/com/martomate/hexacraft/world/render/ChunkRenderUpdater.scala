@@ -2,23 +2,16 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import com.martomate.hexacraft.world.storage.{ChunkEventListener, World}
-import org.joml.{Vector3d, Vector4d}
+import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.storage.{ChunkEventListener, CylinderSize, PosAndDir, World}
 
-class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double) extends ChunkEventListener {
-  private var chunkLoadingOrigin: CylCoords = _
-  private val chunkLoadingDirection: Vector3d = new Vector3d()
-  private def setChunkLoadingCenterAndDirection(camera: Camera): Vector3d = {
-    chunkLoadingOrigin = CylCoords(camera.position.x, camera.position.y, camera.position.z, camera.worldSize)
-    val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.view.invMatrix)
-    chunkLoadingDirection.set(vec4.x, vec4.y, vec4.z) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
-  }
+class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double, worldSize: CylinderSize) extends ChunkEventListener {
+  private val origin = new PosAndDir(worldSize)
 
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
 
   def update(camera: Camera): Unit = {
-    setChunkLoadingCenterAndDirection(camera)
+    origin.setPosAndDirFrom(camera)
 
     reprioritizeTimer.tick()
 
@@ -48,11 +41,10 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
       k <- 0 to 1
     } yield (15 * i, 15 * j, 15 * k)
     val dist = ((corners :+ (8, 8, 8)) map { t =>
-      if (chunkLoadingOrigin == null) chunkLoadingOrigin = CylCoords(0, 0, 0, coords.cylSize)
       val cyl = BlockCoords(coords.withBlockCoords(t._1, t._2, t._3), coords.cylSize).toCylCoords
-      val cDir = cyl.toNormalCoords(chunkLoadingOrigin).toVector3d.normalize()
-      val dot = chunkLoadingDirection.dot(cDir)
-      chunkLoadingOrigin.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
+      val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
+      val dot = origin.dir.dot(cDir)
+      origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
     }).min
 
     dist

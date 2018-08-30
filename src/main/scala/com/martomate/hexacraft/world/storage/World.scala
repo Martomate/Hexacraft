@@ -7,27 +7,13 @@ import com.martomate.hexacraft.util.{NBTUtil, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.Player
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.worldsave.WorldSave
-import org.joml.Vector2d
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object World {
-  val chunksLoadedPerTick = 2
   val chunkRenderUpdatesPerTick = 1
   val ticksBetweenBlockUpdates = 5
   val ticksBetweenColumnLoading = 5
-}
-
-trait BlockSetAndGet {
-  def getBlock(coords: BlockRelWorld): BlockState
-  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean
-  def removeBlock(coords: BlockRelWorld): Boolean
-}
-
-trait ChunkAddedOrRemovedListener {
-  def onChunkAdded(chunk: Chunk): Unit
-  def onChunkRemoved(chunk: Chunk): Unit
 }
 
 class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener with BlockSetAndGet {
@@ -38,71 +24,17 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   val renderDistance: Double = 8 * CoordUtils.y60
 
-  val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
-  val columnsAtEdge: mutable.Set[ColumnRelWorld] = mutable.Set.empty[ColumnRelWorld]
+  private val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
 
-  private val chunkLoader: ChunkLoader = new ChunkLoader(this)
-
-  private def updateLoadedColumns(): Unit = {
-    val rDistSq = math.pow(renderDistance, 2)
-    val origin = {
-      val temp = chunkLoader.chunkLoadingOrigin.toBlockCoords
-      new Vector2d(temp.x / 16, temp.z / 16)
-    }
-    def inSight(col: ColumnRelWorld): Boolean = {
-      col.distSq(origin) <= rDistSq
-    }
-
-    val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt, size)
-    ensureColumnExists(here)
-
-    val columnsToAdd = mutable.Set.empty[ColumnRelWorld]
-    val columnsToRemove = mutable.Set.empty[ColumnRelWorld]
-
-    def fillInEdgeWithExistingNeighbors(col: ColumnRelWorld): Unit = {
-      for (offset <- ChunkColumn.neighbors) {
-        val col2 = col.offset(offset._1, offset._2)
-        if (columns.contains(col2.value)) {
-          columnsToAdd += col2
-        }
-      }
-    }
-
-    def expandEdgeWhereInSightAndReturnSurrounded(col: ColumnRelWorld): Boolean = {
-      var surrounded = true
-      for (offset <- ChunkColumn.neighbors) {
-        val col2 = col.offset(offset._1, offset._2)
-        if (inSight(col2)) {
-          if (!columns.contains(col2.value)) {
-            columnsToAdd += col2
-            columns(col2.value) = new ChunkColumn(col2, this)
-          }
-        } else {
-          surrounded = false
-        }
-      }
-      surrounded
-    }
-
-    def shouldRemoveColAfterManagingEdgeAt(col: ColumnRelWorld): Boolean = {
-      if (!inSight(col)) {
-        columns.remove(col.value).get.unload()
-        fillInEdgeWithExistingNeighbors(col)
-        true
-      } else {
-        val surrounded = expandEdgeWhereInSightAndReturnSurrounded(col)
-        surrounded
-      }
-    }
-
-    for (col <- columnsAtEdge) {
-      val shouldRemoveCol: Boolean = shouldRemoveColAfterManagingEdgeAt(col)
-
-      if (shouldRemoveCol) columnsToRemove += col
-    }
-    columnsAtEdge ++= columnsToAdd
-    columnsAtEdge --= columnsToRemove
-  }
+  private val chunkLoadingOrigin = new PosAndDir(size)
+  private val chunkLoader: ChunkLoader = new ChunkLoaderWithOrigin(
+    size,
+    renderDistance,
+    columns,
+    coords => new ChunkColumn(coords, this),
+    coords => new Chunk(coords, new ChunkGenerator(coords, this), this),
+    chunkLoadingOrigin
+  )
 
   private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
 
@@ -112,6 +44,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   private[storage] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
 
+  addChunkAddedOrRemovedListener(chunkLoader)
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
@@ -131,20 +64,34 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   }
 
   def tick(camera: Camera): Unit = {
-    chunkLoader.tick(camera)
+    chunkLoadingOrigin.setPosAndDirFrom(camera)
+    chunkLoader.tick()
+    for (ch <- chunkLoader.chunksToAdd()) {
+      ensureColumnExists(ch.coords.getColumnRelWorld)
+      getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
+      chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
+    }
+
+    for (ch <- chunkLoader.chunksToRemove()) {
+      getColumn(ch.getColumnRelWorld) foreach { col =>
+        col.removeChunk(ch.getChunkRelColumn).foreach { c =>
+          chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+          c.unload()
+        }
+        if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
+          c.unload()
+          chunkLoader.onColumnRemoved(c)
+        }
+      }
+    }
 
     blockUpdateTimer.tick()
-    loadColumnsTimer.tick()
 
     columns.values.foreach(_.tick())
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates) {
     performBlockUpdates()
-  }
-
-  private val loadColumnsTimer: TickableTimer = TickableTimer(World.ticksBetweenColumnLoading) {
-    updateLoadedColumns()
   }
 
   private def performBlockUpdates(): Unit = {
@@ -157,8 +104,9 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
   private def ensureColumnExists(here: ColumnRelWorld): Unit = {
     if (!columns.contains(here.value)) {
-      columns(here.value) = new ChunkColumn(here, this)
-      columnsAtEdge += here
+      val col = new ChunkColumn(here, this)
+      columns(here.value) = col
+      chunkLoader.onColumnAdded(col)
     }
   }
 
@@ -185,6 +133,10 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     else 1.0f
   }
 
+  def onReloadedResources(): Unit = {
+    columns.values.foreach(_.onReloadedResources())
+  }
+
   def unload(): Unit = {
     val worldTag = NBTUtil.makeCompoundTag("world", Seq(
       new ShortTag("version", WorldSave.LatestVersion),
@@ -200,7 +152,6 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
 
     chunkLoader.unload()
     blockUpdateTimer.active = false
-    loadColumnsTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear
   }

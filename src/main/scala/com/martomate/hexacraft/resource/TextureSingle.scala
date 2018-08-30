@@ -1,16 +1,9 @@
 package com.martomate.hexacraft.resource
 
-import java.io.File
-import java.nio.file.Files
-import javax.imageio.ImageIO
-
 import com.martomate.hexacraft.util.FileUtils
+import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic
-import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.{GL11, GL12}
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]

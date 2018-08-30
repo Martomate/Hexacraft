@@ -22,7 +22,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: World) {
         val noise = blockNoise(i, j, k)
         val yToGo = coords.Y * 16 + j - column.generatedHeightMap(i)(k)
         val limit = limitForBlockNoise(yToGo)
-        if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, world.size), new BlockState(getBlockAtDepth(yToGo)))
+        if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, coords.cylSize), new BlockState(getBlockAtDepth(yToGo)))
       }
     }
     val data = new ChunkData
@@ -44,21 +44,5 @@ class ChunkGenerator(coords: ChunkRelWorld, world: World) {
     if (yToGo < -6) -0.4
     else if (yToGo < 0) -0.4 - (6 + yToGo) * 0.025
     else 4
-  }
-}
-
-class ChunkData {
-  var storage: ChunkStorage = _
-
-  def optimizeStorage(): Unit = {
-    if (storage.isDense) {
-      if (storage.numBlocks < 48) {
-        storage = storage.toSparse
-      }
-    } else {
-      if (storage.numBlocks > 64) {
-        storage = storage.toDense
-      }
-    }
   }
 }

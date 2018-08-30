@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.resource
 
-import java.io.{BufferedReader, FileReader, IOException}
-import java.nio.file.Files
+import java.io.IOException
 
 import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.util.FileUtils

@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.resource
 
-import scala.collection.mutable.Set
 import scala.collection.mutable.ArrayBuffer
 
 object Resource {

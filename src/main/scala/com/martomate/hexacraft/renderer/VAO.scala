@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.renderer
 
-import org.lwjgl.opengl.GL30
-import scala.collection.mutable.ArrayBuffer
 import com.martomate.hexacraft.resource.Resource
+import org.lwjgl.opengl.GL30
+
+import scala.collection.mutable.ArrayBuffer
 
 object VAO {
   private var boundVAO: VAO = _

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.storage.{CylinderSize, World}
+import com.martomate.hexacraft.world.storage.CylinderSize
 import org.joml.Vector3d
 
 sealed abstract class AbstractCoords[T <: AbstractCoords[T]](val x: Double, val y: Double, val z: Double) {

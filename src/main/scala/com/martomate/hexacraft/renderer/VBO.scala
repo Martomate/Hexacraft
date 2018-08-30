@@ -2,15 +2,11 @@ package com.martomate.hexacraft.renderer
 
 import java.nio.ByteBuffer
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL33
 import com.martomate.hexacraft.resource.Resource
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl._
+
+import scala.collection.mutable.ArrayBuffer
 
 class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
   val vboID: Int = GL15.glGenBuffers()

@@ -1,13 +1,11 @@
 package com.martomate.hexacraft.block
 
 import java.net.URL
-import java.nio.file.{Files, Path}
-import java.util.stream.Collectors
-import javax.imageio.ImageIO
 
 import com.eclipsesource.json.{Json, JsonValue}
 import com.martomate.hexacraft.resource.{ResourceWrapper, TextureArray}
 import com.martomate.hexacraft.util.FileUtils
+import javax.imageio.ImageIO
 
 object BlockLoader {
   private var texIdxMap: Map[String, Int] = _
