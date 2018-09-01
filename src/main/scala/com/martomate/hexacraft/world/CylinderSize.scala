@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.world.coord.CoordUtils
 
@@ -25,8 +25,12 @@ class CylinderSize(val worldSize: Int) {
   def hexAngle: Double = (2 * math.Pi) / totalSize
 
   /** The radius of the cylinder */
-  def radius: Double = CoordUtils.y60 / hexAngle
+  def radius: Double = CylinderSize.y60 / hexAngle
 
   /** The circumference of the cylinder.<br><br>This is NOT the number of blocks, for that see <code>totalSize</code>. */
-  def circumference: Double = totalSize * CoordUtils.y60
+  def circumference: Double = totalSize * CylinderSize.y60
+}
+
+object CylinderSize {
+  val y60: Double = Math.sqrt(3) / 2
 }

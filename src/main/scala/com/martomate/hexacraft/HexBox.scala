@@ -1,6 +1,7 @@
 package com.martomate.hexacraft
 
 import com.martomate.hexacraft.block.Block
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.world.storage.World
 import org.joml.Vector3d
@@ -28,7 +29,7 @@ object HexBox {
 
 /** radius is the big radius of the hexagon */
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
-  val smallRadius: Double = radius * CoordUtils.y60
+  val smallRadius: Double = radius * CylinderSize.y60
 
   def vertices: IndexedSeq[CylCoords] = {
     //val ints = Seq(1, 2, 0, 3, 5, 4)

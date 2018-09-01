@@ -2,8 +2,8 @@ package com.martomate.hexacraft.world.gen.noise
 
 import java.util.Random
 
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.CylCoords
-import com.martomate.hexacraft.world.storage.CylinderSize
 import org.scalatest.FunSuite
 
 class NoiseGenerator3DTest extends FunSuite {

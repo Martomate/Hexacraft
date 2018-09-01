@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 import com.martomate.hexacraft.world.coord.{BlockCoords, ChunkRelColumn, ChunkRelWorld, ColumnRelWorld}
 import org.joml.Vector2d
 

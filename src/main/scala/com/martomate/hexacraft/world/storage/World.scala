@@ -4,7 +4,7 @@ import com.flowpowered.nbt._
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.util.{NBTUtil, TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.Player
+import com.martomate.hexacraft.world.{CylinderSize, Player, PosAndDir}
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.world.render.LightPropagator
 import com.martomate.hexacraft.worldsave.WorldSave
@@ -24,7 +24,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
   val worldGenerator = new WorldGenerator(worldSettings.gen, size)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
-  val renderDistance: Double = 8 * CoordUtils.y60
+  val renderDistance: Double = 8 * CylinderSize.y60
 
   private val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
 

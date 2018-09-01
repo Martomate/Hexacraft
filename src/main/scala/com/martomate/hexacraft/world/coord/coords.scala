@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.storage.{Chunk, CylinderSize}
+import com.martomate.hexacraft.world.CylinderSize
 import org.joml.Vector2d
 
 abstract class AbstractIntegerCoords[T](val value: T) {
@@ -78,6 +78,17 @@ case class BlockRelWorld(private val _value: Long, cylSize: CylinderSize) extend
 
 object ChunkRelWorld {
   def apply(X: Long, Y: Int, Z: Int, cylSize: CylinderSize): ChunkRelWorld = ChunkRelWorld((X & 0xfffff) << 32 | (Z & cylSize.ringSizeMask) << 12 | (Y & 0xfff), cylSize)
+
+  val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
+    (0, 1, 0),
+    (1, 0, 0),
+    (0, 0, 1),
+    (-1, 0, 1),
+    (0, -1, 0),
+    (-1, 0, 0),
+    (0, 0, -1),
+    (1, 0, -1)
+  )
 }
 case class ChunkRelWorld(private val _value: Long, cylSize: CylinderSize) extends AbstractIntegerCoords(_value) {
   // XXXXXZZZZZYYY
@@ -88,7 +99,7 @@ case class ChunkRelWorld(private val _value: Long, cylSize: CylinderSize) extend
   def Z: Int = value.toInt >> 12
   def Y: Int = (value << 20).toInt >> 20
 
-  def neighbors: Seq[ChunkRelWorld] = Chunk.neighborOffsets.map(d => offset(d._1, d._2, d._3))
+  def neighbors: Seq[ChunkRelWorld] = ChunkRelWorld.neighborOffsets.map(d => offset(d._1, d._2, d._3))
   def offset(x: Int, y: Int, z: Int): ChunkRelWorld = ChunkRelWorld(X + x, Y + y, Z + z, cylSize)
   def withBlockCoords(i: Int, j: Int, k: Int): BlockRelWorld = BlockRelWorld(X * 16 + i, Y * 16 + j, Z * 16 + k, cylSize)
 

@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.storage
 
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
 import org.scalatest.FunSuite
 
@@ -13,8 +14,8 @@ class CylinderSizeTest extends FunSuite {
       assertResult(size.ringSize * 16)(size.totalSize)
       assertResult(size.totalSize - 1)(size.totalSizeMask)
       assertResult((2 * math.Pi) / size.totalSize)(size.hexAngle)
-      assertResult(CoordUtils.y60 / size.hexAngle)(size.radius)
-      assertResult(size.totalSize * CoordUtils.y60)(size.circumference)
+      assertResult(CylinderSize.y60 / size.hexAngle)(size.radius)
+      assertResult(size.totalSize * CylinderSize.y60)(size.circumference)
     }
   }
 }

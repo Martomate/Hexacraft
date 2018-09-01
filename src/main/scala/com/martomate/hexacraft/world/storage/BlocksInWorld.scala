@@ -20,7 +20,7 @@ trait BlocksInWorld {
   }
 
   def neighborChunk(coords: ChunkRelWorld, side: Int): Option[Chunk] = {
-    val (dx, dy, dz) = Chunk.neighborOffsets(side)
+    val (dx, dy, dz) = ChunkRelWorld.neighborOffsets(side)
     getChunk(coords.offset(dx, dy, dz))
   }
 

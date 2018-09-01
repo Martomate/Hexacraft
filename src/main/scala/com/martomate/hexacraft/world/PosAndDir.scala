@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.world.coord.CylCoords

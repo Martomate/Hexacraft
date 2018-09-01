@@ -1,9 +1,8 @@
 package com.martomate.hexacraft
 
 import com.martomate.hexacraft.resource.Shader
-import com.martomate.hexacraft.world.Player
+import com.martomate.hexacraft.world.{CylinderSize, Player}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils}
-import com.martomate.hexacraft.world.storage.CylinderSize
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 
 object Camera {

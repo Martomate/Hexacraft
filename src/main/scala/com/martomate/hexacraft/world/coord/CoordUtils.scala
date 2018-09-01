@@ -1,18 +1,16 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.storage.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.{Camera, CameraView}
 import org.joml.Vector3d
 
 object CoordUtils {
-  val y60: Double = Math.sqrt(3) / 2
-
   def toBlockCoords(camera: Camera, vec: Vector3d, adjustY: Boolean = true): (BlockRelWorld, BlockCoords) = {
     val camX = camera.position.x
     val y = vec.y * 2
     val mult = if (adjustY) Math.exp(y - camera.position.y) else 1
     val x = ((vec.x - camX) / mult + camX) / 0.75
-    val z = vec.z / y60 - x / 2
+    val z = vec.z / CylinderSize.y60 - x / 2
 
     toBlockCoords(BlockCoords(x, y, z, camera.worldSize))
   }

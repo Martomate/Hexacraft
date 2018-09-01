@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.ByteArrayTag
 import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import org.scalatest.FunSuite
 

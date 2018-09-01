@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.storage.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import org.joml.Vector3d
 
 sealed abstract class AbstractCoords[T <: AbstractCoords[T]](val x: Double, val y: Double, val z: Double) {
@@ -26,14 +26,14 @@ class CylCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSize, f
 
   def toNormalCoords(ref: CylCoords): NormalCoords = {
     val mult = math.exp((this.y - ref.y) / cylSize.radius)
-    val v = (this.z - ref.z) / CoordUtils.y60 * cylSize.hexAngle
+    val v = (this.z - ref.z) / CylinderSize.y60 * cylSize.hexAngle
     val z = math.sin(v)
     val y = math.cos(v)
 
     val scale = cylSize.radius // / math.sqrt(z * z + y * y)
     NormalCoords((this.x - ref.x) * mult, y * scale * mult - cylSize.radius, z * scale * mult)
   }
-  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x / CoordUtils.y60, y, z - x * 0.5 / CoordUtils.y60, cylSize, fixZ)
+  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60, cylSize, fixZ)
   def toBlockCoords: BlockCoords = toSkewCylCoords.toBlockCoords
 
   def +(that: CylCoords) = CylCoords(x + that.x, y + that.y, z + that.z, cylSize)
@@ -52,8 +52,8 @@ class SkewCylCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSiz
   extends AbstractCoords[SkewCylCoords](_x, _y, if (fixZ) CoordUtils.fitZ(_z, cylSize.circumference) else _z) {
 
   def toNormalCoords(reference: CylCoords): NormalCoords = toCylCoords.toNormalCoords(reference)
-  def toCylCoords: CylCoords = new CylCoords(x * CoordUtils.y60, y, z + x * 0.5, cylSize, fixZ)
-  def toBlockCoords: BlockCoords = new BlockCoords(x / CoordUtils.y60, y / 0.5, z / CoordUtils.y60, cylSize, fixZ)
+  def toCylCoords: CylCoords = new CylCoords(x * CylinderSize.y60, y, z + x * 0.5, cylSize, fixZ)
+  def toBlockCoords: BlockCoords = new BlockCoords(x / CylinderSize.y60, y / 0.5, z / CylinderSize.y60, cylSize, fixZ)
 
   def +(that: SkewCylCoords) = SkewCylCoords(x + that.x, y + that.y, z + that.z, cylSize)
   def -(that: SkewCylCoords) = SkewCylCoords(x - that.x, y - that.y, z - that.z, cylSize)
@@ -64,7 +64,7 @@ class BlockCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSize,
 
   def toNormalCoords(reference: CylCoords): NormalCoords = toSkewCylCoords.toNormalCoords(reference)
   def toCylCoords: CylCoords = toSkewCylCoords.toCylCoords
-  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x * CoordUtils.y60, y * 0.5, z * CoordUtils.y60, cylSize, fixZ)
+  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x * CylinderSize.y60, y * 0.5, z * CylinderSize.y60, cylSize, fixZ)
   def toPlaceInBlockCoords: PlaceInBlockCoords = PlaceInBlockCoords(x + 0.5 * z, y - 0.5, z + 0.5 * x, cylSize)
 
   def +(that: BlockCoords) = BlockCoords(x + that.x, y + that.y, z + that.z, cylSize)

@@ -8,18 +8,6 @@ import com.martomate.hexacraft.world.render.LightPropagator
 
 import scala.collection.mutable.ArrayBuffer
 
-object Chunk {
-  val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
-    (0, 1, 0),
-    (1, 0, 0),
-    (0, 0, 1),
-    (-1, 0, 1),
-    (0, -1, 0),
-    (-1, 0, 0),
-    (0, 0, -1),
-    (1, 0, -1))
-}
-
 trait ChunkBlockListener {
   def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit
 }
@@ -98,7 +86,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World, 
     requestRenderUpdate()
 
     for (i <- 0 until 8) {
-      val off = Chunk.neighborOffsets(i)
+      val off = ChunkRelWorld.neighborOffsets(i)
       val c2 = offsetCoords(coords, off)
       if (isInNeighborChunk(off)) {
         neighborChunk(i).foreach(n => {

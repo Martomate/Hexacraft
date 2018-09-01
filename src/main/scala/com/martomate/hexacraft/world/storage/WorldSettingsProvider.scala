@@ -5,7 +5,7 @@ import java.util.Random
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.WorldSettings
+import com.martomate.hexacraft.world.{CylinderSize, WorldSettings}
 import com.martomate.hexacraft.worldsave.WorldSave
 
 class WorldGenSettings(val nbt: CompoundTag, val defaultSettings: WorldSettings) {

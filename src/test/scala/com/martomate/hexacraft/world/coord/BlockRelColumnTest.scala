@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.storage.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import org.scalatest.FunSuite
 
 class BlockRelColumnTest extends FunSuite {

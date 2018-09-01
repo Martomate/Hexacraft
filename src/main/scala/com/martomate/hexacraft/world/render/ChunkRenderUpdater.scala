@@ -2,8 +2,9 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.storage.{ChunkEventListener, CylinderSize, PosAndDir, World}
+import com.martomate.hexacraft.world.storage.{ChunkEventListener, World}
 
 class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double, worldSize: CylinderSize) extends ChunkEventListener {
   private val origin = new PosAndDir(worldSize)

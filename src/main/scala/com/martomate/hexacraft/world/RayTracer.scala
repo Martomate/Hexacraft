@@ -1,7 +1,8 @@
-package com.martomate.hexacraft.world.coord
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.{Block, BlockState}
+import com.martomate.hexacraft.world.coord.{BlockRelWorld, CoordUtils}
 import com.martomate.hexacraft.world.storage.World
 import org.joml.{Vector2f, Vector3d, Vector4f}
 
@@ -128,7 +129,7 @@ class RayTracer(world: World, camera: Camera, maxDistance: Double) {
     if (ray.dot(normal) <= 0) { // TODO: this is a temporary fix for ray-loops
       val pointOnSide = points(if (side == 0) index else index + 6)
       val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
-      if (distance <= maxDistance * CoordUtils.y60) {
+      if (distance <= maxDistance * CylinderSize.y60) {
         val hitBlockCoords = coordsOfHitBlock(current, BlockState.neighborOffsets(side))
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
