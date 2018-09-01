@@ -13,7 +13,7 @@ class ChunkRenderer(chunk: Chunk, world: World) {
       val blocks = chunk.blocks.allBlocks
 
       if (!chunk.lighting.initialized) {
-        chunk.lighting.init(chunk, world, blocks)
+        chunk.lighting.init(chunk, blocks)
       }
 
       val sidesToRender = Vector.fill(8)(new Array[Boolean](16 * 16 * 16))
@@ -52,7 +52,7 @@ class ChunkRenderer(chunk: Chunk, world: World) {
         }
       }
     } else if (!chunk.lighting.initialized) {
-      chunk.lighting.init(chunk, world, Seq.empty)
+      chunk.lighting.init(chunk, Seq.empty)
     }
   }
 

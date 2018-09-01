@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelColumn, ChunkRelColumn, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord._
 
 object ChunkColumn {
   val neighbors: Seq[(Int, Int)] = Seq(
@@ -13,7 +13,7 @@ object ChunkColumn {
     (0, -1))
 }
 
-class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
+class ChunkColumn(val coords: ColumnRelWorld, val world: World) extends ChunkBlockListener {
   private val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
 
@@ -48,19 +48,30 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: World) {
   def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
   def setChunk(chunk: Chunk): Unit = {
     val coords = chunk.coords.getChunkRelColumn
-    if (!chunks.put(coords.value, chunk).contains(chunk)) {
+    val oldChunk = chunks.put(coords.value, chunk)
+    oldChunk.foreach(_.removeEventListener(world))
+    oldChunk.foreach(_.removeBlockEventListener(this))
+
+    if (!oldChunk.contains(chunk)) {
+      chunk.addEventListener(world)
+      chunk.addBlockEventListener(this)
       onChunkLoaded(chunk)
     }
   }
-  def removeChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.remove(coords.value)
+  def removeChunk(coords: ChunkRelColumn): Option[Chunk] = {
+    val oldChunk = chunks.remove(coords.value)
+    oldChunk.foreach(_.removeEventListener(world))
+    oldChunk.foreach(_.removeBlockEventListener(this))
+    oldChunk
+  }
 
   def getBlock(coords: BlockRelColumn): BlockState = {
     getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
   }
 
-  def onSetBlock(coords: BlockRelColumn, block: BlockState): Unit = {
+  override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
     val height = heightMap(coords.cx, coords.cz)
-    if (block.blockType == Block.Air) {
+    if (now.blockType == Block.Air) {
       if (coords.y == height) {
         // remove and find the next highest
         var y: Int = height

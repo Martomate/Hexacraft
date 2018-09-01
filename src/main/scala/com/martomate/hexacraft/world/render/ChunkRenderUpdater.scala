@@ -53,4 +53,6 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
   override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = ()// TODO: Interface Segregation
 
   override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = chunkRenderUpdateQueue.enqueue(coords)
+
+  override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ()
 }

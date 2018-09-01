@@ -33,7 +33,7 @@ trait WorldSettingsProvider {
   def playerNBT: CompoundTag
 
   def loadState(path: String): CompoundTag
-  def saveState(tag: CompoundTag, path: String = "world.dat"): Unit
+  def saveState(tag: CompoundTag, path: String): Unit
 }
 
 class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings) extends WorldSettingsProvider {
@@ -50,7 +50,7 @@ class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings)
     NBTUtil.loadTag(new File(saveDir, path))
   }
 
-  def saveState(tag: CompoundTag, path: String = "world.dat"): Unit = {
+  def saveState(tag: CompoundTag, path: String): Unit = {
     NBTUtil.saveTag(tag, new File(saveDir, path))
   }
 }

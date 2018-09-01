@@ -100,7 +100,7 @@ class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
   }
 
   override def onChunkAdded(chunk: Chunk): Unit = {
-    chunkRenderers += chunk.coords -> chunk.renderer
+    chunkRenderers(chunk.coords) = new ChunkRenderer(chunk, world)
     chunk.addEventListener(chunkRenderUpdater)
   }
   override def onChunkRemoved(chunk: Chunk): Unit = {

@@ -3,8 +3,8 @@ package com.martomate.hexacraft.world.storage
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
 import com.martomate.hexacraft.world.ChunkLighting
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
-import com.martomate.hexacraft.world.render.{ChunkRenderer, LightPropagator}
+import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.render.LightPropagator
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -20,11 +20,12 @@ object Chunk {
     (1, 0, -1))
 }
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) {
-  private def neighbors: Iterable[Chunk] = Option(world).map(_.neighborChunks(this)).getOrElse(Iterable.empty)
-  private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(this, side))
+trait ChunkBlockListener {
+  def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit
+}
 
-  neighbors.foreach(_.requestRenderUpdate())
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World, lightPropagator: LightPropagator) {
+  private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(coords, side))
 
   private val chunkData: ChunkData = generator.loadData()
 
@@ -34,20 +35,24 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) 
   private val eventListeners: ArrayBuffer[ChunkEventListener] = ArrayBuffer.empty
   def addEventListener(listener: ChunkEventListener): Unit = eventListeners += listener
   def removeEventListener(listener: ChunkEventListener): Unit = eventListeners -= listener
-  addEventListener(world)
 
-  val renderer: ChunkRenderer = new ChunkRenderer(this, world)
-  val lighting: ChunkLighting = new ChunkLighting
+  private val blockEventListeners: ArrayBuffer[ChunkBlockListener] = ArrayBuffer.empty
+  def addBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners += listener
+  def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
+
+  val lighting: ChunkLighting = new ChunkLighting(lightPropagator)
 
   private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
     coords => eventListeners.foreach(_.onBlockNeedsUpdate(coords.withChunk(this.coords))),
     coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
   )
 
-  requestRenderUpdate()
+  def init(): Unit = {
+    requestRenderUpdate()
+    requestRenderUpdateForAllNeighbors()
+  }
 
   def blocks: ChunkStorage = storage
-  def column: ChunkColumn = world.getColumn(coords.getColumnRelWorld).get
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
@@ -57,21 +62,22 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) 
     if (before.blockType == Block.Air || before != block) {
       onBlockModified(blockCoords)
     }
-    LightPropagator.removeTorchlight(world, this, blockCoords)
-    LightPropagator.removeSunlight(world, this, blockCoords)
+    lightPropagator.removeTorchlight(this, blockCoords)
+    lightPropagator.removeSunlight(this, blockCoords)
     if (block.blockType.lightEmitted != 0) {
-      LightPropagator.addTorchlight(world, this, blockCoords, block.blockType.lightEmitted)
+      lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
     }
-    column.onSetBlock(blockCoords.withChunk(coords.getChunkRelColumn), block)
+    blockEventListeners.foreach(_.onSetBlock(blockCoords.withChunk(coords), before, block))
     true
   }
 
   def removeBlock(coords: BlockRelChunk): Boolean = {
+    val before = getBlock(coords)
     storage.removeBlock(coords)
     onBlockModified(coords)
-    LightPropagator.removeTorchlight(world, this, coords)
-    LightPropagator.updateSunlight(world, this, coords)
-    column.onSetBlock(coords.withChunk(this.coords.getChunkRelColumn), BlockAir.State)
+    lightPropagator.removeTorchlight(this, coords)
+    lightPropagator.updateSunlight(this, coords)
+    blockEventListeners.foreach(_.onSetBlock(coords.withChunk(this.coords), before, BlockAir.State))
     true
   }
 
@@ -112,6 +118,13 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) 
 
   def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 
+  private def requestRenderUpdateForAllNeighbors(): Unit =
+    for (side <- 0 until 8)
+      eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
+
+  private def requestRenderUpdateForNeighbor(side: Int): Unit =
+    eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
+
   def tick(): Unit = {
     chunkData.optimizeStorage()
   }
@@ -123,8 +136,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World) 
       val chunkTag = NBTUtil.makeCompoundTag("chunk", storage.toNBT)// Add more tags with ++
       generator.saveData(chunkTag)
     }
-    
-    neighbors.foreach(_.requestRenderUpdate())
-    removeEventListener(world)
+
+    requestRenderUpdateForAllNeighbors()
   }
 }
