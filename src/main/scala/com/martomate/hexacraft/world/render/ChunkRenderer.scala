@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
-import com.martomate.hexacraft.world.storage.{Chunk, World}
+import com.martomate.hexacraft.world.storage.{Chunk, IWorld}
 
-class ChunkRenderer(chunk: Chunk, world: World) {
+class ChunkRenderer(chunk: Chunk, world: IWorld) {
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None
 
   def updateContent(): Unit = {

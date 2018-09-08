@@ -11,10 +11,10 @@ import com.martomate.hexacraft.gui.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.{RayTracer, WorldSettings}
 import com.martomate.hexacraft.world.coord.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
+import com.martomate.hexacraft.world.{RayTracer, WorldSettings}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._

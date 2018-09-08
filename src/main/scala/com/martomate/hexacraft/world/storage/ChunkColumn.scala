@@ -13,7 +13,7 @@ object ChunkColumn {
     (0, -1))
 }
 
-class ChunkColumn(val coords: ColumnRelWorld, val world: World) extends ChunkBlockListener {
+class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBlockListener {
   private val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
 

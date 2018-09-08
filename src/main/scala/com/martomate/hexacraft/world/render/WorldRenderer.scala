@@ -5,14 +5,14 @@ import com.martomate.hexacraft.block.BlockState
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
 import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, CylCoords}
-import com.martomate.hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, World}
+import com.martomate.hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, IWorld}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: World) extends ChunkAddedOrRemovedListener {
+class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val blockShader = Shader.get("block").get
   private val blockSideShader = Shader.get("blockSide").get
   private val skyShader = Shader.get("sky").get

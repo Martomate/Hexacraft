@@ -12,7 +12,7 @@ trait ChunkBlockListener {
   def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit
 }
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: World, lightPropagator: LightPropagator) {
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld, lightPropagator: LightPropagator) {
   private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(coords, side))
 
   private val chunkData: ChunkData = generator.loadData()

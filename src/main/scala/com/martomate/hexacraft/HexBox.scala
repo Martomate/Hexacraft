@@ -3,7 +3,7 @@ package com.martomate.hexacraft
 import com.martomate.hexacraft.block.BlockAir
 import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord._
-import com.martomate.hexacraft.world.storage.World
+import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.Vector3d
 
 object HexBox {
@@ -46,7 +46,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   }
 
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
-  def positionAndVelocityAfterCollision(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
+  def positionAndVelocityAfterCollision(pos: Vector3d, velocity: Vector3d, world: IWorld): (Vector3d, Vector3d) = {
     var result = (pos, velocity)
     val parts = (velocity.length * 10).toInt + 1
     velocity.div(parts)
@@ -57,7 +57,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
     result
   }
 
-  private def _collides(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
+  private def _collides(pos: Vector3d, velocity: Vector3d, world: IWorld): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
       val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, world.size, false).toBlockCoords)
       val skewCoords = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, world.size, false).toSkewCylCoords

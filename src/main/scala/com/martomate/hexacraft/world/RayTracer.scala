@@ -3,13 +3,13 @@ package com.martomate.hexacraft.world
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.{BlockRelWorld, CoordUtils}
-import com.martomate.hexacraft.world.storage.World
+import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.{Vector2f, Vector3d, Vector4f}
 
 import scala.collection.immutable
 
 
-class RayTracer(world: World, camera: Camera, maxDistance: Double) {
+class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   private val ray = new Vector3d()
   private var rayValid = false
 

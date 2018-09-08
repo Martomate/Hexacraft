@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.block.BlockState
 import com.martomate.hexacraft.world.coord.BlockRelChunk
-import com.martomate.hexacraft.world.storage.{BlocksInWorld, Chunk, World}
+import com.martomate.hexacraft.world.storage.{BlocksInWorld, Chunk, IWorld}
 
 import scala.collection.mutable
 

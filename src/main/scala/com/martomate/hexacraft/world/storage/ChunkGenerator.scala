@@ -4,7 +4,7 @@ import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
-class ChunkGenerator(coords: ChunkRelWorld, world: World) {
+class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) {
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {

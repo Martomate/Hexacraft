@@ -4,7 +4,7 @@ import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.storage.{ChunkEventListener, World}
+import com.martomate.hexacraft.world.storage.{ChunkEventListener, IWorld}
 
 object ChunkRenderUpdater {
   val chunkRenderUpdatesPerTick = 1

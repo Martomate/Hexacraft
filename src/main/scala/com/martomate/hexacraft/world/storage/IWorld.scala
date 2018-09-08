@@ -11,11 +11,23 @@ import com.martomate.hexacraft.worldsave.WorldSave
 
 import scala.collection.mutable.ArrayBuffer
 
-object World {
+object IWorld {
   val ticksBetweenBlockUpdates = 5
 }
 
-class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener with BlockSetAndGet with BlocksInWorld {
+trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld {
+  def size: CylinderSize
+  def worldSettings: WorldSettingsProvider
+  def worldGenerator: WorldGenerator
+  def renderDistance: Double
+
+  def getHeight(x: Int, z: Int): Int
+
+  private[storage] def chunkAddedOrRemovedListeners: Iterable[ChunkAddedOrRemovedListener]
+  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
+}
+
+class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   def worldName: String = worldSettings.name
   val size: CylinderSize = worldSettings.size
 
@@ -91,7 +103,7 @@ class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener
     columns.values.foreach(_.tick())
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates) {
+  private val blockUpdateTimer: TickableTimer = TickableTimer(IWorld.ticksBetweenBlockUpdates) {
     performBlockUpdates()
   }
 

@@ -4,10 +4,10 @@ import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
 import com.martomate.hexacraft.HexBox
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.coord.BlockCoords
-import com.martomate.hexacraft.world.storage.World
+import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.Vector3d
 
-class Player(val world: World) {
+class Player(val world: IWorld) {
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
   val velocity = new Vector3d
   val position = new Vector3d
