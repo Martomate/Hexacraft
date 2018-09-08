@@ -11,7 +11,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
                             loadingDistance: Double,
                             @deprecated columns: mutable.Map[Long, ChunkColumn],
                             @deprecated columnFactory: ColumnRelWorld => ChunkColumn,
-                            chunkFactory: ChunkRelWorld => Chunk,
+                            chunkFactory: ChunkRelWorld => IChunk,
                             origin: PosAndDir) extends ChunkLoader {
   def tick(): Unit = {
     loadChunks()
@@ -20,7 +20,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
   }
 
   private val chunksToLoad: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
-  private val chunksReadyToAdd: mutable.Set[Chunk] = mutable.Set.empty
+  private val chunksReadyToAdd: mutable.Set[IChunk] = mutable.Set.empty
   private val chunksReadyToRemove: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
   @deprecated
@@ -206,7 +206,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
   @deprecated
   override def onColumnRemoved(column: ChunkColumn): Unit = columnsAtEdge -= column.coords
 
-  override def onChunkAdded(chunk: Chunk): Unit = {
+  override def onChunkAdded(chunk: IChunk): Unit = {
     val coords = chunk.coords
     chunksReadyToAdd -= chunk
 
@@ -219,7 +219,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }*/
   }
 
-  override def onChunkRemoved(chunk: Chunk): Unit = {
+  override def onChunkRemoved(chunk: IChunk): Unit = {
     val coords = chunk.coords
     chunksReadyToRemove -= coords
 
@@ -232,7 +232,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }*/
   }
 
-  override def chunksToAdd(): Iterable[Chunk] = chunksReadyToAdd
+  override def chunksToAdd(): Iterable[IChunk] = chunksReadyToAdd
 
   override def chunksToRemove(): Iterable[ChunkRelWorld] = chunksReadyToRemove
 }

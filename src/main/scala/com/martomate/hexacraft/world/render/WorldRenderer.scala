@@ -5,7 +5,7 @@ import com.martomate.hexacraft.block.BlockState
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
 import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, CylCoords}
-import com.martomate.hexacraft.world.storage.{Chunk, ChunkAddedOrRemovedListener, IWorld}
+import com.martomate.hexacraft.world.storage.{IChunk, ChunkAddedOrRemovedListener, IWorld}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 
@@ -99,11 +99,11 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     selectedBlockVAO.free()
   }
 
-  override def onChunkAdded(chunk: Chunk): Unit = {
+  override def onChunkAdded(chunk: IChunk): Unit = {
     chunkRenderers(chunk.coords) = new ChunkRenderer(chunk, world)
     chunk.addEventListener(chunkRenderUpdater)
   }
-  override def onChunkRemoved(chunk: Chunk): Unit = {
+  override def onChunkRemoved(chunk: IChunk): Unit = {
     chunkRenderers.remove(chunk.coords).foreach(_.unload())
     chunk.removeEventListener(chunkRenderUpdater)
   }

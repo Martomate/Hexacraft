@@ -9,7 +9,7 @@ object ChunkLoader {
 
 trait ChunkLoader extends WorldListenerForTheLoader {
   def tick(): Unit
-  def chunksToAdd(): Iterable[Chunk]
+  def chunksToAdd(): Iterable[IChunk]
   def chunksToRemove(): Iterable[ChunkRelWorld]
   def unload(): Unit
 }

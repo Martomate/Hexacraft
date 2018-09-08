@@ -14,7 +14,7 @@ object ChunkColumn {
 }
 
 class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBlockListener {
-  private val chunks = scala.collection.mutable.Map.empty[Int, Chunk]
+  private val chunks = scala.collection.mutable.Map.empty[Int, IChunk]
   private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -45,8 +45,8 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
     _heightMap(x)(z)
   }
 
-  def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
-  def setChunk(chunk: Chunk): Unit = {
+  def getChunk(coords: ChunkRelColumn): Option[IChunk] = chunks.get(coords.value)
+  def setChunk(chunk: IChunk): Unit = {
     val coords = chunk.coords.getChunkRelColumn
     val oldChunk = chunks.put(coords.value, chunk)
     oldChunk.foreach(_.removeEventListener(world))
@@ -58,7 +58,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
       onChunkLoaded(chunk)
     }
   }
-  def removeChunk(coords: ChunkRelColumn): Option[Chunk] = {
+  def removeChunk(coords: ChunkRelColumn): Option[IChunk] = {
     val oldChunk = chunks.remove(coords.value)
     oldChunk.foreach(_.removeEventListener(world))
     oldChunk.foreach(_.removeBlockEventListener(this))
@@ -75,7 +75,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
       if (coords.y == height) {
         // remove and find the next highest
         var y: Int = height
-        var ch: Option[Chunk] = None
+        var ch: Option[IChunk] = None
         do {
           y -= 1
           ch = getChunk(ChunkRelColumn(y >> 4, coords.cylSize))
@@ -99,7 +99,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
     }
   }
 
-  def onChunkLoaded(chunk: Chunk): Unit = {
+  def onChunkLoaded(chunk: IChunk): Unit = {
     val yy = chunk.coords.Y * 16
     for (x <- 0 until 16) {
       for (z <- 0 until 16) {

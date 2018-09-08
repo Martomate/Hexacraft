@@ -2,18 +2,13 @@ package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
-import com.martomate.hexacraft.world.ChunkLighting
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.render.LightPropagator
+import com.martomate.hexacraft.world.{ChunkLighting, IChunkLighting}
+import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
 import scala.collection.mutable.ArrayBuffer
 
-trait ChunkBlockListener {
-  def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit
-}
-
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld, lightPropagator: LightPropagator) {
-  private def neighborChunk(side: Int): Option[Chunk] = Option(world).flatMap(_.neighborChunk(coords, side))
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld, lightPropagator: LightPropagator) extends IChunk {
+  private def neighborChunk(side: Int): Option[IChunk] = Option(world).flatMap(_.neighborChunk(coords, side))
 
   private val chunkData: ChunkData = generator.loadData()
 
@@ -28,7 +23,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld,
   def addBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners += listener
   def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
 
-  val lighting: ChunkLighting = new ChunkLighting(lightPropagator)
+  val lighting: IChunkLighting = new ChunkLighting(lightPropagator)
 
   private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
     coords => eventListeners.foreach(_.onBlockNeedsUpdate(coords.withChunk(this.coords))),

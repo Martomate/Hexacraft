@@ -5,10 +5,10 @@ import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkR
 
 trait BlocksInWorld {
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn]
-  def getChunk(coords: ChunkRelWorld): Option[Chunk]
+  def getChunk(coords: ChunkRelWorld): Option[IChunk]
   def getBlock(coords: BlockRelWorld): BlockState
 
-  def neighbor(side: Int, chunk: Chunk, coords: BlockRelChunk): (BlockRelChunk, Option[Chunk]) = {
+  def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk): (BlockRelChunk, Option[IChunk]) = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     val c2 = BlockRelChunk(i2, j2, k2, coords.cylSize)
@@ -19,10 +19,10 @@ trait BlocksInWorld {
     }
   }
 
-  def neighborChunk(coords: ChunkRelWorld, side: Int): Option[Chunk] = {
+  def neighborChunk(coords: ChunkRelWorld, side: Int): Option[IChunk] = {
     val (dx, dy, dz) = ChunkRelWorld.neighborOffsets(side)
     getChunk(coords.offset(dx, dy, dz))
   }
 
-  def neighborChunks(coords: ChunkRelWorld): Iterable[Chunk] = Iterable.tabulate(8)(i => neighborChunk(coords, i)).flatten
+  def neighborChunks(coords: ChunkRelWorld): Iterable[IChunk] = Iterable.tabulate(8)(i => neighborChunk(coords, i)).flatten
 }
