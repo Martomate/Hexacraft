@@ -1,40 +1,14 @@
 package com.martomate.hexacraft
 
 import com.martomate.hexacraft.resource.Shader
-import com.martomate.hexacraft.world.{CylinderSize, Player}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils}
-import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
+import com.martomate.hexacraft.world.{CylinderSize, Player}
+import org.joml.{Vector3d, Vector3f, Vector3fc}
 
 object Camera {
   val unitX: Vector3fc = new Vector3f(1, 0, 0)
   val unitY: Vector3fc = new Vector3f(0, 1, 0)
   val unitZ: Vector3fc = new Vector3f(0, 0, 1)
-}
-
-class CameraProjection(var fov: Float, var aspect: Float, val near: Float, val far: Float) {
-  val matrix = new Matrix4f
-  val invMatrix = new Matrix4f
-
-  def updateProjMatrix(): Unit = {
-    matrix.identity()
-    matrix.perspective(fov, aspect, near, far)
-    matrix.invert(invMatrix)
-  }
-}
-
-class CameraView {
-  val position = new Vector3d
-  val rotation = new Vector3f
-  val matrix = new Matrix4f
-  val invMatrix = new Matrix4f
-
-  def updateViewMatrix(): Unit = {
-    matrix.identity()
-    matrix.rotate(rotation.z, Camera.unitZ)
-    matrix.rotate(rotation.x, Camera.unitX)
-    matrix.rotate(rotation.y, Camera.unitY)
-    matrix.invert(invMatrix)
-  }
 }
 
 class Camera(val proj: CameraProjection, val worldSize: CylinderSize) {

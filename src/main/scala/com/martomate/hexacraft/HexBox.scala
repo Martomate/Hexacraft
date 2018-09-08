@@ -1,6 +1,6 @@
 package com.martomate.hexacraft
 
-import com.martomate.hexacraft.block.Block
+import com.martomate.hexacraft.block.BlockAir
 import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.world.storage.World
@@ -44,7 +44,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
       new CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, null, false)
     }
   }
-  
+
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
   def positionAndVelocityAfterCollision(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
     var result = (pos, velocity)
@@ -56,7 +56,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
     result._2.mul(parts)
     result
   }
-  
+
   private def _collides(pos: Vector3d, velocity: Vector3d, world: World): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
       val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, world.size, false).toBlockCoords)
@@ -70,7 +70,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
               val coords = BlockRelWorld(bc.x + x, y, bc.z + z, world.size)
               world.getChunk(coords.getChunkRelWorld) match {
                 case Some(chunk) =>
-                  val blockState = Some(chunk.getBlock(coords.getBlockRelChunk)).filter(_.blockType != Block.Air)
+                  val blockState = Some(chunk.getBlock(coords.getBlockRelChunk)).filter(_.blockType != BlockAir)
                   blockState.map(_.blockType).foreach(blockType => {
                     val dist = distanceToCollision(skewCoords, skewVelocity, blockType.bounds(blockState.get), new BlockCoords(bc.x + x, y, bc.z + z, world.size, false).toSkewCylCoords)
                     if (dist._1 < maxDistTuple._1) {

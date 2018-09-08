@@ -12,9 +12,7 @@ import com.martomate.hexacraft.worldsave.WorldSave
 import scala.collection.mutable.ArrayBuffer
 
 object World {
-  val chunkRenderUpdatesPerTick = 1
   val ticksBetweenBlockUpdates = 5
-  val ticksBetweenColumnLoading = 5
 }
 
 class World(val worldSettings: WorldSettingsProvider) extends ChunkEventListener with BlockSetAndGet with BlocksInWorld {

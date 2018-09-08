@@ -6,6 +6,11 @@ import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.{ChunkEventListener, World}
 
+object ChunkRenderUpdater {
+  val chunkRenderUpdatesPerTick = 1
+  val ticksBetweenColumnLoading = 5
+}
+
 class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double, worldSize: CylinderSize) extends ChunkEventListener {
   private val origin = new PosAndDir(worldSize)
 
@@ -16,7 +21,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
 
     reprioritizeTimer.tick()
 
-    for (_ <- 1 to World.chunkRenderUpdatesPerTick) {
+    for (_ <- 1 to ChunkRenderUpdater.chunkRenderUpdatesPerTick) {
       if (!chunkRenderUpdateQueue.isEmpty) {
         var renderer: Option[ChunkRenderer] = None
         do {
@@ -29,7 +34,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
     }
   }
 
-  private val reprioritizeTimer: TickableTimer = TickableTimer(World.ticksBetweenColumnLoading) {
+  private val reprioritizeTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading) {
     val rDistSq = (renderDistance * 16) * (renderDistance * 16)
 
     chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
