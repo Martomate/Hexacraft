@@ -5,8 +5,9 @@ import java.io.File
 import com.martomate.hexacraft._
 import com.martomate.hexacraft.block.{Block, BlockState}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import com.martomate.hexacraft.gui.comp.{GUITransformation, LocationInfoIdentity}
+import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
+import com.martomate.hexacraft.gui.location.LocationInfoIdentity
 import com.martomate.hexacraft.gui.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import com.martomate.hexacraft.resource.Shader

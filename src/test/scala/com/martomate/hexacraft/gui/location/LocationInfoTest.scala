@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.gui.comp
+package com.martomate.hexacraft.gui.location
 
 import org.scalatest.FunSuite
 

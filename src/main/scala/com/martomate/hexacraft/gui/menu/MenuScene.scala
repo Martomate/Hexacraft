@@ -2,6 +2,7 @@ package com.martomate.hexacraft.gui.menu
 
 import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.gui.comp._
+import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.resource.TextureSingle
 import com.martomate.hexacraft.scene.Scene
 

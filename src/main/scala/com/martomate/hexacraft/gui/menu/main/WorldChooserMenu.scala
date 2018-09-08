@@ -5,7 +5,8 @@ import java.io.{File, FileInputStream}
 import com.flowpowered.nbt.CompoundTag
 import com.flowpowered.nbt.stream.NBTInputStream
 import com.martomate.hexacraft.Main
-import com.martomate.hexacraft.gui.comp.{Button, Label, LocationInfo, ScrollPane}
+import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
+import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.gui.menu.MenuScene
 import com.martomate.hexacraft.scene.GameScene
 import com.martomate.hexacraft.util.NBTUtil

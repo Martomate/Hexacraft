@@ -47,27 +47,11 @@ object Main {
   def normalizedMousePos: Vector2f = new Vector2f((mousePos.x / windowSize.x * 2 - 1).toFloat, (mousePos.y / windowSize.y * 2 - 1).toFloat)
   def aspectRatio: Float = windowSize.x.toFloat / windowSize.y
 
-  private val sceneList = ArrayBuffer.empty[Scene]
-  def pushScene(scene: Scene): Unit = {
-    if (scene != null) {
-      sceneList += scene
-    }
-  }
-  def popScene(): Unit = {
-    if (sceneList.nonEmpty) {
-      val index = sceneList.size - 1
-      sceneList(index).unload()
-      sceneList.remove(index)
-    }
-  }
-
-  def popScenesUntil(predicate: Scene => Boolean): Unit = {
-    while (sceneList.nonEmpty && !predicate(sceneList.last)) popScene()
-  }
-
-  def popScenesUntilMainMenu(): Unit = {
-    popScenesUntil(_.isInstanceOf[MainMenu])
-  }
+  private val sceneStack = new SceneStack
+  def pushScene(scene: Scene): Unit = sceneStack.pushScene(scene)
+  def popScene(): Unit = sceneStack.popScene()
+  def popScenesUntil(predicate: Scene => Boolean): Unit = sceneStack.popScenesUntil(predicate)
+  def popScenesUntilMainMenu(): Unit = sceneStack.popScenesUntilMainMenu()
   
   def updateMousePos(): Unit = {
     glfwGetCursorPos(window, doublePtrX, doublePtrY)
@@ -81,7 +65,7 @@ object Main {
     _mousePos.y = pos._2 * windowSize.y
   }
 
-  def loop(): Unit = {
+  private def loop(): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
 
@@ -116,7 +100,7 @@ object Main {
       if (titleTicker > 10) {
         titleTicker = 0
         val debugInfo = (
-            sceneList.map(_.windowTitle) :+ 
+            sceneStack.map(_.windowTitle) :+
             (fps + " fps   ms: " + ((if (msTime < 10) "0" else "") + msTime)) :+ 
             (if (vsync) "vsync" else "")
         ).filter(!_.isEmpty).mkString("   |   ")
@@ -146,11 +130,11 @@ object Main {
 
   private def render(): Unit = {
     def render(idx: Int): Unit = {
-      if (idx >= 0 && !sceneList(idx).isOpaque) render(idx-1)
+      if (idx >= 0 && !sceneStack(idx).isOpaque) render(idx-1)
 
-      sceneList(idx).render(GUITransformation(0, 0))
+      sceneStack(idx).render(GUITransformation(0, 0))
     }
-    render(sceneList.size - 1)
+    render(sceneStack.size - 1)
 
     VAO.unbindVAO()
   }
@@ -162,20 +146,26 @@ object Main {
     _mousePos.set(doublePtrX.get(0), windowSize.y - doublePtrY.get(0))
     _mouseMoved.set(_mousePos.x - oldMouseX, _mousePos.y - oldMouseY)
     
-    sceneList.foreach(_.tick()) // TODO: should maybe be reversed
+    sceneStack.foreach(_.tick()) // TODO: should maybe be reversed
   }
 
-  def run(): Unit = {
+  private def run(): Unit = {
     initGL()
-    Shader.init()
-    BlockLoader.init()// this loads it to memory
-    Block.init()
-    pushScene(new MainMenu)
-    updateMousePos()
-    Shader.foreach(_.setUniform2f("windowSize", windowSize.x, windowSize.y))
-    loop()
 
-    destroy()
+    try {
+      Shader.init()
+      BlockLoader.init()// this loads it to memory
+      Block.init()
+      pushScene(new MainMenu)
+      updateMousePos()
+      Shader.foreach(_.setUniform2f("windowSize", windowSize.x, windowSize.y))
+      loop()
+    } catch {
+      case e: Exception =>
+        throw e
+    } finally {
+      destroy()
+    }
 
     // Free the window callbacks and destroy the window
     Callbacks.glfwFreeCallbacks(window)
@@ -189,13 +179,13 @@ object Main {
   private def processKeys(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit = { // action: 0 = release, 1 = press, 2 = repeat
     if (key == GLFW_KEY_R && action == GLFW_PRESS && GLFW.glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
       Resource.reloadAllResources()
-      sceneList.foreach(_.onReloadedResources())
+      sceneStack.foreach(_.onReloadedResources())
       println("Reloaded resources")
     }
     if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
       setFullscreen()
     }
-    sceneList.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
+    sceneStack.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
   }
 
   private def setFullscreen(): Unit = {
@@ -231,15 +221,15 @@ object Main {
   }
 
   private def processChar(window: Long, character: Int): Unit = {
-    sceneList.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
+    sceneStack.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
   }
 
   private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
-    sceneList.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * aspectRatio, normalizedMousePos.y))))
+    sceneStack.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * aspectRatio, normalizedMousePos.y))))
   }
 
   private def processScroll(window: Long, xoffset: Double, yoffset: Double): Unit = {
-    sceneList.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xoffset.toFloat, yoffset.toFloat)))
+    sceneStack.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xoffset.toFloat, yoffset.toFloat)))
   }
 
   private def resizeWindow(width: Int, height: Int): Unit = {
@@ -247,7 +237,7 @@ object Main {
       if (width != windowSize.x || height != windowSize.y) {
         GL11.glViewport(0, 0, width, height)
   
-        sceneList.foreach(_.windowResized(width, height))
+        sceneStack.foreach(_.windowResized(width, height))
       }
       windowSize.set(width, height)
     }
@@ -321,7 +311,7 @@ object Main {
   }
 
   def destroy(): Unit = {
-    while (sceneList.nonEmpty) popScene()
+    while (sceneStack.nonEmpty) popScene()
 
     Resource.freeAllResources()
   }

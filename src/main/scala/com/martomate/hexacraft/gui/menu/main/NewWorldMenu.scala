@@ -4,6 +4,7 @@ import java.io.File
 
 import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.gui.comp._
+import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.gui.menu.MenuScene
 import com.martomate.hexacraft.scene.GameScene
 import com.martomate.hexacraft.world.WorldSettings

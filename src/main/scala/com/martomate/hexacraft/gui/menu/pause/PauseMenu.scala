@@ -2,7 +2,8 @@ package com.martomate.hexacraft.gui.menu.pause
 
 import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.event.KeyEvent
-import com.martomate.hexacraft.gui.comp.{Button, LocationInfo}
+import com.martomate.hexacraft.gui.comp.Button
+import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.gui.menu.MenuScene
 import com.martomate.hexacraft.scene.GameScene
 import org.lwjgl.glfw.GLFW

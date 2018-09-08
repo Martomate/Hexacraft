@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.gui.menu.settings
 
 import com.martomate.hexacraft.Main
-import com.martomate.hexacraft.gui.comp.{Button, LocationInfo}
+import com.martomate.hexacraft.gui.comp.Button
+import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.gui.menu.MenuScene
 
 class SettingsMenu extends MenuScene {

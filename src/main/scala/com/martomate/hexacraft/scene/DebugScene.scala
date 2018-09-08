@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.Main
-import com.martomate.hexacraft.gui.comp.{Component, LocationInfo}
+import com.martomate.hexacraft.gui.comp.Component
+import com.martomate.hexacraft.gui.location.LocationInfo
 import fontMeshCreator.GUIText
 
 import scala.collection.mutable

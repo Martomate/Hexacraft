@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.gui.comp
+package com.martomate.hexacraft.gui.location
 
 import com.martomate.hexacraft.Main
 
@@ -26,13 +26,4 @@ abstract class LocationInfo {
 
 object LocationInfo {
   def apply(_x: Float, _y: Float, _w: Float, _h: Float) = new LocationInfo16x9(_x, _y, _w, _h)
-}
-
-class LocationInfoIdentity(val x: Float, val y: Float, val w: Float, val h: Float) extends LocationInfo
-
-class LocationInfo16x9(_x: Float, _y: Float, _w: Float, _h: Float) extends LocationInfo {
-  def x: Float = (_x * 2 - 1) * (16f / 9)
-  def y: Float = _y * 2 - 1
-  def w: Float = _w * 2 * 16 / 9// * (Main.aspectRatio / (16f / 9))
-  def h: Float = _h * 2
 }

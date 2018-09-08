@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.event._
+import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 
