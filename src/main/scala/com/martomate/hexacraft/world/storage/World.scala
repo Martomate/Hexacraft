@@ -63,7 +63,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   def tick(camera: Camera): Unit = {
-    chunkLoadingOrigin.setPosAndDirFrom(camera)
+    chunkLoadingOrigin.setPosAndDirFrom(camera.view)
     chunkLoader.tick()
     for (ch <- chunkLoader.chunksToAdd()) {
       ensureColumnExists(ch.coords.getColumnRelWorld)

@@ -3,13 +3,7 @@ package com.martomate.hexacraft
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils}
 import com.martomate.hexacraft.world.{CylinderSize, Player}
-import org.joml.{Vector3d, Vector3f, Vector3fc}
-
-object Camera {
-  val unitX: Vector3fc = new Vector3f(1, 0, 0)
-  val unitY: Vector3fc = new Vector3f(0, 1, 0)
-  val unitZ: Vector3fc = new Vector3f(0, 0, 1)
-}
+import org.joml.{Vector3d, Vector3f}
 
 class Camera(val proj: CameraProjection, val worldSize: CylinderSize) {
   val view = new CameraView

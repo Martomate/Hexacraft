@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.storage.{ChunkEventListener, IWorld}
+import com.martomate.hexacraft.world.storage.ChunkEventListener
+import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 
 object ChunkRenderUpdater {
   val chunkRenderUpdatesPerTick = 1
@@ -17,7 +17,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
 
   def update(camera: Camera): Unit = {
-    origin.setPosAndDirFrom(camera)
+    origin.setPosAndDirFrom(camera.view)
 
     reprioritizeTimer.tick()
 

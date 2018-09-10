@@ -7,7 +7,7 @@ import fontMeshCreator.GUIText
 
 import scala.collection.mutable
 
-class DebugScene(gameScene: GameScene) extends Scene {
+class DebugScene(info: DebugInfoProvider) extends Scene {
   private val textDisplayMap = mutable.Map.empty[String, String]
   private val textValueMap = mutable.Map.empty[String, GUIText]
   private val texts = mutable.ArrayBuffer.empty[GUIText]
@@ -58,19 +58,19 @@ class DebugScene(gameScene: GameScene) extends Scene {
   }
 
   override def tick(): Unit = {
-    setValue("p.x", gameScene.camera.position.x.toFloat)
-    setValue("p.y", gameScene.camera.position.y.toFloat)
-    setValue("p.z", gameScene.camera.position.z.toFloat)
+    setValue("p.x", info.camera.position.x.toFloat)
+    setValue("p.y", info.camera.position.y.toFloat)
+    setValue("p.z", info.camera.position.z.toFloat)
 
-    setValue("c.x", gameScene.camera.blockCoords.x >> 4)
-    setValue("c.y", gameScene.camera.blockCoords.y >> 4)
-    setValue("c.z", gameScene.camera.blockCoords.z >> 4)
+    setValue("c.x", info.camera.blockCoords.x >> 4)
+    setValue("c.y", info.camera.blockCoords.y >> 4)
+    setValue("c.z", info.camera.blockCoords.z >> 4)
 
-    setValue("r.x", gameScene.camera.rotation.x)
-    setValue("r.y", gameScene.camera.rotation.y)
-    setValue("r.z", gameScene.camera.rotation.z)
+    setValue("r.x", info.camera.rotation.x)
+    setValue("r.y", info.camera.rotation.y)
+    setValue("r.z", info.camera.rotation.z)
 
-    setValue("viewDist", (100 * gameScene.world.renderDistance).toInt / 100f)
+    setValue("viewDist", (100 * info.viewDistance).toInt / 100f)
   }
 
   override def windowResized(w: Int, h: Int): Unit = {

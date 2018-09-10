@@ -5,24 +5,22 @@ import com.martomate.hexacraft.event.KeyEvent
 import com.martomate.hexacraft.gui.comp.Button
 import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.gui.menu.MenuScene
-import com.martomate.hexacraft.scene.GameScene
 import org.lwjgl.glfw.GLFW
 
-
-class PauseMenu(game: GameScene) extends MenuScene {
-  addComponent(new Button("Back to game", LocationInfo(0.4f, 0.55f, 0.2f, 0.1f))({
-    unpause()
-  }))
-  addComponent(new Button("Back to menu", LocationInfo(0.4f, 0.25f, 0.2f, 0.1f))({
-    Main.popScenesUntilMainMenu()
-  }))
+class PauseMenu(scene: PausableScene) extends MenuScene {
+  addComponent(new Button("Back to game", LocationInfo(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
+  addComponent(new Button("Back to menu", LocationInfo(0.4f, 0.25f, 0.2f, 0.1f))(quit()))
   hasDefaultBackground = false
 
   override def isOpaque: Boolean = false
 
   private def unpause(): Unit = {
     Main.popScene()
-    game.setPaused(false)
+    scene.setPaused(false)
+  }
+
+  private def quit(): Unit = {
+    Main.popScenesUntilMainMenu()
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {

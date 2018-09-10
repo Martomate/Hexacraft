@@ -8,7 +8,7 @@ import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
-import com.martomate.hexacraft.gui.menu.pause.PauseMenu
+import com.martomate.hexacraft.gui.menu.pause.{PausableScene, PauseMenu}
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL11
 import scala.collection.Seq
 
 
-class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
+class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
 
   private val blockShader: Shader = Shader.get("block").get
@@ -253,4 +253,6 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene {
     setMouseCursorInvisible(false)
     if (debugScene != null) debugScene.unload()
   }
+
+  override def viewDistance: Double = world.renderDistance
 }
