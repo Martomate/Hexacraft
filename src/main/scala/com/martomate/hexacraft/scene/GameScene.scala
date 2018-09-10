@@ -3,16 +3,16 @@ package com.martomate.hexacraft.scene
 import java.io.File
 
 import com.martomate.hexacraft._
-import com.martomate.hexacraft.block.{Block, BlockState}
+import com.martomate.hexacraft.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
 import com.martomate.hexacraft.gui.menu.pause.{PausableScene, PauseMenu}
-import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, VAOBuilder, VBO}
+import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.coord.{BlockCoords, CylCoords}
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
 import com.martomate.hexacraft.world.{RayTracer, WorldSettings}
@@ -35,7 +35,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
   private val skyShader: Shader = Shader.get("sky").get
   private val crosshairShader: Shader = Shader.get("crosshair").get
 
-  private val crosshairVAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
+  private val crosshairVAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
   private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
 
@@ -91,7 +91,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
       event.key match {
         case GLFW_KEY_B =>
           val newCoords = camera.blockCoords.offset(0, -4, 0)
-          if (world.getBlock(newCoords).blockType == Block.Air) world.setBlock(newCoords, new BlockState(world.player.blockInHand))
+          if (world.getBlock(newCoords).blockType == Blocks.Air) world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
           Main.pushScene(new PauseMenu(this))
           setPaused(true)
@@ -216,13 +216,13 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
 
   private def updateMousePicker(): Unit = {
     mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
-    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Block.Air) else None)
+    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None)
   }
 
   private def performLeftMouseClick = {
     worldRenderer.getSelectedBlockAndSide match {
       case Some((coords, _)) =>
-        if (world.getBlock(coords).blockType != Block.Air) {
+        if (world.getBlock(coords).blockType != Blocks.Air) {
           world.removeBlock(coords)
         }
       case _ =>
@@ -234,7 +234,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
       case Some((coords1, Some(side))) =>
         val offset = BlockState.neighborOffsets(side)
         val coords = coords1.offset(offset._1, offset._2, offset._3)
-        if (world.getBlock(coords).blockType == Block.Air) {
+        if (world.getBlock(coords).blockType == Blocks.Air) {
           val blockType = playerInputHandler.player.blockInHand
           val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoords
           val state = new BlockState(blockType)

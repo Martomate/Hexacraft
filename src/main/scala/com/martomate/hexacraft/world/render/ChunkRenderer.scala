@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.{IChunk, IWorld}
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
@@ -38,7 +39,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
       for (side <- 0 until 8) {
         blockRenderers.get.updateContent(side, sidesCount(side)) {buf =>
           for ((bCoords, block) <- blocks) {
-            val coords = bCoords.withChunk(chunk.coords)
+            val coords = BlockRelWorld(bCoords, chunk.coords)
             if (sidesToRender(side)(bCoords.value)) {
               buf.putInt(coords.x)
               buf.putInt(coords.y)

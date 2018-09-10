@@ -4,8 +4,9 @@ import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.BlockState
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
-import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, CylCoords}
-import com.martomate.hexacraft.world.storage.{IChunk, ChunkAddedOrRemovedListener, IWorld}
+import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.storage.{ChunkAddedOrRemovedListener, IChunk, IWorld}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 
@@ -21,16 +22,16 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   private val renderingJobs = ArrayBuffer.empty[RenderingJob]
 
-  private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
+  private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
   private val selectedBlockVAO: VAO = new VAOBuilder(25)
-    .addVBO(VBO(25).floats(0, 3).create().fillFloats(0, {
+    .addVBO(VBOBuilder(25).floats(0, 3).create().fillFloats(0, {
       val expandFn: CylCoords => Seq[Float] = v => Seq((v.x * 1.0025).toFloat, ((v.y - 0.25) * 1.0025 + 0.25).toFloat, (v.z * 1.0025).toFloat)
       val fn: Int => Seq[Float] = s => BlockState.getVertices(s + 2).flatMap(expandFn)
       Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
     }))
-    .addVBO(VBO(1, divisor = 1).ints(1, 3).floats(2, 3).floats(3, 1).create()).create()
+    .addVBO(VBOBuilder(1, divisor = 1).ints(1, 3).floats(2, 3).floats(3, 1).create()).create()
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
 
   private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None

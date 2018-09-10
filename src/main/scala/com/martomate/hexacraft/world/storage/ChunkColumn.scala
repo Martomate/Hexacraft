@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.ShortArrayTag
-import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
+import com.martomate.hexacraft.block.{BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.coord._
+import com.martomate.hexacraft.world.coord.integer._
 
 object ChunkColumn {
   val neighbors: Seq[(Int, Int)] = Seq(
@@ -71,7 +71,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
     val height = heightMap(coords.cx, coords.cz)
-    if (now.blockType == Block.Air) {
+    if (now.blockType == Blocks.Air) {
       if (coords.y == height) {
         // remove and find the next highest
         var y: Int = height
@@ -81,7 +81,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
           ch = getChunk(ChunkRelColumn(y >> 4, coords.cylSize))
           ch match {
             case Some(chunk) =>
-              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
+              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Blocks.Air)
                 ch = None
               else
                 y -= 1
@@ -105,7 +105,7 @@ class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBl
       for (z <- 0 until 16) {
         val height = heightMap(x, z)
         (yy + 15 to yy by -1).filter(_ > height).find(y =>
-          chunk.getBlock(BlockRelChunk(x, y, z, chunk.coords.cylSize)).blockType != Block.Air
+          chunk.getBlock(BlockRelChunk(x, y, z, chunk.coords.cylSize)).blockType != Blocks.Air
         ).foreach(h => {
           _heightMap(x)(z) = h.toShort
         })

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.block
 
-import com.martomate.hexacraft.world.coord.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.BlockSetAndGet
 
 class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
@@ -11,8 +11,8 @@ class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_
     var depth: Int = bs.metadata & fluidLevelMask
     val blocks = BlockState.neighborOffsets.map(off => coords.offset(off._1, off._2, off._3))
     val bottomCoords = blocks.find(_.y == coords.y - 1).get
-    val bottomBS = Some(world.getBlock(bottomCoords)).filter(_.blockType != Block.Air)//TODO: clean up
-    if (!bottomBS.exists(_.blockType != Block.Air)) {
+    val bottomBS = Some(world.getBlock(bottomCoords)).filter(_.blockType != Blocks.Air)//TODO: clean up
+    if (!bottomBS.exists(_.blockType != Blocks.Air)) {
       world.setBlock(bottomCoords, new BlockState(this, depth.toByte))
       depth = fluidLevelMask
     } else if (bottomBS.exists(_.blockType == this) && bottomBS.get.metadata != 0) {
@@ -21,10 +21,10 @@ class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_
       depth = fluidLevelMask - math.max(totalLevel - fluidLevelMask, 0)
     } else {
       blocks.filter(_.y == coords.y).map(c => (c, world.getBlock(c))).foreach { case (nCoords, ns) =>
-        if (ns.blockType == Block.Air) {
+        if (ns.blockType == Blocks.Air) {
           val belowNeighborBlock = world.getBlock(nCoords.offset(0, -1, 0))
           val belowNeighbor = belowNeighborBlock.blockType
-          if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Block.Air || (belowNeighbor == this && belowNeighborBlock.metadata != 0)))) {
+          if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Blocks.Air || (belowNeighbor == this && belowNeighborBlock.metadata != 0)))) {
             world.setBlock(nCoords, new BlockState(this, 0x1e.toByte))
             depth += 1
           }

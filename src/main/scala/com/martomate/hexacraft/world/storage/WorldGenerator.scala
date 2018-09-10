@@ -4,7 +4,8 @@ import java.util.Random
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.world.CylinderSize
-import com.martomate.hexacraft.world.coord.{BlockCoords, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
 
 class WorldGenerator(worldGenSettings: WorldGenSettings, worldSize: CylinderSize) {

@@ -6,11 +6,11 @@ class ChunkData {
   def optimizeStorage(): Unit = {
     if (storage.isDense) {
       if (storage.numBlocks < 48) {
-        storage = storage.toSparse
+        storage = new SparseChunkStorage(storage)
       }
     } else {
       if (storage.numBlocks > 64) {
-        storage = storage.toDense
+        storage = new DenseChunkStorage(storage)
       }
     }
   }

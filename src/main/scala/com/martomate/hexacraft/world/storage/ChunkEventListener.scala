@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.storage
 
-import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 trait ChunkEventListener {
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit

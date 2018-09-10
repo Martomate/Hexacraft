@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.storage
 
-import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
+import com.martomate.hexacraft.block.{BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.{ChunkLighting, IChunkLighting}
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -26,8 +26,8 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld,
   val lighting: IChunkLighting = new ChunkLighting(lightPropagator)
 
   private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
-    coords => eventListeners.foreach(_.onBlockNeedsUpdate(coords.withChunk(this.coords))),
-    coords => getBlock(coords).blockType.doUpdate(coords.withChunk(this.coords), world)
+    coords => eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld(coords, this.coords))),
+    coords => getBlock(coords).blockType.doUpdate(BlockRelWorld(coords, this.coords), world)
   )
 
   def init(): Unit = {
@@ -42,7 +42,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld,
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean = {
     val before = getBlock(blockCoords)
     storage.setBlock(blockCoords, block)
-    if (before.blockType == Block.Air || before != block) {
+    if (before.blockType == Blocks.Air || before != block) {
       onBlockModified(blockCoords)
     }
     lightPropagator.removeTorchlight(this, blockCoords)
@@ -50,7 +50,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld,
     if (block.blockType.lightEmitted != 0) {
       lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
     }
-    blockEventListeners.foreach(_.onSetBlock(blockCoords.withChunk(coords), before, block))
+    blockEventListeners.foreach(_.onSetBlock(BlockRelWorld(blockCoords, coords), before, block))
     true
   }
 
@@ -60,7 +60,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, world: IWorld,
     onBlockModified(coords)
     lightPropagator.removeTorchlight(this, coords)
     lightPropagator.updateSunlight(this, coords)
-    blockEventListeners.foreach(_.onSetBlock(coords.withChunk(this.coords), before, BlockAir.State))
+    blockEventListeners.foreach(_.onSetBlock(BlockRelWorld(coords, this.coords), before, BlockAir.State))
     true
   }
 

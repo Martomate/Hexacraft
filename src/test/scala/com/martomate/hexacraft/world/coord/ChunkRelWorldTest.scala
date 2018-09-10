@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord
 
 import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import org.scalatest.FunSuite
 
 class ChunkRelWorldTest extends FunSuite {
@@ -41,12 +42,12 @@ class ChunkRelWorldTest extends FunSuite {
   }
 
   test("withBlockCoords works") {
-    var c = ChunkRelWorld(532, -14, 17, size).withBlockCoords(0, 0, 0)
+    var c = BlockRelWorld(0, 0, 0, ChunkRelWorld(532, -14, 17, size))
     assertResult(532 * 16)(c.x)
     assertResult(-14 * 16)(c.y)
     assertResult(  1 * 16)(c.z)
 
-    c = ChunkRelWorld(532, -14, 17, size).withBlockCoords(-4, 71, -12345)
+    c = BlockRelWorld(-4, 71, -12345, ChunkRelWorld(532, -14, 17, size))
     assertResult(532 * 16 -  4)(c.x)
     assertResult(-14 * 16 + 71)(c.y)
     assertResult( (17 * 16 - 12345) & size.totalSizeMask)(c.z)

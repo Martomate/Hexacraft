@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.gen.noise
 
 import java.util.Random
 
-import com.martomate.hexacraft.world.coord.CylCoords
+import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
   private[this] val noiseGens = Seq.fill(numOctaves)(new SingleNoiseGen4D(random))

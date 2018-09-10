@@ -7,7 +7,11 @@ import com.martomate.hexacraft.resource.{ResourceWrapper, TextureArray}
 import com.martomate.hexacraft.util.FileUtils
 import javax.imageio.ImageIO
 
-object BlockLoader {
+trait IBlockLoader {
+  def loadBlockType(name: String): IndexedSeq[Int]
+}
+
+object BlockLoader extends IBlockLoader {
   private var texIdxMap: Map[String, Int] = _
   
   def init(): Unit = {

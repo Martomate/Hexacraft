@@ -39,7 +39,7 @@ abstract class Component(protected val location: LocationInfo) {
 }
 
 object Component {
-  private val rectVAO: VAO = new VAOBuilder(4).addVBO(VBO(4).floats(0, 2).create().fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1))).create()
+  private val rectVAO: VAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1))).create()
   private val rectRenderer = new Renderer(rectVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest with Blending
 
   val font: FontType = Fonts.get("Verdana").get

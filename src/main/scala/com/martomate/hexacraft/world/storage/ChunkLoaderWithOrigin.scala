@@ -2,7 +2,8 @@ package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
-import com.martomate.hexacraft.world.coord.{BlockCoords, ChunkRelColumn, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.integer._
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import org.joml.Vector2d
 
 import scala.collection.mutable
@@ -33,7 +34,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       k <- 0 to 1
     } yield (15 * i, 15 * j, 15 * k)
     val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(coords.withBlockCoords(t._1, t._2, t._3), coords.cylSize).toCylCoords
+      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords), coords.cylSize).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = this.origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
@@ -89,10 +90,10 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       val bottomChunk = ChunkRelColumn(now & 0xfff, worldSize)
       if (inSight(bottomChunk)) {
         val below = ChunkRelColumn((now + dir) & 0xfff, worldSize)
-        if (inSight(below)) addChunkToLoadingQueue(below.withColumn(column.coords))
+        if (inSight(below)) addChunkToLoadingQueue(ChunkRelWorld(below, column.coords))
         now
       } else {
-        chunksReadyToRemove += bottomChunk.withColumn(column.coords)
+        chunksReadyToRemove += ChunkRelWorld(bottomChunk, column.coords)
         now - dir
       }
     }
@@ -107,7 +108,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
         val ground = ChunkRelColumn((column.generatedHeightMap(8)(8) >> 4) & 0xfff, worldSize)
         val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, worldSize)
 
-        if (inSight(first)) addChunkToLoadingQueue(first.withColumn(column.coords))
+        if (inSight(first)) addChunkToLoadingQueue(ChunkRelWorld(first, column.coords))
     }
   }
 

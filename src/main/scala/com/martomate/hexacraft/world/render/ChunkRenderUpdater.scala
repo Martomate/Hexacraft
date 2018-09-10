@@ -2,7 +2,8 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.ChunkEventListener
 import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
 
@@ -47,7 +48,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
       k <- 0 to 1
     } yield (15 * i, 15 * j, 15 * k)
     val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(coords.withBlockCoords(t._1, t._2, t._3), coords.cylSize).toCylCoords
+      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords), coords.cylSize).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25

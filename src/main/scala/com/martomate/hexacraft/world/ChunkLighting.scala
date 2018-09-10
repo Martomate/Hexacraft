@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.block.BlockState
-import com.martomate.hexacraft.world.coord.BlockRelChunk
+import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 import com.martomate.hexacraft.world.storage.{IChunk, LightPropagator}
 
 import scala.collection.mutable

@@ -4,7 +4,7 @@ import com.flowpowered.nbt.{ByteTag, ShortTag, StringTag}
 import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.util.{NBTUtil, TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.{CylinderSize, Player, PosAndDir}
 import com.martomate.hexacraft.worldsave.WorldSave
 

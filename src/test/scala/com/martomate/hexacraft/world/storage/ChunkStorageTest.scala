@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.ByteArrayTag
-import com.martomate.hexacraft.block.{Block, BlockState}
+import com.martomate.hexacraft.block.{BlockState, Blocks}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.CylinderSize
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import org.scalatest.FunSuite
 
 abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => ChunkStorage) extends FunSuite {
@@ -15,44 +15,44 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
 
   test("One block") {
     val storage = makeStorage(null)
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
     assertResult(1)(storage.numBlocks)
   }
 
   test("Many blocks") {
     val storage = makeStorage(null)
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
-      storage.setBlock(BlockRelChunk(i, j, k, cylSize), new BlockState(Block.Dirt))
+      storage.setBlock(BlockRelChunk(i, j, k, cylSize), new BlockState(Blocks.Dirt))
 
     assertResult(16*16*16)(storage.numBlocks)
   }
 
   test("Air doesn't count as a block") {
     val storage = makeStorage(null)
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Dirt))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Air))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Air))
     assertResult(0)(storage.numBlocks)
   }
 
   test("blockType for existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    assertResult(Block.Stone)(storage.blockType(coords350.getBlockRelChunk))
+    assertResult(Blocks.Stone)(storage.blockType(coords350.getBlockRelChunk))
   }
 
   test("blockType for non-existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
 
-    assertResult(Block.Air)(storage.blockType(coords351.getBlockRelChunk))
+    assertResult(Blocks.Air)(storage.blockType(coords351.getBlockRelChunk))
   }
 
   test("Remove existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords350.getBlockRelChunk)
-    assertResult(Block.Air)(storage.blockType(coords350.getBlockRelChunk))
+    assertResult(Blocks.Air)(storage.blockType(coords350.getBlockRelChunk))
     assertResult(1)(storage.numBlocks)
   }
 
@@ -60,14 +60,14 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords351.getBlockRelChunk)
-    assertResult(Block.Stone)(storage.blockType(coords350.getBlockRelChunk))
+    assertResult(Blocks.Stone)(storage.blockType(coords350.getBlockRelChunk))
     assertResult(2)(storage.numBlocks)
   }
 
   test("getBlock for existing block") {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords350.getBlockRelChunk)
-    assertResult(Block.Stone)(block.blockType)
+    assertResult(Blocks.Stone)(block.blockType)
     assertResult(2)(block.metadata)
     assertResult(2)(block.metadata)
   }
@@ -75,7 +75,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   test("getBlock for non-existing block") {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords351.getBlockRelChunk)
-    assertResult(Block.Air)(block.blockType)
+    assertResult(Blocks.Air)(block.blockType)
   }
 
   test("allBlocks returns all blocks") {
@@ -90,8 +90,8 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   test("fromNBT with correct tag") {
     val tag = NBTUtil.makeCompoundTag("", Seq(
       new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
-        case 0 => Block.Dirt.id
-        case 1 => Block.Stone.id
+        case 0 => Blocks.Dirt.id
+        case 1 => Blocks.Stone.id
         case _ => 0
       }),
       new ByteArrayTag("metadata", Array.tabulate(16*16*16) {
@@ -103,21 +103,21 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
     storage.fromNBT(tag)
     assertResult(2)(storage.numBlocks)
-    assertResult(Block.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+    assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
   }
 
   test("fromNBT without metadata") {
     val tag = NBTUtil.makeCompoundTag("", Seq(
       new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
-        case 0 => Block.Dirt.id
-        case 1 => Block.Stone.id
+        case 0 => Blocks.Dirt.id
+        case 1 => Blocks.Stone.id
         case _ => 0
       })
     ))
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
     storage.fromNBT(tag)
     assertResult(2)(storage.numBlocks)
-    assertResult(Block.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+    assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
   }
 
   test("fromNBT without blocks") {
@@ -131,7 +131,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
     storage.fromNBT(tag)
     assertResult(0)(storage.numBlocks)
-    assertResult(Block.Air)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+    assertResult(Blocks.Air)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
   }
 
   test("toNBT works") {
@@ -149,8 +149,8 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     val metadataArray = nbt(1).asInstanceOf[ByteArrayTag].getValue
     assertResult(16*16*16)(metadataArray.length)
 
-    assertResult(Block.Dirt.id)(blocksArray(coords359.getBlockRelChunk.value))
-    assertResult(Block.Stone.id)(blocksArray(coords350.getBlockRelChunk.value))
+    assertResult(Blocks.Dirt.id)(blocksArray(coords359.getBlockRelChunk.value))
+    assertResult(Blocks.Stone.id)(blocksArray(coords350.getBlockRelChunk.value))
     assertResult(6)(metadataArray(coords359.getBlockRelChunk.value))
     assertResult(2)(metadataArray(coords350.getBlockRelChunk.value))
   }
@@ -163,8 +163,8 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
 
   protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
-    storage.setBlock(coords359.getBlockRelChunk, new BlockState(Block.Dirt, 6))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Stone, 2))
+    storage.setBlock(coords359.getBlockRelChunk, new BlockState(Blocks.Dirt, 6))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Stone, 2))
     storage
   }
 }
@@ -177,12 +177,12 @@ class SparseChunkStorageTest extends ChunkStorageTest(new SparseChunkStorage(_))
 
   test("toSparse gives back this") {
     val storage = makeStorage(null)
-    assertResult(storage)(storage.toSparse)
+    assertResult(storage)(new SparseChunkStorage(storage))
   }
 
   test("toDense gives back DenseStorage") {
     val storage = makeStorage_Dirt359_Stone350
-    val dense = storage.toDense
+    val dense = new DenseChunkStorage(storage)
     assert(dense.isInstanceOf[DenseChunkStorage])
     assertResult(2)(dense.numBlocks)
   }
@@ -196,12 +196,12 @@ class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage(_)) {
 
   test("toDense gives back this") {
     val storage = makeStorage(null)
-    assertResult(storage)(storage.toDense)
+    assertResult(storage)(new DenseChunkStorage(storage))
   }
 
   test("toSparse gives back SparseStorage") {
     val storage = makeStorage_Dirt359_Stone350
-    val sparse = storage.toSparse
+    val sparse = new SparseChunkStorage(storage)
     assert(sparse.isInstanceOf[SparseChunkStorage])
     assertResult(2)(sparse.numBlocks)
   }

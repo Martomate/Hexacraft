@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.BlockState
 import com.martomate.hexacraft.world.IChunkLighting
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 trait IChunk {
   def coords: ChunkRelWorld

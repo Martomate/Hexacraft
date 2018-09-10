@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.CompoundTag
-import com.martomate.hexacraft.block.{Block, BlockState}
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) {
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
@@ -35,9 +35,9 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) {
   }
 
   private def getBlockAtDepth(yToGo: Int) = {
-    if (yToGo < -5) Block.Stone
-    else if (yToGo < -1) Block.Dirt
-    else Block.Grass
+    if (yToGo < -5) Blocks.Stone
+    else if (yToGo < -1) Blocks.Dirt
+    else Blocks.Grass
   }
 
   private def limitForBlockNoise(yToGo: Int): Double = {

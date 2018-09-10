@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord
 
 import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.world.coord.integer.ColumnRelWorld
 import org.scalatest.FunSuite
 
 class ColumnRelWorldTest extends FunSuite {

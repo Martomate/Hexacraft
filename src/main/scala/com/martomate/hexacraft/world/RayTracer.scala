@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.Camera
-import com.martomate.hexacraft.block.{Block, BlockState}
-import com.martomate.hexacraft.world.coord.{BlockRelWorld, CoordUtils}
+import com.martomate.hexacraft.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.{Vector2f, Vector3d, Vector4f}
 
@@ -92,7 +93,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   }
 
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
-    case block if block.blockType != Block.Air =>
+    case block if block.blockType != Blocks.Air =>
       val points = for (v <- block.blockType.bounds(block).vertices) yield {
         CoordUtils.fromBlockCoords(world.size, camera.view, hitBlockCoords, v, new Vector3d)
       }

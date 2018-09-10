@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.BlockState
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 trait BlocksInWorld {
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn]
@@ -15,7 +15,7 @@ trait BlocksInWorld {
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
       (c2, Some(chunk))
     } else {
-      (c2, getChunk(chunk.coords.withBlockCoords(i2, j2, k2).getChunkRelWorld))
+      (c2, getChunk(BlockRelWorld(i2, j2, k2, chunk.coords).getChunkRelWorld))
     }
   }
 

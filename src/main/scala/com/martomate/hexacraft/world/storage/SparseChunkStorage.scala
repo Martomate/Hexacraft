@@ -1,29 +1,28 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
-import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
+import com.martomate.hexacraft.block.{Block, BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-class SparseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
+class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
+  def this(storage: ChunkStorage) = {
+    this(storage.chunkCoords)
+    for ((i, b) <- storage.allBlocks) setBlock(i, b)
+  }
+
   private val blocks = scala.collection.mutable.Map.empty[Short, BlockState]
 
-  def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Block.Air)
+  def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Blocks.Air)
   def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockAir.State)
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
-    if (block.blockType != Block.Air) blocks(coords.value.toShort) = block
+    if (block.blockType != Blocks.Air) blocks(coords.value.toShort) = block
     else removeBlock(coords)
   }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
   def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1, chunkCoords.cylSize), t._2))
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
-  def toDense: DenseChunkStorage = {
-    val dense = new DenseChunkStorage(chunkCoords)
-    for ((i, b) <- blocks) dense.setBlock(BlockRelChunk(i, chunkCoords.cylSize), b)
-    dense
-  }
-  def toSparse: SparseChunkStorage = this
 
   def fromNBT(nbt: CompoundTag): Unit = {
     val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16*16*16, 0))

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.storage
 
-import com.martomate.hexacraft.world.coord.ChunkRelWorld
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 object ChunkLoader {
   val chunksLoadedPerTick = 2

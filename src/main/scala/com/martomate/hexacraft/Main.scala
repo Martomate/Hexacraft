@@ -2,7 +2,7 @@ package com.martomate.hexacraft
 
 import java.io.File
 
-import com.martomate.hexacraft.block.{Block, BlockLoader}
+import com.martomate.hexacraft.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.menu.main.MainMenu
@@ -15,8 +15,6 @@ import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11}
 import org.lwjgl.system.{Configuration, MemoryStack, MemoryUtil}
-
-import scala.collection.mutable.ArrayBuffer
 
 object Main {
   {
@@ -155,7 +153,7 @@ object Main {
     try {
       Shader.init()
       BlockLoader.init()// this loads it to memory
-      Block.init()
+      Blocks.init()
       pushScene(new MainMenu)
       updateMousePos()
       Shader.foreach(_.setUniform2f("windowSize", windowSize.x, windowSize.y))

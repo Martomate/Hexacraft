@@ -3,9 +3,13 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
-import com.martomate.hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
+class DenseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
+  def this(storage: ChunkStorage) = {
+    this(storage.chunkCoords)
+    for ((i, b) <- storage.allBlocks) setBlock(i, b)
+  }
   private val blockTypes = new Array[Byte](16 * 16 * 16)
   private val metadata = new Array[Byte](16 * 16 * 16)
   private var _numBlocks = 0
@@ -30,12 +34,6 @@ class DenseChunkStorage(chunkCoords: ChunkRelWorld) extends ChunkStorage {
     (BlockRelChunk(i, chunkCoords.cylSize), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
-  def toDense: DenseChunkStorage = this
-  def toSparse: SparseChunkStorage = {
-    val sparse = new SparseChunkStorage(chunkCoords)
-    for ((i, b) <- allBlocks) sparse.setBlock(i, b)
-    sparse
-  }
 
   def fromNBT(nbt: CompoundTag): Unit = {
     val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16*16*16, 0))

@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.BlockState
-import com.martomate.hexacraft.world.coord.BlockRelChunk
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
 
 import scala.collection.mutable
 
@@ -37,7 +37,7 @@ class LightPropagator(world: BlocksInWorld) {
           (y, z, -1),
           (y, z, 16)
         ) foreach { t =>
-          val c2 = chunk.coords.withBlockCoords(t._1, t._2, t._3)
+          val c2 = BlockRelWorld(t._1, t._2, t._3, chunk.coords)
           val c2c = c2.getBlockRelChunk
           world.getChunk(c2.getChunkRelWorld) match {
             case Some(neigh) =>

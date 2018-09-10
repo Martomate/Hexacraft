@@ -2,9 +2,11 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.block.{Block, BlockState}
-import com.martomate.hexacraft.world.coord.BlockRelChunk
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 trait ChunkStorage {
+  def chunkCoords: ChunkRelWorld
+
   def blockType(coords: BlockRelChunk): Block
 
   def getBlock(coords: BlockRelChunk): BlockState
@@ -15,9 +17,7 @@ trait ChunkStorage {
   def numBlocks: Int
 
   def isDense: Boolean
-  def toDense: DenseChunkStorage
-  def toSparse: SparseChunkStorage
-  
+
   def fromNBT(nbt: CompoundTag): Unit
   def toNBT: Seq[Tag[_]]
 }

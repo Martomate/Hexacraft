@@ -2,7 +2,9 @@ package com.martomate.hexacraft
 
 import com.martomate.hexacraft.block.BlockAir
 import com.martomate.hexacraft.world.CylinderSize
-import com.martomate.hexacraft.world.coord._
+import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.Vector3d
 

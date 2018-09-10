@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.coord
+package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.world.CylinderSize
 import org.joml.Vector2d
@@ -14,10 +14,6 @@ object BlockRelChunk {
   def apply(x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelChunk = BlockRelChunk((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf), cylSize)
 }
 case class BlockRelChunk(private val _value: Int, cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // xyz
-
-  def withChunk(chunk: ChunkRelColumn) = BlockRelColumn(chunk.value << 12 | value, cylSize)
-  def withChunk(chunk: ChunkRelWorld) = BlockRelWorld(chunk.value << 12 | value, cylSize)
-
   def cx: Byte = (value >> 8 & 0xf).toByte
   def cy: Byte = (value >> 4 & 0xf).toByte
   def cz: Byte = (value >> 0 & 0xf).toByte
@@ -29,10 +25,9 @@ case class BlockRelChunk(private val _value: Int, cylSize: CylinderSize) extends
 
 object BlockRelColumn {
   def apply(Y: Int, x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelColumn = BlockRelColumn((Y & 0xfff) << 12 | ((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)), cylSize)
+  def apply(block: BlockRelChunk, chunk: ChunkRelColumn): BlockRelColumn = BlockRelColumn(chunk.value << 12 | block.value, chunk.cylSize)
 }
 case class BlockRelColumn(private val _value: Int, cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // YYYxyz
-  def withColumn(column: ColumnRelWorld) = BlockRelWorld(column.value << 24L | value, cylSize)
-
   def getBlockRelChunk = BlockRelChunk(value & 0xfff, cylSize)
   def getChunkRelColumn = ChunkRelColumn(value >> 12 & 0xfff, cylSize)
 
@@ -44,8 +39,6 @@ case class BlockRelColumn(private val _value: Int, cylSize: CylinderSize) extend
 }
 
 case class ChunkRelColumn(private val _value: Int, cylSize: CylinderSize) extends AbstractIntegerCoords(_value & 0xfff) { // YYY
-  def withColumn(column: ColumnRelWorld) = ChunkRelWorld(column.value << 12L | value, cylSize)
-
   def Y: Int = value << 20 >> 20
 }
 
@@ -53,6 +46,10 @@ object BlockRelWorld {
   def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelWorld =
     BlockRelWorld((X & 0xfffff) << 44L | (Z & cylSize.ringSizeMask) << 24 | (Y & 0xfff) << 12 | (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf), cylSize)
   def apply(x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelWorld = BlockRelWorld(x >> 4, y >> 4, z >> 4, x & 15, y & 15, z & 15, cylSize)
+
+  def apply(block: BlockRelChunk, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.value << 12 | block.value, chunk.cylSize)
+  def apply(block: BlockRelColumn, column: ColumnRelWorld): BlockRelWorld = BlockRelWorld(column.value << 24L | block.value, column.cylSize)
+  def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.X * 16 + i, chunk.Y * 16 + j, chunk.Z * 16 + k, chunk.cylSize)
 }
 case class BlockRelWorld(private val _value: Long, cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // XXXXXZZZZZYYYxyz
   def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt, cylSize)
@@ -79,6 +76,8 @@ case class BlockRelWorld(private val _value: Long, cylSize: CylinderSize) extend
 object ChunkRelWorld {
   def apply(X: Long, Y: Int, Z: Int, cylSize: CylinderSize): ChunkRelWorld = ChunkRelWorld((X & 0xfffff) << 32 | (Z & cylSize.ringSizeMask) << 12 | (Y & 0xfff), cylSize)
 
+  def apply(chunk: ChunkRelColumn, column: ColumnRelWorld): ChunkRelWorld = ChunkRelWorld(column.value << 12L | chunk.value, column.cylSize)
+
   val neighborOffsets: Seq[(Int, Int, Int)] = Seq(
     (0, 1, 0),
     (1, 0, 0),
@@ -101,7 +100,6 @@ case class ChunkRelWorld(private val _value: Long, cylSize: CylinderSize) extend
 
   def neighbors: Seq[ChunkRelWorld] = ChunkRelWorld.neighborOffsets.map(d => offset(d._1, d._2, d._3))
   def offset(x: Int, y: Int, z: Int): ChunkRelWorld = ChunkRelWorld(X + x, Y + y, Z + z, cylSize)
-  def withBlockCoords(i: Int, j: Int, k: Int): BlockRelWorld = BlockRelWorld(X * 16 + i, Y * 16 + j, Z * 16 + k, cylSize)
 
   override def toString: String = s"($X, $Y, $Z)"
 }

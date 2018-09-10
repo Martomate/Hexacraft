@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.CameraView
-import com.martomate.hexacraft.world.coord.CylCoords
+import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Vector3d, Vector4d}
 
 class PosAndDir(cylinderSize: CylinderSize) {
