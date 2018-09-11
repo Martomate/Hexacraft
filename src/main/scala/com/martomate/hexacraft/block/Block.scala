@@ -15,17 +15,17 @@ class Block(val id: Byte, val name: String, val displayName: String) {
   Block.blocks(id) = this
   
   protected lazy val texture = new BlockTexture(name, BlockLoader)
-  def bounds(blockState: BlockState) = new HexBox(0.5f, 0, 0.5f * blockHeight(blockState))
+  def bounds(metadata: Byte) = new HexBox(0.5f, 0, 0.5f * blockHeight(metadata))
   
   def blockTex(side: Int): Int = texture.indices(side)
   def canBeRendered: Boolean = true
 
-  def isTransparent(blockState: BlockState, side: Int): Boolean = false
+  def isTransparent(metadata: Byte, side: Int): Boolean = false
 
   def lightEmitted: Byte = 0
 
-  def blockHeight(blockState: BlockState): Float = 1.0f
+  def blockHeight(metadata: Byte): Float = 1.0f
 
-  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet): Unit = onUpdated(coords, world)
-  protected def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet): Unit = ()
+  protected val behaviour: BlockBehaviour = new BlockBehaviourNothing
+  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet): Unit = behaviour.onUpdated(coords, world)
 }

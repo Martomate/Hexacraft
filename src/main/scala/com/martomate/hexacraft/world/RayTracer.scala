@@ -95,7 +95,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
 
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
     case block if block.blockType != Blocks.Air =>
-      val points = for (v <- block.blockType.bounds(block).vertices) yield {
+      val points = for (v <- block.blockType.bounds(block.metadata).vertices) yield {
         CoordUtils.fromBlockCoords(world.size, camera.view, hitBlockCoords, v, new Vector3d)
       }
       val PA = new Vector3d

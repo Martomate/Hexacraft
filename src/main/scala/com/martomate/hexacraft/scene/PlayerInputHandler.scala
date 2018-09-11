@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.world.Player
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 
@@ -56,7 +57,7 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
     if (keyPressed(GLFW_KEY_PAGE_DOWN)  ) player.rotation.z += rSpeed
 
     if (moveWithMouse) {
-      val mouseMoved = mouse.mouseMoved
+      val mouseMoved = mouse.moved
       player.rotation.y += mouseMoved.x * rSpeed * 0.1
       player.rotation.x -= mouseMoved.y * rSpeed * 0.1
     }
@@ -91,7 +92,7 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
     if (!player.flying) {
       player.velocity.y -= 9.82 / 60
       player.velocity.div(60)
-      val (pos, vel) = player.bounds.positionAndVelocityAfterCollision(player.position, player.velocity, player.world)
+      val (pos, vel) = CollisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity, player.world)
       player.position.set(pos)
       player.velocity.set(vel)
       player.velocity.mul(60)

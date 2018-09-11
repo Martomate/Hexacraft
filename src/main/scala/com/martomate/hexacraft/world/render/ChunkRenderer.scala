@@ -25,11 +25,11 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
         for (s <- BlockState.neighborOffsets.indices) {
           val (c2, neigh) = world.neighbor(s, chunk, c)
           val bs = neigh.map(_.getBlock(c2)).getOrElse(BlockAir.State)
-          if (bs.blockType.isTransparent(bs, oppositeSide(s))) {
+          if (bs.blockType.isTransparent(bs.metadata, oppositeSide(s))) {
             sidesToRender(s)(c.value) = true
             sideBrightness(s)(c.value) = neigh.map(_.lighting.getBrightness(c2)).getOrElse(0f)
             sidesCount(s) += 1
-            if (s > 1 && b.blockType.isTransparent(b, s)) {
+            if (s > 1 && b.blockType.isTransparent(b.metadata, s)) {
               sidesToRender(0)(c.value) = true
               sidesCount(0) += 1
             } // render the top side
@@ -47,7 +47,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
               buf.putInt(coords.z)
               val blockType = block.blockType
               buf.putInt(blockType.blockTex(side))
-              buf.putFloat(blockType.blockHeight(block))
+              buf.putFloat(blockType.blockHeight(block.metadata))
               buf.putFloat(sideBrightness(side)(bCoords.value))
             }
           }

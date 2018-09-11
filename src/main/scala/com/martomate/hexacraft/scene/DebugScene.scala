@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.scene
 
-import com.martomate.hexacraft.{GameWindow, Main}
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import fontMeshCreator.GUIText
@@ -32,7 +32,7 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
   addLabel("Other")
   addDebugText("viewDist", "viewDistance")
 
-  alignTexts(Main.aspectRatio)
+  alignTexts(window.aspectRatio)
 
   override def isOpaque: Boolean = false
 

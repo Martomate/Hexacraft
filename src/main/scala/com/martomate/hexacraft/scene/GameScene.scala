@@ -2,7 +2,7 @@ package com.martomate.hexacraft.scene
 
 import java.io.File
 
-import com.martomate.hexacraft._
+import com.martomate.hexacraft.{GameWindow, Main}
 import com.martomate.hexacraft.block.{BlockState, Blocks}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
@@ -14,7 +14,7 @@ import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.RayTracer
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
-import com.martomate.hexacraft.world.collision.HexBox
+import com.martomate.hexacraft.world.collision.{CollisionDetector, HexBox}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
@@ -45,7 +45,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
   val worldRenderer = new WorldRenderer(world)
 
-  val camera = new Camera(new CameraProjection(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f), world.size)
+  val camera = new Camera(new CameraProjection(70f, window.windowSize.x.toFloat / window.windowSize.y, 0.02f, 1000f), world.size)
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
 
@@ -78,7 +78,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
-    Shader.foreach(_.setUniform2f("windowSize", Main.windowSize.x, Main.windowSize.y))
+    Shader.foreach(_.setUniform2f("windowSize", window.windowSize.x, window.windowSize.y))
   }
 
   private def setProjMatrixForAll(): Unit = {
@@ -218,7 +218,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   }
 
   private def updateMousePicker(): Unit = {
-    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) Main.normalizedMousePos else new Vector2f(0, 0))
+    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
     worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None)
   }
 
@@ -241,7 +241,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           val blockType = playerInputHandler.player.blockInHand
           val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoords
           val state = new BlockState(blockType)
-          if (!HexBox.collides(blockType.bounds(state), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
+          if (!CollisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
             world.setBlock(coords, state)
           }
         }

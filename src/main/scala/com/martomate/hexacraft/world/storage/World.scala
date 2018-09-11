@@ -10,7 +10,7 @@ import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin}
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.{Player, PosAndDir}
-import com.martomate.hexacraft.worldsave.WorldSave
+import com.martomate.hexacraft.world.save.WorldSave
 
 import scala.collection.mutable.ArrayBuffer
 

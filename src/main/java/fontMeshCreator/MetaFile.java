@@ -1,12 +1,12 @@
 package fontMeshCreator;
 
-import java.io.*;
+import com.martomate.hexacraft.util.FileUtils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.martomate.hexacraft.Main;
-import com.martomate.hexacraft.util.FileUtils;
 
 /**
  * Provides functionality for getting the values from a font file.

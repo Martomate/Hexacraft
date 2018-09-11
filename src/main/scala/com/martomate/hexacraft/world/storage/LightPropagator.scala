@@ -21,7 +21,7 @@ class LightPropagator(world: BlocksInWorld) {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neigh.coords.getColumnRelWorld).get
       if (neigh.coords.Y * 16 + coords.cy > neighCol.heightMap(coords.cx, coords.cz)) {
-        if (block.blockType.isTransparent(block, 0) && block.blockType.isTransparent(block, 1)) {
+        if (block.blockType.isTransparent(block.metadata, 0) && block.blockType.isTransparent(block.metadata, 1)) {
           neigh.lighting.setSunlight(coords, 15)
           queueSun15 += ((coords, neigh))
         }
@@ -175,7 +175,7 @@ class LightPropagator(world: BlocksInWorld) {
           world.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
-              if (block.blockType.isTransparent(block, oppositeSide(s))) {
+              if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
                 val thisTLevel = neigh.lighting.getTorchlight(c2)
                 if (thisTLevel < nextLevel) {
                   neigh.lighting.setTorchlight(c2, nextLevel)
@@ -208,7 +208,7 @@ class LightPropagator(world: BlocksInWorld) {
           world.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
-              if (block.blockType.isTransparent(block, oppositeSide(s))) {
+              if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
                 val thisSLevel = neigh.lighting.getSunlight(c2)
                 val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
                 if (thisSLevel < nextS) {

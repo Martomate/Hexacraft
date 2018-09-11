@@ -4,7 +4,7 @@ import java.io.File
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
-import com.martomate.hexacraft.worldsave.WorldSave
+import com.martomate.hexacraft.world.save.WorldSave
 
 class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings) extends WorldSettingsProvider {
   WorldSave(saveDir)// TODO: Use this class instead of all the current stuff

@@ -15,33 +15,6 @@ import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11}
 import org.lwjgl.system.{Configuration, MemoryStack, MemoryUtil}
 
-trait GameWindow {
-  def windowSize: Vector2ic
-
-  def aspectRatio: Float = windowSize.x.toFloat / windowSize.y
-
-  def scenes: SceneStack
-  def mouse: GameMouse
-  def keyboard: GameKeyboard
-
-  def normalizedMousePos: Vector2fc = new Vector2f(
-    (mouse.mousePos.x / windowSize.x * 2 - 1).toFloat,
-    (mouse.mousePos.y / windowSize.y * 2 - 1).toFloat
-  )
-
-  def setCursorLayout(cursorLayout: Int): Unit
-  def tryQuit(): Unit
-}
-
-trait GameMouse {
-  def mousePos: Vector2dc
-  def mouseMoved: Vector2dc
-}
-
-trait GameKeyboard {
-  def getKey(key: Int): Int
-}
-
 object Main extends GameWindow {
   {
     var file = new File("lib/natives")
@@ -52,9 +25,10 @@ object Main extends GameWindow {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
-  def windowSize: Vector2ic = new Vector2i(_windowSize)
   private val prevWindowSize = new Vector2i()
   private val prevWindowPos = new Vector2i()
+
+  def windowSize: Vector2ic = new Vector2i(_windowSize)
 
   private val window: Long = initWindow()
   private var fullscreen = false
@@ -64,16 +38,14 @@ object Main extends GameWindow {
   private val _mouseMoved = new Vector2d()
 
   override val mouse: GameMouse = new GameMouse {
-    override def mousePos: Vector2dc = _mousePos
+    override def pos: Vector2dc = _mousePos
 
-    override def mouseMoved: Vector2dc = _mouseMoved
+    override def moved: Vector2dc = _mouseMoved
   }
 
-  override val keyboard: GameKeyboard = new GameKeyboard {
-    override def getKey(key: Int): Int = glfwGetKey(Main.window, key)
-  }
+  override val keyboard: GameKeyboard = key => glfwGetKey(window, key)
 
-  override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(Main.window, GLFW_CURSOR, cursorLayout)
+  override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
 
   private val doublePtrX = MemoryUtil.memAllocDouble(1)
   private val doublePtrY = MemoryUtil.memAllocDouble(1)

@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.worldsave
+package com.martomate.hexacraft.world.save
 
 import java.io.File
 
@@ -22,8 +22,9 @@ object WorldSave {
   }
 
   /**
-    * Makes the changes needed to play on the version after the supplied one.
-    * NOTE: This might be irreversible!
+    * Makes the changes needed to play on version `LatestVersion` when the world was saved using `fromVersion`
+    * <br><br>
+    * <b>NOTE:</b> This might be irreversible!
     */
   private def migrate(fromVersion: Int, saveDir: File): Unit = fromVersion match {
     case 1 => migrateFromV1(saveDir)
