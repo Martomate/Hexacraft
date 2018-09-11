@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.CylinderSize
 import org.joml.Vector2d
 
 abstract class AbstractIntegerCoords[T](val value: T) {

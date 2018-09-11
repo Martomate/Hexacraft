@@ -1,6 +1,8 @@
 package com.martomate.hexacraft.world.storage
 
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.gen.WorldGenerator
+import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 
 trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld {
   def size: CylinderSize

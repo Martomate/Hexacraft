@@ -3,7 +3,7 @@ package com.martomate.hexacraft.scene
 import java.io.File
 
 import com.martomate.hexacraft._
-import com.martomate.hexacraft.block.{Block, BlockState, Blocks}
+import com.martomate.hexacraft.block.{BlockState, Blocks}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
@@ -12,10 +12,13 @@ import com.martomate.hexacraft.gui.menu.pause.{PausableScene, PauseMenu}
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.world.RayTracer
+import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
+import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
-import com.martomate.hexacraft.world.storage.{World, WorldSettingsProviderFromFile}
-import com.martomate.hexacraft.world.{RayTracer, WorldSettings}
+import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
+import com.martomate.hexacraft.world.storage.World
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
@@ -24,7 +27,7 @@ import org.lwjgl.opengl.GL11
 import scala.collection.Seq
 
 
-class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene with PausableScene with DebugInfoProvider {
+class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window: GameWindow) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
 
   private val blockShader: Shader = Shader.get("block").get
@@ -44,7 +47,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
 
   val camera = new Camera(new CameraProjection(70f, Main.windowSize.x.toFloat / Main.windowSize.y, 0.02f, 1000f), world.size)
   val mousePicker = new RayTracer(world, camera, 7)
-  val playerInputHandler = new PlayerInputHandler(world.player)
+  val playerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
 
   private val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), world.player.inventory)
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
@@ -93,7 +96,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
           val newCoords = camera.blockCoords.offset(0, -4, 0)
           if (world.getBlock(newCoords).blockType == Blocks.Air) world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
-          Main.pushScene(new PauseMenu(this))
+          window.scenes.pushScene(new PauseMenu(this))
           setPaused(true)
         case GLFW_KEY_M =>
           setUseMouse(!playerInputHandler.moveWithMouse)
@@ -143,7 +146,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings) extends Scene wi
   }
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit = {
-    glfwSetInputMode(Main.window, GLFW_CURSOR, if (invisible) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
+    window.setCursorLayout(if (invisible) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
   }
 
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {

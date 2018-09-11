@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 import org.scalatest.FunSuite
 

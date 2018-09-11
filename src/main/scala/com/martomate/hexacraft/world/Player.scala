@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
-import com.martomate.hexacraft.HexBox
 import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.Vector3d

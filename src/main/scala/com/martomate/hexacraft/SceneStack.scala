@@ -1,6 +1,5 @@
 package com.martomate.hexacraft
 
-import com.martomate.hexacraft.gui.menu.main.MainMenu
 import com.martomate.hexacraft.scene.Scene
 
 import scala.collection.mutable.ArrayBuffer
@@ -22,10 +21,6 @@ class SceneStack extends Seq[Scene] {
 
   def popScenesUntil(predicate: Scene => Boolean): Unit = {
     while (sceneList.nonEmpty && !predicate(sceneList.last)) popScene()
-  }
-
-  def popScenesUntilMainMenu(): Unit = {
-    popScenesUntil(_.isInstanceOf[MainMenu])
   }
 
   override def iterator: Iterator[Scene] = sceneList.iterator

@@ -1,11 +1,12 @@
 package com.martomate.hexacraft.gui.inventory
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.comp._
 import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.world.Inventory
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(_locationInfo: LocationInfo, inventory: Inventory) extends Component(_locationInfo) with SubComponents {
+class Toolbar(_locationInfo: LocationInfo, inventory: Inventory)(implicit window: GameWindow) extends Component(_locationInfo) with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
   private val selectedBox = new LocationInfoIdentity(location.x + location.h * 0.05f, location.y + location.h * 0.05f, location.w / 9 - location.h * 0.1f, location.h - location.h * 0.1f)

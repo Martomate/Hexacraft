@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.scene
 
-import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.world.Player
+import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 
-class PlayerInputHandler(val player: Player) {
+class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: Player) {
   var moveWithMouse = false
 
   def tick(): Unit = {
@@ -12,7 +12,7 @@ class PlayerInputHandler(val player: Player) {
   }
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
   private def updatePlayer(): Unit = {
-    def keyPressed(key: Int) = glfwGetKey(Main.window, key) == GLFW_PRESS
+    def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
     
     val speed = if (keyPressed(GLFW_KEY_LEFT_CONTROL))    0.075
            else if (keyPressed(GLFW_KEY_LEFT_ALT))       12.0
@@ -56,7 +56,7 @@ class PlayerInputHandler(val player: Player) {
     if (keyPressed(GLFW_KEY_PAGE_DOWN)  ) player.rotation.z += rSpeed
 
     if (moveWithMouse) {
-      val mouseMoved = Main.mouseMoved
+      val mouseMoved = mouse.mouseMoved
       player.rotation.y += mouseMoved.x * rSpeed * 0.1
       player.rotation.x -= mouseMoved.y * rSpeed * 0.1
     }

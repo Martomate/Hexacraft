@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.gui.location
 
-import com.martomate.hexacraft.Main
+import com.martomate.hexacraft.GameWindow
 
 /** x, y, w, h are position and size where the screen has center (0, 0), width aspectRatio * 2 and height 2 */
-abstract class LocationInfo {
+abstract class LocationInfo(implicit window: GameWindow) {
   def x: Float
   def y: Float
   def w: Float
@@ -13,17 +13,13 @@ abstract class LocationInfo {
   final def containsPoint(pos: (Float, Float)): Boolean = containsPoint(pos._1, pos._2)
 
   def containsMouse(offset: (Float, Float)): Boolean = {
-    containsPoint(Main.normalizedMousePos.x * Main.aspectRatio - offset._1, Main.normalizedMousePos.y - offset._2)
+    containsPoint(window.normalizedMousePos.x * window.aspectRatio - offset._1, window.normalizedMousePos.y - offset._2)
   }
 
   def inScreenCoordinates: (Int, Int, Int, Int) = (
-      ((x + Main.aspectRatio) * 0.5f * Main.windowSize.y).round,
-      ((y + 1) * 0.5f * Main.windowSize.y).round,
-      (w * 0.5f * Main.windowSize.y).round,
-      (h * 0.5f * Main.windowSize.y).round
+      ((x + window.aspectRatio) * 0.5f * window.windowSize.y).round,
+      ((y + 1) * 0.5f * window.windowSize.y).round,
+      (w * 0.5f * window.windowSize.y).round,
+      (h * 0.5f * window.windowSize.y).round
   )
-}
-
-object LocationInfo {
-  def apply(_x: Float, _y: Float, _w: Float, _h: Float) = new LocationInfo16x9(_x, _y, _w, _h)
 }

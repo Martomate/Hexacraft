@@ -1,8 +1,8 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.lighting
 
 import com.martomate.hexacraft.block.BlockState
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
-import com.martomate.hexacraft.world.storage.IChunk
 
 trait IChunkLighting {
   def initialized: Boolean
@@ -14,4 +14,3 @@ trait IChunkLighting {
   def getTorchlight(coords: BlockRelChunk): Byte
   def getBrightness(block: BlockRelChunk): Float
 }
-

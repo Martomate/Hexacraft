@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.block.{BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer._
 
 object ChunkColumn {
@@ -15,11 +16,11 @@ object ChunkColumn {
 
 class ChunkColumn(val coords: ColumnRelWorld, val world: IWorld) extends ChunkBlockListener {
   private val chunks = scala.collection.mutable.Map.empty[Int, IChunk]
-  private[storage] var topAndBottomChunks: Option[(Int, Int)] = None
+  private[world] var topAndBottomChunks: Option[(Int, Int)] = None
 
   def isEmpty: Boolean = chunks.isEmpty
 
-  private[storage] val generatedHeightMap = {
+  private[world] val generatedHeightMap = {
     val interp = world.worldGenerator.getHeightmapInterpolator(coords)
 
     for (x <- 0 until 16) yield {

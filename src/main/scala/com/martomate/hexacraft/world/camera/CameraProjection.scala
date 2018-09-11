@@ -1,4 +1,4 @@
-package com.martomate.hexacraft
+package com.martomate.hexacraft.world.camera
 
 import org.joml.Matrix4f
 

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.block
 
-import com.martomate.hexacraft.HexBox
+import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import scala.collection.Seq

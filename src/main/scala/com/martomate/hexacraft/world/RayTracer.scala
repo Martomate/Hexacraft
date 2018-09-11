@@ -1,11 +1,12 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.Camera
 import com.martomate.hexacraft.block.{BlockState, Blocks}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.IWorld
-import org.joml.{Vector2f, Vector3d, Vector4f}
+import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 import scala.collection.immutable
 
@@ -14,7 +15,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   private val ray = new Vector3d()
   private var rayValid = false
 
-  def setRayFromScreen(normalizedScreenCoords: Vector2f): Unit = {
+  def setRayFromScreen(normalizedScreenCoords: Vector2fc): Unit = {
     val coords = normalizedScreenCoords
     if (coords.x < -1 || coords.x > 1 || coords.y < -1 || coords.y > 1) {
       rayValid = false

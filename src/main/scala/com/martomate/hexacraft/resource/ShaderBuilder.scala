@@ -2,7 +2,6 @@ package com.martomate.hexacraft.resource
 
 import java.io.IOException
 
-import com.martomate.hexacraft.Main
 import com.martomate.hexacraft.util.FileUtils
 import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
 
@@ -51,6 +50,7 @@ class ShaderBuilder(name: String) {
 
   def loadSource(path: String): String = {
     val source = new StringBuilder()
+
     try {
       val reader = FileUtils.getBufferedReader(FileUtils.getResourceFile(prefix + path).get)
       reader.lines.forEach(line => {
@@ -58,11 +58,10 @@ class ShaderBuilder(name: String) {
       })
       reader.close()
     } catch {
-      case e: IOException =>
-        e.printStackTrace()
-        Main.tryQuit()
-        System.exit(1)
+      case e: Exception =>
+        throw new IOException("Could not load shader at " + (prefix + path), e)
     }
+
     source.toString
   }
 

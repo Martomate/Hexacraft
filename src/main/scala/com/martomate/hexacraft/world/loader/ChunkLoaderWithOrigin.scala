@@ -1,9 +1,11 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.{CylinderSize, PosAndDir}
-import com.martomate.hexacraft.world.coord.integer._
+import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer._
+import com.martomate.hexacraft.world.storage.ChunkColumn
+import com.martomate.hexacraft.world.PosAndDir
 import org.joml.Vector2d
 
 import scala.collection.mutable
@@ -77,7 +79,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }
   }
 
-  private[storage] def updateLoadedChunks(column: ChunkColumn): Unit = {
+  private[loader] def updateLoadedChunks(column: ChunkColumn): Unit = {
     val origin = this.origin.pos.toBlockCoords.toVector3d.div(16)
     val xzDist = math.sqrt(column.coords.distSq(new Vector2d(origin.x, origin.z)))
 
@@ -116,7 +118,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     chunksToLoad.enqueue(coords)
   }
 
-  private[storage] def filterChunkLoadingQueue(): Unit = {
+  private[loader] def filterChunkLoadingQueue(): Unit = {
     val rDistSq = (loadingDistance * 16) * (loadingDistance * 16)
 
     chunksToLoad.reprioritizeAndFilter(_._1 <= rDistSq)

@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.scene
 
-import com.martomate.hexacraft.Main
+import com.martomate.hexacraft.{GameWindow, Main}
 import com.martomate.hexacraft.gui.comp.Component
-import com.martomate.hexacraft.gui.location.LocationInfo
+import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import fontMeshCreator.GUIText
 
 import scala.collection.mutable
 
-class DebugScene(info: DebugInfoProvider) extends Scene {
+class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends Scene()(window) {
   private val textDisplayMap = mutable.Map.empty[String, String]
   private val textValueMap = mutable.Map.empty[String, GUIText]
   private val texts = mutable.ArrayBuffer.empty[GUIText]
@@ -38,14 +38,14 @@ class DebugScene(info: DebugInfoProvider) extends Scene {
 
   private def addLabel(text: String): Unit = {
     yOff += 0.02f
-    val guiText = Component.makeText(text, LocationInfo(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
+    val guiText = Component.makeText(text, LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
     addText(guiText)
     yOff += 0.03f
     texts += guiText
   }
 
   private def addDebugText(id: String, display: String, defaultValue: String = ""): Unit = {
-    val text = Component.makeText(defaultValue, LocationInfo(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
+    val text = Component.makeText(defaultValue, LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
     addText(text)
     yOff += 0.03f
     textDisplayMap += id -> display

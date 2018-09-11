@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.storage.chunk
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.block.{Block, BlockState}
@@ -21,4 +21,3 @@ trait ChunkStorage {
   def fromNBT(nbt: CompoundTag): Unit
   def toNBT: Seq[Tag[_]]
 }
-

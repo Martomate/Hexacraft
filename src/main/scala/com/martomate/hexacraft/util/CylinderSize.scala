@@ -1,6 +1,4 @@
-package com.martomate.hexacraft.world
-
-import com.martomate.hexacraft.world.coord.CoordUtils
+package com.martomate.hexacraft.util
 
 /**
   * The real cylinder size (the number of chunks around the cylinder) is:<br>

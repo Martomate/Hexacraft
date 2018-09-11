@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.settings
 
 case class WorldSettings(name: Option[String],
                          size: Option[Byte],

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord.fp
 
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord._
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import org.joml.Vector3d

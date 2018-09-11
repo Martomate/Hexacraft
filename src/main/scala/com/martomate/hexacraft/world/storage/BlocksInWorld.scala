@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.block.BlockState
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 trait BlocksInWorld {

@@ -1,12 +1,13 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.gen
 
 import java.util.Random
 
 import com.flowpowered.nbt.CompoundTag
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
+import com.martomate.hexacraft.world.settings.WorldGenSettings
 
 class WorldGenerator(worldGenSettings: WorldGenSettings, worldSize: CylinderSize) {
   private val randomGenSeed = worldGenSettings.seed

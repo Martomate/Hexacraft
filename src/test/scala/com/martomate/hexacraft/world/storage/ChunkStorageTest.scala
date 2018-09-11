@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.ByteArrayTag
 import com.martomate.hexacraft.block.{BlockState, Blocks}
-import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.storage.chunk.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import org.scalatest.FunSuite
 
 abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => ChunkStorage) extends FunSuite {
