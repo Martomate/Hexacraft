@@ -4,6 +4,7 @@ import com.martomate.hexacraft.block.{BlockState, Blocks}
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.IWorld
 import org.joml.{Vector2fc, Vector3d, Vector4f}
@@ -93,10 +94,13 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
     }
   }
 
+  def fromBlockCoords(blockPos: BlockRelWorld, position: CylCoords, _result: Vector3d): Vector3d =
+    CoordUtils.fromBlockCoords(CylCoords(camera.view.position, world.size), BlockCoords(blockPos.x, blockPos.y, blockPos.z, world.size), position, _result)
+
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
     case block if block.blockType != Blocks.Air =>
       val points = for (v <- block.blockType.bounds(block.metadata).vertices) yield {
-        CoordUtils.fromBlockCoords(world.size, camera.view, hitBlockCoords, v, new Vector3d)
+        fromBlockCoords(hitBlockCoords, v, new Vector3d)
       }
       val PA = new Vector3d
       val PB = new Vector3d
@@ -117,7 +121,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   }
 
   private def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
-    val points = BlockState.vertices.map(v => CoordUtils.fromBlockCoords(world.size, camera.view, current, v, new Vector3d))
+    val points = BlockState.vertices.map(v => fromBlockCoords(current, v, new Vector3d))
 
     val PA = new Vector3d
     val PB = new Vector3d

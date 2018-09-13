@@ -2,7 +2,7 @@ package com.martomate.hexacraft.scene
 
 import java.io.File
 
-import com.martomate.hexacraft.{GameWindow, Main}
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.block.{BlockState, Blocks}
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
@@ -14,7 +14,7 @@ import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.RayTracer
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
-import com.martomate.hexacraft.world.collision.{CollisionDetector, HexBox}
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
@@ -121,7 +121,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   def setUseMouse(useMouse: Boolean): Unit = {
     playerInputHandler.moveWithMouse = useMouse
     setMouseCursorInvisible(playerInputHandler.moveWithMouse)
-    Main.updateMousePos()
+    window.resetMousePos()
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {

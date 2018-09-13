@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.storage
 
-import com.flowpowered.nbt.{ByteTag, ShortTag, StringTag}
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.camera.Camera
@@ -124,7 +124,18 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   def unload(): Unit = {
-    val worldTag = NBTUtil.makeCompoundTag("world", Seq(
+    val worldTag = toNBT
+
+    worldSettings.saveState(worldTag, "world.dat")
+
+    chunkLoader.unload()
+    blockUpdateTimer.active = false
+    columns.values.foreach(_.unload())
+    columns.clear
+  }
+
+  private def toNBT: CompoundTag = {
+    NBTUtil.makeCompoundTag("world", Seq(
       new ShortTag("version", WorldSave.LatestVersion),
       NBTUtil.makeCompoundTag("general", Seq(
         new ByteTag("worldSize", size.worldSize.toByte),
@@ -133,13 +144,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       worldGenerator.toNBT,
       player.toNBT
     ))
-
-    worldSettings.saveState(worldTag, "world.dat")
-
-    chunkLoader.unload()
-    blockUpdateTimer.active = false
-    columns.values.foreach(_.unload())
-    columns.clear
   }
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ()//neighborChunk(coords, side).foreach(_.requestRenderUpdate())

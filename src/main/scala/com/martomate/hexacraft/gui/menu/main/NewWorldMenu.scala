@@ -2,12 +2,12 @@ package com.martomate.hexacraft.gui.menu.main
 
 import java.io.File
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.comp._
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.gui.menu.MenuScene
 import com.martomate.hexacraft.scene.GameScene
 import com.martomate.hexacraft.world.settings.WorldSettings
-import com.martomate.hexacraft.{GameWindow, Main}
 
 import scala.util.{Random, Try}
 
@@ -29,7 +29,7 @@ class NewWorldMenu(implicit window: GameWindow) extends MenuScene{
       val (_, file) = {
         val filteredName = nameTF.text.map(c => if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' ') c else '_')
         val nameBase = if (filteredName.trim.nonEmpty) filteredName else "New World"
-        val savesFolder = new File(Main.saveFolder, "saves")
+        val savesFolder = new File(window.saveFolder, "saves")
 
         var name: String = null
         var file: File = null

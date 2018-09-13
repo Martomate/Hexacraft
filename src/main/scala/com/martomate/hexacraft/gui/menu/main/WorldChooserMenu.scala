@@ -2,12 +2,12 @@ package com.martomate.hexacraft.gui.menu.main
 
 import java.io.File
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.gui.menu.MenuScene
 import com.martomate.hexacraft.scene.GameScene
 import com.martomate.hexacraft.world.settings.WorldSettings
-import com.martomate.hexacraft.{GameWindow, Main}
 
 class WorldChooserMenu(implicit window: GameWindow) extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
@@ -25,7 +25,7 @@ class WorldChooserMenu(implicit window: GameWindow) extends MenuScene {
   addComponent(new Button("New world", LocationInfo16x9(0.51f, 0.1f, 0.19f, 0.1f))({ window.scenes.pushScene(new NewWorldMenu) }))
 
   private def getWorlds: Seq[WorldInfo] = {
-    val baseFolder = new File(Main.saveFolder, "saves")
+    val baseFolder = new File(window.saveFolder, "saves")
     if (baseFolder.exists()) baseFolder.listFiles().filter(f => new File(f, "world.dat").exists()).map(saveFile => WorldInfo(saveFile))
     else Seq.empty[WorldInfo]
   }

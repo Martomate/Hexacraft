@@ -1,10 +1,29 @@
 package com.martomate.hexacraft.gui.location
 
-import com.martomate.hexacraft.{GameWindow, Main}
+import java.io.File
+
+import com.martomate.hexacraft._
+import org.joml.Vector2ic
 import org.scalatest.FunSuite
 
 class LocationInfoTest extends FunSuite {
-  implicit val windowImplicit: GameWindow = Main
+  implicit val windowImplicit: GameWindow = new GameWindow {
+    override def windowSize: Vector2ic = ???
+
+    override def scenes: SceneStack = ???
+
+    override def mouse: GameMouse = ???
+
+    override def keyboard: GameKeyboard = ???
+
+    override def saveFolder: File = ???
+
+    override def resetMousePos(): Unit = ???
+
+    override def setCursorLayout(cursorLayout: Int): Unit = ???
+
+    override def tryQuit(): Unit = ???
+  }
 
   test("16x9 at 16x9 aspect ratio") {
     val info = LocationInfo16x9(0, 0, 1, 1)

@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.util
 
+import com.martomate.hexacraft.util.os.{Linux, Mac, Windows}
 import org.scalatest.{FlatSpec, Matchers}
 
 class OSUtilsTest extends FlatSpec with Matchers {

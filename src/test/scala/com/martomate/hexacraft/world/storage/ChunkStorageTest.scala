@@ -160,49 +160,66 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   protected def coords351: BlockRelWorld = coordsAt(3, 5, 1)
   protected def coords359: BlockRelWorld = coordsAt(3, 5, 9)
   protected def coordsAt(x: Int, y: Int, z: Int): BlockRelWorld = BlockRelWorld(x, y, z, cylSize)
+  protected def cc0: ChunkRelWorld = ChunkRelWorld(0, cylSize)
 
   protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
     val storage = makeStorage(ChunkRelWorld(0, cylSize))
+    fillStorage_Dirt359_Stone350(storage)
+    storage
+  }
+
+  protected def fillStorage_Dirt359_Stone350(storage: ChunkStorage): Unit = {
     storage.setBlock(coords359.getBlockRelChunk, new BlockState(Blocks.Dirt, 6))
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Stone, 2))
-    storage
   }
 }
 
 class SparseChunkStorageTest extends ChunkStorageTest(new SparseChunkStorage(_)) {
+  val makeOtherStorage: ChunkRelWorld => ChunkStorage = new DenseChunkStorage(_)
+
   test("Is sparse") {
     val storage = makeStorage(null)
     assert(!storage.isDense)
   }
 
-  test("toSparse gives back this") {
-    val storage = makeStorage(null)
-    assertResult(storage)(new SparseChunkStorage(storage))
+  test("copy constructor can take this storage type") {
+    val storage = makeStorage(cc0)
+    fillStorage_Dirt359_Stone350(storage)
+    val sparse = new SparseChunkStorage(storage)
+    assert(sparse.isInstanceOf[SparseChunkStorage])
+    assertResult(2)(sparse.numBlocks)
   }
 
-  test("toDense gives back DenseStorage") {
-    val storage = makeStorage_Dirt359_Stone350
-    val dense = new DenseChunkStorage(storage)
-    assert(dense.isInstanceOf[DenseChunkStorage])
-    assertResult(2)(dense.numBlocks)
+  test("copy constructor can take other storage types") {
+    val storage = makeOtherStorage(cc0)
+    fillStorage_Dirt359_Stone350(storage)
+    val sparse = new SparseChunkStorage(storage)
+    assert(sparse.isInstanceOf[SparseChunkStorage])
+    assertResult(2)(sparse.numBlocks)
   }
 }
 
 class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage(_)) {
+  val makeOtherStorage: ChunkRelWorld => ChunkStorage = new SparseChunkStorage(_)
+
   test("Is dense") {
     val storage = makeStorage(null)
     assert(storage.isDense)
   }
 
-  test("toDense gives back this") {
-    val storage = makeStorage(null)
-    assertResult(storage)(new DenseChunkStorage(storage))
+  test("copy constructor can take this storage type") {
+    val storage = makeStorage(cc0)
+    fillStorage_Dirt359_Stone350(storage)
+    val dense = new DenseChunkStorage(storage)
+    assert(dense.isInstanceOf[DenseChunkStorage])
+    assertResult(2)(dense.numBlocks)
   }
 
-  test("toSparse gives back SparseStorage") {
-    val storage = makeStorage_Dirt359_Stone350
-    val sparse = new SparseChunkStorage(storage)
-    assert(sparse.isInstanceOf[SparseChunkStorage])
-    assertResult(2)(sparse.numBlocks)
+  test("copy constructor can take other storage types") {
+    val storage = makeOtherStorage(cc0)
+    fillStorage_Dirt359_Stone350(storage)
+    val dense = new DenseChunkStorage(storage)
+    assert(dense.isInstanceOf[DenseChunkStorage])
+    assertResult(2)(dense.numBlocks)
   }
 }
