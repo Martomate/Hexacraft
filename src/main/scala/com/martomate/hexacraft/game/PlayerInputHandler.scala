@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.world.Player
 import com.martomate.hexacraft.world.collision.CollisionDetector
+import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 

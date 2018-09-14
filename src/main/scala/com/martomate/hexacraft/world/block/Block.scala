@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.BlockSetAndGet
+import com.martomate.hexacraft.world.temp.BlockSetAndGet
 
 object Block {
   private val maxBlocks = 256

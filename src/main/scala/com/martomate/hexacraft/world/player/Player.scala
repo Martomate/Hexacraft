@@ -1,10 +1,10 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.player
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.storage.IWorld
+import com.martomate.hexacraft.world.temp.IWorld
 import org.joml.Vector3d
 
 class Player(val world: IWorld) {

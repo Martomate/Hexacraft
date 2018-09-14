@@ -1,8 +1,8 @@
-package com.martomate.hexacraft.world.storage.chunk
+package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
-import com.martomate.hexacraft.world.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
+import com.martomate.hexacraft.world.block.{Block, BlockAir, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 class DenseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {

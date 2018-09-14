@@ -4,8 +4,7 @@ import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer._
-import com.martomate.hexacraft.world.storage.ChunkColumn
-import com.martomate.hexacraft.world.PosAndDir
+import com.martomate.hexacraft.world.temp.ChunkColumn
 import org.joml.Vector2d
 
 import scala.collection.mutable

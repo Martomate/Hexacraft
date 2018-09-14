@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.camera.CameraView

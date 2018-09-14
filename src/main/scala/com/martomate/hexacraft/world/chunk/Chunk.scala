@@ -4,8 +4,8 @@ import com.martomate.hexacraft.world.block.{BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, IChunkLighting}
-import com.martomate.hexacraft.world.storage._
-import com.martomate.hexacraft.world.storage.chunk.ChunkStorage
+import com.martomate.hexacraft.world.storage.{ChunkStorage, _}
+import com.martomate.hexacraft.world.temp.{IWorld, LightPropagator}
 
 import scala.collection.mutable.ArrayBuffer
 

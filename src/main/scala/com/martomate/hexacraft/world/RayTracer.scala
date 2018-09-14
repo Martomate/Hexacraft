@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.IWorld
+import com.martomate.hexacraft.world.temp.IWorld
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 import scala.collection.immutable

@@ -14,13 +14,12 @@ import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
 import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.RayTracer
+import com.martomate.hexacraft.world.{RayTracer, World}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
-import com.martomate.hexacraft.world.storage.World
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._

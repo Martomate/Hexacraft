@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.BlockSetAndGet
+import com.martomate.hexacraft.world.temp.BlockSetAndGet
 
 class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask

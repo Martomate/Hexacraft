@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.lighting
 import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
-import com.martomate.hexacraft.world.storage.LightPropagator
+import com.martomate.hexacraft.world.temp.LightPropagator
 
 import scala.collection.mutable
 

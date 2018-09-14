@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.IWorld
+import com.martomate.hexacraft.world.temp.IWorld
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None

@@ -1,16 +1,18 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
-import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkGenerator, IChunk}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin}
-import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.{Player, PosAndDir}
+import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
+import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
+import com.martomate.hexacraft.world.settings.WorldSettingsProvider
+import com.martomate.hexacraft.world.storage._
+import com.martomate.hexacraft.world.temp.{ChunkAddedOrRemovedListener, ChunkColumn, IWorld, LightPropagator}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -44,7 +46,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   val player: Player = new Player(this)
   player.fromNBT(worldSettings.playerNBT)
 
-  private[storage] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
+  private[world] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
 
   addChunkAddedOrRemovedListener(chunkLoader)

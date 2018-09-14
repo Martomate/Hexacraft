@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.player
 
 import java.util.Observable
 
