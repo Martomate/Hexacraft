@@ -1,9 +1,7 @@
 package com.martomate.hexacraft.world.coord
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.camera.{Camera, CameraView}
 import org.joml.Vector3d
 
 object CoordUtils {

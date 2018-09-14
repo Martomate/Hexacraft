@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.block.BlockState
+import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
 import com.martomate.hexacraft.world.camera.Camera

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui.inventory
 
-import com.martomate.hexacraft.block.Block
+import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}

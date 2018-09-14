@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.ShortArrayTag
-import com.martomate.hexacraft.block.{BlockAir, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockAir, BlockState, Blocks}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer._

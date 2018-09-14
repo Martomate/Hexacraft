@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.flowpowered.nbt.CompoundTag
-import com.martomate.hexacraft.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockState, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.chunk.{ChunkStorage, DenseChunkStorage}
 import com.martomate.hexacraft.world.storage.IWorld

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockState, Blocks}
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.CoordUtils

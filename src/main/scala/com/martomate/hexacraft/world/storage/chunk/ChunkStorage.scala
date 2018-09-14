@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.storage.chunk
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
-import com.martomate.hexacraft.block.{Block, BlockState}
+import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 trait ChunkStorage {

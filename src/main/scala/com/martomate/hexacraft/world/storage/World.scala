@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
-import com.martomate.hexacraft.block.{BlockAir, BlockState}
+import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkGenerator, IChunk}

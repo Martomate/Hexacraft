@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.block.BlockState
+import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.lighting.IChunkLighting
 import com.martomate.hexacraft.world.storage.chunk.ChunkStorage
