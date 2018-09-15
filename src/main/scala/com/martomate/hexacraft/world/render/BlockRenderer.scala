@@ -1,34 +1,7 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
-
-import com.martomate.hexacraft.renderer._
-import org.lwjgl.BufferUtils
+import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
 import org.lwjgl.opengl.{GL11, GL15}
-
-class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {
-  val blockRenderers:     Seq[T] = Seq.tabulate(2)(s => rendererFactory(s))
-  val blockSideRenderers: Seq[T] = Seq.tabulate(6)(s => rendererFactory(s + 2))
-  val allBlockRenderers:  Seq[T] = blockRenderers ++ blockSideRenderers
-
-  def renderBlockSide(side: Int): Unit = {
-    val r = allBlockRenderers(side)
-    r.renderer.render(r.instances)
-  }
-
-  def updateContent(side: Int, maxInstances: Int)(dataFiller: ByteBuffer => Unit): Unit = {
-    val buf = BufferUtils.createByteBuffer(maxInstances * allBlockRenderers(side).vao.vbos(1).stride)
-    dataFiller(buf)
-    val instances = buf.position() / allBlockRenderers(side).vao.vbos(1).stride
-    if (instances > allBlockRenderers(side).maxInstances) allBlockRenderers(side).resize((instances * 1.1f).toInt)
-    val r = allBlockRenderers(side)
-    r.instances = instances
-    buf.flip()
-    r.vao.vbos(1).fill(0, buf)
-  }
-
-  def unload(): Unit = allBlockRenderers.foreach(_.unload())
-}
 
 class BlockRenderer(val side: Int, init_maxInstances: Int) {
   private var _maxInstances = init_maxInstances
@@ -92,12 +65,4 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
   def unload(): Unit = {
     vao.unload()
   }
-}
-
-class FlatBlockRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
-  override val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
-    .addVBO(VBOBuilder(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
-    .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).floats(3, 2).ints(4, 1).floats(5, 1).floats(6, 1).create()).create()
-
-  override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 }

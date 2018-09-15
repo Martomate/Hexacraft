@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world.block
 
-import com.martomate.hexacraft.world.collision.HexBox
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.temp.BlockSetAndGet
 

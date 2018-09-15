@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.collision
 
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld

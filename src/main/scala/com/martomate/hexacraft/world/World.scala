@@ -7,12 +7,12 @@ import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkGenerator, IChunk}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
+import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.storage._
-import com.martomate.hexacraft.world.temp.{ChunkAddedOrRemovedListener, ChunkColumn, IWorld, LightPropagator}
+import com.martomate.hexacraft.world.temp.{ChunkAddedOrRemovedListener, ChunkColumn, IWorld}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,7 +36,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     size,
     renderDistance,
     columns,
-    coords => new ChunkColumn(coords, this),
+    coords => new ChunkColumn(coords, worldGenerator, worldSettings),
     coords => new Chunk(coords, new ChunkGenerator(coords, this), this, lightPropagator),
     chunkLoadingOrigin
   )
@@ -48,6 +48,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   private[world] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
+  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners -= listener
 
   addChunkAddedOrRemovedListener(chunkLoader)
 
@@ -85,6 +86,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
           c.unload()
         }
         if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
+          c.removeEventListener(this)
+          c.removeChunkAddedOrRemovedListener(this)
           c.unload()
           chunkLoader.onColumnRemoved(c)
         }
@@ -110,8 +113,10 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   private def ensureColumnExists(here: ColumnRelWorld): Unit = {
     if (!columns.contains(here.value)) {
-      val col = new ChunkColumn(here, this)
+      val col = new ChunkColumn(here, worldGenerator, worldSettings)
       columns(here.value) = col
+      col.addEventListener(this)
+      col.addChunkAddedOrRemovedListener(this)
       chunkLoader.onColumnAdded(col)
     }
   }
@@ -149,4 +154,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ()//neighborChunk(coords, side).foreach(_.requestRenderUpdate())
+
+  override def onChunkAdded(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(chunk))
+
+  override def onChunkRemoved(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(chunk))
 }
