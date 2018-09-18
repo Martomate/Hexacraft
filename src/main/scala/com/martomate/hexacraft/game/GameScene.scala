@@ -3,7 +3,7 @@ package com.martomate.hexacraft.game
 import java.io.File
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.world.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
@@ -14,6 +14,7 @@ import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
 import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.{RayTracer, World}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.collision.CollisionDetector

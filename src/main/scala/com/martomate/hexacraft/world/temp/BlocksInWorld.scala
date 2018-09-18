@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.world.temp
 
-import com.martomate.hexacraft.world.block.BlockState
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.temp2.ChunkColumn
 
 trait BlocksInWorld {
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn]

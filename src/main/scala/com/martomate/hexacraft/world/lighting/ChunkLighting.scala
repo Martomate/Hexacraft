@@ -1,18 +1,18 @@
 package com.martomate.hexacraft.world.lighting
 
-import com.martomate.hexacraft.world.block.BlockState
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.chunk.{IChunk, IChunkLighting}
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 
 import scala.collection.mutable
 
-class ChunkLighting(lightPropagator: LightPropagator) extends IChunkLighting {
+class ChunkLighting(chunk: IChunk, lightPropagator: LightPropagator) extends IChunkLighting {
   private val brightness: Array[Byte] = new Array(16*16*16)
   private var brightnessInitialized: Boolean = false
 
   def initialized: Boolean = brightnessInitialized
 
-  def init(chunk: IChunk, blocks: Seq[(BlockRelChunk, BlockState)]): Unit = {
+  def init(blocks: Seq[(BlockRelChunk, BlockState)]): Unit = {
     if (!brightnessInitialized) {
       brightnessInitialized = true
       val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]

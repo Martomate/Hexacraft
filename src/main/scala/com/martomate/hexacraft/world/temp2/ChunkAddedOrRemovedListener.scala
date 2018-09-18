@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.temp
+package com.martomate.hexacraft.world.temp2
 
 import com.martomate.hexacraft.world.chunk.IChunk
 

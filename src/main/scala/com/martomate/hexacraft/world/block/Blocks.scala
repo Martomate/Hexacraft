@@ -1,12 +1,14 @@
 package com.martomate.hexacraft.world.block
 
 object Blocks {
-  val Air: Block= BlockAir
-  val Stone     = new Block(1, "stone", "Stone")
-  val Grass     = new Block(2, "grass", "Grass")
-  val Dirt      = new Block(3, "dirt", "Dirt")
-  val Sand      = new Block(4, "sand", "Sand") with EmittingLight
-  val Water     = new BlockFluid(5, "water", "Water")
+  private val factory: BlockFactory = new BlockFactory
+
+  val Air     = factory("air")
+  val Stone   = factory("stone")
+  val Grass   = factory("grass")
+  val Dirt    = factory("dirt")
+  val Sand    = factory("sand")
+  val Water   = factory("water")
 
   def init(): Unit = {
   }

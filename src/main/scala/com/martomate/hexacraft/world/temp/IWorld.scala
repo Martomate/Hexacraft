@@ -4,6 +4,8 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.ChunkEventListener
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
+import com.martomate.hexacraft.world.temp2.ChunkAddedOrRemovedListener
+import com.martomate.hexacraft.world.block.temp3.BlockSetAndGet
 
 trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld with ChunkAddedOrRemovedListener {
   def size: CylinderSize

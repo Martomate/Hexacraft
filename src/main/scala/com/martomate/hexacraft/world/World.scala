@@ -2,9 +2,10 @@ package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{Chunk, ChunkGenerator, IChunk}
+import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.lighting.LightPropagator
@@ -12,7 +13,8 @@ import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin,
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.temp.{ChunkAddedOrRemovedListener, ChunkColumn, IWorld}
+import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.temp2.{ChunkAddedOrRemovedListener, ChunkColumn}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -58,7 +60,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
   def getChunk(coords: ChunkRelWorld): Option[IChunk] = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
-  def getBlock(coords: BlockRelWorld): BlockState    = getColumn(coords.getColumnRelWorld).map(_.getBlock(coords.getBlockRelColumn)).getOrElse(BlockAir.State)
+  def getBlock(coords: BlockRelWorld): BlockState    = getColumn(coords.getColumnRelWorld).map(_.getBlock(coords.getBlockRelColumn)).getOrElse(BlockState.Air)
   def setBlock(coords: BlockRelWorld, block: BlockState): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
   def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
   def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))

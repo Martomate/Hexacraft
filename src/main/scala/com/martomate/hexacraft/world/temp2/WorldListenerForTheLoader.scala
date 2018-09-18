@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.temp
+package com.martomate.hexacraft.world.temp2
 
 trait WorldListenerForTheLoader extends ChunkAddedOrRemovedListener {
   def onColumnAdded(column: ChunkColumn): Unit

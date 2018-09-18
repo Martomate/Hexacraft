@@ -1,8 +1,9 @@
-package com.martomate.hexacraft.world.temp
+package com.martomate.hexacraft.world.temp2
 
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.block.{BlockAir, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, IChunk}
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
@@ -76,7 +77,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   }
 
   def getBlock(coords: BlockRelColumn): BlockState = {
-    getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockAir.State)
+    getChunk(coords.getChunkRelColumn).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockState.Air)
   }
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {

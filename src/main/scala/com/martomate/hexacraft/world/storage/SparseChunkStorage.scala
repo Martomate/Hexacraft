@@ -2,7 +2,8 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
-import com.martomate.hexacraft.world.block.{Block, BlockAir, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{Block, BlockAir, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
@@ -14,7 +15,7 @@ class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
   private val blocks = scala.collection.mutable.Map.empty[Short, BlockState]
 
   def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Blocks.Air)
-  def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockAir.State)
+  def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockState.Air)
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
     if (block.blockType != Blocks.Air) blocks(coords.value.toShort) = block
     else removeBlock(coords)

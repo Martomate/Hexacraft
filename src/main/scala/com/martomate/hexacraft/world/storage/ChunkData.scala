@@ -1,6 +1,4 @@
-package com.martomate.hexacraft.world.chunk
-
-import com.martomate.hexacraft.world.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
+package com.martomate.hexacraft.world.storage
 
 class ChunkData {
   var storage: ChunkStorage = _

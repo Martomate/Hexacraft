@@ -2,12 +2,13 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
-import com.martomate.hexacraft.world.block.BlockState
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.temp.{ChunkAddedOrRemovedListener, IWorld}
+import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.temp2.ChunkAddedOrRemovedListener
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 

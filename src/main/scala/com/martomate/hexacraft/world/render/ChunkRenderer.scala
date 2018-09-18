@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.world.block.{BlockAir, BlockState}
+import com.martomate.hexacraft.world.block.BlockAir
+import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.temp.IWorld
@@ -15,7 +16,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
       val blocks = chunk.blocks.allBlocks
 
       if (!chunk.lighting.initialized) {
-        chunk.lighting.init(chunk, blocks)
+        chunk.lighting.init(blocks)
       }
 
       val sidesToRender = Vector.fill(8)(new Array[Boolean](16 * 16 * 16))
@@ -24,7 +25,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
       for ((c, b) <- blocks) {
         for (s <- BlockState.neighborOffsets.indices) {
           val (c2, neigh) = world.neighbor(s, chunk, c)
-          val bs = neigh.map(_.getBlock(c2)).getOrElse(BlockAir.State)
+          val bs = neigh.map(_.getBlock(c2)).getOrElse(BlockState.Air)
           if (bs.blockType.isTransparent(bs.metadata, oppositeSide(s))) {
             sidesToRender(s)(c.value) = true
             sideBrightness(s)(c.value) = neigh.map(_.lighting.getBrightness(c2)).getOrElse(0f)
@@ -54,7 +55,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
         }
       }
     } else if (!chunk.lighting.initialized) {
-      chunk.lighting.init(chunk, Seq.empty)
+      chunk.lighting.init(Seq.empty)
     }
   }
 
