@@ -14,7 +14,7 @@ import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.worldlike.IWorld
-import com.martomate.hexacraft.world.column.ChunkColumn
+import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -38,7 +38,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     size,
     renderDistance,
     columns,
-    coords => new ChunkColumn(coords, worldGenerator, worldSettings),
+    coords => new ChunkColumnImpl(coords, worldGenerator, worldSettings),
     coords => new Chunk(coords, new ChunkGenerator(coords, this), this, lightPropagator),
     chunkLoadingOrigin
   )
@@ -59,11 +59,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ()
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
-  def getChunk(coords: ChunkRelWorld): Option[IChunk] = getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
-  def getBlock(coords: BlockRelWorld): BlockState    = getColumn(coords.getColumnRelWorld).map(_.getBlock(coords.getBlockRelColumn)).getOrElse(BlockState.Air)
-  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
-  def removeBlock(coords: BlockRelWorld): Boolean = getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
-  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
+
+  def getChunk(coords: ChunkRelWorld): Option[IChunk] =
+    getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
+
+  def getBlock(coords: BlockRelWorld): BlockState =
+    getChunk(coords.getChunkRelWorld).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockState.Air)
+
+  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean =
+    getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
+
+  def removeBlock(coords: BlockRelWorld): Boolean =
+    getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
+//  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
 
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4, size)
@@ -115,7 +123,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   private def ensureColumnExists(here: ColumnRelWorld): Unit = {
     if (!columns.contains(here.value)) {
-      val col = new ChunkColumn(here, worldGenerator, worldSettings)
+      val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
       columns(here.value) = col
       col.addEventListener(this)
       col.addChunkAddedOrRemovedListener(this)

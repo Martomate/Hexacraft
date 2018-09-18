@@ -16,4 +16,5 @@ trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld w
 
   private[worldlike] def chunkAddedOrRemovedListeners: Iterable[ChunkAddedOrRemovedListener]
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
+  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
 }

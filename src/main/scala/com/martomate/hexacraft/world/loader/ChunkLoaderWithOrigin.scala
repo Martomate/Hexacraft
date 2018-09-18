@@ -28,6 +28,9 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
   @deprecated
   private val columnsAtEdge: mutable.Set[ColumnRelWorld] = mutable.Set.empty[ColumnRelWorld]
 
+  @deprecated
+  private val topAndBottomChunks: mutable.Map[ChunkColumn, Option[(Int, Int)]] = mutable.HashMap.empty
+
   private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
     val corners = for {
       i <- 0 to 1
@@ -52,7 +55,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }
 
     def getTopBottomChange(col: ChunkColumn, chY: Int): Option[(Int, Int)] = {
-      col.topAndBottomChunks match {
+      topAndBottomChunks.getOrElse(col, None) match {
         case None => Some((chY, chY))
         case Some((top, bottom)) =>
           topBottomChangeWhenExists(chY, top, bottom)
@@ -65,7 +68,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
         val topBottomChange = getTopBottomChange(col, ch.Y)
 
         if (topBottomChange.isDefined) {
-          col.topAndBottomChunks = topBottomChange
+          topAndBottomChunks(col) = topBottomChange
           val newChunk = chunkFactory(chunkToLoad)
           chunksReadyToAdd += newChunk
           !newChunk.isEmpty
@@ -99,12 +102,12 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       }
     }
 
-    column.topAndBottomChunks match {
+    topAndBottomChunks.getOrElse(column, None) match {
       case Some((top, bottom)) =>
         val newBottom = newTopOrBottom(bottom, -1)
         val newTop = if (newBottom > top) top else newTopOrBottom(top, 1)
 
-        if (newTop != top || newBottom != bottom) column.topAndBottomChunks = if (newTop >= newBottom) Some((newTop, newBottom)) else None
+        if (newTop != top || newBottom != bottom) topAndBottomChunks(column) = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
         val ground = ChunkRelColumn((column.generatedHeightMap(8)(8) >> 4) & 0xfff, worldSize)
         val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, worldSize)
