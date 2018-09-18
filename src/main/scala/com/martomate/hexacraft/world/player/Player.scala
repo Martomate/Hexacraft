@@ -4,7 +4,7 @@ import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.Vector3d
 
 class Player(val world: IWorld) {

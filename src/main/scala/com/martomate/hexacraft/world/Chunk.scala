@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.chunk._
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
-import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable.ArrayBuffer
 

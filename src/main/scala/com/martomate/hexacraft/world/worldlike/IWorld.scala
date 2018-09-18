@@ -1,11 +1,10 @@
-package com.martomate.hexacraft.world.temp
+package com.martomate.hexacraft.world.worldlike
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.chunk.ChunkEventListener
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkEventListener}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.temp2.ChunkAddedOrRemovedListener
-import com.martomate.hexacraft.world.block.temp3.BlockSetAndGet
+import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 
 trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld with ChunkAddedOrRemovedListener {
   def size: CylinderSize
@@ -15,6 +14,6 @@ trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld w
 
   def getHeight(x: Int, z: Int): Int
 
-  private[temp] def chunkAddedOrRemovedListeners: Iterable[ChunkAddedOrRemovedListener]
+  private[worldlike] def chunkAddedOrRemovedListeners: Iterable[ChunkAddedOrRemovedListener]
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
 }

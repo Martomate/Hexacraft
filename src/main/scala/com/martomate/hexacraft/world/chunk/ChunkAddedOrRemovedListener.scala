@@ -1,6 +1,4 @@
-package com.martomate.hexacraft.world.temp2
-
-import com.martomate.hexacraft.world.chunk.IChunk
+package com.martomate.hexacraft.world.chunk
 
 trait ChunkAddedOrRemovedListener {
   def onChunkAdded(chunk: IChunk): Unit

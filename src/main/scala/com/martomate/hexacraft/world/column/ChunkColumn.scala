@@ -1,10 +1,10 @@
-package com.martomate.hexacraft.world.temp2
+package com.martomate.hexacraft.world.column
 
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, IChunk}
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkBlockListener, ChunkEventListener, IChunk}
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider

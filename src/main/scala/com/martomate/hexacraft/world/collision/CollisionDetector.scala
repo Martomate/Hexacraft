@@ -4,7 +4,7 @@ import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.Vector3d
 
 object CollisionDetector {

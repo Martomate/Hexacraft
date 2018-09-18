@@ -4,7 +4,7 @@ import com.martomate.hexacraft.world.block.BlockAir
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.temp.IWorld
+import com.martomate.hexacraft.world.worldlike.IWorld
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None

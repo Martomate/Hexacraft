@@ -4,7 +4,7 @@ import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.block.behaviour.BlockBehaviour
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.block.temp3.BlockSetAndGet
+import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 
 class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask

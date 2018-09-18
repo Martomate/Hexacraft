@@ -4,7 +4,7 @@ import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
@@ -13,8 +13,8 @@ import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin,
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.temp.IWorld
-import com.martomate.hexacraft.world.temp2.{ChunkAddedOrRemovedListener, ChunkColumn}
+import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.column.ChunkColumn
 
 import scala.collection.mutable.ArrayBuffer
 
