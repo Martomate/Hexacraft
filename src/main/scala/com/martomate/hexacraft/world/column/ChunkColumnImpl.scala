@@ -4,7 +4,7 @@ import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkEventListener, IChunk}
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
@@ -64,7 +64,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
   private def handleEventsOnChunkRemoval(oldChunkOpt: Option[IChunk]): Unit = oldChunkOpt foreach { oldChunk =>
     oldChunk.removeEventListener(this)
     oldChunk.removeBlockEventListener(this)
-    chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(oldChunk))
+    eventListeners.foreach(_.onChunkRemoved(oldChunk))
   }
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
@@ -95,6 +95,8 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
         _heightMap(coords.cx)(coords.cz) = coords.y.toShort
       }
     }
+
+    eventListeners.foreach(_.onSetBlock(coords, prev, now))
   }
 
   private def onChunkLoaded(chunk: IChunk): Unit = {
@@ -121,7 +123,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
 
   def unload(): Unit = {
     chunks.values.foreach{c =>
-      chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+      eventListeners.foreach(_.onChunkRemoved(c))
       c.unload()
     }
 
@@ -130,9 +132,9 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     )), saveFilePath)
   }
 
-  private val eventListeners: ArrayBuffer[ChunkEventListener] = ArrayBuffer.empty
-  def addEventListener(listener: ChunkEventListener): Unit = eventListeners += listener
-  def removeEventListener(listener: ChunkEventListener): Unit = eventListeners -= listener
+  private val eventListeners: ArrayBuffer[ChunkColumnListener] = ArrayBuffer.empty
+  override def addEventListener(listener: ChunkColumnListener): Unit = eventListeners += listener
+  override def removeEventListener(listener: ChunkColumnListener): Unit = eventListeners -= listener
 
   override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit =
     eventListeners.foreach(_.onBlockNeedsUpdate(coords))
@@ -142,8 +144,4 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit =
     eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
-
-  private[world] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
-  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
-  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners -= listener
 }

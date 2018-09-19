@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.column
 
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkBlockListener, ChunkEventListener, IChunk}
+import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, IChunk}
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelColumn, ColumnRelWorld}
 
 object ChunkColumn {
@@ -27,9 +27,6 @@ trait ChunkColumn extends ChunkBlockListener with ChunkEventListener {
   def onReloadedResources(): Unit
   def unload(): Unit
 
-  def addEventListener(listener: ChunkEventListener): Unit
-  def removeEventListener(listener: ChunkEventListener): Unit
-
-  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
-  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
+  def addEventListener(listener: ChunkColumnListener): Unit
+  def removeEventListener(listener: ChunkColumnListener): Unit
 }

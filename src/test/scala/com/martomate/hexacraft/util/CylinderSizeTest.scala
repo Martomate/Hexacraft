@@ -1,7 +1,5 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.util
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.coord.CoordUtils
 import org.scalatest.FunSuite
 
 class CylinderSizeTest extends FunSuite {

@@ -25,7 +25,6 @@ trait IChunk {
 
   def requestRenderUpdate(): Unit
   def requestBlockUpdate(coords: BlockRelChunk): Unit
-  def doBlockUpdate(coords: BlockRelChunk): Unit
 
   def unload(): Unit
 }

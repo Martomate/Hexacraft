@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
@@ -38,8 +38,13 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     size,
     renderDistance,
     columns,
-    coords => new ChunkColumnImpl(coords, worldGenerator, worldSettings),
-    coords => new Chunk(coords, new ChunkGenerator(coords, this), this, lightPropagator),
+    coords => {
+      val col = new ChunkColumnImpl(coords, worldGenerator, worldSettings)
+      col.addEventListener(this)
+      chunkLoader.onColumnAdded(col)
+      col
+    },
+    coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
     chunkLoadingOrigin
   )
 
@@ -97,7 +102,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
         }
         if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
           c.removeEventListener(this)
-          c.removeChunkAddedOrRemovedListener(this)
           c.unload()
           chunkLoader.onColumnRemoved(c)
         }
@@ -117,7 +121,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     val blocksToUpdateLen = blocksToUpdate.size
     for (_ <- 0 until blocksToUpdateLen) {
       val c = blocksToUpdate.dequeue()
-      getChunk(c.getChunkRelWorld).foreach(_.doBlockUpdate(c.getBlockRelChunk))
+      getBlock(c).blockType.doUpdate(c, this)
     }
   }
 
@@ -126,7 +130,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
       columns(here.value) = col
       col.addEventListener(this)
-      col.addChunkAddedOrRemovedListener(this)
       chunkLoader.onColumnAdded(col)
     }
   }
@@ -168,4 +171,43 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   override def onChunkAdded(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(chunk))
 
   override def onChunkRemoved(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(chunk))
+
+  override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
+    def affectableChunkOffset(where: Byte): Int = where match {
+      case  0 => -1
+      case 15 =>  1
+      case  _ =>  0
+    }
+
+    def isInNeighborChunk(chunkOffset: (Int, Int, Int)) = {
+      val xx = affectableChunkOffset(coords.cx)
+      val yy = affectableChunkOffset(coords.cy)
+      val zz = affectableChunkOffset(coords.cz)
+
+      chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
+    }
+
+    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = c.offset(off._1, off._2, off._3)
+
+    val cCoords = coords.getChunkRelWorld
+    val bCoords = coords.getBlockRelChunk
+
+    getChunk(cCoords).foreach { c =>
+      c.requestRenderUpdate()
+      c.requestBlockUpdate(bCoords)
+
+      for (i <- 0 until 8) {
+        val off = ChunkRelWorld.neighborOffsets(i)
+        val c2 = offsetCoords(bCoords, off)
+
+        if (isInNeighborChunk(off)) {
+          neighborChunk(cCoords, i).foreach(n => {
+            n.requestRenderUpdate()
+            n.requestBlockUpdate(c2)
+          })
+        }
+        else c.requestBlockUpdate(c2)
+      }
+    }
+  }
 }

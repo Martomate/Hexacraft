@@ -1,19 +1,15 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.{NBTUtil, PreparableRunnerWithIndex}
+import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{BlockAir, Blocks}
 import com.martomate.hexacraft.world.chunk._
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
-import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable.ArrayBuffer
 
-class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, world: IWorld, lightPropagator: LightPropagator) extends IChunk {
-  private def neighborChunk(side: Int): Option[IChunk] = Option(world).flatMap(_.neighborChunk(coords, side))
-
+class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagator: LightPropagator) extends IChunk {
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -29,11 +25,6 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, world: IWorld
 
   val lighting: IChunkLighting = new ChunkLighting(this, lightPropagator)
 
-  private val needsBlockUpdateToggle = new PreparableRunnerWithIndex[BlockRelChunk](_.value)(
-    coords => eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld(coords, this.coords))),
-    coords => getBlock(coords).blockType.doUpdate(BlockRelWorld(coords, this.coords), world)
-  )
-
   def init(): Unit = {
     requestRenderUpdate()
     requestRenderUpdateForAllNeighbors()
@@ -45,72 +36,36 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, world: IWorld
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean = {
     val before = getBlock(blockCoords)
-    storage.setBlock(blockCoords, block)
-    if (before.blockType == Blocks.Air || before != block) {
-      onBlockModified(blockCoords)
+    if (before != block) {
+      storage.setBlock(blockCoords, block)
+      needsToSave = true
+
+      for (listener <- blockEventListeners) {
+        listener.onSetBlock(BlockRelWorld(blockCoords, coords), before, block)
+      }
+
+      handleLightingOnSetBlock(blockCoords, block)
     }
+    true
+  }
+
+  def removeBlock(coords: BlockRelChunk): Boolean = setBlock(coords, BlockState.Air)
+
+  private def handleLightingOnSetBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
     lightPropagator.removeTorchlight(this, blockCoords)
     lightPropagator.removeSunlight(this, blockCoords)
     if (block.blockType.lightEmitted != 0) {
       lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
     }
-    blockEventListeners.foreach(_.onSetBlock(BlockRelWorld(blockCoords, coords), before, block))
-    true
   }
 
-  def removeBlock(coords: BlockRelChunk): Boolean = {
-    val before = getBlock(coords)
-    storage.removeBlock(coords)
-    onBlockModified(coords)
-    lightPropagator.removeTorchlight(this, coords)
-    lightPropagator.updateSunlight(this, coords)
-    blockEventListeners.foreach(_.onSetBlock(BlockRelWorld(coords, this.coords), before, BlockState.Air))
-    true
-  }
-
-  private def onBlockModified(coords: BlockRelChunk): Unit = {
-    def affectableChunkOffset(where: Byte): Int = if (where == 0) -1 else if (where == 15) 1 else 0
-
-    def isInNeighborChunk(chunkOffset: (Int, Int, Int)) = {
-      val xx = affectableChunkOffset(coords.cx)
-      val yy = affectableChunkOffset(coords.cy)
-      val zz = affectableChunkOffset(coords.cz)
-
-      chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
-    }
-
-    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = c.offset(off._1, off._2, off._3)
-
-
-    requestRenderUpdate()
-
-    for (i <- 0 until 8) {
-      val off = ChunkRelWorld.neighborOffsets(i)
-      val c2 = offsetCoords(coords, off)
-      if (isInNeighborChunk(off)) {
-        neighborChunk(i).foreach(n => {
-          n.requestRenderUpdate()
-          n.requestBlockUpdate(c2)
-        })
-      }
-      else requestBlockUpdate(c2)
-    }
-
-    requestBlockUpdate(coords)
-    needsToSave = true
-  }
-
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.prepare(coords)
-  def doBlockUpdate(coords: BlockRelChunk): Unit = needsBlockUpdateToggle.activate(coords)
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld(coords, this.coords)))
 
   def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 
   private def requestRenderUpdateForAllNeighbors(): Unit =
     for (side <- 0 until 8)
       eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
-
-  private def requestRenderUpdateForNeighbor(side: Int): Unit =
-    eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
 
   def tick(): Unit = {
     chunkData.optimizeStorage()

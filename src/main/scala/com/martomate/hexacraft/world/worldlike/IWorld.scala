@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.world.worldlike
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkEventListener}
+import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
+import com.martomate.hexacraft.world.chunk.ChunkAddedOrRemovedListener
+import com.martomate.hexacraft.world.column.ChunkColumnListener
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
-import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 
-trait IWorld extends ChunkEventListener with BlockSetAndGet with BlocksInWorld with ChunkAddedOrRemovedListener {
+trait IWorld extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
   def size: CylinderSize
   def worldSettings: WorldSettingsProvider
   def worldGenerator: WorldGenerator
