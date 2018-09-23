@@ -13,7 +13,7 @@ trait BlocksInWorld {
   def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk): (BlockRelChunk, Option[IChunk]) = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
-    val c2 = BlockRelChunk(i2, j2, k2, coords.cylSize)
+    val c2 = BlockRelChunk(i2, j2, k2)(coords.cylSize)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
       (c2, Some(chunk))
     } else {

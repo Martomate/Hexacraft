@@ -2,32 +2,30 @@ package com.martomate.hexacraft.game
 
 import java.io.File
 
-import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
+import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
-import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.Shader
-import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
 import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.{RayTracer, World}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
+import com.martomate.hexacraft.world.{RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
 
 import scala.collection.Seq
-
 
 class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window: GameWindowExtended) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
@@ -45,9 +43,11 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
 
   val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
+  import world.size.impl
+
   val worldRenderer = new WorldRenderer(world)
 
-  val camera = new Camera(new CameraProjection(70f, window.windowSize.x.toFloat / window.windowSize.y, 0.02f, 1000f), world.size)
+  val camera = new Camera(new CameraProjection(70f, window.windowSize.x.toFloat / window.windowSize.y, 0.02f, 1000f))
   val mousePicker = new RayTracer(world, camera, 7)
   val playerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
 
@@ -241,9 +241,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
         val coords = coords1.offset(offset._1, offset._2, offset._3)
         if (world.getBlock(coords).blockType == Blocks.Air) {
           val blockType = playerInputHandler.player.blockInHand
-          val skewCoords = BlockCoords(coords.x, coords.y, coords.z, world.size).toSkewCylCoords
+          val skewCoords = BlockCoords(coords.x, coords.y, coords.z).toSkewCylCoords
           val state = new BlockState(blockType)
-          if (!CollisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position, world.size))) {
+          if (!CollisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
             world.setBlock(coords, state)
           }
         }

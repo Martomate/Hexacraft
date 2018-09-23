@@ -15,6 +15,8 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
                             @deprecated columnFactory: ColumnRelWorld => ChunkColumn,
                             chunkFactory: ChunkRelWorld => IChunk,
                             origin: PosAndDir) extends ChunkLoader {
+  import worldSize.impl
+
   def tick(): Unit = {
     loadChunks()
 
@@ -38,7 +40,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       k <- 0 to 1
     } yield (15 * i, 15 * j, 15 * k)
     val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords), coords.cylSize).toCylCoords
+      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = this.origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
@@ -91,9 +93,9 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }
 
     def newTopOrBottom(now: Int, dir: Int): Int = {
-      val bottomChunk = ChunkRelColumn(now & 0xfff, worldSize)
+      val bottomChunk = ChunkRelColumn(now & 0xfff)
       if (inSight(bottomChunk)) {
-        val below = ChunkRelColumn((now + dir) & 0xfff, worldSize)
+        val below = ChunkRelColumn((now + dir) & 0xfff)
         if (inSight(below)) addChunkToLoadingQueue(ChunkRelWorld(below, column.coords))
         now
       } else {
@@ -109,8 +111,8 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
 
         if (newTop != top || newBottom != bottom) topAndBottomChunks(column) = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
-        val ground = ChunkRelColumn((column.generatedHeightMap(8)(8) >> 4) & 0xfff, worldSize)
-        val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff, worldSize)
+        val ground = ChunkRelColumn((column.generatedHeightMap(8)(8) >> 4) & 0xfff)
+        val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff)
 
         if (inSight(first)) addChunkToLoadingQueue(ChunkRelWorld(first, column.coords))
     }
@@ -143,7 +145,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       col.distSq(origin) <= rDistSq
     }
 
-    val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt, worldSize)
+    val here = ColumnRelWorld(math.floor(origin.x).toInt, math.floor(origin.y).toInt)
     ensureColumnExists(here)
 
     val columnsToAdd = mutable.Set.empty[ColumnRelWorld]

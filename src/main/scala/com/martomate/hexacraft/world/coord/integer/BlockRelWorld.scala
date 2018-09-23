@@ -3,23 +3,23 @@ package com.martomate.hexacraft.world.coord.integer
 import com.martomate.hexacraft.util.CylinderSize
 
 object BlockRelWorld {
-  def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelWorld =
-    BlockRelWorld((X & 0xfffff) << 44L | (Z & cylSize.ringSizeMask) << 24 | (Y & 0xfff) << 12 | (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf), cylSize)
-  def apply(x: Int, y: Int, z: Int, cylSize: CylinderSize): BlockRelWorld = BlockRelWorld(x >> 4, y >> 4, z >> 4, x & 15, y & 15, z & 15, cylSize)
+  def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int)(implicit cylSize: CylinderSize): BlockRelWorld =
+    BlockRelWorld((X & 0xfffff) << 44L | (Z & cylSize.ringSizeMask) << 24 | (Y & 0xfff) << 12 | (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf))
+  def apply(x: Int, y: Int, z: Int)(implicit cylSize: CylinderSize): BlockRelWorld = BlockRelWorld(x >> 4, y >> 4, z >> 4, x & 15, y & 15, z & 15)
 
-  def apply(block: BlockRelChunk, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.value << 12 | block.value, chunk.cylSize)
-  def apply(block: BlockRelColumn, column: ColumnRelWorld): BlockRelWorld = BlockRelWorld(column.value << 24L | block.value, column.cylSize)
-  def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.X * 16 + i, chunk.Y * 16 + j, chunk.Z * 16 + k, chunk.cylSize)
+  def apply(block: BlockRelChunk, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.value << 12 | block.value)(chunk.cylSize)
+  def apply(block: BlockRelColumn, column: ColumnRelWorld): BlockRelWorld = BlockRelWorld(column.value << 24L | block.value)(column.cylSize)
+  def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.X * 16 + i, chunk.Y * 16 + j, chunk.Z * 16 + k)(chunk.cylSize)
 }
 
-case class BlockRelWorld(private val _value: Long, cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // XXXXXZZZZZYYYxyz
-  def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt, cylSize)
-  def getBlockRelColumn = BlockRelColumn((value & 0xffffff).toInt, cylSize)
-  def getChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt, cylSize)
-  def getChunkRelWorld = ChunkRelWorld(value >>> 12, cylSize)
-  def getColumnRelWorld = ColumnRelWorld(value >>> 24, cylSize)
+case class BlockRelWorld(private val _value: Long)(implicit val cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // XXXXXZZZZZYYYxyz
+  def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt)
+  def getBlockRelColumn = BlockRelColumn((value & 0xffffff).toInt)
+  def getChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt)
+  def getChunkRelWorld = ChunkRelWorld(value >>> 12)
+  def getColumnRelWorld = ColumnRelWorld(value >>> 24)
 
-  def offset(xx: Int, yy: Int, zz: Int) = BlockRelWorld(x + xx, y + yy, z + zz, cylSize)
+  def offset(xx: Int, yy: Int, zz: Int) = BlockRelWorld(x + xx, y + yy, z + zz)
 
   def X: Int = (value >> 32).toInt >> 12
   def Z: Int = (value >> 12).toInt >> 12

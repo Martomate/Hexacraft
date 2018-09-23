@@ -2,8 +2,8 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
+import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{Block, BlockAir}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 class DenseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
@@ -32,7 +32,7 @@ class DenseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
     blockTypes(coords.value) = 0
   }
   def allBlocks: Seq[(BlockRelChunk, BlockState)] = blockTypes.indices.filter(i => blockTypes(i) != 0).map(i =>
-    (BlockRelChunk(i, chunkCoords.cylSize), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
+    (BlockRelChunk(i)(chunkCoords.cylSize), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
 

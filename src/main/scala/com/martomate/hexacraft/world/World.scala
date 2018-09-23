@@ -25,15 +25,16 @@ object World {
 class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   def worldName: String = worldSettings.name
   val size: CylinderSize = worldSettings.size
+  import size.impl
 
-  val worldGenerator = new WorldGenerator(worldSettings.gen, size)
+  val worldGenerator = new WorldGenerator(worldSettings.gen)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
   private val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
 
-  private val chunkLoadingOrigin = new PosAndDir(size)
+  private val chunkLoadingOrigin = new PosAndDir
   private val chunkLoader: ChunkLoader = new ChunkLoaderWithOrigin(
     size,
     renderDistance,
@@ -53,7 +54,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   val player: Player = new Player(this)
   player.fromNBT(worldSettings.playerNBT)
 
-  private[world] val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
+  private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
   def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners -= listener
 
@@ -79,7 +80,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 //  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
 
   def getHeight(x: Int, z: Int): Int = {
-    val coords = ColumnRelWorld(x >> 4, z >> 4, size)
+    val coords = ColumnRelWorld(x >> 4, z >> 4)
     ensureColumnExists(coords)
     getColumn(coords).get.heightMap(x & 15, z & 15)
   }

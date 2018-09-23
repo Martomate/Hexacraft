@@ -8,14 +8,13 @@ import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 
 trait IWorld extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
-  def size: CylinderSize
+  val size: CylinderSize
   def worldSettings: WorldSettingsProvider
   def worldGenerator: WorldGenerator
   def renderDistance: Double
 
   def getHeight(x: Int, z: Int): Int
 
-  private[worldlike] def chunkAddedOrRemovedListeners: Iterable[ChunkAddedOrRemovedListener]
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
   def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit
 }

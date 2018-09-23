@@ -7,6 +7,8 @@ package com.martomate.hexacraft.util
   * @param worldSize the size exponent, <b>max-value: 20</b>
   */
 class CylinderSize(val worldSize: Int) {
+  require(worldSize >= 0 && worldSize <= 20)
+
   /** The number of chunks around the cylinder */
   def ringSize: Int = 1 << worldSize
 
@@ -27,6 +29,8 @@ class CylinderSize(val worldSize: Int) {
 
   /** The circumference of the cylinder.<br><br>This is NOT the number of blocks, for that see <code>totalSize</code>. */
   def circumference: Double = totalSize * CylinderSize.y60
+
+  implicit def impl: CylinderSize = this
 }
 
 object CylinderSize {

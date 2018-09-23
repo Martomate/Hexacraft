@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.coord.fp
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import org.joml.Vector3d
 
-class CylCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSize, fixZ: Boolean = true)
+class CylCoords(_x: Double, _y: Double, _z: Double, fixZ: Boolean = true)(implicit val cylSize: CylinderSize)
   extends AbstractCoords[CylCoords](_x, _y, if (fixZ) MathUtils.fitZ(_z, cylSize.circumference) else _z) {
 
   def toNormalCoords(ref: CylCoords): NormalCoords = {
@@ -15,11 +15,11 @@ class CylCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSize, f
     val scale = cylSize.radius // / math.sqrt(z * z + y * y)
     NormalCoords((this.x - ref.x) * mult, y * scale * mult - cylSize.radius, z * scale * mult)
   }
-  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60, cylSize, fixZ)
+  def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60, fixZ)
   def toBlockCoords: BlockCoords = toSkewCylCoords.toBlockCoords
 
-  def +(that: CylCoords) = CylCoords(x + that.x, y + that.y, z + that.z, cylSize)
-  def -(that: CylCoords) = CylCoords(x - that.x, y - that.y, z - that.z, cylSize)
+  def +(that: CylCoords) = CylCoords(x + that.x, y + that.y, z + that.z)
+  def -(that: CylCoords) = CylCoords(x - that.x, y - that.y, z - that.z)
 
   def distanceSq(c: CylCoords): Double = {
     val dx = x - c.x
@@ -32,6 +32,6 @@ class CylCoords(_x: Double, _y: Double, _z: Double, val cylSize: CylinderSize, f
 
 /** NormalCoords with z axis wrapped around a cylinder. The y axis is perpendicular to the x and z axes and also exponential */
 object CylCoords {
-  def apply(vec: Vector3d, cylSize: CylinderSize) = new CylCoords(vec.x, vec.y, vec.z, cylSize)
-  def apply(_x: Double, _y: Double, _z: Double, cylSize: CylinderSize) = new CylCoords(_x, _y, _z, cylSize)
+  def apply(vec: Vector3d)(implicit cylSize: CylinderSize) = new CylCoords(vec.x, vec.y, vec.z)
+  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize) = new CylCoords(_x, _y, _z)
 }

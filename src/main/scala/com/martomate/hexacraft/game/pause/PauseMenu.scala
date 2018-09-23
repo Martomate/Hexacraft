@@ -8,8 +8,8 @@ import com.martomate.hexacraft.scene.{GameWindowExtended, MenuScene}
 import org.lwjgl.glfw.GLFW
 
 class PauseMenu(scene: PausableScene)(implicit window: GameWindowExtended) extends MenuScene {
-  addComponent(new Button("Back to game", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
-  addComponent(new Button("Back to menu", LocationInfo16x9(0.4f, 0.25f, 0.2f, 0.1f))(quit()))
+  addComponent(Button("Back to game", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
+  addComponent(Button("Back to menu", LocationInfo16x9(0.4f, 0.25f, 0.2f, 0.1f))(quit()))
   hasDefaultBackground = false
 
   override def isOpaque: Boolean = false

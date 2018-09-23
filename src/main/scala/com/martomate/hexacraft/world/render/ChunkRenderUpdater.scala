@@ -12,8 +12,8 @@ object ChunkRenderUpdater {
   val ticksBetweenColumnLoading = 5
 }
 
-class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double, worldSize: CylinderSize) extends ChunkEventListener {
-  private val origin = new PosAndDir(worldSize)
+class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double)(implicit worldSize: CylinderSize) extends ChunkEventListener {
+  private val origin = new PosAndDir
 
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
 
@@ -48,7 +48,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
       k <- 0 to 1
     } yield (15 * i, 15 * j, 15 * k)
     val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords), coords.cylSize).toCylCoords
+      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25

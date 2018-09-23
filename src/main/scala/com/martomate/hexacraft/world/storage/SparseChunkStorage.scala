@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{Block, BlockAir, Blocks}
+import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
@@ -21,7 +21,7 @@ class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
     else removeBlock(coords)
   }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
-  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1, chunkCoords.cylSize), t._2))
+  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1)(chunkCoords.cylSize), t._2))
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
 
@@ -31,7 +31,7 @@ class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
 
     for (i <- blocks.indices) {
       if (blocks(i) != 0) {
-        setBlock(BlockRelChunk(i, chunkCoords.cylSize), new BlockState(Block.byId(blocks(i)), meta(i)))
+        setBlock(BlockRelChunk(i)(chunkCoords.cylSize), new BlockState(Block.byId(blocks(i)), meta(i)))
 //        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
       }
     }

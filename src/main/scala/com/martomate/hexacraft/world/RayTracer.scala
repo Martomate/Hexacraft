@@ -14,6 +14,8 @@ import scala.collection.immutable
 
 
 class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
+  import world.size.impl
+
   private val ray = new Vector3d()
   private var rayValid = false
 
@@ -69,7 +71,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   }
 
   private def coordsOfHitBlock(current: BlockRelWorld, offsets: (Int, Int, Int)) = {
-    BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3, world.size)
+    BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3)
   }
 
   private def oppositeSide(side: Int) = {
@@ -96,7 +98,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   }
 
   def fromBlockCoords(blockPos: BlockRelWorld, position: CylCoords, _result: Vector3d): Vector3d =
-    CoordUtils.fromBlockCoords(CylCoords(camera.view.position, world.size), BlockCoords(blockPos.x, blockPos.y, blockPos.z, world.size), position, _result)
+    CoordUtils.fromBlockCoords(CylCoords(camera.view.position), BlockCoords(blockPos.x, blockPos.y, blockPos.z), position, _result)
 
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
     case block if block.blockType != Blocks.Air =>

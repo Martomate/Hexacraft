@@ -17,7 +17,8 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
       val v = i * Math.PI / 3
       val x = Math.cos(v).toFloat
       val z = Math.sin(v).toFloat
-      new CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, null, false)
+      implicit val impl_cylSize: CylinderSize = null
+      new CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, false)
     }
   }
 }

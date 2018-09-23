@@ -15,6 +15,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
+  import world.size.impl
+
   private val blockShader = Shader.get("block").get
   private val blockSideShader = Shader.get("blockSide").get
   private val skyShader = Shader.get("sky").get
@@ -59,7 +61,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   world.addChunkAddedOrRemovedListener(this)
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance, world.size)
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)

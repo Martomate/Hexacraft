@@ -9,6 +9,8 @@ import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage, DenseChun
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerator {
+  import coords.cylSize.impl
+
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {
@@ -26,7 +28,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerat
         val noise = blockNoise(i, j, k)
         val yToGo = coords.Y * 16 + j - column.generatedHeightMap(i)(k)
         val limit = limitForBlockNoise(yToGo)
-        if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k, coords.cylSize), new BlockState(getBlockAtDepth(yToGo)))
+        if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
       }
     }
     val data = new ChunkData

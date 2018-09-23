@@ -8,6 +8,9 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld
 import org.scalatest.FunSuite
 
 abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => ChunkStorage) extends FunSuite {
+  protected val cylSize: CylinderSize = new CylinderSize(4)
+  import cylSize.impl
+
   test("No blocks") {
     val storage = makeStorage(null)
     assertResult(0)(storage.numBlocks)
@@ -23,7 +26,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   test("Many blocks") {
     val storage = makeStorage(null)
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
-      storage.setBlock(BlockRelChunk(i, j, k, cylSize), new BlockState(Blocks.Dirt))
+      storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
 
     assertResult(16*16*16)(storage.numBlocks)
   }
@@ -100,7 +103,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
         case _ => 0
       })
     ))
-    val storage = makeStorage(ChunkRelWorld(0, cylSize))
+    val storage = makeStorage(ChunkRelWorld(0))
     storage.fromNBT(tag)
     assertResult(2)(storage.numBlocks)
     assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
@@ -114,7 +117,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
         case _ => 0
       })
     ))
-    val storage = makeStorage(ChunkRelWorld(0, cylSize))
+    val storage = makeStorage(ChunkRelWorld(0))
     storage.fromNBT(tag)
     assertResult(2)(storage.numBlocks)
     assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
@@ -128,7 +131,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
         case _ => 0
       })
     ))
-    val storage = makeStorage(ChunkRelWorld(0, cylSize))
+    val storage = makeStorage(ChunkRelWorld(0))
     storage.fromNBT(tag)
     assertResult(0)(storage.numBlocks)
     assertResult(Blocks.Air)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
@@ -154,16 +157,15 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
     assertResult(6)(metadataArray(coords359.getBlockRelChunk.value))
     assertResult(2)(metadataArray(coords350.getBlockRelChunk.value))
   }
-
-  protected def cylSize: CylinderSize = new CylinderSize(4)
+  
   protected def coords350: BlockRelWorld = coordsAt(3, 5, 0)
   protected def coords351: BlockRelWorld = coordsAt(3, 5, 1)
   protected def coords359: BlockRelWorld = coordsAt(3, 5, 9)
-  protected def coordsAt(x: Int, y: Int, z: Int): BlockRelWorld = BlockRelWorld(x, y, z, cylSize)
-  protected def cc0: ChunkRelWorld = ChunkRelWorld(0, cylSize)
+  protected def coordsAt(x: Int, y: Int, z: Int): BlockRelWorld = BlockRelWorld(x, y, z)
+  protected def cc0: ChunkRelWorld = ChunkRelWorld(0)
 
   protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
-    val storage = makeStorage(ChunkRelWorld(0, cylSize))
+    val storage = makeStorage(ChunkRelWorld(0))
     fillStorage_Dirt359_Stone350(storage)
     storage
   }

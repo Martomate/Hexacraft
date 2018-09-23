@@ -9,7 +9,7 @@ import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.player.Player
 import org.joml.{Vector3d, Vector3f}
 
-class Camera(val proj: CameraProjection, val worldSize: CylinderSize) {
+class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
   val view = new CameraView
   def position: Vector3d = view.position
   def rotation: Vector3f = view.rotation
@@ -80,6 +80,6 @@ class Camera(val proj: CameraProjection, val worldSize: CylinderSize) {
     val x = ((position.x - camX) / mult + camX) / 0.75
     val z = position.z / CylinderSize.y60 - x / 2
 
-    CoordUtils.toBlockCoords(BlockCoords(x, y, z, worldSize))
+    CoordUtils.toBlockCoords(BlockCoords(x, y, z))
   }
 }

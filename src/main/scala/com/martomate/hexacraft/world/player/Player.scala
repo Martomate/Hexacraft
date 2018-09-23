@@ -8,6 +8,8 @@ import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.Vector3d
 
 class Player(val world: IWorld) {
+  import world.size.impl
+
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
   val velocity = new Vector3d
   val position = new Vector3d
@@ -22,7 +24,7 @@ class Player(val world: IWorld) {
   {
     val startX = (math.random * 100 - 50).toInt
     val startZ = (math.random * 100 - 50).toInt
-    val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ, world.size).toCylCoords
+    val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ).toCylCoords
     position.set(startCoords.x, startCoords.y - bounds.bottom + 2, startCoords.z)
   }
   

@@ -12,6 +12,8 @@ import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import scala.collection.mutable.ArrayBuffer
 
 class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider) extends ChunkColumn {
+  import coords.cylSize.impl
+
   private val chunks = scala.collection.mutable.Map.empty[Int, IChunk]
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -76,10 +78,10 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
         var ch: Option[IChunk] = None
         do {
           y -= 1
-          ch = getChunk(ChunkRelColumn(y >> 4, coords.cylSize))
+          ch = getChunk(ChunkRelColumn(y >> 4))
           ch match {
             case Some(chunk) =>
-              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Blocks.Air)
+              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air)
                 ch = None
               else
                 y -= 1
@@ -105,7 +107,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
       for (z <- 0 until 16) {
         val height = heightMap(x, z)
         (yy + 15 to yy by -1).filter(_ > height).find(y =>
-          chunk.getBlock(BlockRelChunk(x, y, z, chunk.coords.cylSize)).blockType != Blocks.Air
+          chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Blocks.Air
         ).foreach(h => {
           _heightMap(x)(z) = h.toShort
         })

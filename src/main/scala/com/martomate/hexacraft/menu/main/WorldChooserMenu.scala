@@ -13,15 +13,19 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   private val scrollPane = new ScrollPane(window, LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
   getWorlds.zipWithIndex.map {
     case (f, i) =>
-      new Button(f.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f))({
+      Button(f.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
         window.scenes.popScenesUntil(MenuScene.isMainMenu)
         window.scenes.pushScene(new GameScene(f.saveFile, WorldSettings.none))
-      })
+      }
   }.foreach(b => scrollPane.addComponent(b))
   addComponent(scrollPane)
 
-  addComponent(new Button("Back to menu", LocationInfo16x9(0.3f, 0.1f, 0.19f, 0.1f))({ window.scenes.popScene() }))
-  addComponent(new Button("New world", LocationInfo16x9(0.51f, 0.1f, 0.19f, 0.1f))({ window.scenes.pushScene(new NewWorldMenu) }))
+  addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.1f, 0.19f, 0.1f)) {
+    window.scenes.popScene()
+  })
+  addComponent(Button("New world", LocationInfo16x9(0.51f, 0.1f, 0.19f, 0.1f)) {
+    window.scenes.pushScene(new NewWorldMenu)
+  })
 
   private def getWorlds: Seq[WorldInfo] = {
     val baseFolder = new File(window.saveFolder, "saves")
