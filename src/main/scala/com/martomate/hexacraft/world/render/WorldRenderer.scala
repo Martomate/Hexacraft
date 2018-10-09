@@ -19,6 +19,8 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   private val blockShader = Shader.get("block").get
   private val blockSideShader = Shader.get("blockSide").get
+  private val entityShader = Shader.get("entity").get
+  private val entitySideShader = Shader.get("entitySide").get
   private val skyShader = Shader.get("sky").get
   private val selectedBlockShader = Shader.get("selectedBlock").get
   private val blockTexture = TextureArray.getTextureArray("blocks")
@@ -71,6 +73,9 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     skyShader.enable()
     skyRenderer.render()
 
+    for (r <- chunkRenderers.values)
+      r.updateEntityRenderers()
+
     for (job <- renderingJobs) {
       job.setup()
 
@@ -89,6 +94,15 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     registerRenderingJob(RenderingJob(_.renderBlockSide(side), () => {
       blockTexture.bind()
       val sh = if (side < 2) blockShader else blockSideShader
+      sh.enable()
+      sh.setUniform1i("side", side)
+    }))
+  }
+
+  for (side <- 0 until 8) {
+    registerRenderingJob(RenderingJob(_.renderEntitySide(side), () => {
+      blockTexture.bind()
+      val sh = if (side < 2) entityShader else entitySideShader
       sh.enable()
       sh.setUniform1i("side", side)
     }))

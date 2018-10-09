@@ -1,17 +1,20 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.world.block.BlockAir
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
 import com.martomate.hexacraft.world.worldlike.IWorld
+import org.joml.{Matrix4f, Vector4f}
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
+  import chunk.coords.cylSize.impl
+
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None
+  private var entityRenderers: Option[BlockRendererCollection[EntityPartRenderer]] =
+    Some(new BlockRendererCollection(s => new EntityPartRenderer(s, 0)))
 
   def updateContent(): Unit = {
     onlyKeepBlockRenderersIfChunkNotEmpty()
-
     if (!chunk.isEmpty) {
       val blocks = chunk.blocks.allBlocks
 
@@ -59,6 +62,30 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
     }
   }
 
+  def updateEntityRenderers(): Unit = {
+    val entities = chunk.entities
+
+    for (side <- 0 until 8) {
+      entityRenderers.get.updateContent(side, entities.count) {buf =>
+        for (ent <- entities.allEntities) {
+          val baseT = ent.transform
+          val model = ent.model
+          val tr = new Matrix4f
+          for (part <- model.parts) {
+            baseT.mul(part.transform, tr)
+            val box = part.box
+            val coords = tr.transform(new Vector4f)
+            tr.get(buf)
+            buf.position(buf.position() + 16 * 4)
+            buf.putInt(1)
+            buf.putFloat((box.top - box.bottom) * 2)
+            buf.putFloat(chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt)))
+          }
+        }
+      }
+    }
+  }
+
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {
     if (chunk.isEmpty) {
       blockRenderers.foreach(_.unload())
@@ -75,7 +102,10 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
 
   def renderBlockSide(side: Int): Unit = blockRenderers.foreach(_.renderBlockSide(side))
 
+  def renderEntitySide(side: Int): Unit = entityRenderers.foreach(_.renderBlockSide(side))
+
   def unload(): Unit = {
     blockRenderers.foreach(_.unload())
+    entityRenderers.foreach(_.unload())
   }
 }

@@ -3,10 +3,31 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
 import org.lwjgl.opengl.{GL11, GL15}
 
+class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
+  override val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+    .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
+      .floats(0, 3)
+      .floats(1, 2)
+      .floats(2, 3)
+      .create().fillFloats(0, setupBlockVBO(side)))
+    .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+      .floats(3, 4)
+      .floats(4, 4)
+      .floats(5, 4)
+      .floats(6, 4)
+      .ints(7, 1)
+      .floats(8, 1)
+      .floats(9, 1)
+      .create())
+    .create()
+
+  override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+}
+
 class BlockRenderer(val side: Int, init_maxInstances: Int) {
   private var _maxInstances = init_maxInstances
   def maxInstances: Int = _maxInstances
-  private def verticesPerInstance = if (side < 2) 6 else 4
+  protected def verticesPerInstance: Int = if (side < 2) 6 else 4
 
   val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)

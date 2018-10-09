@@ -103,7 +103,7 @@ class ShaderBuilder(name: String) {
   }
 
   def bindAttribs(attribs: String*): ShaderBuilder = {
-    for (i <- attribs.indices) GL20.glBindAttribLocation(programID, i, attribs(i))
+    for (i <- attribs.indices) if (attribs(i) != "") GL20.glBindAttribLocation(programID, i, attribs(i))
     this
   }
 

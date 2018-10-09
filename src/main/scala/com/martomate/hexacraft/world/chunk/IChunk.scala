@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 import com.martomate.hexacraft.world.storage.ChunkStorage
 
 trait IChunk {
-  def coords: ChunkRelWorld
+  val coords: ChunkRelWorld
   def lighting: IChunkLighting
 
   def init(): Unit
@@ -13,6 +13,7 @@ trait IChunk {
 
   def isEmpty: Boolean
   def blocks: ChunkStorage
+  def entities: EntitiesInChunk
   def getBlock(coords: BlockRelChunk): BlockState
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean
   def removeBlock(coords: BlockRelChunk): Boolean

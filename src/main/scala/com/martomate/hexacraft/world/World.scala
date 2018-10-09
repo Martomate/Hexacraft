@@ -15,6 +15,7 @@ import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.worldlike.IWorld
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
+import com.martomate.hexacraft.world.entity.Entity
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -77,7 +78,38 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   def removeBlock(coords: BlockRelWorld): Boolean =
     getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
-//  def requestBlockUpdate(coords: BlockRelWorld): Unit = getChunk(coords.getChunkRelWorld).foreach(_.requestBlockUpdate(coords.getBlockRelChunk))
+
+  def addEntity(entity: Entity): Unit = {
+    val X = (entity.position.x / 16).toInt
+    val Y = (entity.position.y / 16).toInt
+    val Z = (entity.position.z / 16).toInt
+
+    getChunk(ChunkRelWorld(X, Y, Z)).foreach(_.entities += entity)
+  }
+
+  def removeEntity(entity: Entity): Unit = {
+    val X = (entity.position.x / 16).toInt
+    val Y = (entity.position.y / 16).toInt
+    val Z = (entity.position.z / 16).toInt
+
+    getChunk(ChunkRelWorld(X, Y, Z)).foreach(_.entities -= entity)
+  }
+
+  def relocateEntity(chunk: IChunk, entity: Entity): Unit = {
+    val X = (entity.position.x / 16).toInt
+    val Y = (entity.position.y / 16).toInt
+    val Z = (entity.position.z / 16).toInt
+
+    getChunk(ChunkRelWorld(X, Y, Z)) match {
+      case Some(newChunk) =>
+        if (newChunk != chunk) {
+          chunk.entities -= entity
+          newChunk.entities += entity
+        }
+      case None =>
+        chunk.entities -= entity
+    }
+  }
 
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4)

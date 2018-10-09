@@ -32,6 +32,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   private val blockShader: Shader = Shader.get("block").get
   private val blockSideShader: Shader = Shader.get("blockSide").get
+  private val entityShader: Shader = Shader.get("entity").get
+  private val entitySideShader: Shader = Shader.get("entitySide").get
   private val guiBlockShader: Shader = Shader.get("gui_block").get
   private val guiBlockSideShader: Shader = Shader.get("gui_blockSide").get
   private val selectedBlockShader: Shader = Shader.get("selectedBlock").get
@@ -76,6 +78,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
     blockShader.setUniform1f("totalSize", world.size.totalSize)
     blockSideShader.setUniform1f("totalSize", world.size.totalSize)
+    entityShader.setUniform1f("totalSize", world.size.totalSize)
+    entitySideShader.setUniform1f("totalSize", world.size.totalSize)
     selectedBlockShader.setUniform1f("totalSize", world.size.totalSize)
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
@@ -86,6 +90,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private def setProjMatrixForAll(): Unit = {
     camera.setProjMatrix(blockShader)
     camera.setProjMatrix(blockSideShader)
+    camera.setProjMatrix(entityShader)
+    camera.setProjMatrix(entitySideShader)
     camera.setProjMatrix(guiBlockShader)
     camera.setProjMatrix(guiBlockSideShader)
     camera.setProjMatrix(selectedBlockShader)
@@ -200,11 +206,15 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     camera.updateViewMatrix()
     camera.updateUniforms(blockShader)
     camera.updateUniforms(blockSideShader)
+    camera.updateUniforms(entityShader)
+    camera.updateUniforms(entitySideShader)
     camera.updateUniforms(selectedBlockShader)
     skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
     skyShader.setUniform3f("sun", 0, 1, -1)
     blockShader.setUniform3f("sun", 0, 1, -1)
     blockSideShader.setUniform3f("sun", 0, 1, -1)
+    entityShader.setUniform3f("sun", 0, 1, -1)
+    entitySideShader.setUniform3f("sun", 0, 1, -1)
 
     blockInHandRenderer.updateContent()
 
@@ -215,7 +225,6 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
     world.tick(camera)
     worldRenderer.tick(camera)
-
     if (debugScene != null) debugScene.tick()
   }
 
