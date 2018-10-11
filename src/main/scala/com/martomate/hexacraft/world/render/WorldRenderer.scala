@@ -62,6 +62,8 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   world.addChunkAddedOrRemovedListener(this)
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
+  private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
+    new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance)
 
@@ -73,8 +75,13 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     skyShader.enable()
     skyRenderer.render()
 
-    for (r <- chunkRenderers.values)
-      r.updateEntityRenderers()
+    for (side <- 0 until 8) {
+      val data = chunkRenderers.values.flatMap(_.entityRenderData(side))
+
+      entityRenderers.updateContent(side, data.size) { buf =>
+        data.foreach(_.fill(buf))
+      }
+    }
 
     for (job <- renderingJobs) {
       job.setup()
@@ -82,6 +89,14 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
       for (r <- chunkRenderers.values) {
         job(r)
       }
+    }
+
+    for (side <- 0 until 8) {
+      blockTexture.bind()
+      val sh = if (side < 2) entityShader else entitySideShader
+      sh.enable()
+      sh.setUniform1i("side", side)
+      entityRenderers.renderBlockSide(side)
     }
 
     if (getSelectedSide.isDefined) {
@@ -94,15 +109,6 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     registerRenderingJob(RenderingJob(_.renderBlockSide(side), () => {
       blockTexture.bind()
       val sh = if (side < 2) blockShader else blockSideShader
-      sh.enable()
-      sh.setUniform1i("side", side)
-    }))
-  }
-
-  for (side <- 0 until 8) {
-    registerRenderingJob(RenderingJob(_.renderEntitySide(side), () => {
-      blockTexture.bind()
-      val sh = if (side < 2) entityShader else entitySideShader
       sh.enable()
       sh.setUniform1i("side", side)
     }))

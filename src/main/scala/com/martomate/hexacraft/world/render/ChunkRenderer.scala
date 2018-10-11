@@ -10,8 +10,6 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
   import chunk.coords.cylSize.impl
 
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None
-  private var entityRenderers: Option[BlockRendererCollection[EntityPartRenderer]] =
-    Some(new BlockRendererCollection(s => new EntityPartRenderer(s, 0)))
 
   def updateContent(): Unit = {
     onlyKeepBlockRenderersIfChunkNotEmpty()
@@ -62,29 +60,24 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
     }
   }
 
-  def updateEntityRenderers(): Unit = {
+  def entityRenderData(side: Int): Seq[EntityDataForShader] = {
     val entities = chunk.entities
+    val tr = new Matrix4f
 
-    for (side <- 0 until 8) {
-      entityRenderers.get.updateContent(side, entities.count) {buf =>
-        for (ent <- entities.allEntities) {
-          val baseT = ent.transform
-          val model = ent.model
-          val tr = new Matrix4f
-          for (part <- model.parts) {
-            baseT.mul(part.transform, tr)
-            val box = part.box
-            val coords = tr.transform(new Vector4f)
-            tr.get(buf)
-            buf.position(buf.position() + 16 * 4)
-            buf.putInt(1)
-            buf.putFloat((box.top - box.bottom) * 2)
-            buf.putFloat(chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt)))
-          }
-        }
+    entities.allEntities.flatMap { ent =>
+      val baseT = ent.transform
+      val model = ent.model
+      for (part <- model.parts) yield {
+        baseT.mul(part.transform, tr)
+        val coords = tr.transform(new Vector4f)
+        EntityDataForShader(
+          new Matrix4f(tr),
+          1,
+          chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt))
+        )
       }
     }
-  }
+  }.toSeq
 
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {
     if (chunk.isEmpty) {
@@ -102,10 +95,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
 
   def renderBlockSide(side: Int): Unit = blockRenderers.foreach(_.renderBlockSide(side))
 
-  def renderEntitySide(side: Int): Unit = entityRenderers.foreach(_.renderBlockSide(side))
-
   def unload(): Unit = {
     blockRenderers.foreach(_.unload())
-    entityRenderers.foreach(_.unload())
   }
 }

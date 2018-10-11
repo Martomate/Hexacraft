@@ -17,7 +17,6 @@ class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRende
       .floats(6, 4)
       .ints(7, 1)
       .floats(8, 1)
-      .floats(9, 1)
       .create())
     .create()
 

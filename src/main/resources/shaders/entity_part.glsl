@@ -10,7 +10,6 @@ in vec3 normal;
 // Per instance
 in mat4 modelMatrix;
 in int blockTex;
-in float blockHeight;
 in float brightness;
 
 out FragIn {
@@ -31,7 +30,7 @@ void main() {
 
 	mat4 matrix = projMatrix * viewMatrix;
 
-    vec4 trPos = modelMatrix * vec4(position.x, position.y * blockHeight, position.z, 2) / 2;
+    vec4 trPos = modelMatrix * vec4(position.x, position.y, position.z, 1);
     trPos.z /= y60;
 	vec3 pos = trPos.xyz;//vec3(blockPos.x * 1.5 + position.x, blockPos.y + position.y * blockHeight, (blockPos.x + 2 * blockPos.z) + position.z / y60) / 2;
 	pos.z -= cam.z / y60;
