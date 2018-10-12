@@ -7,5 +7,11 @@ class TempEntity(initPos: CylCoords, override val model: EntityModel) extends En
 //    rotation.y += math.random.toFloat * 0.01f
 //    rotation.z += 0.003f * math.Pi.toFloat
 //    rotation.x += math.random.toFloat * 0.01f
+
+    model match {
+      case compl: PlayerEntityModel =>
+        compl.tempTick()
+      case _ =>
+    }
   }
 }

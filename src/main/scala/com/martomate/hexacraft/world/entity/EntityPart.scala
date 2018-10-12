@@ -11,13 +11,13 @@ trait EntityPart {
   def textureSize(side: Int): (Int, Int)
 }
 
-class TempEntityPart(override val box: HexBox, pos: CylCoords, rotation: Vector3f) extends EntityPart {
-  override val transform: Matrix4f = new Matrix4f()
+class TempEntityPart(override val box: HexBox, pos: CylCoords, val rotation: Vector3f) extends EntityPart {
+  override def transform: Matrix4f = new Matrix4f()
     .translate(pos.toVector3f)
-    .translate(0, box.bottom / 2, 0)
     .rotateZ(rotation.z)
     .rotateX(rotation.x)
     .rotateY(rotation.y)
+    .translate(0, box.bottom, 0)
     .scale(new Vector3f(box.radius, box.top - box.bottom, box.radius))
 
   override def texture(side: Int): Int = 1

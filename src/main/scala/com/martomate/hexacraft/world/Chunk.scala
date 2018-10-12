@@ -31,7 +31,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   val lighting: IChunkLighting = new ChunkLighting(this, lightPropagator)
   override val entities: EntitiesInChunk = new EntitiesInChunkImpl
   // TODO: temporary
-  entities += new TempEntity(BlockCoords(BlockRelWorld(0, 0, 0, coords)).toCylCoords, new TempComplexEntityModel(BlockCoords(BlockRelWorld(0, 0, 0)).toCylCoords, new HexBox(0.5f, 0, 0.125f)))
+  entities += new TempEntity(BlockCoords(BlockRelWorld(0, 0, 0, coords)).toCylCoords, new PlayerEntityModel(BlockCoords(BlockRelWorld(0, 0, 0)).toCylCoords, new HexBox(0.5f, 0, 0.125f)))
 
   def init(): Unit = {
     requestRenderUpdate()
