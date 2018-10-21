@@ -75,14 +75,6 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     skyShader.enable()
     skyRenderer.render()
 
-    for (side <- 0 until 8) {
-      val data = chunkRenderers.values.flatMap(_.entityRenderData(side))
-
-      entityRenderers.updateContent(side, data.size) { buf =>
-        data.foreach(_.fill(buf))
-      }
-    }
-
     for (job <- renderingJobs) {
       job.setup()
 
@@ -92,11 +84,18 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     }
 
     for (side <- 0 until 8) {
-      blockTexture.bind()
       val sh = if (side < 2) entityShader else entitySideShader
       sh.enable()
       sh.setUniform1i("side", side)
-      entityRenderers.renderBlockSide(side)
+
+      val entityDataList: Iterable[EntityDataForShader] = chunkRenderers.values.flatMap(_.entityRenderData(side))
+      for ((model, data) <- entityDataList.groupBy(_.model).map(a => (a._1, a._2.flatMap(_.parts)))) {
+        entityRenderers.updateContent(side, data.size) { buf =>
+          data.foreach(_.fill(buf))
+        }
+        blockTexture.bind()
+        entityRenderers.renderBlockSide(side)
+      }
     }
 
     if (getSelectedSide.isDefined) {

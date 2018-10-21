@@ -5,9 +5,11 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3f}
 
 trait EntityPart {
+
   def transform: Matrix4f
   def box: HexBox
   def texture(side: Int): Int
+  def textureOffset(side: Int): (Int, Int) = (0, 0)
   def textureSize(side: Int): (Int, Int)
 }
 
@@ -22,5 +24,12 @@ class TempEntityPart(override val box: HexBox, pos: CylCoords, val rotation: Vec
 
   override def texture(side: Int): Int = 1
 
-  override def textureSize(side: Int): (Int, Int) = (32, 32)
+  override def textureOffset(side: Int): (Int, Int) = {
+    val texSize = textureSize(side)
+    (32 - texSize._1, 32 - texSize._2)
+  }
+
+  override def textureSize(side: Int): (Int, Int) =
+    if (side < 2) ((box.radius * 32 / 0.5f).round, (box.radius * 32 / 0.5f).round)
+    else ((box.radius * 32 / 0.5f).round, ((box.top - box.bottom) * 32 / 0.5f).round)
 }

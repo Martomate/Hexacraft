@@ -2,6 +2,7 @@ package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
@@ -15,7 +16,8 @@ import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.worldlike.IWorld
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
-import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.entity.{Entity, PlayerEntityModel, TempEntity}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -125,6 +127,9 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
       chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
       ch.init()
+
+      //TODO: temporary
+      if (ch.coords == ChunkRelWorld(0, 0, 0)) ch.entities += new TempEntity(BlockCoords(BlockRelWorld(0, 0, 0, ch.coords)).toCylCoords, new PlayerEntityModel(BlockCoords(BlockRelWorld(0, 0, 0)).toCylCoords, new HexBox(0.5f, 0, 0.125f)), this)
     }
 
     for (ch <- chunkLoader.chunksToRemove()) {

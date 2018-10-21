@@ -9,11 +9,15 @@ in vec3 normal;
 
 // Per instance
 in mat4 modelMatrix;
+in ivec2 texOffset;
+in ivec2 texDim;
 in int blockTex;
 in float brightness;
 
 out FragIn {
 	vec2 texCoords;
+	flat ivec2 texOffset;
+    flat ivec2 texDim;
 	flat int blockTex;
 	flat float brightness;
 	vec3 normal;
@@ -22,6 +26,7 @@ out FragIn {
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
 uniform float totalSize;
+uniform int texSize = 32;
 uniform vec3 cam;
 
 void main() {
@@ -47,7 +52,10 @@ void main() {
 	pos = vec3(pos.x - cam.x, y, z) * mult;
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);
-	fragIn.texCoords = vec2(texCoords.x, texCoords.y);
+	fragIn.texCoords = texCoords;
+//	fragIn.texCoords = (vec2(texCoords.x, texCoords.y) + texOffset / texSize) * texDim / texSize;
+	fragIn.texOffset = texOffset;
+	fragIn.texDim = texDim;
 	fragIn.blockTex = blockTex;
 	fragIn.brightness = brightness;
 }
@@ -57,6 +65,8 @@ void main() {
 
 in FragIn {
 	vec2 texCoords;
+	flat ivec2 texOffset;
+    flat ivec2 texDim;
 	flat int blockTex;
 	flat float brightness;
 	vec3 normal;
@@ -73,7 +83,7 @@ void main() {
 	int texDepth = fragIn.blockTex & 0xfff;
 
 #if isSide
-	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
+	color = texture(texSampler, vec3((fragIn.texCoords * fragIn.texDim + fragIn.texOffset) / texSize, texDepth));
 #else
 	float yy = (fragIn.texCoords.y * 2 - 1) / y60;
 	float xx = fragIn.texCoords.x + yy * 0.25;
@@ -113,11 +123,12 @@ void main() {
 			break;
 	}
 
+    int texDim = fragIn.texDim.x;
 	float factor = cc.y;
-	int xInt = int(cc.x*texSize);
-	int zInt = int(cc.z*texSize);
-	float px = (xInt-zInt) / factor / texSize;
-	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor;
+	int xInt = int(cc.x * texDim);
+	int zInt = int(cc.z * texDim);
+	float px = (xInt-zInt) / factor / texDim;
+	vec2 tex = (vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texDim + fragIn.texOffset) / texSize;
 	int texOffset = (fragIn.blockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 	color = texture(texSampler, vec3(tex, texDepth + texOffset));
 #endif

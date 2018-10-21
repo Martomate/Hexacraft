@@ -9,6 +9,8 @@ class TempEntityModel(pos: CylCoords, box: HexBox) extends EntityModel {
   private val theBox = new TempEntityPart(box, pos, new Vector3f)
 
   override val parts: Seq[EntityPart] = Seq(theBox)
+
+  override def tick(): Unit = ()
 }
 
 class PlayerEntityModel(pos: CylCoords, box: HexBox) extends EntityModel {
@@ -17,52 +19,62 @@ class PlayerEntityModel(pos: CylCoords, box: HexBox) extends EntityModel {
   def makeHexBox(r: Int, b: Float, h: Int): HexBox =
     new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
+  private val legLength = 48
+  private val legRadius = 8
+  private val bodyLength = 40
+  private val bodyRadius = 8
+  private val armLength = 40
+  private val armRadius = 6
+  private val headRadius = 16
+  private val headDepth = 24
+
   private val head = new TempEntityPart(
-    makeHexBox(8, -5, 10),
-    BlockCoords(0, 40f / 32 + 8f / 32 * CylinderSize.y60, 0).toCylCoords,
+    makeHexBox(headRadius, -headDepth / 2f, headDepth),
+//    BlockCoords(0, (bodyLength + legLength) / 32f + headDepth / 2 / 32f, 0).toCylCoords,
+    BlockCoords(0, (bodyLength + legLength) / 32f + headRadius / 32f * CylinderSize.y60, 0).toCylCoords,
     new Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2)
   )
   private val leftBodyhalf = new TempEntityPart(
-    makeHexBox(4, 0, 20),
-    BlockCoords(0, 20f / 32, -0.5f / 8).toCylCoords,
+    makeHexBox(bodyRadius, 0, bodyLength),
+    BlockCoords(0, legLength / 32f, -0.5f * bodyRadius / 32).toCylCoords,
     new Vector3f(0, 0, 0)
   )
   private val rightBodyhalf = new TempEntityPart(
-    makeHexBox(4, 0, 20),
-    BlockCoords(0, 20f / 32, 0.5f / 8).toCylCoords,
+    makeHexBox(bodyRadius, 0, bodyLength),
+    BlockCoords(0, legLength / 32f, 0.5f * bodyRadius / 32).toCylCoords,
     new Vector3f(0, 0, 0)
   )
   private val rightArm = new TempEntityPart(
-    makeHexBox(4, -4 * CylinderSize.y60.toFloat, 20),
-    BlockCoords(0, (40f - 4 * CylinderSize.y60.toFloat) / 32, 0.5f / 4 + 0.5f / 8).toCylCoords,
+    makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
+    BlockCoords(0, (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f, 0.5f * 2 * bodyRadius / 32 + 0.5f * armRadius / 32).toCylCoords,
     new Vector3f(math.Pi.toFloat * -6 / 6, 0, 0)
   )
   private val leftArm = new TempEntityPart(
-    makeHexBox(4, -4 * CylinderSize.y60.toFloat, 20),
-    BlockCoords(0, (40f - 4 * CylinderSize.y60.toFloat) / 32, -0.5f / 4 - 0.5f / 8).toCylCoords,
+    makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
+    BlockCoords(0, (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f, -0.5f * 2 * bodyRadius / 32 - 0.5f * armRadius / 32).toCylCoords,
     new Vector3f(math.Pi.toFloat * 6 / 6, 0, 0)
   )
   private val rightLeg = new TempEntityPart(
-    makeHexBox(4, 0, 20),
-    BlockCoords(0, 20f / 32, 0.5f / 8).toCylCoords,
+    makeHexBox(legRadius, 0, legLength),
+    BlockCoords(0, legLength / 32f, 0.5f * legRadius / 32).toCylCoords,
     new Vector3f(math.Pi.toFloat, 0, 0)
   )
   private val leftLeg = new TempEntityPart(
-    makeHexBox(4, 0, 20),
-    BlockCoords(0, 20f / 32, -0.5f / 8).toCylCoords,
+    makeHexBox(legRadius, 0, legLength),
+    BlockCoords(0, legLength / 32f, -0.5f * legRadius / 32).toCylCoords,
     new Vector3f(math.Pi.toFloat, 0, 0)
   )
 
   override val parts: Seq[EntityPart] = Seq(head, leftBodyhalf, rightBodyhalf, rightArm, leftArm, rightLeg, leftLeg)
 var time = 0f
-  def tempTick(): Unit = {
+  override def tick(): Unit = {
     time += 0.03f
 
     rightArm.rotation.z = -0.5f * math.sin(time).toFloat
     leftArm.rotation.z =  0.5f * math.sin(time).toFloat
 
-    rightArm.rotation.x += -0.05f * math.sin(time).toFloat
-    leftArm.rotation.x +=  0.05f * math.sin(time).toFloat
+    rightArm.rotation.x += -0.03f * math.sin(time).toFloat
+    leftArm.rotation.x +=  0.03f * math.sin(time).toFloat
 
     rightLeg.rotation.z =  0.5f * math.sin(time).toFloat
     leftLeg.rotation.z = -0.5f * math.sin(time).toFloat
@@ -96,7 +108,7 @@ class TempComplexEntityModel(pos: CylCoords, box: HexBox) extends EntityModel {
 
   override val parts: Seq[EntityPart] = Seq(box1, box2, box3, box4)
   var time = 0f
-  def tempTick(): Unit = {
+  override def tick(): Unit = {
     box2.rotation.y += 0.01f
     box3.rotation.z += 0.01f
     box1.rotation.y = time

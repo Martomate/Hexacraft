@@ -64,18 +64,22 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
     val entities = chunk.entities
     val tr = new Matrix4f
 
-    entities.allEntities.flatMap { ent =>
+    for (ent <- entities.allEntities) yield {
       val baseT = ent.transform
       val model = ent.model
-      for (part <- model.parts) yield {
+
+      val parts = for (part <- model.parts) yield {
         baseT.mul(part.transform, tr)
         val coords = tr.transform(new Vector4f)
-        EntityDataForShader(
+        EntityPartDataForShader(
           new Matrix4f(tr),
+          part.textureOffset(side),
+          part.textureSize(side),
           1,
           chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt))
         )
       }
+      EntityDataForShader(model, parts)
     }
   }.toSeq
 
