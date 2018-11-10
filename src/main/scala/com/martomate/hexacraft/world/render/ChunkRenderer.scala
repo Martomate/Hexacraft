@@ -75,7 +75,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
           new Matrix4f(tr),
           part.textureOffset(side),
           part.textureSize(side),
-          1,
+          part.texture(side),
           chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt))
         )
       }

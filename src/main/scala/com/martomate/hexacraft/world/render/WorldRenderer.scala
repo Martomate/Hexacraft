@@ -93,7 +93,8 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
         entityRenderers.updateContent(side, data.size) { buf =>
           data.foreach(_.fill(buf))
         }
-        blockTexture.bind()
+        model.texture.bind()
+        sh.setUniform1i("texSize", model.texSize)
         entityRenderers.renderBlockSide(side)
       }
     }

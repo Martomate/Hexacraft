@@ -37,7 +37,10 @@ class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWr
       for (j <- 0 until texSize) {
         for (i <- 0 until texSize) {
           val idx = i + j * texSize
-          buf.put((pix(idx) >> 16).toByte).put((pix(idx) >> 8).toByte).put((pix(idx) >> 0).toByte).put((pix(idx) >> 24).toByte)
+          buf.put((pix(idx) >> 16).toByte)
+          buf.put((pix(idx) >> 8).toByte)
+          buf.put((pix(idx) >> 0).toByte)
+          buf.put((pix(idx) >> 24).toByte)
         }
       }
     }

@@ -1,9 +1,12 @@
 package com.martomate.hexacraft.world.entity
 
+import com.martomate.hexacraft.resource.TextureSingle
+
 trait EntityModel {
   def parts: Seq[EntityPart]
 
-  def texSize: Int = 32
+  def texture: TextureSingle
+  def texSize: Int
 
   def tick(): Unit
 }

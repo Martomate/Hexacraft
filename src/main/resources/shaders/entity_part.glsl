@@ -74,16 +74,15 @@ in FragIn {
 
 out vec4 color;
 
-uniform sampler2DArray texSampler;
+uniform sampler2D texSampler;
 uniform int side;
 uniform int texSize = 32;
 uniform vec3 sun;
 
 void main() {
-	int texDepth = fragIn.blockTex & 0xfff;
-
 #if isSide
-	color = texture(texSampler, vec3((fragIn.texCoords * fragIn.texDim + fragIn.texOffset) / texSize, texDepth));
+    vec2 coords = fragIn.texCoords * fragIn.texDim;
+	color = texelFetch(texSampler, ivec2(int(coords.x), int(coords.y)) + fragIn.texOffset, 0);
 #else
 	float yy = (fragIn.texCoords.y * 2 - 1) / y60;
 	float xx = fragIn.texCoords.x + yy * 0.25;
@@ -128,9 +127,9 @@ void main() {
 	int xInt = int(cc.x * texDim);
 	int zInt = int(cc.z * texDim);
 	float px = (xInt-zInt) / factor / texDim;
-	vec2 tex = (vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texDim + fragIn.texOffset) / texSize;
 	int texOffset = (fragIn.blockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
-	color = texture(texSampler, vec3(tex, texDepth + texOffset));
+	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texDim + vec2(side * texDim, 0);
+	color = texelFetch(texSampler, ivec2(int(tex.x), int(tex.y)) + fragIn.texOffset, 0);
 #endif
 
 	vec3 sunDir = normalize(sun);
