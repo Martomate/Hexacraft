@@ -17,7 +17,8 @@ import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.worldlike.IWorld
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, PlayerEntityModel, TempEntity}
+import com.martomate.hexacraft.world.entity._
+import com.martomate.hexacraft.world.entity.player.PlayerEntity
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -129,7 +130,9 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       ch.init()
 
       //TODO: temporary
-      if (ch.coords == ChunkRelWorld(0, 0, 0)) ch.entities += new TempEntity(BlockCoords(BlockRelWorld(0, 0, 0, ch.coords)).toCylCoords, new EntityModelLoader().load("player"), this)
+      if (ch.coords == ChunkRelWorld(0, 0, 0))
+        for (_ <- 1 to 10)
+          ch.entities += new PlayerEntity(BlockCoords(BlockRelWorld(0, 0, 0, ch.coords)).toCylCoords, new EntityModelLoader().load("player"), this)
     }
 
     for (ch <- chunkLoader.chunksToRemove()) {

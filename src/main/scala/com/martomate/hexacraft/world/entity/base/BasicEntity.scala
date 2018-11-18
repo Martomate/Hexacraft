@@ -1,10 +1,11 @@
-package com.martomate.hexacraft.world.entity
+package com.martomate.hexacraft.world.entity.base
 
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.entity.{Entity, EntityModel}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
-class TempEntity(initPos: CylCoords, override val model: EntityModel, world: IWorld) extends Entity(initPos) {
+class BasicEntity(initPos: CylCoords, override val model: EntityModel, world: IWorld) extends Entity(initPos) {
   import initPos.cylSize.impl
 
   override def tick(): Unit = {

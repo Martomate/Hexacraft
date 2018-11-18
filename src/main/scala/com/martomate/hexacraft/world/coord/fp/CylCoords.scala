@@ -28,6 +28,20 @@ class CylCoords(_x: Double, _y: Double, _z: Double, fixZ: Boolean = true)(implic
     val dz = math.min(dz1, cylSize.circumference - dz1)
     dx * dx + dy * dy + dz * dz
   }
+
+  def distanceXZSq(c: CylCoords): Double = {
+    val dx = x - c.x
+    val dz1 = MathUtils.fitZ(z - c.z, cylSize.circumference)
+    val dz = math.min(dz1, cylSize.circumference - dz1)
+    dx * dx + dz * dz
+  }
+
+  def angleXZ(c: CylCoords): Double = {
+    val dx = c.x - x
+    // dz: -circ / 2 until circ / 2
+    val dz = MathUtils.fitZ(c.z - z + cylSize.circumference / 2, cylSize.circumference) - cylSize.circumference / 2
+    math.atan2(dz, dx)
+  }
 }
 
 /** NormalCoords with z axis wrapped around a cylinder. The y axis is perpendicular to the x and z axes and also exponential */
