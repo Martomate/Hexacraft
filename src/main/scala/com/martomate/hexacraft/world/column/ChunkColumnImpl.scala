@@ -62,6 +62,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     handleEventsOnChunkRemoval(oldChunkOpt)
     oldChunkOpt
   }
+  override def allChunks: Iterable[IChunk] = chunks.values
 
   private def handleEventsOnChunkRemoval(oldChunkOpt: Option[IChunk]): Unit = oldChunkOpt foreach { oldChunk =>
     oldChunk.removeEventListener(this)

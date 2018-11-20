@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.coord
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import org.joml.Vector3d
 
 object CoordUtils {
@@ -39,5 +40,17 @@ object CoordUtils {
   def fromBlockCoords(reference: CylCoords, blockPos: BlockCoords, position: CylCoords, _result: Vector3d): Vector3d = {
     val pos = if (_result != null) _result else new Vector3d()
     (blockPos.toCylCoords + position).toNormalCoords(reference) into pos
+  }
+
+  def approximateIntCoords(coords: BlockCoords)(implicit cylinderSize: CylinderSize): BlockRelWorld = {
+    val c = coords
+    val X = math.round(c.x).toInt
+    val Y = math.round(c.y).toInt
+    val Z = math.round(c.z).toInt
+    BlockRelWorld(X, Y, Z)
+  }
+
+  def approximateChunkCoords(coords: CylCoords)(implicit cylinderSize: CylinderSize): ChunkRelWorld = {
+    approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
   }
 }

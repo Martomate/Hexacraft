@@ -16,9 +16,12 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerat
   def loadData(): ChunkData = {
     val nbt = world.worldSettings.loadState(filePath)
 
+    val data = new ChunkData
     val storage: ChunkStorage = new DenseChunkStorage(coords)
+    data.storage = storage
+
     if (!nbt.getValue.isEmpty) {
-      storage.fromNBT(nbt)
+      data.fromNBT(nbt)
     } else {
       val column = world.getColumn(coords.getColumnRelWorld).get
 
@@ -31,8 +34,6 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerat
         if (noise > limit) storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
       }
     }
-    val data = new ChunkData
-    data.storage = storage
     data
   }
 

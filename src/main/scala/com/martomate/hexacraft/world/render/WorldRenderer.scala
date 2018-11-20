@@ -89,7 +89,9 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
       sh.setUniform1i("side", side)
 
       val entityDataList: Iterable[EntityDataForShader] = chunkRenderers.values.flatMap(_.entityRenderData(side))
-      for ((model, data) <- entityDataList.groupBy(_.model).map(a => (a._1, a._2.flatMap(_.parts)))) {
+      for ((model, partLists) <- entityDataList.groupBy(_.model)) {
+        val data = partLists.flatMap(_.parts)
+
         entityRenderers.updateContent(side, data.size) { buf =>
           data.foreach(_.fill(buf))
         }

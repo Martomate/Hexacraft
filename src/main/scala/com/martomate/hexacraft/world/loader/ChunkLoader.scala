@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.column.WorldListenerForTheLoader
 
 object ChunkLoader {
-  val chunksLoadedPerTick = 2
+  val chunksLoadedPerTick = 1
   val ticksBetweenColumnLoading = 5
 }
 

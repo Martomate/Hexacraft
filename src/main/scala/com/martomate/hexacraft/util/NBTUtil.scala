@@ -4,8 +4,10 @@ import java.io.{File, FileInputStream, FileOutputStream}
 
 import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
+import org.joml.Vector3d
 
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 
 object NBTUtil {
   def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
@@ -67,6 +69,16 @@ object NBTUtil {
       }
     }
   }
+
+  def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] = {
+    if (tag == null) None
+    else {
+      tag.getValue.get(key) match {
+        case t: ListTag[_] => Some(t.getValue.asScala)
+        case _ => None
+      }
+    }
+  }
   
   def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
     if (tag == null) None
@@ -96,11 +108,24 @@ object NBTUtil {
     NBTUtil.getTag(tag, name).map(_.asInstanceOf[ShortArrayTag].getValue)
   }
 
+  def setVector(tag: CompoundTag, vector: Vector3d): Vector3d = {
+    val x = NBTUtil.getDouble(tag, "x", vector.x)
+    val y = NBTUtil.getDouble(tag, "y", vector.y)
+    val z = NBTUtil.getDouble(tag, "z", vector.z)
+    vector.set(x, y, z)
+  }
+
   def makeCompoundTag(name: String, children: Seq[Tag[_]]): CompoundTag = {
     val map = new CompoundMap()
     for (tag <- children) map.put(tag)
     new CompoundTag(name, map)
   }
+
+  def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(name, Seq(
+    new DoubleTag("x", vector.x),
+    new DoubleTag("y", vector.y),
+    new DoubleTag("z", vector.z)
+  ))
   
   def saveTag(tag: Tag[_], nbtFile: File): Unit = {
     new Thread(() => {

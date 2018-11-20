@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.chunk.ChunkEventListener
 import com.martomate.hexacraft.world.loader.PosAndDir
 
 object ChunkRenderUpdater {
-  val chunkRenderUpdatesPerTick = 1
+  val chunkRenderUpdatesPerTick = 2
   val ticksBetweenColumnLoading = 5
 }
 
@@ -22,7 +22,8 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
 
     reprioritizeTimer.tick()
 
-    for (_ <- 1 to ChunkRenderUpdater.chunkRenderUpdatesPerTick) {
+    val numUpdatesToPerform = if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
+    for (_ <- 1 to numUpdatesToPerform) {
       if (!chunkRenderUpdateQueue.isEmpty) {
         var renderer: Option[ChunkRenderer] = None
         do {

@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import org.joml.Vector3d
 
 class CylCoords(_x: Double, _y: Double, _z: Double, fixZ: Boolean = true)(implicit val cylSize: CylinderSize)

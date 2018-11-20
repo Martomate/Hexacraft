@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.entity.player.ai
 
-import com.martomate.hexacraft.util.MathUtils
+import com.flowpowered.nbt._
+import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
@@ -16,7 +17,7 @@ class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
   private val reach: Double = 5
   private val speed = 0.2
 
-  def tick(): Unit = {
+  def tick(input: PlayerAIInput): Unit = {
     val distSq = player.position.distanceXZSq(target)
 
     movingForce.set(0)
@@ -31,7 +32,7 @@ class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
       timeout = timeLimit
     } else {
       // move towards goal
-      val blockInFront = player.blockInFront(player.boundingBox.radius + speed * 4)
+      val blockInFront = input.blockInFront(player.boundingBox.radius + speed * 4)
 
       if (blockInFront != Blocks.Air && player.velocity.y == 0) {
         movingForce.y = 5
@@ -40,7 +41,7 @@ class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
 
       movingForce.x = speed * math.cos(angle)
       movingForce.z = speed * math.sin(angle)
-      player.rotation.y = -angle.toFloat
+      player.rotation.y = -angle
     }
 
     timeout -= 1
@@ -54,4 +55,18 @@ class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
   }
 
   override def acceleration(): Vector3dc = movingForce
+
+  override def fromNBT(tag: CompoundTag): Unit = {
+    val targetX = NBTUtil.getDouble(tag, "targetX", 0)
+    val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
+    target = CylCoords(targetX, 0, targetZ)(player.position.cylSize)
+    timeout = NBTUtil.getShort(tag, "timeout", 0)
+  }
+
+  override def toNBT: Seq[Tag[_]] = Seq(
+    new StringTag("type", "simple"),
+    new DoubleTag("targetX", target.x),
+    new DoubleTag("targetZ", target.z),
+    new ShortTag("timeout", timeout.toShort)
+  )
 }

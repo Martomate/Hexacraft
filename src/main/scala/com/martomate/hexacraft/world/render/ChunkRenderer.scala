@@ -2,9 +2,13 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
+import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
+
+import scala.collection.mutable
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
   import chunk.coords.cylSize.impl
@@ -61,27 +65,34 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
   }
 
   def entityRenderData(side: Int): Seq[EntityDataForShader] = {
+    val result: mutable.Buffer[EntityDataForShader] = mutable.ArrayBuffer.empty
+
     val entities = chunk.entities
     val tr = new Matrix4f
 
-    for (ent <- entities.allEntities) yield {
+    for (ent <- entities.allEntities) {
       val baseT = ent.transform
       val model = ent.model
 
       val parts = for (part <- model.parts) yield {
         baseT.mul(part.transform, tr)
-        val coords = tr.transform(new Vector4f)
+        val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
+        val coords = CoordUtils.toBlockCoords(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
+        val cCoords = coords.getChunkRelWorld
+        val partChunk = if (cCoords == chunk.coords) Some(chunk) else world.getChunk(cCoords)
+        val brightness: Float = partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)
         EntityPartDataForShader(
           new Matrix4f(tr),
           part.textureOffset(side),
           part.textureSize(side),
           part.texture(side),
-          chunk.lighting.getBrightness(BlockRelChunk(coords.x.toInt, coords.y.toInt, coords.z.toInt))
+          brightness
         )
       }
-      EntityDataForShader(model, parts)
+      result += EntityDataForShader(model, parts)
     }
-  }.toSeq
+    result
+  }
 
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {
     if (chunk.isEmpty) {

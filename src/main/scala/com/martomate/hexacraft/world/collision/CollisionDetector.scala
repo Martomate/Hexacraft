@@ -1,14 +1,17 @@
 package com.martomate.hexacraft.world.collision
 
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
+import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.Vector3d
 
+import scala.collection.mutable
+
 object CollisionDetector {
-  private val reflectionDirs = IndexedSeq(
+  private val reflectionDirs = Array(
     ( 0, -1,  0),
     ( 0,  1,  0),
     (-1,  0,  0),
@@ -20,6 +23,17 @@ object CollisionDetector {
   )
   private val reflDirsCyl = reflectionDirs.map(d => new SkewCylCoords(d._1, d._2, d._3, false)(null).toCylCoords)
 
+  private val chunkCache: mutable.Map[ChunkRelWorld, IChunk] = mutable.HashMap.empty
+  private var worldForCaching: IWorld = _
+
+  def getChunk(coords: ChunkRelWorld): Option[IChunk] = {
+    chunkCache.get(coords) orElse {
+      val ch = worldForCaching.getChunk(coords)
+      if (ch.isDefined) chunkCache(coords) = ch.get
+      ch
+    }
+  }
+
   def collides(box1: HexBox, pos1: SkewCylCoords, box2: HexBox, pos2: CylCoords): Boolean = {
     import pos1.cylSize.impl
     val (bc, fc) = CoordUtils.toBlockCoords(pos2.toBlockCoords)
@@ -30,6 +44,9 @@ object CollisionDetector {
 
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
   def positionAndVelocityAfterCollision(box: HexBox, pos: Vector3d, velocity: Vector3d, world: IWorld): (Vector3d, Vector3d) = {
+    chunkCache.clear()
+    worldForCaching = world
+
     var result = (pos, velocity)
     val parts = (velocity.length * 10).toInt + 1
     velocity.div(parts)
@@ -53,7 +70,7 @@ object CollisionDetector {
           for (z <- -1 to 1) {
             if (x * z != 1) {// corners
             val coords = BlockRelWorld(bc.x + x, y, bc.z + z)
-              world.getChunk(coords.getChunkRelWorld) match {
+              getChunk(coords.getChunkRelWorld) match {
                 case Some(chunk) =>
                   val blockState = Some(chunk.getBlock(coords.getBlockRelChunk)).filter(_.blockType != Blocks.Air)
                   blockState.map(_.blockType).foreach(blockType => {
@@ -94,7 +111,7 @@ object CollisionDetector {
     val (x1, y1, z1, x2, y2, z2) = (pos.x + 0.5 * pos.z, pos.y, pos.z + 0.5 * pos.x, pos2.x + 0.5 * pos2.z, pos2.y, pos2.z + 0.5 * pos2.x)
     val (r1, r2, b1, b2, t1, t2) = (box1.smallRadius, box2.smallRadius, box1.bottom, box2.bottom, box1.top, box2.top)
     val (vx, vy, vz) = (velocity.x + 0.5 * velocity.z, velocity.y, velocity.z + 0.5 * velocity.x)
-    val distances = Vector(
+    val distances = Array(
       y2 - y1 + t2 - b1,// (  y2    + t2) - (  y1    + b1),
       y1 - y2 + t1 - b2,// (  y1    + t1) - (  y2    + b2),
       (     x2 + r2) - (     x1 - r1),
@@ -105,17 +122,19 @@ object CollisionDetector {
       (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
-    val velDists = CollisionDetector.reflectionDirs.map(t => t._1 * vx + t._2 * vy + t._3 * vz)
+    if (distances.forall(_ >= 0)) {
+      val velDists = CollisionDetector.reflectionDirs.map(t => t._1 * vx + t._2 * vy + t._3 * vz)
 
-    val distBefore = distances.indices.map(i => ((distances(i) - velDists(i)) * 1e9).toLong / 1e9)
-    if (distances.min >= 0) {
-
-      val zipped = distBefore.zip(velDists).map(t => if (t._2 <= 0 || t._1 > 0) 1 else -t._1 / t._2).zipWithIndex
-      val distBeforeMin = distBefore.zipWithIndex.minBy(_._1)
-      val minInZip = zipped.minBy(_._1)
-
-      if (distBeforeMin._1 <= 0) (math.min(minInZip._1, 1), minInZip._2)
-      else (0, -1)
+      if (distances.indices.exists(i => distances(i) <= velDists(i))) {
+        val zipped = for (i <- distances.indices) yield {
+          val distBefore = ((distances(i) - velDists(i)) * 1e9).toLong / 1e9
+          val t = (distBefore, velDists(i))
+          val a = if (t._2 <= 0 || t._1 > 0) 1 else -t._1 / t._2
+          (a, i)
+        }
+        val minInZip = zipped.minBy(_._1)
+        (math.min(minInZip._1, 1), minInZip._2)
+      } else (0, -1)
     } else (1, -1)
   }
 }

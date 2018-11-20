@@ -22,6 +22,7 @@ trait ChunkColumn extends ChunkBlockListener with ChunkEventListener {
   def getChunk(coords: ChunkRelColumn): Option[IChunk]
   def setChunk(chunk: IChunk): Unit
   def removeChunk(coords: ChunkRelColumn): Option[IChunk]
+  def allChunks: Iterable[IChunk]
 
   def tick(): Unit
   def onReloadedResources(): Unit

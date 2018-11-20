@@ -29,7 +29,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
 
   val lighting: IChunkLighting = new ChunkLighting(this, lightPropagator)
-  override val entities: EntitiesInChunk = new EntitiesInChunkImpl
+  override def entities: EntitiesInChunk = chunkData.entities
 
   def init(): Unit = {
     requestRenderUpdate()
@@ -84,8 +84,8 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   def isEmpty: Boolean = storage.numBlocks == 0
 
   def unload(): Unit = {
-    if (needsToSave) {
-      val chunkTag = NBTUtil.makeCompoundTag("chunk", storage.toNBT)// Add more tags with ++
+    if (needsToSave || entities.needsToSave) {
+      val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT)// Add more tags with ++
       generator.saveData(chunkTag)
     }
 

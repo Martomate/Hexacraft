@@ -11,12 +11,14 @@ import com.martomate.hexacraft.gui.location.LocationInfoIdentity
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
-import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.util.{CylinderSize, TickableTimer}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
+import com.martomate.hexacraft.world.entity.EntityModelLoader
+import com.martomate.hexacraft.world.entity.player.PlayerEntity
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
 import com.martomate.hexacraft.world.{RayTracer, World}
@@ -120,6 +122,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           playerInputHandler.player.selectedItemSlot = idx
           blockInHandRenderer.updateContent()
           toolbar.setSelectedIndex(idx)
+        case GLFW_KEY_P =>
+          world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world)(new EntityModelLoader))
         case _ =>
       }
     }
