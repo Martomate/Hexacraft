@@ -6,17 +6,23 @@
 in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
+in int vertexIndex;
 
 // Per instance
 in ivec3 blockPos;
 in int blockTex;
 in float blockHeight;
-in float brightness;
+
+#if isSide
+in float brightness[4];
+#else
+in float brightness[6];
+#endif
 
 out FragIn {
 	vec2 texCoords;
 	flat int blockTex;
-	flat float brightness;
+	float brightness;
 	vec3 normal;
 } fragIn;
 
@@ -48,7 +54,7 @@ void main() {
 	gl_Position = matrix * vec4(pos, 1);
 	fragIn.texCoords = vec2(texCoords.x, texCoords.y);
 	fragIn.blockTex = blockTex;
-	fragIn.brightness = brightness;
+	fragIn.brightness = brightness[vertexIndex];
 }
 
 #shader frag
@@ -57,7 +63,7 @@ void main() {
 in FragIn {
 	vec2 texCoords;
 	flat int blockTex;
-	flat float brightness;
+	float brightness;
 	vec3 normal;
 } fragIn;
 
@@ -124,5 +130,5 @@ void main() {
 	vec3 sunDir = normalize(sun);
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
-	color.rgb *= fragIn.brightness * visibility;
+	color.rgb *= (fragIn.brightness * 0.8 + 0.2) * visibility;
 }

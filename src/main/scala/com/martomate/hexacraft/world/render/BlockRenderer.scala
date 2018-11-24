@@ -1,6 +1,9 @@
 package com.martomate.hexacraft.world.render
 
+import java.nio.ByteBuffer
+
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
+import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.opengl.{GL11, GL15}
 
 class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
@@ -9,20 +12,42 @@ class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRende
       .floats(0, 3)
       .floats(1, 2)
       .floats(2, 3)
-      .create().fillFloats(0, setupBlockVBO(side)))
+      .ints(3, 1)
+      .create().fill(0, setupBlockVBO(side)))
     .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
-      .floats(3, 4)
       .floats(4, 4)
       .floats(5, 4)
       .floats(6, 4)
-      .ints(7, 2)
+      .floats(7, 4)
       .ints(8, 2)
-      .ints(9, 1)
-      .floats(10, 1)
+      .ints(9, 2)
+      .ints(10, 1)
+      .floats(11, 1)
       .create())
     .create()
 
   override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+}
+
+case class BlockVertexData(position: Vector3f,
+                           texCoords: Vector2f,
+                           normal: Vector3f,
+                           vertexIndex: Int) {
+
+  def fill(buf: ByteBuffer): Unit = {
+    buf.putFloat(position.x)
+    buf.putFloat(position.y)
+    buf.putFloat(position.z)
+
+    buf.putFloat(texCoords.x)
+    buf.putFloat(texCoords.y)
+
+    buf.putFloat(normal.x)
+    buf.putFloat(normal.y)
+    buf.putFloat(normal.z)
+
+    buf.putInt(vertexIndex)
+  }
 }
 
 class BlockRenderer(val side: Int, init_maxInstances: Int) {
@@ -35,12 +60,13 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
       .floats(0, 3)
       .floats(1, 2)
       .floats(2, 3)
-      .create().fillFloats(0, setupBlockVBO(side)))
+      .ints(3, 1)
+      .create().fill(0, setupBlockVBO(side)))
     .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
-      .ints(3, 3)
-      .ints(4, 1)
-      .floats(5, 1)
+      .ints(4, 3)
+      .ints(5, 1)
       .floats(6, 1)
+      .floatsArray(7, 1)(verticesPerInstance)// after this index should be 'this index' + verticesPerInstance
       .create())
     .create()
 
@@ -53,33 +79,39 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
     vao.vbos(1).resize(newMaxInstances)
   }
 
-  protected def setupBlockVBO(s: Int): Seq[Float] = {
+  protected def setupBlockVBO(s: Int): Seq[BlockVertexData] = {
     if (s < 2) {
       val ints = Seq(1, 2, 0, 3, 5, 4)
 
-      (0 until 6).flatMap(i => {
+      (0 until 6).map(i => {
         val v = {
           val a = ints(if (s == 0) i else 5 - i) * Math.PI / 3
           if (s == 0) -a else a
         }
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
-        Seq(x, 1 - s, z,
-          (1 + (if (s == 0) -x else x)) / 2, (1 + z) / 2,
-          0, 1 - 2 * s, 0)
+        BlockVertexData(
+          new Vector3f(x, 1 - s, z),
+          new Vector2f((1 + (if (s == 0) -x else x)) / 2, (1 + z) / 2),
+          new Vector3f(0, 1 - 2 * s, 0),
+          i
+        )
       })
     } else {
       val nv = ((s - 1) % 6 - 0.5) * Math.PI / 3
       val nx = Math.cos(nv).toFloat
       val nz = Math.sin(nv).toFloat
 
-      (0 until 4).flatMap(i => {
+      (0 until 4).map(i => {
         val v = (s - 2 + i % 2) % 6 * Math.PI / 3
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
-        Seq(x, 1 - i / 2, z,
-          1 - i % 2, i / 2,
-          nx, 0, nz)
+        BlockVertexData(
+          new Vector3f(x, 1 - i / 2, z),
+          new Vector2f(1 - i % 2, i / 2),
+          new Vector3f(nx, 0, nz),
+          i
+        )
       })
     }
   }

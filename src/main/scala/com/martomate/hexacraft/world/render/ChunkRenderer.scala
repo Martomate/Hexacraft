@@ -44,6 +44,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
       }
 
       for (side <- 0 until 8) {
+        val verticesPerInstance = if (side < 2) 6 else 4
         blockRenderers.get.updateContent(side, sidesCount(side)) {buf =>
           for ((bCoords, block) <- blocks) {
             val coords = BlockRelWorld(bCoords, chunk.coords)
@@ -54,7 +55,9 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
               val blockType = block.blockType
               buf.putInt(blockType.blockTex(side))
               buf.putFloat(blockType.blockHeight(block.metadata))
-              buf.putFloat(sideBrightness(side)(bCoords.value))
+              for (i <- 0 until verticesPerInstance) {
+                buf.putFloat(sideBrightness(side)(bCoords.value))// TODO: change in the future to make lighting smoother
+              }
             }
           }
         }

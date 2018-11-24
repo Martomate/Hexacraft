@@ -31,6 +31,20 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
     this
   }
 
+  def intsArray(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_INT)(size: Int): VBOBuilder = {
+    for (i <- 0 until size) {
+      ints(index + i, dims, elementSize, _type)
+    }
+    this
+  }
+
+  def floatsArray(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_FLOAT, normalized: Boolean = false)(size: Int): VBOBuilder = {
+    for (i <- 0 until size) {
+      floats(index + i, dims, elementSize, _type, normalized)
+    }
+    this
+  }
+
   def create(): VBO = {
     val realChannels = channels.map {
       case IntChannel(index, dims, elementSize, _type, offset) =>

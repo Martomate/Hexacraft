@@ -3,6 +3,7 @@ package com.martomate.hexacraft.renderer
 import java.nio.ByteBuffer
 
 import com.martomate.hexacraft.resource.Resource
+import com.martomate.hexacraft.world.render.BlockVertexData
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
@@ -46,6 +47,8 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
   def fillFloats(start: Int, content: Seq[Float]): VBO = fillWith(start, content, 4, _.putFloat)
 
   def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
+
+  def fill(start: Int, content: Seq[BlockVertexData]): VBO = fillWith[BlockVertexData](start, content, (3+2+3+1)*4, buf => data => data.fill(buf))
 
   private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)
