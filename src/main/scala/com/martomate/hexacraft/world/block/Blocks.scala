@@ -9,6 +9,8 @@ object Blocks {
   val Dirt    = factory("dirt")
   val Sand    = factory("sand")
   val Water   = factory("water")
+  val Log     = factory("log")
+  val Leaves  = factory("leaves")
 
   def init(): Unit = {
   }

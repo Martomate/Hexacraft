@@ -10,6 +10,10 @@ import scala.collection.mutable
 import scala.collection.JavaConverters._
 
 object NBTUtil {
+  def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
+    getByte(tag, key, if (default) 1 else 0) == 1
+  }
+
   def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
     if (tag == null) default
     else {

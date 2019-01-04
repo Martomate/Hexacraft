@@ -10,6 +10,8 @@ class BlockFactory {
     case "dirt"   => new Block(3, "dirt", "Dirt")
     case "sand"   => new Block(4, "sand", "Sand") with EmittingLight
     case "water"  => new BlockFluid(5, "water", "Water")
+    case "log"    => new Block(6, "log", "Log")
+    case "leaves" => new Block(7, "leaves", "Leaves")
     case _        => new Block(-128, "unknown", "Unknown")
   }
 }

@@ -1,21 +1,16 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk._
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.entity._
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
 
 import scala.collection.mutable.ArrayBuffer
 
 class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagator: LightPropagator) extends IChunk {
-  import coords.cylSize.impl
-
-  private val chunkData: ChunkData = generator.loadData()
+  private var chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
@@ -91,4 +86,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
     requestRenderUpdateForAllNeighbors()
   }
+
+  override def isDecorated: Boolean = chunkData.isDecorated
+  override def setDecorated(): Unit = chunkData.isDecorated = true
 }

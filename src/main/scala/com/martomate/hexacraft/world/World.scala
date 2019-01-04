@@ -10,7 +10,7 @@ import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.entity.{EntityModelLoader, _}
-import com.martomate.hexacraft.world.gen.WorldGenerator
+import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
@@ -34,6 +34,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   EntityRegistrator.load(this)
 
   val worldGenerator = new WorldGenerator(worldSettings.gen)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldSettings.plannerNBT)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -64,6 +65,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
   def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners -= listener
 
+  addChunkAddedOrRemovedListener(worldPlanner)
   addChunkAddedOrRemovedListener(chunkLoader)
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
@@ -77,6 +79,11 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   def getBlock(coords: BlockRelWorld): BlockState =
     getChunk(coords.getChunkRelWorld).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockState.Air)
+
+  def provideColumn(coords: ColumnRelWorld): ChunkColumn = {
+    ensureColumnExists(coords)
+    getColumn(coords).get
+  }
 
   def setBlock(coords: BlockRelWorld, block: BlockState): Boolean =
     getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
@@ -123,6 +130,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
       chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
       ch.init()
+      worldPlanner.decorate(ch)
 
       //TODO: temporary
 /*      if (ch.coords == ChunkRelWorld(0, 0, 0))
@@ -220,6 +228,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
         new StringTag("name", worldName)
       )),
       worldGenerator.toNBT,
+      worldPlanner.toNBT,
       player.toNBT
     ))
   }

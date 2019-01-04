@@ -14,6 +14,7 @@ class WorldSettingsProviderFromFile(saveDir: File, worldSettings: WorldSettings)
   val name: String = NBTUtil.getString(generalSettings, "worldName", worldSettings.name.getOrElse(saveDir.getName))
   val size: CylinderSize = new CylinderSize(NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7)))
   def gen: WorldGenSettings = new WorldGenSettings(nbtData.getValue.get("gen").asInstanceOf[CompoundTag], worldSettings)
+  def plannerNBT: CompoundTag = nbtData.getValue.get("planner").asInstanceOf[CompoundTag]
   def playerNBT: CompoundTag = nbtData.getValue.get("player").asInstanceOf[CompoundTag]
 
   def loadState(path: String): CompoundTag = {

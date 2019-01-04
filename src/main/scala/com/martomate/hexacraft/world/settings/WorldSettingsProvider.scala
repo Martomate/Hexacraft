@@ -7,6 +7,7 @@ trait WorldSettingsProvider {
   def name: String
   def size: CylinderSize
   def gen: WorldGenSettings
+  def plannerNBT: CompoundTag
   def playerNBT: CompoundTag
 
   def loadState(path: String): CompoundTag

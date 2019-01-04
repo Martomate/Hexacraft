@@ -10,6 +10,8 @@ trait BlocksInWorld {
   def getChunk(coords: ChunkRelWorld): Option[IChunk]
   def getBlock(coords: BlockRelWorld): BlockState
 
+  def provideColumn(coords: ColumnRelWorld): ChunkColumn
+
   def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk): (BlockRelChunk, Option[IChunk]) = {
     val (i, j, k) = BlockState.neighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
