@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.util
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class UniquePQ[S](func: S => Double, ord: Ordering[Double]) {// PQ with fast lookup and resorting
   private type DS = (Double, S)
@@ -31,7 +32,14 @@ class UniquePQ[S](func: S => Double, ord: Ordering[Double]) {// PQ with fast loo
 
   def reprioritizeAndFilter(filterFunc: DS => Boolean): Unit = {
     set.clear()
-    pq.enqueue(pq.dequeueAll.map(t => (func(t._2), t._2)).filter(filterFunc): _*)
-    pq.foreach(set += _._2)
+    val buffer = ArrayBuffer.empty[DS]
+    for (t <- pq) {
+      val elem = (func(t._2), t._2)
+      if (filterFunc(elem))
+        buffer += elem
+    }
+    pq.clear()
+    pq.enqueue(buffer: _*)
+    buffer.foreach(set += _._2)
   }
 }

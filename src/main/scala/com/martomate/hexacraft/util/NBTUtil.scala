@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.util
 
 import java.io.{File, FileInputStream, FileOutputStream}
+import java.nio.file.{Files, Paths}
 
 import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
@@ -137,7 +138,7 @@ object NBTUtil {
         nbtFile.getParentFile.mkdirs()
         nbtFile.createNewFile()
       }
-      val nbtOut = new NBTOutputStream(new FileOutputStream(nbtFile))
+      val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
       nbtOut.writeTag(tag)
       nbtOut.close()
     }).start()
@@ -145,7 +146,7 @@ object NBTUtil {
 
   def loadTag(file: File): CompoundTag = {
     if (file.isFile) {
-      val stream = new NBTInputStream(new FileInputStream(file))
+      val stream = new NBTInputStream(Files.newInputStream(file.toPath))
       val nbt = stream.readTag().asInstanceOf[CompoundTag]
       stream.close()
       nbt

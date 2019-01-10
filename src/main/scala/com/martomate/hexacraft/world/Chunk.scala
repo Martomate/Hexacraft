@@ -10,7 +10,7 @@ import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
 import scala.collection.mutable.ArrayBuffer
 
 class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagator: LightPropagator) extends IChunk {
-  private var chunkData: ChunkData = generator.loadData()
+  private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
@@ -80,13 +80,24 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
   def unload(): Unit = {
     if (needsToSave || entities.needsToSave) {
-      val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT)// Add more tags with ++
-      generator.saveData(chunkTag)
+      save()
     }
 
     requestRenderUpdateForAllNeighbors()
   }
 
+  private def save(): Unit = {
+    val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT) // Add more tags with ++
+    generator.saveData(chunkTag)
+    needsToSave = false
+  }
+
   override def isDecorated: Boolean = chunkData.isDecorated
-  override def setDecorated(): Unit = chunkData.isDecorated = true
+  override def setDecorated(): Unit = {
+    if (!chunkData.isDecorated) {
+      chunkData.isDecorated = true
+      needsToSave = true
+      save()
+    }
+  }
 }

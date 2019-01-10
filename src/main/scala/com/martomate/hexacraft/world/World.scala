@@ -18,6 +18,7 @@ import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import com.martomate.hexacraft.world.worldlike.IWorld
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object World {
@@ -39,7 +40,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
-  private val columns = scala.collection.mutable.Map.empty[Long, ChunkColumn]
+  private val columns = mutable.Map.empty[Long, ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
   private val chunkLoader: ChunkLoader = new ChunkLoaderWithOrigin(

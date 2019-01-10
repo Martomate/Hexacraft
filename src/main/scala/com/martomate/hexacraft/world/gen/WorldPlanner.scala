@@ -8,19 +8,23 @@ import com.martomate.hexacraft.world.worldlike.IWorld
 
 class WorldPlanner(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
-    new TreePlanner
+    new TreePlanner(world)
   )
 
   def decorate(chunk: IChunk): Unit = {
-    planners.foreach(_.decorate(chunk, world))
-    chunk.setDecorated()
+    if (!chunk.isDecorated) {
+      planners.foreach(_.decorate(chunk))
+      chunk.setDecorated()
+    }
   }
 
   override def onChunkAdded(chunk: IChunk): Unit = {
-
+    for (ch <- chunk.coords.extendedNeighbors(1))
+      for (p <- planners)
+        p.plan(ch)
   }
 
-  override def onChunkRemoved(chunk: IChunk): Unit = ()
+  override def onChunkRemoved(chunk: IChunk): Unit = ()// same as onChunkAdded, except dropPlan instead of plan. No
 
   def toNBT: CompoundTag = NBTUtil.makeCompoundTag("worldPlanner", Seq(
 

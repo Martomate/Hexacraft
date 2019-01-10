@@ -4,8 +4,7 @@ import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunkGenerator
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.gen.WorldPlanner
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage, DenseChunkStorage}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
@@ -17,9 +16,8 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerat
   def loadData(): ChunkData = {
     val nbt = world.worldSettings.loadState(filePath)
 
-    val data = new ChunkData
     val storage: ChunkStorage = new DenseChunkStorage(coords)
-    data.storage = storage
+    val data = new ChunkData(storage)
 
     if (!nbt.getValue.isEmpty) {
       data.fromNBT(nbt)

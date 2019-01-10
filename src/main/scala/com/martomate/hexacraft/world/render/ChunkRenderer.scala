@@ -67,34 +67,33 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
     }
   }
 
-  def entityRenderData(side: Int): Seq[EntityDataForShader] = {
-    val result: mutable.Buffer[EntityDataForShader] = mutable.ArrayBuffer.empty
+  def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit = {
+    if (chunk.entities.count > 0) {
+      val entities = chunk.entities
+      val tr = new Matrix4f
 
-    val entities = chunk.entities
-    val tr = new Matrix4f
+      for (ent <- entities.allEntities) {
+        val baseT = ent.transform
+        val model = ent.model
 
-    for (ent <- entities.allEntities) {
-      val baseT = ent.transform
-      val model = ent.model
-
-      val parts = for (part <- model.parts) yield {
-        baseT.mul(part.transform, tr)
-        val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
-        val coords = CoordUtils.toBlockCoords(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
-        val cCoords = coords.getChunkRelWorld
-        val partChunk = if (cCoords == chunk.coords) Some(chunk) else world.getChunk(cCoords)
-        val brightness: Float = partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)
-        EntityPartDataForShader(
-          new Matrix4f(tr),
-          part.textureOffset(side),
-          part.textureSize(side),
-          part.texture(side),
-          brightness
-        )
+        val parts = for (part <- model.parts) yield {
+          baseT.mul(part.transform, tr)
+          val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
+          val coords = CoordUtils.toBlockCoords(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
+          val cCoords = coords.getChunkRelWorld
+          val partChunk = if (cCoords == chunk.coords) Some(chunk) else world.getChunk(cCoords)
+          val brightness: Float = partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)
+          EntityPartDataForShader(
+            new Matrix4f(tr),
+            part.textureOffset(side),
+            part.textureSize(side),
+            part.texture(side),
+            brightness
+          )
+        }
+        append(EntityDataForShader(model, parts))
       }
-      result += EntityDataForShader(model, parts)
     }
-    result
   }
 
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {

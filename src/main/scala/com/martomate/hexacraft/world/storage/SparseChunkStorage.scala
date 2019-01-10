@@ -6,13 +6,15 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-class SparseChunkStorage(val chunkCoords: ChunkRelWorld) extends ChunkStorage {
+import scala.collection.mutable
+
+class SparseChunkStorage(_chunkCoords: ChunkRelWorld) extends ChunkStorage(_chunkCoords) {
   def this(storage: ChunkStorage) = {
     this(storage.chunkCoords)
     for ((i, b) <- storage.allBlocks) setBlock(i, b)
   }
 
-  private val blocks = scala.collection.mutable.Map.empty[Short, BlockState]
+  private val blocks = mutable.HashMap.empty[Short, BlockState]
 
   def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Blocks.Air)
   def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockState.Air)

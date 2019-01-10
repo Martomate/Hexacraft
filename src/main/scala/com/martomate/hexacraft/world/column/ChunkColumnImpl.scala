@@ -9,12 +9,13 @@ import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider) extends ChunkColumn {
   import coords.cylSize.impl
 
-  private val chunks = scala.collection.mutable.Map.empty[Int, IChunk]
+  private val chunks: mutable.Map[Int, IChunk] = mutable.HashMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
 

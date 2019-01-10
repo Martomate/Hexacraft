@@ -5,9 +5,7 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-trait ChunkStorage {
-  def chunkCoords: ChunkRelWorld
-
+abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) {
   def blockType(coords: BlockRelChunk): Block
 
   def getBlock(coords: BlockRelChunk): BlockState

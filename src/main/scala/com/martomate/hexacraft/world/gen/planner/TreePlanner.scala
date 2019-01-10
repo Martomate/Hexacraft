@@ -8,28 +8,42 @@ import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable
+import scala.util.Random
 
-class TreePlanner extends WorldFeaturePlanner {
+class TreePlanner(world: IWorld) extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
-  override def decorate(chunk: IChunk, world: IWorld): Unit = {
-    plan(chunk.coords, world)
-    chunk.coords.extendedNeighbors(1).foreach(ch => plan(ch, world))
+  private val maxTreesPerChunk = 5
+
+  override def decorate(chunk: IChunk): Unit = {
     plannedChanges.remove(chunk.coords).foreach(ch => ch.applyChanges(chunk))
   }
 
-  protected def plan(coords: ChunkRelWorld, world: IWorld): Unit = {
+  def treeLocations(coords: ChunkRelWorld): Seq[(Int, Int)] = {
+    val rand = new Random(world.worldSettings.gen.seed ^ coords.value)
+    val count = rand.nextInt(maxTreesPerChunk + 1)
+
+    for (_ <- 0 until count) yield {
+      val cx = rand.nextInt(16)
+      val cz = rand.nextInt(16)
+      (cx, cz)
+    }
+  }
+
+  def plan(coords: ChunkRelWorld): Unit = {
     if (!chunksPlanned(coords)) {
       val column = world.provideColumn(coords.getColumnRelWorld)
-      attemptTreeGenerationAt(coords, column, 0, 0)
+      for ((cx, cz) <- treeLocations(coords)) {
+        attemptTreeGenerationAt(coords, column, cx, cz)
+      }
 
       chunksPlanned(coords) = true
     }
   }
 
   private def attemptTreeGenerationAt(coords: ChunkRelWorld, column: ChunkColumn, cx: Int, cz: Int): Unit = {
-    val yy = column.heightMap(cx, cz)
+    val yy = column.generatedHeightMap(cx)(cz)
     if (yy >= coords.Y * 16 && yy < (coords.Y + 1) * 16) {
       generateTree(coords, cx, cz, yy)
     }

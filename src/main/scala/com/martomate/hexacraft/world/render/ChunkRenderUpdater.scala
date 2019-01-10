@@ -43,18 +43,21 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
   }
 
   private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
-    val corners = for {
-      i <- 0 to 1
-      j <- 0 to 1
-      k <- 0 to 1
-    } yield (15 * i, 15 * j, 15 * k)
-    val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords)).toCylCoords
+    def distTo(x: Int, y: Int, z: Int): Double = {
+      val cyl = BlockCoords(BlockRelWorld(x, y, z, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
-    }).min
-
+    }
+    var dist = distTo(8, 8, 8)
+    if (dist < 16) {// if it's close, refine estimate
+      for (n <- 0 until 8) {
+        val i = n & 1
+        val j = n >> 1 & 1
+        val k = n >> 2 & 1
+        dist = math.min(dist, distTo(15 * i, 15 * j, 15 * k))
+      }
+    }
     dist
   }
 

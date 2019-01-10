@@ -12,7 +12,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   import world.size.impl
@@ -88,7 +88,8 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
       sh.enable()
       sh.setUniform1i("side", side)
 
-      val entityDataList: Iterable[EntityDataForShader] = chunkRenderers.values.flatMap(_.entityRenderData(side))
+      val entityDataList: mutable.Buffer[EntityDataForShader] = ListBuffer.empty
+      chunkRenderers.values.foreach(_.appendEntityRenderData(side, entityDataList += _))
       for ((model, partLists) <- entityDataList.groupBy(_.model)) {
         val data = partLists.flatMap(_.parts)
 
