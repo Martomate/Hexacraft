@@ -14,6 +14,7 @@ object VAO {
 }
 
 class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VBO]) extends Resource {
+  private val tempPath = new Throwable().getStackTrace
   def bind(): Unit = {
     if (VAO.boundVAO != this) {
       VAO.boundVAO = this
@@ -25,14 +26,14 @@ class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VB
   
   protected def reload(): Unit = ()
 
-  def unload(): Unit = {
+  protected def unload(): Unit = {
     GL30.glDeleteVertexArrays(vaoID)
-    vbos.foreach(_.unload())
+    vbos.foreach(_.free())
   }
 }
 
 class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
-  private val vbos = ArrayBuffer.empty[VBO]
+  private val vbos: ArrayBuffer[VBO] = new ArrayBuffer(1)
   val vaoID: Int = GL30.glGenVertexArrays()
   GL30.glBindVertexArray(vaoID)
 

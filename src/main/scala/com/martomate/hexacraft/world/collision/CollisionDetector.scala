@@ -10,7 +10,7 @@ import org.joml.Vector3d
 
 import scala.collection.mutable
 
-object CollisionDetector {
+class CollisionDetector {
   private val reflectionDirs = Array(
     ( 0, -1,  0),
     ( 0,  1,  0),
@@ -91,7 +91,7 @@ object CollisionDetector {
       val (maxDist, reflectionDir) = maxDistTuple
       if (maxDist < 1d) {
         if (reflectionDir != -1) {
-          val normal = CollisionDetector.reflDirsCyl(reflectionDir).toVector3d.normalize()
+          val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
           val newPos = new Vector3d(pos).add(velocity.x * maxDist, velocity.y * maxDist, velocity.z * maxDist)
           val vel = new Vector3d(velocity).mul(1 - maxDist)
           val dot = vel.dot(normal)
@@ -123,7 +123,7 @@ object CollisionDetector {
     )
 
     if (distances.forall(_ >= 0)) {
-      val velDists = CollisionDetector.reflectionDirs.map(t => t._1 * vx + t._2 * vy + t._3 * vz)
+      val velDists = reflectionDirs.map(t => t._1 * vx + t._2 * vy + t._3 * vz)
 
       if (distances.indices.exists(i => distances(i) <= velDists(i))) {
         val zipped = for (i <- distances.indices) yield {

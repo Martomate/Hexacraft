@@ -5,9 +5,9 @@ import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 
 class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {
-  val blockRenderers:     Seq[T] = Seq.tabulate(2)(s => rendererFactory(s))
-  val blockSideRenderers: Seq[T] = Seq.tabulate(6)(s => rendererFactory(s + 2))
-  val allBlockRenderers:  Seq[T] = blockRenderers ++ blockSideRenderers
+  val blockRenderers:     IndexedSeq[T] = IndexedSeq.tabulate(2)(s => rendererFactory(s))
+  val blockSideRenderers: IndexedSeq[T] = IndexedSeq.tabulate(6)(s => rendererFactory(s + 2))
+  val allBlockRenderers:  IndexedSeq[T] = blockRenderers ++ blockSideRenderers
 
   def renderBlockSide(side: Int): Unit = {
     val r = allBlockRenderers(side)

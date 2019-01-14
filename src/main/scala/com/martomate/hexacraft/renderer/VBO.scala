@@ -57,7 +57,7 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
     fill(start, buf)
   }
 
-  def unload(): Unit = {
+  protected def unload(): Unit = {
     GL15.glDeleteBuffers(vboID)
   }
 }

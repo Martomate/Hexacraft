@@ -134,6 +134,8 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     worldSettings.saveState(NBTUtil.makeCompoundTag("column", Seq(
       new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))
     )), saveFilePath)
+
+    eventListeners.clear()
   }
 
   private val eventListeners: ArrayBuffer[ChunkColumnListener] = ArrayBuffer.empty

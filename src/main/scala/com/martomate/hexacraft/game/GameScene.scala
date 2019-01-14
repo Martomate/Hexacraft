@@ -256,7 +256,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           val blockType = playerInputHandler.player.blockInHand
           val skewCoords = BlockCoords(coords.x, coords.y, coords.z).toSkewCylCoords
           val state = new BlockState(blockType)
-          if (!CollisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
+          if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
             world.setBlock(coords, state)
           }
         }
@@ -268,6 +268,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     world.unload()
     worldRenderer.unload()
     crosshairVAO.free()
+    toolbar.unload()
+    blockInHandRenderer.unload()
     setMouseCursorInvisible(false)
     if (debugScene != null) debugScene.unload()
   }

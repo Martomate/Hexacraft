@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer._
-import com.martomate.hexacraft.world.column.ChunkColumn
 import org.joml.Vector2d
 
 import scala.collection.mutable
@@ -31,21 +31,24 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
   private val columnsAtEdge: mutable.Set[ColumnRelWorld] = mutable.Set.empty[ColumnRelWorld]
 
   @deprecated
-  private val topAndBottomChunks: mutable.Map[ChunkColumn, Option[(Int, Int)]] = mutable.HashMap.empty
+  private val topAndBottomChunks: mutable.Map[ColumnRelWorld, Option[(Int, Int)]] = mutable.HashMap.empty
 
   private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
-    val corners = for {
-      i <- 0 to 1
-      j <- 0 to 1
-      k <- 0 to 1
-    } yield (15 * i, 15 * j, 15 * k)
-    val dist = ((corners :+ (8, 8, 8)) map { t =>
-      val cyl = BlockCoords(BlockRelWorld(t._1, t._2, t._3, coords)).toCylCoords
+    def distTo(x: Int, y: Int, z: Int): Double = {
+      val cyl = BlockCoords(BlockRelWorld(x, y, z, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()
       val dot = this.origin.dir.dot(cDir)
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
-    }).min
-
+    }
+    var dist = distTo(8, 8, 8)
+    if (dist < 16) {// if it's close, refine estimate
+      for (n <- 0 until 8) {
+        val i = n & 1
+        val j = n >> 1 & 1
+        val k = n >> 2 & 1
+        dist = math.min(dist, distTo(15 * i, 15 * j, 15 * k))
+      }
+    }
     dist
   }
 
@@ -56,7 +59,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       else None
     }
 
-    def getTopBottomChange(col: ChunkColumn, chY: Int): Option[(Int, Int)] = {
+    def getTopBottomChange(col: ColumnRelWorld, chY: Int): Option[(Int, Int)] = {
       topAndBottomChunks.getOrElse(col, None) match {
         case None => Some((chY, chY))
         case Some((top, bottom)) =>
@@ -65,17 +68,17 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
     }
 
     def manageTopBottomFor(chunkToLoad: ChunkRelWorld): Boolean = {// returns true if it loaded a non-empty chunk
-      columns.get(chunkToLoad.getColumnRelWorld.value).exists { col =>
-        val ch = chunkToLoad.getChunkRelColumn
-        val topBottomChange = getTopBottomChange(col, ch.Y)
+      val col = chunkToLoad.getColumnRelWorld
+      val ch = chunkToLoad.getChunkRelColumn
+      val topBottomChange = getTopBottomChange(col, ch.Y)
 
-        if (topBottomChange.isDefined) {
-          topAndBottomChunks(col) = topBottomChange
-          val newChunk = chunkFactory(chunkToLoad)
-          chunksReadyToAdd += newChunk
-          !newChunk.isEmpty
-        } else false
-      }
+      if (topBottomChange.isDefined) {
+        topAndBottomChunks(col) = topBottomChange
+        val newChunk = chunkFactory(chunkToLoad)
+        chunksReadyToAdd += newChunk
+//          !newChunk.isEmpty // not a good idea, since even an empty chunk might have to load to see that it is empty
+        true
+      } else false
     }
 
     for (_ <- 1 to ChunkLoader.chunksLoadedPerTick) {
@@ -89,7 +92,7 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
 
     def inSight(chunk: ChunkRelColumn): Boolean = {
       val dy = chunk.Y - origin.y
-      math.abs(dy) + xzDist * 0.25 <= loadingDistance
+      math.max(math.abs(dy), xzDist) <= loadingDistance
     }
 
     def newTopOrBottom(now: Int, dir: Int): Int = {
@@ -104,12 +107,12 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
       }
     }
 
-    topAndBottomChunks.getOrElse(column, None) match {
+    topAndBottomChunks.getOrElse(column.coords, None) match {
       case Some((top, bottom)) =>
         val newBottom = newTopOrBottom(bottom, -1)
         val newTop = if (newBottom > top) top else newTopOrBottom(top, 1)
 
-        if (newTop != top || newBottom != bottom) topAndBottomChunks(column) = if (newTop >= newBottom) Some((newTop, newBottom)) else None
+        if (newTop != top || newBottom != bottom) topAndBottomChunks(column.coords) = if (newTop >= newBottom) Some((newTop, newBottom)) else None
       case None =>
         val ground = ChunkRelColumn((column.generatedHeightMap(8)(8) >> 4) & 0xfff)
         val first = if (inSight(ground)) ground else ChunkRelColumn(math.round(origin.y).toInt & 0xfff)
@@ -205,6 +208,8 @@ class ChunkLoaderWithOrigin(worldSize: CylinderSize,
 
   def unload(): Unit = {
     chunksToLoad.clear()
+    chunksReadyToAdd.foreach(_.unload())
+    chunksReadyToAdd.clear()
   }
 
   @deprecated

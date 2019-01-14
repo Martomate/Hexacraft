@@ -84,6 +84,9 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     }
 
     requestRenderUpdateForAllNeighbors()
+
+    blockEventListeners.clear()
+    eventListeners.clear()
   }
 
   private def save(): Unit = {

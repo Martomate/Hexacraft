@@ -26,4 +26,8 @@ class Toolbar(_locationInfo: LocationInfo, inventory: Inventory)(implicit window
 
   }
 
+  override def unload(): Unit = {
+    guiBlockRenderer.unload()
+    super.unload()
+  }
 }

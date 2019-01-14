@@ -4,7 +4,7 @@ import com.martomate.hexacraft.renderer._
 import org.lwjgl.opengl.{GL11, GL15}
 
 class FlatBlockRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
-  override val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+  override protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
       .floats(0, 3)
       .floats(1, 2)

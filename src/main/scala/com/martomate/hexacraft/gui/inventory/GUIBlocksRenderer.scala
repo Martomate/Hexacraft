@@ -49,4 +49,8 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
       }
     }
   }
+
+  def unload(): Unit = {
+    guiBlockRenderer.unload()
+  }
 }

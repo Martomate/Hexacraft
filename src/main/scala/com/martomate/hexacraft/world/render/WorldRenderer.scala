@@ -109,7 +109,12 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   }
 
   for (side <- 0 until 8) {
-    registerRenderingJob(RenderingJob(_.renderBlockSide(side), () => {
+    registerRenderingJob(RenderingJob({
+      val sh = if (side < 2) blockShader else blockSideShader
+      sh.enable()
+      sh.setUniform1i("side", side)
+      _.renderBlockSide(side)
+    }, () => {
       blockTexture.bind()
       val sh = if (side < 2) blockShader else blockSideShader
       sh.enable()
@@ -124,6 +129,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   def unload(): Unit = {
     skyVAO.free()
     selectedBlockVAO.free()
+    entityRenderers.unload()
   }
 
   override def onChunkAdded(chunk: IChunk): Unit = {

@@ -58,4 +58,9 @@ class ScrollPane(window: GameWindow, _location: LocationInfo) extends Component(
 
   def containsMouse: Boolean = location.containsMouse(0, 0)
 
+  override def unload(): Unit = {
+    components.foreach(_.unload())
+    super.unload()
+  }
+
 }

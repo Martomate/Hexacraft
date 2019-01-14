@@ -7,7 +7,7 @@ import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.opengl.{GL11, GL15}
 
 class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
-  override val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+  override protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
       .floats(0, 3)
       .floats(1, 2)
@@ -55,7 +55,13 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
   def maxInstances: Int = _maxInstances
   protected def verticesPerInstance: Int = if (side < 2) 6 else 4
 
-  val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+  final val vao: VAO = initVAO()
+
+  val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+
+  var instances = 0
+
+  protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
       .floats(0, 3)
       .floats(1, 2)
@@ -69,10 +75,6 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
       .floatsArray(7, 1)(verticesPerInstance)// after this index should be 'this index' + verticesPerInstance
       .create())
     .create()
-
-  val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
-
-  var instances = 0
 
   def resize(newMaxInstances: Int): Unit = {
     _maxInstances = newMaxInstances
@@ -117,6 +119,6 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
   }
 
   def unload(): Unit = {
-    vao.unload()
+    vao.free()
   }
 }

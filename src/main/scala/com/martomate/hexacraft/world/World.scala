@@ -6,6 +6,7 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
@@ -32,13 +33,15 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   import size.impl
 
   private implicit val modelLoaderImpl: EntityModelLoader = new EntityModelLoader()
-  EntityRegistrator.load(this)
+  EntityRegistrator.load()
 
   val worldGenerator = new WorldGenerator(worldSettings.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldSettings.plannerNBT)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
+
+  override def collisionDetector: CollisionDetector = new CollisionDetector
 
   private val columns = mutable.Map.empty[Long, ChunkColumn]
 
@@ -219,6 +222,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     blockUpdateTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear
+    chunkAddedOrRemovedListeners.clear()
   }
 
   private def toNBT: CompoundTag = {

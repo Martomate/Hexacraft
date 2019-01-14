@@ -4,10 +4,11 @@ import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.EntitiesInChunkImpl
 import com.martomate.hexacraft.world.chunk.EntitiesInChunk
+import com.martomate.hexacraft.world.worldlike.IWorld
 
-class ChunkData(init_storage: ChunkStorage) {
+class ChunkData(init_storage: ChunkStorage, world: IWorld) {
   var storage: ChunkStorage = init_storage
-  val entities: EntitiesInChunk = new EntitiesInChunkImpl
+  val entities: EntitiesInChunk = new EntitiesInChunkImpl(world)
   var isDecorated: Boolean = false
 
   def optimizeStorage(): Unit = {

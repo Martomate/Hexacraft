@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.game.pause
 
-import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.event.KeyEvent
 import com.martomate.hexacraft.gui.comp.Button
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
@@ -21,6 +20,7 @@ class PauseMenu(scene: PausableScene)(implicit window: GameWindowExtended) exten
 
   private def quit(): Unit = {
     window.scenes.popScenesUntil(MenuScene.isMainMenu)
+    System.gc()
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {

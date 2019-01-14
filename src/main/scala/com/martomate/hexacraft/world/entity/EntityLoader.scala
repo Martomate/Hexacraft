@@ -1,5 +1,7 @@
 package com.martomate.hexacraft.world.entity
 
+import com.martomate.hexacraft.world.worldlike.IWorld
+
 import scala.collection.mutable
 
 object EntityLoader {
@@ -9,7 +11,7 @@ object EntityLoader {
     registry(name) = maker
   }
 
-  def load(name: String): Option[Entity] = {
-    registry.get(name).map(_.makeEntity())
+  def load(name: String, world: IWorld): Option[Entity] = {
+    registry.get(name).map(_.makeEntity(world))
   }
 }

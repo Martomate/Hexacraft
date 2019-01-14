@@ -6,7 +6,7 @@ object Resource {
   private val resources = ArrayBuffer.empty[Resource]
 
   def freeAllResources(): Unit = {
-    resources.foreach(_.unload())
+    resources.clone().foreach(_.free1())
     resources.clear()
   }
   
@@ -16,11 +16,20 @@ object Resource {
 }
 
 abstract class Resource {
+  private var hasBeenFreed = false
+
   Resource.resources += this
-  
+
   final def free(): Unit = {
-    unload()
     Resource.resources -= this
+    free1()
+  }
+
+  private def free1(): Unit = {
+    if (!hasBeenFreed) {
+      hasBeenFreed = true
+      unload()
+    }
   }
   
   protected def reload(): Unit
