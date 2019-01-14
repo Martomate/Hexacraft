@@ -14,7 +14,6 @@ object VAO {
 }
 
 class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VBO]) extends Resource {
-  private val tempPath = new Throwable().getStackTrace
   def bind(): Unit = {
     if (VAO.boundVAO != this) {
       VAO.boundVAO = this
