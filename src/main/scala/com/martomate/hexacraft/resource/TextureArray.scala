@@ -21,7 +21,7 @@ object TextureArray {
   }
 }
 
-class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[Array[Int]]]) extends Resource {
+class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[Array[Int]]]) extends Resource with Texture {
   private var texID: Int = _
 
   TextureArray.textures += name -> this

@@ -10,6 +10,7 @@ val lwjglVersion = "3.1.6"
 libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "3.0.5",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.scalamock" %% "scalamock" % "4.1.0" % "test",
   "org.joml" % "joml" % "1.9.9",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.4",
   "com.flowpowered" % "flow-nbt" % "1.0.0",

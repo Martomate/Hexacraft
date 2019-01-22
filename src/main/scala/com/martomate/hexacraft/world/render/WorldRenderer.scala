@@ -26,6 +26,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
   private val renderingJobs = ArrayBuffer.empty[RenderingJob]
+  private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
   private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
@@ -65,7 +66,11 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
     new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(chunkRenderers.get, world.renderDistance)
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
+    val r = chunkRenderers.get(coords)
+    r.foreach(chunkHandler.updateChunk)
+    r.isDefined
+  }, world.renderDistance)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)
@@ -74,6 +79,8 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   def render(camera: Camera): Unit = {
     skyShader.enable()
     skyRenderer.render()
+
+    chunkHandler.render()
 
     for (job <- renderingJobs) {
       job.setup()
@@ -130,14 +137,20 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     skyVAO.free()
     selectedBlockVAO.free()
     entityRenderers.unload()
+    chunkHandler.unload()
   }
 
   override def onChunkAdded(chunk: IChunk): Unit = {
-    chunkRenderers(chunk.coords) = new ChunkRenderer(chunk, world)
+    val renderer = new ChunkRenderer(chunk, world)
+    chunkRenderers(chunk.coords) = renderer
+    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
   }
   override def onChunkRemoved(chunk: IChunk): Unit = {
-    chunkRenderers.remove(chunk.coords).foreach(_.unload())
+    chunkRenderers.remove(chunk.coords).foreach(renderer => {
+      chunkHandler.removeChunk(renderer)
+      renderer.unload()
+    })
     chunk.removeEventListener(chunkRenderUpdater)
   }
 }

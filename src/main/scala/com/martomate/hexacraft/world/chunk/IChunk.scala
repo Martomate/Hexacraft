@@ -14,7 +14,7 @@ trait IChunk {
   def init(): Unit
   def tick(): Unit
 
-  def isEmpty: Boolean
+  def hasNoBlocks: Boolean
   def blocks: ChunkStorage
   def entities: EntitiesInChunk
   def getBlock(coords: BlockRelChunk): BlockState

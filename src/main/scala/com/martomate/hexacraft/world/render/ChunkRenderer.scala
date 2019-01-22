@@ -1,5 +1,7 @@
 package com.martomate.hexacraft.world.render
 
+import java.nio.ByteBuffer
+
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.CoordUtils
@@ -7,17 +9,22 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
+import org.lwjgl.BufferUtils
 
-import scala.collection.mutable
+case class ChunkRenderData(blockSide: IndexedSeq[ByteBuffer])
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
   import chunk.coords.cylSize.impl
 
   private var blockRenderers: Option[BlockRendererCollection[BlockRenderer]] = None
 
+  private var renderData: ChunkRenderData = _
+  def getRenderData: ChunkRenderData = renderData
+
   def updateContent(): Unit = {
+    val buffers: Array[ByteBuffer] = new Array(8)
     onlyKeepBlockRenderersIfChunkNotEmpty()
-    if (!chunk.isEmpty) {
+    if (!chunk.hasNoBlocks) {
       val blocks = chunk.blocks.allBlocks
 
       if (!chunk.lighting.initialized) {
@@ -45,7 +52,8 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
 
       for (side <- 0 until 8) {
         val verticesPerInstance = if (side < 2) 6 else 4
-        blockRenderers.get.updateContent(side, sidesCount(side)) {buf =>
+        val buf = BufferUtils.createByteBuffer(sidesCount(side) * blockRenderers.get.allBlockRenderers(side).vao.vbos(1).stride)
+//        blockRenderers.get.updateContent(side, sidesCount(side)) {buf =>
           for ((bCoords, block) <- blocks) {
             val coords = BlockRelWorld(bCoords, chunk.coords)
             if (sidesToRender(side)(bCoords.value)) {
@@ -60,11 +68,17 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
               }
             }
           }
-        }
+          buffers(side) = buf
+//        }
+      }
+      for (side <- 0 until 8) {
+        val b = buffers(side)
+        b.flip()
       }
     } else if (!chunk.lighting.initialized) {
       chunk.lighting.init(Seq.empty)
     }
+    renderData = ChunkRenderData(buffers)
   }
 
   def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit = {
@@ -97,7 +111,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
   }
 
   private def onlyKeepBlockRenderersIfChunkNotEmpty(): Unit = {
-    if (chunk.isEmpty) {
+    if (chunk.hasNoBlocks) {
       blockRenderers.foreach(_.unload())
       blockRenderers = None
     } else {

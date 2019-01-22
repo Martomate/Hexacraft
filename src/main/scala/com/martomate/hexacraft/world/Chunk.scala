@@ -76,7 +76,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     }
   }
 
-  def isEmpty: Boolean = storage.numBlocks == 0
+  def hasNoBlocks: Boolean = storage.numBlocks == 0
 
   def unload(): Unit = {
     if (needsToSave || entities.needsToSave) {
