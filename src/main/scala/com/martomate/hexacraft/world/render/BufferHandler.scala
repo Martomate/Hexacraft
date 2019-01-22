@@ -4,10 +4,6 @@ import java.nio.ByteBuffer
 
 import scala.collection.mutable.ArrayBuffer
 
-class VAOBufferHandler(bufferFactory: RenderBufferFactory[VAORenderBuffer]) extends BufferHandler(bufferFactory) {
-  override protected def copyInternal(fromBuffer: Int, fromIdx: Int, toBuffer: Int, toIdx: Int, len: Int): Unit = buffers(fromBuffer).copyFrom(buffers(toBuffer), fromIdx, toIdx, len)
-}
-
 abstract class BufferHandler[T <: RenderBuffer](bufferFactory: RenderBufferFactory[T]) {
   private val InstancesPerBuffer: Int = 10000
   protected val BufSize: Int = bufferFactory.bytesPerInstance * InstancesPerBuffer

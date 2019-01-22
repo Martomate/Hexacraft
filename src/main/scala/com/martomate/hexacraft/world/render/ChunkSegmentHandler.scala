@@ -6,7 +6,6 @@ class ChunkSegmentHandler {
   private val contentMap: mutable.Map[ChunkRenderer, ChunkSegs] = mutable.Map.empty
   private val allSegments: ChunkSegsWithKey[ChunkRenderer] = new ChunkSegsWithKey
 
-  private var _length: Int = 0
   def length: Int = lastSegment().map(s => s._2.start + s._2.length).getOrElse(0)
 
   def hasMapping(chunk: ChunkRenderer): Boolean = contentMap.get(chunk).exists(_.totalLength != 0)
@@ -16,7 +15,6 @@ class ChunkSegmentHandler {
   def add(chunk: ChunkRenderer, segment: Segment): Unit = {
     contentMap.getOrElseUpdate(chunk, new ChunkSegs).add(segment)
     allSegments.add(chunk, segment)
-    if (segment.start == length) _length += segment.length
   }
 
   // TODO: Handle removal of parts of existing segments
@@ -24,8 +22,6 @@ class ChunkSegmentHandler {
   def remove(chunk: ChunkRenderer, segment: Segment): Unit = {
     require(contentMap.get(chunk).exists(_.remove(segment)))
     allSegments.remove(chunk, segment)
-    if (segment.start + segment.length == length)
-      _length -= segment.length
   }
 
   def segments(chunk: ChunkRenderer): Iterable[Segment] = contentMap.getOrElse(chunk, Iterable.empty)

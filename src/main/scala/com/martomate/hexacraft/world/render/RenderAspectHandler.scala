@@ -5,9 +5,12 @@ import java.nio.ByteBuffer
 class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   private val segmentHandler: ChunkSegmentHandler = new ChunkSegmentHandler
 
-  private var length: Int = 0
+  private def length: Int = segmentHandler.length
 
-  def render(): Unit = bufferHandler.render(length)
+  def render(): Unit = {
+    println(length)
+    bufferHandler.render(length)
+  }
 
   def setChunkContent(chunk: ChunkRenderer, content: Option[ByteBuffer]): Unit = content match {
     case Some(data) =>
@@ -21,11 +24,12 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   }
 
   private def appendData(chunk: ChunkRenderer, data: ByteBuffer): Unit = {
-    val seg = Segment(length, data.remaining())
-    bufferHandler.set(seg, data)
-    length += seg.length
+    if (data.remaining() > 0) {
+      val seg = Segment(length, data.remaining())
+      bufferHandler.set(seg, data)
 
-    segmentHandler.add(chunk, seg)
+      segmentHandler.add(chunk, seg)
+    }
   }
 
   private def addNewChunk(chunk: ChunkRenderer, data: ByteBuffer): Unit = {
@@ -56,10 +60,12 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       }
 
       val splitSeg = leftOver.firstSegment()
-      val first = Segment(splitSeg.start, data.remaining())
+      if (data.remaining() > 0) {
+        val first = Segment(splitSeg.start, data.remaining())
 
-      bufferHandler.set(first, data)
-      leftOver.remove(first)
+        bufferHandler.set(first, data)
+        leftOver.remove(first)
+      }
 
       removeData(chunk, leftOver)
     }
