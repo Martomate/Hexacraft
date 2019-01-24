@@ -19,5 +19,6 @@ class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer {
 
   def copyFrom(buffer: VAORenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = VBO.copy(vao.vbos(idxToFill), buffer.vao.vbos(buffer.idxToFill), fromIdx, toIdx, len)
 
-  def render(length: Int): Unit = renderer.render(length)
+  def render(length: Int): Unit = renderer.render(length / vao.vbos(idxToFill).stride)
 }
+//TODO: updateChunk is still quite slow, and the world.dat file is not saved until unload even though the chunks are saved before that.

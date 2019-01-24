@@ -41,7 +41,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
-  override def collisionDetector: CollisionDetector = new CollisionDetector
+  override val collisionDetector: CollisionDetector = new CollisionDetector
 
   private val columns = mutable.Map.empty[Long, ChunkColumn]
 
@@ -71,6 +71,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   addChunkAddedOrRemovedListener(worldPlanner)
   addChunkAddedOrRemovedListener(chunkLoader)
+
+  saveWorldData()
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
@@ -214,15 +216,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   def unload(): Unit = {
-    val worldTag = toNBT
-
-    worldSettings.saveState(worldTag, "world.dat")
+    saveWorldData()
 
     chunkLoader.unload()
     blockUpdateTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear
     chunkAddedOrRemovedListeners.clear()
+  }
+
+  private def saveWorldData(): Unit = {
+    val worldTag = toNBT
+
+    worldSettings.saveState(worldTag, "world.dat")
   }
 
   private def toNBT: CompoundTag = {

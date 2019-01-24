@@ -9,7 +9,9 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
 
   override def bytesPerInstance: Int = (5 + verticesPerInstance) * 4
 
-  override def makeBuffer(maxInstances: Int): VAORenderBuffer = new VAORenderBuffer(makeVAO(maxInstances), 1)
+  override def makeBuffer(maxInstances: Int): VAORenderBuffer = {
+    new VAORenderBuffer(makeVAO(maxInstances), 1)
+  }
 
   def makeVAO(maxInstances: Int): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
@@ -18,7 +20,7 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
       .floats(2, 3)
       .ints(3, 1)
       .create().fill(0, setupBlockVBO(side)))
-    .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+    .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)//GL_DYNAMIC_DRAW
       .ints(4, 3)
       .ints(5, 1)
       .floats(6, 1)

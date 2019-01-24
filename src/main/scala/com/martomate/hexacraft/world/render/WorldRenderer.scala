@@ -108,14 +108,14 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
         entityRenderers.renderBlockSide(side)
       }
     }
-
     if (getSelectedSide.isDefined) {
       selectedBlockShader.enable()
       selectedBlockRenderer.render()
     }
+
   }
 
-  for (side <- 0 until 8) {
+/*  for (side <- 0 until 8) {
     registerRenderingJob(RenderingJob({
       val sh = if (side < 2) blockShader else blockSideShader
       sh.enable()
@@ -127,7 +127,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
       sh.enable()
       sh.setUniform1i("side", side)
     }))
-  }
+  }*/
 
   def registerRenderingJob(job: RenderingJob): Unit = {
     renderingJobs += job

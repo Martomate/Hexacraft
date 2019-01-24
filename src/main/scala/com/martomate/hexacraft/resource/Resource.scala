@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.resource
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 object Resource {
-  private val resources = ArrayBuffer.empty[Resource]
+  private val resources: mutable.Set[Resource] = mutable.Set.empty
 
   def freeAllResources(): Unit = {
     resources.clone().foreach(_.free1())

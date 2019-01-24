@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 abstract class BufferHandler[T <: RenderBuffer](bufferFactory: RenderBufferFactory[T]) {
-  private val InstancesPerBuffer: Int = 10000
+  private val InstancesPerBuffer: Int = 100000
   protected val BufSize: Int = bufferFactory.bytesPerInstance * InstancesPerBuffer
 
   protected val buffers: ArrayBuffer[T] = ArrayBuffer.empty

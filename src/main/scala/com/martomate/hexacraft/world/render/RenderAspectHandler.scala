@@ -8,7 +8,6 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   private def length: Int = segmentHandler.length
 
   def render(): Unit = {
-    println(length)
     bufferHandler.render(length)
   }
 

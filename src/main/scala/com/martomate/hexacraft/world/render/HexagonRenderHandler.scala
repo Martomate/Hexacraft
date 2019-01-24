@@ -6,7 +6,7 @@ import com.martomate.hexacraft.resource.Shader
 
 class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
 
-  def bufferHandlerMaker(s: Int): BufferHandler[_] = new VAOBufferHandler(new BlockVAORenderBufferFactory(s))
+  private def bufferHandlerMaker(s: Int): BufferHandler[_] = new VAOBufferHandler(new BlockVAORenderBufferFactory(s))
 
   private val sideHandlers: IndexedSeq[RenderAspectHandler] = IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
 
