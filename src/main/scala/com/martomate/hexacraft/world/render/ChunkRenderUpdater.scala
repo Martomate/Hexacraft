@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.ChunkEventListener
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.loader.PosAndDir
 
 object ChunkRenderUpdater {
@@ -25,7 +25,7 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
     val numUpdatesToPerform = if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
     for (_ <- 1 to numUpdatesToPerform) {
       if (!chunkRenderUpdateQueue.isEmpty) {
-        while (updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
+        while (!updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
       }
     }
   }

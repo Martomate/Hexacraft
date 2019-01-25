@@ -143,7 +143,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   override def onChunkAdded(chunk: IChunk): Unit = {
     val renderer = new ChunkRenderer(chunk, world)
     chunkRenderers(chunk.coords) = renderer
-    chunkHandler.addChunk(renderer)
+//    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
   }
   override def onChunkRemoved(chunk: IChunk): Unit = {

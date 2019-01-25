@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.player
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords

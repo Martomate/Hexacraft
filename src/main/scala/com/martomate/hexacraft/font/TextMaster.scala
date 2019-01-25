@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.renderer.{VAO, VAOBuilder, VBO, VBOBuilder}
+import com.martomate.hexacraft.renderer.{VAO, VAOBuilder, VBOBuilder}
 import fontMeshCreator.{FontType, GUIText}
 
 import scala.collection.mutable

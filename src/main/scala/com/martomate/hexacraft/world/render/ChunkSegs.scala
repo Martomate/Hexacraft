@@ -8,14 +8,20 @@ class ChunkSegs extends mutable.Iterable[Segment] {
     if (s1.overlaps(s2)) 0
     else s1.start - s2.start
   }
+  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty { (s1, s2) =>
+    if (s2.contains(s1)) 0
+    else s1.start - s2.start
+  }
   private var _totalLength = 0
 
   protected def _add(seg: Segment): Unit = {
     require(segments.add(seg), seg + " cannot be added")
+    segmentsContain(seg) = seg
     _totalLength += seg.length
   }
   protected def _remove(seg: Segment): Unit = {
-    require(segments.remove(seg), seg + " cannot be removed")
+    require(segmentsContain.remove(seg).isDefined, seg + " cannot be removed")
+    segments.remove(seg)
     _totalLength -= seg.length
   }
 
@@ -41,8 +47,8 @@ class ChunkSegs extends mutable.Iterable[Segment] {
     }
   }
 
-  private def containedInSegments(seg: Segment) = {
-    segments.find(_.contains(seg))
+  private def containedInSegments(seg: Segment): Option[Segment] = {
+    segmentsContain.get(seg)
   }
 
   def totalLength: Int = _totalLength

@@ -2,15 +2,15 @@ package com.martomate.hexacraft.main
 
 import java.io.File
 
-import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
+import com.martomate.hexacraft._
 import com.martomate.hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
-import com.martomate.hexacraft.util.os.OSUtils
-import com.martomate.hexacraft._
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
+import com.martomate.hexacraft.util.os.OSUtils
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}

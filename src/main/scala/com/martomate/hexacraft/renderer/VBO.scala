@@ -7,8 +7,6 @@ import com.martomate.hexacraft.world.render.BlockVertexData
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
-import scala.collection.mutable.ArrayBuffer
-
 object VBO {
   private var boundVBO: VBO = _
 

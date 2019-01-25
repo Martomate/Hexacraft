@@ -20,8 +20,8 @@ class ChunkSegmentHandler {
   // TODO: Handle removal of parts of existing segments
   /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c <= a, d >= b */
   def remove(chunk: ChunkRenderer, segment: Segment): Unit = {
-    require(contentMap.get(chunk).exists(_.remove(segment)))
     allSegments.remove(chunk, segment)
+    contentMap.get(chunk).exists(_.remove(segment))
   }
 
   def segments(chunk: ChunkRenderer): Iterable[Segment] = contentMap.getOrElse(chunk, Iterable.empty)

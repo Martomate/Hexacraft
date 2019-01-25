@@ -3,7 +3,6 @@ package com.martomate.hexacraft.world.camera
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
-import com.martomate.hexacraft.world.coord.CoordUtils.toBlockCoords
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.player.Player

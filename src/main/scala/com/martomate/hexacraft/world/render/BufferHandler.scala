@@ -58,8 +58,10 @@ abstract class BufferHandler[T <: RenderBuffer](bufferFactory: RenderBufferFacto
   protected def copyInternal(fromBuffer: Int, fromIdx: Int, toBuffer: Int, toIdx: Int, len: Int): Unit
 
   def render(length: Int): Unit = {
-    for (i <- 0 to (length - 1) / BufSize) {
-      buffers(i).render(math.min(length - i * BufSize, BufSize))
+    if (length > 0) {
+      for (i <- 0 to (length - 1) / BufSize) {
+        buffers(i).render(math.min(length - i * BufSize, BufSize))
+      }
     }
   }
 

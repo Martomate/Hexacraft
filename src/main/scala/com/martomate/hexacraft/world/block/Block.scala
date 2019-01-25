@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.world.block.behaviour.{BlockBehaviour, BlockBehaviourNothing}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 object Block {
   private val maxBlocks = 256

@@ -3,13 +3,15 @@ package com.martomate.hexacraft.world.lighting
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
+import com.martomate.hexacraft.world.worldlike.{BlocksInWorld, ChunkCache}
 
 import scala.collection.mutable
 
 class LightPropagator(world: BlocksInWorld) {
+  private val chunkCache: ChunkCache = new ChunkCache(world)
 
   def initBrightnesses(chunk: IChunk, lights: mutable.HashMap[BlockRelChunk, BlockState]): Unit = {
+    chunkCache.clearCache()
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, IChunk)]
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, IChunk)]
     val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, IChunk)]
@@ -41,7 +43,7 @@ class LightPropagator(world: BlocksInWorld) {
         ) foreach { t =>
           val c2 = BlockRelWorld(t._1, t._2, t._3, chunk.coords)
           val c2c = c2.getBlockRelChunk
-          world.getChunk(c2.getChunkRelWorld) match {
+          chunkCache.getChunk(c2.getChunkRelWorld) match {
             case Some(neigh) =>
               if (neigh.lighting.getTorchlight(c2c) > 1) {
                 queueTorch += ((c2c, neigh))
@@ -68,29 +70,33 @@ class LightPropagator(world: BlocksInWorld) {
   }
 
   def addTorchlight(chunk: IChunk, coords: BlockRelChunk, value: Int): Unit = {
+    chunkCache.clearCache()
     chunk.lighting.setTorchlight(coords, value)
     val queue = mutable.Queue(coords -> chunk)
     propagateTorchlight(queue)
   }
 
   def updateSunlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+    chunkCache.clearCache()
     chunk.lighting.setSunlight(coords, 0)
     removeSunlight(chunk, coords)
   }
 
   def removeTorchlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+    chunkCache.clearCache()
     val queue = mutable.Queue[(BlockRelChunk, IChunk, Int)]((coords, chunk, chunk.lighting.getTorchlight(coords)))
     chunk.lighting.setTorchlight(coords, 0)
     propagateTorchlightRemoval(queue)
   }
 
   def removeSunlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+    chunkCache.clearCache()
     val queue = mutable.Queue[(BlockRelChunk, IChunk, Int)]((coords, chunk, chunk.lighting.getSunlight(coords)))
     chunk.lighting.setSunlight(coords, 0)
     propagateSunlightRemoval(queue)
   }
 
-  def propagateTorchlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
+  private def propagateTorchlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
     val lightQueue = mutable.Queue.empty[(BlockRelChunk, IChunk)]
 
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
@@ -104,7 +110,7 @@ class LightPropagator(world: BlocksInWorld) {
       chunksNeedingRenderUpdate += chunk
 
       for (s <- BlockState.neighborOffsets.indices) {
-        world.neighbor(s, chunk, here) match {
+        chunkCache.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
             val thisLevel = neigh.lighting.getTorchlight(c2)
             if (thisLevel != 0) {
@@ -125,7 +131,7 @@ class LightPropagator(world: BlocksInWorld) {
     propagateTorchlight(lightQueue)
   }
 
-  def propagateSunlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
+  private def propagateSunlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
     val lightQueue = mutable.Queue.empty[(BlockRelChunk, IChunk)]
 
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
@@ -139,7 +145,7 @@ class LightPropagator(world: BlocksInWorld) {
       chunksNeedingRenderUpdate += chunk
 
       for (s <- BlockState.neighborOffsets.indices) {
-        world.neighbor(s, chunk, here) match {
+        chunkCache.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
             val thisLevel = neigh.lighting.getSunlight(c2)
             if (thisLevel != 0) {
@@ -159,7 +165,7 @@ class LightPropagator(world: BlocksInWorld) {
     propagateSunlight(lightQueue)
   }
 
-  def propagateTorchlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
+  private def propagateTorchlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
 
     while (queue.nonEmpty) {
@@ -173,7 +179,7 @@ class LightPropagator(world: BlocksInWorld) {
         chunksNeedingRenderUpdate += chunk
 
         for (s <- BlockState.neighborOffsets.indices) {
-          world.neighbor(s, chunk, here) match {
+          chunkCache.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
               if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
@@ -192,7 +198,7 @@ class LightPropagator(world: BlocksInWorld) {
     chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
   }
 
-  def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
+  private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
 
     while (queue.nonEmpty) {
@@ -206,7 +212,7 @@ class LightPropagator(world: BlocksInWorld) {
         chunksNeedingRenderUpdate += chunk
 
         for (s <- BlockState.neighborOffsets.indices) {
-          world.neighbor(s, chunk, here) match {
+          chunkCache.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
               if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
