@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.buffer
 
 trait RenderBufferFactory[T <: RenderBuffer] {
   def bytesPerInstance: Int

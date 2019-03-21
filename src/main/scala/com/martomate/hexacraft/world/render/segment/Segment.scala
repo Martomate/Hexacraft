@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.segment
 
 case class Segment(start: Int, length: Int) {
   require(start >= 0,  "'start' has to be non-negative")

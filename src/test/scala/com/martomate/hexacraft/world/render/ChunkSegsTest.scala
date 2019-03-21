@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.world.render.segment.{ChunkSegs, Segment}
 import org.scalatest.{FlatSpec, Matchers}
 
 class ChunkSegsTest extends FlatSpec with Matchers {

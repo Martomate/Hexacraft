@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.buffer
 
 import java.nio.ByteBuffer
 

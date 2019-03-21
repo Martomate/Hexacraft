@@ -1,8 +1,9 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.buffer.vao
 
 import java.nio.ByteBuffer
 
 import com.martomate.hexacraft.renderer.{InstancedRenderer, Renderer, VAO, VBO}
+import com.martomate.hexacraft.world.render.buffer.RenderBuffer
 import org.lwjgl.opengl.GL11
 
 class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer {
@@ -21,4 +22,3 @@ class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer {
 
   def render(length: Int): Unit = renderer.render(length / vao.vbos(idxToFill).stride)
 }
-//TODO: updateChunk is still quite slow, and the world.dat file is not saved until unload even though the chunks are saved before that.

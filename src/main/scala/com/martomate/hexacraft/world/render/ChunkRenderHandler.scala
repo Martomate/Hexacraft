@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.resource.{Shader, Texture, TextureArray}
+import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
 
 import scala.collection.mutable
 

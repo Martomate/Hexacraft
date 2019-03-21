@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.world.render.segment.Segment
 import org.scalatest.{FlatSpec, Matchers}
 
 class SegmentTest extends FlatSpec with Matchers {

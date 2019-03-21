@@ -7,6 +7,7 @@ import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.render.selector._
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -27,6 +28,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   private val renderingJobs = ArrayBuffer.empty[RenderingJob]
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
+  private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorNotBuried(chunkHandler)
 
   private val skyVAO: VAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))).create()
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
@@ -68,12 +70,14 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
     val r = chunkRenderers.get(coords)
-    r.foreach(chunkHandler.updateChunk)
+    r.foreach(chunkRenderSelector.updateChunk)
     r.isDefined
   }, world.renderDistance)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)
+
+    chunkRenderSelector.tick(CylCoords(camera.view.position))
   }
 
   def render(camera: Camera): Unit = {
@@ -148,7 +152,7 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   }
   override def onChunkRemoved(chunk: IChunk): Unit = {
     chunkRenderers.remove(chunk.coords).foreach(renderer => {
-      chunkHandler.removeChunk(renderer)
+      chunkRenderSelector.removeChunk(renderer)
       renderer.unload()
     })
     chunk.removeEventListener(chunkRenderUpdater)

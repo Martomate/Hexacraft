@@ -1,6 +1,8 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.buffer.vao
 
 import com.martomate.hexacraft.renderer.{VAO, VAOBuilder, VBOBuilder}
+import com.martomate.hexacraft.world.render.BlockVertexData
+import com.martomate.hexacraft.world.render.buffer.RenderBufferFactory
 import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.opengl.GL15
 

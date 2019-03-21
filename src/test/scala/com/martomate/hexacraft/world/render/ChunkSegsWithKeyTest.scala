@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.world.render.segment.{ChunkSegsWithKey, Segment}
 import org.scalamock.scalatest.MockFactory
 
 class ChunkSegsWithKeyTest extends ChunkSegsTest with MockFactory {

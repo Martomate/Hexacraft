@@ -1,4 +1,6 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.segment
+
+import com.martomate.hexacraft.world.render.ChunkRenderer
 
 import scala.collection.mutable
 

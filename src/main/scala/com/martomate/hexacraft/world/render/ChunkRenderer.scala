@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.worldlike.{ChunkCache, IWorld}
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
@@ -19,6 +19,12 @@ object ChunkRenderData {
 
 class ChunkRenderer(chunk: IChunk, world: IWorld) {
   import chunk.coords.cylSize.impl
+
+  def coords: ChunkRelWorld = chunk.coords
+
+  private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.blocks)
+
+  def canGetToSide(fromSide: Int, toSide: Int): Boolean = opaqueDeterminer.canGetToSide(fromSide, toSide)
 
   private var renderData: ChunkRenderData = _
   def getRenderData: ChunkRenderData = renderData
@@ -85,6 +91,7 @@ class ChunkRenderer(chunk: IChunk, world: IWorld) {
       chunk.lighting.init(Seq.empty)
     }
     renderData = ChunkRenderData(buffers)
+    opaqueDeterminer.invalidate()
   }
 
   def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit = {
