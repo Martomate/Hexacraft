@@ -39,8 +39,11 @@ class BufferHandlerTest extends FlatSpec with Matchers with MockFactory {
 
   "unload" should "unload all buffers"
 
-  def simpleBuffer(start: Int, len: Int): ByteBuffer =
-    ByteBuffer.allocate(start + len + 2).position(start).limit(start + len)
+  def simpleBuffer(start: Int, len: Int): ByteBuffer = {
+    val bf = ByteBuffer.allocate(start + len + 2)
+    bf.position(start).limit(start + len)
+    bf
+  }
 
   def filledBuffer(start: Int, len: Int)(filler: Int => Byte): ByteBuffer = {
     val buf = simpleBuffer(start, len)
@@ -66,13 +69,17 @@ class BufferHandlerTest extends FlatSpec with Matchers with MockFactory {
     override def set(start: Int, length: Int, buf: ByteBuffer): Unit = {
       val lim = buf.limit()
       buf.limit(buf.position() + length)
-      localBuffer.position(start).limit(start + length).put(buf)
+      localBuffer.position(start).limit(start + length)
+      localBuffer.put(buf)
       buf.position(buf.limit())
       buf.limit(lim)
     }
 
-    override def copyTo(buffer: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit =
-      buffer.localBuffer.position(toIdx).put(localBuffer.position(fromIdx).limit(fromIdx + len))
+    override def copyTo(buffer: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {
+      localBuffer.position(fromIdx).limit(fromIdx + len)
+      buffer.localBuffer.position(toIdx)
+      buffer.localBuffer.put(localBuffer)
+    }
 
     override def render(length: Int): Unit = ???
 
