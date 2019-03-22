@@ -1,57 +1,57 @@
 package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.util.CylinderSize
-import org.scalatest.FunSuite
+import org.scalatest.{FlatSpec, Matchers}
 
-class ChunkRelWorldTest extends FunSuite {
-  private val size = new CylinderSize(4)
-  import size.impl
+class ChunkRelWorldTest extends FlatSpec with Matchers {
+  private val cylSize = new CylinderSize(4)
+  import cylSize.impl
 
-  test("Y is correct in entire range") {
-    assertResult(   -14)(ChunkRelWorld(532,    -14, 17).Y)
-    assertResult( 0x7ff)(ChunkRelWorld(532,  0x7ff, 17).Y)
-    assertResult(-0x800)(ChunkRelWorld(532,  0x800, 17).Y)
-    assertResult(    -1)(ChunkRelWorld(532,  0xfff, 17).Y)
-    assertResult(     0)(ChunkRelWorld(532, 0x1000, 17).Y)
+  "Y" should "be correct in entire range" in {
+    ChunkRelWorld(532,    -14, 17).Y shouldBe -14
+    ChunkRelWorld(532,  0x7ff, 17).Y shouldBe 0x7ff
+    ChunkRelWorld(532,  0x800, 17).Y shouldBe -0x800
+    ChunkRelWorld(532,  0xfff, 17).Y shouldBe -1
+    ChunkRelWorld(532, 0x1000, 17).Y shouldBe 0
   }
 
-  test("X is correct in entire range") {
-    assertResult(     -14)(ChunkRelWorld(     -14, -14, 17).X)
-    assertResult( 0x7ffff)(ChunkRelWorld( 0x7ffff, -14, 17).X)
-    assertResult(-0x80000)(ChunkRelWorld( 0x80000, -14, 17).X)
-    assertResult(      -1)(ChunkRelWorld( 0xfffff, -14, 17).X)
-    assertResult(       0)(ChunkRelWorld(0x100000, -14, 17).X)
+  "X" should "be correct in entire range" in {
+    ChunkRelWorld(     -14, -14, 17).X shouldBe -14
+    ChunkRelWorld( 0x7ffff, -14, 17).X shouldBe 0x7ffff
+    ChunkRelWorld( 0x80000, -14, 17).X shouldBe -0x80000
+    ChunkRelWorld( 0xfffff, -14, 17).X shouldBe -1
+    ChunkRelWorld(0x100000, -14, 17).X shouldBe 0
   }
 
-  test("Z is correct in entire range") {
-    assertResult( 1)(ChunkRelWorld(532, -14,  1).Z)
-    assertResult(15)(ChunkRelWorld(532, -14, -1).Z)
-    assertResult( 0)(ChunkRelWorld(532, -14, 16).Z)
-    assertResult( 0)(ChunkRelWorld(532, -14, 16 * 25235).Z)
+  "Z" should "be correct in entire range" in {
+    ChunkRelWorld(532, -14,  1).Z shouldBe 1
+    ChunkRelWorld(532, -14, -1).Z shouldBe 15
+    ChunkRelWorld(532, -14, 16).Z shouldBe 0
+    ChunkRelWorld(532, -14, 16 * 25235).Z shouldBe 0
   }
 
-  test("offset works") {
+  "offset" should "give the correct result" in {
     val c = ChunkRelWorld(532, -14, 17).offset(-4, 71, -12345)
-    assertResult(532 -  4)(c.X)
-    assertResult(-14 + 71)(c.Y)
-    assertResult(       8)(c.Z)
+    c.X shouldBe 532 -  4
+    c.Y shouldBe -14 + 71
+    c.Z shouldBe 8
   }
 
-  test("value is in XXXXXZZZZZYYY-format and correct") {
-    assertResult(532L << 32 | (17L & 15) << 12 | (-14 & 0xfff))(ChunkRelWorld(532, -14, 17).value)
-    assertResult((-532L & 0xfffff) << 32 | (17L & 15) << 12 | (-14 & 0xfff))(ChunkRelWorld(-532, -14, 17).value)
-    assertResult(532L << 32 | (-17L & 15) << 12 | (-14 & 0xfff))(ChunkRelWorld(532, -14, -17).value)
+  "value" should "be in XXXXXZZZZZYYY-format and correct" in {
+    ChunkRelWorld(532, -14, 17).value shouldBe 532L << 32 | (17L & 15) << 12 | (-14 & 0xfff)
+    ChunkRelWorld(-532, -14, 17).value shouldBe (-532L & 0xfffff) << 32 | (17L & 15) << 12 | (-14 & 0xfff)
+    ChunkRelWorld(532, -14, -17).value shouldBe 532L << 32 | (-17L & 15) << 12 | (-14 & 0xfff)
   }
 
-  test("withBlockCoords works") {
+  "withBlockCoords" should "give the correct result" in {
     var c = BlockRelWorld(0, 0, 0, ChunkRelWorld(532, -14, 17))
-    assertResult(532 * 16)(c.x)
-    assertResult(-14 * 16)(c.y)
-    assertResult(  1 * 16)(c.z)
+    c.x shouldBe 532 * 16
+    c.y shouldBe -14 * 16
+    c.z shouldBe   1 * 16
 
     c = BlockRelWorld(-4, 71, -12345, ChunkRelWorld(532, -14, 17))
-    assertResult(532 * 16 -  4)(c.x)
-    assertResult(-14 * 16 + 71)(c.y)
-    assertResult( (17 * 16 - 12345) & size.totalSizeMask)(c.z)
+    c.x shouldBe 532 * 16 -  4
+    c.y shouldBe -14 * 16 + 71
+    c.z shouldBe (17 * 16 - 12345) & cylSize.totalSizeMask
   }
 }
