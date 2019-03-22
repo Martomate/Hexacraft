@@ -91,11 +91,11 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     getColumn(coords).get
   }
 
-  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean =
-    getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
+  def setBlock(coords: BlockRelWorld, block: BlockState): Unit =
+    getChunk(coords.getChunkRelWorld).foreach(_.setBlock(coords.getBlockRelChunk, block))
 
-  def removeBlock(coords: BlockRelWorld): Boolean =
-    getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
+  def removeBlock(coords: BlockRelWorld): Unit =
+    getChunk(coords.getChunkRelWorld).foreach(_.removeBlock(coords.getBlockRelChunk))
 
   def addEntity(entity: Entity): Unit = {
     getChunk(CoordUtils.approximateChunkCoords(entity.position)).foreach(_.entities += entity)

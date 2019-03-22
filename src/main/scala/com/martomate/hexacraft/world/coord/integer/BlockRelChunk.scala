@@ -17,16 +17,16 @@ case class BlockRelChunk(private val _value: Int)(implicit val cylSize: Cylinder
   def onChunkEdge(side: Int): Boolean = {
     val off = BlockState.neighborOffsets(side)
     val xx = cx + off._1
-    val yy = cx + off._2
-    val zz = cx + off._3
+    val yy = cy + off._2
+    val zz = cz + off._3
     (xx & ~15 | yy & ~15 | zz & ~15) != 0
   }
 
   def neighbor(side: Int): BlockRelChunk = {
     val off = BlockState.neighborOffsets(side)
     val xx = cx + off._1
-    val yy = cx + off._2
-    val zz = cx + off._3
+    val yy = cy + off._2
+    val zz = cz + off._3
     BlockRelChunk(xx, yy, zz)
   }
 

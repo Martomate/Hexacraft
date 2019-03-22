@@ -17,12 +17,26 @@ object ChunkRenderData {
   def blockSideStride(side: Int): Int = if (side < 2) (5 + 6) * 4 else (5 + 4) * 4
 }
 
-class ChunkRenderer(chunk: IChunk, world: IWorld) {
+trait ChunkRenderer {
+  def coords: ChunkRelWorld
+
+  def canGetToSide(fromSide: Int, toSide: Int): Boolean
+
+  def getRenderData: ChunkRenderData
+
+  def updateContent(): Unit
+
+  def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit
+
+  def unload(): Unit
+}
+
+class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
   import chunk.coords.cylSize.impl
 
   def coords: ChunkRelWorld = chunk.coords
 
-  private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.blocks)
+  private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
 
   def canGetToSide(fromSide: Int, toSide: Int): Boolean = opaqueDeterminer.canGetToSide(fromSide, toSide)
 

@@ -5,11 +5,12 @@ import java.nio.ByteBuffer
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.world.render.ChunkRenderer
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
-import com.martomate.hexacraft.world.render.buffer.vao.{BlockVAORenderBufferFactory, VAOBufferHandler}
+import com.martomate.hexacraft.world.render.buffer.vao.BlockVAORenderBufferFactory
 
 class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
 
-  private def bufferHandlerMaker(s: Int): BufferHandler[_] = new VAOBufferHandler(new BlockVAORenderBufferFactory(s))
+  private def bufferHandlerMaker(s: Int): BufferHandler[_] =
+    new BufferHandler(100000, new BlockVAORenderBufferFactory(s))
 
   private val sideHandlers: IndexedSeq[RenderAspectHandler] = IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
 

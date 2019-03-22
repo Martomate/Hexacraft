@@ -19,7 +19,8 @@ case class BlockRelWorld(private val _value: Long)(implicit val cylSize: Cylinde
   def getChunkRelWorld = ChunkRelWorld(value >>> 12)
   def getColumnRelWorld = ColumnRelWorld(value >>> 24)
 
-  def offset(xx: Int, yy: Int, zz: Int) = BlockRelWorld(x + xx, y + yy, z + zz)
+  def offset(t: (Int, Int, Int)): BlockRelWorld = offset(t._1, t._2, t._3)
+  def offset(xx: Int, yy: Int, zz: Int): BlockRelWorld = BlockRelWorld(x + xx, y + yy, z + zz)
 
   def X: Int = (value >> 32).toInt >> 12
   def Z: Int = (value >> 12).toInt >> 12

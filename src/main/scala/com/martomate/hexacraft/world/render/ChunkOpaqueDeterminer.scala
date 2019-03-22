@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
-import com.martomate.hexacraft.world.storage.ChunkStorage
+import com.martomate.hexacraft.world.chunk.BlockInChunkAccessor
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import scala.collection.mutable
 
@@ -12,7 +12,7 @@ trait ChunkOpaqueDeterminer {
   def invalidate(): Unit
 }
 
-class ChunkOpaqueDeterminerSimple(chunk: ChunkStorage) extends ChunkOpaqueDeterminer {
+class ChunkOpaqueDeterminerSimple(chunkCoords: ChunkRelWorld, chunk: BlockInChunkAccessor) extends ChunkOpaqueDeterminer {
   private val sideGroups: Array[mutable.Set[Int]] = Array.fill(8)(mutable.Set.empty)
   private var sideGroupValid: Boolean = false
 
@@ -29,6 +29,11 @@ class ChunkOpaqueDeterminerSimple(chunk: ChunkStorage) extends ChunkOpaqueDeterm
   def invalidate(): Unit = sideGroupValid = false
 
   private def calculateSideGroups(): Unit = {
+    sideGroups.foreach(_.clear())
+
+    val chunkLookup: Map[ChunkRelWorld, Int] =
+      BlockState.neighborOffsets.map(t => chunkCoords.offset(t)).zipWithIndex.toMap
+
     val group = new Array[Int](16 * 16 * 16)
     val bfs = mutable.Queue.empty[Int]
     var currentGroup = 1
@@ -40,14 +45,15 @@ class ChunkOpaqueDeterminerSimple(chunk: ChunkStorage) extends ChunkOpaqueDeterm
           val idx = bfs.dequeue()
 
           if (group(idx) == 0) {
-            val c = BlockRelChunk(idx)(chunk.chunkCoords.cylSize)
+            val c = BlockRelChunk(idx)(chunkCoords.cylSize)
             val solid = chunk.getBlock(c) != BlockState.Air
             if (!solid) {
               group(idx) = currentGroup
 
               for (s <- BlockState.neighborOffsets.indices) {
                 if (c.onChunkEdge(s)) {
-                  sideGroups(s) += currentGroup
+                  val ch = BlockRelWorld(c, chunkCoords).offset(BlockState.neighborOffsets(s)).getChunkRelWorld
+                  sideGroups(chunkLookup(ch)) += currentGroup
                 } else {
                   val n = c.neighbor(s).value
                   if (group(n) == 0) bfs += n
@@ -60,6 +66,6 @@ class ChunkOpaqueDeterminerSimple(chunk: ChunkStorage) extends ChunkOpaqueDeterm
       }
     }
 
-    if (currentGroup != 1) println(currentGroup)
+//    if (currentGroup != 1) println(currentGroup)
   }
 }
