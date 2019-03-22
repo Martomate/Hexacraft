@@ -52,7 +52,10 @@ class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage
 
   def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
 
-  def fill(start: Int, content: Seq[BlockVertexData]): VBO = fillWith[BlockVertexData](start, content, (3+2+3+1)*4, buf => data => data.fill(buf))
+  def fill(start: Int, content: Seq[VertexData]): VBO =
+    if (content.nonEmpty)
+      fillWith[VertexData](start, content, content.head.bytesPerVertex, buf => data => data.fill(buf))
+    else this
 
   private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)

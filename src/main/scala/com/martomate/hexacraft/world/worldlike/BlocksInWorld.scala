@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.worldlike
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.column.ChunkColumn
+import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.mutable
@@ -15,7 +16,7 @@ trait BlocksInWorld {
   def provideColumn(coords: ColumnRelWorld): ChunkColumn
 
   def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk): (BlockRelChunk, Option[IChunk]) = {
-    val (i, j, k) = BlockState.neighborOffsets(side)
+    val (i, j, k) = NeighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     val c2 = BlockRelChunk(i2, j2, k2)(coords.cylSize)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
@@ -26,7 +27,7 @@ trait BlocksInWorld {
   }
 
   def neighborChunk(coords: ChunkRelWorld, side: Int): Option[IChunk] = {
-    val (dx, dy, dz) = ChunkRelWorld.neighborOffsets(side)
+    val (dx, dy, dz) = NeighborOffsets(side)
     getChunk(coords.offset(dx, dy, dz))
   }
 
@@ -41,7 +42,7 @@ class ChunkCache(world: BlocksInWorld) {
   def getChunk(coords: ChunkRelWorld): Option[IChunk] = cache.getOrElseUpdate(coords, world.getChunk(coords))
 
   def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk): (BlockRelChunk, Option[IChunk]) = {
-    val (i, j, k) = BlockState.neighborOffsets(side)
+    val (i, j, k) = NeighborOffsets(side)
     val (i2, j2, k2) = (coords.cx + i, coords.cy + j, coords.cz + k)
     val c2 = BlockRelChunk(i2, j2, k2)(coords.cylSize)
     if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {

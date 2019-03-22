@@ -15,6 +15,7 @@ import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
+import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
@@ -58,8 +59,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
   blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
 
-  private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick)
-  private val leftMouseButtonTimer = TickableTimer(10, initActive = false)(performLeftMouseClick)
+  private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick())
+  private val leftMouseButtonTimer = TickableTimer(10, initActive = false)(performLeftMouseClick())
 
   private var isPaused: Boolean = false
 
@@ -236,7 +237,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None)
   }
 
-  private def performLeftMouseClick = {
+  private def performLeftMouseClick(): Unit = {
     worldRenderer.getSelectedBlockAndSide match {
       case Some((coords, _)) =>
         if (world.getBlock(coords).blockType != Blocks.Air) {
@@ -246,10 +247,10 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     }
   }
 
-  private def performRightMouseClick = {
+  private def performRightMouseClick(): Unit = {
     worldRenderer.getSelectedBlockAndSide match {
       case Some((coords1, Some(side))) =>
-        val offset = BlockState.neighborOffsets(side)
+        val offset = NeighborOffsets(side)
         val coords = coords1.offset(offset._1, offset._2, offset._3)
         if (world.getBlock(coords).blockType == Blocks.Air) {
           val blockType = playerInputHandler.player.blockInHand

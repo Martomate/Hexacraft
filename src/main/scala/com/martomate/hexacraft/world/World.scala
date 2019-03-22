@@ -164,13 +164,9 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     columns.values.foreach(_.tick())
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates) {
-    performBlockUpdates()
-  }
+  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)(performBlockUpdates())
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation) {
-    performEntityRelocation()
-  }
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)(performEntityRelocation())
 
   private def performBlockUpdates(): Unit = {
     val blocksToUpdateLen = blocksToUpdate.size

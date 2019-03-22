@@ -8,16 +8,6 @@ import scala.collection.Seq
 object BlockState {
   val Air: BlockState = new BlockState(Blocks.Air)
 
-  val neighborOffsets: Seq[(Int, Int, Int)] = IndexedSeq(
-      ( 0, 1, 0),
-      ( 0,-1, 0),
-      ( 1, 0, 0),
-      ( 0, 0, 1),
-      (-1, 0, 1),
-      (-1, 0, 0),
-      ( 0, 0,-1),
-      ( 1, 0,-1))
-
   val vertices: Seq[CylCoords] = new HexBox(0.5f, 0, 0.5f).vertices
 
   def getVertices(side: Int): Seq[CylCoords] = side match {

@@ -13,7 +13,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ListBuffer
 
 class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   import world.size.impl
@@ -26,7 +26,6 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val selectedBlockShader = Shader.get("selectedBlock").get
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
-  private val renderingJobs = ArrayBuffer.empty[RenderingJob]
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
   private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorNotBuried(chunkHandler)
 
@@ -86,14 +85,6 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
     chunkHandler.render()
 
-    for (job <- renderingJobs) {
-      job.setup()
-
-      for (r <- chunkRenderers.values) {
-        job(r)
-      }
-    }
-
     for (side <- 0 until 8) {
       val sh = if (side < 2) entityShader else entitySideShader
       sh.enable()
@@ -119,24 +110,6 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
 
   }
 
-/*  for (side <- 0 until 8) {
-    registerRenderingJob(RenderingJob({
-      val sh = if (side < 2) blockShader else blockSideShader
-      sh.enable()
-      sh.setUniform1i("side", side)
-      _.renderBlockSide(side)
-    }, () => {
-      blockTexture.bind()
-      val sh = if (side < 2) blockShader else blockSideShader
-      sh.enable()
-      sh.setUniform1i("side", side)
-    }))
-  }*/
-
-  def registerRenderingJob(job: RenderingJob): Unit = {
-    renderingJobs += job
-  }
-
   def unload(): Unit = {
     skyVAO.free()
     selectedBlockVAO.free()
@@ -157,8 +130,4 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
     })
     chunk.removeEventListener(chunkRenderUpdater)
   }
-}
-
-case class RenderingJob(job: ChunkRenderer => Unit, setup: () => Unit) {
-  def apply(r: ChunkRenderer): Unit = job(r)
 }

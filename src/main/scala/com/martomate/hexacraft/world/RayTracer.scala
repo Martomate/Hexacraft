@@ -4,7 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.worldlike.IWorld
@@ -139,7 +139,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
       val pointOnSide = points(if (side == 0) index else index + 6)
       val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
       if (distance <= maxDistance * CylinderSize.y60) {
-        val hitBlockCoords = coordsOfHitBlock(current, BlockState.neighborOffsets(side))
+        val hitBlockCoords = coordsOfHitBlock(current, NeighborOffsets(side))
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
           Some(hitBlockCoords, Some(oppositeSide(side)))

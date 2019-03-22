@@ -2,6 +2,7 @@ package com.martomate.hexacraft.world.lighting
 
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
 import com.martomate.hexacraft.world.worldlike.{BlocksInWorld, ChunkCache}
 
@@ -109,7 +110,7 @@ class LightPropagator(world: BlocksInWorld) {
 
       chunksNeedingRenderUpdate += chunk
 
-      for (s <- BlockState.neighborOffsets.indices) {
+      for (s <- NeighborOffsets.indices) {
         chunkCache.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
             val thisLevel = neigh.lighting.getTorchlight(c2)
@@ -144,7 +145,7 @@ class LightPropagator(world: BlocksInWorld) {
 
       chunksNeedingRenderUpdate += chunk
 
-      for (s <- BlockState.neighborOffsets.indices) {
+      for (s <- NeighborOffsets.indices) {
         chunkCache.neighbor(s, chunk, here) match {
           case (c2, Some(neigh)) =>
             val thisLevel = neigh.lighting.getSunlight(c2)
@@ -178,7 +179,7 @@ class LightPropagator(world: BlocksInWorld) {
       if (nextLevel > 0) {
         chunksNeedingRenderUpdate += chunk
 
-        for (s <- BlockState.neighborOffsets.indices) {
+        for (s <- NeighborOffsets.indices) {
           chunkCache.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
@@ -211,7 +212,7 @@ class LightPropagator(world: BlocksInWorld) {
       if (nextLevel > 0) {
         chunksNeedingRenderUpdate += chunk
 
-        for (s <- BlockState.neighborOffsets.indices) {
+        for (s <- NeighborOffsets.indices) {
           chunkCache.neighbor(s, chunk, here) match {
             case (c2, Some(neigh)) =>
               val block = neigh.getBlock(c2)
