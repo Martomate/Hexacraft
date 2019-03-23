@@ -17,8 +17,10 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
+import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
 import com.martomate.hexacraft.world.{RayTracer, World}
@@ -42,32 +44,34 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private val skyShader: Shader = Shader.get("sky").get
   private val crosshairShader: Shader = Shader.get("crosshair").get
 
-  private val crosshairVAO = new VAOBuilder(4).addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))).create()
-  private val crosshairRenderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
+  private val shadersNeedingTotalSize: Seq[Shader] = Seq(blockShader, blockSideShader, entityShader, entitySideShader, selectedBlockShader)
+  private val shadersNeedingProjMatrix: Seq[Shader] = Seq(blockShader, blockSideShader, entityShader, entitySideShader, guiBlockShader, guiBlockSideShader, selectedBlockShader)
+  private val shadersNeedingCamera: Seq[Shader] = Seq(blockShader, blockSideShader, entityShader, entitySideShader, selectedBlockShader)
+  private val shadersNeedingSun: Seq[Shader] = Seq(skyShader, blockShader, blockSideShader, entityShader, entitySideShader)
 
+  private val crosshairVAO: VAO = makeCrosshairVAO
+  private val crosshairRenderer: Renderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
-  val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
+  private val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
   import world.size.impl
 
-  val worldRenderer = new WorldRenderer(world)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world)
 
-  val camera = new Camera(new CameraProjection(70f, window.windowSize.x.toFloat / window.windowSize.y, 0.02f, 1000f))
-  val mousePicker = new RayTracer(world, camera, 7)
-  val playerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
+  val camera: Camera = new Camera(new CameraProjection(70f, window.aspectRatio, 0.02f, 1000f))
+  private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
+  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
 
-  private val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), world.player.inventory)
-  private val blockInHandRenderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
-  blockInHandRenderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
+  private val toolbar: Toolbar = makeToolbar(world.player)
+  private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
 
-  private val rightMouseButtonTimer = TickableTimer(10, initActive = false)(performRightMouseClick())
-  private val leftMouseButtonTimer = TickableTimer(10, initActive = false)(performLeftMouseClick())
+  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)(performRightMouseClick())
+  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)(performLeftMouseClick())
 
   private var isPaused: Boolean = false
 
   private var debugScene: DebugScene = _
-  
+
   setUniforms()
-  toolbar.setSelectedIndex(world.player.selectedItemSlot)
   setUseMouse(true)
   
   override def onReloadedResources(): Unit = {
@@ -78,11 +82,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private def setUniforms(): Unit = {
     setProjMatrixForAll()
 
-    blockShader.setUniform1f("totalSize", world.size.totalSize)
-    blockSideShader.setUniform1f("totalSize", world.size.totalSize)
-    entityShader.setUniform1f("totalSize", world.size.totalSize)
-    entitySideShader.setUniform1f("totalSize", world.size.totalSize)
-    selectedBlockShader.setUniform1f("totalSize", world.size.totalSize)
+    for (shader <- shadersNeedingTotalSize)
+      shader.setUniform1f("totalSize", world.size.totalSize)
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
@@ -90,13 +91,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   }
 
   private def setProjMatrixForAll(): Unit = {
-    camera.setProjMatrix(blockShader)
-    camera.setProjMatrix(blockSideShader)
-    camera.setProjMatrix(entityShader)
-    camera.setProjMatrix(entitySideShader)
-    camera.setProjMatrix(guiBlockShader)
-    camera.setProjMatrix(guiBlockSideShader)
-    camera.setProjMatrix(selectedBlockShader)
+    for (shader <- shadersNeedingProjMatrix)
+      camera.setProjMatrix(shader)
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {
@@ -113,21 +109,25 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
         case GLFW_KEY_F =>
           playerInputHandler.player.flying = !playerInputHandler.player.flying
         case GLFW_KEY_F7 =>
-          if (debugScene != null) {
-            debugScene.unload()
-            debugScene = null
-          } else debugScene = new DebugScene(this)
+          setDebugScreenVisible(debugScene == null)
         case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
           val idx = key - GLFW_KEY_1
-          playerInputHandler.player.selectedItemSlot = idx
-          blockInHandRenderer.updateContent()
-          toolbar.setSelectedIndex(idx)
+          setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
           world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world)(new EntityModelLoader))
         case _ =>
       }
     }
     true
+  }
+
+  private def setDebugScreenVisible(visible: Boolean): Unit = {
+    if (visible) {
+      if (debugScene == null) debugScene = new DebugScene(this)
+    } else {
+      if (debugScene != null) debugScene.unload()
+      debugScene = null
+    }
   }
 
   def setUseMouse(useMouse: Boolean): Unit = {
@@ -141,12 +141,16 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
       val dy = -math.signum(event.yoffset).toInt
       if (dy != 0) {
         val itemSlot = (playerInputHandler.player.selectedItemSlot + dy + 9) % 9
-        playerInputHandler.player.selectedItemSlot = itemSlot
-        blockInHandRenderer.updateContent()
-        toolbar.setSelectedIndex(itemSlot)
+        setSelectedItemSlot(itemSlot)
       }
       true
     } else super.onScrollEvent(event)
+  }
+
+  private def setSelectedItemSlot(itemSlot: Int): Unit = {
+    playerInputHandler.player.selectedItemSlot = itemSlot
+    blockInHandRenderer.updateContent()
+    toolbar.setSelectedIndex(itemSlot)
   }
 
   def setPaused(paused: Boolean): Unit = {
@@ -205,20 +209,16 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   override def tick(): Unit = {
     if (!isPaused) playerInputHandler.tick()
+
     camera.setPositionAndRotation(playerInputHandler.player)
     camera.updateCoords()
     camera.updateViewMatrix()
-    camera.updateUniforms(blockShader)
-    camera.updateUniforms(blockSideShader)
-    camera.updateUniforms(entityShader)
-    camera.updateUniforms(entitySideShader)
-    camera.updateUniforms(selectedBlockShader)
+    for (shader <- shadersNeedingCamera)
+      camera.updateUniforms(shader)
+
     skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
-    skyShader.setUniform3f("sun", 0, 1, -1)
-    blockShader.setUniform3f("sun", 0, 1, -1)
-    blockSideShader.setUniform3f("sun", 0, 1, -1)
-    entityShader.setUniform3f("sun", 0, 1, -1)
-    entitySideShader.setUniform3f("sun", 0, 1, -1)
+    for (shader <- shadersNeedingSun)
+      shader.setUniform3f("sun", 0, 1, -1)
 
     blockInHandRenderer.updateContent()
 
@@ -234,11 +234,11 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   private def updateMousePicker(): Unit = {
     mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
-    worldRenderer.setSelectedBlockAndSide(if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None)
+    worldRenderer.selectedBlockAndSide = if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None
   }
 
   private def performLeftMouseClick(): Unit = {
-    worldRenderer.getSelectedBlockAndSide match {
+    worldRenderer.selectedBlockAndSide match {
       case Some((coords, _)) =>
         if (world.getBlock(coords).blockType != Blocks.Air) {
           world.removeBlock(coords)
@@ -248,19 +248,23 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   }
 
   private def performRightMouseClick(): Unit = {
-    worldRenderer.getSelectedBlockAndSide match {
+    worldRenderer.selectedBlockAndSide match {
       case Some((coords1, Some(side))) =>
         val offset = NeighborOffsets(side)
         val coords = coords1.offset(offset._1, offset._2, offset._3)
-        if (world.getBlock(coords).blockType == Blocks.Air) {
-          val blockType = playerInputHandler.player.blockInHand
-          val skewCoords = BlockCoords(coords.x, coords.y, coords.z).toSkewCylCoords
-          val state = new BlockState(blockType)
-          if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
-            world.setBlock(coords, state)
-          }
-        }
+        tryPlacingBlockAt(coords)
       case _ =>
+    }
+  }
+
+  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
+    if (world.getBlock(coords).blockType == Blocks.Air) {
+      val blockType = playerInputHandler.player.blockInHand
+      val skewCoords = BlockCoords(coords.x, coords.y, coords.z).toSkewCylCoords
+      val state = new BlockState(blockType)
+      if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
+        world.setBlock(coords, state)
+      }
     }
   }
 
@@ -275,4 +279,22 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   }
 
   override def viewDistance: Double = world.renderDistance
+
+  private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer = {
+    val renderer = new GUIBlocksRenderer(1, xOff = 1.2f, yOff = -0.8f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
+    renderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
+    renderer
+  }
+
+  private def makeCrosshairVAO: VAO = new VAOBuilder(4).addVBO(
+    VBOBuilder(4).floats(0, 2).create().fillFloats(0,
+      Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0)
+    )
+  ).create()
+
+  private def makeToolbar(player: Player): Toolbar = {
+    val toolbar = new Toolbar(new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f), player.inventory)
+    toolbar.setSelectedIndex(player.selectedItemSlot)
+    toolbar
+  }
 }
