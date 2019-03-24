@@ -14,7 +14,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
-import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
+import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, ChunkLoaderWithOrigin, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
@@ -40,14 +40,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldSettings.plannerNBT)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
-  val renderDistance: Double = 8 * CylinderSize.y60
+  val renderDistance: Double = 4 * CylinderSize.y60
 
   override val collisionDetector: CollisionDetector = new CollisionDetector
 
   private val columns = mutable.Map.empty[Long, ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
-  private val chunkLoader: ChunkLoader = new ChunkLoaderWithOrigin(
+  private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(
+    chunkLoadingOrigin,
+    coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
+    renderDistance
+  )
+  /*new ChunkLoaderWithOrigin(
     size,
     renderDistance,
     columns,
@@ -59,7 +64,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     },
     coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
     chunkLoadingOrigin
-  )
+  )*/
 
   private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
 
