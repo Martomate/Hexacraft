@@ -49,7 +49,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     }
   }
 
-  it should "be not already be loaded" in {
+  it should "not already be loaded" in {
     val prio = make()
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
@@ -117,9 +117,11 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
 
   it should "be a None after adding and removing C far away" in {
     val prio = make(makePos(0, 0, 0))
-    prio += ChunkRelWorld(0, 0, 0)
-    prio += ChunkRelWorld(10, 0, 0)
-    prio -= ChunkRelWorld(10, 0, 0)
+    val start = ChunkRelWorld(0, 0, 0)
+    val far = ChunkRelWorld(10, 0, 0)
+    prio += start
+    prio += far
+    prio -= far
     prio.nextRemovableChunk shouldBe None
   }
 

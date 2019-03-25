@@ -40,7 +40,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldSettings.plannerNBT)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
-  val renderDistance: Double = 4 * CylinderSize.y60
+  val renderDistance: Double = 8 * CylinderSize.y60
 
   override val collisionDetector: CollisionDetector = new CollisionDetector
 
