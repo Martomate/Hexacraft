@@ -77,6 +77,12 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
   def hasNoBlocks: Boolean = storage.numBlocks == 0
 
+  def saveIfNeeded(): Unit = {
+    if (needsToSave || entities.needsToSave) {
+      save()
+    }
+  }
+
   def unload(): Unit = {
     saveIfNeeded()
 
@@ -84,12 +90,6 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
     blockEventListeners.clear()
     eventListeners.clear()
-  }
-
-  def saveIfNeeded(): Unit = {
-    if (needsToSave || entities.needsToSave) {
-      save()
-    }
   }
 
   private def save(): Unit = {

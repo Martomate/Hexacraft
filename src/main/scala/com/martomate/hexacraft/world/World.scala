@@ -14,7 +14,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
-import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, ChunkLoaderWithOrigin, PosAndDir}
+import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
@@ -50,6 +50,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(
     chunkLoadingOrigin,
     coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
+    coords => getChunk(coords).foreach(_.saveIfNeeded()),
     renderDistance
   )
   /*new ChunkLoaderWithOrigin(

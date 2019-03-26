@@ -26,5 +26,7 @@ trait IChunk extends BlockInChunkAccessor {
   def requestRenderUpdate(): Unit
   def requestBlockUpdate(coords: BlockRelChunk): Unit
 
+  def saveIfNeeded(): Unit
+
   def unload(): Unit
 }
