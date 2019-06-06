@@ -5,7 +5,7 @@ scalaVersion := "2.12.8"
 
 enablePlugins(LauncherJarPlugin)
 
-val lwjglVersion = "3.1.6"
+val lwjglVersion = "3.2.2"
 
 libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "3.0.5",
