@@ -20,7 +20,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
 
-  private val prioritizer: ChunkLoadingPrioritizer = new ChunkLoadingPrioritizerSimple(origin, distSqFunc, maxDist)
+  private val prioritizer: ChunkLoadingPrioritizer = new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c))(c.cylSize).toCylCoords)

@@ -14,10 +14,10 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
            distSqFunc: (PosAndDir, ChunkRelWorld) => Double = distSqFuncDefault,
            maxDist: Double = 4): ChunkLoadingPrioritizer
 
-  private def distSqFuncDefault(p: PosAndDir, c: ChunkRelWorld): Double =
+  protected def distSqFuncDefault(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c))(c.cylSize).toCylCoords)
 
-  private def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
+  protected def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
 
   "nextAddableChunk" should "be the chunk of the origin in the beginning" in {
     make(makePos(0, 0, 0)).nextAddableChunk shouldBe Some(ChunkRelWorld(0, 0, 0))
@@ -84,6 +84,17 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     finished shouldBe true
   }
 
+  it should "not assume the chunk will be added" in {
+    val prio = make()
+
+    prio += prio.nextAddableChunk.get
+
+    val chunk = prio.nextAddableChunk
+    prio.nextAddableChunk shouldBe chunk
+    prio.nextAddableChunk shouldBe chunk
+    prio.nextAddableChunk shouldBe chunk
+  }
+
   "nextRemovableChunk" should "be None in the beginning" in {
     make(makePos(0, 0, 0)).nextRemovableChunk shouldBe None
     make(makePos(17, 0, 0)).nextRemovableChunk shouldBe None
@@ -106,7 +117,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     prio.nextRemovableChunk shouldBe None
   }
 
-  it should "be a the C after adding the origin and then C far away" in {
+  it should "be C after adding the origin and then C far away" in {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     val far = ChunkRelWorld(10, 0, 0)
@@ -115,7 +126,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     prio.nextRemovableChunk shouldBe Some(far)
   }
 
-  it should "be a None after adding and removing C far away" in {
+  it should "be None after adding and removing C far away" in {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     val far = ChunkRelWorld(10, 0, 0)
@@ -132,5 +143,16 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     prio += start
     origin.pos = makePos(10*16, 0, 0).pos
     prio.nextRemovableChunk shouldBe Some(start)
+  }
+
+  it should "not assume the chunk will be removed" in {
+    val prio = make()
+
+    prio += ChunkRelWorld(100, 0, 0)
+
+    val chunk = prio.nextRemovableChunk
+    prio.nextRemovableChunk shouldBe chunk
+    prio.nextRemovableChunk shouldBe chunk
+    prio.nextRemovableChunk shouldBe chunk
   }
 }
