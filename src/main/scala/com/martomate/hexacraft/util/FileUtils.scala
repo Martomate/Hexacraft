@@ -2,6 +2,7 @@ package com.martomate.hexacraft.util
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.URL
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.jar.JarFile
 
@@ -18,7 +19,7 @@ object FileUtils {
         .filter(p => Files.isRegularFile(p))
         .map(_.getFileName.toString)
     } else {
-      val pathStr = path.getPath.substring(5)
+      val pathStr = java.net.URLDecoder.decode(path.getPath.substring(5), StandardCharsets.UTF_8.name())
       val jarSepIndex = pathStr.indexOf('!')
       val jar = new JarFile(pathStr.substring(0, jarSepIndex))
       val query = pathStr.substring(jarSepIndex + 2)
