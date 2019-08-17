@@ -1,11 +1,7 @@
 package com.martomate.hexacraft.resource
 
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.{GL11, GL12, GL30}
 
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]
@@ -25,7 +21,7 @@ object TextureArray {
   }
 }
 
-class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[Array[Int]]]) extends Resource {
+class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[Array[Int]]]) extends Resource with Texture {
   private var texID: Int = _
 
   TextureArray.textures += name -> this
@@ -41,7 +37,10 @@ class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWr
       for (j <- 0 until texSize) {
         for (i <- 0 until texSize) {
           val idx = i + j * texSize
-          buf.put((pix(idx) >> 16).toByte).put((pix(idx) >> 8).toByte).put((pix(idx) >> 0).toByte).put((pix(idx) >> 24).toByte)
+          buf.put((pix(idx) >> 16).toByte)
+          buf.put((pix(idx) >> 8).toByte)
+          buf.put((pix(idx) >> 0).toByte)
+          buf.put((pix(idx) >> 24).toByte)
         }
       }
     }

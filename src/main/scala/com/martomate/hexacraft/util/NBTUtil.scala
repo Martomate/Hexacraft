@@ -1,13 +1,20 @@
 package com.martomate.hexacraft.util
 
-import java.io.{File, FileInputStream, FileOutputStream}
+import java.io.{File, IOException}
+import java.nio.file.Files
 
 import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
+import org.joml.Vector3d
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 object NBTUtil {
+  def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
+    getByte(tag, key, if (default) 1 else 0) == 1
+  }
+
   def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
     if (tag == null) default
     else {
@@ -67,6 +74,16 @@ object NBTUtil {
       }
     }
   }
+
+  def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] = {
+    if (tag == null) None
+    else {
+      tag.getValue.get(key) match {
+        case t: ListTag[_] => Some(t.getValue.asScala)
+        case _ => None
+      }
+    }
+  }
   
   def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
     if (tag == null) None
@@ -96,11 +113,24 @@ object NBTUtil {
     NBTUtil.getTag(tag, name).map(_.asInstanceOf[ShortArrayTag].getValue)
   }
 
+  def setVector(tag: CompoundTag, vector: Vector3d): Vector3d = {
+    val x = NBTUtil.getDouble(tag, "x", vector.x)
+    val y = NBTUtil.getDouble(tag, "y", vector.y)
+    val z = NBTUtil.getDouble(tag, "z", vector.z)
+    vector.set(x, y, z)
+  }
+
   def makeCompoundTag(name: String, children: Seq[Tag[_]]): CompoundTag = {
     val map = new CompoundMap()
     for (tag <- children) map.put(tag)
     new CompoundTag(name, map)
   }
+
+  def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(name, Seq(
+    new DoubleTag("x", vector.x),
+    new DoubleTag("y", vector.y),
+    new DoubleTag("z", vector.z)
+  ))
   
   def saveTag(tag: Tag[_], nbtFile: File): Unit = {
     new Thread(() => {
@@ -108,7 +138,7 @@ object NBTUtil {
         nbtFile.getParentFile.mkdirs()
         nbtFile.createNewFile()
       }
-      val nbtOut = new NBTOutputStream(new FileOutputStream(nbtFile))
+      val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
       nbtOut.writeTag(tag)
       nbtOut.close()
     }).start()
@@ -116,10 +146,16 @@ object NBTUtil {
 
   def loadTag(file: File): CompoundTag = {
     if (file.isFile) {
-      val stream = new NBTInputStream(new FileInputStream(file))
-      val nbt = stream.readTag().asInstanceOf[CompoundTag]
-      stream.close()
-      nbt
+      val stream = new NBTInputStream(Files.newInputStream(file.toPath))
+      try {
+        stream.readTag().asInstanceOf[CompoundTag]
+      } catch {
+        case e: IOException =>
+          println(file.getAbsolutePath + " couldn't be read as NBT")
+          throw e
+      } finally {
+        stream.close()
+      }
     } else {
       new CompoundTag("", new CompoundMap())
     }

@@ -2,63 +2,27 @@ package com.martomate.hexacraft.renderer
 
 import java.nio.ByteBuffer
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL33
 import com.martomate.hexacraft.resource.Resource
-
-class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
-  val vboID: Int = GL15.glGenBuffers()
-  GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
-
-  private trait SomeChannel
-  private case class IntChannel(index: Int, dims: Int, elementSize: Int, _type: Int, offset: Int) extends SomeChannel
-  private case class FloatChannel(index: Int, dims: Int, elementSize: Int, _type: Int, normalized: Boolean, offset: Int) extends SomeChannel
-
-  private val channels = ArrayBuffer.empty[SomeChannel]
-  private var totalStride = 0
-
-  def ints(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_INT): VBOBuilder = {
-    channels += IntChannel(index, dims, elementSize, _type, totalStride)
-    totalStride += dims * elementSize
-    this
-  }
-
-  def floats(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_FLOAT, normalized: Boolean = false): VBOBuilder = {
-    channels += FloatChannel(index, dims, elementSize, _type, normalized, totalStride)
-    totalStride += dims * elementSize
-    this
-  }
-
-  def create(): VBO = {
-    val realChannels = channels.map {
-      case IntChannel(index, dims, elementSize, _type, offset) =>
-        VBOChannelInt(index, dims, elementSize, _type, totalStride, offset, divisor)
-      case FloatChannel(index, dims, elementSize, _type, normalized, offset) =>
-        VBOChannelFloat(index, dims, elementSize, _type, normalized, totalStride, offset, divisor)
-    }
-    val vbo = new VBO(vboID, count, totalStride, vboUsage, realChannels)
-    vbo
-  }
-}
+import com.martomate.hexacraft.world.render.BlockVertexData
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl._
 
 object VBO {
-  def apply(count: Int, vboUsage: Int = GL15.GL_STATIC_DRAW, divisor: Int = 0): VBOBuilder = new VBOBuilder(count, vboUsage, divisor)
-
   private var boundVBO: VBO = _
+
+  def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
+    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
+    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
+    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, fromOffset, toOffset, length)
+  }
 }
 
-class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
+class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
   var _count: Int = init_count
   def count: Int = _count
   
   bind()
-  channels.foreach(_.setAttributes(this))
+  channels.foreach(_.setAttributes())
   GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
   
   protected def reload(): Unit = ()
@@ -88,6 +52,11 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
 
   def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
 
+  def fill(start: Int, content: Seq[VertexData]): VBO =
+    if (content.nonEmpty)
+      fillWith[VertexData](start, content, content.head.bytesPerVertex, buf => data => data.fill(buf))
+    else this
+
   private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)
     content.foreach(howToFill(buf))
@@ -95,31 +64,7 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
     fill(start, buf)
   }
 
-  def unload(): Unit = {
+  protected def unload(): Unit = {
     GL15.glDeleteBuffers(vboID)
-  }
-}
-
-trait VBOChannel {
-  def size: Int
-  def setAttributes(vbo: VBO): Unit
-}
-
-case class VBOChannelInt(index: Int, dims: Int, elementSize: Int, _type: Int, stride: Int, offset: Int, divisor: Int) extends VBOChannel {
-  def size: Int = dims * elementSize
-  def setAttributes(vbo: VBO): Unit = {
-    GL30.glVertexAttribIPointer(index, dims, _type, stride, offset)
-    GL33.glVertexAttribDivisor(index, divisor)
-    GL20.glEnableVertexAttribArray(index)
-  }
-}
-
-case class VBOChannelFloat(index: Int, dims: Int, elementSize: Int, _type: Int, normalized: Boolean, stride: Int, offset: Int, divisor: Int) 
-extends VBOChannel {
-  def size: Int = dims * elementSize
-  def setAttributes(vbo: VBO): Unit = {
-    GL20.glVertexAttribPointer(index, dims, _type, normalized, stride, offset)
-    GL33.glVertexAttribDivisor(index, divisor)
-    GL20.glEnableVertexAttribArray(index)
   }
 }

@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.gui.inventory
 
-import com.martomate.hexacraft.block.Block
-import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
+import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.resource.{Shader, TextureArray}
+import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 import org.joml.Matrix4f
 
@@ -43,10 +43,14 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
             buf.putFloat(y * separation + yOff)
             buf.putInt(blockToDraw.blockTex(side))
             buf.putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
-            buf.putFloat(brightnessFunc(x, y))
+            buf.putFloat(1)//brightnessFunc(x, y))
           }
         }
       }
     }
+  }
+
+  def unload(): Unit = {
+    guiBlockRenderer.unload()
   }
 }

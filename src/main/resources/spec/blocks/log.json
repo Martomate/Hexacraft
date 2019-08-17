@@ -1,0 +1,7 @@
+{
+	"textures": {
+		"top": "log",
+		"bottom": "log",
+		"side": "logSide"
+	}
+}

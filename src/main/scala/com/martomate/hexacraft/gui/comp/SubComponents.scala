@@ -40,4 +40,9 @@ trait SubComponents extends Component {
   def addComponent(comp: Component): Unit = {
     comps += comp
   }
+
+  override def unload(): Unit = {
+    comps.foreach(_.unload())
+    super.unload()
+  }
 }

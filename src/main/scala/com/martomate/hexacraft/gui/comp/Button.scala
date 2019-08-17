@@ -1,11 +1,15 @@
 package com.martomate.hexacraft.gui.comp
 
-import fontMeshCreator.GUIText
 import com.martomate.hexacraft.event.MouseClickEvent
+import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 
-class Button(text: String, _location: LocationInfo)(clickAction: =>Unit) extends Component(_location) {
+object Button {
+  def apply(text: String, location: LocationInfo)(clickAction: =>Unit): Button = new Button(text, location, clickAction)
+}
+
+class Button(text: String, _location: LocationInfo, clickAction: =>Unit) extends Component(_location) {
   addText(Component.makeText(text, location, 4.0f).setTextAndFitSize(text, 4.0f))
 
   override def render(transformation: GUITransformation): Unit = {

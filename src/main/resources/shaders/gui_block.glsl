@@ -6,6 +6,7 @@
 in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
+in int vertexIndex;
 
 // Per instance
 in vec2 blockPos;

@@ -1,16 +1,9 @@
 package com.martomate.hexacraft.resource
 
-import java.io.File
-import java.nio.file.Files
-import javax.imageio.ImageIO
-
 import com.martomate.hexacraft.util.FileUtils
+import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.EXTTextureFilterAnisotropic
-import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.{GL11, GL12}
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
@@ -25,7 +18,7 @@ object TextureSingle {
   def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
 }
 
-class TextureSingle(val name: String) extends Resource {
+class TextureSingle(val name: String) extends Resource with Texture {
   private var texID: Int = _
   private var texWidth: Int = _
   private var texHeight: Int = _
@@ -53,7 +46,7 @@ class TextureSingle(val name: String) extends Resource {
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf)
 
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
   }

@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.resource
 
-import scala.collection.Seq
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20
+
+import scala.collection.Seq
 
 object Shader {
   private var activeShader: Shader = _
@@ -15,10 +16,12 @@ object Shader {
 
   def init(): Unit = {
     cleanUp()
-    Shader("block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight", "brightness")("isSide" -> "0")
-    Shader("blockSide", fileName = "block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
-    Shader("gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "0")
-    Shader("gui_blockSide", fileName = "gui_block")("position", "texCoords", "normal", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
+    Shader("block")("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex", "blockHeight", "brightness")("isSide" -> "0")
+    Shader("blockSide", fileName = "block")("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex", "blockHeight")("isSide" -> "1")
+    Shader("entity", fileName = "entity_part")("position", "texCoords", "normal", "vertexIndex", "modelMatrix", "", "", "", "texOffset", "texDim", "blockTex", "brightness")("isSide" -> "0")
+    Shader("entitySide", fileName = "entity_part")("position", "texCoords", "normal", "vertexIndex", "modelMatrix", "", "", "", "texOffset", "texDim", "blockTex", "brightness")("isSide" -> "1")
+    Shader("gui_block")("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex", "blockHeight", "brightness")("isSide" -> "0")
+    Shader("gui_blockSide", fileName = "gui_block")("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex", "blockHeight", "brightness")("isSide" -> "1")
     Shader("selectedBlock")("position", "blockPos", "color", "blockHeight")()
     Shader("sky")("position")()
     Shader("crosshair")("position")()

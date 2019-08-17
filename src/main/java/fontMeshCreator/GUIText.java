@@ -181,8 +181,10 @@ public class GUIText {
 	 *            - the total number of vertices in all of the quads.
 	 */
 	public void setMeshInfo(VAO vao, int verticesCount) {
-	    if (textMeshVao != null) textMeshVao.free();
-		this.textMeshVao = vao;
+		if (textMeshVao != vao) {
+			if (textMeshVao != null) textMeshVao.free();
+			this.textMeshVao = vao;
+		}
 		this.vertexCount = verticesCount;
 	}
 

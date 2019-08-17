@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.util
 
 class TickableTimer private (period: Int, delay: Int, initActive: Boolean, action: =>Unit) {
-  require(period > 0, "The period may not be negative")
+  require(period > 0, "The period must be positive")
   require(delay >= 0, "The delay may not be negative")
 
   private var time = delay

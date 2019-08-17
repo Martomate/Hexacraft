@@ -1,103 +1,78 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.renderer._
-import org.lwjgl.BufferUtils
+import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.opengl.{GL11, GL15}
-
-class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {
-  val blockRenderers:     Seq[T] = Seq.tabulate(2)(s => rendererFactory(s))
-  val blockSideRenderers: Seq[T] = Seq.tabulate(6)(s => rendererFactory(s + 2))
-  val allBlockRenderers:  Seq[T] = blockRenderers ++ blockSideRenderers
-
-  def renderBlockSide(side: Int): Unit = {
-    val r = allBlockRenderers(side)
-    r.renderer.render(r.instances)
-  }
-
-  def updateContent(side: Int, maxInstances: Int)(dataFiller: ByteBuffer => Unit): Unit = {
-    val buf = BufferUtils.createByteBuffer(maxInstances * allBlockRenderers(side).vao.vbos(1).stride)
-    dataFiller(buf)
-    val instances = buf.position() / allBlockRenderers(side).vao.vbos(1).stride
-    if (instances > allBlockRenderers(side).maxInstances) allBlockRenderers(side).resize((instances * 1.1f).toInt)
-    val r = allBlockRenderers(side)
-    r.instances = instances
-    buf.flip()
-    r.vao.vbos(1).fill(0, buf)
-  }
-
-  def unload(): Unit = allBlockRenderers.foreach(_.unload())
-}
 
 class BlockRenderer(val side: Int, init_maxInstances: Int) {
   private var _maxInstances = init_maxInstances
   def maxInstances: Int = _maxInstances
-  private def verticesPerInstance = if (side < 2) 6 else 4
+  protected def verticesPerInstance: Int = if (side < 2) 6 else 4
 
-  val vao: VAO = new VAOBuilder(verticesPerInstance, maxInstances)
-    .addVBO(VBO(verticesPerInstance, GL15.GL_STATIC_DRAW)
-      .floats(0, 3)
-      .floats(1, 2)
-      .floats(2, 3)
-      .create().fillFloats(0, setupBlockVBO(side)))
-    .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
-      .ints(3, 3)
-      .ints(4, 1)
-      .floats(5, 1)
-      .floats(6, 1)
-      .create())
-    .create()
+  final val vao: VAO = initVAO()
 
   val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
 
   var instances = 0
+
+  protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
+    .addVBO(VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
+      .floats(0, 3)
+      .floats(1, 2)
+      .floats(2, 3)
+      .ints(3, 1)
+      .create().fill(0, setupBlockVBO(side)))
+    .addVBO(VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+      .ints(4, 3)
+      .ints(5, 1)
+      .floats(6, 1)
+      .floatsArray(7, 1)(verticesPerInstance)// after this index should be 'this index' + verticesPerInstance
+      .create())
+    .create()
 
   def resize(newMaxInstances: Int): Unit = {
     _maxInstances = newMaxInstances
     vao.vbos(1).resize(newMaxInstances)
   }
 
-  protected def setupBlockVBO(s: Int): Seq[Float] = {
+  protected def setupBlockVBO(s: Int): Seq[BlockVertexData] = {
     if (s < 2) {
       val ints = Seq(1, 2, 0, 3, 5, 4)
 
-      (0 until 6).flatMap(i => {
+      (0 until 6).map(i => {
         val v = {
           val a = ints(if (s == 0) i else 5 - i) * Math.PI / 3
           if (s == 0) -a else a
         }
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
-        Seq(x, 1 - s, z,
-          (1 + (if (s == 0) -x else x)) / 2, (1 + z) / 2,
-          0, 1 - 2 * s, 0)
+        BlockVertexData(
+          new Vector3f(x, 1 - s, z),
+          new Vector2f((1 + (if (s == 0) -x else x)) / 2, (1 + z) / 2),
+          new Vector3f(0, 1 - 2 * s, 0),
+          i
+        )
       })
     } else {
       val nv = ((s - 1) % 6 - 0.5) * Math.PI / 3
       val nx = Math.cos(nv).toFloat
       val nz = Math.sin(nv).toFloat
 
-      (0 until 4).flatMap(i => {
+      (0 until 4).map(i => {
         val v = (s - 2 + i % 2) % 6 * Math.PI / 3
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
-        Seq(x, 1 - i / 2, z,
-          1 - i % 2, i / 2,
-          nx, 0, nz)
+        BlockVertexData(
+          new Vector3f(x, 1 - i / 2, z),
+          new Vector2f(1 - i % 2, i / 2),
+          new Vector3f(nx, 0, nz),
+          i
+        )
       })
     }
   }
 
   def unload(): Unit = {
-    vao.unload()
+    vao.free()
   }
-}
-
-class FlatBlockRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
-  override val vao: VAO = new VAOBuilder(if (side < 2) 6 else 4, maxInstances)
-    .addVBO(VBO(if (side < 2) 6 else 4, GL15.GL_STATIC_DRAW).floats(0, 3).floats(1, 2).floats(2, 3).create().fillFloats(0, setupBlockVBO(side)))
-    .addVBO(VBO(maxInstances, GL15.GL_DYNAMIC_DRAW, 1).floats(3, 2).ints(4, 1).floats(5, 1).floats(6, 1).create()).create()
-
-  override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 }
