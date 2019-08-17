@@ -30,16 +30,3 @@ class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VB
     vbos.foreach(_.free())
   }
 }
-
-class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
-  private val vbos: ArrayBuffer[VBO] = new ArrayBuffer(1)
-  val vaoID: Int = GL30.glGenVertexArrays()
-  GL30.glBindVertexArray(vaoID)
-
-  def addVBO(vbo: VBO): VAOBuilder = {
-    vbos += vbo
-    this
-  }
-
-  def create(): VAO = new VAO(vaoID, maxCount, maxPrimCount, vbos)
-}

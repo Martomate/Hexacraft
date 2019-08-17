@@ -5,8 +5,8 @@ import java.io.File
 import com.martomate.hexacraft.game.GameScene
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
-import com.martomate.hexacraft.world.settings.WorldSettings
 import com.martomate.hexacraft.scene.{GameWindowExtended, MenuScene}
+import com.martomate.hexacraft.world.settings.WorldSettings
 
 class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))

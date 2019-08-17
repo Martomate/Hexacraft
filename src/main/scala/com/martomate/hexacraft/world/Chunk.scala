@@ -35,7 +35,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
-  def setBlock(blockCoords: BlockRelChunk, block: BlockState): Boolean = {
+  def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
     val before = getBlock(blockCoords)
     if (before != block) {
       storage.setBlock(blockCoords, block)
@@ -47,10 +47,9 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
 
       handleLightingOnSetBlock(blockCoords, block)
     }
-    true
   }
 
-  def removeBlock(coords: BlockRelChunk): Boolean = setBlock(coords, BlockState.Air)
+  def removeBlock(coords: BlockRelChunk): Unit = setBlock(coords, BlockState.Air)
 
   private def handleLightingOnSetBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
     lightPropagator.removeTorchlight(this, blockCoords)
@@ -76,12 +75,16 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     }
   }
 
-  def isEmpty: Boolean = storage.numBlocks == 0
+  def hasNoBlocks: Boolean = storage.numBlocks == 0
 
-  def unload(): Unit = {
+  def saveIfNeeded(): Unit = {
     if (needsToSave || entities.needsToSave) {
       save()
     }
+  }
+
+  def unload(): Unit = {
+    saveIfNeeded()
 
     requestRenderUpdateForAllNeighbors()
 

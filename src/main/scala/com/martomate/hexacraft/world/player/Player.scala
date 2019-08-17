@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.player
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, DoubleTag, ShortTag}
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.block.HexBox
+import com.martomate.hexacraft.world.block.{Block, HexBox}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.Vector3d
@@ -19,9 +19,11 @@ class Player(val world: IWorld) {
 
   val inventory = new Inventory
 
-  def blockInHand = inventory(selectedItemSlot)// TODO: temporary, make inventory system
-  
-  {
+  def blockInHand: Block = inventory(selectedItemSlot)// TODO: temporary, make inventory system
+
+  initPosition()
+
+  private def initPosition(): Unit = {
     val startX = (math.random * 100 - 50).toInt
     val startZ = (math.random * 100 - 50).toInt
     val startCoords = BlockCoords(startX, world.getHeight(startX, startZ), startZ).toCylCoords

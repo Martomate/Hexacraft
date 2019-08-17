@@ -1,35 +1,35 @@
 package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.util.CylinderSize
-import org.scalatest.FunSuite
+import org.scalatest.{FlatSpec, Matchers}
 
-class BlockRelChunkTest extends FunSuite {
-  private val size = new CylinderSize(4)
-  import size.impl
+class BlockRelChunkTest extends FlatSpec with Matchers {
+  private val cylSize = new CylinderSize(4)
+  import cylSize.impl
 
-  test("xyz is correct in normal range") {
+  "xyz" should "be correct in normal range" in {
     val c = BlockRelChunk(3, 7, 5)
-    assertResult(3)(c.cx)
-    assertResult(7)(c.cy)
-    assertResult(5)(c.cz)
+    c.cx shouldBe 3
+    c.cy shouldBe 7
+    c.cz shouldBe 5
   }
 
-  test("xyz is correct outside normal range") {
+  it should "be correct outside normal range" in {
     val c = BlockRelChunk(3 + 5*16, 7 - 3*16, 5 + 200 * 16)
-    assertResult(3)(c.cx)
-    assertResult(7)(c.cy)
-    assertResult(5)(c.cz)
+    c.cx shouldBe 3
+    c.cy shouldBe 7
+    c.cz shouldBe 5
   }
 
-  test("value is in xyz-format and correct") {
+  "value" should "be in xyz-format and correct" in {
     val c = BlockRelChunk(3, 7, 5)
-    assertResult(3 << 8 | 7 << 4 | 5)(c.value)
+    c.value shouldBe (3 << 8 | 7 << 4 | 5)
   }
 
-  test("offset is correct") {
+  "offset" should "be correct" in {
     val c = BlockRelChunk(3, 7, 5).offset(-4, -1, 14)
-    assertResult(15)(c.cx)
-    assertResult(6)(c.cy)
-    assertResult(3)(c.cz)
+    c.cx shouldBe 15
+    c.cy shouldBe 6
+    c.cz shouldBe 3
   }
 }

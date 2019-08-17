@@ -1,13 +1,8 @@
 package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.world.chunk.IChunk
-import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.column.WorldListenerForTheLoader
-
-object ChunkLoader {
-  val chunksLoadedPerTick = 1
-  val ticksBetweenColumnLoading = 5
-}
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 trait ChunkLoader extends WorldListenerForTheLoader {
   def tick(): Unit

@@ -18,7 +18,7 @@ object TextureSingle {
   def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
 }
 
-class TextureSingle(val name: String) extends Resource {
+class TextureSingle(val name: String) extends Resource with Texture {
   private var texID: Int = _
   private var texWidth: Int = _
   private var texHeight: Int = _

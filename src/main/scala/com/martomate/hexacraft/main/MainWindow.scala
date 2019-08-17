@@ -2,15 +2,15 @@ package com.martomate.hexacraft.main
 
 import java.io.File
 
-import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
+import com.martomate.hexacraft._
 import com.martomate.hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
-import com.martomate.hexacraft.util.os.OSUtils
-import com.martomate.hexacraft._
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
+import com.martomate.hexacraft.util.os.OSUtils
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
@@ -29,6 +29,7 @@ class MainWindow extends GameWindowExtended {
   private val window: Long = initWindow()
   private var fullscreen = false
   private var vsync = false
+  private var skipMouseMovedUpdate = false
 
   private val _mousePos = new Vector2d()
   private val _mouseMoved = new Vector2d()
@@ -55,13 +56,7 @@ class MainWindow extends GameWindowExtended {
   def resetMousePos(): Unit = {
     glfwGetCursorPos(window, doublePtrX, doublePtrY)
     _mousePos.set(doublePtrX.get(0), _windowSize.y - doublePtrY.get(0))
-  }
-
-  def moveMouse(pos: (Float, Float)): Unit = {
-    //val dx = _mousePos.x - prevWindowPos.x
-    //val dy = _mousePos.y - prevWindowPos.y
-    _mousePos.x = pos._1 * _windowSize.x
-    _mousePos.y = pos._2 * _windowSize.y
+    skipMouseMovedUpdate = true
   }
 
   private def loop(): Unit = {
@@ -143,7 +138,13 @@ class MainWindow extends GameWindowExtended {
     val oldMouseX = _mousePos.x
     val oldMouseY = _mousePos.y
     _mousePos.set(doublePtrX.get(0), _windowSize.y - doublePtrY.get(0))
-    _mouseMoved.set(_mousePos.x - oldMouseX, _mousePos.y - oldMouseY)
+
+    if (skipMouseMovedUpdate) {
+      _mouseMoved.set(0, 0)
+      skipMouseMovedUpdate = false
+    } else {
+      _mouseMoved.set(_mousePos.x - oldMouseX, _mousePos.y - oldMouseY)
+    }
 
     scenes.foreach(_.tick()) // TODO: should maybe be reversed
   }
@@ -197,27 +198,13 @@ class MainWindow extends GameWindowExtended {
       glfwGetWindowPos(window, intPtrX, intPtrY)
       prevWindowPos.set(intPtrX.get(0), intPtrY.get(0))
 
-
-      _mousePos.add(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
-
-      val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
-      if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
       glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
-      resetMousePos()
-      if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
-
-      fullscreen = true
     } else {
-      _mousePos.sub(prevWindowPos.x, mode.height - prevWindowSize.y - prevWindowPos.y)
-
-      val cursorHidden = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED
-      if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
       glfwSetWindowMonitor(window, 0, prevWindowPos.x, prevWindowPos.y, prevWindowSize.x, prevWindowSize.y, GLFW_DONT_CARE)
-      resetMousePos()
-      if (cursorHidden) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
-
-      fullscreen = false
     }
+
+    fullscreen = !fullscreen
+    skipMouseMovedUpdate = true
   }
 
   private def processChar(window: Long, character: Int): Unit = {
@@ -240,6 +227,7 @@ class MainWindow extends GameWindowExtended {
         scenes.foreach(_.windowResized(width, height))
       }
       _windowSize.set(width, height)
+      skipMouseMovedUpdate = true
     }
     Shader.foreach(_.setUniform2f("windowSize", _windowSize.x, _windowSize.y))
   }

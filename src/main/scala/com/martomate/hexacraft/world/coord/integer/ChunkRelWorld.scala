@@ -36,6 +36,7 @@ case class ChunkRelWorld(private val _value: Long)(implicit val cylSize: Cylinde
     x <- -radius to radius
   } yield offset(x, y, z)
 
+  def offset(t: (Int, Int, Int)): ChunkRelWorld = offset(t._1, t._2, t._3)
   def offset(x: Int, y: Int, z: Int): ChunkRelWorld = ChunkRelWorld(X + x, Y + y, Z + z)
 
   override def toString: String = s"($X, $Y, $Z)"

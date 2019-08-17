@@ -1,14 +1,14 @@
 package com.martomate.hexacraft.util
 
-import java.io.{File, FileInputStream, FileOutputStream}
-import java.nio.file.{Files, Paths}
+import java.io.{File, IOException}
+import java.nio.file.Files
 
 import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import org.joml.Vector3d
 
-import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 object NBTUtil {
   def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
@@ -147,9 +147,15 @@ object NBTUtil {
   def loadTag(file: File): CompoundTag = {
     if (file.isFile) {
       val stream = new NBTInputStream(Files.newInputStream(file.toPath))
-      val nbt = stream.readTag().asInstanceOf[CompoundTag]
-      stream.close()
-      nbt
+      try {
+        stream.readTag().asInstanceOf[CompoundTag]
+      } catch {
+        case e: IOException =>
+          println(file.getAbsolutePath + " couldn't be read as NBT")
+          throw e
+      } finally {
+        stream.close()
+      }
     } else {
       new CompoundTag("", new CompoundMap())
     }

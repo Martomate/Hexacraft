@@ -9,11 +9,12 @@ import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
-import com.martomate.hexacraft.world.entity.{EntityModelLoader, _}
+import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
-import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderWithOrigin, PosAndDir}
+import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.WorldSettingsProvider
@@ -41,12 +42,18 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
-  override def collisionDetector: CollisionDetector = new CollisionDetector
+  override val collisionDetector: CollisionDetector = new CollisionDetector
 
   private val columns = mutable.Map.empty[Long, ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
-  private val chunkLoader: ChunkLoader = new ChunkLoaderWithOrigin(
+  private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(
+    chunkLoadingOrigin,
+    coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
+    coords => getChunk(coords).foreach(_.saveIfNeeded()),
+    renderDistance
+  )
+  /*new ChunkLoaderWithOrigin(
     size,
     renderDistance,
     columns,
@@ -58,12 +65,11 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     },
     coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
     chunkLoadingOrigin
-  )
+  )*/
 
   private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
 
-  val player: Player = new Player(this)
-  player.fromNBT(worldSettings.playerNBT)
+  val player: Player = makePlayer
 
   private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
@@ -71,6 +77,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   addChunkAddedOrRemovedListener(worldPlanner)
   addChunkAddedOrRemovedListener(chunkLoader)
+
+  saveWorldData()
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
@@ -89,35 +97,26 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     getColumn(coords).get
   }
 
-  def setBlock(coords: BlockRelWorld, block: BlockState): Boolean =
-    getChunk(coords.getChunkRelWorld).fold(false)(_.setBlock(coords.getBlockRelChunk, block))
+  def setBlock(coords: BlockRelWorld, block: BlockState): Unit =
+    getChunk(coords.getChunkRelWorld).foreach(_.setBlock(coords.getBlockRelChunk, block))
 
-  def removeBlock(coords: BlockRelWorld): Boolean =
-    getChunk(coords.getChunkRelWorld).fold(false)(_.removeBlock(coords.getBlockRelChunk))
+  def removeBlock(coords: BlockRelWorld): Unit =
+    getChunk(coords.getChunkRelWorld).foreach(_.removeBlock(coords.getBlockRelChunk))
 
   def addEntity(entity: Entity): Unit = {
-    getChunk(CoordUtils.approximateChunkCoords(entity.position)).foreach(_.entities += entity)
+    chunkOfEntity(entity).foreach(_.entities += entity)
   }
 
   def removeEntity(entity: Entity): Unit = {
-    getChunk(CoordUtils.approximateChunkCoords(entity.position)).foreach(_.entities -= entity)
+    chunkOfEntity(entity).foreach(_.entities -= entity)
   }
 
-  def relocateEntity(oldChunk: IChunk, entity: Entity): Unit = {
-    getChunk(CoordUtils.approximateChunkCoords(entity.position)) match {
-      case Some(newChunk) =>
-        if (newChunk != oldChunk) {
-          oldChunk.entities -= entity
-          newChunk.entities += entity
-        }
-      case None =>
-        // TODO: Highly questionable. This is unsafe. It should freeze, not disappear.
-        oldChunk.entities -= entity
-    }
+  private def chunkOfEntity(entity: Entity): Option[IChunk] = {
+    getApproximateChunk(entity.position)
   }
 
-  def chunkOfEntity(entity: Entity): Option[IChunk] = {
-    getChunk(CoordUtils.approximateChunkCoords(entity.position))
+  private def getApproximateChunk(coords: CylCoords): Option[IChunk] = {
+    getChunk(CoordUtils.approximateChunkCoords(coords))
   }
 
   def getHeight(x: Int, z: Int): Int = {
@@ -129,19 +128,18 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   def tick(camera: Camera): Unit = {
     chunkLoadingOrigin.setPosAndDirFrom(camera.view)
     chunkLoader.tick()
-    for (ch <- chunkLoader.chunksToAdd()) {
-      ensureColumnExists(ch.coords.getColumnRelWorld)
-      getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
-      chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
-      ch.init()
-      worldPlanner.decorate(ch)
 
-      //TODO: temporary
-/*      if (ch.coords == ChunkRelWorld(0, 0, 0))
-        for (_ <- 1 to 10)
-          addEntity(PlayerEntity.atStartPos(BlockCoords(BlockRelWorld(0, 0, 0, ch.coords)).toCylCoords, this))*/
-    }
+    addNewChunks()
 
+    removeOldChunks()
+
+    blockUpdateTimer.tick()
+    relocateEntitiesTimer.tick()
+
+    columns.values.foreach(_.tick())
+  }
+
+  private def removeOldChunks(): Unit = {
     for (ch <- chunkLoader.chunksToRemove()) {
       getColumn(ch.getColumnRelWorld) foreach { col =>
         col.removeChunk(ch.getChunkRelColumn).foreach { c =>
@@ -155,20 +153,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
         }
       }
     }
-
-    blockUpdateTimer.tick()
-    relocateEntitiesTimer.tick()
-
-    columns.values.foreach(_.tick())
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates) {
-    performBlockUpdates()
+  private def addNewChunks(): Unit = {
+    for (ch <- chunkLoader.chunksToAdd()) {
+      ensureColumnExists(ch.coords.getColumnRelWorld)
+      getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
+      chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
+      ch.init()
+      worldPlanner.decorate(ch)
+    }
   }
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation) {
-    performEntityRelocation()
-  }
+  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)(performBlockUpdates())
 
   private def performBlockUpdates(): Unit = {
     val blocksToUpdateLen = blocksToUpdate.size
@@ -177,6 +174,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       getBlock(c).blockType.doUpdate(c, this)
     }
   }
+
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)(performEntityRelocation())
 
   private def performEntityRelocation(): Unit = {
     val entList = for {
@@ -214,15 +213,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   def unload(): Unit = {
-    val worldTag = toNBT
-
-    worldSettings.saveState(worldTag, "world.dat")
+    saveWorldData()
 
     chunkLoader.unload()
     blockUpdateTimer.active = false
     columns.values.foreach(_.unload())
     columns.clear
     chunkAddedOrRemovedListeners.clear()
+  }
+
+  private def saveWorldData(): Unit = {
+    val worldTag = toNBT
+
+    worldSettings.saveState(worldTag, "world.dat")
   }
 
   private def toNBT: CompoundTag = {
@@ -281,5 +284,11 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
         else c.requestBlockUpdate(c2)
       }
     }
+  }
+
+  private def makePlayer: Player = {
+    val player = new Player(this)
+    player.fromNBT(worldSettings.playerNBT)
+    player
   }
 }

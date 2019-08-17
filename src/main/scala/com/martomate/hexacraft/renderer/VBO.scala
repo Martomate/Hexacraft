@@ -7,13 +7,17 @@ import com.martomate.hexacraft.world.render.BlockVertexData
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
-import scala.collection.mutable.ArrayBuffer
-
 object VBO {
   private var boundVBO: VBO = _
+
+  def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
+    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
+    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
+    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, fromOffset, toOffset, length)
+  }
 }
 
-class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
+class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
   var _count: Int = init_count
   def count: Int = _count
   
@@ -48,7 +52,10 @@ class VBO(vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, chann
 
   def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
 
-  def fill(start: Int, content: Seq[BlockVertexData]): VBO = fillWith[BlockVertexData](start, content, (3+2+3+1)*4, buf => data => data.fill(buf))
+  def fill(start: Int, content: Seq[VertexData]): VBO =
+    if (content.nonEmpty)
+      fillWith[VertexData](start, content, content.head.bytesPerVertex, buf => data => data.fill(buf))
+    else this
 
   private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)

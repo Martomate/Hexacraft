@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.ChunkEventListener
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.loader.PosAndDir
 
 object ChunkRenderUpdater {
@@ -12,7 +12,7 @@ object ChunkRenderUpdater {
   val ticksBetweenColumnLoading = 5
 }
 
-class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRenderer], renderDistance: => Double)(implicit worldSize: CylinderSize) extends ChunkEventListener {
+class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderDistance: => Double)(implicit worldSize: CylinderSize) extends ChunkEventListener {
   private val origin = new PosAndDir
 
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
@@ -25,13 +25,7 @@ class ChunkRenderUpdater(chunkRendererProvider: ChunkRelWorld => Option[ChunkRen
     val numUpdatesToPerform = if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
     for (_ <- 1 to numUpdatesToPerform) {
       if (!chunkRenderUpdateQueue.isEmpty) {
-        var renderer: Option[ChunkRenderer] = None
-        do {
-          val coords = chunkRenderUpdateQueue.dequeue()
-          renderer = chunkRendererProvider(coords)
-        } while (renderer.isEmpty && !chunkRenderUpdateQueue.isEmpty)
-
-        renderer.foreach(_.updateContent())
+        while (!updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
       }
     }
   }

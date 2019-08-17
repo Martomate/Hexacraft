@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.world.block.fluid
 
-import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.block.behaviour.BlockBehaviour
-import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
+import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{Block, Blocks}
+import com.martomate.hexacraft.world.coord.NeighborOffsets
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask
@@ -12,7 +13,7 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet): Unit = {
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
-    val blocks = BlockState.neighborOffsets.map(off => coords.offset(off._1, off._2, off._3))
+    val blocks = NeighborOffsets.all.map(off => coords.offset(off._1, off._2, off._3))
     val bottomCoords = blocks.find(_.y == coords.y - 1).get
     val bottomBS = Some(world.getBlock(bottomCoords)).filter(_.blockType != Blocks.Air)//TODO: clean up
     if (!bottomBS.exists(_.blockType != Blocks.Air)) {
