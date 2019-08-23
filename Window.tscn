@@ -12,7 +12,7 @@ outline_size = 2
 outline_color = Color( 0, 0, 0, 1 )
 font_data = ExtResource( 4 )
 
-[sub_resource type="Theme" id=3]
+[sub_resource type="Theme" id=2]
 Button/colors/font_color = Color( 0.878431, 0.878431, 0.878431, 1 )
 Button/colors/font_color_disabled = Color( 0.9, 0.9, 0.9, 0.2 )
 Button/colors/font_color_hover = Color( 0.941176, 0.941176, 0.941176, 1 )
@@ -25,7 +25,7 @@ Button/styles/hover = ExtResource( 5 )
 Button/styles/normal = ExtResource( 5 )
 Button/styles/pressed = ExtResource( 5 )
 
-[sub_resource type="DynamicFont" id=2]
+[sub_resource type="DynamicFont" id=3]
 size = 32
 font_data = ExtResource( 4 )
 
@@ -71,8 +71,8 @@ margin_right = 128.0
 margin_bottom = 64.0
 rect_min_size = Vector2( 128, 64 )
 size_flags_horizontal = 0
-theme = SubResource( 3 )
-custom_fonts/font = SubResource( 2 )
+theme = SubResource( 2 )
+custom_fonts/font = SubResource( 3 )
 text = "Play"
 
 [node name="Progress" type="ProgressBar" parent="CenterPlay/MarginPlay"]
@@ -97,7 +97,7 @@ margin_right = 712.0
 margin_bottom = 29.0
 
 [node name="Versions" type="OptionButton" parent="MarginContainer/HBoxContainer"]
-margin_right = 215.0
+margin_right = 242.0
 margin_bottom = 29.0
 size_flags_horizontal = 0
 text = "Latest release (0.8)"
@@ -106,7 +106,7 @@ items = [ "Latest release (0.8)", null, false, -1, null ]
 selected = 0
 
 [node name="Filler" type="Label" parent="MarginContainer/HBoxContainer"]
-margin_left = 219.0
+margin_left = 246.0
 margin_top = 3.0
 margin_right = 604.0
 margin_bottom = 26.0
@@ -123,13 +123,16 @@ flat = true
 [node name="VersionListRequest" type="HTTPRequest" parent="."]
 
 [node name="VersionDownloader" type="HTTPRequest" parent="."]
+use_threads = true
 
 [node name="DownloadProgress" type="Timer" parent="."]
 wait_time = 0.1
 
+[node name="MartoLibDownloader" type="HTTPRequest" parent="."]
 [connection signal="pressed" from="CenterPlay/MarginPlay/Play" to="." method="_on_Play_pressed"]
 [connection signal="item_selected" from="MarginContainer/HBoxContainer/Versions" to="." method="_on_Versions_item_selected"]
 [connection signal="pressed" from="MarginContainer/HBoxContainer/Settings" to="." method="_on_Settings_pressed"]
 [connection signal="request_completed" from="VersionListRequest" to="." method="_on_VersionListRequest_request_completed"]
 [connection signal="request_completed" from="VersionDownloader" to="." method="_on_VersionDownloader_request_completed"]
 [connection signal="timeout" from="DownloadProgress" to="." method="_on_DownloadProgress_timeout"]
+[connection signal="request_completed" from="MartoLibDownloader" to="." method="_on_MartoLibDownloader_request_completed"]
