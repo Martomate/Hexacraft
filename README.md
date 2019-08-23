@@ -19,16 +19,20 @@ Official website: http://www.martomate.com/games/Hexacraft
 
 The game requires Java 8 (or later) to be installed. If it's not installed you can get it [here](https://java.com).
 
-### Version 0.7 and earlier
-Up to version 0.7 the game was shipped as a couple of folders and a jar file.
-To get started, just run `Hexacraft.jar` (or Hexagon.jar in early versions) either by **double-clicking** it or using the terminal.
-In the terminal you would run `java -jar Hexacraft.jar`
+### Using the Hexacraft Launcher (easiest)
+
+You can download the launcher [here](https://github.com/Martomate/Hexacraft/releases/tag/launcher-1.0).
 
 ### Version 0.8
 In this version you can run the game in any of the following ways.
 - Run `bin/hexacraft.bat` (Windows)
 - Run `bin/hexacraft` (Mac/Linux)
 - Double click `lib/com.martomate.hexacraft-0.8-launcher.jar` (like in the previous version)
+
+### Version 0.7 and earlier
+Up to version 0.7 the game was shipped as a couple of folders and a jar file.
+To get started, just run `Hexacraft.jar` (or Hexagon.jar in early versions) either by **double-clicking** it or using the terminal.
+In the terminal you would run `java -jar Hexacraft.jar`
 
 ## Usage
 
