@@ -3,14 +3,14 @@ enablePlugins(LauncherJarPlugin)
 lazy val Benchmark = config("bench") extend Test
 
 lazy val root = Project(
-  "basic-with-separate-config",
+  "hexacraft",
   file(".")
 ) settings (Defaults.coreDefaultSettings: _*) settings (
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.9-SNAPSHOT",
   scalaVersion := "2.12.8",
-  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
+  scalacOptions ++= Seq("-deprecation"),//, "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   resolvers ++= Seq(
@@ -55,5 +55,5 @@ def otherDependencies = Seq(
 def testDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalamock" %% "scalamock" % "4.1.0" % "test",
-  "com.storm-enroute" %% "scalameter" % "0.18" % "bench"
+  "com.storm-enroute" %% "scalameter" % "0.19" % "bench"
 )

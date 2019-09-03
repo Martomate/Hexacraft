@@ -158,7 +158,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   private def addNewChunks(): Unit = {
     for (ch <- chunkLoader.chunksToAdd()) {
       ensureColumnExists(ch.coords.getColumnRelWorld)
-      getColumn(ch.coords.getColumnRelWorld).foreach(_.setChunk(ch))
+      getColumn(ch.coords.getColumnRelWorld).get.setChunk(ch)
       chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
       ch.init()
       worldPlanner.decorate(ch)

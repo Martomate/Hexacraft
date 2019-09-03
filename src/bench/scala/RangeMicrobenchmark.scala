@@ -1,24 +1,26 @@
 import org.scalameter.api._
 
-object RangeMicrobenchmark extends Bench.OfflineReport {
-  val sizes: Gen[Int] = Gen.range("size")(300000, 1500000, 300000)
+object RangeMicrobenchmark extends Bench.OnlineRegressionReport {
+  val sizes: Gen[Int] = Gen.range("size")(300000, 1500000, 25000)
 
   val ranges: Gen[Range] = for {
     size <- sizes
-  } yield 0 until size
+  } yield 0 until (size * 1)
 
   performance of "Range" in {
-    measure method "map" in {
-      using(ranges) config (
-        exec.benchRuns -> 15
-      ) in {
+    measure method "map" config (
+      exec.minWarmupRuns -> 20,
+      exec.benchRuns -> 50,
+      reports.regression.significance -> 0.01
+    ) in {
+      using(ranges) in {
         r => r.map(_ + 1)
       }
     }
   }
 }
 
-object RegressionTest extends Bench.OfflineReport {
+object RegressionTest extends Bench.OfflineRegressionReport {
   val sizes = Gen.range("size")(1000000, 5000000, 2000000)
   val arrays = for (sz <- sizes) yield (0 until sz).toArray
 

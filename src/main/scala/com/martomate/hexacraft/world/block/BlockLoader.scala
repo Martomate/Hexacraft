@@ -44,22 +44,21 @@ object BlockLoader extends IBlockLoader {
   }
   
   def loadBlockType(name: String): IndexedSeq[Int] = {
-    FileUtils.getResourceFile("spec/blocks/" + name + ".json") match {
-      case Some(file) =>
-        val reader = FileUtils.getBufferedReader(file)
-        if (reader != null) {
-          val base = Json.parse(reader).asObject()
-          val textures = base.get("textures").asObject()
-          val all = textures.get("all")
-          val side = textures.get("side") or all
-          val topIdx = texIdxMap((textures.get("top") or all).asString())
-          val bottomIdx = texIdxMap((textures.get("bottom") or all).asString())
-          val sidesIdx = (2 until 8).map(i => texIdxMap((textures.get(s"side$i") or side).asString()))
-          topIdx +: bottomIdx +: sidesIdx
-        } else IndexedSeq.fill(8)(0)
-      case None =>
-        IndexedSeq.fill(8)(0)
+    val retOpt = for {
+      texIdxMap <- Option(texIdxMap)
+      file <- FileUtils.getResourceFile("spec/blocks/" + name + ".json")
+      reader <- Option(FileUtils.getBufferedReader(file))
+    } yield {
+      val base = Json.parse(reader).asObject()
+      val textures = base.get("textures").asObject()
+      val all = textures.get("all")
+      val side = textures.get("side") or all
+      val topIdx = texIdxMap((textures.get("top") or all).asString())
+      val bottomIdx = texIdxMap((textures.get("bottom") or all).asString())
+      val sidesIdx = (2 until 8).map(i => texIdxMap((textures.get(s"side$i") or side).asString()))
+      topIdx +: bottomIdx +: sidesIdx
     }
+    retOpt getOrElse IndexedSeq.fill(8)(0)
   }
   
   implicit class DefaultJsonImplicitClass(left: JsonValue) {
