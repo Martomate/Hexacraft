@@ -8,8 +8,8 @@ lazy val root = Project(
 ) settings (Defaults.coreDefaultSettings: _*) settings (
   name := "Hexacraft",
   organization := "com.martomate",
-  version := "0.9",
-  scalaVersion := "2.12.8",
+  version := "0.10-SNAPSHOT",
+  scalaVersion := "2.12.11",
   scalacOptions ++= Seq("-deprecation"),//, "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,

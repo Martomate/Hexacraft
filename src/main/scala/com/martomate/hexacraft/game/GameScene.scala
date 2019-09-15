@@ -20,6 +20,8 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffse
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
 import com.martomate.hexacraft.world.entity.player.ai.PlayerAIFactory
+import com.martomate.hexacraft.world.entity.sheep.SheepEntity
+import com.martomate.hexacraft.world.entity.sheep.ai.SheepAIFactory
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
@@ -66,6 +68,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
+
+  private val entityModelLoader = new EntityModelLoader
 
   private var isPaused: Boolean = false
 
@@ -115,6 +119,10 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
           world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world, PlayerAIFactory, new EntityModelLoader().load("player")))
+        case GLFW_KEY_L =>
+          world.addEntity(SheepEntity.atStartPos(CylCoords(world.player.position), world, SheepAIFactory, new EntityModelLoader().load("sheep")))
+        case GLFW_KEY_K =>
+          world.removeAllEntities()
         case _ =>
       }
     }
