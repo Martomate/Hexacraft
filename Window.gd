@@ -46,13 +46,38 @@ func startGame(versionID):
     var version = versions[versionID]
     var dir = str(OS.get_user_data_dir(), "/versions/", version.name)
     
-    var executable = '/bin/sh'
-    var flag = '-c'
+    var executableName
+    var executableSource
     if OS.get_name() == 'Windows':
-        executable = 'CMD.exe'
-        flag = '/C'
+        executableName = 'run_game.bat'
+        executableSource = """
+@echo off
+set wdir=%1
+set file=%2
+
+cd %wdir%
+javaw -jar %file%
+        """
+    else:
+        executableName = 'run_game.sh'
+        executableSource = """
+#!/bin/sh
+wdir=$1
+file=$2
+
+cd $wdir
+javaw -jar $file
+        """
     
-    OS.execute(executable, [flag, str('cd ', dir, ' && java -jar \"', version.file_to_run, "\"")], false)
+    var executable = str(OS.get_user_data_dir(), '/libs/', executableName)
+    
+    var file = File.new()
+    file.open(executable, File.WRITE)
+    file.store_string(executableSource)
+    file.close()
+    
+    OS.execute(executable, [dir, version.file_to_run], false)
+    
     get_tree().quit()
 
 func ensureVersionIsDownloaded(versionID):
