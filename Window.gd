@@ -1,7 +1,10 @@
 extends Control
 
-const MARTO_LIB_VERSION = "1.0"
+const MARTO_LIB_VERSION = "1.1"
 var libFilePath
+var martoLibDownloaded = false
+
+var javaCommand
 
 var currentVersion = "latest-version"
 
@@ -10,7 +13,14 @@ var launcher_data_path: String = "user://launcher_data.json"
 var versions: Dictionary = {}
 
 func _ready():
+    # This makes sure that a cmd-window doesn't pop up on Windows
+    if OS.get_name() == "Windows":
+        javaCommand = "javaw"
+    else:
+        javaCommand = "java"
+    
     libFilePath = str(OS.get_user_data_dir(), "/libs/martolib_", MARTO_LIB_VERSION, ".jar")
+    ensureMartoLibIsDownloaded()
     
     var file = File.new()
     if file.file_exists(launcher_data_path):
@@ -23,6 +33,17 @@ func _ready():
         $CenterPlay/MarginPlay/Play.hide()
     
     $VersionListRequest.request("https://www.martomate.com/api/hexacraft/versions")
+
+func ensureMartoLibIsDownloaded():
+    var libDir = Directory.new()
+    libDir.open("user://")
+    if libDir.file_exists(libFilePath):
+        martoLibDownloaded = true
+    else:
+        print("Downloading MartoLib")
+        libDir.make_dir("libs")
+        $MartoLibDownloader.download_file = libFilePath
+        $MartoLibDownloader.request("https://www.martomate.com/api/libs/martolib")
 
 func saveLauncherData():
     var file = File.new()
@@ -43,42 +64,17 @@ func _on_Play_pressed():
         startGame(currentVersion)
 
 func startGame(versionID):
-    var version = versions[versionID]
-    var dir = str(OS.get_user_data_dir(), "/versions/", version.name)
-    
-    var executableName
-    var executableSource
-    if OS.get_name() == 'Windows':
-        executableName = 'run_game.bat'
-        executableSource = """
-@echo off
-set wdir=%1
-set file=%2
-
-cd %wdir%
-javaw -jar %file%
-        """
-    else:
-        executableName = 'run_game.sh'
-        executableSource = """
-#!/bin/sh
-wdir=$1
-file=$2
-
-cd $wdir
-javaw -jar $file
-        """
-    
-    var executable = str(OS.get_user_data_dir(), '/libs/', executableName)
-    
-    var file = File.new()
-    file.open(executable, File.WRITE)
-    file.store_string(executableSource)
-    file.close()
-    
-    OS.execute(executable, [dir, version.file_to_run], false)
-    
-    get_tree().quit()
+    if checkIfMartoLibIsDownloaded():
+        var version = versions[versionID]
+        var dir = str(OS.get_user_data_dir(), "/versions/", version.name)
+        
+        var output = []
+        OS.execute(javaCommand, ["-jar", libFilePath, "execute", dir, javaCommand, "-jar", version.file_to_run], false, output)
+        OS.delay_msec(1000)
+        if !output.empty() && output[0] != "":
+            print("Failed to run game. Error: ", output)
+        
+        get_tree().quit()
 
 func ensureVersionIsDownloaded(versionID):
     var version = versions[versionID]
@@ -164,18 +160,7 @@ func _on_VersionDownloader_request_completed(result, response_code, headers, bod
     $DownloadProgress.stop()
     updateVersionDownloadProgress()
     
-    ensureMartoLibIsDownloaded()
-
-func ensureMartoLibIsDownloaded():
-    var libDir = Directory.new()
-    libDir.open("user://")
-    if libDir.file_exists(libFilePath):
-        unzipAndStartGame()
-    else:
-        print("Downloading MartoLib")
-        libDir.make_dir("libs")
-        $MartoLibDownloader.download_file = libFilePath
-        $MartoLibDownloader.request("https://www.martomate.com/api/libs/martolib")
+    unzipAndStartGame()
 
 func _on_DownloadProgress_timeout():
     updateVersionDownloadProgress()
@@ -191,7 +176,7 @@ func updateVersionDownloadProgress():
 func _on_MartoLibDownloader_request_completed(result, response_code, headers, body):
     if result != HTTPRequest.RESULT_SUCCESS:
         print("Failed to downloadload MartoLib. Result: ", result, ", response_code: ", response_code)
-    unzipAndStartGame()
+    martoLibDownloaded = true
 
 func unzipAndStartGame():
     unzipDownloadedVersionFile()
@@ -201,11 +186,16 @@ func unzipAndStartGame():
     startGame(currentVersion)
 
 func unzipDownloadedVersionFile():
-    var filePath = str(OS.get_user_data_dir(), "/tmp.zip")
-    var output = []
-    OS.execute("java", ["-jar", libFilePath, "unzip", filePath, str(OS.get_user_data_dir(), "/versions/", versions[currentVersion].name)], true, output)
-    if !output.empty() && output[0] != "":
-        print("Failed to unzip version file. Error: ", output)
+    if checkIfMartoLibIsDownloaded():
+        var filePath = str(OS.get_user_data_dir(), "/tmp.zip")
+        var output = []
+        OS.execute(javaCommand, ["-jar", libFilePath, "unzip", filePath, str(OS.get_user_data_dir(), "/versions/", versions[currentVersion].name)], true, output)
+        if !output.empty() && output[0] != "":
+            print("Failed to unzip version file. Error: ", output)
     
-    Directory.new().remove(filePath)
-    
+        Directory.new().remove(filePath)
+
+func checkIfMartoLibIsDownloaded():
+    if !martoLibDownloaded:
+        print("Cannot run MartoLib since it has't finished downloading yet")
+    return martoLibDownloaded
