@@ -21,7 +21,7 @@ The game requires Java 8 (or later) to be installed. If it's not installed you c
 
 ### Using the Hexacraft Launcher (easiest)
 
-You can download the launcher [here](https://github.com/Martomate/Hexacraft/releases/tag/launcher-1.0).
+You can download the launcher [here](https://github.com/Martomate/Hexacraft/releases/tag/launcher-1.1).
 
 ### Version 0.8
 In this version you can run the game in any of the following ways.
