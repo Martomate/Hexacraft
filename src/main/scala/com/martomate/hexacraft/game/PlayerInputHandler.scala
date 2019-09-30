@@ -57,14 +57,14 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
 
     if (moveWithMouse) {
       val mouseMoved = mouse.moved
-      player.rotation.y += mouseMoved.x * rSpeed * 0.1
-      player.rotation.x -= mouseMoved.y * rSpeed * 0.1
+      player.rotation.y += mouseMoved.x * rSpeed * 0.05
+      player.rotation.x -= mouseMoved.y * rSpeed * 0.05
     }
 
     if (player.rotation.x < -math.Pi / 2) {
-      player.rotation.x = -(math.Pi / 2)
+      player.rotation.x += (math.Pi * 2)
     } else if (player.rotation.x > math.Pi / 2) {
-      player.rotation.x = math.Pi / 2
+      player.rotation.x -= (math.Pi * 2)
     }
 
     if (player.rotation.y < 0) {
