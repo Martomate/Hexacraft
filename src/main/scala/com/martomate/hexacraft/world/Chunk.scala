@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk._
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
@@ -34,6 +35,8 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   def blocks: ChunkStorage = storage
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
+
+  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = storage.mapBlock(coords, func)
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
     val before = getBlock(blockCoords)

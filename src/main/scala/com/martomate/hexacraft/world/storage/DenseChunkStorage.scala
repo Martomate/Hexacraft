@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil, SmartArray}
-import com.martomate.hexacraft.world.block.Block
+import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
@@ -21,7 +21,11 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld) extends ChunkStorage(_chunk
   def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
   def getBlock(coords: BlockRelChunk): BlockState = {
     val _type = blockTypes(coords.value)
-    if (_type != 0) new BlockState(Block.byId(_type), metadata(coords.value)) else BlockState.Air
+    if (_type != 0) new BlockState(Block.byId(_type), metadata(coords.value))
+    else BlockState.Air
+  }
+  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = {
+    func(blockType(coords), metadata(coords.value))
   }
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
     val idx = coords.value

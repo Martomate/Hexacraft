@@ -5,12 +5,15 @@ import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import org.joml.Vector3d
 
+import scala.annotation.tailrec
+
 object CoordUtils {
   def toBlockCoords(vec: BlockCoords): (BlockRelWorld, BlockCoords) = {
     import vec.cylSize.impl
 
     val (x, y, z) = (vec.x, vec.y, vec.z)
 
+    @tailrec
     def findBlockPos(xInt: Int, zInt: Int): (Int, Int) = {
       val xx = x - xInt
       val zz = z - zInt
@@ -43,10 +46,9 @@ object CoordUtils {
   }
 
   def approximateIntCoords(coords: BlockCoords)(implicit cylinderSize: CylinderSize): BlockRelWorld = {
-    val c = coords
-    val X = math.round(c.x).toInt
-    val Y = math.round(c.y).toInt
-    val Z = math.round(c.z).toInt
+    val X = math.round(coords.x).toInt
+    val Y = math.round(coords.y).toInt
+    val Z = math.round(coords.z).toInt
     BlockRelWorld(X, Y, Z)
   }
 

@@ -1,7 +1,5 @@
 package com.martomate.hexacraft.util
 
-import java.util
-
 import com.flowpowered.nbt._
 import org.scalatest.{FlatSpec, Matchers}
 

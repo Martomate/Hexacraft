@@ -251,7 +251,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     worldRenderer.selectedBlockAndSide match {
       case Some((coords1, Some(side))) =>
         val offset = NeighborOffsets(side)
-        val coords = coords1.offset(offset._1, offset._2, offset._3)
+        val coords = coords1.offset(offset)
         tryPlacingBlockAt(coords)
       case _ =>
     }

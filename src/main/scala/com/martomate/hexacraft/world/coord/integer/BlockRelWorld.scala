@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.coord.Offset
 
 object BlockRelWorld {
   def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int)(implicit cylSize: CylinderSize): BlockRelWorld =
@@ -12,14 +13,14 @@ object BlockRelWorld {
   def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld): BlockRelWorld = BlockRelWorld(chunk.X * 16 + i, chunk.Y * 16 + j, chunk.Z * 16 + k)(chunk.cylSize)
 }
 
-case class BlockRelWorld(private val _value: Long)(implicit val cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // XXXXXZZZZZYYYxyz
+case class BlockRelWorld private (value: Long)(implicit val cylSize: CylinderSize) { // XXXXXZZZZZYYYxyz
   def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt)
   def getBlockRelColumn = BlockRelColumn((value & 0xffffff).toInt)
   def getChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt)
   def getChunkRelWorld = ChunkRelWorld(value >>> 12)
   def getColumnRelWorld = ColumnRelWorld(value >>> 24)
 
-  def offset(t: (Int, Int, Int)): BlockRelWorld = offset(t._1, t._2, t._3)
+  def offset(t: Offset): BlockRelWorld = offset(t.dx, t.dy, t.dz)
   def offset(xx: Int, yy: Int, zz: Int): BlockRelWorld = BlockRelWorld(x + xx, y + yy, z + zz)
 
   def X: Int = (value >> 32).toInt >> 12

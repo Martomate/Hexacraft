@@ -4,7 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets}
+import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets, Offset}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.worldlike.IWorld
@@ -70,8 +70,8 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
     }
   }
 
-  private def coordsOfHitBlock(current: BlockRelWorld, offsets: (Int, Int, Int)) = {
-    BlockRelWorld(current.x + offsets._1, current.y + offsets._2, current.z + offsets._3)
+  private def coordsOfHitBlock(current: BlockRelWorld, offsets: Offset) = {
+    BlockRelWorld(current.x + offsets.dx, current.y + offsets.dy, current.z + offsets.dz)
   }
 
   private def oppositeSide(side: Int) = {
@@ -142,7 +142,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
         val hitBlockCoords = coordsOfHitBlock(current, NeighborOffsets(side))
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
-          Some(hitBlockCoords, Some(oppositeSide(side)))
+          Some((hitBlockCoords, Some(oppositeSide(side))))
         } else traceIt(hitBlockCoords, blockFoundFn)
       } else None
     } else {
@@ -153,7 +153,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
 
   def trace(blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
     if (!rayValid) None
-    else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords)) Some(camera.blockCoords, None)
+    else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords)) Some((camera.blockCoords, None))
     else traceIt(camera.blockCoords, blockFoundFn)
   }
 }

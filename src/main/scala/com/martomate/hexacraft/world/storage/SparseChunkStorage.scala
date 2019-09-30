@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.storage
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil}
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{Block, Blocks}
+import com.martomate.hexacraft.world.block.{Block, BlockAir, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 import scala.collection.mutable
@@ -14,16 +14,20 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld) extends ChunkStorage(_chun
     for ((i, b) <- storage.allBlocks) setBlock(i, b)
   }
 
-  private val blocks = mutable.HashMap.empty[Short, BlockState]
+  private val blocks = mutable.LongMap.empty[BlockState]
 
   def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Blocks.Air)
   def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockState.Air)
+  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = {
+    val s = blocks.getOrElse(coords.value, BlockState.Air)
+    func(s.blockType, s.metadata)
+  }
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
-    if (block.blockType != Blocks.Air) blocks(coords.value.toShort) = block
+    if (block.blockType != Blocks.Air) blocks(coords.value) = block
     else removeBlock(coords)
   }
-  def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value.toShort
-  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1)(chunkCoords.cylSize), t._2))
+  def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value
+  def allBlocks: Seq[(BlockRelChunk, BlockState)] = blocks.toSeq.map(t => (BlockRelChunk(t._1.toInt)(chunkCoords.cylSize), t._2))
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
 

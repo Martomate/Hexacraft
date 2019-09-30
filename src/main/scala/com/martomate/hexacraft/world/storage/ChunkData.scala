@@ -13,11 +13,11 @@ class ChunkData(init_storage: ChunkStorage, world: IWorld) {
 
   def optimizeStorage(): Unit = {
     if (storage.isDense) {
-      if (storage.numBlocks < 48) {
+      if (storage.numBlocks < 32) {
         storage = new SparseChunkStorage(storage)
       }
     } else {
-      if (storage.numBlocks > 64) {
+      if (storage.numBlocks > 48) {
         storage = new DenseChunkStorage(storage)
       }
     }

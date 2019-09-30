@@ -3,7 +3,6 @@ package com.martomate.hexacraft.renderer
 import java.nio.ByteBuffer
 
 import com.martomate.hexacraft.resource.Resource
-import com.martomate.hexacraft.world.render.BlockVertexData
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 

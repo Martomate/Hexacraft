@@ -25,8 +25,8 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c))(c.cylSize).toCylCoords)
 
-  private var chunksToLoad: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
-  private var chunksToUnload: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
+  private val chunksToLoad: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
+  private val chunksToUnload: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
 
   override def tick(): Unit = {
     prioritizer.tick()

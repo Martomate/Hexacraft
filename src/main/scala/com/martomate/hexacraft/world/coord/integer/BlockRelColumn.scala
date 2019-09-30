@@ -7,7 +7,7 @@ object BlockRelColumn {
   def apply(block: BlockRelChunk, chunk: ChunkRelColumn): BlockRelColumn = BlockRelColumn(chunk.value << 12 | block.value)(chunk.cylSize)
 }
 
-case class BlockRelColumn(private val _value: Int)(implicit val cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // YYYxyz
+case class BlockRelColumn private (value: Int)(implicit val cylSize: CylinderSize) { // YYYxyz
   def getBlockRelChunk = BlockRelChunk(value & 0xfff)
   def getChunkRelColumn = ChunkRelColumn(value >> 12 & 0xfff)
 
