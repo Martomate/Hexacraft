@@ -7,7 +7,7 @@ object ColumnRelWorld {
   def apply(X: Long, Z: Int)(implicit cylSize: CylinderSize): ColumnRelWorld = ColumnRelWorld((X & 0xfffff) << 20 | (Z & cylSize.ringSizeMask))
 }
 
-case class ColumnRelWorld(private val _value: Long)(implicit val cylSize: CylinderSize) extends AbstractIntegerCoords(_value) { // XXXXXZZZZZ
+case class ColumnRelWorld private (value: Long)(implicit val cylSize: CylinderSize) { // XXXXXZZZZZ
   def X: Int = (value >> 8).toInt >> 12
   def Z: Int = (value << 12).toInt >> 12
 

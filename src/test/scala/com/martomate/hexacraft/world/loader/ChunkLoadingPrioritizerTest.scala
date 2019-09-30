@@ -41,7 +41,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
 
     for (_ <- 0 until 100) {
       prio.nextAddableChunk.foreach { newChunk =>
-        (newChunk, newChunk.neighbors.exists(chunks.contains)) shouldBe(newChunk, true)
+        (newChunk, newChunk.neighbors.exists(chunks.contains)) shouldBe ((newChunk, true))
 
         prio += newChunk
         chunks += newChunk

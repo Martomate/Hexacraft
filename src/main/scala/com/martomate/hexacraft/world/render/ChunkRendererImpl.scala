@@ -3,11 +3,11 @@ package com.martomate.hexacraft.world.render
 import java.nio.ByteBuffer
 
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.IChunk
-import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets}
+import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.worldlike.{ChunkCache, IWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets}
+import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
 
@@ -24,7 +24,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
   def getRenderData: ChunkRenderData = renderData
 
   def updateContent(): Unit = {
-    val buffers: Array[ByteBuffer] = new Array(8)
+    val buffers: Array[ByteBuffer] = Array.ofDim(8)
 
     if (!chunk.hasNoBlocks) {
       val blocks = chunk.blocks.allBlocks
@@ -33,59 +33,79 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
         chunk.lighting.init(blocks)
       }
 
-      val blockStates = blocks.toMap
-
       val chunkCache = new ChunkCache(world)
 
-      val sidesToRender = Vector.fill(8)(new Array[Boolean](16 * 16 * 16))
-      val sideBrightness = Vector.fill(8)(new Array[Float](16 * 16 * 16))
-      val sidesCount = new Array[Int](8)
+      val sidesToRender = Array.ofDim[Boolean](8, 16 * 16 * 16)
+      val sideBrightness = Array.ofDim[Float](8, 16 * 16 * 16)
+      val sidesCount = Array.ofDim[Int](8)
+
       for (s <- NeighborOffsets.indices) {
+        val shouldRender = sidesToRender(s)
+        val shouldRenderTop = sidesToRender(0)
+        val brightness = sideBrightness(s)
+        val otherSide = oppositeSide(s)
+
         for ((c, b) <- blocks) {
-          val (c2, neigh) = chunkCache.neighbor(s, chunk, c)
+          val (c2, neighOpt) = chunkCache.neighbor(s, chunk, c)
 
-          val bs = if (neigh.contains(chunk)) blockStates.getOrElse(c2, BlockState.Air) else neigh.map(_.getBlock(c2)).getOrElse(BlockState.Air)
+          if (neighOpt.isDefined) {
+            val neigh = neighOpt.get
 
-          if (neigh.isDefined && bs.blockType.isTransparent(bs.metadata, oppositeSide(s))) {
-            sidesToRender(s)(c.value) = true
-            sideBrightness(s)(c.value) = neigh.get.lighting.getBrightness(c2)
-            sidesCount(s) += 1
-            if (s > 1 && b.blockType.isTransparent(b.metadata, s)) {
-              sidesToRender(0)(c.value) = true
-              sidesCount(0) += 1
-            } // render the top side
+            val bs = neigh.getBlock(c2)
+
+            if (bs.blockType.isTransparent(bs.metadata, otherSide)) {
+              brightness(c.value) = neigh.lighting.getBrightness(c2)
+              shouldRender(c.value) = true
+              sidesCount(s) += 1
+              if (s > 1 && b.blockType.isTransparent(b.metadata, s)) {
+                shouldRenderTop(c.value) = true
+                sidesCount(0) += 1
+              } // render the top side
+            }
           }
         }
       }
 
-      for (side <- 0 until 8) {
-        val verticesPerInstance = if (side < 2) 6 else 4
+      val newBuffers = for (side <- 0 until 8) yield {
+        val shouldRender = sidesToRender(side)
+        val brightness = sideBrightness(side)
         val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
-          for ((bCoords, block) <- blocks) {
-            val coords = BlockRelWorld(bCoords, chunk.coords)
-            if (sidesToRender(side)(bCoords.value)) {
-              buf.putInt(coords.x)
-              buf.putInt(coords.y)
-              buf.putInt(coords.z)
-              val blockType = block.blockType
-              buf.putInt(blockType.blockTex(side))
-              buf.putFloat(blockType.blockHeight(block.metadata))
-              for (i <- 0 until verticesPerInstance) {
-                buf.putFloat(sideBrightness(side)(bCoords.value))// TODO: change in the future to make lighting smoother
-              }
-            }
-          }
-          buffers(side) = buf
+
+        populateBuffer(blocks, side, shouldRender, brightness, buf)
+        buf
       }
       for (side <- 0 until 8) {
-        val b = buffers(side)
-        b.flip()
+        val buf = newBuffers(side)
+        buf.flip()
+        buffers(side) = buf
       }
     } else if (!chunk.lighting.initialized) {
       chunk.lighting.init(Seq.empty)
     }
     renderData = ChunkRenderData(buffers)
     opaqueDeterminer.invalidate()
+  }
+
+  private def populateBuffer(blocks: Iterable[(BlockRelChunk, BlockState)], side: Int, shouldRender: Array[Boolean],
+                             brightness: Array[Float], buf: ByteBuffer): Unit = {
+    val verticesPerInstance = if (side < 2) 6 else 4
+
+    for ((bCoords, block) <- blocks) {
+      if (shouldRender(bCoords.value)) {
+        val coords = BlockRelWorld(bCoords, chunk.coords)
+        buf.putInt(coords.x)
+        buf.putInt(coords.y)
+        buf.putInt(coords.z)
+
+        val blockType = block.blockType
+        buf.putInt(blockType.blockTex(side))
+        buf.putFloat(blockType.blockHeight(block.metadata))
+
+        for (_ <- 0 until verticesPerInstance) {
+          buf.putFloat(brightness(bCoords.value)) // TODO: change in the future to make lighting smoother
+        }
+      }
+    }
   }
 
   def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit = {

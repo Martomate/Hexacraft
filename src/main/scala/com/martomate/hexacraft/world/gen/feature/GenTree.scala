@@ -2,21 +2,22 @@ package com.martomate.hexacraft.world.gen.feature
 
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.block.{Block, Blocks}
+import com.martomate.hexacraft.world.coord.Offset
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.gen.PlannedWorldChange
 
 class GenTree(at: BlockRelWorld) {
-  private type BlockSpec = ((Int, Int, Int), Block)
+  private type BlockSpec = (Offset, Block)
 
   private def makePillar(x: Int, y: Int, z: Int, len: Int, b: Block): Seq[BlockSpec] =
-    for (yy <- y until y + len) yield (x, yy, z) -> b
+    for (yy <- y until y + len) yield Offset(x, yy, z) -> b
 
   private def makePlatform(x: Int, y: Int, z: Int, r: Int, b: Block): Seq[BlockSpec] = {
     for {
       dx <- -r to r
       dz <- -r to r
       if math.abs(dx + dz) <= r
-    } yield (x + dx, y, z + dz) -> b
+    } yield Offset(x + dx, y, z + dz) -> b
   }
 
   private val blocks: Seq[BlockSpec] =
@@ -34,8 +35,8 @@ class GenTree(at: BlockRelWorld) {
     worldChange
   }
 
-  private def setBlockAt(at: BlockRelWorld, c: (Int, Int, Int), b: Block)(world: PlannedWorldChange): Unit = {
-    val ch = at.offset(c._1, c._2, c._3)
+  private def setBlockAt(at: BlockRelWorld, c: Offset, b: Block)(world: PlannedWorldChange): Unit = {
+    val ch = at.offset(c)
     val bs = new BlockState(b)
     world.setBlock(ch, bs)
   }

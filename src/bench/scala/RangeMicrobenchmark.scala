@@ -1,5 +1,6 @@
 import org.scalameter.api._
 
+// this entire file is for learning purposes only
 object RangeMicrobenchmark extends Bench.OnlineRegressionReport {
   val sizes: Gen[Int] = Gen.range("size")(300000, 1500000, 25000)
 

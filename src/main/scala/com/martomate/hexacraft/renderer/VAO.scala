@@ -3,8 +3,6 @@ package com.martomate.hexacraft.renderer
 import com.martomate.hexacraft.resource.Resource
 import org.lwjgl.opengl.GL30
 
-import scala.collection.mutable.ArrayBuffer
-
 object VAO {
   private var boundVAO: VAO = _
   def unbindVAO(): Unit = {

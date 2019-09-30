@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
-import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.{CoordUtils, Offset}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
@@ -254,15 +254,15 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       case  _ =>  0
     }
 
-    def isInNeighborChunk(chunkOffset: (Int, Int, Int)) = {
+    def isInNeighborChunk(chunkOffset: Offset) = {
       val xx = affectableChunkOffset(coords.cx)
       val yy = affectableChunkOffset(coords.cy)
       val zz = affectableChunkOffset(coords.cz)
 
-      chunkOffset._1 * xx == 1 || chunkOffset._2 * yy == 1 || chunkOffset._3 * zz == 1
+      chunkOffset.dx * xx == 1 || chunkOffset.dy * yy == 1 || chunkOffset.dz * zz == 1
     }
 
-    def offsetCoords(c: BlockRelChunk, off: (Int, Int, Int)) = c.offset(off._1, off._2, off._3)
+    def offsetCoords(c: BlockRelChunk, off: Offset) = c.offset(off)
 
     val cCoords = coords.getChunkRelWorld
     val bCoords = coords.getBlockRelChunk

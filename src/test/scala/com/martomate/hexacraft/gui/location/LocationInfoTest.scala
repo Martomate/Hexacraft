@@ -1,21 +1,13 @@
 package com.martomate.hexacraft.gui.location
 
-import java.io.File
+import com.martomate.hexacraft.GameWindow
+import org.scalamock.scalatest.MockFactory
+import org.scalatest.FlatSpec
 
-import com.martomate.hexacraft._
-import org.joml.Vector2ic
-import org.scalatest.FunSuite
+class LocationInfoTest extends FlatSpec with MockFactory {
+  implicit val windowImplicit: GameWindow = null
 
-class LocationInfoTest extends FunSuite {
-  implicit val windowImplicit: GameWindow = new GameWindow {
-    override def windowSize: Vector2ic = ???
-
-    override def mouse: GameMouse = ???
-
-    override def keyboard: GameKeyboard = ???
-  }
-
-  test("16x9 at 16x9 aspect ratio") {
+  "16x9" should "have a 16x9 aspect ratio" in {
     val info = LocationInfo16x9(0, 0, 1, 1)
     assertResult(-16f / 9)(info.x)
     assertResult(-1)(info.y)
@@ -23,7 +15,7 @@ class LocationInfoTest extends FunSuite {
     assertResult(2)(info.h)
   }
 
-  test("16x9 at 16x9 aspect ratio at arbitrary point") {
+  it should "have a 16x9 aspect ratio at arbitrary point" in {
     val info = LocationInfo16x9(0.3f, 0.23f, 0.78f, 0.54f)
     assertResult((0.3f * 2 - 1) * 16f / 9)(info.x)
     assertResult(0.23f * 2 - 1)(info.y)

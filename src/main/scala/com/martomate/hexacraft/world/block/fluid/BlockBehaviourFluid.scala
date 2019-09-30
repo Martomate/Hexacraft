@@ -13,7 +13,7 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet): Unit = {
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
-    val blocks = NeighborOffsets.all.map(off => coords.offset(off._1, off._2, off._3))
+    val blocks = NeighborOffsets.all.map(off => coords.offset(off))
     val bottomCoords = blocks.find(_.y == coords.y - 1).get
     val bottomBS = Some(world.getBlock(bottomCoords)).filter(_.blockType != Blocks.Air)//TODO: clean up
     if (!bottomBS.exists(_.blockType != Blocks.Air)) {

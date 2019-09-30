@@ -3,21 +3,13 @@ package com.martomate.hexacraft.world.render
 import com.flowpowered.nbt.{CompoundTag, LongTag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.World
-import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
-import com.martomate.hexacraft.world.chunk._
-import com.martomate.hexacraft.world.collision.CollisionDetector
-import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnListener}
 import com.martomate.hexacraft.world.coord.integer._
-import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
 import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldSettings, WorldSettingsProvider}
-import com.martomate.hexacraft.world.storage.{ChunkStorage, DenseChunkStorage}
-import com.martomate.hexacraft.world.worldlike.{BlocksInWorld, IWorld}
+import com.martomate.hexacraft.world.worldlike.IWorld
 import org.scalameter.api._
 
-object ChunkRenderImplBench extends Bench.OnlineRegressionReport {
+object ChunkRenderImplBench extends Bench.LocalTime {
   implicit val cylSize: CylinderSize = new CylinderSize(8)
 
   // Initializations ------
@@ -36,26 +28,45 @@ object ChunkRenderImplBench extends Bench.OnlineRegressionReport {
 
   // Measurements ------
   performance of "ChunkRenderer" in {
-    measure method "updateContent" config (
-      exec.benchRuns -> 10,
-      exec.independentSamples -> 10,
-      reports.regression.significance -> 5e-2
-    ) in {
-      using(renderers) in { renderer =>
-        renderer.updateContent()
+    performance of "updateContent" in {
+      measure method "blocks" config(
+        exec.benchRuns -> 50,
+        exec.minWarmupRuns -> 10,
+
+        reports.regression.significance -> 5e-2
+      ) in {
+        using(renderers) setUp { renderer =>
+          renderer.updateContent() // to initialize lighting
+        } in { renderer =>
+          renderer.updateContent()
+        }
+      }
+
+      measure method "lighting" config(
+        exec.benchRuns -> 50,
+        exec.minWarmupRuns -> 10,
+        reports.regression.significance -> 5e-2
+      ) in {
+        var renderer: ChunkRendererImpl = null
+
+        using(heightAboveGround) setUp { aboveGround =>
+          renderer = makeRenderer(aboveGround)
+        } in { _ =>
+          renderer.updateContent()
+        }
       }
     }
   }
 
   // Helper stuff ------
   def setupRenderers: Gen[ChunkRendererImpl] = for {
-    heightAboveGround <- heightAboveGround
-  } yield {
-    val world = initWorld(heightAboveGround)
-    val chunk = world.getChunk(ChunkRelWorld(0, (world.getHeight(0, 0) + heightAboveGround * 2) >> 4, 0)).get
-    val r = new ChunkRendererImpl(chunk, world)
-    r.updateContent() // to initialize lighting
-    r
+    aboveGround <- heightAboveGround
+  } yield makeRenderer(aboveGround)
+
+  private def makeRenderer(aboveGround: Int): ChunkRendererImpl = {
+    val world = initWorld(aboveGround)
+    val chunk = world.getChunk(ChunkRelWorld(0, (world.getHeight(0, 0) + aboveGround * 2) >> 4, 0)).get
+    new ChunkRendererImpl(chunk, world)
   }
 
   def initWorld(heightAboveGround: Int): IWorld = {
@@ -87,138 +98,5 @@ object ChunkRenderImplBench extends Bench.OnlineRegressionReport {
     override def loadState(path: String): CompoundTag = NBTUtil.makeCompoundTag("", Seq.empty)
 
     override def saveState(tag: CompoundTag, path: String): Unit = ()
-  }
-
-  private class TestWorld(chunksToBeLoaded: Seq[ChunkRelWorld], chunkFactory: (ChunkRelWorld, IWorld) => IChunk)(implicit val cylSize: CylinderSize) extends IWorld {
-    private val loadedColumns = chunksToBeLoaded.map(_.getColumnRelWorld).distinct
-      .map(col => col -> new TestColumn(col)).toMap
-    private val loadedChunks = chunksToBeLoaded.map(c => c -> chunkFactory(c, this)).toMap
-
-    override val size: CylinderSize = cylSize
-
-    override def worldSettings: WorldSettingsProvider = ???
-
-    override def worldGenerator: WorldGenerator = ???
-
-    override def renderDistance: Double = ???
-
-    override def collisionDetector: CollisionDetector = ???
-
-    override def getHeight(x: Int, z: Int): Int = ???
-
-    override def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = ???
-
-    override def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = ???
-
-    override def setBlock(coords: BlockRelWorld, block: BlockState): Unit = ???
-
-    override def removeBlock(coords: BlockRelWorld): Unit = ???
-
-    override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = ???
-
-    override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = ???
-
-    override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ???
-
-    override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ???
-
-    override def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = loadedColumns.get(coords)
-
-    override def getChunk(coords: ChunkRelWorld): Option[IChunk] = loadedChunks.get(coords)
-
-    override def getBlock(coords: BlockRelWorld): BlockState = ???
-
-    override def provideColumn(coords: ColumnRelWorld): ChunkColumn = ???
-
-    override def onChunkAdded(chunk: IChunk): Unit = ???
-
-    override def onChunkRemoved(chunk: IChunk): Unit = ???
-  }
-
-  private class TestColumn(_coords: ColumnRelWorld) extends ChunkColumn {
-    override def coords: ColumnRelWorld = _coords
-
-    override private[world] val generatedHeightMap = null
-
-    override def isEmpty: Boolean = ???
-
-    override def heightMap(x: Int, z: Int): Short = ???
-
-    override def getChunk(coords: ChunkRelColumn): Option[IChunk] = ???
-
-    override def setChunk(chunk: IChunk): Unit = ???
-
-    override def removeChunk(coords: ChunkRelColumn): Option[IChunk] = ???
-
-    override def allChunks: Iterable[IChunk] = ???
-
-    override def tick(): Unit = ???
-
-    override def onReloadedResources(): Unit = ???
-
-    override def unload(): Unit = ???
-
-    override def addEventListener(listener: ChunkColumnListener): Unit = ???
-
-    override def removeEventListener(listener: ChunkColumnListener): Unit = ???
-
-    override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = ???
-
-    override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ???
-
-    override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ???
-
-    override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = ???
-  }
-
-  private class TestChunk(_coords: ChunkRelWorld, _world: BlocksInWorld)(implicit val cylSize: CylinderSize) extends IChunk {
-    def fillWithBlocks(count: Int): TestChunk = {
-      val storage = blocks
-      for (i <- (0 until count).map(_ * 19 % (16*16*16))) {
-        storage.setBlock(BlockRelChunk(i), new BlockState(Blocks.Dirt, 0))
-      }
-      this
-    }
-
-    override def isDecorated: Boolean = ???
-
-    override def setDecorated(): Unit = ???
-
-    override val coords: ChunkRelWorld = _coords
-
-    override val lighting: IChunkLighting =
-      new ChunkLighting(this, new LightPropagator(_world))
-
-    override def init(): Unit = ???
-
-    override def tick(): Unit = ???
-
-    override def hasNoBlocks: Boolean = false
-
-    override val blocks: ChunkStorage = new DenseChunkStorage(coords)
-
-    override def entities: EntitiesInChunk = ???
-
-    override def addEventListener(listener: ChunkEventListener): Unit = ???
-
-    override def removeEventListener(listener: ChunkEventListener): Unit = ???
-
-    override def addBlockEventListener(listener: ChunkBlockListener): Unit = ???
-
-    override def removeBlockEventListener(listener: ChunkBlockListener): Unit = ???
-
-    override def requestRenderUpdate(): Unit = ???
-
-    override def requestBlockUpdate(coords: BlockRelChunk): Unit = ???
-
-    override def saveIfNeeded(): Unit = ???
-
-    override def unload(): Unit = ???
-
-    override def getBlock(coords: BlockRelChunk): BlockState = blocks.getBlock(coords)
-
-    override def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = ???
-
-    override def removeBlock(coords: BlockRelChunk): Unit = ???
   }
 }

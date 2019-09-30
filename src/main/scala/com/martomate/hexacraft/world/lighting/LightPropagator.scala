@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.lighting
 
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
-import com.martomate.hexacraft.world.worldlike.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 
@@ -201,6 +201,7 @@ class LightPropagator(world: BlocksInWorld) {
 
   private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
+    var lastChunkAddedToRenderSet: IChunk = null
 
     while (queue.nonEmpty) {
       val top = queue.dequeue()
@@ -210,21 +211,29 @@ class LightPropagator(world: BlocksInWorld) {
       val nextLevel = chunk.lighting.getSunlight(here) - 1
 
       if (nextLevel > 0) {
-        chunksNeedingRenderUpdate += chunk
+        if (lastChunkAddedToRenderSet != chunk) {
+          chunksNeedingRenderUpdate += chunk
+          lastChunkAddedToRenderSet = chunk
+        }
 
         for (s <- NeighborOffsets.indices) {
-          chunkCache.neighbor(s, chunk, here) match {
-            case (c2, Some(neigh)) =>
-              val block = neigh.getBlock(c2)
-              if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
-                val thisSLevel = neigh.lighting.getSunlight(c2)
-                val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
-                if (thisSLevel < nextS) {
-                  neigh.lighting.setSunlight(c2, nextS)
-                  queue += ((c2, neigh))
-                } else chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
+          val (c2, neighOpt) = chunkCache.neighbor(s, chunk, here)
+          if (neighOpt.isDefined) {
+            val neigh = neighOpt.get
+
+            if (neigh.mapBlock(c2, (blockType, metadata) => blockType.isTransparent(metadata, oppositeSide(s)))) {
+              val thisSLevel = neigh.lighting.getSunlight(c2)
+              val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
+              if (thisSLevel < nextS) {
+                neigh.lighting.setSunlight(c2, nextS)
+                queue += ((c2, neigh))
+              } else { // the if-case above gets handled later since it's in the queue
+                if (lastChunkAddedToRenderSet != neigh) {
+                  chunksNeedingRenderUpdate += neigh
+                  lastChunkAddedToRenderSet = neigh
+                }
               }
-            case _ =>
+            }
           }
         }
       }

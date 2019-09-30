@@ -17,7 +17,7 @@ class TextMaster {
   def loadText(text: GUIText): Unit = {
     val font = text.getFont
 
-    var textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[GUIText])
+    val textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[GUIText])
     textBatch += text
   }
 

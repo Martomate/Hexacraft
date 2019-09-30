@@ -12,6 +12,8 @@ abstract class LocationInfo(implicit window: GameWindow) {
   def containsPoint(px: Float, py: Float): Boolean = px >= x && px <= x + w && py >= y && py <= y + h
   final def containsPoint(pos: (Float, Float)): Boolean = containsPoint(pos._1, pos._2)
 
+  def containsMouse(xOff: Float, yOff: Float): Boolean = containsMouse((xOff, yOff))
+
   def containsMouse(offset: (Float, Float)): Boolean = {
     containsPoint(window.normalizedMousePos.x * window.aspectRatio - offset._1, window.normalizedMousePos.y - offset._2)
   }

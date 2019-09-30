@@ -84,5 +84,5 @@ abstract class ChunkOpaqueDeterminerTest extends FlatSpec with Matchers with Moc
   def testAllSides(det: ChunkOpaqueDeterminer)(answer: (Int, Int) => Boolean): Unit = for {
     f <- 0 until 8
     t <- 0 until 8
-  } (f, t, det.canGetToSide(f, t)) shouldBe (f, t, answer(f, t))
+  } (f, t, det.canGetToSide(f, t)) shouldBe ((f, t, answer(f, t)))
 }
