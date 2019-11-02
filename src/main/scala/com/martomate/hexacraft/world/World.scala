@@ -8,9 +8,9 @@ import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
-import com.martomate.hexacraft.world.coord.{CoordUtils, Offset}
+import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator

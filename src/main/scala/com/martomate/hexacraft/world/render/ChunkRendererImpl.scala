@@ -5,14 +5,14 @@ import java.nio.ByteBuffer
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
+import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
 
 class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
-  import chunk.coords.cylSize.impl
+  import world.size.impl
 
   def coords: ChunkRelWorld = chunk.coords
 
@@ -92,7 +92,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
 
     for ((bCoords, block) <- blocks) {
       if (shouldRender(bCoords.value)) {
-        val coords = BlockRelWorld(bCoords, chunk.coords)
+        val coords = BlockRelWorld.fromChunk(bCoords, chunk.coords)
         buf.putInt(coords.x)
         buf.putInt(coords.y)
         buf.putInt(coords.z)

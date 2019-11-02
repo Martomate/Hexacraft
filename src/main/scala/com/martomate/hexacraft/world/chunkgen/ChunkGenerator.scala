@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.chunkgen
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunkGenerator
@@ -8,8 +9,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage, DenseChunkStorage}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
-class ChunkGenerator(coords: ChunkRelWorld, world: IWorld) extends IChunkGenerator {
-  import coords.cylSize.impl
+class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: CylinderSize) extends IChunkGenerator {
 
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 

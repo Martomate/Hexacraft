@@ -15,9 +15,8 @@ import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
-import com.martomate.hexacraft.world.coord.NeighborOffsets
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
 import com.martomate.hexacraft.world.player.Player

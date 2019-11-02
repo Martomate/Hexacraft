@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.block.fluid
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.behaviour.BlockBehaviour
 

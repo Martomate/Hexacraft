@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.loader
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
@@ -12,7 +13,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
                         chunkFactory: ChunkRelWorld => IChunk,
                         chunkUnloader: ChunkRelWorld => Unit,
                         maxDist: Double
-                       ) extends ChunkLoader {
+                       )(implicit cylSize: CylinderSize) extends ChunkLoader {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val LoadsPerTick = 1
@@ -23,7 +24,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private val prioritizer: ChunkLoadingPrioritizer = new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
-    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c))(c.cylSize).toCylCoords)
+    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
 
   private val chunksToLoad: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
   private val chunksToUnload: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty

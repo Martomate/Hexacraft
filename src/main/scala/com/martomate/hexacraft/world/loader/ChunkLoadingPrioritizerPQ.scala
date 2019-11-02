@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.loader
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
@@ -8,7 +9,7 @@ import scala.collection.mutable
 class ChunkLoadingPrioritizerPQ(origin: PosAndDir,
                                 distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
                                 maxDist: Double
-                                   ) extends ChunkLoadingPrioritizer with ChunkLoadingEdgeListener {
+                               )(implicit cylSize: CylinderSize) extends ChunkLoadingPrioritizer with ChunkLoadingEdgeListener {
 
   private val edge = new ChunkLoadingEdge
   edge.addListener(this)

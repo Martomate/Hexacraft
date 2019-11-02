@@ -7,24 +7,26 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import org.scalatest.FunSuite
 
-abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => ChunkStorage) extends FunSuite {
+abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends FunSuite {
   protected val cylSize: CylinderSize = new CylinderSize(4)
   import cylSize.impl
 
+  def makeStorage(coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage = storageFactory(coords, cylSize)
+
   test("No blocks") {
-    val storage = makeStorage(null)
+    val storage = makeStorage()
     assertResult(0)(storage.numBlocks)
   }
 
   test("One block") {
-    val storage = makeStorage(null)
+    val storage = makeStorage()
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
     assertResult(1)(storage.numBlocks)
   }
 
   test("Many blocks") {
-    val storage = makeStorage(null)
+    val storage = makeStorage()
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
 
@@ -32,7 +34,7 @@ abstract class ChunkStorageTest(protected val makeStorage: ChunkRelWorld => Chun
   }
 
   test("Air doesn't count as a block") {
-    val storage = makeStorage(null)
+    val storage = makeStorage()
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
     storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Air))
     assertResult(0)(storage.numBlocks)

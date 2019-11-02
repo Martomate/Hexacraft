@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.block
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.behaviour.{BlockBehaviour, BlockBehaviourNothing}
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
@@ -27,5 +28,5 @@ class Block(val id: Byte, val name: String, val displayName: String) {
   def blockHeight(metadata: Byte): Float = 1.0f
 
   protected val behaviour: BlockBehaviour = new BlockBehaviourNothing
-  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet): Unit = behaviour.onUpdated(coords, world)
+  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet)(implicit cylSize: CylinderSize): Unit = behaviour.onUpdated(coords, world)
 }

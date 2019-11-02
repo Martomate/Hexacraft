@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.coord
+package com.martomate.hexacraft.world.coord.integer
 
 import scala.collection.Seq
 
