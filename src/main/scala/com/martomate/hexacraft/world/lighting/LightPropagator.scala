@@ -1,14 +1,14 @@
 package com.martomate.hexacraft.world.lighting
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
-import com.martomate.hexacraft.world.coord.NeighborOffsets
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 
-class LightPropagator(world: BlocksInWorld) {
+class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
   def initBrightnesses(chunk: IChunk, lights: mutable.HashMap[BlockRelChunk, BlockState]): Unit = {

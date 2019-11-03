@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
-import com.martomate.hexacraft.util.{ConstantSeq, NBTUtil, SmartArray}
-import com.martomate.hexacraft.world.block.{Block, Blocks}
+import com.martomate.hexacraft.util.{ConstantSeq, CylinderSize, NBTUtil, SmartArray}
+import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
 import scala.collection.mutable.ArrayBuffer
 
-class DenseChunkStorage(_chunkCoords: ChunkRelWorld) extends ChunkStorage(_chunkCoords) {
-  def this(storage: ChunkStorage) = {
+class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize) extends ChunkStorage(_chunkCoords) {
+  def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
     this(storage.chunkCoords)
     for ((i, b) <- storage.allBlocks) setBlock(i, b)
   }
@@ -42,7 +42,7 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld) extends ChunkStorage(_chunk
     val buffer = new ArrayBuffer[(BlockRelChunk, BlockState)](numBlocks)
     for (i <- blockTypes.indices) {
       if (blockTypes(i) != 0)
-        buffer += ((BlockRelChunk(i)(chunkCoords.cylSize), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
+        buffer += ((BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
     }
     buffer
   }

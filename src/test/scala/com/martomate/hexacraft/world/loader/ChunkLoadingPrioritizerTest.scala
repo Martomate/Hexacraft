@@ -15,7 +15,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
            maxDist: Double = 4): ChunkLoadingPrioritizer
 
   protected def distSqFuncDefault(p: PosAndDir, c: ChunkRelWorld): Double =
-    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c))(c.cylSize).toCylCoords)
+    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
 
   protected def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
 
@@ -30,7 +30,7 @@ abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
     val prio = make(makePos(0, 0, 0))
     val coords = ChunkRelWorld(0, 0, 0)
     prio += coords
-    coords.neighbors should contain (prio.nextAddableChunk.orNull)
+    coords.neighbors should contain (prio.nextAddableChunk.get)
   }
 
   it should "be a neighbor of a loaded chunk" in {

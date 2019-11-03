@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.gen.planner
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -10,7 +11,7 @@ import com.martomate.hexacraft.world.worldlike.IWorld
 import scala.collection.mutable
 import scala.util.Random
 
-class TreePlanner(world: IWorld) extends WorldFeaturePlanner {
+class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -50,7 +51,6 @@ class TreePlanner(world: IWorld) extends WorldFeaturePlanner {
   }
 
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short): Unit = {
-    import coords.cylSize.impl
     val tree = new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz)).generate()
     generateChanges(tree)
   }

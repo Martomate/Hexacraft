@@ -45,7 +45,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
       needsToSave = true
 
       for (listener <- blockEventListeners) {
-        listener.onSetBlock(BlockRelWorld(blockCoords, coords), before, block)
+        listener.onSetBlock(BlockRelWorld.fromChunk(blockCoords, coords), before, block)
       }
 
       handleLightingOnSetBlock(blockCoords, block)
@@ -62,7 +62,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     }
   }
 
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld(coords, this.coords)))
+  def requestBlockUpdate(coords: BlockRelChunk): Unit = eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
 
   def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 

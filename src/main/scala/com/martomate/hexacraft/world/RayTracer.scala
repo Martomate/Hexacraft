@@ -4,9 +4,9 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.coord.{CoordUtils, NeighborOffsets, Offset}
+import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets, Offset}
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 

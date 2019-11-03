@@ -1,12 +1,12 @@
 package com.martomate.hexacraft.world.storage
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.EntitiesInChunkImpl
 import com.martomate.hexacraft.world.chunk.EntitiesInChunk
 import com.martomate.hexacraft.world.worldlike.IWorld
 
-class ChunkData(init_storage: ChunkStorage, world: IWorld) {
+class ChunkData(init_storage: ChunkStorage, world: IWorld)(implicit cylSize: CylinderSize) {
   var storage: ChunkStorage = init_storage
   val entities: EntitiesInChunk = new EntitiesInChunkImpl(world)
   var isDecorated: Boolean = false
@@ -26,7 +26,7 @@ class ChunkData(init_storage: ChunkStorage, world: IWorld) {
   def fromNBT(nbt: CompoundTag): Unit = {
     storage.fromNBT(nbt)
     entities.fromNBT(nbt)
-    isDecorated = NBTUtil.getBoolean(nbt, "isDecorated", false)
+    isDecorated = NBTUtil.getBoolean(nbt, "isDecorated", default = false)
   }
 
   def toNBT: Seq[Tag[_]] = {

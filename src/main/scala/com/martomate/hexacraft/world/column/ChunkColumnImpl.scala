@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.column
 
 import com.flowpowered.nbt.ShortArrayTag
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
@@ -12,9 +12,7 @@ import com.martomate.hexacraft.world.settings.WorldSettingsProvider
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider) extends ChunkColumn {
-  import coords.cylSize.impl
-
+class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider)(implicit cylSize: CylinderSize) extends ChunkColumn {
   private val chunks: mutable.Map[Int, IChunk] = mutable.HashMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -80,7 +78,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
         var ch: Option[IChunk] = None
         do {
           y -= 1
-          ch = getChunk(ChunkRelColumn(y >> 4))
+          ch = getChunk(ChunkRelColumn.create(y >> 4))
           ch match {
             case Some(chunk) =>
               if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air)

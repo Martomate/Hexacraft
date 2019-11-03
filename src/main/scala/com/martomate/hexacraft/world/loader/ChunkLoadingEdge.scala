@@ -1,11 +1,12 @@
 package com.martomate.hexacraft.world.loader
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkLoadingEdge {
+class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
   private val chunksLoaded: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksEdge: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksLoadable: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty

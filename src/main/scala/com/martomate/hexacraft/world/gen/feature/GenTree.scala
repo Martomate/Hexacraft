@@ -1,12 +1,12 @@
 package com.martomate.hexacraft.world.gen.feature
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.block.{Block, Blocks}
-import com.martomate.hexacraft.world.coord.Offset
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import com.martomate.hexacraft.world.gen.PlannedWorldChange
 
-class GenTree(at: BlockRelWorld) {
+class GenTree(at: BlockRelWorld)(implicit cylSize: CylinderSize) {
   private type BlockSpec = (Offset, Block)
 
   private def makePillar(x: Int, y: Int, z: Int, len: Int, b: Block): Seq[BlockSpec] =

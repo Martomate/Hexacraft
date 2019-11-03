@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.block
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.fluid.BlockFluid
 
 class BlockFactory {

@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.BlockInChunkAccessor
-import com.martomate.hexacraft.world.coord.NeighborOffsets
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
 
 import scala.collection.mutable
 
-class ChunkOpaqueDeterminerSimple(chunkCoords: ChunkRelWorld, chunk: BlockInChunkAccessor) extends ChunkOpaqueDeterminer {
+class ChunkOpaqueDeterminerSimple(chunkCoords: ChunkRelWorld, chunk: BlockInChunkAccessor)(implicit cylSize: CylinderSize) extends ChunkOpaqueDeterminer {
   private val sideGroups: Array[mutable.Set[Int]] = Array.fill(8)(mutable.Set.empty)
   private var sideGroupValid: Boolean = false
 
@@ -40,14 +40,14 @@ class ChunkOpaqueDeterminerSimple(chunkCoords: ChunkRelWorld, chunk: BlockInChun
           val idx = bfs.dequeue()
 
           if (group(idx) == 0) {
-            val c = BlockRelChunk(idx)(chunkCoords.cylSize)
+            val c = BlockRelChunk(idx)
             val solid = chunk.getBlock(c) != BlockState.Air
             if (!solid) {
               group(idx) = currentGroup
 
               for (s <- NeighborOffsets.indices) {
                 if (c.onChunkEdge(s)) {
-                  val ch = BlockRelWorld(c, chunkCoords).offset(NeighborOffsets(s)).getChunkRelWorld
+                  val ch = BlockRelWorld.fromChunk(c, chunkCoords).offset(NeighborOffsets(s)).getChunkRelWorld
                   sideGroups(chunkLookup(ch)) += currentGroup
                 } else {
                   val n = c.neighbor(s).value

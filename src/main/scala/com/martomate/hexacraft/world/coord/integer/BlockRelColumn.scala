@@ -4,10 +4,10 @@ import com.martomate.hexacraft.util.CylinderSize
 
 object BlockRelColumn {
   def apply(Y: Int, x: Int, y: Int, z: Int)(implicit cylSize: CylinderSize): BlockRelColumn = BlockRelColumn((Y & 0xfff) << 12 | ((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)))
-  def apply(block: BlockRelChunk, chunk: ChunkRelColumn): BlockRelColumn = BlockRelColumn(chunk.value << 12 | block.value)(chunk.cylSize)
+  def apply(block: BlockRelChunk, chunk: ChunkRelColumn): BlockRelColumn = BlockRelColumn(chunk.value << 12 | block.value)
 }
 
-case class BlockRelColumn private (value: Int)(implicit val cylSize: CylinderSize) { // YYYxyz
+case class BlockRelColumn(value: Int) extends AnyVal { // YYYxyz
   def getBlockRelChunk = BlockRelChunk(value & 0xfff)
   def getChunkRelColumn = ChunkRelColumn(value >> 12 & 0xfff)
 

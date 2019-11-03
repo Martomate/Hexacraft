@@ -2,11 +2,13 @@ package com.martomate.hexacraft.world.storage
 
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
-class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage(_)) {
+class DenseChunkStorageTest extends ChunkStorageTest((coords, size) => new DenseChunkStorage(coords)(implicitly(size))) {
+  import cylSize.impl
+
   val makeOtherStorage: ChunkRelWorld => ChunkStorage = new SparseChunkStorage(_)
 
   test("Is dense") {
-    val storage = makeStorage(null)
+    val storage = makeStorage()
     assert(storage.isDense)
   }
 
