@@ -24,7 +24,7 @@ config/name="Hexacraft Launcher"
 run/main_scene="res://Window.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Hexacraft"
-boot_splash/image="res://background.png"
+boot_splash/image="res://Bakgrundsbild i launchern2.0.png"
 config/icon="res://icon.png"
 
 [display]

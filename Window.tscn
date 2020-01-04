@@ -2,7 +2,7 @@
 
 [ext_resource path="res://main_theme.tres" type="Theme" id=1]
 [ext_resource path="res://Window.gd" type="Script" id=2]
-[ext_resource path="res://background.png" type="Texture" id=3]
+[ext_resource path="res://Bakgrundsbild i launchern2.0.png" type="Texture" id=3]
 [ext_resource path="res://Verdana.ttf" type="DynamicFontData" id=4]
 [ext_resource path="res://play_button_style.tres" type="StyleBox" id=5]
 
@@ -102,7 +102,7 @@ margin_bottom = 29.0
 size_flags_horizontal = 0
 text = "Latest release (0.8)"
 flat = true
-items = [ "Latest release (0.8)", null, false, -1, null ]
+items = [ "Latest release (0.8)", null, false, 0, null ]
 selected = 0
 
 [node name="Filler" type="Label" parent="MarginContainer/HBoxContainer"]
