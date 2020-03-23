@@ -6,13 +6,14 @@ A game with hexagonal blocks on a cylindrical world inspired by Minecraft
 
 Official website: http://www.martomate.com/games/Hexacraft
 
-![image](https://user-images.githubusercontent.com/20427996/48558548-7cff4a00-e924-11e8-9877-75883f5edf38.png)
+![image](https://www.martomate.com/games/Hexacraft/hexacraft_in_game_0.9.png)
 
 ## Features:
 
 - Hexagonal blocks
 - Cylindrical world
 - Infinite world (except around the cylinder)
+- Triangular pixels
 - And much more!
 
 ## Installation
@@ -73,28 +74,14 @@ The program works very similarly to Minecraft (at least when it comes to saving 
 
 You can create as many worlds as you like and they will be saved on your computer. To find the files go to the folder named ".hexacraft" in the %appdata% directory on Windows and in the home directory on Mac and Linux (just like for Minecraft).
 
-## Contributing
-
-### The GitHub repository
-
-To contribute you need to fork the develop-branch of the project. To make changes I would recommend that you make many small commits rather than one big at the end, since it will make it easy to see which commit introduced what (assuming that you provide good commit-messages). When you are done with a feature you can create a pull-request. Please note that you can still add commits to an active pull-request, which might be needed to fix merge conflicts.
-
-### Building the project
-
-This project uses [sbt](https://www.scala-sbt.org/1.x/docs/index.html) as the build tool. The project can be directly imported into [IntelliJ](https://www.jetbrains.com/idea/) since it supports sbt, but the project itself does not in any way depend on any tools other than sbt.
-
-### Tests
-
-At the moment this project hardly contains any tests (unit tests), but that will hopefully improve as time goes on. That being said, there is support for unit tests so you are welcome to write tests for your code. That will make sure that the code you write do what it was designed to do not only now, but also in the future.
-
 ## Credits
 
 The game was created in spring of 2015 by **Martin Jakobsson** ([Martomate](https://github.com/Martomate)).
 
-Almost three years later the game moved to GitHub and since then anyone has had the chance to contribute. Every contributor will be listed in this section.
+Almost three years later the game moved to GitHub and since then anyone has had the chance to contribute. More information about how to contribute is available [here](CONTRIBUTING.md).
 
 ## Licence
 
-This project goes under the [MIT Licence](LICENSE) which you can read more about if you click right above the clone-button at the top of the page. In short it says that anyone may use this project for anything they want as long as the licence is not removed or changed.
+This project goes under the [MIT Licence](LICENSE). In short it says that anyone may use this project for anything they want as long as the licence is not removed or changed.
 
 Basically this should be an open source project, but if anyone uses it for some purpose it would be nice if they mentioned the original project or the authors of this project. There has, after all, been a lot of work put into this.
