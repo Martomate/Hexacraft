@@ -133,8 +133,12 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
     removeOldChunks()
 
-    blockUpdateTimer.tick()
-    relocateEntitiesTimer.tick()
+    if (blockUpdateTimer.tick()) {
+      performBlockUpdates()
+    }
+    if (relocateEntitiesTimer.tick()) {
+      performEntityRelocation()
+    }
 
     columns.values.foreach(_.tick())
   }
@@ -165,7 +169,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     }
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)(performBlockUpdates())
+  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
 
   private def performBlockUpdates(): Unit = {
     val blocksToUpdateLen = blocksToUpdate.size
@@ -175,7 +179,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     }
   }
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)(performEntityRelocation())
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)
 
   private def performEntityRelocation(): Unit = {
     val entList = for {
