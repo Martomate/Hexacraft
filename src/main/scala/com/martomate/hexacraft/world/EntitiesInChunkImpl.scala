@@ -3,7 +3,8 @@ package com.martomate.hexacraft.world
 import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.chunk.EntitiesInChunk
-import com.martomate.hexacraft.world.entity.{Entity, EntityLoader}
+import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.JavaConverters._
@@ -32,10 +33,10 @@ class EntitiesInChunkImpl(world: IWorld) extends EntitiesInChunk {
     for (tag <- list) {
       val compTag = tag.asInstanceOf[CompoundTag]
       val entType = NBTUtil.getString(compTag, "type", "")
-      EntityLoader.load(entType, world) match {
+      EntityRegistry.load(entType, world) match {
         case Some(ent) =>
           ent.fromNBT(compTag)
-          +=(ent)
+          this += ent
         case None =>
           println(s"Entity-type '$entType' not found")
       }
