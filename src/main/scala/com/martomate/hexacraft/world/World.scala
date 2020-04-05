@@ -11,7 +11,9 @@ import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
-import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistrator}
+import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
+import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.entity.registry.EntityRegistrator
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}

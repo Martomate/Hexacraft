@@ -1,9 +1,10 @@
-package com.martomate.hexacraft.world.entity
+package com.martomate.hexacraft.world.entity.loader
 
 import com.eclipsesource.json.{Json, JsonObject}
 import com.martomate.hexacraft.util.{CylinderSize, FileUtils}
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.base.BasicEntityModel
 import com.martomate.hexacraft.world.entity.player.PlayerEntityModel
 

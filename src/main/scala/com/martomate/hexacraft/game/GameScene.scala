@@ -17,8 +17,9 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.entity.EntityModelLoader
+import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
+import com.martomate.hexacraft.world.entity.player.ai.PlayerAIFactory
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
@@ -113,7 +114,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           val idx = key - GLFW_KEY_1
           setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
-          world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world)(new EntityModelLoader))
+          world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world, PlayerAIFactory, new EntityModelLoader().load("player")))
         case _ =>
       }
     }

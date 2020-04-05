@@ -4,10 +4,11 @@ import com.flowpowered.nbt._
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIInput}
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
 import org.joml.{Vector3d, Vector3dc}
 
-class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
+class SimplePlayerAI(player: PlayerEntity, input: EntityAIInput) extends EntityAI {
   private val movingForce = new Vector3d
   private var target: CylCoords = CylCoords(0, 0, 0)(player.position.cylSize)
 
@@ -17,7 +18,7 @@ class SimplePlayerAI(player: PlayerEntity) extends PlayerAI {
   private val reach: Double = 5
   private val speed = 0.2
 
-  def tick(input: PlayerAIInput): Unit = {
+  def tick(): Unit = {
     val distSq = player.position.distanceXZSq(target)
 
     movingForce.set(0)

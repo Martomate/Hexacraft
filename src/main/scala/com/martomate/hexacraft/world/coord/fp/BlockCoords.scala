@@ -10,7 +10,6 @@ class BlockCoords(_x: Double, _y: Double, _z: Double, fixZ: Boolean = true)(impl
   def toNormalCoords(reference: CylCoords): NormalCoords = toSkewCylCoords.toNormalCoords(reference)
   def toCylCoords: CylCoords = toSkewCylCoords.toCylCoords
   def toSkewCylCoords: SkewCylCoords = new SkewCylCoords(x * CylinderSize.y60, y * 0.5, z * CylinderSize.y60, fixZ)
-  def toPlaceInBlockCoords: PlaceInBlockCoords = PlaceInBlockCoords(x + 0.5 * z, y - 0.5, z + 0.5 * x)
 
   def +(that: BlockCoords) = BlockCoords(x + that.x, y + that.y, z + that.z)
   def -(that: BlockCoords) = BlockCoords(x - that.x, y - that.y, z - that.z)
