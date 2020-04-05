@@ -63,8 +63,8 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private val toolbar: Toolbar = makeToolbar(world.player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
 
-  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)(performRightMouseClick())
-  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)(performLeftMouseClick())
+  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
+  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
 
   private var isPaused: Boolean = false
 
@@ -223,8 +223,12 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
     updateMousePicker()
 
-    rightMouseButtonTimer.tick()
-    leftMouseButtonTimer.tick()
+    if (rightMouseButtonTimer.tick()) {
+      performRightMouseClick()
+    }
+    if (leftMouseButtonTimer.tick()) {
+      performLeftMouseClick()
+    }
 
     world.tick(camera)
     worldRenderer.tick(camera)

@@ -32,7 +32,7 @@ class UniquePQ[S](func: S => Double, ord: Ordering[Double]) {// PQ with fast loo
 
   def reprioritizeAndFilter(filterFunc: DS => Boolean): Unit = {
     set.clear()
-    val buffer = ArrayBuffer.empty[DS]
+    val buffer = new ArrayBuffer[DS](pq.size)
     for (t <- pq) {
       val elem = (func(t._2), t._2)
       if (filterFunc(elem))

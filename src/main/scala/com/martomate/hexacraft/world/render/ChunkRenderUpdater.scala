@@ -20,7 +20,11 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
   def update(camera: Camera): Unit = {
     origin.setPosAndDirFrom(camera.view)
 
-    reprioritizeTimer.tick()
+    if (reprioritizeTimer.tick()) {
+      val rDistSq = (renderDistance * 16) * (renderDistance * 16)
+
+      chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
+    }
 
     val numUpdatesToPerform = if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
     for (_ <- 1 to numUpdatesToPerform) {
@@ -30,11 +34,7 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
     }
   }
 
-  private val reprioritizeTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading) {
-    val rDistSq = (renderDistance * 16) * (renderDistance * 16)
-
-    chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
-  }
+  private val reprioritizeTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading)
 
   private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
     def distTo(x: Int, y: Int, z: Int): Double = {
