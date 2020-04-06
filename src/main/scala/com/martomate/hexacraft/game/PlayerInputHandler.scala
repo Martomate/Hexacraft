@@ -91,7 +91,7 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
     if (!player.flying) {
       player.velocity.y -= 9.82 / 60
       player.velocity.div(60)
-      val (pos, vel) = player.world.collisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity, player.world)
+      val (pos, vel) = player.world.collisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity)
       player.position.set(pos)
       player.velocity.set(vel)
       player.velocity.mul(60)

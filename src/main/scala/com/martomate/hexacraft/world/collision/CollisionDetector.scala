@@ -1,16 +1,15 @@
 package com.martomate.hexacraft.world.collision
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.joml.Vector3d
 
-import scala.collection.mutable
-
-class CollisionDetector {
+class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   private val reflectionDirs = Array(
     ( 0, -1,  0),
     ( 0,  1,  0),
@@ -23,19 +22,11 @@ class CollisionDetector {
   )
   private val reflDirsCyl = reflectionDirs.map(d => new SkewCylCoords(d._1, d._2, d._3, false)(null).toCylCoords)
 
-  private val chunkCache: mutable.Map[ChunkRelWorld, IChunk] = mutable.HashMap.empty
-  private var worldForCaching: IWorld = _
+  private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def getChunk(coords: ChunkRelWorld): Option[IChunk] = {
-    chunkCache.get(coords) orElse {
-      val ch = worldForCaching.getChunk(coords)
-      if (ch.isDefined) chunkCache(coords) = ch.get
-      ch
-    }
-  }
+  def getChunk(coords: ChunkRelWorld): Option[IChunk] = chunkCache.getChunk(coords)
 
   def collides(box1: HexBox, pos1: SkewCylCoords, box2: HexBox, pos2: CylCoords): Boolean = {
-    import pos1.cylSize.impl
     val (bc, fc) = CoordUtils.toBlockCoords(pos2.toBlockCoords)
     val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, false).toSkewCylCoords
 
@@ -43,23 +34,20 @@ class CollisionDetector {
   }
 
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
-  def positionAndVelocityAfterCollision(box: HexBox, pos: Vector3d, velocity: Vector3d, world: IWorld): (Vector3d, Vector3d) = {
-    chunkCache.clear()
-    worldForCaching = world
+  def positionAndVelocityAfterCollision(box: HexBox, pos: Vector3d, velocity: Vector3d): (Vector3d, Vector3d) = {
+    chunkCache.clearCache()
 
     var result = (pos, velocity)
     val parts = (velocity.length * 10).toInt + 1
     velocity.div(parts)
     for (_ <- 1 to parts) {
-      result = _collides(box, result._1, velocity, world)
+      result = _collides(box, result._1, velocity)
     }
     result._2.mul(parts)
     result
   }
 
-  private def _collides(box1: HexBox, pos: Vector3d, velocity: Vector3d, world: IWorld): (Vector3d, Vector3d) = {
-    import world.size.impl
-
+  private def _collides(box1: HexBox, pos: Vector3d, velocity: Vector3d): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
       val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, false).toBlockCoords)
       val skewCoords = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, false).toSkewCylCoords
@@ -96,7 +84,7 @@ class CollisionDetector {
           val vel = new Vector3d(velocity).mul(1 - maxDist)
           val dot = vel.dot(normal)
           vel.sub(normal.mul(dot))
-          val result = _collides(box1, newPos, vel, world)
+          val result = _collides(box1, newPos, vel)
           //val falseLen = result._2.length
           if (maxDist != 1) {
             result._2.mul(1 / (1 - maxDist))

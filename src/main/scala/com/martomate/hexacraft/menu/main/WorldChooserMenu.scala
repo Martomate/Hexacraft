@@ -20,10 +20,10 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   }.foreach(b => scrollPane.addComponent(b))
   addComponent(scrollPane)
 
-  addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.1f, 0.19f, 0.1f)) {
+  addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
     window.scenes.popScene()
   })
-  addComponent(Button("New world", LocationInfo16x9(0.51f, 0.1f, 0.19f, 0.1f)) {
+  addComponent(Button("New world", LocationInfo16x9(0.51f, 0.05f, 0.19f, 0.1f)) {
     window.scenes.pushScene(new NewWorldMenu)
   })
 

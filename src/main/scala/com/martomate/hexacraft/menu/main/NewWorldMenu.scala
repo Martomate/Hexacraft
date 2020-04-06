@@ -23,8 +23,8 @@ class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene{
   private val seedTF = new TextField(LocationInfo16x9(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 2.5f)
   addComponent(seedTF)
 
-  addComponent(Button("Cancel", LocationInfo16x9(0.3f, 0.1f, 0.19f, 0.1f)){ window.scenes.popScene() })
-  addComponent(Button("Create world", LocationInfo16x9(0.51f, 0.1f, 0.19f, 0.1f))(createWorld()))
+  addComponent(Button("Cancel", LocationInfo16x9(0.3f, 0.05f, 0.19f, 0.1f)){ window.scenes.popScene() })
+  addComponent(Button("Create world", LocationInfo16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
 
   private def createWorld(): Unit = {
     try {

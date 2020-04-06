@@ -2,6 +2,7 @@ package com.martomate.hexacraft.menu.main
 
 import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
+import com.martomate.hexacraft.menu.multiplayer.MultiplayerMenu
 import com.martomate.hexacraft.menu.settings.SettingsMenu
 import com.martomate.hexacraft.scene.{GameWindowExtended, MenuScene}
 
@@ -10,10 +11,13 @@ class MainMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(Button("Play", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new WorldChooserMenu)
   })
-  addComponent(Button("Settings", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
+  addComponent(Button("Multiplayer", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
+    window.scenes.pushScene(new MultiplayerMenu)
+  })
+  addComponent(Button("Settings", LocationInfo16x9(0.4f, 0.25f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new SettingsMenu)
   })
-  addComponent(Button("Quit", LocationInfo16x9(0.4f, 0.1f, 0.2f, 0.1f)) {
+  addComponent(Button("Quit", LocationInfo16x9(0.4f, 0.05f, 0.2f, 0.1f)) {
     window.tryQuit()
   })
 

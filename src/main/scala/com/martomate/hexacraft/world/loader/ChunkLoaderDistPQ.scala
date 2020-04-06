@@ -2,7 +2,6 @@ package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.IChunk
-import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
@@ -66,9 +65,4 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   override def onChunkRemoved(chunk: IChunk): Unit = {
     chunksToUnload -= chunk.coords
   }
-
-  @deprecated
-  override def onColumnAdded(column: ChunkColumn): Unit = ()
-  @deprecated
-  override def onColumnRemoved(column: ChunkColumn): Unit = ()
 }

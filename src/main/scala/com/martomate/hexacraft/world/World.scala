@@ -44,7 +44,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
-  override val collisionDetector: CollisionDetector = new CollisionDetector
+  override val collisionDetector: CollisionDetector = new CollisionDetector(this)
 
   private val columns = mutable.Map.empty[Long, ChunkColumn]
 
@@ -55,19 +55,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     coords => getChunk(coords).foreach(_.saveIfNeeded()),
     renderDistance
   )
-  /*new ChunkLoaderWithOrigin(
-    size,
-    renderDistance,
-    columns,
-    coords => {
-      val col = new ChunkColumnImpl(coords, worldGenerator, worldSettings)
-      col.addEventListener(this)
-      chunkLoader.onColumnAdded(col)
-      col
-    },
-    coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
-    chunkLoadingOrigin
-  )*/
 
   private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
 
@@ -155,7 +142,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
         if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
           c.removeEventListener(this)
           c.unload()
-          chunkLoader.onColumnRemoved(c)
         }
       }
     }
@@ -205,7 +191,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
       columns(here.value) = col
       col.addEventListener(this)
-      chunkLoader.onColumnAdded(col)
     }
   }
 
