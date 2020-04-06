@@ -9,7 +9,7 @@ abstract class BasicEntity(override val model: EntityModel, world: IWorld)(impli
   override def tick(): Unit = {
     velocity.y -= 9.82 / 60
     velocity.div(60)
-    val (pos, vel) = world.collisionDetector.positionAndVelocityAfterCollision(boundingBox, position.toVector3d, velocity, world)
+    val (pos, vel) = world.collisionDetector.positionAndVelocityAfterCollision(boundingBox, position.toVector3d, velocity)
     position = CylCoords(pos)
     velocity.set(vel)
     velocity.mul(60)
