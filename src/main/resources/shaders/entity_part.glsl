@@ -45,7 +45,8 @@ void main() {
 	float z = sin(v);
 	float y = cos(v);
 
-	fragIn.normal = vec3(normal.x, mat2(y, z, -z, y) * normal.yz);
+	fragIn.normal = (modelMatrix * vec4(normal.x, mat2(y, z, -z, y) * normal.yz, 0)).xyz;
+	fragIn.normal /= length(fragIn.normal);
 
 	float scale = radius / sqrt(z*z+y*y);// to fix rounding errors
 	y *= scale;
@@ -138,7 +139,7 @@ void main() {
 #endif
 
 	vec3 sunDir = normalize(sun);
-	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
+	float visibility = max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
 	color.rgb *= fragIn.brightness * visibility;
 }

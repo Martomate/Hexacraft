@@ -4,6 +4,7 @@ import com.martomate.hexacraft.world.block.HexBox
 import org.joml.Matrix4f
 
 trait EntityPart {
+  def baseTransform: Matrix4f
   def transform: Matrix4f
   def box: HexBox
   def texture(side: Int): Int

@@ -21,8 +21,8 @@ class PlayerEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) 
   private val bodyRadius = 8
   private val armLength = 40
   private val armRadius = 8
-  private val headRadius = 16
   private val headDepth = 20
+  private val headRadius = 16
 
   private val head = new BasicEntityPart(
     makeHexBox(headRadius, -headDepth / 2f, headDepth),

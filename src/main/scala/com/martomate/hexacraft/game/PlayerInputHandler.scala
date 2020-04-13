@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
-import org.lwjgl.glfw.GLFW._
+import org.lwjgl.glfw.GLFW.{GLFW_KEY_R, _}
 
 class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: Player) {
   var moveWithMouse = false
@@ -54,6 +54,10 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
     if (keyPressed(GLFW_KEY_RIGHT)      ) player.rotation.y += rSpeed
     if (keyPressed(GLFW_KEY_PAGE_UP)    ) player.rotation.z -= rSpeed
     if (keyPressed(GLFW_KEY_PAGE_DOWN)  ) player.rotation.z += rSpeed
+
+    if (keyPressed(GLFW_KEY_R) && keyPressed(GLFW_KEY_DELETE)) {
+      player.rotation.set(0, 0, 0)
+    }
 
     if (moveWithMouse) {
       val mouseMoved = mouse.moved

@@ -100,6 +100,16 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     chunkOfEntity(entity).foreach(_.entities -= entity)
   }
 
+  def removeAllEntities(): Unit = {
+    for (col <- columns.values) {
+      for (ch <- col.allChunks) {
+        for (e <- ch.entities.allEntities.toSeq) {
+          ch.entities -= e
+        }
+      }
+    }
+  }
+
   private def chunkOfEntity(entity: Entity): Option[IChunk] = {
     getApproximateChunk(entity.position)
   }
