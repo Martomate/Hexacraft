@@ -118,9 +118,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
           val idx = key - GLFW_KEY_1
           setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
-          world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world, PlayerAIFactory, new EntityModelLoader().load("player")))
+          world.addEntity(PlayerEntity.atStartPos(CylCoords(world.player.position), world, PlayerAIFactory, entityModelLoader.load("player")))
         case GLFW_KEY_L =>
-          world.addEntity(SheepEntity.atStartPos(CylCoords(world.player.position), world, SheepAIFactory, new EntityModelLoader().load("sheep")))
+          world.addEntity(SheepEntity.atStartPos(CylCoords(world.player.position), world, SheepAIFactory, entityModelLoader.load("sheep")))
         case GLFW_KEY_K =>
           world.removeAllEntities()
         case _ =>

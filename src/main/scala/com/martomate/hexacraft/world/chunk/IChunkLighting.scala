@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
+import com.martomate.hexacraft.world.storage.LocalBlockState
 
 trait IChunkLighting {
   def initialized: Boolean
-  def init(blocks: Seq[(BlockRelChunk, BlockState)]): Unit
+  def init(blocks: Seq[LocalBlockState]): Unit
 
   def setSunlight(coords: BlockRelChunk, value: Int): Unit
   def getSunlight(coords: BlockRelChunk): Byte

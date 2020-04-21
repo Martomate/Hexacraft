@@ -46,7 +46,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   override val collisionDetector: CollisionDetector = new CollisionDetector(this)
 
-  private val columns = mutable.Map.empty[Long, ChunkColumn]
+  private val columns = mutable.LongMap.empty[ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
   private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(

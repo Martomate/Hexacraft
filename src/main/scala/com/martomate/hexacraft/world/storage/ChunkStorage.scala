@@ -13,7 +13,7 @@ abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) extends BlockInChunk
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit
   def removeBlock(coords: BlockRelChunk): Unit
 
-  def allBlocks: Seq[(BlockRelChunk, BlockState)]
+  def allBlocks: IndexedSeq[LocalBlockState]
   def numBlocks: Int
 
   def isDense: Boolean
@@ -21,3 +21,5 @@ abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) extends BlockInChunk
   def fromNBT(nbt: CompoundTag): Unit
   def toNBT: Seq[Tag[_]]
 }
+
+case class LocalBlockState(coords: BlockRelChunk, block: BlockState)

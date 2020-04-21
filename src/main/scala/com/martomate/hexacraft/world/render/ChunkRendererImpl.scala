@@ -2,19 +2,17 @@ package com.martomate.hexacraft.world.render
 
 import java.nio.ByteBuffer
 
-import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
-import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.coord.CoordUtils
+import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.storage.LocalBlockState
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
 
 class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
   import world.size.impl
-
-  def coords: ChunkRelWorld = chunk.coords
 
   private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
 
@@ -35,34 +33,43 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
 
       val chunkCache = new ChunkCache(world)
 
-      val sidesToRender = Array.ofDim[Boolean](8, 16 * 16 * 16)
+      val sidesToRender = Array.tabulate[java.util.BitSet](8)(_ => new java.util.BitSet(16 * 16 * 16))
       val sideBrightness = Array.ofDim[Float](8, 16 * 16 * 16)
       val sidesCount = Array.ofDim[Int](8)
 
-      for (s <- NeighborOffsets.indices) {
+      for (s <- 0 until 8) {
         val shouldRender = sidesToRender(s)
         val shouldRenderTop = sidesToRender(0)
         val brightness = sideBrightness(s)
         val otherSide = oppositeSide(s)
 
-        for ((c, b) <- blocks) {
-          val (c2, neighOpt) = chunkCache.neighbor(s, chunk, c)
+        var i1 = 0
+        val i1Lim = blocks.size
+        while (i1 < i1Lim) {
+          val lbs = blocks(i1)
+          val c = lbs.coords
+          val b = lbs.block
 
-          if (neighOpt.isDefined) {
-            val neigh = neighOpt.get
+          val c2w = c.globalNeighbor(s, chunk.coords)
+          val c2 = c2w.getBlockRelChunk
+          val crw = c2w.getChunkRelWorld
+          val neigh = chunkCache.getChunk(crw)
 
+          if (neigh != null) {
             val bs = neigh.getBlock(c2)
 
             if (bs.blockType.isTransparent(bs.metadata, otherSide)) {
               brightness(c.value) = neigh.lighting.getBrightness(c2)
-              shouldRender(c.value) = true
+              shouldRender.set(c.value)
               sidesCount(s) += 1
               if (s > 1 && b.blockType.isTransparent(b.metadata, s)) {
-                shouldRenderTop(c.value) = true
+                shouldRenderTop.set(c.value)
                 sidesCount(0) += 1
               } // render the top side
             }
           }
+
+          i1 += 1
         }
       }
 
@@ -86,13 +93,21 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
     opaqueDeterminer.invalidate()
   }
 
-  private def populateBuffer(blocks: Iterable[(BlockRelChunk, BlockState)], side: Int, shouldRender: Array[Boolean],
+  private def populateBuffer(blocks: IndexedSeq[LocalBlockState], side: Int, shouldRender: java.util.BitSet,
                              brightness: Array[Float], buf: ByteBuffer): Unit = {
     val verticesPerInstance = if (side < 2) 6 else 4
 
-    for ((bCoords, block) <- blocks) {
-      if (shouldRender(bCoords.value)) {
-        val coords = BlockRelWorld.fromChunk(bCoords, chunk.coords)
+    val chunkCoords = chunk.coords
+
+    var i1 = 0
+    val i1Lim = blocks.size
+    while (i1 < i1Lim) {
+      val lbs = blocks(i1)
+      val bCoords = lbs.coords
+      val block = lbs.block
+
+      if (shouldRender.get(bCoords.value)) {
+        val coords = BlockRelWorld.fromChunk(bCoords, chunkCoords)
         buf.putInt(coords.x)
         buf.putInt(coords.y)
         buf.putInt(coords.z)
@@ -101,10 +116,14 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
         buf.putInt(blockType.blockTex(side))
         buf.putFloat(blockType.blockHeight(block.metadata))
 
-        for (_ <- 0 until verticesPerInstance) {
+        var i2 = 0
+        while (i2 < verticesPerInstance) {
           buf.putFloat(brightness(bCoords.value)) // TODO: change in the future to make lighting smoother
+          i2 += 1
         }
       }
+
+      i1 += 1
     }
   }
 
