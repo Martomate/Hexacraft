@@ -13,7 +13,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider)(implicit cylSize: CylinderSize) extends ChunkColumn {
-  private val chunks: mutable.Map[Int, IChunk] = mutable.HashMap.empty
+  private val chunks: mutable.LongMap[IChunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
 

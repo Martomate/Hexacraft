@@ -30,5 +30,13 @@ case class BlockRelChunk(value: Int) extends AnyVal { // xyz
     BlockRelChunk(xx, yy, zz)
   }
 
+  def globalNeighbor(side: Int, chunk: ChunkRelWorld)(implicit cylSize: CylinderSize): BlockRelWorld = {
+    val off = NeighborOffsets(side)
+    val xx = cx + off.dx
+    val yy = cy + off.dy
+    val zz = cz + off.dz
+    BlockRelWorld(xx, yy, zz, chunk)
+  }
+
   override def toString: String = s"($cx, $cy, $cz)"
 }

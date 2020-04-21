@@ -24,7 +24,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
 
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def getChunk(coords: ChunkRelWorld): Option[IChunk] = chunkCache.getChunk(coords)
+  def getChunk(coords: ChunkRelWorld): Option[IChunk] = Option(chunkCache.getChunk(coords))
 
   def collides(box1: HexBox, pos1: SkewCylCoords, box2: HexBox, pos2: CylCoords): Boolean = {
     val (bc, fc) = CoordUtils.toBlockCoords(pos2.toBlockCoords)

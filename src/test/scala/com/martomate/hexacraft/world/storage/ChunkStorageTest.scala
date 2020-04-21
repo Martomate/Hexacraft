@@ -89,7 +89,7 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
 
     val all = storage.allBlocks
     assertResult(storageSize)(all.size)
-    for ((c, b) <- all) assertResult(b)(storage.getBlock(c))
+    for (LocalBlockState(c, b) <- all) assertResult(b)(storage.getBlock(c))
   }
 
   test("fromNBT with correct tag") {

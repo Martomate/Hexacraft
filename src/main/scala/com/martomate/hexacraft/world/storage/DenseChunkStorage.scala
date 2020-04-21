@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize) extends ChunkStorage(_chunkCoords) {
   def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
     this(storage.chunkCoords)
-    for ((i, b) <- storage.allBlocks) setBlock(i, b)
+    for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
   }
 
   private val blockTypes = SmartArray.withByteArray(16*16*16, 0)
@@ -38,11 +38,11 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderS
     if (blockTypes(coords.value) != 0) _numBlocks -= 1
     blockTypes(coords.value) = 0
   }
-  def allBlocks: Seq[(BlockRelChunk, BlockState)] = {
-    val buffer = new ArrayBuffer[(BlockRelChunk, BlockState)](numBlocks)
+  def allBlocks: IndexedSeq[LocalBlockState] = {
+    val buffer = new ArrayBuffer[LocalBlockState](numBlocks)
     for (i <- blockTypes.indices) {
       if (blockTypes(i) != 0)
-        buffer += ((BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i))))
+        buffer += LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
     }
     buffer
   }
