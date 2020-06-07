@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.util.os
 
 object OSUtils {
-  val os: OS = {
-    val os = System.getProperty("os.name").toLowerCase()
+  def os: OS = {
+    val osStr = System.getProperty("os.name").toLowerCase()
     
-    if (os contains "win") Windows
-    else if (os contains "mac") Mac
+    if (osStr startsWith "win") Windows
+    else if ((osStr startsWith "mac") || (osStr startsWith "darwin")) Mac
     else Linux
   }
   

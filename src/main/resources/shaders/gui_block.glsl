@@ -16,10 +16,10 @@ in float brightness;
 
 out FragIn {
 	vec2 texCoords;
-	flat int blockTex;
-	flat float brightness;
 	vec3 normal;
 } fragIn;
+flat out int fragBlockTex;
+flat out float fragBrightness;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix = mat4(1);
@@ -38,8 +38,8 @@ void main() {
 	gl_Position.xy += vec2(blockPos.x / aspect, blockPos.y) * gl_Position.w;
 	gl_Position.z = 0;
 	fragIn.texCoords = texCoords;
-	fragIn.blockTex = blockTex;
-	fragIn.brightness = brightness;
+	fragBlockTex = blockTex;
+	fragBrightness = brightness;
 }
 
 #shader frag
@@ -47,10 +47,10 @@ void main() {
 
 in FragIn {
 	vec2 texCoords;
-	flat int blockTex;
-	flat float brightness;
 	vec3 normal;
 } fragIn;
+flat in int fragBlockTex;
+flat in float fragBrightness;
 
 out vec4 color;
 
@@ -58,8 +58,10 @@ uniform sampler2DArray texSampler;
 uniform int side;
 uniform int texSize = 32;
 
+float texSizef = float(texSize);
+
 void main() {
-	int texDepth = fragIn.blockTex & 0xfff;
+	int texDepth = fragBlockTex & 0xfff;
 
 #if isSide
 	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
@@ -103,15 +105,15 @@ void main() {
 	}
 
 	float factor = cc.y;
-	int xInt = int(cc.x*texSize);
-	int zInt = int(cc.z*texSize);
-	float px = (xInt-zInt) / factor / texSize;
+	int xInt = int(cc.x*texSizef);
+	int zInt = int(cc.z*texSizef);
+	float px = (xInt-zInt) / factor / texSizef;
 	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor;
-	int texOffset = (fragIn.blockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
+	int texOffset = (fragBlockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 	color = texture(texSampler, vec3(tex, texDepth + texOffset));
 #endif
 
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
-	color.rgb *= fragIn.brightness * visibility;
+	color.rgb *= fragBrightness * visibility;
 }

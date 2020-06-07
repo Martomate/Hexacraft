@@ -3,11 +3,12 @@ package com.martomate.hexacraft.world.loader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.mutable
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-abstract class ChunkLoadingPrioritizerTest extends FlatSpec with Matchers {
+abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
   implicit val cylSize: CylinderSize = new CylinderSize(4)
 
   def make(origin: PosAndDir = new PosAndDir(),

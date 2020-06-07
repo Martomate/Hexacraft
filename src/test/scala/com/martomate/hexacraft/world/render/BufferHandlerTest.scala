@@ -5,9 +5,10 @@ import java.nio.ByteBuffer
 import com.martomate.hexacraft.world.render.buffer.{BufferHandler, RenderBuffer, RenderBufferFactory}
 import com.martomate.hexacraft.world.render.segment.Segment
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class BufferHandlerTest extends FlatSpec with Matchers with MockFactory {
+class BufferHandlerTest extends AnyFlatSpec with Matchers with MockFactory {
   private val BytesPerInstance: Int = 3
   private val InstancesPerBuffer: Int = 4
   private val BufferSize: Int = BytesPerInstance * InstancesPerBuffer

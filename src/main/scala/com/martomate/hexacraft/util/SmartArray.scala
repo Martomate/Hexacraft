@@ -8,7 +8,11 @@ class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Ar
   def apply(idx: Int): T = if (arr != null) arr(idx) else default
 
   def update(idx: Int, value: T): Unit = {
-    if (arr == null && value != default) arr = builder(size)
+    if (arr == null && value != default) {
+      arr = builder(size)
+      for (i <- 0 until size)
+        arr(i) = default
+    }
 
     if (arr != null) arr(idx) = value
   }

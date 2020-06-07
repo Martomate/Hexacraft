@@ -217,7 +217,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
         val thisQueue = chunksToProcess.remove(chunk).get
         val map = propagateSunlightInChunk(chunk, thisQueue)
         for (ch <- map.keysIterator) {
-          chunksToProcess.getOrElseUpdate(ch, mutable.Queue.empty).enqueue(map(ch): _*)
+          chunksToProcess.getOrElseUpdate(ch, mutable.Queue.empty).enqueueAll(map(ch))
           chunksNeedingRenderUpdate += ch
         }
       }
@@ -285,7 +285,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       }
     }
 
-    neighborMap.toMap
+    neighborMap.view.mapValues(_.toSeq).toMap
   }
 
   private def oppositeSide(s: Int): Int = {

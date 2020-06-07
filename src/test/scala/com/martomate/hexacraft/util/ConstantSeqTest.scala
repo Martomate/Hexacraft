@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ConstantSeqTest extends FlatSpec with Matchers {
+class ConstantSeqTest extends AnyFlatSpec with Matchers {
   val seq = new ConstantSeq[String](3, "a string")
 
   "length" should "be the size of the seq" in {

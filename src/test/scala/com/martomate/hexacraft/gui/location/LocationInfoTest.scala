@@ -2,9 +2,9 @@ package com.martomate.hexacraft.gui.location
 
 import com.martomate.hexacraft.GameWindow
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-class LocationInfoTest extends FlatSpec with MockFactory {
+class LocationInfoTest extends AnyFlatSpec with MockFactory {
   implicit val windowImplicit: GameWindow = null
 
   "16x9" should "have a 16x9 aspect ratio" in {

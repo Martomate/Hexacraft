@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class PreparableRunnerTest extends FlatSpec with Matchers {
+class PreparableRunnerTest extends AnyFlatSpec with Matchers {
 
   "onPrepare" should "be called when prepare is called" in {
     var prepFired: Boolean = false

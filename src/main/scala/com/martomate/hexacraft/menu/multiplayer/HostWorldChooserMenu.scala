@@ -33,8 +33,15 @@ class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
 
   private def getWorlds: Seq[WorldInfo] = {
     val baseFolder = new File(window.saveFolder, "saves")
-    if (baseFolder.exists()) baseFolder.listFiles().filter(f => new File(f, "world.dat").exists()).map(saveFile => WorldInfo(saveFile))
-    else Seq.empty[WorldInfo]
+    if (baseFolder.exists()) {
+      baseFolder
+        .listFiles()
+        .filter(f => new File(f, "world.dat").exists())
+        .map(saveFile => WorldInfo(saveFile))
+        .toSeq
+    } else {
+      Seq.empty[WorldInfo]
+    }
   }
 
   def registerWorld(name: String): Long = {

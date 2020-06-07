@@ -47,16 +47,16 @@ class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage
     this
   }
 
-  def fillFloats(start: Int, content: Seq[Float]): VBO = fillWith(start, content, 4, _.putFloat)
+  def fillFloats(start: Int, content: collection.Seq[Float]): VBO = fillWith(start, content, 4, _.putFloat)
 
-  def fillInts(start: Int, content: Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
+  def fillInts(start: Int, content: collection.Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
 
-  def fill(start: Int, content: Seq[VertexData]): VBO =
+  def fill(start: Int, content: collection.Seq[VertexData]): VBO =
     if (content.nonEmpty)
       fillWith[VertexData](start, content, content.head.bytesPerVertex, buf => data => data.fill(buf))
     else this
 
-  private def fillWith[T](start: Int, content: Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
+  private def fillWith[T](start: Int, content: collection.Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)
     content.foreach(howToFill(buf))
     buf.flip()

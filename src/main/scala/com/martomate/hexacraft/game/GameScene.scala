@@ -31,8 +31,6 @@ import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
 
-import scala.collection.Seq
-
 class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window: GameWindowExtended) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
 
@@ -87,11 +85,11 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     setProjMatrixForAll()
 
     for (shader <- shadersNeedingTotalSize)
-      shader.setUniform1f("totalSize", world.size.totalSize)
+      shader.setUniform1i("totalSize", world.size.totalSize)
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
-    Shader.foreach(_.setUniform2f("windowSize", window.windowSize.x, window.windowSize.y))
+    Shader.foreach(_.setUniform2f("windowSize", window.windowSize.x.toFloat, window.windowSize.y.toFloat))
   }
 
   private def setProjMatrixForAll(): Unit = {

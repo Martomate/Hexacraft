@@ -39,7 +39,8 @@ class UniquePQ[S](func: S => Double, ord: Ordering[Double]) {// PQ with fast loo
         buffer += elem
     }
     pq.clear()
-    pq.enqueue(buffer: _*)
+    val seq = buffer.toSeq
+    pq.enqueue(seq: _*)
     buffer.foreach(set += _._2)
   }
 }

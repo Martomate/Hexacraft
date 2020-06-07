@@ -15,23 +15,30 @@ in ivec2 texDim;
 in int blockTex;
 in float brightness;
 
+struct FragInFlat {
+	ivec2 texOffset;
+	ivec2 texDim;
+	int blockTex;
+	float brightness;
+};
+
+flat out FragInFlat fragInFlat;
+
 out FragIn {
 	vec2 texCoords;
-	flat ivec2 texOffset;
-    flat ivec2 texDim;
-	flat int blockTex;
-	flat float brightness;
 	vec3 normal;
 } fragIn;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
-uniform float totalSize;
+uniform int totalSize;
 uniform int texSize = 32;
 uniform vec3 cam;
 
+float totalSizef = float(totalSize);
+
 void main() {
-	float hexAngle = 2 * PI / totalSize;
+	float hexAngle = 2.0 * PI / totalSizef;
 	float radius = y60 / hexAngle;
 
 	mat4 matrix = projMatrix * viewMatrix;
@@ -56,21 +63,26 @@ void main() {
 	gl_Position = matrix * vec4(pos, 1);
 	fragIn.texCoords = texCoords;
 //	fragIn.texCoords = (vec2(texCoords.x, texCoords.y) + texOffset / texSize) * texDim / texSize;
-	fragIn.texOffset = texOffset;
-	fragIn.texDim = texDim;
-	fragIn.blockTex = blockTex;
-	fragIn.brightness = brightness;
+	fragInFlat.texOffset = texOffset;
+	fragInFlat.texDim = texDim;
+	fragInFlat.blockTex = blockTex;
+	fragInFlat.brightness = brightness;
 }
 
 #shader frag
 #define y60 0.866025403784439
 
+struct FragInFlat {
+	ivec2 texOffset;
+	ivec2 texDim;
+	int blockTex;
+	float brightness;
+};
+
+flat in FragInFlat fragInFlat;
+
 in FragIn {
 	vec2 texCoords;
-	flat ivec2 texOffset;
-    flat ivec2 texDim;
-	flat int blockTex;
-	flat float brightness;
 	vec3 normal;
 } fragIn;
 
@@ -83,10 +95,10 @@ uniform vec3 sun;
 
 void main() {
 #if isSide
-    vec2 coords = fragIn.texCoords * fragIn.texDim;
-    int texX = min(int(coords.x), fragIn.texDim.x - 1);
-    int texY = min(int(coords.y), fragIn.texDim.y - 1);
-	color = texelFetch(texSampler, ivec2(texX, texY) + fragIn.texOffset, 0);
+    vec2 coords = fragIn.texCoords * fragInFlat.texDim;
+    int texX = min(int(coords.x), fragInFlat.texDim.x - 1);
+    int texY = min(int(coords.y), fragInFlat.texDim.y - 1);
+	color = texelFetch(texSampler, ivec2(texX, texY) + fragInFlat.texOffset, 0);
 #else
 	float yy = (fragIn.texCoords.y * 2 - 1) / y60;
 	float xx = fragIn.texCoords.x + yy * 0.25;
@@ -126,20 +138,20 @@ void main() {
 			break;
 	}
 
-    int texDim = fragIn.texDim.x;
+    int texDim = fragInFlat.texDim.x;
 	float factor = cc.y;
 	int xInt = int(cc.x * texDim);
 	int zInt = int(cc.z * texDim);
 	float px = (xInt-zInt) / factor / texDim;
-	int texOffset = (fragIn.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
+	int texOffset = (fragInFlat.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texDim;
 	int texX = min(int(tex.x), texDim - 1);
     int texY = min(int(tex.y), texDim - 1);
-	color = texelFetch(texSampler, ivec2(texX + texOffset * texDim, texY) + fragIn.texOffset, 0);
+	color = texelFetch(texSampler, ivec2(texX + texOffset * texDim, texY) + fragInFlat.texOffset, 0);
 #endif
 
 	vec3 sunDir = normalize(sun);
 	float visibility = max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
-	color.rgb *= fragIn.brightness * visibility;
+	color.rgb *= fragInFlat.brightness * visibility;
 }

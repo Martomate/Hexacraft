@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class MathUtilsTest extends FunSuite {
+class MathUtilsTest extends AnyFunSuite {
   test("fitZ works correctly") {
     // make instance
     assert(MathUtils.fitZ(123.54, 200) == 123.54)

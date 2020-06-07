@@ -28,7 +28,11 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
     else removeBlock(coords)
   }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value
-  def allBlocks: IndexedSeq[LocalBlockState] = blocks.map(t => LocalBlockState(BlockRelChunk(t._1.toInt), t._2)).toArray[LocalBlockState]
+
+  def allBlocks: IndexedSeq[LocalBlockState] = blocks
+    .map(t => LocalBlockState(BlockRelChunk(t._1.toInt), t._2))
+    .toIndexedSeq
+
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
 

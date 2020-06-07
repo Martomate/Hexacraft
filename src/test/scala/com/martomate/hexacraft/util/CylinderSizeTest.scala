@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class CylinderSizeTest extends FunSuite {
+class CylinderSizeTest extends AnyFunSuite {
   test("all aspects of the cylinder size should be determined by worldSize") {
     for (s <- 1 to 20) {
       val size = new CylinderSize(s)

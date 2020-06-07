@@ -33,7 +33,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     val columnNBT = worldSettings.loadState(saveFilePath)
     NBTUtil.getShortArray(columnNBT, "heightMap") match {
       case Some(heightNBT) =>
-        for (x <- 0 until 16) yield Array.tabulate(16)(z => heightNBT.array((x << 4) | z))
+        for (x <- 0 until 16) yield Array.tabulate(16)(z => heightNBT((x << 4) | z))
       case None =>
         for (x <- 0 until 16) yield Array.tabulate(16)(z => generatedHeightMap(x)(z))
     }

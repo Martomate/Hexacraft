@@ -3,8 +3,6 @@ package com.martomate.hexacraft.world.block.state
 import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
-import scala.collection.Seq
-
 object BlockState {
   val Air: BlockState = new BlockState(Blocks.Air)
 

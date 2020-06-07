@@ -3,9 +3,10 @@ package com.martomate.hexacraft.world.loader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ChunkLoadingEdgeTest extends FlatSpec with Matchers with MockFactory {
+class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   implicit val cylSize : CylinderSize = new CylinderSize(4)
 
   "isLoaded" should "be false in the beginning" in {

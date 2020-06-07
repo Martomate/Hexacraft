@@ -2,9 +2,10 @@ package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.entity.{Entity, EntityModel}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-abstract class EntitiesInChunkTest(make: => EntitiesInChunk) extends FlatSpec with Matchers {
+abstract class EntitiesInChunkTest(make: => EntitiesInChunk) extends AnyFlatSpec with Matchers {
   private implicit val sizeImpl: CylinderSize = new CylinderSize(4)
   class MockEntity extends Entity {
     override def model: EntityModel = ???
