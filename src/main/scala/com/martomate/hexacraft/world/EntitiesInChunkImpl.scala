@@ -7,7 +7,6 @@ import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.worldlike.IWorld
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 class EntitiesInChunkImpl(world: IWorld) extends EntitiesInChunk {
@@ -44,5 +43,15 @@ class EntitiesInChunkImpl(world: IWorld) extends EntitiesInChunk {
     }
   }
 
-  override def toNBT: Seq[Tag[_]] = Seq(new ListTag[CompoundTag]("entities", classOf[CompoundTag], entities.map(e => NBTUtil.makeCompoundTag("", e.toNBT)).toList.asJava))
+  override def toNBT: Seq[Tag[_]] = {
+    import scala.jdk.CollectionConverters._
+    Seq(new ListTag[CompoundTag](
+      "entities",
+      classOf[CompoundTag],
+      entities
+        .map(e => NBTUtil.makeCompoundTag("", e.toNBT))
+        .toList
+        .asJava
+      ))
+  }
 }

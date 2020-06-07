@@ -52,7 +52,7 @@ object Component {
     image.bind()
     val mat = new Matrix4f().translate(location.x + xoffset, location.y + yoffset, 0).scale(location.w, location.h, 1)
     imageShader.setUniformMat4("transformationMatrix", mat)
-    imageShader.setUniform2f("imageSize", image.width, image.height)
+    imageShader.setUniform2f("imageSize", image.width.toFloat, image.height.toFloat)
     Component.rectRenderer.render()
   }
 

@@ -40,7 +40,7 @@ object BlockLoader extends IBlockLoader {
     }
     
     texIdxMap = nameToIdx.toMap
-    images
+    images.toSeq
   }
   
   def loadBlockType(name: String): IndexedSeq[Int] = {

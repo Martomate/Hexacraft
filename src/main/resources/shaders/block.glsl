@@ -21,18 +21,20 @@ in float brightness[6];
 
 out FragIn {
 	vec2 texCoords;
-	flat int blockTex;
 	float brightness;
 	vec3 normal;
 } fragIn;
+flat out int fragBlockTex;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
-uniform float totalSize;
+uniform int totalSize;
 uniform vec3 cam;
 
+float totalSizef = float(totalSize);
+
 void main() {
-	float angleHalfHexagon = PI / totalSize * 2;
+	float angleHalfHexagon = 2.0 * PI / totalSizef;
 	float radius = y60 / angleHalfHexagon;
 
 	mat4 matrix = projMatrix * viewMatrix;
@@ -53,7 +55,7 @@ void main() {
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);
 	fragIn.texCoords = vec2(texCoords.x, texCoords.y);
-	fragIn.blockTex = blockTex;
+	fragBlockTex = blockTex;
 	fragIn.brightness = brightness[vertexIndex];
 }
 
@@ -62,10 +64,10 @@ void main() {
 
 in FragIn {
 	vec2 texCoords;
-	flat int blockTex;
 	float brightness;
 	vec3 normal;
 } fragIn;
+flat in int fragBlockTex;
 
 out vec4 color;
 
@@ -74,8 +76,10 @@ uniform int side;
 uniform int texSize = 32;
 uniform vec3 sun;
 
+float texSizef = float(texSize);
+
 void main() {
-	int texDepth = fragIn.blockTex & 0xfff;
+	int texDepth = fragBlockTex & 0xfff;
 
 #if isSide
 	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
@@ -119,11 +123,11 @@ void main() {
 	}
 
 	float factor = cc.y;
-	int xInt = int(cc.x*texSize);
-	int zInt = int(cc.z*texSize);
-	float px = (xInt-zInt) / factor / texSize;
+	int xInt = int(cc.x*texSizef);
+	int zInt = int(cc.z*texSizef);
+	float px = (xInt-zInt) / factor / texSizef;
 	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor;
-	int texOffset = (fragIn.blockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
+	int texOffset = (fragBlockTex >> (4 * (5 - ss)) & 0xfff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 	color = texture(texSampler, vec3(tex, texDepth + texOffset));
 #endif
 

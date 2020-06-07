@@ -14,5 +14,5 @@ class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
     this
   }
 
-  def create(): VAO = new VAO(vaoID, maxCount, maxPrimCount, vbos)
+  def create(): VAO = new VAO(vaoID, maxCount, maxPrimCount, vbos.toSeq)
 }

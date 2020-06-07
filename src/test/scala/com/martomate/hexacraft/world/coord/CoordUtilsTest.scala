@@ -3,9 +3,10 @@ package com.martomate.hexacraft.world.coord
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CoordUtilsTest extends FlatSpec with Matchers {
+class CoordUtilsTest extends AnyFlatSpec with Matchers {
   implicit val cylSize: CylinderSize = new CylinderSize(4)
 
   "approximateIntCoords" should "return the input when it's integers" in {

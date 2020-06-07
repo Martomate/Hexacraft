@@ -5,9 +5,9 @@ import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends FunSuite {
+abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends AnyFunSuite {
   protected val cylSize: CylinderSize = new CylinderSize(4)
   import cylSize.impl
 

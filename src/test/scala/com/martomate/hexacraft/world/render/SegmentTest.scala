@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.render.segment.Segment
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SegmentTest extends FlatSpec with Matchers {
+class SegmentTest extends AnyFlatSpec with Matchers {
   "Segment" should "fail for negative 'start'" in {
     Segment(4, 5)
     Segment(0, 5)

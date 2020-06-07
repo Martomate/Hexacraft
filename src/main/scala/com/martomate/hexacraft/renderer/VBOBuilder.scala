@@ -52,7 +52,7 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
       case FloatChannel(index, dims, elementSize, _type, normalized, offset) =>
         VBOChannelFloat(index, dims, elementSize, _type, normalized, totalStride, offset, divisor)
     }
-    val vbo = new VBO(vboID, count, totalStride, vboUsage, realChannels)
+    val vbo = new VBO(vboID, count, totalStride, vboUsage, realChannels.toSeq)
     vbo
   }
 }

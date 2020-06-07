@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SeqUtilsTest extends FlatSpec with Matchers {
+class SeqUtilsTest extends AnyFlatSpec with Matchers {
   "whileSome" should "do a maximum of maxCount iterations" in {
     var total = 0
     SeqUtils.whileSome(10, Some(4)) { t =>

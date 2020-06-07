@@ -4,9 +4,9 @@ import java.util.Random
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class NoiseGenerator3DTest extends FunSuite {
+class NoiseGenerator3DTest extends AnyFunSuite {
   test("same input should give same output") {
     val rand = new Random
     val seed = rand.nextLong

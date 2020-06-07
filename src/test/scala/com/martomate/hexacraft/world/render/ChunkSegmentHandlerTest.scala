@@ -2,9 +2,10 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.render.segment.{ChunkSegmentHandler, Segment}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ChunkSegmentHandlerTest extends FlatSpec with Matchers with MockFactory {
+class ChunkSegmentHandlerTest extends AnyFlatSpec with Matchers with MockFactory {
   "hasMapping" should "be false if the chunk has never had a mapping" in {
     val handler = make
     val r2 = mkRenderer

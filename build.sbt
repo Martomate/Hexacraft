@@ -9,7 +9,7 @@ lazy val root = Project(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10-SNAPSHOT",
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.13.2",
   scalacOptions ++= Seq("-deprecation"),//, "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
@@ -27,7 +27,7 @@ lazy val root = Project(
 )
 
 def lwjglDependencies = {
-  val lwjglVersion = "3.2.2"
+  val lwjglVersion = "3.2.3"
 
   Seq(
     "org.lwjgl" % "lwjgl" % lwjglVersion,
@@ -46,14 +46,14 @@ def lwjglDependencies = {
 }
 
 def otherDependencies = Seq(
-  "org.scalactic" %% "scalactic" % "3.0.5",
-  "org.joml" % "joml" % "1.9.9",
-  "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.4",
+  "org.scalactic" %% "scalactic" % "3.1.2",
+  "org.joml" % "joml" % "1.9.25",
+  "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
 
 def testDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-  "org.scalamock" %% "scalamock" % "4.1.0" % "test",
+  "org.scalatest" %% "scalatest" % "3.1.2" % "test",
+  "org.scalamock" %% "scalamock" % "4.4.0" % "test",
   "com.storm-enroute" %% "scalameter" % "0.19" % "bench"
 )

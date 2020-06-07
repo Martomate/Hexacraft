@@ -93,10 +93,12 @@ class MainWindow extends GameWindowExtended {
 
       if (titleTicker > 10) {
         titleTicker = 0
+        val msString = (if (msTime < 10) "0" else "") + msTime
+        val vsyncStr = if (vsync) "vsync" else ""
         val debugInfo = (
           scenes.map(_.windowTitle) :+
-            (fps + " fps   ms: " + ((if (msTime < 10) "0" else "") + msTime)) :+
-            (if (vsync) "vsync" else "")
+            s"$fps fps   ms: $msString" :+
+            vsyncStr
         ).filter(!_.isEmpty).mkString("   |   ")
 
         glfwSetWindowTitle(window, "Hexacraft   |   " + debugInfo)
@@ -159,7 +161,7 @@ class MainWindow extends GameWindowExtended {
       Blocks.init()
       scenes.pushScene(new MainMenu)
       resetMousePos()
-      Shader.foreach(_.setUniform2f("windowSize", _windowSize.x, _windowSize.y))
+      Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
     } catch {
       case e: Exception =>
@@ -229,7 +231,7 @@ class MainWindow extends GameWindowExtended {
       _windowSize.set(width, height)
       skipMouseMovedUpdate = true
     }
-    Shader.foreach(_.setUniform2f("windowSize", _windowSize.x, _windowSize.y))
+    Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
   }
 
   private def initWindow(): Long = {

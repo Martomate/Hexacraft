@@ -14,11 +14,13 @@ flat out vec3 fragColor;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
-uniform float totalSize;
+uniform int totalSize;
 uniform vec3 cam;
 
+float totalSizef = float(totalSize);
+
 void main() {
-	float angleHalfHexagon = PI / totalSize * 2;
+	float angleHalfHexagon = 2.0 * PI / totalSizef;
 	float radius = y60 / angleHalfHexagon;
 
 	mat4 matrix = projMatrix * viewMatrix;

@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class PreparableRunnerWithIndexTest extends FlatSpec with Matchers {
+class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
 
   val indexFn: String => Int = s => s.toInt
 

@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.util.CylinderSize
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CylCoordsTest extends FlatSpec with Matchers {
+class CylCoordsTest extends AnyFlatSpec with Matchers {
   implicit val cylSize: CylinderSize = new CylinderSize(3)
   val eps = 1e-9
 

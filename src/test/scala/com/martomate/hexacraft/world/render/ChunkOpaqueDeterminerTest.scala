@@ -6,9 +6,10 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-abstract class ChunkOpaqueDeterminerTest extends FlatSpec with Matchers with MockFactory {
+abstract class ChunkOpaqueDeterminerTest extends AnyFlatSpec with Matchers with MockFactory {
   def make(chunk: ChunkStorage): ChunkOpaqueDeterminer
   implicit val cylSize: CylinderSize = new CylinderSize(4)
   val coords00 = ChunkRelWorld(0, 0, 0)

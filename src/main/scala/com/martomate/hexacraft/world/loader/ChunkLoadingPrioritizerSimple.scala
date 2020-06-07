@@ -48,9 +48,10 @@ class ChunkLoadingPrioritizerSimple(origin: PosAndDir,
       val coords = CoordUtils.approximateChunkCoords(origin.pos)(origin.pos.cylSize)
       if (!chunksLoaded(coords)) Some(coords) else None
     } else {
-      chunksLoadingEdge.toStream.map(edge => edge.neighbors.find(
-        coords => !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks
-      )).find(_.isDefined).flatten
+      chunksLoadingEdge.iterator
+        .map(_.neighbors.find(coords => !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks))
+        .find(_.isDefined)
+        .flatten
     }
   }
 

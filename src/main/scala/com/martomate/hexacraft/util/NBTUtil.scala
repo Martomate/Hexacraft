@@ -7,8 +7,7 @@ import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import org.joml.Vector3d
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.immutable.ArraySeq
 
 object NBTUtil {
   def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
@@ -76,10 +75,11 @@ object NBTUtil {
   }
 
   def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] = {
+    import scala.jdk.CollectionConverters._
     if (tag == null) None
     else {
       tag.getValue.get(key) match {
-        case t: ListTag[_] => Some(t.getValue.asScala)
+        case t: ListTag[_] => Some(t.getValue.asScala.toSeq)
         case _ => None
       }
     }
@@ -105,12 +105,12 @@ object NBTUtil {
     }
   }
 
-  def getByteArray(tag: CompoundTag, name: String): Option[mutable.WrappedArray[Byte]] = {
-    NBTUtil.getTag(tag, name).map(_.asInstanceOf[ByteArrayTag].getValue)
+  def getByteArray(tag: CompoundTag, name: String): Option[ArraySeq[Byte]] = {
+    NBTUtil.getTag(tag, name).map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ByteArrayTag].getValue))
   }
 
-  def getShortArray(tag: CompoundTag, name: String): Option[mutable.WrappedArray[Short]] = {
-    NBTUtil.getTag(tag, name).map(_.asInstanceOf[ShortArrayTag].getValue)
+  def getShortArray(tag: CompoundTag, name: String): Option[ArraySeq[Short]] = {
+    NBTUtil.getTag(tag, name).map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ShortArrayTag].getValue))
   }
 
   def setVector(tag: CompoundTag, vector: Vector3d): Vector3d = {

@@ -15,12 +15,12 @@ class ChunkSegs extends mutable.Iterable[Segment] {
   private var _totalLength = 0
 
   protected def _add(seg: Segment): Unit = {
-    require(segments.add(seg), seg + " cannot be added")
+    require(segments.add(seg), s"$seg cannot be added")
     segmentsContain(seg) = seg
     _totalLength += seg.length
   }
   protected def _remove(seg: Segment): Unit = {
-    require(segmentsContain.remove(seg).isDefined, seg + " cannot be removed")
+    require(segmentsContain.remove(seg).isDefined, s"$seg cannot be removed")
     segments.remove(seg)
     _totalLength -= seg.length
   }

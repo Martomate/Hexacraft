@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.LocalBlockState
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
@@ -89,7 +89,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
     } else if (!chunk.lighting.initialized) {
       chunk.lighting.init(Seq.empty)
     }
-    renderData = ChunkRenderData(buffers)
+    renderData = ChunkRenderData(buffers.toIndexedSeq)
     opaqueDeterminer.invalidate()
   }
 

@@ -42,9 +42,9 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
         BlockVertexData(
-          new Vector3f(x, 1 - s, z),
+          new Vector3f(x, (1 - s).toFloat, z),
           new Vector2f((1 + (if (s == 0) -x else x)) / 2, (1 + z) / 2),
-          new Vector3f(0, 1 - 2 * s, 0),
+          new Vector3f(0, (1 - 2 * s).toFloat, 0),
           i
         )
       }
@@ -58,8 +58,8 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
         BlockVertexData(
-          new Vector3f(x, 1 - i / 2, z),
-          new Vector2f(1 - i % 2, i / 2),
+          new Vector3f(x, (1 - i / 2).toFloat, z),
+          new Vector2f((1 - i % 2).toFloat, (i / 2).toFloat),
           new Vector3f(nx, 0, nz),
           i
         )

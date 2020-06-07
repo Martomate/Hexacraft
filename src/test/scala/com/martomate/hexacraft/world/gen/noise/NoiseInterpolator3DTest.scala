@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.gen.noise
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class NoiseInterpolator3DTest extends FunSuite {
+class NoiseInterpolator3DTest extends AnyFunSuite {
   test("same input should give same output") {
     val n = new NoiseInterpolator3D(4, 4, 4, (i, j, k) => i + 2 * j - 3 * k)
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {

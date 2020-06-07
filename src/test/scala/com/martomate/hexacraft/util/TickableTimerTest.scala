@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class TickableTimerTest extends FlatSpec with Matchers {
+class TickableTimerTest extends AnyFlatSpec with Matchers {
   "period" must "be positive" in {
     an [IllegalArgumentException] should be thrownBy TickableTimer(-1000)
     an [IllegalArgumentException] should be thrownBy TickableTimer(-1)
