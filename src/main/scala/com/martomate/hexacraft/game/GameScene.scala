@@ -270,7 +270,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
     if (world.getBlock(coords).blockType == Blocks.Air) {
       val blockType = playerInputHandler.player.blockInHand
-      val skewCoords = BlockCoords(coords.x, coords.y, coords.z).toSkewCylCoords
+      val skewCoords = BlockCoords(coords).toSkewCylCoords
       val state = new BlockState(blockType)
       if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
         world.setBlock(coords, state)

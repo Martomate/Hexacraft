@@ -5,32 +5,36 @@ import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
 import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.joml.Vector3d
 
 class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   private val reflectionDirs = Array(
-    ( 0, -1,  0),
-    ( 0,  1,  0),
-    (-1,  0,  0),
-    ( 1,  0,  0),
-    ( 0,  0, -1),
-    ( 0,  0,  1),
-    ( 1,  0, -1),
-    (-1,  0,  1)
+    Offset( 0, -1,  0),
+    Offset( 0,  1,  0),
+    Offset(-1,  0,  0),
+    Offset( 1,  0,  0),
+    Offset( 0,  0, -1),
+    Offset( 0,  0,  1),
+    Offset( 1,  0, -1),
+    Offset(-1,  0,  1)
   )
-  private val reflDirsCyl = reflectionDirs.map(d => new SkewCylCoords(d._1, d._2, d._3, false)(null).toCylCoords)
+  private val reflDirsCyl = reflectionDirs map {
+    case Offset(x, y, z) => SkewCylCoords(x, y, z, fixZ = false).toCylCoords
+  }
 
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def getChunk(coords: ChunkRelWorld): Option[IChunk] = Option(chunkCache.getChunk(coords))
+  def collides(objectBounds: HexBox,
+               objectCoords: SkewCylCoords,
+               targetBounds: HexBox,
+               targetCylCoords: CylCoords): Boolean = {
+    val (bc, fc) = CoordUtils.toBlockCoords(targetCylCoords.toBlockCoords)
+    val targetCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
+    val objectVelocity = SkewCylCoords(0, 0, 0, fixZ = false)
 
-  def collides(box1: HexBox, pos1: SkewCylCoords, box2: HexBox, pos2: CylCoords): Boolean = {
-    val (bc, fc) = CoordUtils.toBlockCoords(pos2.toBlockCoords)
-    val skewCoord = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, false).toSkewCylCoords
-
-    distanceToCollision(box1, pos1, new SkewCylCoords(0, 0, 0), box2, skewCoord)._1 == 0
+    distanceToCollision(objectBounds, objectCoords, objectVelocity, targetBounds, targetCoords)._1 == 0
   }
 
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
@@ -47,58 +51,120 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     result
   }
 
-  private def _collides(box1: HexBox, pos: Vector3d, velocity: Vector3d): (Vector3d, Vector3d) = {
+  private def _collides(objectBounds: HexBox,
+                        pos: Vector3d,
+                        velocity: Vector3d): (Vector3d, Vector3d) = {
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
-      val (bc, fc) = CoordUtils.toBlockCoords(new CylCoords(pos.x + velocity.x, pos.y + velocity.y, pos.z + velocity.z, false).toBlockCoords)
-      val skewCoords = new BlockCoords(bc.x + fc.x, bc.y + fc.y, bc.z + fc.z, false).toSkewCylCoords
-      val skewVelocity = new CylCoords(velocity.x, velocity.y, velocity.z, false).toSkewCylCoords
-      var maxDistTuple: (Double, Int) = (1d, -1)
-      for (y <- math.floor((skewCoords.y + box1.bottom) * 2).toInt to math.floor((skewCoords.y + box1.top) * 2).toInt) {
-        for (x <- -1 to 1) {
-          for (z <- -1 to 1) {
-            if (x * z != 1) {// corners
-            val coords = BlockRelWorld(bc.x + x, y, bc.z + z)
-              getChunk(coords.getChunkRelWorld) match {
-                case Some(chunk) =>
-                  val blockState = Some(chunk.getBlock(coords.getBlockRelChunk)).filter(_.blockType != Blocks.Air)
-                  blockState.map(_.blockType).foreach(blockType => {
-                    val dist = distanceToCollision(box1, skewCoords, skewVelocity,
-                      blockType.bounds(blockState.get.metadata),
-                      new BlockCoords(bc.x + x, y, bc.z + z, false).toSkewCylCoords)
-                    if (dist._1 < maxDistTuple._1) {
-                      maxDistTuple = dist
-                    }
-                  })
-                case None =>
-                  maxDistTuple = (0, -1)// Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
-              }
-            }
-          }
-        }
+      val futureCoords = CylCoords(pos, fixZ = false).offset(velocity.x, velocity.y, velocity.z).toBlockCoords
+      val (bc, fc) = CoordUtils.toBlockCoords(futureCoords)
+      val objectCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
+      val objectVelocity = CylCoords(velocity, fixZ = false).toSkewCylCoords
+
+      minDistAndReflectionDir(objectBounds, objectCoords, objectVelocity, bc) match {
+        case Some((minDist, reflectionDir)) =>
+          resultAfterCollision(objectBounds, pos, velocity, minDist, reflectionDir)
+        case None =>
+          (pos.add(velocity, new Vector3d), velocity) // no collision found
       }
-      val (maxDist, reflectionDir) = maxDistTuple
-      if (maxDist < 1d) {
-        if (reflectionDir != -1) {
-          val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
-          val newPos = new Vector3d(pos).add(velocity.x * maxDist, velocity.y * maxDist, velocity.z * maxDist)
-          val vel = new Vector3d(velocity).mul(1 - maxDist)
-          val dot = vel.dot(normal)
-          vel.sub(normal.mul(dot))
-          val result = _collides(box1, newPos, vel)
-          //val falseLen = result._2.length
-          if (maxDist != 1) {
-            result._2.mul(1 / (1 - maxDist))
-          }
-          result
-        } else (pos, new Vector3d)
-      } else (pos.add(velocity, new Vector3d), velocity)
-    } else (pos, velocity)
+    } else (pos, velocity) // velocity is 0
   }
 
-  private def distanceToCollision(box1: HexBox, pos: SkewCylCoords, velocity: SkewCylCoords, box2: HexBox, pos2: SkewCylCoords): (Double, Int) = {
-    val (x1, y1, z1, x2, y2, z2) = (pos.x + 0.5 * pos.z, pos.y, pos.z + 0.5 * pos.x, pos2.x + 0.5 * pos2.z, pos2.y, pos2.z + 0.5 * pos2.x)
+  /** This will check all blocks that could intersect the bounds of the object.
+    * If any block intersects the bounds of the object it will return (dist: 0, side: -1)
+    * If no blocks are in the way it will return None
+    * Otherwise it will return (dist: 'distance to the closest block', side: 'side of collision for that block')
+    */
+  private def minDistAndReflectionDir(objectBounds: HexBox,
+                                      objectCoords: SkewCylCoords,
+                                      objectVelocity: SkewCylCoords,
+                                      bc: BlockRelWorld): Option[(Double, Int)] = {
+    val yLo = math.floor((objectCoords.y + objectBounds.bottom) * 2).toInt
+    val yHi = math.floor((objectCoords.y + objectBounds.top) * 2).toInt
+
+    val candidates =
+      for {
+        y <- yLo to yHi
+        dx <- -1 to 1
+        dz <- -1 to 1
+        if dx * dz != 1 // remove corners
+      } yield distanceToBlock(objectBounds, objectCoords, objectVelocity,
+                              BlockRelWorld(bc.x + dx, y, bc.z + dz))
+
+    candidates
+      .flatten // remove blocks that are not in the way
+      .minByOption(_._1)
+  }
+
+  /** Returns the distance to the target block along `vec` and the side of the collision.
+    *
+    * If the chunk of the target block is not loaded it will return (dist: 0, side: -1),
+    * which is the same as if the object was intersecting the block.
+    *
+    * If the target block is air it will return None
+    */
+  private def distanceToBlock(objectBounds: HexBox,
+                              objectCoords: SkewCylCoords,
+                              objectVelocity: SkewCylCoords,
+                              targetBlock: BlockRelWorld): Option[(Double, Int)] = {
+    val chunk = chunkCache.getChunk(targetBlock.getChunkRelWorld)
+    if (chunk != null) {
+      val blockState = chunk.getBlock(targetBlock.getBlockRelChunk)
+
+      if (blockState.blockType != Blocks.Air) {
+        val targetBounds = blockState.blockType.bounds(blockState.metadata)
+        val targetCoords = BlockCoords(targetBlock, fixZ = false).toSkewCylCoords
+
+        Some(distanceToCollision(objectBounds, objectCoords, objectVelocity,
+                                 targetBounds, targetCoords))
+      } else None
+    } else {
+        Some((0, -1)) // Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
+    }
+  }
+
+  /** If minDist == 1, there was no collision and it returns (pos + velocity, velocity)
+    * If reflectionDir == -1, there is an intersection with a block and it returns (pos, 0)
+    * Otherwise
+    */
+  private def resultAfterCollision(objectBounds: HexBox,
+                                   pos: Vector3d,
+                                   velocity: Vector3d,
+                                   minDist: Double,
+                                   reflectionDir: Int): (Vector3d, Vector3d) = {
+    if (minDist < 1d) { // a collision was found
+      if (reflectionDir != -1) { // not inside a block
+        val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
+        val newPos = new Vector3d(pos).add(velocity.x * minDist, velocity.y * minDist, velocity.z * minDist)
+        val vel = new Vector3d(velocity).mul(1 - minDist)
+        val dot = vel.dot(normal)
+        vel.sub(normal.mul(dot))
+        val result = _collides(objectBounds, newPos, vel) // TODO: fix StackOverflow bug
+        //val falseLen = result._2.length
+        if (minDist != 1) {
+          result._2.mul(1 / (1 - minDist))
+        }
+        result
+      } else (pos, new Vector3d) // inside a block
+    } else (pos.add(velocity, new Vector3d), velocity) // no collision found
+  }
+
+  /** Returns the distance to the other object along the vector `vec`.
+    * Also returns the side of the other object that will be collided with.
+    *
+    * If the objects are already intersecting, it will return (dist: 1, side: -1)
+    * The maximum distance returned is 1 (meaning the full length of `vec`).
+    * If no collision is found within that distance it will return (dist: 1, side: -1)
+    * Otherwise it will return (dist: 'distance in units of `vec.length`, side: 'side of collision')
+    */
+  private def distanceToCollision(box1: HexBox,
+                                  pos1: SkewCylCoords,
+                                  vel1: SkewCylCoords,
+                                  box2: HexBox,
+                                  pos2: SkewCylCoords): (Double, Int) = {
+    // Hope this works. I have no idea.
+    val (x1, y1, z1, x2, y2, z2) = (pos1.x + 0.5 * pos1.z, pos1.y, pos1.z + 0.5 * pos1.x, pos2.x + 0.5 * pos2.z, pos2.y, pos2.z + 0.5 * pos2.x)
     val (r1, r2, b1, b2, t1, t2) = (box1.smallRadius, box2.smallRadius, box1.bottom, box2.bottom, box1.top, box2.top)
-    val (vx, vy, vz) = (velocity.x + 0.5 * velocity.z, velocity.y, velocity.z + 0.5 * velocity.x)
+    val (vx, vy, vz) = (vel1.x + 0.5 * vel1.z, vel1.y, vel1.z + 0.5 * vel1.x)
     val distances = Array(
       y2 - y1 + t2 - b1,// (  y2    + t2) - (  y1    + b1),
       y1 - y2 + t1 - b2,// (  y1    + t1) - (  y2    + b2),
@@ -110,14 +176,14 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
-    if (distances.forall(_ >= 0)) {
-      val velDists = reflectionDirs.map(t => t._1 * vx + t._2 * vy + t._3 * vz)
-
-      if (distances.indices.exists(i => distances(i) <= velDists(i))) {
+    if (distances.forall(_ >= 0)) { // no intersection before moving
+      val velDists = reflectionDirs.map(t => t.dx * vx + t.dy * vy + t.dz * vz) // the length of v along the normals
+// TODO: possible bug: the dot product above uses normals that are not normalized. Could this lead to incorrect velDists?
+      if (distances.indices.exists(i => distances(i) <= velDists(i))) { // intersection after moving
         val zipped = for (i <- distances.indices) yield {
-          val distBefore = ((distances(i) - velDists(i)) * 1e9).toLong / 1e9
-          val t = (distBefore, velDists(i))
-          val a = if (t._2 <= 0 || t._1 > 0) 1 else -t._1 / t._2
+          val velDist = velDists(i)
+          val distBefore = ((distances(i) - velDist) * 1e9).toLong / 1e9
+          val a = if (velDist <= 0 || distBefore > 0) 1 else -distBefore / velDist
           (a, i)
         }
         val minInZip = zipped.minBy(_._1)

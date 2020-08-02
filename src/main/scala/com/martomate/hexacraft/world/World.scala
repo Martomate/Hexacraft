@@ -83,7 +83,6 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   def provideColumn(coords: ColumnRelWorld): ChunkColumn = {
     ensureColumnExists(coords)
-    getColumn(coords).get
   }
 
   def setBlock(coords: BlockRelWorld, block: BlockState): Unit =
@@ -120,8 +119,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4)
-    ensureColumnExists(coords)
-    getColumn(coords).get.heightMap(x & 15, z & 15)
+    ensureColumnExists(coords).heightMap(x & 15, z & 15)
   }
 
   def tick(camera: Camera): Unit = {
@@ -159,11 +157,21 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
   private def addNewChunks(): Unit = {
     for (ch <- chunkLoader.chunksToAdd()) {
-      ensureColumnExists(ch.coords.getColumnRelWorld)
-      getColumn(ch.coords.getColumnRelWorld).get.setChunk(ch)
+      ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
       chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
       ch.init()
       worldPlanner.decorate(ch)
+      for (block <- ch.blocks.allBlocks) {
+        ch.requestBlockUpdate(block.coords)
+
+        for (side <- 0 until 8) {
+          if (block.coords.onChunkEdge(side)) {
+            val neighCoords = block.coords.neighbor(side)
+            getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side)))
+              .foreach(_.requestBlockUpdate(neighCoords))
+          }
+        }
+      }
     }
   }
 
@@ -196,11 +204,14 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     }
   }
 
-  private def ensureColumnExists(here: ColumnRelWorld): Unit = {
-    if (!columns.contains(here.value)) {
-      val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
-      columns(here.value) = col
-      col.addEventListener(this)
+  private def ensureColumnExists(here: ColumnRelWorld): ChunkColumn = {
+    columns.get(here.value) match {
+      case Some(col) => col
+      case None =>
+        val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
+        columns(here.value) = col
+        col.addEventListener(this)
+        col
     }
   }
 

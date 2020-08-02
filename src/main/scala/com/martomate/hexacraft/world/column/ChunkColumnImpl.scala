@@ -116,15 +116,15 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
   }
 
   def tick(): Unit = {
-    chunks.values.foreach(_.tick())
+    chunks.foreachValue(_.tick())
   }
 
   def onReloadedResources(): Unit = {
-    chunks.values.foreach(_.requestRenderUpdate())
+    chunks.foreachValue(_.requestRenderUpdate())
   }
 
   def unload(): Unit = {
-    chunks.values.foreach{c =>
+    chunks.foreachValue{c =>
       eventListeners.foreach(_.onChunkRemoved(c))
       c.unload()
     }

@@ -11,7 +11,7 @@ import com.martomate.hexacraft.world.entity.sheep.ai.SimpleSheepAIInput
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 class SheepEntity(_model: EntityModel, _world: IWorld, aiFactory: EntityAIFactory[SheepEntity]) extends BasicEntity(_model, _world)(_world.size) {
-  override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
+  override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
 
   override def id: String = "sheep"
 

@@ -41,8 +41,12 @@ class ChunkLoadingPrioritizerPQ(origin: PosAndDir,
   }
 
   def reorderPQs(): Unit = {
-    addableChunks.enqueue(addableChunks.dequeueAll: _*)
-    removableChunks.enqueue(removableChunks.dequeueAll: _*)
+    val addSeq = addableChunks.toSeq
+    addableChunks.clear()
+    addableChunks.enqueue(addSeq: _*)
+    val remSeq = removableChunks.toSeq
+    removableChunks.clear()
+    removableChunks.enqueue(remSeq: _*)
   }
 
   override def nextAddableChunk: Option[ChunkRelWorld] = {

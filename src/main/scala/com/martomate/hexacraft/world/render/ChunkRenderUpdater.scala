@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld
 import com.martomate.hexacraft.world.loader.PosAndDir
 
 object ChunkRenderUpdater {
-  val chunkRenderUpdatesPerTick = 2
+  val chunkRenderUpdatesPerTick = 4
   val ticksBetweenColumnLoading = 5
 }
 

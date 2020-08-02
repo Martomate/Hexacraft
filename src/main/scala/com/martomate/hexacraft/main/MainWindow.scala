@@ -126,7 +126,7 @@ class MainWindow extends GameWindowExtended {
 
   private def render(): Unit = {
     def render(idx: Int): Unit = {
-      if (idx >= 0 && !scenes(idx).isOpaque) render(idx-1)
+      if (idx > 0 && !scenes(idx).isOpaque) render(idx-1)
 
       scenes(idx).render(GUITransformation(0, 0))
     }
