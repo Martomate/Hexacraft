@@ -14,7 +14,7 @@ class TickableTimer private (period: Int, delay: Int, initActive: Boolean) {
     } else if (active) {
       time = period - 1
       true
-    }else false
+    } else false
   }
 }
 

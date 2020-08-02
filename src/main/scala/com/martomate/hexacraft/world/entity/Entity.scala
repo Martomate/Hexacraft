@@ -12,7 +12,7 @@ abstract class Entity(implicit cylSizeImpl: CylinderSize) extends NBTSavable {
 
   private var _position: CylCoords = CylCoords(0, 0, 0)
   def position: CylCoords = _position
-  protected def position_=(pos: CylCoords): Unit = _position = pos
+  def position_=(pos: CylCoords): Unit = _position = pos
 
   private var _rotation: Vector3d = new Vector3d
   def rotation: Vector3d = _rotation

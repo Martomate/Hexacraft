@@ -3,12 +3,13 @@ package com.martomate.hexacraft.world.gen
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
-import com.martomate.hexacraft.world.gen.planner.{TreePlanner, WorldFeaturePlanner}
+import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 class WorldPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
-    new TreePlanner(world)
+    new TreePlanner(world),
+    new SheepPlanner(world)
   )
 
   def decorate(chunk: IChunk): Unit = {

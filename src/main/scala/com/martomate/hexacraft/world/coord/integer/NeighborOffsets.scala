@@ -13,9 +13,10 @@ object NeighborOffsets {
     Offset( 0, 0,-1),
     Offset( 1, 0,-1))
 
+  /** @param side the side of the origin block (0: top, 1: bottom, 2-7: sides)
+    * @return The offset of the neighboring block on the given side
+    */
   def apply(side: Int): Offset = all(side)
 
   val indices: Range = all.indices
 }
-
-case class Offset(dx: Int, dy: Int, dz: Int)

@@ -23,7 +23,7 @@ object ChunkRelWorld {
 case class ChunkRelWorld(value: Long) extends AnyVal {
   // XXXXXZZZZZYYY
   def getChunkRelColumn: ChunkRelColumn = ChunkRelColumn((value & 0xfff).toInt)
-  def getColumnRelWorld = ColumnRelWorld(value >>> 12)
+  def getColumnRelWorld: ColumnRelWorld = ColumnRelWorld(value >>> 12)
 
   def X: Int = (value >> 20).toInt >> 12
   def Z: Int = value.toInt >> 12
@@ -38,7 +38,7 @@ case class ChunkRelWorld(value: Long) extends AnyVal {
   } yield offset(x, y, z)
 
   def offset(t: Offset)(implicit cylSize: CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
-  def offset(x: Int, y: Int, z: Int)(implicit cylSize: CylinderSize): ChunkRelWorld = ChunkRelWorld(X + x, Y + y, Z + z)
+  def offset(dx: Int, dy: Int, dz: Int)(implicit cylSize: CylinderSize): ChunkRelWorld = ChunkRelWorld(X + dx, Y + dy, Z + dz)
 
   override def toString: String = s"($X, $Y, $Z)"
 }

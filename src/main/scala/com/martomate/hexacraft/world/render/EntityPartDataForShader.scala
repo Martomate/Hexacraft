@@ -2,12 +2,13 @@ package com.martomate.hexacraft.world.render
 
 import java.nio.ByteBuffer
 
-import com.martomate.hexacraft.world.entity.EntityModel
 import org.joml.Matrix4f
 
-case class EntityDataForShader(model: EntityModel, parts: Seq[EntityPartDataForShader])
-
-case class EntityPartDataForShader(modelMatrix: Matrix4f, texOffset: (Int, Int), texSize: (Int, Int), blockTex: Int, brightness: Float) {
+case class EntityPartDataForShader(modelMatrix: Matrix4f,
+                                   texOffset: (Int, Int),
+                                   texSize: (Int, Int),
+                                   blockTex: Int,
+                                   brightness: Float) {
   def fill(buf: ByteBuffer): Unit = {
     modelMatrix.get(buf)
     buf.position(buf.position() + 16 * 4)

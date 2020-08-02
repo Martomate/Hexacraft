@@ -37,7 +37,7 @@ object CoordUtils {
     val zz = z - zInt
     val yInt = math.floor(y).toInt
 
-    (BlockRelWorld(xInt, yInt, zInt), new BlockCoords(xx, y - yInt, zz, false))
+    (BlockRelWorld(xInt, yInt, zInt), BlockCoords(xx, y - yInt, zz, fixZ = false))
   }
 
   def fromBlockCoords(reference: CylCoords, blockPos: BlockCoords, position: CylCoords, _result: Vector3d): Vector3d = {

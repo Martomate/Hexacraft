@@ -5,9 +5,11 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk._
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
 import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagator: LightPropagator) extends IChunk {
@@ -73,8 +75,14 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   def tick(): Unit = {
     chunkData.optimizeStorage()
 
-    for (ent <- entities.allEntities) {
-      ent.tick()
+    tickEntities(entities.allEntities)
+
+    @tailrec
+    def tickEntities(ents: Iterable[Entity]): Unit = {
+      if (ents.nonEmpty) {
+        ents.head.tick()
+        tickEntities(ents.tail)
+      }
     }
   }
 
