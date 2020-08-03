@@ -20,9 +20,15 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
       world.setBlock(bottomCoords, new BlockState(block, depth.toByte))
       depth = fluidLevelMask
     } else if (bottomBS.exists(_.blockType == block) && bottomBS.get.metadata != 0) {
-      val totalLevel = (fluidLevelMask - depth) + (fluidLevelMask - (bottomBS.get.metadata & fluidLevelMask))
-      world.setBlock(bottomCoords, new BlockState(block, (fluidLevelMask - math.min(totalLevel, fluidLevelMask)).toByte))
-      depth = fluidLevelMask - math.max(totalLevel - fluidLevelMask, 0)
+      val fluidHere = fluidLevelMask + 1 - depth
+      val fluidBelow = fluidLevelMask + 1 - (bottomBS.get.metadata & fluidLevelMask)
+
+      val totalFluid = fluidHere + fluidBelow
+      val fluidBelowAfter = math.min(totalFluid, fluidLevelMask + 1)
+      val fluidHereAfter = totalFluid - fluidBelowAfter
+
+      world.setBlock(bottomCoords, new BlockState(block, (fluidLevelMask + 1 - fluidBelowAfter).toByte))
+      depth = fluidLevelMask + 1 - fluidHereAfter
     } else {
       blocks.filter(_.y == coords.y).map(c => (c, world.getBlock(c))).foreach { case (nCoords, ns) =>
         if (ns.blockType == Blocks.Air) {
