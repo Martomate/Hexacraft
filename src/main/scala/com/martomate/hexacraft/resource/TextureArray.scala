@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.resource
 
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL12, GL30}
+import org.lwjgl.opengl.{GL11, GL12, GL13, GL15, GL30}
 
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]
@@ -15,13 +15,13 @@ object TextureArray {
 
   def getTextureArray(name: String): TextureArray = textures(name)
   
-  def registerTextureArray(name: String, texSize: Int, images: ResourceWrapper[Seq[Array[Int]]]): TextureArray = {
+  def registerTextureArray(name: String, texSize: Int, images: ResourceWrapper[Seq[TextureToLoad]]): TextureArray = {
     if (!textures.contains(name)) new TextureArray(name, texSize, images)
     else textures(name)
   }
 }
 
-class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[Array[Int]]]) extends Resource with Texture {
+class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWrapper[Seq[TextureToLoad]]) extends Resource with Texture {
   private var texID: Int = _
 
   TextureArray.textures += name -> this
@@ -33,7 +33,8 @@ class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWr
     val height = texSize
     val width = texSize * images.length
     val buf = BufferUtils.createByteBuffer(height * width * 4)
-    for (pix <- images) {
+    for (image <- images) {
+      val pix = image.pixels
       for (j <- 0 until texSize) {
         for (i <- 0 until texSize) {
           val idx = i + j * texSize
@@ -55,8 +56,8 @@ class TextureArray(val name: String, val texSize: Int, wrappedImages: ResourceWr
     GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
     GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
     GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D_ARRAY)
-  }// TODO: Mipmapping produces jagged edges on triangular images
-  
+  }
+
   protected def reload(): Unit = {
     unload()
     load()
