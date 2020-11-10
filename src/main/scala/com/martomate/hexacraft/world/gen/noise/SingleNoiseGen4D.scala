@@ -46,14 +46,22 @@ class SingleNoiseGen4D(random: Random) {// Apparently SimplexNoise exists in jom
     val (ix3, x3, u3) = intComps(zz)
     val (ix4, x4, u4) = intComps(ww)
 
-    def lerpThing1(hash: Int, y2: Double, y3: Double, y4: Double) = lerp(u1, grad(perm(hash + ix1    ), x1  , y2, y3, y4),
-                                                                             grad(perm(hash + ix1 + 1), x1-1, y2, y3, y4))
-    def lerpThing2(hash: Int, y3: Double, y4: Double) = lerp(u2, lerpThing1(perm(hash + ix2    ), x2  , y3, y4),
-                                                                 lerpThing1(perm(hash + ix2 + 1), x2-1, y3, y4))
-    def lerpThing3(hash: Int, y4: Double) = lerp(u3, lerpThing2(perm(hash + ix3    ), x3  , y4),
-                                                     lerpThing2(perm(hash + ix3 + 1), x3-1, y4))
-    def lerpThing4 = lerp(u4, lerpThing3(perm(ix4    ), x4  ),
-                              lerpThing3(perm(ix4 + 1), x4-1))
-    lerpThing4
+    def lerpX(hash: Int, y: Double, z: Double, w: Double) =
+      lerp(u1,
+           grad(perm(hash + ix1    ), x1  , y, z, w),
+           grad(perm(hash + ix1 + 1), x1-1, y, z, w))
+    def lerpY(hash: Int, z: Double, w: Double) =
+      lerp(u2,
+           lerpX(perm(hash + ix2    ), x2  , z, w),
+           lerpX(perm(hash + ix2 + 1), x2-1, z, w))
+    def lerpZ(hash: Int, w: Double) =
+      lerp(u3,
+           lerpY(perm(hash + ix3    ), x3  , w),
+           lerpY(perm(hash + ix3 + 1), x3-1, w))
+    def lerpW =
+      lerp(u4,
+           lerpZ(perm(ix4    ), x4  ),
+           lerpZ(perm(ix4 + 1), x4-1))
+    lerpW
   }
 }

@@ -11,7 +11,7 @@ class BlockRenderer(val side: Int, init_maxInstances: Int) {
 
   final val vao: VAO = initVAO()
 
-  val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+  val renderer: Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
 
   var instances = 0
 

@@ -11,6 +11,7 @@ object Blocks {
   val Water   = factory("water")
   val Log     = factory("log")
   val Leaves  = factory("leaves")
+  val Planks  = factory("planks")
 
   def init(): Unit = {
   }

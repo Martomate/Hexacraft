@@ -1,0 +1,23 @@
+{
+	"textures": {
+		"top": "planks_top",
+		"topOffsets": {
+			"0": 0,
+			"1": 1,
+			"2": 0,
+			"3": 1,
+			"4": 0,
+			"5": 1
+		},
+		"bottom": "planks_top",
+		"bottomOffsets": {
+			"0": 0,
+			"1": 1,
+			"2": 0,
+			"3": 1,
+			"4": 0,
+			"5": 1
+		},
+		"side": "planks_side"
+	}
+}

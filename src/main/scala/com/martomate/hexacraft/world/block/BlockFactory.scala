@@ -12,6 +12,7 @@ class BlockFactory {
     case "water"  => new BlockFluid(5, "water", "Water")
     case "log"    => new Block(6, "log", "Log")
     case "leaves" => new Block(7, "leaves", "Leaves")
+    case "planks" => new Block(8, "planks", "Planks")
     case _        => new Block(-128, "unknown", "Unknown")
   }
 }

@@ -56,7 +56,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     renderDistance
   )
 
-  private val blocksToUpdate: UniquePQ[BlockRelWorld] = new UniquePQ(_ => 0, Ordering.by(x => x))
+  private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
   val player: Player = makePlayer
 

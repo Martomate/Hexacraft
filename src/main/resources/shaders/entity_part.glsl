@@ -151,7 +151,7 @@ void main() {
 #endif
 
 	vec3 sunDir = normalize(sun);
-	float visibility = max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
+	float visibility = clamp(dot(fragIn.normal, sunDir) * 0.4, 0.0, 0.3) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
 	color.rgb *= fragInFlat.brightness * visibility;
 }

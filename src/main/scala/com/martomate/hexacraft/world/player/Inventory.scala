@@ -5,7 +5,7 @@ import java.util.Observable
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 
 class Inventory extends Observable {
-  private val slots = Seq(Blocks.Dirt, Blocks.Grass, Blocks.Sand, Blocks.Stone, Blocks.Water, Blocks.Log, Blocks.Leaves) ++ Seq.fill(2)(Blocks.Air)
+  private val slots = Seq(Blocks.Dirt, Blocks.Grass, Blocks.Sand, Blocks.Stone, Blocks.Water, Blocks.Log, Blocks.Leaves, Blocks.Planks) ++ Seq.fill(1)(Blocks.Air)
 
   def apply(idx: Int): Block = slots(idx)
 

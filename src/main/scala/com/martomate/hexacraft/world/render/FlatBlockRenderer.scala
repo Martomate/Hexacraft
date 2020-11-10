@@ -19,5 +19,5 @@ class FlatBlockRenderer(_side: Int, _init_maxInstances: Int) extends BlockRender
       .create())
     .create()
 
-  override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  override val renderer: Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 }

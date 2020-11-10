@@ -29,4 +29,10 @@ class Block(val id: Byte, val name: String, val displayName: String) {
 
   protected val behaviour: BlockBehaviour = new BlockBehaviourNothing
   final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet)(implicit cylSize: CylinderSize): Unit = behaviour.onUpdated(coords, world)
+
+  override def equals(o: Any): Boolean = o match {
+    case other : Block =>
+      id == other.id
+    case _ => false
+  }
 }
