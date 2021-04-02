@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.coord
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
 import org.joml.Vector3d
 
 import scala.annotation.tailrec
@@ -54,5 +54,10 @@ object CoordUtils {
 
   def approximateChunkCoords(coords: CylCoords)(implicit cylinderSize: CylinderSize): ChunkRelWorld = {
     approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
+  }
+
+  def vectorToOffset(vec: Vector3d): Offset = {
+    val blockCoords = CylCoords(vec, fixZ = false)(null).toBlockCoords
+    Offset(blockCoords.x.round.toInt, blockCoords.y.round.toInt, blockCoords.z.round.toInt)
   }
 }

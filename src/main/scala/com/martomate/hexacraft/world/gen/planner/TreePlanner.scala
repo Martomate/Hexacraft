@@ -4,7 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.gen.feature.GenTree
+import com.martomate.hexacraft.world.gen.feature.tree.{GenTree, HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
@@ -35,23 +35,33 @@ class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFe
   def plan(coords: ChunkRelWorld): Unit = {
     if (!chunksPlanned(coords)) {
       val column = world.provideColumn(coords.getColumnRelWorld)
-      for ((cx, cz) <- treeLocations(coords)) {
-        attemptTreeGenerationAt(coords, column, cx, cz)
+      val locations = treeLocations(coords)
+      for ((cx, cz) <- locations) {
+        attemptTreeGenerationAt(coords, column, cx, cz, locations.size == 1)
       }
 
       chunksPlanned(coords) = true
     }
   }
 
-  private def attemptTreeGenerationAt(coords: ChunkRelWorld, column: ChunkColumn, cx: Int, cz: Int): Unit = {
+  private def attemptTreeGenerationAt(coords: ChunkRelWorld, column: ChunkColumn, cx: Int, cz: Int, allowBig: Boolean): Unit = {
     val yy = column.generatedHeightMap(cx)(cz)
     if (yy >= coords.Y * 16 && yy < (coords.Y + 1) * 16) {
-      generateTree(coords, cx, cz, yy)
+      generateTree(coords, cx, cz, yy, allowBig)
     }
   }
 
-  private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short): Unit = {
-    val tree = new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz)).generate()
+  private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
+    val rand = new Random(world.worldSettings.gen.seed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
+
+    val choice = rand.nextDouble()
+    val treeGenStrategy = {
+      if (allowBig && choice < 0.05) new HugeTreeGenStrategy(24, 1, rand)
+      else if (choice < 0.3) new TallTreeGenStrategy(16, rand)
+      else new ShortTreeGenStrategy
+    }
+
+    val tree = new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz), treeGenStrategy).generate()
     generateChanges(tree)
   }
 
