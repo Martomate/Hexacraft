@@ -1,7 +1,5 @@
 package com.martomate.hexacraft.main
 
-import java.io.File
-
 import com.martomate.hexacraft._
 import com.martomate.hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
@@ -15,7 +13,8 @@ import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11}
-import org.lwjgl.system.{MemoryStack, MemoryUtil}
+
+import java.io.File
 
 class MainWindow extends GameWindowExtended {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
@@ -25,6 +24,11 @@ class MainWindow extends GameWindowExtended {
   private val prevWindowPos = new Vector2i()
 
   def windowSize: Vector2ic = _windowSize
+
+  private val doublePtrX = Array.ofDim[Double](1)
+  private val doublePtrY = Array.ofDim[Double](1)
+  private val intPtrX = Array.ofDim[Int](1)
+  private val intPtrY = Array.ofDim[Int](1)
 
   private val window: Long = initWindow()
   private var fullscreen = false
@@ -44,18 +48,11 @@ class MainWindow extends GameWindowExtended {
 
   override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
 
-  private val doublePtrX = MemoryUtil.memAllocDouble(1)
-  private val doublePtrY = MemoryUtil.memAllocDouble(1)
-  private val intPtrX = MemoryUtil.memAllocInt(1)
-  private val intPtrY = MemoryUtil.memAllocInt(1)
-  def mousePos: Vector2dc = new Vector2d(_mousePos)
-  def mouseMoved: Vector2dc = new Vector2d(_mouseMoved)
-
   override val scenes: SceneStack = new SceneStackImpl
 
   def resetMousePos(): Unit = {
     glfwGetCursorPos(window, doublePtrX, doublePtrY)
-    _mousePos.set(doublePtrX.get(0), _windowSize.y - doublePtrY.get(0))
+    _mousePos.set(doublePtrX(0), _windowSize.y - doublePtrY(0))
     skipMouseMovedUpdate = true
   }
 
@@ -99,7 +96,7 @@ class MainWindow extends GameWindowExtended {
           scenes.map(_.windowTitle) :+
             s"$fps fps   ms: $msString" :+
             vsyncStr
-        ).filter(!_.isEmpty).mkString("   |   ")
+        ).filter(_.nonEmpty).mkString("   |   ")
 
         glfwSetWindowTitle(window, "Hexacraft   |   " + debugInfo)
       }
@@ -139,7 +136,7 @@ class MainWindow extends GameWindowExtended {
     glfwGetCursorPos(window, doublePtrX, doublePtrY)
     val oldMouseX = _mousePos.x
     val oldMouseY = _mousePos.y
-    _mousePos.set(doublePtrX.get(0), _windowSize.y - doublePtrY.get(0))
+    _mousePos.set(doublePtrX(0), _windowSize.y - doublePtrY(0))
 
     if (skipMouseMovedUpdate) {
       _mouseMoved.set(0, 0)
@@ -192,13 +189,13 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def setFullscreen(): Unit = {
-    val monitor = glfwGetPrimaryMonitor()
+    val monitor = glfwGetCurrentMonitor(window)
     val mode = glfwGetVideoMode(monitor)
 
     if (!fullscreen) {
       prevWindowSize.set(_windowSize)
       glfwGetWindowPos(window, intPtrX, intPtrY)
-      prevWindowPos.set(intPtrX.get(0), intPtrY.get(0))
+      prevWindowPos.set(intPtrX(0), intPtrY(0))
 
       glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
     } else {
@@ -207,6 +204,49 @@ class MainWindow extends GameWindowExtended {
 
     fullscreen = !fullscreen
     skipMouseMovedUpdate = true
+  }
+
+  /** Determines the current monitor that the specified window is being displayed on.
+    * If the monitor could not be determined, the primary monitor will be returned.
+    */
+  def glfwGetCurrentMonitor(window: Long): Long = {
+    glfwGetWindowPos(window, intPtrX, intPtrY)
+    val wx = intPtrX(0)
+    val wy = intPtrY(0)
+
+    glfwGetWindowSize(window, intPtrX, intPtrY)
+    val ww = intPtrX(0)
+    val wh = intPtrY(0)
+
+    glfwGetCurrentMonitor(wx, wy, ww, wh)
+  }
+
+  def glfwGetCurrentMonitor(wx: Int, wy: Int, ww: Int, wh: Int): Long = {
+    var bestOverlap = 0
+    var bestMonitor = 0L
+
+    val monitors = glfwGetMonitors()
+    while (monitors.hasRemaining) {
+      val monitor = monitors.get
+
+      glfwGetMonitorPos(monitor, intPtrX, intPtrY)
+      val mx = intPtrX(0)
+      val my = intPtrY(0)
+
+      val mode = glfwGetVideoMode(monitor)
+      val mw = mode.width
+      val mh = mode.height
+
+      val overlapWidth = Math.max(0, Math.min(wx + ww, mx + mw) - Math.max(wx, mx))
+      val overlapHeight = Math.max(0, Math.min(wy + wh, my + mh) - Math.max(wy, my))
+      val overlap = overlapWidth * overlapHeight
+
+      if (bestOverlap < overlap) {
+        bestOverlap = overlap
+        bestMonitor = monitor
+      }
+    }
+    if (bestMonitor != 0L) bestMonitor else glfwGetPrimaryMonitor()
   }
 
   private def processChar(window: Long, character: Int): Unit = {
@@ -242,7 +282,24 @@ class MainWindow extends GameWindowExtended {
     // Initialize GLFW. Most GLFW functions will not work before doing this.
     if (!glfwInit) throw new IllegalStateException("Unable to initialize GLFW")
 
-    // Configure GLFW
+    configureGlfw()
+
+    val window = glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", 0, 0)
+    if (window == 0) throw new RuntimeException("Failed to create the GLFW window")
+
+    setupCallbacks(window)
+
+    centerWindow(window)
+
+    glfwMakeContextCurrent(window)
+    // Enable v-sync
+    glfwSwapInterval(if (vsync) 1 else 0)
+
+    glfwShowWindow(window)
+    window
+  }
+
+  private def configureGlfw(): Unit = {
     glfwDefaultWindowHints() // optional, the current window hints are already the default
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE) // the window will stay hidden after creation
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) // the window will be resizable
@@ -251,40 +308,25 @@ class MainWindow extends GameWindowExtended {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFW_SAMPLES, 1)
+  }
 
-    val window = glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", 0, 0)
-    if (window == 0) throw new RuntimeException("Failed to create the GLFW window")
-
+  private def setupCallbacks(window: Long): Unit = {
     // Setup a key callback. It will be called every time a key is pressed, repeated or released.
     glfwSetKeyCallback(window, processKeys)
     glfwSetCharCallback(window, processChar)
     glfwSetMouseButtonCallback(window, processMouseButtons)
     glfwSetWindowSizeCallback(window, (_, width, height) => resizeWindow(width, height))
     glfwSetScrollCallback(window, processScroll)
+  }
 
-    // Get the thread stack and push a new frame
-    {
-      val stack = MemoryStack.stackPush()
-      val pWidth = stack.mallocInt(1) // int*
-      val pHeight = stack.mallocInt(1) // int*
+  private def centerWindow(window: Long): Unit = {
+    glfwGetWindowSize(window, intPtrX, intPtrY)
+    val windowWidth = intPtrX(0)
+    val windowHeight = intPtrY(0)
 
-      // Get the window size passed to glfwCreateWindow
-      glfwGetWindowSize(window, pWidth, pHeight)
+    val mode = glfwGetVideoMode(glfwGetPrimaryMonitor)
 
-      // Get the resolution of the primary monitor
-      val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
-
-      // Center the window
-      glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
-      stack.pop()
-    } // the stack frame is popped automatically
-
-    glfwMakeContextCurrent(window)
-    // Enable v-sync
-    glfwSwapInterval(if (vsync) 1 else 0)
-
-    glfwShowWindow(window)
-    window
+    glfwSetWindowPos(window, (mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
   }
 
   private def initGL(): Unit = {
