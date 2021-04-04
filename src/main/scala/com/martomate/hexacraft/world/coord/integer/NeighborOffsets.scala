@@ -1,7 +1,5 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import scala.collection.Seq
-
 object NeighborOffsets {
   val all: Seq[Offset] = Array(
     Offset( 0, 1, 0),
