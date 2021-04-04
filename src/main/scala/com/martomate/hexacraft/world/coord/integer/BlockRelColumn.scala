@@ -8,8 +8,8 @@ object BlockRelColumn {
 }
 
 case class BlockRelColumn(value: Int) extends AnyVal { // YYYxyz
-  def getBlockRelChunk = BlockRelChunk(value & 0xfff)
-  def getChunkRelColumn = ChunkRelColumn(value >> 12 & 0xfff)
+  def getBlockRelChunk: BlockRelChunk = BlockRelChunk(value & 0xfff)
+  def getChunkRelColumn: ChunkRelColumn = ChunkRelColumn(value >> 12 & 0xfff)
 
   def Y: Int = value << 8 >> 20
   def cx: Byte = (value >> 8 & 0xf).toByte

@@ -77,7 +77,7 @@ class TextField(_location: LocationInfo, initText: String = "", centered: Boolea
   override def onKeyEvent(event: KeyEvent): Boolean = {
     if (focused && event.action != GLFW.GLFW_RELEASE) {
       if (event.key == GLFW.GLFW_KEY_BACKSPACE) {
-        if (text.length > 0) setText(text.substring(0, text.length - 1))
+        if (text.nonEmpty) setText(text.substring(0, text.length - 1))
       }
     }
     super.onKeyEvent(event)

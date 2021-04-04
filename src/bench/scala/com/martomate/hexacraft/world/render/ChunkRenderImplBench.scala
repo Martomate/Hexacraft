@@ -30,10 +30,9 @@ object ChunkRenderImplBench extends Bench.LocalTime {
   performance of "ChunkRenderer" in {
     performance of "updateContent" in {
       measure method "blocks" config(
-        exec.benchRuns -> 50,
-        exec.minWarmupRuns -> 10,
-
-        reports.regression.significance -> 5e-2
+        exec.benchRuns := 50,
+        exec.minWarmupRuns := 10,
+        reports.regression.significance := 5e-2
       ) in {
         using(renderers) setUp { renderer =>
           renderer.updateContent() // to initialize lighting
@@ -43,9 +42,9 @@ object ChunkRenderImplBench extends Bench.LocalTime {
       }
 
       measure method "lighting" config(
-        exec.benchRuns -> 50,
-        exec.minWarmupRuns -> 10,
-        reports.regression.significance -> 5e-2
+        exec.benchRuns := 50,
+        exec.minWarmupRuns := 10,
+        reports.regression.significance := 5e-2
       ) in {
         var renderer: ChunkRendererImpl = null
 

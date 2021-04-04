@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.event._
 import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
@@ -8,30 +7,29 @@ import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable.ArrayBuffer
 
-class ScrollPane(window: GameWindow, _location: LocationInfo) extends Component(_location) {
-  private var (xoffset, yoffset): (Float, Float) = (0, 0)
+class ScrollPane(_location: LocationInfo) extends Component(_location) {
+  private var (xOffset, yOffset): (Float, Float) = (0, 0)
 
   private val components: ArrayBuffer[Component] = ArrayBuffer.empty[Component]
 
   def addComponent(comp: Component): Unit = components.append(comp)
 
   override def render(transformation: GUITransformation): Unit = {
-    val xoffset = transformation.x
-    val yoffset = transformation.y
-    val newTr = GUITransformation(xoffset + this.xoffset, yoffset + this.yoffset)
-    Component.drawRect(location, xoffset, yoffset, new Vector4f(0, 0, 0, 0.4f))
+    Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0, 0, 0, 0.4f))
+
+    val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
     val loc = location.inScreenCoordinates
     GL11.glScissor(loc._1, loc._2, loc._3, loc._4)
     GL11.glEnable(GL11.GL_SCISSOR_TEST)
-    components.foreach(_.render(newTr))
+    components.foreach(_.render(contentTransformation))
     GL11.glDisable(GL11.GL_SCISSOR_TEST)
-    super.render(newTr)
+    super.render(contentTransformation)
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {
     if (containsMouse) {
-      this.xoffset += event.xoffset * 0.05f
-      this.yoffset -= event.yoffset * 0.05f
+      this.xOffset += event.xoffset * 0.05f
+      this.yOffset -= event.yoffset * 0.05f
       true
     } else components.exists(_.onScrollEvent(event))
   }
@@ -46,7 +44,7 @@ class ScrollPane(window: GameWindow, _location: LocationInfo) extends Component(
 
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     if (containsMouse) {
-      components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xoffset, -yoffset)))
+      components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xOffset, -yOffset)))
     } else false
   }
 

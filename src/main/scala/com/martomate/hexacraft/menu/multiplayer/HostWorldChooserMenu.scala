@@ -11,7 +11,7 @@ import scala.util.Random
 
 class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
-  private val scrollPane = new ScrollPane(window, LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
+  private val scrollPane = new ScrollPane(LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
 
   getWorlds.zipWithIndex.map {
     case (f, i) =>

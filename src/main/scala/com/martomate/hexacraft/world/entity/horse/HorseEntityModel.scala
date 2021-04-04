@@ -48,7 +48,7 @@ class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
   )
   private val head = new BasicEntityPart(
     makeHexBox(headRadius, -neckRadius, headDepth),
-    BlockCoords(0, (neckDepth) / 32d, 0, fixZ = false).toCylCoords,
+    BlockCoords(0, neckDepth / 32d, 0, fixZ = false).toCylCoords,
     new Vector3f(math.Pi.toFloat / 4, 0, 0),
     parentPart = neck,
     setup = partsNBT.get("head").asObject()

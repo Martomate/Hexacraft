@@ -14,11 +14,11 @@ object BlockRelWorld {
 }
 
 case class BlockRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYYxyz
-  def getBlockRelChunk = BlockRelChunk((value & 0xfff).toInt)
-  def getBlockRelColumn = BlockRelColumn((value & 0xffffff).toInt)
-  def getChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt)
-  def getChunkRelWorld = ChunkRelWorld(value >>> 12)
-  def getColumnRelWorld = ColumnRelWorld(value >>> 24)
+  def getBlockRelChunk: BlockRelChunk = BlockRelChunk((value & 0xfff).toInt)
+  def getBlockRelColumn: BlockRelColumn = BlockRelColumn((value & 0xffffff).toInt)
+  def getChunkRelColumn: ChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt)
+  def getChunkRelWorld: ChunkRelWorld = ChunkRelWorld(value >>> 12)
+  def getColumnRelWorld: ColumnRelWorld = ColumnRelWorld(value >>> 24)
 
   def offset(t: Offset)(implicit cylSize: CylinderSize): BlockRelWorld = offset(t.dx, t.dy, t.dz)
   def offset(xx: Int, yy: Int, zz: Int)(implicit cylSize: CylinderSize): BlockRelWorld = BlockRelWorld(x + xx, y + yy, z + zz)

@@ -1,20 +1,21 @@
 package com.martomate.hexacraft.world.gen.noise
 
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class NoiseInterpolator2DTest extends AnyFunSuite {
-  test("same input should give same output") {
+class NoiseInterpolator2DTest extends AnyFlatSpec with Matchers {
+  "noise" should "be the same for the same input" in {
     val n = new NoiseInterpolator2D(4, 4, (i, j) => i + 2 * j)
     for (i <- 0 until 16; j <- 0 until 16) {
-      assert(n(i, j) == n(i, j))
+      n(i, j) shouldBe n(i, j)
     }
   }
 
-  test("input should give correct output") {
+  it should "be correct" in {
     val func: (Int, Int) => Double = (i, j) => i + 2 * j
     val n = new NoiseInterpolator2D(4, 4, func)
     for (i <- 0 until 4; j <- 0 until 4) {
-      assertResult(func(i, j))(n(4 * i, 4 * j))
+      n(4 * i, 4 * j) shouldBe func(i, j)
     }
   }
 }

@@ -5,5 +5,5 @@ case class WorldSettings(name: Option[String],
                          seed: Option[Long])
 
 object WorldSettings {
-  def none = WorldSettings(None, None, None)
+  def none: WorldSettings = WorldSettings(None, None, None)
 }

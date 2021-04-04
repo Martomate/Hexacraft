@@ -10,7 +10,7 @@ import scala.util.Random
 
 class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
-  private val scrollPane = new ScrollPane(window, LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
+  private val scrollPane = new ScrollPane(LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
   addComponent(scrollPane)
 
   addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.05f, 0.4f, 0.1f)) {

@@ -10,9 +10,9 @@ object RangeMicrobenchmark extends Bench.OnlineRegressionReport {
 
   performance of "Range" in {
     measure method "map" config (
-      exec.minWarmupRuns -> 20,
-      exec.benchRuns -> 50,
-      reports.regression.significance -> 0.01
+      exec.minWarmupRuns := 20,
+      exec.benchRuns := 50,
+      reports.regression.significance := 0.01
     ) in {
       using(ranges) in {
         r => r.map(_ + 1)
@@ -28,7 +28,7 @@ object RegressionTest extends Bench.OfflineRegressionReport {
   performance of "Array" in {
     measure method "foreach" in {
       using(arrays) config (
-        exec.independentSamples -> 6
+        exec.independentSamples := 6
       ) in { xs =>
         var sum = 0
         xs.foreach(x => sum += x)
@@ -46,8 +46,8 @@ object MemoryTest extends Bench.OfflineReport {
   performance of "MemoryFootprint" in {
     performance of "Array" in {
       using(sizes) config (
-        exec.benchRuns -> 10,
-        exec.independentSamples -> 2
+        exec.benchRuns := 10,
+        exec.independentSamples := 2
       ) in { sz =>
         (0 until sz).toArray
       }

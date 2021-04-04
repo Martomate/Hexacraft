@@ -10,6 +10,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffse
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 
+import scala.annotation.tailrec
 import scala.collection.immutable
 
 
@@ -123,6 +124,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
     !seq.exists(_ != seq(0))
   }
 
+  @tailrec
   private def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
     val points = BlockState.vertices.map(v => fromBlockCoords(current, v, new Vector3d))
 

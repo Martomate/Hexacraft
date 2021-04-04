@@ -2,15 +2,18 @@ enablePlugins(LauncherJarPlugin)
 
 lazy val Benchmark = config("bench") extend Test
 
-lazy val root = Project(
-  "hexacraft",
-  file(".")
-) settings (Defaults.coreDefaultSettings: _*) settings (
+lazy val root = Project("hexacraft", file("."))
+  .settings(Defaults.coreDefaultSettings: _*)
+  .settings(mainSettings: _*)
+  .configs(Benchmark)
+  .settings(inConfig(Benchmark)(Defaults.testSettings): _*)
+
+def mainSettings = Seq(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10-SNAPSHOT",
-  scalaVersion := "2.13.2",
-  scalacOptions ++= Seq("-deprecation"),//, "-unchecked", "-feature", "-Xlint"),
+  scalaVersion := "2.13.5",
+  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   resolvers ++= Seq(
@@ -20,10 +23,6 @@ lazy val root = Project(
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
   parallelExecution in Benchmark := false,
   logBuffered := false
-) configs(
-  Benchmark
-) settings(
-  inConfig(Benchmark)(Defaults.testSettings): _*
 )
 
 def lwjglDependencies = {
@@ -45,15 +44,18 @@ def lwjglDependencies = {
   )
 }
 
+val scalatestVersion = "3.2.5"
+
 def otherDependencies = Seq(
-  "org.scalactic" %% "scalactic" % "3.1.2",
-  "org.joml" % "joml" % "1.9.25",
+  "org.scalactic" %% "scalactic" % scalatestVersion,
+  "org.joml" % "joml" % "1.10.1",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
 
 def testDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.1.2" % "test",
-  "org.scalamock" %% "scalamock" % "4.4.0" % "test",
-  "com.storm-enroute" %% "scalameter" % "0.19" % "bench"
+  "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
+  "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
+  "org.scalamock" %% "scalamock" % "5.1.0" % "test",
+  "com.storm-enroute" %% "scalameter" % "0.21" % "bench"
 )

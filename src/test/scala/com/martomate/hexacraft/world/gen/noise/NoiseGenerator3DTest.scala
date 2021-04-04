@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.world.gen.noise
 
 import java.util.Random
-
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class NoiseGenerator3DTest extends AnyFunSuite {
-  test("same input should give same output") {
+class NoiseGenerator3DTest extends AnyFlatSpec with Matchers {
+  "the noise" should "be the same for the same input" in {
     val rand = new Random
     val seed = rand.nextLong
     val gen = makeGen(seed)
@@ -17,27 +17,26 @@ class NoiseGenerator3DTest extends AnyFunSuite {
     for (_ <- 1 to 10) {
       val (x, y, z) = nextDouble3(rand, scale)
 
-      assertResult(gen.genNoise(x, y, z))(gen2.genNoise(x, y, z))
+      gen.genNoise(x, y, z) shouldBe gen2.genNoise(x, y, z)
     }
   }
 
-  test("noise should not be constant") {
+  it should "not be constant" in {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
     val scale = 100
-    val result = gen.genNoise(0, 0, 0)
 
-    val different = (1 to 10).exists(_ => {
+    val values = for (_ <- 1 to 10) yield {
       val (x, y, z) = nextDouble3(rand, scale)
 
-      result != gen.genNoise(x, y, z)
-    })
+      gen.genNoise(x, y, z)
+    }
 
-    assert(different)
+    values.toSet.size should be > 1
   }
 
-  test("genNoiseFromCylXZ is correct") {
+  "genNoiseFromCylXZ" should "be correct" in {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
@@ -47,11 +46,13 @@ class NoiseGenerator3DTest extends AnyFunSuite {
     for (_ <- 1 to 10) {
       val cyl = CylCoords(nextDouble(rand, scale), nextDouble(rand, scale), nextDouble(rand, scale))
       val angle = cyl.z / size.radius
-      assertResult(gen.genNoise(cyl.x, math.sin(angle) * size.radius, math.cos(angle) * size.radius))(gen.genNoiseFromCylXZ(cyl))
+
+      val noiseFromCyl = gen.genNoiseFromCylXZ(cyl)
+      val expectedNoise = gen.genNoise(cyl.x, math.sin(angle) * size.radius, math.cos(angle) * size.radius)
+
+      noiseFromCyl shouldBe expectedNoise
     }
   }
-
-
 
   private def makeGen(seed: Long, octaves: Int = 4, scale: Double = 0.01): NoiseGenerator3D = {
     new NoiseGenerator3D(new Random(seed), octaves, scale)

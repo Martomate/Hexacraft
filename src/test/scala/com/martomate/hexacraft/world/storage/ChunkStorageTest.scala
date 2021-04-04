@@ -5,94 +5,107 @@ import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends AnyFunSuite {
+abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends AnyFlatSpec with Matchers {
   protected val cylSize: CylinderSize = new CylinderSize(4)
   import cylSize.impl
 
   def makeStorage(coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage = storageFactory(coords, cylSize)
 
-  test("No blocks") {
+  "the storage" should "be correct for 0 blocks" in {
     val storage = makeStorage()
-    assertResult(0)(storage.numBlocks)
+
+    storage.numBlocks shouldBe 0
   }
 
-  test("One block") {
+  it should "be correct for 1 block" in {
     val storage = makeStorage()
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
-    assertResult(1)(storage.numBlocks)
+    val coords = coords350.getBlockRelChunk
+
+    storage.setBlock(coords, new BlockState(Blocks.Dirt))
+    storage.setBlock(coords, new BlockState(Blocks.Dirt))
+
+    storage.numBlocks shouldBe 1
   }
 
-  test("Many blocks") {
+  it should "be correct for many blocks" in {
     val storage = makeStorage()
+
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
 
-    assertResult(16*16*16)(storage.numBlocks)
+    storage.numBlocks shouldBe 16*16*16
   }
 
-  test("Air doesn't count as a block") {
+  "Air" should "not count as a block" in {
     val storage = makeStorage()
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Dirt))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Air))
-    assertResult(0)(storage.numBlocks)
+    val coords = coords350.getBlockRelChunk
+
+    storage.setBlock(coords, new BlockState(Blocks.Dirt))
+    storage.setBlock(coords, new BlockState(Blocks.Air))
+
+    storage.numBlocks shouldBe 0
   }
 
-  test("blockType for existing block") {
+  "blockType" should "be correct for existing block" in {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    assertResult(Blocks.Stone)(storage.blockType(coords350.getBlockRelChunk))
+    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Stone
   }
 
-  test("blockType for non-existing block") {
+  it should "be Air for non-existing block" in {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-
-    assertResult(Blocks.Air)(storage.blockType(coords351.getBlockRelChunk))
+    storage.blockType(coords351.getBlockRelChunk) shouldBe Blocks.Air
   }
 
-  test("Remove existing block") {
+  "removeBlock" should "work for existing blocks" in {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords350.getBlockRelChunk)
-    assertResult(Blocks.Air)(storage.blockType(coords350.getBlockRelChunk))
-    assertResult(1)(storage.numBlocks)
+
+    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Air
+    storage.numBlocks shouldBe 1
   }
 
-  test("Remove non-existing block") {
+  it should "do nothing for non-existing blocks" in {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords351.getBlockRelChunk)
-    assertResult(Blocks.Stone)(storage.blockType(coords350.getBlockRelChunk))
-    assertResult(2)(storage.numBlocks)
+
+    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Stone
+    storage.numBlocks shouldBe 2
   }
 
-  test("getBlock for existing block") {
+  "getBlock" should "work for existing blocks" in {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords350.getBlockRelChunk)
-    assertResult(Blocks.Stone)(block.blockType)
-    assertResult(2)(block.metadata)
-    assertResult(2)(block.metadata)
+
+    block.blockType shouldBe Blocks.Stone
+    block.metadata shouldBe 2
   }
 
-  test("getBlock for non-existing block") {
+  it should "return Air for non-existing block" in {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords351.getBlockRelChunk)
-    assertResult(Blocks.Air)(block.blockType)
+
+    block.blockType shouldBe Blocks.Air
   }
 
-  test("allBlocks returns all blocks") {
+  "allBlocks" should "return all blocks" in {
     val storage = makeStorage_Dirt359_Stone350
     val storageSize = storage.numBlocks
 
     val all = storage.allBlocks
-    assertResult(storageSize)(all.size)
-    for (LocalBlockState(c, b) <- all) assertResult(b)(storage.getBlock(c))
+
+    all.size shouldBe storageSize
+    for (LocalBlockState(c, b) <- all)
+      storage.getBlock(c) shouldBe b
   }
 
-  test("fromNBT with correct tag") {
+  "fromNBT" should "work with blocks and metadata" in {
     val tag = NBTUtil.makeCompoundTag("", Seq(
       new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
         case 0 => Blocks.Dirt.id
@@ -106,12 +119,14 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
       })
     ))
     val storage = makeStorage(ChunkRelWorld(0))
+
     storage.fromNBT(tag)
-    assertResult(2)(storage.numBlocks)
-    assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+
+    storage.numBlocks shouldBe 2
+    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
   }
 
-  test("fromNBT without metadata") {
+  it should "work without metadata" in {
     val tag = NBTUtil.makeCompoundTag("", Seq(
       new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
         case 0 => Blocks.Dirt.id
@@ -120,12 +135,14 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
       })
     ))
     val storage = makeStorage(ChunkRelWorld(0))
+
     storage.fromNBT(tag)
-    assertResult(2)(storage.numBlocks)
-    assertResult(Blocks.Stone)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+
+    storage.numBlocks shouldBe 2
+    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
   }
 
-  test("fromNBT without blocks") {
+  it should "work without blocks" in {
     val tag = NBTUtil.makeCompoundTag("", Seq(
       new ByteArrayTag("metadata", Array.tabulate(16*16*16) {
         case 0 => 6
@@ -134,30 +151,34 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
       })
     ))
     val storage = makeStorage(ChunkRelWorld(0))
+
     storage.fromNBT(tag)
-    assertResult(0)(storage.numBlocks)
-    assertResult(Blocks.Air)(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk))
+
+    storage.numBlocks shouldBe 0
+    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Air
   }
 
-  test("toNBT works") {
+  "toNBT" should "work" in {
     val storage = makeStorage_Dirt359_Stone350
     val nbt = storage.toNBT
-    assertResult(2)(nbt.size)
+    nbt.size shouldBe 2
 
-    assertResult("blocks")(nbt(0).getName)
-    assert(nbt(0).isInstanceOf[ByteArrayTag])
-    val blocksArray = nbt(0).asInstanceOf[ByteArrayTag].getValue
-    assertResult(16*16*16)(blocksArray.length)
+    val blocksTag = nbt(0)
+    blocksTag.getName shouldBe "blocks"
+    blocksTag shouldBe a [ByteArrayTag]
+    val blocksArray = blocksTag.asInstanceOf[ByteArrayTag].getValue
+    blocksArray.length shouldBe 16*16*16
 
-    assertResult("metadata")(nbt(1).getName)
-    assert(nbt(1).isInstanceOf[ByteArrayTag])
-    val metadataArray = nbt(1).asInstanceOf[ByteArrayTag].getValue
-    assertResult(16*16*16)(metadataArray.length)
+    val metadataTag = nbt(1)
+    metadataTag.getName shouldBe "metadata"
+    metadataTag shouldBe a [ByteArrayTag]
+    val metadataArray = metadataTag.asInstanceOf[ByteArrayTag].getValue
+    metadataArray.length shouldBe 16*16*16
 
-    assertResult(Blocks.Dirt.id)(blocksArray(coords359.getBlockRelChunk.value))
-    assertResult(Blocks.Stone.id)(blocksArray(coords350.getBlockRelChunk.value))
-    assertResult(6)(metadataArray(coords359.getBlockRelChunk.value))
-    assertResult(2)(metadataArray(coords350.getBlockRelChunk.value))
+    blocksArray(coords359.getBlockRelChunk.value) shouldBe Blocks.Dirt.id
+    blocksArray(coords350.getBlockRelChunk.value) shouldBe Blocks.Stone.id
+    metadataArray(coords359.getBlockRelChunk.value) shouldBe 6
+    metadataArray(coords350.getBlockRelChunk.value) shouldBe 2
   }
   
   protected def coords350: BlockRelWorld = coordsAt(3, 5, 0)
