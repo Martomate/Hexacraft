@@ -7,6 +7,7 @@ import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
+import com.martomate.hexacraft.util.PointerWrapper
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
@@ -25,10 +26,7 @@ class MainWindow extends GameWindowExtended {
 
   def windowSize: Vector2ic = _windowSize
 
-  private val doublePtrX = Array.ofDim[Double](1)
-  private val doublePtrY = Array.ofDim[Double](1)
-  private val intPtrX = Array.ofDim[Int](1)
-  private val intPtrY = Array.ofDim[Int](1)
+  private val pointerWrapper = new PointerWrapper()
 
   private val window: Long = initWindow()
   private var fullscreen = false
@@ -51,8 +49,8 @@ class MainWindow extends GameWindowExtended {
   override val scenes: SceneStack = new SceneStackImpl
 
   def resetMousePos(): Unit = {
-    glfwGetCursorPos(window, doublePtrX, doublePtrY)
-    _mousePos.set(doublePtrX(0), _windowSize.y - doublePtrY(0))
+    val (cx, cy) = pointerWrapper.doubles((px, py) => glfwGetCursorPos(window, px, py))
+    _mousePos.set(cx, _windowSize.y - cy)
     skipMouseMovedUpdate = true
   }
 
@@ -133,10 +131,10 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def tick(): Unit = {
-    glfwGetCursorPos(window, doublePtrX, doublePtrY)
+    val (cx, cy) = pointerWrapper.doubles((px, py) => glfwGetCursorPos(window, px, py))
     val oldMouseX = _mousePos.x
     val oldMouseY = _mousePos.y
-    _mousePos.set(doublePtrX(0), _windowSize.y - doublePtrY(0))
+    _mousePos.set(cx, _windowSize.y - cy)
 
     if (skipMouseMovedUpdate) {
       _mouseMoved.set(0, 0)
@@ -194,8 +192,8 @@ class MainWindow extends GameWindowExtended {
 
     if (!fullscreen) {
       prevWindowSize.set(_windowSize)
-      glfwGetWindowPos(window, intPtrX, intPtrY)
-      prevWindowPos.set(intPtrX(0), intPtrY(0))
+      val (wx, wy) = pointerWrapper.ints((px, py) => glfwGetWindowPos(window, px, py))
+      prevWindowPos.set(wx, wy)
 
       glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
     } else {
@@ -210,18 +208,13 @@ class MainWindow extends GameWindowExtended {
     * If the monitor could not be determined, the primary monitor will be returned.
     */
   def glfwGetCurrentMonitor(window: Long): Long = {
-    glfwGetWindowPos(window, intPtrX, intPtrY)
-    val wx = intPtrX(0)
-    val wy = intPtrY(0)
-
-    glfwGetWindowSize(window, intPtrX, intPtrY)
-    val ww = intPtrX(0)
-    val wh = intPtrY(0)
+    val (wx, wy) = pointerWrapper.ints((px, py) => glfwGetWindowPos(window, px, py))
+    val (ww, wh) = pointerWrapper.ints((px, py) => glfwGetWindowSize(window, px, py))
 
     glfwGetCurrentMonitor(wx, wy, ww, wh)
   }
 
-  def glfwGetCurrentMonitor(wx: Int, wy: Int, ww: Int, wh: Int): Long = {
+  def glfwGetCurrentMonitor(windowPosX: Int, windowPosY: Int, windowWidth: Int, windowHeight: Int): Long = {
     var bestOverlap = 0
     var bestMonitor = 0L
 
@@ -229,16 +222,19 @@ class MainWindow extends GameWindowExtended {
     while (monitors.hasRemaining) {
       val monitor = monitors.get
 
-      glfwGetMonitorPos(monitor, intPtrX, intPtrY)
-      val mx = intPtrX(0)
-      val my = intPtrY(0)
+      val (monitorPosX, monitorPosY) = pointerWrapper.ints((px, py) => glfwGetMonitorPos(monitor, px, py))
 
       val mode = glfwGetVideoMode(monitor)
-      val mw = mode.width
-      val mh = mode.height
+      val monitorWidth = mode.width
+      val monitorHeight = mode.height
 
-      val overlapWidth = Math.max(0, Math.min(wx + ww, mx + mw) - Math.max(wx, mx))
-      val overlapHeight = Math.max(0, Math.min(wy + wh, my + mh) - Math.max(wy, my))
+      val overlapRight = Math.min(windowPosX + windowWidth, monitorPosX + monitorWidth)
+      val overlapLeft = Math.max(windowPosX, monitorPosX)
+      val overlapBottom = Math.min(windowPosY + windowHeight, monitorPosY + monitorHeight)
+      val overlapTop = Math.max(windowPosY, monitorPosY)
+
+      val overlapWidth = Math.max(0, overlapRight - overlapLeft)
+      val overlapHeight = Math.max(0, overlapBottom - overlapTop)
       val overlap = overlapWidth * overlapHeight
 
       if (bestOverlap < overlap) {
@@ -253,12 +249,14 @@ class MainWindow extends GameWindowExtended {
     scenes.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
   }
 
-  private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = { // mods: 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with |
-    scenes.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, (normalizedMousePos.x * aspectRatio, normalizedMousePos.y))))
+  /** @param mods 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with | */
+  private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = {
+    val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
+    scenes.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos)))
   }
 
-  private def processScroll(window: Long, xoffset: Double, yoffset: Double): Unit = {
-    scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xoffset.toFloat, yoffset.toFloat)))
+  private def processScroll(window: Long, xOffset: Double, yOffset: Double): Unit = {
+    scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOffset.toFloat, yOffset.toFloat)))
   }
 
   private def resizeWindow(width: Int, height: Int): Unit = {
@@ -320,9 +318,7 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def centerWindow(window: Long): Unit = {
-    glfwGetWindowSize(window, intPtrX, intPtrY)
-    val windowWidth = intPtrX(0)
-    val windowHeight = intPtrY(0)
+    val (windowWidth, windowHeight) = pointerWrapper.ints((px, py) => glfwGetWindowSize(window, px, py))
 
     val mode = glfwGetVideoMode(glfwGetPrimaryMonitor)
 
@@ -348,3 +344,4 @@ class MainWindow extends GameWindowExtended {
     Resource.freeAllResources()
   }
 }
+
