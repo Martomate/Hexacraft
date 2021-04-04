@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
-import org.lwjgl.glfw.GLFW.{GLFW_KEY_R, _}
+import org.lwjgl.glfw.GLFW._
 
 class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: Player) {
   var moveWithMouse = false

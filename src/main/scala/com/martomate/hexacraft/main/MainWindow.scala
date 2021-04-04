@@ -7,12 +7,11 @@ import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
-import com.martomate.hexacraft.util.PointerWrapper
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
-import org.lwjgl.glfw.{Callbacks, GLFW, GLFWErrorCallback}
+import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11}
 
 import java.io.File
@@ -26,7 +25,7 @@ class MainWindow extends GameWindowExtended {
 
   def windowSize: Vector2ic = _windowSize
 
-  private val pointerWrapper = new PointerWrapper()
+  private val glfwHelper = new GlfwHelper()
 
   private val window: Long = initWindow()
   private var fullscreen = false
@@ -49,7 +48,7 @@ class MainWindow extends GameWindowExtended {
   override val scenes: SceneStack = new SceneStackImpl
 
   def resetMousePos(): Unit = {
-    val (cx, cy) = pointerWrapper.doubles((px, py) => glfwGetCursorPos(window, px, py))
+    val (cx, cy) = glfwHelper.getCursorPos(window)
     _mousePos.set(cx, _windowSize.y - cy)
     skipMouseMovedUpdate = true
   }
@@ -131,7 +130,7 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def tick(): Unit = {
-    val (cx, cy) = pointerWrapper.doubles((px, py) => glfwGetCursorPos(window, px, py))
+    val (cx, cy) = glfwHelper.getCursorPos(window)
     val oldMouseX = _mousePos.x
     val oldMouseY = _mousePos.y
     _mousePos.set(cx, _windowSize.y - cy)
@@ -175,7 +174,7 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def processKeys(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit = { // action: 0 = release, 1 = press, 2 = repeat
-    if (key == GLFW_KEY_R && action == GLFW_PRESS && GLFW.glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+    if (key == GLFW_KEY_R && action == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
       Resource.reloadAllResources()
       scenes.foreach(_.onReloadedResources())
       println("Reloaded resources")
@@ -187,12 +186,12 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def setFullscreen(): Unit = {
-    val monitor = glfwGetCurrentMonitor(window)
+    val monitor = glfwHelper.getCurrentMonitor(window)
     val mode = glfwGetVideoMode(monitor)
 
     if (!fullscreen) {
       prevWindowSize.set(_windowSize)
-      val (wx, wy) = pointerWrapper.ints((px, py) => glfwGetWindowPos(window, px, py))
+      val (wx, wy) = glfwHelper.getWindowPos(window)
       prevWindowPos.set(wx, wy)
 
       glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
@@ -202,47 +201,6 @@ class MainWindow extends GameWindowExtended {
 
     fullscreen = !fullscreen
     skipMouseMovedUpdate = true
-  }
-
-  /** Determines the current monitor that the specified window is being displayed on.
-    * If the monitor could not be determined, the primary monitor will be returned.
-    */
-  def glfwGetCurrentMonitor(window: Long): Long = {
-    val (wx, wy) = pointerWrapper.ints((px, py) => glfwGetWindowPos(window, px, py))
-    val (ww, wh) = pointerWrapper.ints((px, py) => glfwGetWindowSize(window, px, py))
-
-    glfwGetCurrentMonitor(wx, wy, ww, wh)
-  }
-
-  def glfwGetCurrentMonitor(windowPosX: Int, windowPosY: Int, windowWidth: Int, windowHeight: Int): Long = {
-    var bestOverlap = 0
-    var bestMonitor = 0L
-
-    val monitors = glfwGetMonitors()
-    while (monitors.hasRemaining) {
-      val monitor = monitors.get
-
-      val (monitorPosX, monitorPosY) = pointerWrapper.ints((px, py) => glfwGetMonitorPos(monitor, px, py))
-
-      val mode = glfwGetVideoMode(monitor)
-      val monitorWidth = mode.width
-      val monitorHeight = mode.height
-
-      val overlapRight = Math.min(windowPosX + windowWidth, monitorPosX + monitorWidth)
-      val overlapLeft = Math.max(windowPosX, monitorPosX)
-      val overlapBottom = Math.min(windowPosY + windowHeight, monitorPosY + monitorHeight)
-      val overlapTop = Math.max(windowPosY, monitorPosY)
-
-      val overlapWidth = Math.max(0, overlapRight - overlapLeft)
-      val overlapHeight = Math.max(0, overlapBottom - overlapTop)
-      val overlap = overlapWidth * overlapHeight
-
-      if (bestOverlap < overlap) {
-        bestOverlap = overlap
-        bestMonitor = monitor
-      }
-    }
-    if (bestMonitor != 0L) bestMonitor else glfwGetPrimaryMonitor()
   }
 
   private def processChar(window: Long, character: Int): Unit = {
@@ -318,7 +276,7 @@ class MainWindow extends GameWindowExtended {
   }
 
   private def centerWindow(window: Long): Unit = {
-    val (windowWidth, windowHeight) = pointerWrapper.ints((px, py) => glfwGetWindowSize(window, px, py))
+    val (windowWidth, windowHeight) = glfwHelper.getWindowSize(window)
 
     val mode = glfwGetVideoMode(glfwGetPrimaryMonitor)
 

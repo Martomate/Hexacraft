@@ -27,7 +27,6 @@ import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
 import com.martomate.hexacraft.world.{RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
-import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
 
@@ -174,9 +173,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     event.button match {
       case 0 =>
-        leftMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
+        leftMouseButtonTimer.active = event.action != GLFW_RELEASE
       case 1 =>
-        rightMouseButtonTimer.active = event.action != GLFW.GLFW_RELEASE
+        rightMouseButtonTimer.active = event.action != GLFW_RELEASE
       case _ =>
     }
     true
