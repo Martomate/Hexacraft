@@ -16,10 +16,6 @@ def mainSettings = Seq(
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
-  resolvers ++= Seq(
-    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-    "Sonatype OSS Releases" at "https://oss.sonatype.org/content/repositories/releases"
-  ),
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
   parallelExecution in Benchmark := false,
   logBuffered := false

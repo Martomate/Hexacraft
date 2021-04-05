@@ -21,7 +21,7 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     an[NoSuchElementException] should be thrownBy new UniquePQ[String](_ => 1, defOrder).dequeue()
   }
 
-  "a non-empty queue" should "have not be empty" in {
+  "a non-empty queue" should "not be empty" in {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     q.isEmpty shouldBe false
