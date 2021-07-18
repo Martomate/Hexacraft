@@ -14,5 +14,5 @@ class SimpleSheepAIInput(world: IWorld, sheep: SheepEntity) extends EntityAIInpu
   def blockInFront(dist: Double): Block = world.getBlock(coordsAtOffset(dist * math.cos(sheep.rotation.y), 0, dist * -math.sin(sheep.rotation.y))).blockType
 
   private def coordsAtOffset(dx: Double, dy: Double, dz: Double): BlockRelWorld =
-    CoordUtils.toBlockCoords(CylCoords(sheep.position.x + dx, sheep.position.y + dy, sheep.position.z + dz).toBlockCoords)._1
+    CoordUtils.getEnclosingBlock(CylCoords(sheep.position.x + dx, sheep.position.y + dy, sheep.position.z + dz).toBlockCoords)._1
 }

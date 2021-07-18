@@ -1,13 +1,14 @@
 package com.martomate.hexacraft.util
 
-import java.io.{File, IOException}
-import java.nio.file.Files
-
 import com.flowpowered.nbt._
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import org.joml.Vector3d
 
+import java.io.{File, IOException}
+import java.nio.file.Files
 import scala.collection.immutable.ArraySeq
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 
 object NBTUtil {
   def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
@@ -133,29 +134,36 @@ object NBTUtil {
   ))
   
   def saveTag(tag: Tag[_], nbtFile: File): Unit = {
-    new Thread(() => {
-      if (!nbtFile.exists()) {
-        nbtFile.getParentFile.mkdirs()
-        nbtFile.createNewFile()
-      }
+    val writeOperation = AsyncFileIO.submit(nbtFile, nbtFile => {
+      nbtFile.getParentFile.mkdirs()
+
       val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
-      nbtOut.writeTag(tag)
-      nbtOut.close()
-    }).start()
+      try {
+        nbtOut.writeTag(tag)
+      } finally {
+        nbtOut.close()
+      }
+    })
+
+    Await.result(writeOperation, Duration(5, SECONDS))
   }
 
   def loadTag(file: File): CompoundTag = {
     if (file.isFile) {
-      val stream = new NBTInputStream(Files.newInputStream(file.toPath))
-      try {
-        stream.readTag().asInstanceOf[CompoundTag]
-      } catch {
-        case e: IOException =>
-          println(file.getAbsolutePath + " couldn't be read as NBT")
-          throw e
-      } finally {
-        stream.close()
-      }
+      val readOperation = AsyncFileIO.submit(file, file => {
+        val stream = new NBTInputStream(Files.newInputStream(file.toPath))
+        try {
+          stream.readTag().asInstanceOf[CompoundTag]
+        } catch {
+          case e: IOException =>
+            println(file.getAbsolutePath + " couldn't be read as NBT")
+            throw e
+        } finally {
+          stream.close()
+        }
+      })
+
+      Await.result(readOperation, Duration(5, SECONDS))
     } else {
       new CompoundTag("", new CompoundMap())
     }

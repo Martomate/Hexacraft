@@ -12,6 +12,7 @@ class BlockCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(im
   def toSkewCylCoords: SkewCylCoords = SkewCylCoords(x * CylinderSize.y60, y * 0.5, z * CylinderSize.y60, fixZ)
 
   override def offset(dx: Double, dy: Double, dz: Double): BlockCoords = BlockCoords(x + dx, y + dy, z + dz, fixZ)
+  def offset(c: BlockCoords): BlockCoords = this + c
 }
 
 /** BlockCoords are like SkewCylCoords but with a different axis scale */

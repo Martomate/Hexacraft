@@ -41,6 +41,7 @@ class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(impl
   }
 
   override def offset(dx: Double, dy: Double, dz: Double): CylCoords = CylCoords(x + dx, y + dy, z + dz, fixZ)
+  def offset(v: Vector3d): CylCoords = offset(v.x, v.y, v.z)
 }
 
 /** NormalCoords with z axis wrapped around a cylinder. The y axis is perpendicular to the x and z axes and also exponential */
