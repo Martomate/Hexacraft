@@ -56,7 +56,12 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world)
 
-  val camera: Camera = new Camera(new CameraProjection(70f, window.aspectRatio, 0.02f, 1000f))
+  val camera: Camera = new Camera(new CameraProjection(70f, window.aspectRatio, 0.02f,
+                                                       world.size.worldSize match {
+                                                         case 0 => 100000f
+                                                         case 1 => 10000f
+                                                         case _ => 1000f
+                                                       }))
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
 

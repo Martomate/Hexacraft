@@ -139,7 +139,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
         val parts = for (part <- model.parts) yield {
           baseT.mul(part.transform, tr)
           val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
-          val coords = CoordUtils.toBlockCoords(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
+          val coords = CoordUtils.getEnclosingBlock(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
           val cCoords = coords.getChunkRelWorld
           val partChunk = if (cCoords == chunk.coords) Some(chunk) else world.getChunk(cCoords)
           val brightness: Float = partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)

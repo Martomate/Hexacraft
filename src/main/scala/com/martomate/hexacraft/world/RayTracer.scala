@@ -125,7 +125,10 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   }
 
   @tailrec
-  private def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
+  private def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean, ttl: Int): Option[(BlockRelWorld, Option[Int])] = {
+    if (ttl < 0) // TODO: this is a temporary fix for ray-loops
+      return None
+
     val points = BlockState.vertices.map(v => fromBlockCoords(current, v, new Vector3d))
 
     val PA = new Vector3d
@@ -145,7 +148,7 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
           Some((hitBlockCoords, Some(oppositeSide(side))))
-        } else traceIt(hitBlockCoords, blockFoundFn)
+        } else traceIt(hitBlockCoords, blockFoundFn, ttl-1)
       } else None
     } else {
       System.err.println("At least one bug has not been figured out yet! (Rayloops in RayTracer.trace.traceIt)")
@@ -156,6 +159,6 @@ class RayTracer(world: IWorld, camera: Camera, maxDistance: Double) {
   def trace(blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
     if (!rayValid) None
     else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords)) Some((camera.blockCoords, None))
-    else traceIt(camera.blockCoords, blockFoundFn)
+    else traceIt(camera.blockCoords, blockFoundFn, 1000)
   }
 }

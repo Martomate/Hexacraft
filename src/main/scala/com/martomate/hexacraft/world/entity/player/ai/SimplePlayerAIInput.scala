@@ -14,5 +14,5 @@ class SimplePlayerAIInput(world: IWorld, player: PlayerEntity) extends EntityAII
   def blockInFront(dist: Double): Block = world.getBlock(coordsAtOffset(dist * math.cos(player.rotation.y), 0, dist * -math.sin(player.rotation.y))).blockType
 
   private def coordsAtOffset(dx: Double, dy: Double, dz: Double): BlockRelWorld =
-    CoordUtils.toBlockCoords(CylCoords(player.position.x + dx, player.position.y + dy, player.position.z + dz).toBlockCoords)._1
+    CoordUtils.getEnclosingBlock(CylCoords(player.position.x + dx, player.position.y + dy, player.position.z + dz).toBlockCoords)._1
 }

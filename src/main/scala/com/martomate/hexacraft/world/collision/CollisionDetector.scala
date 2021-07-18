@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.world.collision
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
-import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
+import com.martomate.hexacraft.world.chunk.ChunkCache
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.joml.Vector3d
 
@@ -30,7 +30,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
                objectCoords: SkewCylCoords,
                targetBounds: HexBox,
                targetCylCoords: CylCoords): Boolean = {
-    val (bc, fc) = CoordUtils.toBlockCoords(targetCylCoords.toBlockCoords)
+    val (bc, fc) = CoordUtils.getEnclosingBlock(targetCylCoords.toBlockCoords)
     val targetCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
     val objectVelocity = SkewCylCoords(0, 0, 0, fixZ = false)
 
@@ -45,7 +45,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val parts = (velocity.length * 10).toInt + 1
     velocity.div(parts)
     for (_ <- 1 to parts) {
-      result = _collides(box, result._1, velocity)
+      result = _collides(box, result._1, velocity, 100)
     }
     result._2.mul(parts)
     result
@@ -53,16 +53,20 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
 
   private def _collides(objectBounds: HexBox,
                         pos: Vector3d,
-                        velocity: Vector3d): (Vector3d, Vector3d) = {
+                        velocity: Vector3d,
+                        ttl: Int): (Vector3d, Vector3d) = {
+    if (ttl < 0) // TODO: this is a temporary fix for the StackOverflow problem
+      return (pos, new Vector3d)
+
     if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
-      val futureCoords = CylCoords(pos, fixZ = false).offset(velocity.x, velocity.y, velocity.z).toBlockCoords
-      val (bc, fc) = CoordUtils.toBlockCoords(futureCoords)
-      val objectCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
+      val futureCoords = CylCoords(pos, fixZ = false).offset(velocity).toBlockCoords
+      val (bc, fc) = CoordUtils.getEnclosingBlock(futureCoords)
+      val objectCoords = BlockCoords(bc, fixZ = false).offset(fc).toSkewCylCoords
       val objectVelocity = CylCoords(velocity, fixZ = false).toSkewCylCoords
 
       minDistAndReflectionDir(objectBounds, objectCoords, objectVelocity, bc) match {
         case Some((minDist, reflectionDir)) =>
-          resultAfterCollision(objectBounds, pos, velocity, minDist, reflectionDir)
+          resultAfterCollision(objectBounds, pos, velocity, minDist, reflectionDir, ttl)
         case None =>
           (pos.add(velocity, new Vector3d), velocity) // no collision found
       }
@@ -130,7 +134,8 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
                                    pos: Vector3d,
                                    velocity: Vector3d,
                                    minDist: Double,
-                                   reflectionDir: Int): (Vector3d, Vector3d) = {
+                                   reflectionDir: Int,
+                                   ttl: Int): (Vector3d, Vector3d) = {
     if (minDist < 1d) { // a collision was found
       if (reflectionDir != -1) { // not inside a block
         val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
@@ -138,7 +143,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
         val vel = new Vector3d(velocity).mul(1 - minDist)
         val dot = vel.dot(normal)
         vel.sub(normal.mul(dot))
-        val result = _collides(objectBounds, newPos, vel) // TODO: fix StackOverflow bug
+        val result = _collides(objectBounds, newPos, vel, ttl-1)
         //val falseLen = result._2.length
         if (minDist != 1) {
           result._2.mul(1 / (1 - minDist))
@@ -160,20 +165,30 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
                                   pos1: SkewCylCoords,
                                   vel1: SkewCylCoords,
                                   box2: HexBox,
-                                  pos2: SkewCylCoords): (Double, Int) = {
-    // Hope this works. I have no idea.
+                                  _pos2: SkewCylCoords): (Double, Int) = {
+    // The following line ensures that the code works when z is close to 0
+    val pos2 = SkewCylCoords(_pos2.x, _pos2.y, MathUtils.absmin(_pos2.z - pos1.z, cylSize.circumference) + pos1.z, fixZ = false)
+
     val (x1, y1, z1, x2, y2, z2) = (pos1.x + 0.5 * pos1.z, pos1.y, pos1.z + 0.5 * pos1.x, pos2.x + 0.5 * pos2.z, pos2.y, pos2.z + 0.5 * pos2.x)
     val (r1, r2, b1, b2, t1, t2) = (box1.smallRadius, box2.smallRadius, box1.bottom, box2.bottom, box1.top, box2.top)
+
+    val dx = x2 - x1
+    val dy = y2 - y1
+    val dz = z2 - z1
+    val d = r2 + r1
+
     val (vx, vy, vz) = (vel1.x + 0.5 * vel1.z, vel1.y, vel1.z + 0.5 * vel1.x)
+
+    // index corresponds to `reflectionDirs`
     val distances = Array(
-      y2 - y1 + t2 - b1,// (  y2    + t2) - (  y1    + b1),
-      y1 - y2 + t1 - b2,// (  y1    + t1) - (  y2    + b2),
-      (     x2 + r2) - (     x1 - r1),
-      (     x1 + r1) - (     x2 - r2),
-      (z2      + r2) - (z1      - r1),
-      (z1      + r1) - (z2      - r2),
-      (z2 - x2 + r2) - (z1 - x1 - r1),
-      (z1 - x1 + r1) - (z2 - x2 - r2)
+      t2 - b1 + dy, // (  y2    + t2) - (  y1    + b1),
+      t1 - b2 - dy, // (  y1    + t1) - (  y2    + b2),
+      d + dx, //       (     x2 + r2) - (     x1 - r1),
+      d - dx, //       (     x1 + r1) - (     x2 - r2),
+      d + dz, //       (z2      + r2) - (z1      - r1),
+      d - dz, //       (z1      + r1) - (z2      - r2),
+      d + dz - dx, //  (z2 - x2 + r2) - (z1 - x1 - r1),
+      d - dz + dx, //  (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
     if (distances.forall(_ >= 0)) { // no intersection before moving

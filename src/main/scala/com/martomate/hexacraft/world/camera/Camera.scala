@@ -79,6 +79,6 @@ class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
     val x = ((position.x - camX) / mult + camX) / 0.75
     val z = position.z / CylinderSize.y60 - x / 2
 
-    CoordUtils.toBlockCoords(BlockCoords(x, y, z))
+    CoordUtils.getEnclosingBlock(BlockCoords(x, y, z))
   }
 }

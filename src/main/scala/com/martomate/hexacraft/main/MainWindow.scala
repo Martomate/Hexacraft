@@ -7,6 +7,7 @@ import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
+import com.martomate.hexacraft.util.AsyncFileIO
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
@@ -27,9 +28,10 @@ class MainWindow extends GameWindowExtended {
 
   private val glfwHelper = new GlfwHelper()
 
+  private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
   private val window: Long = initWindow()
+
   private var fullscreen = false
-  private var vsync = false
   private var skipMouseMovedUpdate = false
 
   private val _mousePos = new Vector2d()
@@ -68,7 +70,7 @@ class MainWindow extends GameWindowExtended {
         if (ticks % 60 == 0) {
           fps = frames
 
-          handleVsync(fps)
+          vsyncManager.handleVsync(fps)
 
           frames = 0
         }
@@ -88,7 +90,7 @@ class MainWindow extends GameWindowExtended {
       if (titleTicker > 10) {
         titleTicker = 0
         val msString = (if (msTime < 10) "0" else "") + msTime
-        val vsyncStr = if (vsync) "vsync" else ""
+        val vsyncStr = if (vsyncManager.isVsync) "vsync" else ""
         val debugInfo = (
           scenes.map(_.windowTitle) :+
             s"$fps fps   ms: $msString" :+
@@ -103,19 +105,8 @@ class MainWindow extends GameWindowExtended {
     }
   }
 
-  private def handleVsync(fps: Int): Unit = {
-    val newVsync = shouldUseVsync(fps)
-
-    if (newVsync != vsync) {
-      vsync = newVsync
-      glfwSwapInterval(if (vsync) 1 else 0)
-    }
-  }
-
-  private def shouldUseVsync(fps: Int) = {
-    if (fps > 80) true
-    else if (fps < 50) false
-    else vsync
+  private def onUpdateVsync(vsync: Boolean): Unit = {
+    glfwSwapInterval(if (vsync) 1 else 0)
   }
 
   private def render(): Unit = {
@@ -157,9 +148,6 @@ class MainWindow extends GameWindowExtended {
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
     } finally {
       destroy()
 
@@ -249,7 +237,7 @@ class MainWindow extends GameWindowExtended {
 
     glfwMakeContextCurrent(window)
     // Enable v-sync
-    glfwSwapInterval(if (vsync) 1 else 0)
+    glfwSwapInterval(if (vsyncManager.isVsync) 1 else 0)
 
     glfwShowWindow(window)
     window
@@ -300,6 +288,7 @@ class MainWindow extends GameWindowExtended {
     while (scenes.nonEmpty) scenes.popScene()
 
     Resource.freeAllResources()
+    AsyncFileIO.unload()
   }
 }
 

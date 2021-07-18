@@ -8,7 +8,7 @@ import org.joml.Vector3d
 import scala.annotation.tailrec
 
 object CoordUtils {
-  def toBlockCoords(vec: BlockCoords): (BlockRelWorld, BlockCoords) = {
+  def getEnclosingBlock(vec: BlockCoords): (BlockRelWorld, BlockCoords) = {
     import vec.cylSize.impl
 
     val (x, y, z) = (vec.x, vec.y, vec.z)
