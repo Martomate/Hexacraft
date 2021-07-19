@@ -134,7 +134,7 @@ object NBTUtil {
   ))
   
   def saveTag(tag: Tag[_], nbtFile: File): Unit = {
-    val writeOperation = AsyncFileIO.submit(nbtFile, nbtFile => {
+    AsyncFileIO.submit(nbtFile, nbtFile => {
       nbtFile.getParentFile.mkdirs()
 
       val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
@@ -144,8 +144,6 @@ object NBTUtil {
         nbtOut.close()
       }
     })
-
-    Await.result(writeOperation, Duration(5, SECONDS))
   }
 
   def loadTag(file: File): CompoundTag = {

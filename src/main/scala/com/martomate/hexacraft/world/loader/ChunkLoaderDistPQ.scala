@@ -15,7 +15,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
                        )(implicit cylSize: CylinderSize) extends ChunkLoader {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  private val LoadsPerTick = 4
+  private val LoadsPerTick = 1
   private val UnloadsPerTick = 4
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4

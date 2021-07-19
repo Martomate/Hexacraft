@@ -1,0 +1,23 @@
+{
+	"textures": {
+		"top": "log_birch",
+		"topOffsets": {
+			"0": 0,
+			"1": 1,
+			"2": 2,
+			"3": 0,
+			"4": 1,
+			"5": 2
+		},
+		"bottom": "log_birch",
+		"bottomOffsets": {
+			"0": 0,
+			"1": 1,
+			"2": 2,
+			"3": 0,
+			"4": 1,
+			"5": 2
+		},
+		"side": "logSide_birch"
+	}
+}

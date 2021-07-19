@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.gen.planner
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -54,11 +55,16 @@ class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFe
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
     val rand = new Random(world.worldSettings.gen.seed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
+    // short and tall trees can be birches, but the huge ones cannot
+    val isBirchTree = rand.nextDouble() < 0.1
+    val logBlock = if (isBirchTree) Blocks.BirchLog else Blocks.Log
+    val leavesBlock = if (isBirchTree) Blocks.BirchLeaves else Blocks.Leaves
+
     val choice = rand.nextDouble()
     val treeGenStrategy = {
       if (allowBig && choice < 0.05) new HugeTreeGenStrategy(24, 1, rand)
-      else if (choice < 0.3) new TallTreeGenStrategy(16, rand)
-      else new ShortTreeGenStrategy
+      else if (choice < 0.3) new TallTreeGenStrategy(16, rand)(logBlock, leavesBlock)
+      else new ShortTreeGenStrategy(logBlock, leavesBlock)
     }
 
     val tree = new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz), treeGenStrategy).generate()
