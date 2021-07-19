@@ -11,10 +11,12 @@ class MainMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(Button("Play", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new WorldChooserMenu)
   })
+  /*
   addComponent(Button("Multiplayer", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new MultiplayerMenu)
   })
-  addComponent(Button("Settings", LocationInfo16x9(0.4f, 0.25f, 0.2f, 0.1f)) {
+  */
+  addComponent(Button("Settings", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new SettingsMenu)
   })
   addComponent(Button("Quit", LocationInfo16x9(0.4f, 0.05f, 0.2f, 0.1f)) {
