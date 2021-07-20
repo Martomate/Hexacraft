@@ -6,7 +6,7 @@ A game with hexagonal blocks on a cylindrical world inspired by Minecraft
 
 Official website: http://www.martomate.com/games/Hexacraft
 
-![image](https://www.martomate.com/games/Hexacraft/hexacraft_in_game_0.9.png)
+![image](https://www.martomate.com/games/Hexacraft/hexacraft_in_game_0.10.png)
 
 ## Features:
 
