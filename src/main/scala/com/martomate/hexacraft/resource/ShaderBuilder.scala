@@ -86,8 +86,9 @@ class ShaderBuilder(name: String) {
       } else {
         "Shader"
       }
+      val maxLen = math.max(GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
       System.err.println(s"$shaderTypeName failed to compile ($name).\nError log:\n"
-        + GL20.glGetShaderInfoLog(shaderID, GL20.glGetShaderi(shaderID, GL20.GL_INFO_LOG_LENGTH)))
+        + GL20.glGetShaderInfoLog(shaderID, maxLen))
     }
     shaders.put(shaderType, shaderID)
     this
@@ -107,13 +108,8 @@ class ShaderBuilder(name: String) {
     GL20.glLinkProgram(programID)
 
     if (GL20.glGetProgrami(programID, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-      System.err.println("Link error: " + GL20.glGetProgramInfoLog(programID, GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH)))
-    }
-
-    GL20.glValidateProgram(programID)
-
-    if (GL20.glGetProgrami(programID, GL20.GL_VALIDATE_STATUS) == GL11.GL_FALSE) {
-      System.err.println("Validation error: " + GL20.glGetProgramInfoLog(programID, GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH)))
+      val maxLen = math.max(GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
+      System.err.println("Link error: " + GL20.glGetProgramInfoLog(programID, maxLen))
     }
 
     for (i <- shaders.values) {

@@ -23,8 +23,10 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
+  private val _pixelScale = new Vector2i(1, 1)
 
   def windowSize: Vector2ic = _windowSize
+  def pixelScale: Vector2ic = _pixelScale
 
   private val glfwHelper = new GlfwHelper()
 
@@ -187,7 +189,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   private def resizeWindow(width: Int, height: Int): Unit = {
     if (width > 0 && height > 0) {
       if (width != _windowSize.x || height != _windowSize.y) {
-        GL11.glViewport(0, 0, width, height)
+        GL11.glViewport(0, 0, width * pixelScale.x(), height * pixelScale.y())
 
         scenes.foreach(_.windowResized(width, height))
       }
@@ -203,12 +205,15 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
     GLFWErrorCallback.createPrint(System.err).set
 
     // Initialize GLFW. Most GLFW functions will not work before doing this.
-    if (!glfwInit) throw new IllegalStateException("Unable to initialize GLFW")
+    if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW")
 
     configureGlfw()
 
     val window = glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", 0, 0)
     if (window == 0) throw new RuntimeException("Failed to create the GLFW window")
+
+    val (sw, sh) = glfwHelper.getPixelScale(window)
+    _pixelScale.set(sw, sh)
 
     setupCallbacks(window)
 
@@ -249,7 +254,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   private def centerWindow(window: Long): Unit = {
     val (windowWidth, windowHeight) = glfwHelper.getWindowSize(window)
 
-    val mode = glfwGetVideoMode(glfwGetPrimaryMonitor)
+    val mode = glfwGetVideoMode(glfwGetPrimaryMonitor())
 
     glfwSetWindowPos(window, (mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
   }

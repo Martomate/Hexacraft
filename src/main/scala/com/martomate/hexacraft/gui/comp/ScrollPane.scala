@@ -18,7 +18,7 @@ class ScrollPane(_location: LocationInfo) extends Component(_location) {
     Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0, 0, 0, 0.4f))
 
     val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
-    val loc = location.inScreenCoordinates
+    val loc = location.inScaledScreenCoordinates
     GL11.glScissor(loc._1, loc._2, loc._3, loc._4)
     GL11.glEnable(GL11.GL_SCISSOR_TEST)
     components.foreach(_.render(contentTransformation))

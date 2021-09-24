@@ -8,17 +8,19 @@ lazy val root = Project("hexacraft", file("."))
   .configs(Benchmark)
   .settings(inConfig(Benchmark)(Defaults.testSettings): _*)
 
-def mainSettings = Seq(
+def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10",
   scalaVersion := "2.13.7",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
+  javaOptions += "-XstartOnFirstThread",
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
   parallelExecution in Benchmark := false,
-  logBuffered := false
+  logBuffered := false,
+  fork := true
 )
 
 def lwjglDependencies = {

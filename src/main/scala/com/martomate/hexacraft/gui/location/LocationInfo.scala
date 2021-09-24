@@ -22,6 +22,12 @@ abstract class LocationInfo(implicit window: GameWindow) {
       ((x + window.aspectRatio) * 0.5f * window.windowSize.y).round,
       ((y + 1) * 0.5f * window.windowSize.y).round,
       (w * 0.5f * window.windowSize.y).round,
-      (h * 0.5f * window.windowSize.y).round
-  )
+      (h * 0.5f * window.windowSize.y).round)
+
+  def inScaledScreenCoordinates: (Int, Int, Int, Int) = {
+    val (xx, yy, ww, hh) = this.inScreenCoordinates
+    val sx = window.pixelScale.x()
+    val sy = window.pixelScale.y()
+    (xx * sx, yy * sy, ww * sx, hh * sy)
+  }
 }

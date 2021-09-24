@@ -113,7 +113,7 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     }
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, window.windowSize.x, window.windowSize.y)
+    GL11.glViewport(0, 0, window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
 
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)
