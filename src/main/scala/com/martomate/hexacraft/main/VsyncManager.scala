@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.main
 
 class VsyncManager(lo: Int, hi: Int, onUpdate: Boolean => Unit) {
-  private var vsync = false
+  private var vsync = true
   private var consecutiveToggleAttempts = 0
 
   def isVsync: Boolean = vsync

@@ -21,6 +21,7 @@ in float brightness[6];
 
 out FragIn {
 	vec2 texCoords;
+	float mult;
 	float brightness;
 	vec3 normal;
 } fragIn;
@@ -31,9 +32,8 @@ uniform mat4 viewMatrix;
 uniform int totalSize;
 uniform vec3 cam;
 
-float totalSizef = float(totalSize);
-
 void main() {
+	float totalSizef = float(totalSize);
 	float angleHalfHexagon = 2.0 * PI / totalSizef;
 	float radius = y60 / angleHalfHexagon;
 
@@ -48,13 +48,20 @@ void main() {
 
 	fragIn.normal = vec3(normal.x, mat2(y, z, -z, y) * normal.yz);
 
-	float scale = radius / sqrt(z*z+y*y);// to fix rounding errors
-	y *= scale;
-	z *= scale;
+	y *= radius;
+	z *= radius;
 	pos = vec3(pos.x - cam.x, y, z) * mult;
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);
-	fragIn.texCoords = vec2(texCoords.x, texCoords.y);
+
+	// Here 'mult' is used for correct texturing since block sides are not square
+	fragIn.texCoords = vec2(texCoords.x, texCoords.y) * mult;
+
+#if isSide
+	fragIn.texCoords.y *= blockHeight;// TODO: The blockHeight has to use exp() or something...
+#endif
+
+	fragIn.mult = mult;
 	fragBlockTex = blockTex;
 	fragIn.brightness = brightness[vertexIndex];
 }
@@ -66,6 +73,7 @@ ivec2 triCoordsToStorage(in ivec2 triCoords);
 
 in FragIn {
 	vec2 texCoords;
+	float mult;
 	float brightness;
 	vec3 normal;
 } fragIn;
@@ -78,16 +86,16 @@ uniform int side;
 uniform int texSize = 32;
 uniform vec3 sun;
 
-float texSizef = float(texSize);
-
 void main() {
+	float texSizef = float(texSize);
 	int texDepth = fragBlockTex & 0xfff;
+	vec2 texCoords = vec2(fragIn.texCoords.x / fragIn.mult, fragIn.texCoords.y / fragIn.mult);
 
 #if isSide
-	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
+	color = texture(texSampler, vec3(texCoords, texDepth));
 #else
-	float yy = (fragIn.texCoords.y * 2 - 1) / y60;
-	float xx = fragIn.texCoords.x + yy * 0.25;
+	float yy = (texCoords.y * 2 - 1) / y60;
+	float xx = texCoords.x + yy * 0.25;
 	yy = (yy + 1) * 0.5;
 	float zz = yy - xx + 0.5;
 	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
@@ -138,8 +146,8 @@ void main() {
 	color = textureGrad(
 		texSampler,
 		vec3(vec2(stCoords) / texSizef, texDepth + texOffset),
-		dFdx(fragIn.texCoords) * 2,
-		dFdy(fragIn.texCoords) * 2);
+		dFdx(fragIn.texCoords / fragIn.mult) * 2,
+		dFdy(fragIn.texCoords / fragIn.mult) * 2);
 #endif
 
 	vec3 sunDir = normalize(sun);

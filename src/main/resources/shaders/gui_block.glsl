@@ -25,9 +25,8 @@ uniform mat4 projMatrix;
 uniform mat4 viewMatrix = mat4(1);
 uniform vec2 windowSize;
 
-float aspect = windowSize.x / windowSize.y;
-
 void main() {
+	float aspect = windowSize.x / windowSize.y;
 	mat4 matrix = projMatrix * viewMatrix;
 
 	vec3 pos = vec3(position.x, position.y * blockHeight, position.z) / 2;
@@ -60,9 +59,8 @@ uniform sampler2DArray texSampler;
 uniform int side;
 uniform int texSize = 32;
 
-float texSizef = float(texSize);
-
 void main() {
+	float texSizef = float(texSize);
 	int texDepth = fragBlockTex & 0xfff;
 
 #if isSide

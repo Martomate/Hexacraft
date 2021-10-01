@@ -31,12 +31,11 @@ object BlockLoader extends IBlockLoader {
     }
     val dir = FileUtils.getResourceFile("textures/blocks/").get
     val files = FileUtils.listFilesInResource(dir).toArray[String](len => new Array(len))
-    for (f <- files) {
-      val fileName = f
+    for (fileName <- files) {
       val lastDot = fileName.lastIndexOf('.')
       val name = fileName.substring(0, lastDot)
       nameToIdx += name -> images.size
-      images ++= loadImages(new URL(dir, f))
+      images ++= loadImages(new URL(dir, fileName))
     }
     
     texIdxMap = nameToIdx.toMap

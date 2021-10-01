@@ -13,11 +13,12 @@ import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
-import org.lwjgl.opengl.{GL, GL11}
+import org.lwjgl.opengl.{GL, GL11, GL43}
+import org.lwjgl.system.MemoryUtil
 
 import java.io.File
 
-class MainWindow extends GameWindowExtended {
+class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
@@ -205,6 +206,13 @@ class MainWindow extends GameWindowExtended {
     scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOffset.toFloat, yOffset.toFloat)))
   }
 
+  private def processDebugMessage(source: Int, debugType: Int, id: Int, severity: Int, length: Int, messageAddress: Long, userParam: Long): Unit = {
+    val message = if (length < 0) MemoryUtil.memASCII(messageAddress) else MemoryUtil.memASCII(messageAddress, length)
+    val debugMessage = new DebugMessage(source, debugType, severity)
+    val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] (id = $id) - $message"
+    System.err.println(s"OpenGL debug: $messageStr")
+  }
+
   private def resizeWindow(width: Int, height: Int): Unit = {
     if (width > 0 && height > 0) {
       if (width != _windowSize.x || height != _windowSize.y) {
@@ -252,6 +260,10 @@ class MainWindow extends GameWindowExtended {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFW_SAMPLES, 1)
+
+    if (isDebug) {
+      glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL11.GL_TRUE)
+    }
   }
 
   private def setupCallbacks(window: Long): Unit = {
@@ -278,6 +290,11 @@ class MainWindow extends GameWindowExtended {
     GL11.glEnable(GL11.GL_DEPTH_TEST)
     GL11.glDepthFunc(GL11.GL_LEQUAL)
     GL11.glEnable(GL11.GL_CULL_FACE)
+
+    if (isDebug && GL.getCapabilities.GL_KHR_debug) {
+      GL11.glEnable(GL43.GL_DEBUG_OUTPUT)
+      GL43.glDebugMessageCallback(processDebugMessage, 0L)
+    }
   }
 
   def tryQuit(): Unit = {

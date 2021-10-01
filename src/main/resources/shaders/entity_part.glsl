@@ -35,9 +35,8 @@ uniform int totalSize;
 uniform int texSize = 32;
 uniform vec3 cam;
 
-float totalSizef = float(totalSize);
-
 void main() {
+	float totalSizef = float(totalSize);
 	float hexAngle = 2.0 * PI / totalSizef;
 	float radius = y60 / hexAngle;
 
@@ -55,9 +54,8 @@ void main() {
 	fragIn.normal = (modelMatrix * vec4(normal.x, mat2(y, z, -z, y) * normal.yz, 0)).xyz;
 	fragIn.normal /= length(fragIn.normal);
 
-	float scale = radius / sqrt(z*z+y*y);// to fix rounding errors
-	y *= scale;
-	z *= scale;
+	y *= radius;
+	z *= radius;
 	pos = vec3(pos.x - cam.x, y, z) * mult;
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);

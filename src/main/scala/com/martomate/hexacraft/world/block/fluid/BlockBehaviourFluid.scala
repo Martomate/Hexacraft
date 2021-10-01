@@ -13,15 +13,14 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet)(implicit cylSize: CylinderSize): Unit = {
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
-    val blocks = NeighborOffsets.all.map(off => coords.offset(off))
-    val bottomCoords = blocks.find(_.y == coords.y - 1).get
-    val bottomBS = Some(world.getBlock(bottomCoords)).filter(_.blockType != Blocks.Air)//TODO: clean up
-    if (!bottomBS.exists(_.blockType != Blocks.Air)) {
+    val bottomCoords = coords.offset(0, -1, 0)
+    val bottomBS = world.getBlock(bottomCoords)
+    if (bottomBS.blockType == Blocks.Air) {
       world.setBlock(bottomCoords, new BlockState(block, depth.toByte))
-      depth = fluidLevelMask
-    } else if (bottomBS.exists(_.blockType == block) && bottomBS.get.metadata != 0) {
+      depth = fluidLevelMask + 1
+    } else if (bottomBS.blockType == block && bottomBS.metadata != 0) {
       val fluidHere = fluidLevelMask + 1 - depth
-      val fluidBelow = fluidLevelMask + 1 - (bottomBS.get.metadata & fluidLevelMask)
+      val fluidBelow = fluidLevelMask + 1 - (bottomBS.metadata & fluidLevelMask)
 
       val totalFluid = fluidHere + fluidBelow
       val fluidBelowAfter = math.min(totalFluid, fluidLevelMask + 1)
@@ -30,12 +29,15 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
       world.setBlock(bottomCoords, new BlockState(block, (fluidLevelMask + 1 - fluidBelowAfter).toByte))
       depth = fluidLevelMask + 1 - fluidHereAfter
     } else {
-      blocks.filter(_.y == coords.y).map(c => (c, world.getBlock(c))).foreach { case (nCoords, ns) =>
+      for (off <- NeighborOffsets.all if off.dy == 0) {
+        val nCoords = coords.offset(off)
+        val ns = world.getBlock(nCoords)
+
         if (ns.blockType == Blocks.Air) {
           val belowNeighborBlock = world.getBlock(nCoords.offset(0, -1, 0))
           val belowNeighbor = belowNeighborBlock.blockType
-          if (depth < 0x1e || (depth == 0x1e && (belowNeighbor == Blocks.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))) {
-            world.setBlock(nCoords, new BlockState(block, 0x1e.toByte))
+          if (depth < 0x1f || (depth == 0x1f && (belowNeighbor == Blocks.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))) {
+            world.setBlock(nCoords, new BlockState(block, 0x1f.toByte))
             depth += 1
           }
         } else if (ns.blockType == block) {
@@ -50,7 +52,7 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
       }
     }
 
-    if (depth >= fluidLevelMask)
+    if (depth > fluidLevelMask)
       world.removeBlock(coords)
     else if (depth != (bs.metadata & fluidLevelMask))
       world.setBlock(coords, new BlockState(block, depth.toByte))

@@ -17,9 +17,8 @@ uniform mat4 viewMatrix;
 uniform int totalSize;
 uniform vec3 cam;
 
-float totalSizef = float(totalSize);
-
 void main() {
+	float totalSizef = float(totalSize);
 	float angleHalfHexagon = 2.0 * PI / totalSizef;
 	float radius = y60 / angleHalfHexagon;
 
@@ -32,9 +31,8 @@ void main() {
 	float z = sin(v);
 	float y = cos(v);
 
-	float scale = radius / sqrt(z*z+y*y);
-	y *= scale;
-	z *= scale;
+	y *= radius;
+	z *= radius;
 	pos = vec3(pos.x - cam.x, y, z) * mult;
 	pos.y -= radius;
 	gl_Position = matrix * vec4(pos, 1);
