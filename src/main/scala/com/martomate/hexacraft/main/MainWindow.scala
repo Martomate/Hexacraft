@@ -10,7 +10,7 @@ import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
 import com.martomate.hexacraft.util.AsyncFileIO
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
-import org.joml.{Vector2d, Vector2dc, Vector2i, Vector2ic}
+import org.joml.{Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11, GL43}
@@ -22,8 +22,6 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
-  private val prevWindowSize = new Vector2i()
-  private val prevWindowPos = new Vector2i()
 
   def windowSize: Vector2ic = _windowSize
 
@@ -32,17 +30,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
   private val window: Long = initWindow()
 
-  private var fullscreen = false
-  private var skipMouseMovedUpdate = false
+  private val fullscreenManager = new FullscreenManager(window, glfwHelper)
 
-  private val _mousePos = new Vector2d()
-  private val _mouseMoved = new Vector2d()
-
-  override val mouse: GameMouse = new GameMouse {
-    override def pos: Vector2dc = _mousePos
-
-    override def moved: Vector2dc = _mouseMoved
-  }
+  override val mouse: RealGameMouse = new RealGameMouse
 
   override val keyboard: GameKeyboard = key => glfwGetKey(window, key)
 
@@ -52,8 +42,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   def resetMousePos(): Unit = {
     val (cx, cy) = glfwHelper.getCursorPos(window)
-    _mousePos.set(cx, _windowSize.y - cy)
-    skipMouseMovedUpdate = true
+    mouse.skipNextMouseMovedUpdate()
+    mouse.moveTo(cx, _windowSize.y - cy)
   }
 
   private def loop(): Unit = {
@@ -123,16 +113,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   private def tick(): Unit = {
     val (cx, cy) = glfwHelper.getCursorPos(window)
-    val oldMouseX = _mousePos.x
-    val oldMouseY = _mousePos.y
-    _mousePos.set(cx, _windowSize.y - cy)
-
-    if (skipMouseMovedUpdate) {
-      _mouseMoved.set(0, 0)
-      skipMouseMovedUpdate = false
-    } else {
-      _mouseMoved.set(_mousePos.x - oldMouseX, _mousePos.y - oldMouseY)
-    }
+    mouse.moveTo(cx, _windowSize.y - cy)
 
     scenes.foreach(_.tick()) // TODO: should maybe be reversed
   }
@@ -175,21 +156,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   }
 
   private def setFullscreen(): Unit = {
-    val monitor = glfwHelper.getCurrentMonitor(window)
-    val mode = glfwGetVideoMode(monitor)
-
-    if (!fullscreen) {
-      prevWindowSize.set(_windowSize)
-      val (wx, wy) = glfwHelper.getWindowPos(window)
-      prevWindowPos.set(wx, wy)
-
-      glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
-    } else {
-      glfwSetWindowMonitor(window, 0, prevWindowPos.x, prevWindowPos.y, prevWindowSize.x, prevWindowSize.y, GLFW_DONT_CARE)
-    }
-
-    fullscreen = !fullscreen
-    skipMouseMovedUpdate = true
+    fullscreenManager.toggleFullscreen()
+    mouse.skipNextMouseMovedUpdate()
   }
 
   private def processChar(window: Long, character: Int): Unit = {
@@ -209,7 +177,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   private def processDebugMessage(source: Int, debugType: Int, id: Int, severity: Int, length: Int, messageAddress: Long, userParam: Long): Unit = {
     val message = if (length < 0) MemoryUtil.memASCII(messageAddress) else MemoryUtil.memASCII(messageAddress, length)
     val debugMessage = new DebugMessage(source, debugType, severity)
-    val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] (id = $id) - $message"
+    val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] - $message"
     System.err.println(s"OpenGL debug: $messageStr")
   }
 
@@ -221,7 +189,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
         scenes.foreach(_.windowResized(width, height))
       }
       _windowSize.set(width, height)
-      skipMouseMovedUpdate = true
+      mouse.skipNextMouseMovedUpdate()
     }
     Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
   }
