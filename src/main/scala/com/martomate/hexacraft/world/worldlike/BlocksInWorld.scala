@@ -31,5 +31,4 @@ trait BlocksInWorld {
     getChunk(coords.offset(off))
   }
 
-  def neighborChunks(coords: ChunkRelWorld)(implicit cylSize: CylinderSize): Iterable[IChunk] = Iterable.tabulate(8)(i => neighborChunk(coords, i)).flatten
 }

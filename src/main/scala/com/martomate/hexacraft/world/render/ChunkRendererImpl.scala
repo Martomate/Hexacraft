@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.storage.LocalBlockState
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
+
+import java.nio.ByteBuffer
 
 class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
   import world.size.impl
@@ -44,7 +44,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
         val otherSide = oppositeSide(s)
 
         var i1 = 0
-        val i1Lim = blocks.size
+        val i1Lim = blocks.length
         while (i1 < i1Lim) {
           val lbs = blocks(i1)
           val c = lbs.coords
@@ -93,14 +93,14 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
     opaqueDeterminer.invalidate()
   }
 
-  private def populateBuffer(blocks: IndexedSeq[LocalBlockState], side: Int, shouldRender: java.util.BitSet,
+  private def populateBuffer(blocks: Array[LocalBlockState], side: Int, shouldRender: java.util.BitSet,
                              brightness: Array[Float], buf: ByteBuffer): Unit = {
     val verticesPerInstance = if (side < 2) 6 else 4
 
     val chunkCoords = chunk.coords
 
     var i1 = 0
-    val i1Lim = blocks.size
+    val i1Lim = blocks.length
     while (i1 < i1Lim) {
       val lbs = blocks(i1)
       val bCoords = lbs.coords

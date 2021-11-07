@@ -14,10 +14,11 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
     for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
   }
 
-  private val blocks = mutable.LongMap.empty[BlockState]
+  private val blocks = mutable.LongMap.withDefault[BlockState](_ => BlockState.Air)
 
-  def blockType(coords: BlockRelChunk): Block = blocks.get(coords.value.toShort).map(_.blockType).getOrElse(Blocks.Air)
-  def getBlock(coords: BlockRelChunk): BlockState = blocks.getOrElse(coords.value.toShort, BlockState.Air)
+  def blockType(coords: BlockRelChunk): Block = blocks(coords.value.toShort).blockType
+  def getBlock(coords: BlockRelChunk): BlockState = blocks(coords.value.toShort)
+
   def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = {
     val s1 = blocks.getOrNull(coords.value)
     val s = if (s1 != null) s1 else BlockState.Air
@@ -29,9 +30,9 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
   }
   def removeBlock(coords: BlockRelChunk): Unit = blocks -= coords.value
 
-  def allBlocks: IndexedSeq[LocalBlockState] = blocks
+  def allBlocks: Array[LocalBlockState] = blocks
     .map(t => LocalBlockState(BlockRelChunk(t._1.toInt), t._2))
-    .toIndexedSeq
+    .toArray[LocalBlockState]
 
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false

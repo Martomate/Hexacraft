@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.font
 
 import com.martomate.hexacraft.renderer.VAO
-import com.martomate.hexacraft.resource.{Shader, TextureSingle}
+import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
 import fontMeshCreator.{FontType, GUIText}
 import org.lwjgl.opengl.{GL11, GL13, GL30}
 
@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class FontRenderer {
-  private val shader = Shader.get("font").get
+  private val shader = Shaders.Font
 
   def render(texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]], xoffset: Float, yoffset: Float): Unit = {
     prepare()

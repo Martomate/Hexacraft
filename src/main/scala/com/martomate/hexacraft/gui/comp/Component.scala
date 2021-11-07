@@ -4,7 +4,7 @@ import com.martomate.hexacraft.event._
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.renderer._
-import com.martomate.hexacraft.resource.{Shader, TextureSingle}
+import com.martomate.hexacraft.resource.{Shader, Shaders, TextureSingle}
 import fontMeshCreator.{FontType, GUIText}
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
@@ -44,8 +44,8 @@ object Component {
 
   val font: FontType = Fonts.get("Verdana").get
 
-  private val imageShader: Shader = Shader.get("image").get
-  private val colorShader: Shader = Shader.get("color").get
+  private val imageShader: Shader = Shaders.Image
+  private val colorShader: Shader = Shaders.Color
 
   def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit = {
     imageShader.enable()

@@ -13,7 +13,7 @@ abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) extends BlockInChunk
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit
   def removeBlock(coords: BlockRelChunk): Unit
 
-  def allBlocks: IndexedSeq[LocalBlockState]
+  def allBlocks: Array[LocalBlockState]
   def numBlocks: Int
 
   def isDense: Boolean

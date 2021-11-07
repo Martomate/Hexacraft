@@ -9,6 +9,7 @@ import com.martomate.hexacraft.resource.{Resource, Shader}
 import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
 import com.martomate.hexacraft.util.AsyncFileIO
 import com.martomate.hexacraft.util.os.OSUtils
+import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import org.joml.{Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
@@ -62,6 +63,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
           fps = frames
 
           vsyncManager.handleVsync(fps)
+
+          World.shouldChillChunkLoader = fps < 20
 
           frames = 0
         }

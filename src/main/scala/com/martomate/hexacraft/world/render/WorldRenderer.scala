@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer._
-import com.martomate.hexacraft.resource.Shader
+import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
@@ -10,18 +11,39 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld
 import com.martomate.hexacraft.world.render.selector._
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL15}
+import org.lwjgl.opengl.{GL11, GL13, GL14, GL15, GL30, GL32}
 
+import java.nio.{ByteBuffer, FloatBuffer}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
+class FrameBuffer(val width: Int, val height: Int) {
+  private val fbID = GL30.glGenFramebuffers()
+
+  def bind(): Unit = {
+    TextureSingle.unbind()
+    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbID)
+    GL11.glViewport(0, 0, width, height)
+  }
+
+  def unbind(): Unit = {
+    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0)
+  }
+
+  def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
+}
+
+class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAddedOrRemovedListener {
   import world.size.impl
 
-  private val entityShader = Shader.get("entity").get
-  private val entitySideShader = Shader.get("entitySide").get
-  private val skyShader = Shader.get("sky").get
-  private val selectedBlockShader = Shader.get("selectedBlock").get
+  private val entityShader = Shaders.Entity
+  private val entitySideShader = Shaders.EntitySide
+  private val skyShader = Shaders.Sky
+  private val selectedBlockShader = Shaders.SelectedBlock
+  private val worldCombinerShader = Shaders.WorldCombiner
+
+  worldCombinerShader.setUniform1i("worldColorTexture", 0)
+  worldCombinerShader.setUniform1i("worldDepthTexture", 1)
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
   private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorIdentity(chunkHandler)
@@ -29,8 +51,15 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   private val skyVAO: VAO = makeSkyVAO
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
+  private val worldCombinerVAO: VAO = makeSkyVAO
+  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+
   private val selectedBlockVAO: VAO = makeSelectedBlockVAO
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
+
+  private val mainColorTexture = makeMainColorTexture()
+  private val mainDepthTexture = makeMainDepthTexture()
+  private val mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture)
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
   def selectedBlock: Option[BlockRelWorld] = _selectedBlockAndSide.map(_._1)
@@ -67,6 +96,10 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   }
 
   def render(camera: Camera): Unit = {
+    mainFrameBuffer.bind()
+
+    GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
+
     skyShader.enable()
     skyRenderer.render()
 
@@ -78,6 +111,22 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
       selectedBlockShader.enable()
       selectedBlockRenderer.render()
     }
+
+    mainFrameBuffer.unbind()
+    GL11.glViewport(0, 0, window.windowSize.x, window.windowSize.y)
+
+    GL13.glActiveTexture(GL13.GL_TEXTURE0)
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)
+    GL13.glActiveTexture(GL13.GL_TEXTURE1)
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainDepthTexture)
+
+    worldCombinerShader.enable()
+    worldCombinerRenderer.render()
+
+    GL13.glActiveTexture(GL13.GL_TEXTURE1)
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+    GL13.glActiveTexture(GL13.GL_TEXTURE0)
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
   }
 
   override def onChunkAdded(chunk: IChunk): Unit = {
@@ -97,8 +146,14 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
   def unload(): Unit = {
     skyVAO.free()
     selectedBlockVAO.free()
+    worldCombinerVAO.free()
+
     entityRenderers.unload()
     chunkHandler.unload()
+    mainFrameBuffer.unload()
+
+    GL11.glDeleteTextures(mainColorTexture)
+    GL11.glDeleteTextures(mainDepthTexture)
   }
 
 
@@ -152,6 +207,41 @@ class WorldRenderer(world: IWorld) extends ChunkAddedOrRemovedListener {
                 .create()
                 .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1)))
       .create()
+  }
+
+  // TODO: what about resize of the window??
+  private def makeMainColorTexture(): Int = {
+    val texID = GL11.glGenTextures()
+
+    TextureSingle.unbind()
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
+    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, window.windowSize.x, window.windowSize.y, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+
+    texID
+  }
+
+  private def makeMainDepthTexture(): Int = {
+    val texID = GL11.glGenTextures()
+
+    TextureSingle.unbind()
+    GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
+    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32, window.windowSize.x, window.windowSize.y, 0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+
+    texID
+  }
+
+  private def makeMainFrameBuffer(colorTexture: Int, depthTexture: Int): FrameBuffer = {
+    val fb = new FrameBuffer(window.windowSize.x, window.windowSize.y)
+    fb.bind()
+    GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
+    GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, colorTexture, 0)
+    GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthTexture, 0)
+
+    fb
   }
 
   private def updateSelectedBlockVAO(coords: BlockRelWorld) = {

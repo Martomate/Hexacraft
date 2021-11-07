@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.resource.{Shader, Texture, TextureArray}
+import com.martomate.hexacraft.resource.{Shaders, Texture, TextureArray}
 import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
 
 import scala.collection.mutable
@@ -8,8 +8,8 @@ import scala.collection.mutable
 class ChunkRenderHandler {
   private val hexagonHandlers: mutable.Map[Texture, HexagonRenderHandler] = mutable.Map.empty
 
-  private val blockShader = Shader.get("block").get
-  private val blockSideShader = Shader.get("blockSide").get
+  private val blockShader = Shaders.Block
+  private val blockSideShader = Shaders.BlockSide
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
   def render(): Unit = {

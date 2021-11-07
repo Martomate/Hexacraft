@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.game
 
 import java.io.File
-
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
 import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
@@ -9,7 +8,7 @@ import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
 import com.martomate.hexacraft.renderer._
-import com.martomate.hexacraft.resource.Shader
+import com.martomate.hexacraft.resource.{Shader, Shaders}
 import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.Blocks
@@ -33,15 +32,16 @@ import org.lwjgl.opengl.GL11
 class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window: GameWindowExtended) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
 
-  private val blockShader: Shader = Shader.get("block").get
-  private val blockSideShader: Shader = Shader.get("blockSide").get
-  private val entityShader: Shader = Shader.get("entity").get
-  private val entitySideShader: Shader = Shader.get("entitySide").get
-  private val guiBlockShader: Shader = Shader.get("gui_block").get
-  private val guiBlockSideShader: Shader = Shader.get("gui_blockSide").get
-  private val selectedBlockShader: Shader = Shader.get("selectedBlock").get
-  private val skyShader: Shader = Shader.get("sky").get
-  private val crosshairShader: Shader = Shader.get("crosshair").get
+  private val blockShader: Shader = Shaders.Block
+  private val blockSideShader: Shader = Shaders.BlockSide
+  private val entityShader: Shader = Shaders.Entity
+  private val entitySideShader: Shader = Shaders.EntitySide
+  private val guiBlockShader: Shader = Shaders.GuiBlock
+  private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
+  private val selectedBlockShader: Shader = Shaders.SelectedBlock
+  private val skyShader: Shader = Shaders.Sky
+  private val crosshairShader: Shader = Shaders.Crosshair
+  private val worldCombinerShader = Shaders.WorldCombiner
 
   private val shadersNeedingTotalSize: Seq[Shader] = Seq(blockShader, blockSideShader, entityShader, entitySideShader, selectedBlockShader)
   private val shadersNeedingProjMatrix: Seq[Shader] = Seq(blockShader, blockSideShader, entityShader, entitySideShader, guiBlockShader, guiBlockSideShader, selectedBlockShader)
@@ -99,6 +99,9 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private def setProjMatrixForAll(): Unit = {
     for (shader <- shadersNeedingProjMatrix)
       camera.setProjMatrix(shader)
+
+    worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
+    worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
   }
 
   override def onKeyEvent(event: KeyEvent): Boolean = {

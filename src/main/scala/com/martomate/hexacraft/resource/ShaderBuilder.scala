@@ -24,15 +24,6 @@ class ShaderBuilder(name: String) {
     definesText = defines.map(d => s"#define ${d._1} ${d._2}\n").mkString
   }
 
-  def load(shaderType: String): ShaderBuilder = load(shaderType, name + '.' + shaderType)
-
-  def load(shaderType: String, path: String): ShaderBuilder = {
-    getShaderType(shaderType) match {
-      case -1 => this
-      case t  => load(t, path)
-    }
-  }
-
   def getShaderType(shaderType: String): Int = {
     shaderType match {
       case "vs" | "vert" => GL20.GL_VERTEX_SHADER
@@ -112,7 +103,7 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  def linkAndFinish(): (String, Int) = {
+  def linkAndFinish(): Int = {
     GL20.glLinkProgram(programID)
 
     if (GL20.glGetProgrami(programID, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
@@ -130,6 +121,6 @@ class ShaderBuilder(name: String) {
       GL20.glDeleteShader(i)
     }
 
-    (name, programID)
+    programID
   }
 }

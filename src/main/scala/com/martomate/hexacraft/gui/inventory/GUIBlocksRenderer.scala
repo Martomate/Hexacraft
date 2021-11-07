@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.gui.inventory
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.resource.{Shader, TextureArray}
+import com.martomate.hexacraft.resource.{Shader, Shaders, TextureArray}
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 import org.joml.Matrix4f
 
 class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Float = 0, yOff: Float = 0, initBrightnessFunc: (Int, Int) => Float = (_, _) => 1.0f)(blockProvider: Int => Block) {
   private val guiBlockRenderer = new BlockRendererCollection(s => new FlatBlockRenderer(s, 0))
-  private val guiBlockShader: Shader = Shader.get("gui_block").get
-  private val guiBlockSideShader: Shader = Shader.get("gui_blockSide").get
+  private val guiBlockShader: Shader = Shaders.GuiBlock
+  private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")
 
   private var viewMatrix = new Matrix4f

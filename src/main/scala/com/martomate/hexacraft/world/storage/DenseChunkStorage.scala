@@ -6,7 +6,6 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-import scala.collection.generic
 import scala.collection.mutable.ArrayBuffer
 
 class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize) extends ChunkStorage(_chunkCoords) {
@@ -39,13 +38,16 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderS
     if (blockTypes(coords.value) != 0) _numBlocks -= 1
     blockTypes(coords.value) = 0
   }
-  def allBlocks: IndexedSeq[LocalBlockState] = {
-    val buffer = new ArrayBuffer[LocalBlockState](numBlocks)
+  def allBlocks: Array[LocalBlockState] = {
+    val arr = Array.ofDim[LocalBlockState](_numBlocks)
+    var idx = 0
     for (i <- blockTypes.indices) {
-      if (blockTypes(i) != 0)
-        buffer += LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
+      if (blockTypes(i) != 0) {
+        arr(idx) = LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
+        idx += 1
+      }
     }
-    buffer.toIndexedSeq
+    arr
   }
 
   def numBlocks: Int = _numBlocks

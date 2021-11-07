@@ -28,6 +28,8 @@ import scala.collection.mutable.ArrayBuffer
 object World {
   val ticksBetweenBlockUpdates = 5
   val ticksBetweenEntityRelocation = 120
+
+  var shouldChillChunkLoader = false
 }
 
 class World(val worldSettings: WorldSettingsProvider) extends IWorld {
@@ -53,7 +55,8 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     chunkLoadingOrigin,
     coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
     coords => getChunk(coords).foreach(_.saveIfNeeded()),
-    renderDistance
+    renderDistance,
+    () => World.shouldChillChunkLoader
   )
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue

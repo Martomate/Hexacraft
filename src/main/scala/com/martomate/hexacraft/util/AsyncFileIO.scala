@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.util
 
 import java.io.File
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
 
 object AsyncFileIO {
   private implicit val executionContext: ExecutionContextExecutorService =
-    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(8))
 
   private val lockedFiles: mutable.Set[String] = mutable.Set.empty
 
@@ -32,5 +32,6 @@ object AsyncFileIO {
 
   def unload(): Unit = {
     executionContext.shutdown()
+    executionContext.awaitTermination(60, TimeUnit.SECONDS)
   }
 }

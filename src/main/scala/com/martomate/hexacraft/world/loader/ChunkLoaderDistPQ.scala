@@ -11,12 +11,13 @@ import scala.concurrent.Future
 class ChunkLoaderDistPQ(origin: PosAndDir,
                         chunkFactory: ChunkRelWorld => IChunk,
                         chunkUnloader: ChunkRelWorld => Unit,
-                        maxDist: Double
+                        maxDist: Double,
+                        chillSwitch: () => Boolean
                        )(implicit cylSize: CylinderSize) extends ChunkLoader {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val LoadsPerTick = 1
-  private val UnloadsPerTick = 4
+  private val UnloadsPerTick = 2
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
 
@@ -30,8 +31,9 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
 
   override def tick(): Unit = {
     prioritizer.tick()
+    val (maxLoad, maxUnload) = if(chillSwitch()) (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
     for (_ <- 1 to LoadsPerTick) {
-      if (chunksToLoad.size < MaxChunksToLoad) {
+      if (chunksToLoad.size < maxLoad) {
         prioritizer.nextAddableChunk.foreach { coords =>
           chunksToLoad(coords) = Future(chunkFactory(coords))
           prioritizer += coords
@@ -39,7 +41,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
       }
     }
     for (_ <- 1 to UnloadsPerTick) {
-      if (chunksToUnload.size < MaxChunksToUnload) {
+      if (chunksToUnload.size < maxUnload) {
         prioritizer.nextRemovableChunk.foreach { coords =>
           chunksToUnload(coords) = Future {
             chunkUnloader(coords)
@@ -52,10 +54,10 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   }
 
   override def chunksToAdd(): Iterable[IChunk] =
-    chunksToLoad.values.filter(_.isCompleted).flatMap(_.value).flatMap(_.toOption)
+    chunksToLoad.values.flatMap(_.value).flatMap(_.toOption)
 
   override def chunksToRemove(): Iterable[ChunkRelWorld] =
-    chunksToUnload.values.filter(_.isCompleted).flatMap(_.value).flatMap(_.toOption)
+    chunksToUnload.values.flatMap(_.value).flatMap(_.toOption)
 
   override def unload(): Unit = prioritizer.unload()
 
