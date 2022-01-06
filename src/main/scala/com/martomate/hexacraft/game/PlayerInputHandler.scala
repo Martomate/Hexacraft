@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.game
 
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 
-class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: Player) {
+class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, player: Player, collisionDetector: CollisionDetector) {
   var moveWithMouse = false
 
   def tick(): Unit = {
@@ -95,7 +96,7 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, val player: P
     if (!player.flying) {
       player.velocity.y -= 9.82 / 60
       player.velocity.div(60)
-      val (pos, vel) = player.world.collisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity)
+      val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity)
       player.position.set(pos)
       player.velocity.set(vel)
       player.velocity.mul(60)

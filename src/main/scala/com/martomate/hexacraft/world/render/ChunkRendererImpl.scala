@@ -87,7 +87,7 @@ class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
         buffers(side) = buf
       }
     } else if (!chunk.lighting.initialized) {
-      chunk.lighting.init(Seq.empty)
+      chunk.lighting.init(Array.empty)
     }
     renderData = ChunkRenderData(buffers.toIndexedSeq)
     opaqueDeterminer.invalidate()

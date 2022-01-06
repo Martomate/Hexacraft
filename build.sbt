@@ -12,7 +12,7 @@ def mainSettings = Seq(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10",
-  scalaVersion := "2.13.5",
+  scalaVersion := "2.13.7",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
@@ -22,7 +22,7 @@ def mainSettings = Seq(
 )
 
 def lwjglDependencies = {
-  val lwjglVersion = "3.2.3"
+  val lwjglVersion = "3.3.0"
 
   Seq(
     "org.lwjgl" % "lwjgl" % lwjglVersion,
@@ -40,11 +40,11 @@ def lwjglDependencies = {
   )
 }
 
-val scalatestVersion = "3.2.5"
+val scalatestVersion = "3.2.10"
 
 def otherDependencies = Seq(
   "org.scalactic" %% "scalactic" % scalatestVersion,
-  "org.joml" % "joml" % "1.10.1",
+  "org.joml" % "joml" % "1.10.3",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
@@ -52,6 +52,6 @@ def otherDependencies = Seq(
 def testDependencies = Seq(
   "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
-  "org.scalamock" %% "scalamock" % "5.1.0" % "test",
+  "org.scalamock" %% "scalamock" % "5.2.0" % "test",
   "com.storm-enroute" %% "scalameter" % "0.21" % "bench"
 )

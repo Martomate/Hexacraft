@@ -7,12 +7,12 @@ import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.settings.WorldSettingsProvider
+import com.martomate.hexacraft.world.settings.WorldProvider
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldSettingsProvider)(implicit cylSize: CylinderSize) extends ChunkColumn {
+class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldProvider)(implicit cylSize: CylinderSize) extends ChunkColumn {
   private val chunks: mutable.LongMap[IChunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -27,7 +27,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     }
   }
 
-  private def saveFilePath: String = "data/" + coords.value + "/column.dat"
+  private def saveFilePath: String = s"data/${coords.value}/column.dat"
 
   private val _heightMap: IndexedSeq[Array[Short]] = {
     val columnNBT = worldSettings.loadState(saveFilePath)

@@ -9,8 +9,8 @@ import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
 import com.martomate.hexacraft.world.coord.CoordUtils
-import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.registry.EntityRegistrator
@@ -19,7 +19,7 @@ import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
-import com.martomate.hexacraft.world.settings.WorldSettingsProvider
+import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable
@@ -32,16 +32,17 @@ object World {
   var shouldChillChunkLoader = false
 }
 
-class World(val worldSettings: WorldSettingsProvider) extends IWorld {
-  def worldName: String = worldSettings.name
-  val size: CylinderSize = worldSettings.size
+class World(val worldProvider: WorldProvider) extends IWorld {
+  val worldInfo: WorldInfo = worldProvider.getWorldInfo
+
+  val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
   private implicit val modelLoaderImpl: EntityModelLoader = new EntityModelLoader()
   EntityRegistrator.load()
 
-  val worldGenerator = new WorldGenerator(worldSettings.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldSettings.plannerNBT)
+  val worldGenerator = new WorldGenerator(worldInfo.gen)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -211,7 +212,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     columns.get(here.value) match {
       case Some(col) => col
       case None =>
-        val col = new ChunkColumnImpl(here, worldGenerator, worldSettings)
+        val col = new ChunkColumnImpl(here, worldGenerator, worldProvider)
         columns(here.value) = col
         col.addEventListener(this)
         col
@@ -233,14 +234,14 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
     chunkLoader.unload()
     blockUpdateTimer.active = false
     columns.values.foreach(_.unload())
-    columns.clear
+    columns.clear()
     chunkAddedOrRemovedListeners.clear()
   }
 
   private def saveWorldData(): Unit = {
     val worldTag = toNBT
 
-    worldSettings.saveState(worldTag, "world.dat")
+    worldProvider.saveState(worldTag, "world.dat")
   }
 
   private def toNBT: CompoundTag = {
@@ -248,7 +249,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
       new ShortTag("version", WorldSave.LatestVersion),
       NBTUtil.makeCompoundTag("general", Seq(
         new ByteTag("worldSize", size.worldSize.toByte),
-        new StringTag("name", worldName)
+        new StringTag("name", worldInfo.worldName)
       )),
       worldGenerator.toNBT,
       worldPlanner.toNBT,
@@ -263,21 +264,19 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   override def onChunkRemoved(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(chunk))
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
-    def affectableChunkOffset(where: Byte): Int = where match {
+    def affectedChunkOffset(where: Byte): Int = where match {
       case  0 => -1
       case 15 =>  1
       case  _ =>  0
     }
 
     def isInNeighborChunk(chunkOffset: Offset) = {
-      val xx = affectableChunkOffset(coords.cx)
-      val yy = affectableChunkOffset(coords.cy)
-      val zz = affectableChunkOffset(coords.cz)
+      val xx = affectedChunkOffset(coords.cx)
+      val yy = affectedChunkOffset(coords.cy)
+      val zz = affectedChunkOffset(coords.cz)
 
       chunkOffset.dx * xx == 1 || chunkOffset.dy * yy == 1 || chunkOffset.dz * zz == 1
     }
-
-    def offsetCoords(c: BlockRelChunk, off: Offset) = c.offset(off)
 
     val cCoords = coords.getChunkRelWorld
     val bCoords = coords.getBlockRelChunk
@@ -288,7 +287,7 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
 
       for (i <- 0 until 8) {
         val off = ChunkRelWorld.neighborOffsets(i)
-        val c2 = offsetCoords(bCoords, off)
+        val c2 = bCoords.offset(off)
 
         if (isInNeighborChunk(off)) {
           neighborChunk(cCoords, i).foreach(n => {
@@ -302,8 +301,13 @@ class World(val worldSettings: WorldSettingsProvider) extends IWorld {
   }
 
   private def makePlayer: Player = {
-    val player = new Player(this)
-    player.fromNBT(worldSettings.playerNBT)
-    player
+    if (worldInfo.player != null) {
+      Player.fromNBT(worldInfo.player)
+    } else {
+      val startX = (math.random() * 100 - 50).toInt
+      val startZ = (math.random() * 100 - 50).toInt
+      val startY = getHeight(startX, startZ) + 4
+      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
+    }
   }
 }

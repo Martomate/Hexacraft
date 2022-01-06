@@ -23,7 +23,7 @@ class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFe
   }
 
   def treeLocations(coords: ChunkRelWorld): Seq[(Int, Int)] = {
-    val rand = new Random(world.worldSettings.gen.seed ^ coords.value)
+    val rand = new Random(world.worldInfo.gen.seed ^ coords.value)
     val count = rand.nextInt(maxTreesPerChunk + 1)
 
     for (_ <- 0 until count) yield {
@@ -53,7 +53,7 @@ class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFe
   }
 
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
-    val rand = new Random(world.worldSettings.gen.seed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
+    val rand = new Random(world.worldInfo.gen.seed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
     // short and tall trees can be birches, but the huge ones cannot
     val isBirchTree = rand.nextDouble() < 0.1

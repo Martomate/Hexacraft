@@ -4,7 +4,7 @@ import com.martomate.hexacraft.game.GameScene
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.scene.{GameWindowExtended, MenuScene}
-import com.martomate.hexacraft.world.settings.WorldSettings
+import com.martomate.hexacraft.world.settings.{WorldProviderFromFile, WorldSettings}
 
 import java.io.File
 
@@ -33,7 +33,7 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   private def makeWorldButton(world: WorldInfo, listIndex: Int): Button = {
     Button(world.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * listIndex, 0.4f, 0.075f)) {
       window.scenes.popScenesUntil(MenuScene.isMainMenu)
-      window.scenes.pushScene(new GameScene(world.saveFile, WorldSettings.none))
+      window.scenes.pushScene(new GameScene(new WorldProviderFromFile(world.saveFile, WorldSettings.none)))
     }
   }
 
@@ -53,5 +53,6 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
       .filter(t => t._2.exists())
       .sortBy(t => sortFunc(t._2))
       .map(_._1)
+      .toSeq
   }
 }
