@@ -14,7 +14,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: Cyl
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {
-    val nbt = world.worldSettings.loadState(filePath)
+    val nbt = world.worldProvider.loadState(filePath)
 
     val storage: ChunkStorage = new DenseChunkStorage(coords)
     val data = new ChunkData(storage, world)
@@ -36,7 +36,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: Cyl
   }
 
   def saveData(data: CompoundTag): Unit = {
-    world.worldSettings.saveState(data, filePath)
+    world.worldProvider.saveState(data, filePath)
   }
 
   private def getBlockAtDepth(yToGo: Int) = {

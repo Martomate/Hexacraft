@@ -5,7 +5,7 @@ import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.integer._
-import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldSettings, WorldSettingsProvider}
+import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo, WorldProvider, WorldSettings}
 import com.martomate.hexacraft.world.worldlike.IWorld
 import org.scalameter.api._
 
@@ -80,19 +80,16 @@ object ChunkRenderImplBench extends Bench.LocalTime {
     w
   }
 
-  private class TestWorldSettingsProvider(seed: Long) extends WorldSettingsProvider {
-    override def name: String = "bench world"
-
-    override def size: CylinderSize = cylSize
-
-    override def gen: WorldGenSettings = new WorldGenSettings(
-      NBTUtil.makeCompoundTag("", Seq(new LongTag("seed", seed))),
-      WorldSettings(Some(name), Some(8), Some(seed))
-    )
-
-    override def plannerNBT: CompoundTag = NBTUtil.makeCompoundTag("", Seq.empty)
-
-    override def playerNBT: CompoundTag = NBTUtil.makeCompoundTag("", Seq.empty)
+  private class TestWorldSettingsProvider(seed: Long) extends WorldProvider {
+    override def getWorldInfo: WorldInfo = new WorldInfo(
+      "bench world",
+      cylSize,
+      new WorldGenSettings(
+        NBTUtil.makeCompoundTag("", Seq(new LongTag("seed", seed))),
+        WorldSettings(Some("bench world"), Some(8), Some(seed))
+      ),
+      NBTUtil.makeCompoundTag("", Seq.empty),
+      NBTUtil.makeCompoundTag("", Seq.empty))
 
     override def loadState(path: String): CompoundTag = NBTUtil.makeCompoundTag("", Seq.empty)
 

@@ -1,12 +1,11 @@
 package com.martomate.hexacraft.menu.main
 
 import java.io.File
-
 import com.martomate.hexacraft.game.GameScene
 import com.martomate.hexacraft.gui.comp._
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.scene.{GameWindowExtended, MenuScene}
-import com.martomate.hexacraft.world.settings.WorldSettings
+import com.martomate.hexacraft.world.settings.{WorldProviderFromFile, WorldSettings}
 
 import scala.util.{Random, Try}
 
@@ -28,29 +27,33 @@ class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene{
 
   private def createWorld(): Unit = {
     try {
-      val (_, file) = {
-        val filteredName = nameTF.text.map(c => if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' ') c else '_')
-        val nameBase = if (filteredName.trim.nonEmpty) filteredName else "New World"
-        val savesFolder = new File(window.saveFolder, "saves")
-
-        var name: String = null
-        var file: File = null
-        var count = 0
-        do {
-          count += 1
-          name = if (count == 1) nameBase else nameBase + " " + count
-          file = new File(savesFolder, name)
-        } while (file.exists())
-
-        (name, file)
-      }
+      val baseFolder = new File(window.saveFolder, "saves")
+      val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
       val size = Try(sizeTF.text.toByte).toOption.filter(s => s >= 0 && s <= 20)
       val seed = Some(seedTF.text).filter(_.nonEmpty).map(s => new Random(s.##.toLong << 32 | s.reverse.##).nextLong())
       window.scenes.popScenesUntil(MenuScene.isMainMenu)
-      window.scenes.pushScene(new GameScene(file, WorldSettings(Some(nameTF.text), size, seed)))
+      window.scenes.pushScene(new GameScene(new WorldProviderFromFile(file, WorldSettings(Some(nameTF.text), size, seed))))
     } catch {
       case _: Exception =>
       // TODO: complain about the input
     }
+  }
+
+  private def uniqueFile(baseFolder: File, fileName: String): File = {
+    var file: File = null
+    var count = 0
+    do {
+      count += 1
+      val name = if (count == 1) fileName else fileName + " " + count
+      file = new File(baseFolder, name)
+    } while (file.exists())
+
+    file
+  }
+
+  private def cleanupFileName(fileName: String): String = {
+    def charValid(c: Char): Boolean = c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' '
+    val name = fileName.map(c => if (charValid(c)) c else '_').trim
+    if (name.nonEmpty) name else "New World"
   }
 }

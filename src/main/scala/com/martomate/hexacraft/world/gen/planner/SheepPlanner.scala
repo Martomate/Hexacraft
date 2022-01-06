@@ -23,7 +23,7 @@ class SheepPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldF
 
   override def plan(coords: ChunkRelWorld): Unit = {
     if (!chunksPlanned(coords)) {
-      val rand = new Random(world.worldSettings.gen.seed ^ coords.value + 364453868)
+      val rand = new Random(world.worldInfo.gen.seed ^ coords.value + 364453868)
       if (rand.nextDouble() < 0.01) {
         val thePlan = new PlannedEntitySpawn
         val count = rand.nextInt(maxSheepPerGroup) + 1

@@ -6,11 +6,12 @@ import com.martomate.hexacraft.world.chunk.ChunkAddedOrRemovedListener
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.column.ChunkColumnListener
 import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.settings.WorldSettingsProvider
+import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
 
 trait IWorld extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
   val size: CylinderSize
-  def worldSettings: WorldSettingsProvider
+  def worldInfo: WorldInfo
+  def worldProvider: WorldProvider
   def worldGenerator: WorldGenerator
   def renderDistance: Double
 

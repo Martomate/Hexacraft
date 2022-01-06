@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.game
 
-import java.io.File
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
 import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
@@ -23,13 +22,13 @@ import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.entity.sheep.ai.SheepAIFactory
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
-import com.martomate.hexacraft.world.settings.{WorldSettings, WorldSettingsProviderFromFile}
+import com.martomate.hexacraft.world.settings.WorldProvider
 import com.martomate.hexacraft.world.{RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
 
-class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window: GameWindowExtended) extends Scene with PausableScene with DebugInfoProvider {
+class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended) extends Scene with PausableScene with DebugInfoProvider {
   // Camera, player, mouse-picker, world, etc.
 
   private val blockShader: Shader = Shaders.Block
@@ -51,7 +50,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer = new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
-  private val world = new World(new WorldSettingsProviderFromFile(saveFolder, worldSettings))
+  private val world = new World(worldProvider)
   import world.size.impl
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world)
@@ -63,7 +62,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
                                                          case _ => 1000f
                                                        }))
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
-  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player)
+  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(window.mouse, window.keyboard, world.player, world.collisionDetector)
 
   private val toolbar: Toolbar = makeToolbar(world.player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
@@ -116,7 +115,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
         case GLFW_KEY_M =>
           setUseMouse(!playerInputHandler.moveWithMouse)
         case GLFW_KEY_F =>
-          playerInputHandler.player.flying = !playerInputHandler.player.flying
+          world.player.flying = !world.player.flying
         case GLFW_KEY_F7 =>
           setDebugScreenVisible(debugScene == null)
         case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
@@ -153,7 +152,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
     if (playerInputHandler.moveWithMouse) {
       val dy = -math.signum(event.yoffset).toInt
       if (dy != 0) {
-        val itemSlot = (playerInputHandler.player.selectedItemSlot + dy + 9) % 9
+        val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
         setSelectedItemSlot(itemSlot)
       }
       true
@@ -161,7 +160,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   }
 
   private def setSelectedItemSlot(itemSlot: Int): Unit = {
-    playerInputHandler.player.selectedItemSlot = itemSlot
+    world.player.selectedItemSlot = itemSlot
     blockInHandRenderer.updateContent()
     toolbar.setSelectedIndex(itemSlot)
   }
@@ -223,7 +222,7 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
   override def tick(): Unit = {
     if (!isPaused) playerInputHandler.tick()
 
-    camera.setPositionAndRotation(playerInputHandler.player)
+    camera.setPositionAndRotation(world.player)
     camera.updateCoords()
     camera.updateViewMatrix()
     for (shader <- shadersNeedingCamera)
@@ -276,10 +275,10 @@ class GameScene(saveFolder: File, worldSettings: WorldSettings)(implicit window:
 
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
     if (world.getBlock(coords).blockType == Blocks.Air) {
-      val blockType = playerInputHandler.player.blockInHand
+      val blockType = world.player.blockInHand
       val skewCoords = BlockCoords(coords).toSkewCylCoords
       val state = new BlockState(blockType)
-      if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, playerInputHandler.player.bounds, CylCoords(camera.position))) {
+      if (!world.collisionDetector.collides(blockType.bounds(state.metadata), skewCoords, world.player.bounds, CylCoords(camera.position))) {
         world.setBlock(coords, state)
       }
     }

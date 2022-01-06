@@ -7,7 +7,6 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
 import com.martomate.hexacraft.world.entity.base.BasicEntity
-import com.martomate.hexacraft.world.entity.sheep.ai.SimpleSheepAIInput
 import com.martomate.hexacraft.world.worldlike.IWorld
 
 class SheepEntity(_model: EntityModel, _world: IWorld, aiFactory: EntityAIFactory[SheepEntity]) extends BasicEntity(_model, _world)(_world.size) {

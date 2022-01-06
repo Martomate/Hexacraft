@@ -14,7 +14,7 @@ class ChunkLighting(chunk: IChunk, lightPropagator: LightPropagator) extends ICh
 
   def initialized: Boolean = brightnessInitialized
 
-  def init(blocks: Seq[LocalBlockState]): Unit = {
+  def init(blocks: Array[LocalBlockState]): Unit = {
     if (!brightnessInitialized) {
       brightnessInitialized = true
       val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
