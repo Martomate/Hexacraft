@@ -220,7 +220,13 @@ class World(val worldProvider: WorldProvider) extends IWorld {
   }
 
   def getBrightness(block: BlockRelWorld): Float = {
-    if (block != null) getChunk(block.getChunkRelWorld).map(_.lighting.getBrightness(block.getBlockRelChunk)).getOrElse(1.0f)
+    if (block != null)
+      getChunk(block.getChunkRelWorld) match {
+        case Some(c) =>
+          c.lighting.getBrightness(block.getBlockRelChunk)
+        case None =>
+          1.0f
+      }
     else 1.0f
   }
 
@@ -252,16 +258,11 @@ class World(val worldProvider: WorldProvider) extends IWorld {
         new StringTag("name", worldInfo.worldName)
       )),
       worldGenerator.toNBT,
-      worldPlanner.toNBT,
       player.toNBT
     ))
   }
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = neighborChunk(coords, side).foreach(_.requestRenderUpdate())
-
-  override def onChunkAdded(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(chunk))
-
-  override def onChunkRemoved(chunk: IChunk): Unit = chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(chunk))
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
     def affectedChunkOffset(where: Byte): Int = where match {
@@ -281,22 +282,24 @@ class World(val worldProvider: WorldProvider) extends IWorld {
     val cCoords = coords.getChunkRelWorld
     val bCoords = coords.getBlockRelChunk
 
-    getChunk(cCoords).foreach { c =>
-      c.requestRenderUpdate()
-      c.requestBlockUpdate(bCoords)
+    getChunk(cCoords) match {
+      case Some(c) =>
+        c.requestRenderUpdate()
+        c.requestBlockUpdate(bCoords)
 
-      for (i <- 0 until 8) {
-        val off = ChunkRelWorld.neighborOffsets(i)
-        val c2 = bCoords.offset(off)
+        for (i <- 0 until 8) {
+          val off = ChunkRelWorld.neighborOffsets(i)
+          val c2 = bCoords.offset(off)
 
-        if (isInNeighborChunk(off)) {
-          neighborChunk(cCoords, i).foreach(n => {
-            n.requestRenderUpdate()
-            n.requestBlockUpdate(c2)
-          })
+          if (isInNeighborChunk(off)) {
+            neighborChunk(cCoords, i).foreach(n => {
+              n.requestRenderUpdate()
+              n.requestBlockUpdate(c2)
+            })
+          }
+          else c.requestBlockUpdate(c2)
         }
-        else c.requestBlockUpdate(c2)
-      }
+      case None =>
     }
   }
 

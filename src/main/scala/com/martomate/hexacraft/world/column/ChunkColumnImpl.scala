@@ -66,7 +66,6 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
   private def handleEventsOnChunkRemoval(oldChunkOpt: Option[IChunk]): Unit = oldChunkOpt foreach { oldChunk =>
     oldChunk.removeEventListener(this)
     oldChunk.removeBlockEventListener(this)
-    eventListeners.foreach(_.onChunkRemoved(oldChunk))
   }
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
@@ -124,10 +123,7 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
   }
 
   def unload(): Unit = {
-    chunks.foreachValue{c =>
-      eventListeners.foreach(_.onChunkRemoved(c))
-      c.unload()
-    }
+    chunks.foreachValue(_.unload())
 
     worldSettings.saveState(NBTUtil.makeCompoundTag("column", Seq(
       new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))

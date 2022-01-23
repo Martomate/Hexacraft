@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.gen
 
 import com.flowpowered.nbt.CompoundTag
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 import com.martomate.hexacraft.world.worldlike.IWorld
@@ -27,9 +27,6 @@ class WorldPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends ChunkA
 
   override def onChunkRemoved(chunk: IChunk): Unit = ()// same as onChunkAdded, except dropPlan instead of plan. No
 
-  def toNBT: CompoundTag = NBTUtil.makeCompoundTag("worldPlanner", Seq(
-
-  ))
 }
 
 object WorldPlanner {
