@@ -26,24 +26,24 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
 
-  private val chunksToLoad: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
-  private val chunksToUnload: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
+  private val chunksLoading: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
+  private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
 
   override def tick(): Unit = {
     prioritizer.tick()
     val (maxLoad, maxUnload) = if(chillSwitch()) (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
     for (_ <- 1 to LoadsPerTick) {
-      if (chunksToLoad.size < maxLoad) {
+      if (chunksLoading.size < maxLoad) {
         prioritizer.nextAddableChunk.foreach { coords =>
-          chunksToLoad(coords) = Future(chunkFactory(coords))
+          chunksLoading(coords) = Future(chunkFactory(coords))
           prioritizer += coords
         }
       }
     }
     for (_ <- 1 to UnloadsPerTick) {
-      if (chunksToUnload.size < maxUnload) {
+      if (chunksUnloading.size < maxUnload) {
         prioritizer.nextRemovableChunk.foreach { coords =>
-          chunksToUnload(coords) = Future {
+          chunksUnloading(coords) = Future {
             chunkUnloader(coords)
             coords
           }
@@ -54,17 +54,17 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   }
 
   override def chunksToAdd(): Iterable[IChunk] =
-    chunksToLoad.values.flatMap(_.value).flatMap(_.toOption)
+    chunksLoading.values.flatMap(_.value).flatMap(_.toOption)
 
   override def chunksToRemove(): Iterable[ChunkRelWorld] =
-    chunksToUnload.values.flatMap(_.value).flatMap(_.toOption)
+    chunksUnloading.values.flatMap(_.value).flatMap(_.toOption)
 
   override def unload(): Unit = prioritizer.unload()
 
   override def onChunkAdded(chunk: IChunk): Unit = {
-    chunksToLoad -= chunk.coords
+    chunksLoading -= chunk.coords
   }
   override def onChunkRemoved(chunk: IChunk): Unit = {
-    chunksToUnload -= chunk.coords
+    chunksUnloading -= chunk.coords
   }
 }
