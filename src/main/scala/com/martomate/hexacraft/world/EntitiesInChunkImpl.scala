@@ -5,11 +5,11 @@ import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.chunk.EntitiesInChunk
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 
-class EntitiesInChunkImpl(world: IWorld) extends EntitiesInChunk {
+class EntitiesInChunkImpl(world: BlocksInWorld) extends EntitiesInChunk {
   private val entities: mutable.Set[Entity] = mutable.Set.empty
 
   var needsToSave: Boolean = false

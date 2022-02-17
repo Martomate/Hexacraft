@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.column
 
 import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, IChunk}
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelColumn, ColumnRelWorld}
 
 object ChunkColumn {
@@ -24,7 +25,7 @@ trait ChunkColumn extends ChunkBlockListener with ChunkEventListener {
   def removeChunk(coords: ChunkRelColumn): Option[IChunk]
   def allChunks: Iterable[IChunk]
 
-  def tick(): Unit
+  def tick(collisionDetector: CollisionDetector): Unit
   def onReloadedResources(): Unit
   def unload(): Unit
 

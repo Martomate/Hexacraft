@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.storage.ChunkStorage
 
@@ -11,7 +12,7 @@ trait IChunk extends BlockInChunkAccessor {
   def lighting: IChunkLighting
 
   def init(): Unit
-  def tick(): Unit
+  def tick(collisionDetector: CollisionDetector): Unit
 
   def hasNoBlocks: Boolean
   def blocks: ChunkStorage

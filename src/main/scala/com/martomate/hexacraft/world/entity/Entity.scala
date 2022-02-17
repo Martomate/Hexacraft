@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.entity
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTSavable, NBTUtil}
 import com.martomate.hexacraft.world.block.HexBox
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
@@ -30,7 +31,7 @@ abstract class Entity(implicit cylSizeImpl: CylinderSize) extends NBTSavable {
     .rotateX(rotation.x.toFloat)
     .rotateY(rotation.y.toFloat)
 
-  def tick(): Unit = ()
+  def tick(collisionDetector: CollisionDetector): Unit = ()
 
   def fromNBT(tag: CompoundTag): Unit = {
     NBTUtil.getCompoundTag(tag, "pos").foreach(t => position = CylCoords(NBTUtil.setVector(t, new Vector3d)))

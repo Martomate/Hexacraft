@@ -3,15 +3,16 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.render.selector._
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL13, GL14, GL15, GL30, GL32}
+import org.lwjgl.opengl._
 
 import java.nio.{ByteBuffer, FloatBuffer}
 import scala.collection.mutable
@@ -33,9 +34,7 @@ class FrameBuffer(val width: Int, val height: Int) {
   def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
 }
 
-class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAddedOrRemovedListener {
-  import world.size.impl
-
+class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit window: GameWindow, cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
   private val entityShader = Shaders.Entity
   private val entitySideShader = Shaders.EntitySide
   private val skyShader = Shaders.Sky
@@ -78,7 +77,6 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     }
   }
 
-  world.addChunkAddedOrRemovedListener(this)
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
   private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
     new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
@@ -87,7 +85,7 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     val r = chunkRenderers.get(coords)
     r.foreach(chunkRenderSelector.updateChunk)
     r.isDefined
-  }, world.renderDistance)
+  }, renderDistance)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)

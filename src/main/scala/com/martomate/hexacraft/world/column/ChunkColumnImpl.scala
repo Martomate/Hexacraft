@@ -5,6 +5,7 @@ import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldProvider
@@ -114,8 +115,8 @@ class ChunkColumnImpl(val coords: ColumnRelWorld, worldGenerator: WorldGenerator
     }
   }
 
-  def tick(): Unit = {
-    chunks.foreachValue(_.tick())
+  def tick(collisionDetector: CollisionDetector): Unit = {
+    chunks.foreachValue(_.tick(collisionDetector))
   }
 
   def onReloadedResources(): Unit = {

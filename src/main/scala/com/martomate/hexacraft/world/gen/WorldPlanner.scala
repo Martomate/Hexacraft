@@ -4,12 +4,12 @@ import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
-class WorldPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
+class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
-    new TreePlanner(world),
-    new SheepPlanner(world)
+    new TreePlanner(world, mainSeed),
+    new SheepPlanner(world, mainSeed)
   )
 
   def decorate(chunk: IChunk): Unit = {
@@ -30,9 +30,8 @@ class WorldPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends ChunkA
 }
 
 object WorldPlanner {
-  def apply(world: IWorld, nbt: CompoundTag): WorldPlanner = {
-    import world.size.impl
-    val wp = new WorldPlanner(world)
+  def apply(world: BlocksInWorld, mainSeed: Long, nbt: CompoundTag)(implicit cylSize: CylinderSize): WorldPlanner = {
+    val wp = new WorldPlanner(world, mainSeed)
 
     wp
   }

@@ -6,12 +6,13 @@ import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.settings.WorldInfo
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 import scala.util.Random
 
-class SheepPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class SheepPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
   private val plannedSheep: mutable.Map[ChunkRelWorld, PlannedEntitySpawn] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -23,7 +24,7 @@ class SheepPlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldF
 
   override def plan(coords: ChunkRelWorld): Unit = {
     if (!chunksPlanned(coords)) {
-      val rand = new Random(world.worldInfo.gen.seed ^ coords.value + 364453868)
+      val rand = new Random(mainSeed ^ coords.value + 364453868)
       if (rand.nextDouble() < 0.01) {
         val thePlan = new PlannedEntitySpawn
         val count = rand.nextInt(maxSheepPerGroup) + 1

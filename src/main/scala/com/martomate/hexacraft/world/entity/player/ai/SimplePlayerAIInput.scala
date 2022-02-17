@@ -1,16 +1,15 @@
 package com.martomate.hexacraft.world.entity.player.ai
 
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.entity.ai.EntityAIInput
 import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
-class SimplePlayerAIInput(world: IWorld, player: PlayerEntity) extends EntityAIInput {
-  import world.size.impl
-
+class SimplePlayerAIInput(world: BlocksInWorld, player: PlayerEntity)(implicit cylSize: CylinderSize) extends EntityAIInput {
   def blockInFront(dist: Double): Block = world.getBlock(coordsAtOffset(dist * math.cos(player.rotation.y), 0, dist * -math.sin(player.rotation.y))).blockType
 
   private def coordsAtOffset(dx: Double, dy: Double, dz: Double): BlockRelWorld =

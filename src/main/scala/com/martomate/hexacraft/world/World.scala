@@ -2,17 +2,18 @@ package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util._
+import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
 import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
 import com.martomate.hexacraft.world.collision.CollisionDetector
-import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl}
+import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl, ChunkColumnListener}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
-import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.registry.EntityRegistrator
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
@@ -20,7 +21,7 @@ import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, Pos
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -32,7 +33,7 @@ object World {
   var shouldChillChunkLoader = false
 }
 
-class World(val worldProvider: WorldProvider) extends IWorld {
+class World(val worldProvider: WorldProvider) extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
   val worldInfo: WorldInfo = worldProvider.getWorldInfo
 
   val size: CylinderSize = worldInfo.worldSize
@@ -42,19 +43,19 @@ class World(val worldProvider: WorldProvider) extends IWorld {
   EntityRegistrator.load()
 
   val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.planner)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
 
-  override val collisionDetector: CollisionDetector = new CollisionDetector(this)
+  val collisionDetector: CollisionDetector = new CollisionDetector(this)
 
   private val columns = mutable.LongMap.empty[ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
   private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(
     chunkLoadingOrigin,
-    coords => new Chunk(coords, new ChunkGenerator(coords, this), lightPropagator),
+    coords => new Chunk(coords, new ChunkGenerator(coords, this, worldProvider, worldGenerator), lightPropagator),
     coords => getChunk(coords).foreach(_.saveIfNeeded()),
     renderDistance,
     () => World.shouldChillChunkLoader
@@ -141,7 +142,7 @@ class World(val worldProvider: WorldProvider) extends IWorld {
       performEntityRelocation()
     }
 
-    columns.values.foreach(_.tick())
+    columns.values.foreach(_.tick(collisionDetector))
   }
 
   private def removeOldChunks(): Unit = {

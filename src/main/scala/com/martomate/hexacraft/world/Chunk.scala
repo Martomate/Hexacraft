@@ -4,6 +4,7 @@ import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk._
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
@@ -72,7 +73,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     for (side <- 0 until 8)
       eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
 
-  def tick(): Unit = {
+  def tick(collisionDetector: CollisionDetector): Unit = {
     chunkData.optimizeStorage()
 
     tickEntities(entities.allEntities)
@@ -80,7 +81,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     @tailrec
     def tickEntities(ents: Iterable[Entity]): Unit = {
       if (ents.nonEmpty) {
-        ents.head.tick()
+        ents.head.tick(collisionDetector)
         tickEntities(ents.tail)
       }
     }
