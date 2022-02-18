@@ -3,10 +3,8 @@ package com.martomate.hexacraft.world.entity.loader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.entity.Entity
-import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.entity.player.ai.PlayerAIFactory
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
-import com.martomate.hexacraft.world.entity.sheep.ai.SheepAIFactory
+import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
+import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 
 trait EntityFactory {
   def makeEntity(world: BlocksInWorld): Entity

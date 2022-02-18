@@ -16,10 +16,8 @@ import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
-import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.entity.player.ai.PlayerAIFactory
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
-import com.martomate.hexacraft.world.entity.sheep.ai.SheepAIFactory
+import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
+import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
