@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.entity.registry
 
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.loader.EntityFactory
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
 trait ChunkAddedOrRemovedListener {
-  def onChunkAdded(chunk: IChunk): Unit
-  def onChunkRemoved(chunk: IChunk): Unit
+  def onChunkAdded(chunk: Chunk): Unit
+  def onChunkRemoved(chunk: Chunk): Unit
 }

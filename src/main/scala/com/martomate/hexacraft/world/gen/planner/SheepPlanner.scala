@@ -1,13 +1,12 @@
 package com.martomate.hexacraft.world.gen.planner
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
-import com.martomate.hexacraft.world.settings.WorldInfo
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 import scala.util.Random
@@ -18,7 +17,7 @@ class SheepPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylin
 
   private val maxSheepPerGroup = 7
 
-  override def decorate(chunk: IChunk): Unit = {
+  override def decorate(chunk: Chunk): Unit = {
     plannedSheep.get(chunk.coords).foreach(_.spawnEntities(chunk))
   }
 

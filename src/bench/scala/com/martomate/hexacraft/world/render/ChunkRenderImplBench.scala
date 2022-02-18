@@ -70,7 +70,7 @@ object ChunkRenderImplBench extends Bench.LocalTime {
   def initWorld(heightAboveGround: Int): World = {
     val w = new World(new TestWorldSettingsProvider(12398734587123L))
     val cam = new Camera(new CameraProjection(1,1,1,1))
-    cam.position.y = w.getHeight(0, 0) + heightAboveGround
+    cam.position.y = w.provideColumn(ColumnRelWorld(0, 0)).heightMap(0, 0) + heightAboveGround
     cam.updateViewMatrix()
     for (_ <- 1 to 20) {
       w.tick(cam)

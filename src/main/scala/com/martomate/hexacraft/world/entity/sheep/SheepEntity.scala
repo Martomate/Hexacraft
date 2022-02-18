@@ -2,13 +2,13 @@ package com.martomate.hexacraft.world.entity.sheep
 
 import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
 import com.martomate.hexacraft.world.entity.base.BasicEntity
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 class SheepEntity(_model: EntityModel, world: BlocksInWorld, aiFactory: EntityAIFactory[SheepEntity])(implicit cylSizeImpl: CylinderSize) extends BasicEntity(_model) {
   override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)

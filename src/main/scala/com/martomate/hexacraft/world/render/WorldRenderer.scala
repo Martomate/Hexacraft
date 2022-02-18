@@ -4,13 +4,13 @@ import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.render.selector._
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
@@ -127,13 +127,13 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
   }
 
-  override def onChunkAdded(chunk: IChunk): Unit = {
+  override def onChunkAdded(chunk: Chunk): Unit = {
     val renderer = new ChunkRendererImpl(chunk, world)
     chunkRenderers(chunk.coords) = renderer
 //    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
   }
-  override def onChunkRemoved(chunk: IChunk): Unit = {
+  override def onChunkRemoved(chunk: Chunk): Unit = {
     chunkRenderers.remove(chunk.coords).foreach(renderer => {
       chunkRenderSelector.removeChunk(renderer)
       renderer.unload()

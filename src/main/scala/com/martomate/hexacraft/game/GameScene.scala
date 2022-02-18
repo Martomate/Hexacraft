@@ -143,7 +143,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     }
   }
 
-  def setUseMouse(useMouse: Boolean): Unit = {
+  private def setUseMouse(useMouse: Boolean): Unit = {
     playerInputHandler.moveWithMouse = useMouse
     setMouseCursorInvisible(playerInputHandler.moveWithMouse)
     window.resetMousePos()

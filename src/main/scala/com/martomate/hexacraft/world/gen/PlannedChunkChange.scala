@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.gen
 
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 
 import scala.collection.mutable
@@ -13,7 +13,7 @@ class PlannedChunkChange {
 
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit = changes += coords -> block
 
-  def applyChanges(chunk: IChunk): Unit = {
+  def applyChanges(chunk: Chunk): Unit = {
     for ((c, b) <- changes) {
       chunk.setBlock(c, b)
     }

@@ -1,27 +1,27 @@
 package com.martomate.hexacraft.world.lighting
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
+import com.martomate.hexacraft.world.chunk.{ChunkCache, Chunk}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 
 class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def initBrightnesses(chunk: IChunk, lights: Map[BlockRelChunk, BlockState]): Unit = {
+  def initBrightnesses(chunk: Chunk, lights: Map[BlockRelChunk, BlockState]): Unit = {
     chunkCache.clearCache()
-    val queueTorch = mutable.Queue.empty[(BlockRelChunk, IChunk)]
-    val queueSun15 = mutable.Queue.empty[(BlockRelChunk, IChunk)]
-    val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, IChunk)]
+    val queueTorch = mutable.Queue.empty[(BlockRelChunk, Chunk)]
+    val queueSun15 = mutable.Queue.empty[(BlockRelChunk, Chunk)]
+    val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     for ((c, b) <- lights) {
       chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
       queueTorch += ((c, chunk))
     }
 
-    def enqueueIfTransparent(coords: BlockRelChunk, neigh: IChunk): Unit = {
+    def enqueueIfTransparent(coords: BlockRelChunk, neigh: Chunk): Unit = {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neigh.coords.getColumnRelWorld).get
       if (neigh.coords.Y * 16 + coords.cy > neighCol.heightMap(coords.cx, coords.cz)) {
@@ -70,37 +70,37 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     propagateSunlight(queueSunFromNeighbor)
   }
 
-  def addTorchlight(chunk: IChunk, coords: BlockRelChunk, value: Int): Unit = {
+  def addTorchlight(chunk: Chunk, coords: BlockRelChunk, value: Int): Unit = {
     chunkCache.clearCache()
     chunk.lighting.setTorchlight(coords, value)
     val queue = mutable.Queue(coords -> chunk)
     propagateTorchlight(queue)
   }
 
-  def updateSunlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+  def updateSunlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
     chunkCache.clearCache()
     chunk.lighting.setSunlight(coords, 0)
     removeSunlight(chunk, coords)
   }
 
-  def removeTorchlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+  def removeTorchlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
     chunkCache.clearCache()
-    val queue = mutable.Queue[(BlockRelChunk, IChunk, Int)]((coords, chunk, chunk.lighting.getTorchlight(coords)))
+    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.lighting.getTorchlight(coords)))
     chunk.lighting.setTorchlight(coords, 0)
     propagateTorchlightRemoval(queue)
   }
 
-  def removeSunlight(chunk: IChunk, coords: BlockRelChunk): Unit = {
+  def removeSunlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
     chunkCache.clearCache()
-    val queue = mutable.Queue[(BlockRelChunk, IChunk, Int)]((coords, chunk, chunk.lighting.getSunlight(coords)))
+    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)]((coords, chunk, chunk.lighting.getSunlight(coords)))
     chunk.lighting.setSunlight(coords, 0)
     propagateSunlightRemoval(queue)
   }
 
-  private def propagateTorchlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
-    val lightQueue = mutable.Queue.empty[(BlockRelChunk, IChunk)]
+  private def propagateTorchlightRemoval(queue: mutable.Queue[(BlockRelChunk, Chunk, Int)]): Unit = {
+    val lightQueue = mutable.Queue.empty[(BlockRelChunk, Chunk)]
 
-    val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
+    val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
       val top = queue.dequeue()
@@ -133,10 +133,10 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     propagateTorchlight(lightQueue)
   }
 
-  private def propagateSunlightRemoval(queue: mutable.Queue[(BlockRelChunk, IChunk, Int)]): Unit = {
-    val lightQueue = mutable.Queue.empty[(BlockRelChunk, IChunk)]
+  private def propagateSunlightRemoval(queue: mutable.Queue[(BlockRelChunk, Chunk, Int)]): Unit = {
+    val lightQueue = mutable.Queue.empty[(BlockRelChunk, Chunk)]
 
-    val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
+    val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
       val top = queue.dequeue()
@@ -168,8 +168,8 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     propagateSunlight(lightQueue)
   }
 
-  private def propagateTorchlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
-    val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
+  private def propagateTorchlight(queue: mutable.Queue[(BlockRelChunk, Chunk)]): Unit = {
+    val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
       val top = queue.dequeue()
@@ -202,11 +202,11 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
   }
 
-  private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, IChunk)]): Unit = {
-    val chunksNeedingRenderUpdate = mutable.HashSet.empty[IChunk]
+  private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, Chunk)]): Unit = {
+    val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     if (queue.nonEmpty) {
-      val chunksToProcess = mutable.Map.empty[IChunk, mutable.Queue[Int]]
+      val chunksToProcess = mutable.Map.empty[Chunk, mutable.Queue[Int]]
       while (queue.nonEmpty) {
         val (here, chunk) = queue.dequeue()
         chunksToProcess.getOrElseUpdate(chunk, mutable.Queue.empty).enqueue(here.value)
@@ -226,8 +226,8 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
   }
 
-  private def propagateSunlightInChunk(chunk: IChunk, queue: mutable.Queue[Int]): Map[IChunk, Seq[Int]] = {
-    val neighborMap: mutable.Map[IChunk, mutable.ArrayBuffer[Int]] = mutable.Map.empty
+  private def propagateSunlightInChunk(chunk: Chunk, queue: mutable.Queue[Int]): Map[Chunk, Seq[Int]] = {
+    val neighborMap: mutable.Map[Chunk, mutable.ArrayBuffer[Int]] = mutable.Map.empty
     val inQueue: java.util.BitSet = new java.util.BitSet(16*16*16)
 
     while (queue.nonEmpty) {

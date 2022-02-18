@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 class ChunkLoaderDistPQ(origin: PosAndDir,
-                        chunkFactory: ChunkRelWorld => IChunk,
+                        chunkFactory: ChunkRelWorld => Chunk,
                         chunkUnloader: ChunkRelWorld => Unit,
                         maxDist: Double,
                         chillSwitch: () => Boolean
@@ -26,7 +26,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
 
-  private val chunksLoading: mutable.Map[ChunkRelWorld, Future[IChunk]] = mutable.Map.empty
+  private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
 
   override def tick(): Unit = {
@@ -53,7 +53,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
     }
   }
 
-  override def chunksToAdd(): Iterable[IChunk] =
+  override def chunksToAdd(): Iterable[Chunk] =
     chunksLoading.values.flatMap(_.value).flatMap(_.toOption)
 
   override def chunksToRemove(): Iterable[ChunkRelWorld] =
@@ -61,10 +61,10 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
 
   override def unload(): Unit = prioritizer.unload()
 
-  override def onChunkAdded(chunk: IChunk): Unit = {
+  override def onChunkAdded(chunk: Chunk): Unit = {
     chunksLoading -= chunk.coords
   }
-  override def onChunkRemoved(chunk: IChunk): Unit = {
+  override def onChunkRemoved(chunk: Chunk): Unit = {
     chunksUnloading -= chunk.coords
   }
 }

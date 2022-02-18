@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.gen
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
+import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
@@ -12,20 +12,20 @@ class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylin
     new SheepPlanner(world, mainSeed)
   )
 
-  def decorate(chunk: IChunk): Unit = {
+  def decorate(chunk: Chunk): Unit = {
     if (!chunk.isDecorated) {
       planners.foreach(_.decorate(chunk))
       chunk.setDecorated()
     }
   }
 
-  override def onChunkAdded(chunk: IChunk): Unit = {
+  override def onChunkAdded(chunk: Chunk): Unit = {
     for (ch <- chunk.coords.extendedNeighbors(1))
       for (p <- planners)
         p.plan(ch)
   }
 
-  override def onChunkRemoved(chunk: IChunk): Unit = ()// same as onChunkAdded, except dropPlan instead of plan. No
+  override def onChunkRemoved(chunk: Chunk): Unit = ()// same as onChunkAdded, except dropPlan instead of plan. No
 
 }
 

@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.world.gen.planner
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.gen.feature.tree.{GenTree, HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 import scala.util.Random
@@ -18,7 +18,7 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylind
 
   private val maxTreesPerChunk = 5
 
-  override def decorate(chunk: IChunk): Unit = {
+  override def decorate(chunk: Chunk): Unit = {
     plannedChanges.remove(chunk.coords).foreach(ch => ch.applyChanges(chunk))
   }
 

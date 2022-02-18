@@ -5,10 +5,9 @@ import com.martomate.hexacraft.util._
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
-import com.martomate.hexacraft.world.chunkgen.ChunkGenerator
+import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener, ChunkGenerator}
 import com.martomate.hexacraft.world.collision.CollisionDetector
-import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnImpl, ChunkColumnListener}
+import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnListener}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
@@ -21,7 +20,6 @@ import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, Pos
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.save.WorldSave
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -34,7 +32,7 @@ object World {
 }
 
 class World(val worldProvider: WorldProvider) extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
-  val worldInfo: WorldInfo = worldProvider.getWorldInfo
+  private val worldInfo: WorldInfo = worldProvider.getWorldInfo
 
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
@@ -42,7 +40,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   private implicit val modelLoaderImpl: EntityModelLoader = new EntityModelLoader()
   EntityRegistrator.load()
 
-  val worldGenerator = new WorldGenerator(worldInfo.gen)
+  private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
@@ -80,7 +78,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumn] = columns.get(coords.value)
 
-  def getChunk(coords: ChunkRelWorld): Option[IChunk] =
+  def getChunk(coords: ChunkRelWorld): Option[Chunk] =
     getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
 
   def getBlock(coords: BlockRelWorld): BlockState =
@@ -114,15 +112,15 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     }
   }
 
-  private def chunkOfEntity(entity: Entity): Option[IChunk] = {
+  private def chunkOfEntity(entity: Entity): Option[Chunk] = {
     getApproximateChunk(entity.position)
   }
 
-  private def getApproximateChunk(coords: CylCoords): Option[IChunk] = {
+  private def getApproximateChunk(coords: CylCoords): Option[Chunk] = {
     getChunk(CoordUtils.approximateChunkCoords(coords))
   }
 
-  def getHeight(x: Int, z: Int): Int = {
+  private def getHeight(x: Int, z: Int): Int = {
     val coords = ColumnRelWorld(x >> 4, z >> 4)
     ensureColumnExists(coords).heightMap(x & 15, z & 15)
   }
@@ -213,7 +211,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     columns.get(here.value) match {
       case Some(col) => col
       case None =>
-        val col = new ChunkColumnImpl(here, worldGenerator, worldProvider)
+        val col = new ChunkColumn(here, worldGenerator, worldProvider)
         columns(here.value) = col
         col.addEventListener(this)
         col
