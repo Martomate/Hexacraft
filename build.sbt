@@ -14,7 +14,6 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   version := "0.10",
   scalaVersion := "2.13.7",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
-  javaOptions += "-XstartOnFirstThread",
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
