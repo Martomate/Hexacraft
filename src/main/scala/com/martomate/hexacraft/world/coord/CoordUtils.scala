@@ -40,11 +40,6 @@ object CoordUtils {
     (BlockRelWorld(xInt, yInt, zInt), BlockCoords(xx, y - yInt, zz, fixZ = false))
   }
 
-  def fromBlockCoords(reference: CylCoords, blockPos: BlockCoords, position: CylCoords, _result: Vector3d): Vector3d = {
-    val pos = if (_result != null) _result else new Vector3d()
-    (blockPos.toCylCoords + position).toNormalCoords(reference) into pos
-  }
-
   def approximateIntCoords(coords: BlockCoords)(implicit cylinderSize: CylinderSize): BlockRelWorld = {
     val X = math.round(coords.x).toInt
     val Y = math.round(coords.y).toInt

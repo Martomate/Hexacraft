@@ -1,19 +1,19 @@
-package com.martomate.hexacraft.world.chunk
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 
 import scala.collection.mutable
 
 class ChunkCache(world: BlocksInWorld) {
-  private val cache: mutable.LongMap[IChunk] = mutable.LongMap.empty
+  private val cache: mutable.LongMap[Chunk] = mutable.LongMap.empty
   private var lastChunkCoords: ChunkRelWorld = _
-  private var lastChunk: IChunk = _
+  private var lastChunk: Chunk = _
 
   def clearCache(): Unit = cache.clear()
 
-  def getChunk(coords: ChunkRelWorld): IChunk = {
+  def getChunk(coords: ChunkRelWorld): Chunk = {
     if (coords != lastChunkCoords) {
       lastChunkCoords = coords
       lastChunk = cache.getOrNull(coords.value)
@@ -26,7 +26,7 @@ class ChunkCache(world: BlocksInWorld) {
     lastChunk
   }
 
-  def neighbor(side: Int, chunk: IChunk, coords: BlockRelChunk)(implicit cylSize: CylinderSize): (BlockRelChunk, IChunk) = {
+  def neighbor(side: Int, chunk: Chunk, coords: BlockRelChunk)(implicit cylSize: CylinderSize): (BlockRelChunk, Chunk) = {
     val off = NeighborOffsets(side)
     val i2 = coords.cx + off.dx
     val j2 = coords.cy + off.dy

@@ -16,10 +16,8 @@ import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
-import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.entity.player.ai.PlayerAIFactory
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
-import com.martomate.hexacraft.world.entity.sheep.ai.SheepAIFactory
+import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
+import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
@@ -53,7 +51,8 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private val world = new World(worldProvider)
   import world.size.impl
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance)
+  world.addChunkAddedOrRemovedListener(worldRenderer)
 
   val camera: Camera = new Camera(new CameraProjection(70f, window.aspectRatio, 0.02f,
                                                        world.size.worldSize match {
@@ -142,7 +141,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     }
   }
 
-  def setUseMouse(useMouse: Boolean): Unit = {
+  private def setUseMouse(useMouse: Boolean): Unit = {
     playerInputHandler.moveWithMouse = useMouse
     setMouseCursorInvisible(playerInputHandler.moveWithMouse)
     window.resetMousePos()

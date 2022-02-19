@@ -1,12 +1,11 @@
 package com.martomate.hexacraft.world.collision
 
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
-import com.martomate.hexacraft.world.chunk.ChunkCache
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
-import com.martomate.hexacraft.world.worldlike.BlocksInWorld
 import org.joml.Vector3d
 
 class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {

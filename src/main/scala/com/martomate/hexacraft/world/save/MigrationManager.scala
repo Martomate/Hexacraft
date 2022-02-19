@@ -6,7 +6,7 @@ import com.martomate.hexacraft.util.NBTUtil
 import java.io.File
 import scala.util.{Success, Try}
 
-object WorldSave {
+object MigrationManager {
   val LatestVersion: Short = 2
 
   def migrateIfNeeded(saveDir: File): Unit = {

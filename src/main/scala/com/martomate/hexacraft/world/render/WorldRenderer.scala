@@ -3,15 +3,16 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, IChunk}
+import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.render.selector._
-import com.martomate.hexacraft.world.worldlike.IWorld
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL13, GL14, GL15, GL30, GL32}
+import org.lwjgl.opengl._
 
 import java.nio.{ByteBuffer, FloatBuffer}
 import scala.collection.mutable
@@ -33,9 +34,7 @@ class FrameBuffer(val width: Int, val height: Int) {
   def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
 }
 
-class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAddedOrRemovedListener {
-  import world.size.impl
-
+class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit window: GameWindow, cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
   private val entityShader = Shaders.Entity
   private val entitySideShader = Shaders.EntitySide
   private val skyShader = Shaders.Sky
@@ -78,7 +77,6 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     }
   }
 
-  world.addChunkAddedOrRemovedListener(this)
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
   private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
     new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
@@ -87,7 +85,7 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     val r = chunkRenderers.get(coords)
     r.foreach(chunkRenderSelector.updateChunk)
     r.isDefined
-  }, world.renderDistance)
+  }, renderDistance)
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)
@@ -113,7 +111,7 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     }
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, window.windowSize.x, window.windowSize.y)
+    GL11.glViewport(0, 0, window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
 
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)
@@ -129,13 +127,13 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
   }
 
-  override def onChunkAdded(chunk: IChunk): Unit = {
+  override def onChunkAdded(chunk: Chunk): Unit = {
     val renderer = new ChunkRendererImpl(chunk, world)
     chunkRenderers(chunk.coords) = renderer
 //    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
   }
-  override def onChunkRemoved(chunk: IChunk): Unit = {
+  override def onChunkRemoved(chunk: Chunk): Unit = {
     chunkRenderers.remove(chunk.coords).foreach(renderer => {
       chunkRenderSelector.removeChunk(renderer)
       renderer.unload()
@@ -215,7 +213,10 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, window.windowSize.x, window.windowSize.y, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
+    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
+      window.windowSize.x * window.pixelScale.x,
+      window.windowSize.y * window.pixelScale.y,
+      0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
@@ -227,7 +228,10 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32, window.windowSize.x, window.windowSize.y, 0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
+    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32,
+      window.windowSize.x * window.pixelScale.x,
+      window.windowSize.y * window.pixelScale.y,
+      0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
@@ -235,7 +239,7 @@ class WorldRenderer(world: IWorld)(implicit window: GameWindow) extends ChunkAdd
   }
 
   private def makeMainFrameBuffer(colorTexture: Int, depthTexture: Int): FrameBuffer = {
-    val fb = new FrameBuffer(window.windowSize.x, window.windowSize.y)
+    val fb = new FrameBuffer(window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
     fb.bind()
     GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
     GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, colorTexture, 0)

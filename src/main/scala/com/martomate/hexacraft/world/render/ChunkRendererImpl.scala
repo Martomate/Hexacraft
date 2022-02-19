@@ -1,19 +1,18 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.world.chunk.{ChunkCache, IChunk}
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.LocalBlockState
-import com.martomate.hexacraft.world.worldlike.IWorld
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
-class ChunkRendererImpl(chunk: IChunk, world: IWorld) extends ChunkRenderer {
-  import world.size.impl
-
+class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: CylinderSize) extends ChunkRenderer {
   private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
 
   def canGetToSide(fromSide: Int, toSide: Int): Boolean = opaqueDeterminer.canGetToSide(fromSide, toSide)

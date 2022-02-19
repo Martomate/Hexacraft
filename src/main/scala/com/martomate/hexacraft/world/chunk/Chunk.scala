@@ -1,18 +1,18 @@
-package com.martomate.hexacraft.world
+package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk._
+import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
+import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
-import com.martomate.hexacraft.world.lighting.{ChunkLighting, LightPropagator}
-import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
+import com.martomate.hexacraft.world.lighting.LightPropagator
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
-class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagator: LightPropagator) extends IChunk {
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator) extends BlockInChunkAccessor {
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -26,8 +26,8 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
   def addBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners += listener
   def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
 
-  val lighting: IChunkLighting = new ChunkLighting(this, lightPropagator)
-  override def entities: EntitiesInChunk = chunkData.entities
+  val lighting: ChunkLighting = new ChunkLighting(this, lightPropagator)
+  def entities: EntitiesInChunk = chunkData.entities
 
   def init(): Unit = {
     requestRenderUpdate()
@@ -72,7 +72,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     for (side <- 0 until 8)
       eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
 
-  def tick(): Unit = {
+  def tick(collisionDetector: CollisionDetector): Unit = {
     chunkData.optimizeStorage()
 
     tickEntities(entities.allEntities)
@@ -80,7 +80,7 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     @tailrec
     def tickEntities(ents: Iterable[Entity]): Unit = {
       if (ents.nonEmpty) {
-        ents.head.tick()
+        ents.head.tick(collisionDetector)
         tickEntities(ents.tail)
       }
     }
@@ -109,8 +109,8 @@ class Chunk(val coords: ChunkRelWorld, generator: IChunkGenerator, lightPropagat
     needsToSave = false
   }
 
-  override def isDecorated: Boolean = chunkData.isDecorated
-  override def setDecorated(): Unit = {
+  def isDecorated: Boolean = chunkData.isDecorated
+  def setDecorated(): Unit = {
     if (!chunkData.isDecorated) {
       chunkData.isDecorated = true
       needsToSave = true

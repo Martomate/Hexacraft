@@ -1,7 +1,5 @@
 package com.martomate.hexacraft.world.column
 
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, ChunkBlockListener, ChunkEventListener}
+import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener}
 
-trait ChunkColumnListener extends ChunkAddedOrRemovedListener with ChunkEventListener with ChunkBlockListener {
-
-}
+trait ChunkColumnListener extends ChunkEventListener with ChunkBlockListener

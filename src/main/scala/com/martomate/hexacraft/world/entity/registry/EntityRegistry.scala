@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.entity.registry
 
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.loader.EntityFactory
-import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable
 
@@ -13,7 +13,7 @@ object EntityRegistry {
     registry(name) = maker
   }
 
-  def load(name: String, world: IWorld): Option[Entity] = {
+  def load(name: String, world: BlocksInWorld): Option[Entity] = {
     registry.get(name).map(_.makeEntity(world))
   }
 }

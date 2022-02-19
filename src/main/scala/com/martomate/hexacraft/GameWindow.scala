@@ -4,6 +4,7 @@ import org.joml.{Vector2f, Vector2fc, Vector2ic}
 
 trait GameWindow {
   def windowSize: Vector2ic
+  def pixelScale: Vector2ic
 
   def mouse: GameMouse
   def keyboard: GameKeyboard

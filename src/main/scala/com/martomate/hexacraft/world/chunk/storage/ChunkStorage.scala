@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.chunk.storage
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.world.block.Block

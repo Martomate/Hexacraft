@@ -1,20 +1,21 @@
-package com.martomate.hexacraft.world.chunkgen
+package com.martomate.hexacraft.world.chunk
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.IChunkGenerator
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage, DenseChunkStorage}
-import com.martomate.hexacraft.world.worldlike.IWorld
+import com.martomate.hexacraft.world.gen.WorldGenerator
+import com.martomate.hexacraft.world.settings.WorldProvider
 
-class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: CylinderSize) extends IChunkGenerator {
+class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider, worldGenerator: WorldGenerator)(implicit cylSize: CylinderSize) {
 
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
   def loadData(): ChunkData = {
-    val nbt = world.worldProvider.loadState(filePath)
+    val nbt = worldProvider.loadState(filePath)
 
     val storage: ChunkStorage = new DenseChunkStorage(coords)
     val data = new ChunkData(storage, world)
@@ -23,7 +24,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: Cyl
       data.fromNBT(nbt)
     } else {
       val column = world.provideColumn(coords.getColumnRelWorld)
-      val blockNoise = world.worldGenerator.getBlockInterpolator(coords)
+      val blockNoise = worldGenerator.getBlockInterpolator(coords)
 
       for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
         val noise = blockNoise(i, j, k)
@@ -36,7 +37,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: IWorld)(implicit cylSize: Cyl
   }
 
   def saveData(data: CompoundTag): Unit = {
-    world.worldProvider.saveState(data, filePath)
+    worldProvider.saveState(data, filePath)
   }
 
   private def getBlockAtDepth(yToGo: Int) = {

@@ -6,7 +6,6 @@ import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo, WorldProvider, WorldSettings}
-import com.martomate.hexacraft.world.worldlike.IWorld
 import org.scalameter.api._
 
 object ChunkRenderImplBench extends Bench.LocalTime {
@@ -64,14 +63,14 @@ object ChunkRenderImplBench extends Bench.LocalTime {
 
   private def makeRenderer(aboveGround: Int): ChunkRendererImpl = {
     val world = initWorld(aboveGround)
-    val chunk = world.getChunk(ChunkRelWorld(0, (world.getHeight(0, 0) + aboveGround * 2) >> 4, 0)).get
+    val chunk = world.getChunk(ChunkRelWorld(0, (world.provideColumn(ColumnRelWorld(0, 0)).heightMap(0, 0) + aboveGround * 2) >> 4, 0)).get
     new ChunkRendererImpl(chunk, world)
   }
 
-  def initWorld(heightAboveGround: Int): IWorld = {
+  def initWorld(heightAboveGround: Int): World = {
     val w = new World(new TestWorldSettingsProvider(12398734587123L))
     val cam = new Camera(new CameraProjection(1,1,1,1))
-    cam.position.y = w.getHeight(0, 0) + heightAboveGround
+    cam.position.y = w.provideColumn(ColumnRelWorld(0, 0)).heightMap(0, 0) + heightAboveGround
     cam.updateViewMatrix()
     for (_ <- 1 to 20) {
       w.tick(cam)

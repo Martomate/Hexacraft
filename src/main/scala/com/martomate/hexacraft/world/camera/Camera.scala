@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.camera
 import com.martomate.hexacraft.resource.Shader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.player.Player
 import org.joml.{Vector3d, Vector3f}
@@ -67,18 +67,8 @@ class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
   }
 
   def updateCoords(): Unit = {
-    val temp = toBlockCoords()
+    val temp = CoordUtils.getEnclosingBlock(CylCoords(position).toBlockCoords)
     blockCoords = temp._1
     placeInBlock = temp._2
-  }
-
-  private def toBlockCoords(adjustY: Boolean = true): (BlockRelWorld, BlockCoords) = {
-    val camX = position.x
-    val y = position.y * 2
-    val mult = if (adjustY) Math.exp(y - position.y) else 1
-    val x = ((position.x - camX) / mult + camX) / 0.75
-    val z = position.z / CylinderSize.y60 - x / 2
-
-    CoordUtils.getEnclosingBlock(BlockCoords(x, y, z))
   }
 }

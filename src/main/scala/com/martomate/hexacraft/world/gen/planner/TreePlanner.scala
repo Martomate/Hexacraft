@@ -1,29 +1,29 @@
 package com.martomate.hexacraft.world.gen.planner
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.chunk.IChunk
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.gen.feature.tree.{GenTree, HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
-import com.martomate.hexacraft.world.worldlike.IWorld
 
 import scala.collection.mutable
 import scala.util.Random
 
-class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
   private val maxTreesPerChunk = 5
 
-  override def decorate(chunk: IChunk): Unit = {
+  override def decorate(chunk: Chunk): Unit = {
     plannedChanges.remove(chunk.coords).foreach(ch => ch.applyChanges(chunk))
   }
 
   def treeLocations(coords: ChunkRelWorld): Seq[(Int, Int)] = {
-    val rand = new Random(world.worldInfo.gen.seed ^ coords.value)
+    val rand = new Random(mainSeed ^ coords.value)
     val count = rand.nextInt(maxTreesPerChunk + 1)
 
     for (_ <- 0 until count) yield {
@@ -53,7 +53,7 @@ class TreePlanner(world: IWorld)(implicit cylSize: CylinderSize) extends WorldFe
   }
 
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
-    val rand = new Random(world.worldInfo.gen.seed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
+    val rand = new Random(mainSeed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
     // short and tall trees can be birches, but the huge ones cannot
     val isBirchTree = rand.nextDouble() < 0.1
