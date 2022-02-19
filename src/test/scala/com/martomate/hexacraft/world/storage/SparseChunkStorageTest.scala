@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.storage
 
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import org.scalatest.matchers.should.Matchers
 

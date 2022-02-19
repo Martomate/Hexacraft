@@ -1,7 +1,7 @@
-package com.martomate.hexacraft.world.chunk
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
 
 import scala.collection.mutable

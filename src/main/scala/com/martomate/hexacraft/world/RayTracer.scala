@@ -4,7 +4,6 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets, Offset}
 import org.joml.{Vector2fc, Vector3d, Vector4f}
@@ -67,10 +66,6 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
     }
   }
 
-  private def coordsOfHitBlock(current: BlockRelWorld, offsets: Offset) = {
-    BlockRelWorld(current.x + offsets.dx, current.y + offsets.dy, current.z + offsets.dz)
-  }
-
   private def oppositeSide(side: Int) = {
     if (side < 2) 1 - side else (side + 1) % 6 + 2 // (side - 2 + 3) % 6 + 2
   }
@@ -94,13 +89,13 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
     }
   }
 
-  def fromBlockCoords(blockPos: BlockRelWorld, position: CylCoords, _result: Vector3d): Vector3d =
-    CoordUtils.fromBlockCoords(CylCoords(camera.view.position), BlockCoords(blockPos), position, _result)
+  private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords): Vector3d =
+    (BlockCoords(blockPos).toCylCoords + offset).toNormalCoords(CylCoords(camera.view.position)).toVector3d
 
   private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
     case block if block.blockType != Blocks.Air =>
       val points = for (v <- block.blockType.bounds(block.metadata).vertices) yield {
-        fromBlockCoords(hitBlockCoords, v, new Vector3d)
+        asNormalCoords(hitBlockCoords, v)
       }
       val PA = new Vector3d
       val PB = new Vector3d
@@ -125,7 +120,7 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
     if (ttl < 0) // TODO: this is a temporary fix for ray-loops
       return None
 
-    val points = BlockState.vertices.map(v => fromBlockCoords(current, v, new Vector3d))
+    val points = BlockState.vertices.map(v => asNormalCoords(current, v))
 
     val PA = new Vector3d
     val PB = new Vector3d
@@ -140,7 +135,7 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
       val pointOnSide = points(if (side == 0) index else index + 6)
       val distance = Math.abs(pointOnSide.dot(normal) / ray.dot(normal)) // abs may be needed (a/-0)
       if (distance <= maxDistance * CylinderSize.y60) {
-        val hitBlockCoords = coordsOfHitBlock(current, NeighborOffsets(side))
+        val hitBlockCoords = current.offset(NeighborOffsets(side))
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
           Some((hitBlockCoords, Some(oppositeSide(side))))

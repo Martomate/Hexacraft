@@ -1,12 +1,12 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.chunk.{ChunkCache, Chunk}
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.storage.LocalBlockState
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
 

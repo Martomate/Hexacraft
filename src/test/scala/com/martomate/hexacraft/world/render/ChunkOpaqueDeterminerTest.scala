@@ -3,8 +3,8 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-import com.martomate.hexacraft.world.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

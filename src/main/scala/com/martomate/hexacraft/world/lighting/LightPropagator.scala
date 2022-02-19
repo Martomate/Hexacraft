@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.lighting
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkCache, Chunk}
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
 
 import scala.collection.mutable

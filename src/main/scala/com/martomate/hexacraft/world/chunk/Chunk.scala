@@ -3,11 +3,11 @@ package com.martomate.hexacraft.world.chunk
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.lighting.LightPropagator
-import com.martomate.hexacraft.world.storage.{ChunkData, ChunkStorage}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer

@@ -18,7 +18,7 @@ import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
-import com.martomate.hexacraft.world.save.WorldSave
+import com.martomate.hexacraft.world.save.MigrationManager
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
 
 import scala.collection.mutable
@@ -251,7 +251,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
 
   private def toNBT: CompoundTag = {
     NBTUtil.makeCompoundTag("world", Seq(
-      new ShortTag("version", WorldSave.LatestVersion),
+      new ShortTag("version", MigrationManager.LatestVersion),
       NBTUtil.makeCompoundTag("general", Seq(
         new ByteTag("worldSize", size.worldSize.toByte),
         new StringTag("name", worldInfo.worldName)
