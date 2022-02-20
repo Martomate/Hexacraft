@@ -71,6 +71,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
   private val entityModelLoader = new EntityModelLoader
 
+  private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
 
   private var debugScene: DebugScene = _
@@ -112,7 +113,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
           window.scenes.pushScene(new PauseMenu(this))
           setPaused(true)
         case GLFW_KEY_M =>
-          setUseMouse(!playerInputHandler.moveWithMouse)
+          setUseMouse(!moveWithMouse)
         case GLFW_KEY_F =>
           world.player.flying = !world.player.flying
         case GLFW_KEY_F7 =>
@@ -142,13 +143,13 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def setUseMouse(useMouse: Boolean): Unit = {
-    playerInputHandler.moveWithMouse = useMouse
-    setMouseCursorInvisible(playerInputHandler.moveWithMouse)
+    moveWithMouse = useMouse
+    setMouseCursorInvisible(moveWithMouse)
     window.resetMousePos()
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {
-    if (playerInputHandler.moveWithMouse) {
+    if (moveWithMouse) {
       val dy = -math.signum(event.yoffset).toInt
       if (dy != 0) {
         val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
@@ -168,7 +169,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     if (paused != isPaused) {
       isPaused = paused
 
-      setMouseCursorInvisible(!paused && playerInputHandler.moveWithMouse)
+      setMouseCursorInvisible(!paused && moveWithMouse)
     }
   }
 
@@ -212,16 +213,16 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def renderCrosshair(): Unit = {
-    if (!isPaused && playerInputHandler.moveWithMouse) {
+    if (!isPaused && moveWithMouse) {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
   }
 
   override def tick(): Unit = {
-    if (!isPaused) playerInputHandler.tick()
+    if (!isPaused) playerInputHandler.tick(moveWithMouse)
 
-    camera.setPositionAndRotation(world.player)
+    camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
     for (shader <- shadersNeedingCamera)
@@ -248,7 +249,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def updateMousePicker(): Unit = {
-    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
+    mousePicker.setRayFromScreen(if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
     worldRenderer.selectedBlockAndSide = if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None
   }
 

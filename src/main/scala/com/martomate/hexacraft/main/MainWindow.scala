@@ -63,11 +63,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
         titleTicker += 1
         if (ticks % 60 == 0) {
           fps = frames
-
           vsyncManager.handleVsync(fps)
-
           World.shouldChillChunkLoader = fps < 20
-
           frames = 0
         }
         prevTime += 1e9.toLong / 60

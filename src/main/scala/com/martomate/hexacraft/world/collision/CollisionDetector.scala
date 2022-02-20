@@ -144,9 +144,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
         vel.sub(normal.mul(dot))
         val result = _collides(objectBounds, newPos, vel, ttl-1)
         //val falseLen = result._2.length
-        if (minDist != 1) {
-          result._2.mul(1 / (1 - minDist))
-        }
+        result._2.mul(1 / (1 - minDist))
         result
       } else (pos, new Vector3d) // inside a block
     } else (pos.add(velocity, new Vector3d), velocity) // no collision found
