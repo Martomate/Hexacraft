@@ -1,5 +1,7 @@
 enablePlugins(LauncherJarPlugin)
 
+val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
+
 lazy val Benchmark = config("bench") extend Test
 
 lazy val root = Project("hexacraft", file("."))
@@ -14,6 +16,7 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   version := "0.10",
   scalaVersion := "2.13.7",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
+  javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
@@ -23,29 +26,33 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
 )
 
 def lwjglDependencies = {
-  val lwjglVersion = "3.3.0"
+  val lwjglVersion = "3.3.1"
+
+  val platforms = Seq(
+    "natives-windows",
+    "natives-windows-arm64",
+    "natives-linux",
+    "natives-linux-arm64",
+    "natives-macos",
+    "natives-macos-arm64",
+  )
 
   Seq(
     "org.lwjgl" % "lwjgl" % lwjglVersion,
-    "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-windows",
-    "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-linux",
-    "org.lwjgl" % "lwjgl" % lwjglVersion classifier "natives-macos",
     "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
-    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-windows",
-    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-linux",
-    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier "natives-macos",
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion,
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-windows",
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-linux",
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier "natives-macos"
-  )
+    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion
+  ) ++ platforms.flatMap(platform => Seq(
+    "org.lwjgl" % "lwjgl" % lwjglVersion classifier platform,
+    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier platform,
+    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier platform
+  ))
 }
 
-val scalatestVersion = "3.2.10"
+val scalatestVersion = "3.2.11"
 
 def otherDependencies = Seq(
   "org.scalactic" %% "scalactic" % scalatestVersion,
-  "org.joml" % "joml" % "1.10.3",
+  "org.joml" % "joml" % "1.10.4",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
