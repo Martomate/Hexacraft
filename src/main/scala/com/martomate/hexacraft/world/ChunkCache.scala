@@ -8,14 +8,18 @@ import scala.collection.mutable
 
 class ChunkCache(world: BlocksInWorld) {
   private val cache: mutable.LongMap[Chunk] = mutable.LongMap.empty
-  private var lastChunkCoords: ChunkRelWorld = _
+  private var lastChunkCoords: Option[ChunkRelWorld] = None
   private var lastChunk: Chunk = _
 
-  def clearCache(): Unit = cache.clear()
+  def clearCache(): Unit = {
+    cache.clear()
+    lastChunkCoords = None
+    lastChunk = null
+  }
 
   def getChunk(coords: ChunkRelWorld): Chunk = {
-    if (coords != lastChunkCoords) {
-      lastChunkCoords = coords
+    if (lastChunkCoords.isEmpty || coords != lastChunkCoords.get) {
+      lastChunkCoords = Some(coords)
       lastChunk = cache.getOrNull(coords.value)
       if (lastChunk == null) {
         val newValue = world.getChunk(coords).orNull
@@ -36,8 +40,8 @@ class ChunkCache(world: BlocksInWorld) {
       (c2, chunk)
     } else {
       val chunkCoords = BlockRelWorld(i2, j2, k2, chunk.coords).getChunkRelWorld
-      if (chunkCoords != lastChunkCoords) {
-        lastChunkCoords = chunkCoords
+      if (lastChunkCoords.isEmpty || chunkCoords != lastChunkCoords.get) {
+        lastChunkCoords = Some(chunkCoords)
         lastChunk = cache.getOrElseUpdate(chunkCoords.value, world.getChunk(chunkCoords).orNull)
       }
       (c2, lastChunk)

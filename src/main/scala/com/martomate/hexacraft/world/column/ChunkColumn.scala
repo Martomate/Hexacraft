@@ -13,7 +13,7 @@ import com.martomate.hexacraft.world.settings.WorldProvider
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldProvider)(implicit cylSize: CylinderSize) extends ChunkBlockListener with ChunkEventListener {
+class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider)(implicit cylSize: CylinderSize) extends ChunkBlockListener with ChunkEventListener {
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -31,7 +31,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   private def saveFilePath: String = s"data/${coords.value}/column.dat"
 
   private val _heightMap: IndexedSeq[Array[Short]] = {
-    val columnNBT = worldSettings.loadState(saveFilePath)
+    val columnNBT = worldProvider.loadState(saveFilePath)
     NBTUtil.getShortArray(columnNBT, "heightMap") match {
       case Some(heightNBT) =>
         for (x <- 0 until 16) yield Array.tabulate(16)(z => heightNBT((x << 4) | z))
@@ -126,7 +126,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   def unload(): Unit = {
     chunks.foreachValue(_.unload())
 
-    worldSettings.saveState(NBTUtil.makeCompoundTag("column", Seq(
+    worldProvider.saveState(NBTUtil.makeCompoundTag("column", Seq(
       new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))
     )), saveFilePath)
 

@@ -83,7 +83,7 @@ object ChunkRenderImplBench extends Bench.LocalTime {
     override def getWorldInfo: WorldInfo = new WorldInfo(
       "bench world",
       cylSize,
-      new WorldGenSettings(
+      WorldGenSettings.fromNBT(
         NBTUtil.makeCompoundTag("", Seq(new LongTag("seed", seed))),
         WorldSettings(Some("bench world"), Some(8), Some(seed))
       ),

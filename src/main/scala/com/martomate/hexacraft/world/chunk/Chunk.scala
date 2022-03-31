@@ -1,16 +1,27 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.lighting.LightPropagator
+import com.martomate.hexacraft.world.settings.WorldProvider
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
+
+object Chunk {
+  def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(implicit cylSize: CylinderSize): Chunk = {
+    val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
+    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator)
+    new Chunk(coords, chunkGenerator, new LightPropagator(world))
+  }
+}
 
 class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator) extends BlockInChunkAccessor {
   private val chunkData: ChunkData = generator.loadData()
