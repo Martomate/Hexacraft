@@ -4,10 +4,8 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
-import com.martomate.hexacraft.world.chunk.{Chunk, ChunkGenerator}
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
-import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.lighting.LightPropagator
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

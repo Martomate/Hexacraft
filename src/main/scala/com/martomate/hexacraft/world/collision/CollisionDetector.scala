@@ -29,8 +29,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
                objectCoords: SkewCylCoords,
                targetBounds: HexBox,
                targetCylCoords: CylCoords): Boolean = {
-    val (bc, fc) = CoordUtils.getEnclosingBlock(targetCylCoords.toBlockCoords)
-    val targetCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
+    val targetCoords = targetCylCoords.toSkewCylCoords
     val objectVelocity = SkewCylCoords(0, 0, 0, fixZ = false)
 
     distanceToCollision(objectBounds, objectCoords, objectVelocity, targetBounds, targetCoords)._1 == 0
@@ -40,11 +39,12 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   def positionAndVelocityAfterCollision(box: HexBox, pos: Vector3d, velocity: Vector3d): (Vector3d, Vector3d) = {
     chunkCache.clearCache()
 
-    var result = (pos, velocity)
+    val vel = new Vector3d(velocity)
+    var result = (pos, vel)
     val parts = (velocity.length * 10).toInt + 1
-    velocity.div(parts)
+    result._2.div(parts)
     for (_ <- 1 to parts) {
-      result = _collides(box, result._1, velocity, 100)
+      result = _collides(box, result._1, vel, 100)
     }
     result._2.mul(parts)
     result

@@ -7,8 +7,6 @@ import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
-import java.util
-
 class FakeBlocksInWorld private(provider: FakeWorldProvider)(implicit cylSize: CylinderSize) extends BlocksInWorld {
   private val worldGenerator = new WorldGenerator(provider.getWorldInfo.gen)
   private var cols: Map[ColumnRelWorld, ChunkColumn] = Map.empty
