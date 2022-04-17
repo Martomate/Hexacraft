@@ -1,12 +1,11 @@
 package com.martomate.hexacraft.world.gen
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 import scala.collection.mutable
 
-class PlannedWorldChange(implicit cylSize: CylinderSize) {
+class PlannedWorldChange {
   val changes: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
 
   def setBlock(coords: BlockRelWorld, block: BlockState): Unit = {

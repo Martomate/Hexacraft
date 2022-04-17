@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets, Offset}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 import scala.annotation.tailrec

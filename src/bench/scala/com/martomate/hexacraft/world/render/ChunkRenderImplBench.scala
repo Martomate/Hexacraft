@@ -28,7 +28,7 @@ object ChunkRenderImplBench extends Bench.LocalTime {
   // Measurements ------
   performance of "ChunkRenderer" in {
     performance of "updateContent" in {
-      measure method "blocks" config(
+      measure.method("blocks").config(
         exec.benchRuns := 50,
         exec.minWarmupRuns := 10,
         reports.regression.significance := 5e-2
@@ -40,7 +40,7 @@ object ChunkRenderImplBench extends Bench.LocalTime {
         }
       }
 
-      measure method "lighting" config(
+      measure.method("lighting").config(
         exec.benchRuns := 50,
         exec.minWarmupRuns := 10,
         reports.regression.significance := 5e-2

@@ -5,13 +5,13 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.entity.registry.EntityRegistry
+import com.martomate.hexacraft.world.entity.EntityFactory
 import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
 
 import scala.collection.mutable
 import scala.util.Random
 
-class SheepPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
   private val plannedSheep: mutable.Map[ChunkRelWorld, PlannedEntitySpawn] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -28,7 +28,7 @@ class SheepPlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylin
         val thePlan = new PlannedEntitySpawn
         val count = rand.nextInt(maxSheepPerGroup) + 1
         for (_ <- 0 until count) {
-          val sheep = EntityRegistry.load("sheep", world).get
+          val sheep = sheepFactory.createEntity(world)
           val column = world.provideColumn(coords.getColumnRelWorld)
           val cx = rand.nextInt(16)
           val cz = rand.nextInt(16)

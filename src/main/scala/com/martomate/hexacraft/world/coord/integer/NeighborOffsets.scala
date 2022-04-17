@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.coord.integer
 
 object NeighborOffsets {
-  val all: Seq[Offset] = Array(
+  val all: Seq[Offset] = IndexedSeq(
     Offset( 0, 1, 0),
     Offset( 0,-1, 0),
     Offset( 1, 0, 0),

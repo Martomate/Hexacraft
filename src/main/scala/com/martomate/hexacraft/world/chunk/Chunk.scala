@@ -8,6 +8,7 @@ import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
+import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.settings.WorldProvider
@@ -18,7 +19,8 @@ import scala.collection.mutable.ArrayBuffer
 object Chunk {
   def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(implicit cylSize: CylinderSize): Chunk = {
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
-    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator)
+    val entityRegistry = EntityRegistry.empty
+    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
   }
 }

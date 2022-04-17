@@ -2,7 +2,6 @@ package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import org.joml.Vector3d
 
 class BlockCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(implicit val cylSize: CylinderSize)
   extends AbstractCoords[BlockCoords](_x, _y, if (fixZ) MathUtils.fitZ(_z, cylSize.totalSize) else _z) {

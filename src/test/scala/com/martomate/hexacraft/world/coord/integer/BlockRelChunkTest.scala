@@ -1,13 +1,9 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.util.CylinderSize
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BlockRelChunkTest extends AnyFlatSpec with Matchers {
-  private val cylSize = new CylinderSize(4)
-  import cylSize.impl
-
   "xyz" should "be correct in normal range" in {
     val c = BlockRelChunk(3, 7, 5)
     c.cx shouldBe 3

@@ -7,6 +7,8 @@ import com.martomate.hexacraft.world.column.ChunkColumn
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
+import scala.collection.mutable
+
 class FakeBlocksInWorld private(provider: FakeWorldProvider)(implicit cylSize: CylinderSize) extends BlocksInWorld {
   private val worldGenerator = new WorldGenerator(provider.getWorldInfo.gen)
   private var cols: Map[ColumnRelWorld, ChunkColumn] = Map.empty
@@ -33,10 +35,10 @@ class FakeBlocksInWorld private(provider: FakeWorldProvider)(implicit cylSize: C
   }
 
   override def toString: String = {
-    val sb = new StringBuilder
+    val sb = new mutable.StringBuilder
     for (col <- cols.values) {
       for (ch <- col.allChunks) {
-        val blocksStr = Seq(ch.blocks.allBlocks: _*).map(s => s"${s.coords} -> ${s.block.blockType.displayName}").mkString(", ")
+        val blocksStr = ch.blocks.allBlocks.map(s => s"${s.coords} -> ${s.block.blockType.displayName}").mkString(", ")
         sb.append(ch.coords).append(": ").append(blocksStr).append("\n")
       }
     }

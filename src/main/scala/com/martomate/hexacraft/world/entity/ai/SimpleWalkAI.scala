@@ -5,12 +5,11 @@ import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.Entity
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI[E <: Entity](player: E, input: EntityAIInput) extends EntityAI {
+class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput) extends EntityAI {
   private val movingForce = new Vector3d
-  private var target: CylCoords = CylCoords(0, 0, 0)(player.position.cylSize)
+  private var target: CylCoords = CylCoords(0, 0, 0)(entity.position.cylSize)
 
   private var timeout: Int = 0
 
@@ -19,30 +18,30 @@ class SimpleWalkAI[E <: Entity](player: E, input: EntityAIInput) extends EntityA
   private val speed = 0.2
 
   def tick(): Unit = {
-    val distSq = player.position.distanceXZSq(target)
+    val distSq = entity.position.distanceXZSq(target)
 
     movingForce.set(0)
 
     if (distSq < speed * speed || timeout == 0) {
       // new goal
       val angle = math.random() * 2 * math.Pi
-      val targetX = player.position.x + reach * math.cos(angle)
-      val targetZ = player.position.z + reach * -math.sin(angle)
-      target = CylCoords(targetX, 0, targetZ)(player.position.cylSize)
+      val targetX = entity.position.x + reach * math.cos(angle)
+      val targetZ = entity.position.z + reach * -math.sin(angle)
+      target = CylCoords(targetX, 0, targetZ)(entity.position.cylSize)
 
       timeout = timeLimit
     } else {
       // move towards goal
-      val blockInFront = input.blockInFront(player.position, player.rotation, player.boundingBox.radius + speed * 4)
+      val blockInFront = input.blockInFront(entity.position, entity.rotation, entity.boundingBox.radius + speed * 4)
 
-      if (blockInFront != Blocks.Air && player.velocity.y == 0) {
+      if (blockInFront != Blocks.Air && entity.velocity.y == 0) {
         movingForce.y = 3.5
       }
-      val angle = player.position.angleXZ(target)
+      val angle = entity.position.angleXZ(target)
 
       movingForce.x = speed * math.cos(angle)
       movingForce.z = speed * math.sin(angle)
-      player.rotation.y = -angle
+      entity.rotation.y = -angle
     }
 
     timeout -= 1
@@ -60,7 +59,7 @@ class SimpleWalkAI[E <: Entity](player: E, input: EntityAIInput) extends EntityA
   override def fromNBT(tag: CompoundTag): Unit = {
     val targetX = NBTUtil.getDouble(tag, "targetX", 0)
     val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
-    target = CylCoords(targetX, 0, targetZ)(player.position.cylSize)
+    target = CylCoords(targetX, 0, targetZ)(entity.position.cylSize)
     timeout = NBTUtil.getShort(tag, "timeout", 0)
   }
 

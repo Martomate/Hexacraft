@@ -1,13 +1,9 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.util.CylinderSize
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class ChunkRelColumnTest extends AnyFlatSpec with Matchers {
-  private val cylSize = new CylinderSize(4)
-  import cylSize.impl
-
   "Y" can "use the entire range" in {
     ChunkRelColumn.create(   -14).Y shouldBe -14
     ChunkRelColumn.create( 0x7ff).Y shouldBe 0x7ff

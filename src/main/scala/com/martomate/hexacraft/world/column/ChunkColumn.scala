@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.column
 
 import com.flowpowered.nbt.ShortArrayTag
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, Chunk}
+import com.martomate.hexacraft.world.chunk.{Chunk, ChunkBlockListener, ChunkEventListener}
 import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
@@ -13,7 +13,7 @@ import com.martomate.hexacraft.world.settings.WorldProvider
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider)(implicit cylSize: CylinderSize) extends ChunkBlockListener with ChunkEventListener {
+class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider) extends ChunkBlockListener with ChunkEventListener {
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty

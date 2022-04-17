@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.block
 
-import java.net.URL
-
-import com.eclipsesource.json.{Json, JsonObject, JsonValue}
+import com.eclipsesource.json.{Json, JsonValue}
 import com.martomate.hexacraft.resource.{ResourceWrapper, TextureArray, TextureToLoad}
 import com.martomate.hexacraft.util.FileUtils
+
+import java.net.URL
 import javax.imageio.ImageIO
 
 trait IBlockLoader {

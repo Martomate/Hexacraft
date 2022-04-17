@@ -121,16 +121,6 @@ class SheepEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
     //head.rotation.x = lerp(neckSin, -1, 1, 0, pi / 4)
   }
 
-  private def lerp(a: Float,
-                   loIn: Float,
-                   hiIn: Float,
-                   loOut: Float,
-                   hiOut: Float): Float =
-    (a - loIn) / (hiIn - loIn) * (hiOut - loOut) + loOut
-
-  private def clamp(a: Float, lo: Float, hi: Float): Float =
-    if (a < lo) lo else if (a > hi) hi else a
-
   override def texture: TextureSingle =
     TextureSingle.getTexture(
       "textures/entities/" + setup.getString("texture", "")

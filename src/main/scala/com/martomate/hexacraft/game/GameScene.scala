@@ -297,7 +297,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   override def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer = {
-    val renderer = new GUIBlocksRenderer(1, xOff = 1.5f, yOff = -0.9f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
+    val renderer = new GUIBlocksRenderer(1, xOff = 1.5f, yOff = -0.9f, brightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
     renderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
     renderer
   }

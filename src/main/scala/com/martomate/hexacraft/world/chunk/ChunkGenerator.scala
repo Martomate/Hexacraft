@@ -7,10 +7,11 @@ import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldProvider
 
-class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider, worldGenerator: WorldGenerator)(implicit cylSize: CylinderSize) {
+class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider, worldGenerator: WorldGenerator, registry: EntityRegistry)(implicit cylSize: CylinderSize) {
 
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
 
@@ -18,7 +19,7 @@ class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider:
     val nbt = worldProvider.loadState(filePath)
 
     val storage: ChunkStorage = new DenseChunkStorage(coords)
-    val data = new ChunkData(storage, world)
+    val data = new ChunkData(storage, world, registry)
 
     if (!nbt.getValue.isEmpty) {
       data.fromNBT(nbt)

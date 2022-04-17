@@ -9,7 +9,7 @@ object RangeMicrobenchmark extends Bench.OnlineRegressionReport {
   } yield 0 until (size * 1)
 
   performance of "Range" in {
-    measure method "map" config (
+    measure.method("map").config(
       exec.minWarmupRuns := 20,
       exec.benchRuns := 50,
       reports.regression.significance := 0.01
@@ -45,7 +45,7 @@ object MemoryTest extends Bench.OfflineReport {
 
   performance of "MemoryFootprint" in {
     performance of "Array" in {
-      using(sizes) config (
+      using(sizes).config(
         exec.benchRuns := 10,
         exec.independentSamples := 2
       ) in { sz =>

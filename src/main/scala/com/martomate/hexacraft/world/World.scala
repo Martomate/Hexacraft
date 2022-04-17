@@ -13,7 +13,9 @@ import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
-import com.martomate.hexacraft.world.entity.registry.EntityRegistrator
+import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
+import com.martomate.hexacraft.world.entity.registry.EntityRegistry
+import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
@@ -37,11 +39,10 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
-  private implicit val modelLoaderImpl: EntityModelLoader = new EntityModelLoader()
-  EntityRegistrator.load()
+  private val entityRegistry = makeEntityRegistry()
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed, worldInfo.planner)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -51,13 +52,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   private val columns = mutable.LongMap.empty[ChunkColumn]
 
   private val chunkLoadingOrigin = new PosAndDir
-  private val chunkLoader: ChunkLoader = new ChunkLoaderDistPQ(
-    chunkLoadingOrigin,
-    coords => new Chunk(coords, new ChunkGenerator(coords, this, worldProvider, worldGenerator), lightPropagator),
-    coords => getChunk(coords).foreach(_.saveIfNeeded()),
-    renderDistance,
-    () => World.shouldChillChunkLoader
-  )
+  private val chunkLoader: ChunkLoader = makeChunkLoader()
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
@@ -71,6 +66,24 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   addChunkAddedOrRemovedListener(chunkLoader)
 
   saveWorldData()
+
+  private def makeEntityRegistry(): EntityRegistry = {
+    val modelFactory: EntityModelLoader = new EntityModelLoader()
+    EntityRegistry.from(Map(
+      "player" -> (world => new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)),
+      "sheep" -> (world => new SheepEntity(modelFactory.load("sheep"), world, SheepAIFactory))
+    ))
+  }
+
+  private def makeChunkLoader(): ChunkLoader = {
+    new ChunkLoaderDistPQ(
+      chunkLoadingOrigin,
+      coords => new Chunk(coords, new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry), lightPropagator),
+      coords => getChunk(coords).foreach(_.saveIfNeeded()),
+      renderDistance,
+      () => World.shouldChillChunkLoader
+    )
+  }
 
   def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 

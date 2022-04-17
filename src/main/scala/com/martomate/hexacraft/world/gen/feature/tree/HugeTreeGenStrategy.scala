@@ -1,9 +1,7 @@
 package com.martomate.hexacraft.world.gen.feature.tree
 
 import com.martomate.hexacraft.world.block.{Block, Blocks}
-import com.martomate.hexacraft.world.coord.CoordUtils.vectorToOffset
 import com.martomate.hexacraft.world.coord.integer.{NeighborOffsets, Offset}
-import org.joml.Vector3d
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
