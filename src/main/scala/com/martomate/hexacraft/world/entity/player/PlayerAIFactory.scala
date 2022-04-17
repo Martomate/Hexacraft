@@ -6,6 +6,6 @@ import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory, Simpl
 
 object PlayerAIFactory extends EntityAIFactory[PlayerEntity] {
   override def makeEntityAI(world: BlocksInWorld, player: PlayerEntity)(implicit cylSize: CylinderSize): EntityAI = {
-    new SimpleWalkAI(player, new SimpleAIInput(world, player))
+    new SimpleWalkAI(player, new SimpleAIInput(world))
   }
 }
