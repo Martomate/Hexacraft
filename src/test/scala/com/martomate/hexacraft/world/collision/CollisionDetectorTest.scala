@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
-import com.martomate.hexacraft.world.{FakeBlocksInWorld, FakeWorldProvider}
+import com.martomate.hexacraft.world.{CollisionDetector, FakeBlocksInWorld, FakeWorldProvider}
 import org.joml.Vector3d
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -119,6 +119,43 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
       BlockCoords(coords).toCylCoords.toVector3d,
       new Vector3d
     ) shouldBe (BlockCoords(coords).toCylCoords.toVector3d, new Vector3d)
+  }
+
+  it should "do nothing if inside a block" in {
+    val provider = new FakeWorldProvider(37)
+    val world = FakeBlocksInWorld.empty(provider)
+    val detector = new CollisionDetector(world)
+
+    // Ensure the chunk is loaded
+    val coords = BlockRelWorld(17, -48, 3)
+    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+
+    // Place a block
+    chunk.setBlock(coords.getBlockRelChunk, BlockState(Blocks.Dirt))
+
+    // Check for collision (it should not move)
+    val position = BlockCoords(coords).toSkewCylCoords
+    val velocity = SkewCylCoords(3.2, 1.4, -0.9, fixZ = false)
+    val zeroMovement = SkewCylCoords(0, 0, 0, fixZ = false)
+    checkCollision(detector, box1, position, velocity, Some(zeroMovement))
+  }
+
+  it should "do nothing if the chunk is not loaded" in {
+    val provider = new FakeWorldProvider(37)
+    val world = FakeBlocksInWorld.empty(provider)
+    val detector = new CollisionDetector(world)
+
+    // Ensure the chunk is NOT loaded
+    val coords = BlockRelWorld(17, -48, 3)
+    world.provideColumn(coords.getColumnRelWorld)
+    world.getChunk(coords.getChunkRelWorld) shouldBe None
+
+    // Check for collision (it should not move)
+    val position = BlockCoords(coords).toSkewCylCoords
+    val velocity = SkewCylCoords(3.2, 1.4, -0.9, fixZ = false)
+    val zeroMovement = SkewCylCoords(0, 0, 0, fixZ = false)
+    checkCollision(detector, box1, position, velocity, Some(zeroMovement))
   }
 
   it should "add velocity to position if there is no collision" in {

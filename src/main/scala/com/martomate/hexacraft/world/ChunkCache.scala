@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.chunk.Chunk
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable
 
@@ -28,23 +27,5 @@ class ChunkCache(world: BlocksInWorld) {
       }
     }
     lastChunk
-  }
-
-  def neighbor(side: Int, chunk: Chunk, coords: BlockRelChunk)(implicit cylSize: CylinderSize): (BlockRelChunk, Chunk) = {
-    val off = NeighborOffsets(side)
-    val i2 = coords.cx + off.dx
-    val j2 = coords.cy + off.dy
-    val k2 = coords.cz + off.dz
-    val c2 = BlockRelChunk(i2, j2, k2)
-    if ((i2 & ~15 | j2 & ~15 | k2 & ~15) == 0) {
-      (c2, chunk)
-    } else {
-      val chunkCoords = BlockRelWorld(i2, j2, k2, chunk.coords).getChunkRelWorld
-      if (lastChunkCoords.isEmpty || chunkCoords != lastChunkCoords.get) {
-        lastChunkCoords = Some(chunkCoords)
-        lastChunk = cache.getOrElseUpdate(chunkCoords.value, world.getChunk(chunkCoords).orNull)
-      }
-      (c2, lastChunk)
-    }
   }
 }

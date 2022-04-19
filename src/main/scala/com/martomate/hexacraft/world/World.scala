@@ -5,22 +5,18 @@ import com.martomate.hexacraft.util._
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener, ChunkGenerator}
-import com.martomate.hexacraft.world.collision.CollisionDetector
-import com.martomate.hexacraft.world.column.{ChunkColumn, ChunkColumnListener}
+import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener, ChunkColumn, ChunkColumnListener, ChunkGenerator}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, Offset}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, NeighborOffsets, Offset}
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
-import com.martomate.hexacraft.world.lighting.LightPropagator
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
-import com.martomate.hexacraft.world.save.MigrationManager
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
 
 import scala.collection.mutable
@@ -274,7 +270,8 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     ))
   }
 
-  override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = neighborChunk(coords, side).foreach(_.requestRenderUpdate())
+  override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit =
+    getChunk(coords.offset(NeighborOffsets(side))).foreach(_.requestRenderUpdate())
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
     def affectedChunkOffset(where: Byte): Int = where match {
@@ -304,7 +301,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
           val c2 = bCoords.offset(off)
 
           if (isInNeighborChunk(off)) {
-            neighborChunk(cCoords, i).foreach(n => {
+            getChunk(cCoords.offset(NeighborOffsets(i))).foreach(n => {
               n.requestRenderUpdate()
               n.requestBlockUpdate(c2)
             })

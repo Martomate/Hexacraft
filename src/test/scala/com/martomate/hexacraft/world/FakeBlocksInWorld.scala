@@ -2,8 +2,7 @@ package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.Chunk
-import com.martomate.hexacraft.world.column.ChunkColumn
+import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 

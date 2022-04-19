@@ -48,6 +48,39 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     rayTracer.trace(_ => true) shouldBe Some((location, None))
   }
 
+  it should "return None if the mouse is not on the screen" in {
+    val provider = new FakeWorldProvider(1289)
+    val location = BlockRelWorld(-37, 3, 1)
+    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(provider, Map(
+      location -> new BlockState(Blocks.Dirt)
+    ))
+
+    // Create a camera at the location
+    val camera = new Camera(makeCameraProjection)
+    camera.position.set(BlockCoords(location).offset(0, 0.5, 0).toCylCoords.toVector3d)
+    camera.updateCoords()
+    camera.updateViewMatrix()
+
+    // Create a ray tracer
+    val rayTracer = new RayTracer(world, camera, 5.0)
+
+    // Look outside of the screen
+    rayTracer.setRayFromScreen(new Vector2f(1.2f, 0))
+    rayTracer.trace(_ => true) shouldBe None
+
+    rayTracer.setRayFromScreen(new Vector2f(-1.2f, 0))
+    rayTracer.trace(_ => true) shouldBe None
+
+    rayTracer.setRayFromScreen(new Vector2f(0, 1.2f))
+    rayTracer.trace(_ => true) shouldBe None
+
+    rayTracer.setRayFromScreen(new Vector2f(0, -1.2f))
+    rayTracer.trace(_ => true) shouldBe None
+
+    rayTracer.setRayFromScreen(new Vector2f(1.3f, -1.2f))
+    rayTracer.trace(_ => true) shouldBe None
+  }
+
   it should "return a block right in front of the camera" in {
     val provider = new FakeWorldProvider(1289)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(provider, Map(

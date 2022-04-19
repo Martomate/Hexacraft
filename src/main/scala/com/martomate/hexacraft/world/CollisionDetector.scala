@@ -1,7 +1,6 @@
-package com.martomate.hexacraft.world.collision
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
-import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}

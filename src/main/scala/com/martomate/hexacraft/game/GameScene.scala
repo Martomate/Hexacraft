@@ -1,14 +1,14 @@
 package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
-import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
+import com.martomate.hexacraft.menu.debug.DebugScene
+import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, Shaders}
-import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
+import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
@@ -21,7 +21,7 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{RayTracer, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
