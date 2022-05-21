@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 
 in vec2 position;
 
@@ -9,7 +9,7 @@ void main() {
 	fragPosition = position;
 }
 
-#shader frag
+#pragma shader frag
 
 in vec2 fragPosition;
 

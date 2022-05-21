@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 
 in vec2 position;
 
@@ -12,7 +12,7 @@ void main() {
 	gl_Position.xy *= vec2(1 / aspectRatio, 1);
 }
 
-#shader frag
+#pragma shader frag
 
 out vec4 color;
 

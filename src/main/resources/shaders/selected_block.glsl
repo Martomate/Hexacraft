@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 #define PI 3.141592653589793
 #define y60 0.866025403784439
 
@@ -39,7 +39,7 @@ void main() {
 	fragColor = color;
 }
 
-#shader frag
+#pragma shader frag
 
 flat in vec3 fragColor;
 

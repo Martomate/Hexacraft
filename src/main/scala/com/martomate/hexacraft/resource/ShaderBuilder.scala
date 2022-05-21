@@ -58,7 +58,7 @@ class ShaderBuilder(name: String) {
 
   def loadAll(path: String): ShaderBuilder = {
     val s = loadSource(path)
-    for (part <- s.split("#shader ")) {
+    for (part <- s.split("#pragma shader ")) {
       val newLineIdx = part.indexOf('\n')
       if (newLineIdx != -1) {
         val shaderType = part.substring(0, newLineIdx)

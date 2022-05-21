@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 #define PI 3.141592653589793
 #define y60 0.866025403784439
 
@@ -67,7 +67,7 @@ void main() {
 	fragInFlat.brightness = brightness;
 }
 
-#shader frag
+#pragma shader frag
 #define y60 0.866025403784439
 
 struct FragInFlat {
