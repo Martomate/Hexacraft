@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft._
-import com.martomate.hexacraft.event.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.main.MainMenu
 import com.martomate.hexacraft.renderer.VAO

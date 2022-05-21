@@ -134,13 +134,48 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     ensureColumnExists(coords).heightMap(x & 15, z & 15)
   }
 
+  def setChunk(ch: Chunk): Unit = {
+    ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
+    chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
+    ch.init()
+    worldPlanner.decorate(ch)
+    for (block <- ch.blocks.allBlocks) {
+      ch.requestBlockUpdate(block.coords)
+
+      for (side <- 0 until 8) {
+        if (block.coords.onChunkEdge(side)) {
+          val neighCoords = block.coords.neighbor(side)
+          getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side)))
+            .foreach(_.requestBlockUpdate(neighCoords))
+        }
+      }
+    }
+  }
+
+  def removeChunk(ch: ChunkRelWorld): Unit = {
+    getColumn(ch.getColumnRelWorld) foreach { col =>
+      col.removeChunk(ch.getChunkRelColumn).foreach { c =>
+        chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
+        c.unload()
+      }
+      if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
+        c.removeEventListener(this)
+        c.unload()
+      }
+    }
+  }
+
   def tick(camera: Camera): Unit = {
     chunkLoadingOrigin.setPosAndDirFrom(camera.view)
     chunkLoader.tick()
 
-    addNewChunks()
+    for (ch <- chunkLoader.chunksToAdd()) {
+      setChunk(ch)
+    }
 
-    removeOldChunks()
+    for (ch <- chunkLoader.chunksToRemove()) {
+      removeChunk(ch)
+    }
 
     if (blockUpdateTimer.tick()) {
       performBlockUpdates()
@@ -150,41 +185,6 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     }
 
     columns.values.foreach(_.tick(collisionDetector))
-  }
-
-  private def removeOldChunks(): Unit = {
-    for (ch <- chunkLoader.chunksToRemove()) {
-      getColumn(ch.getColumnRelWorld) foreach { col =>
-        col.removeChunk(ch.getChunkRelColumn).foreach { c =>
-          chunkAddedOrRemovedListeners.foreach(_.onChunkRemoved(c))
-          c.unload()
-        }
-        if (col.isEmpty) columns.remove(col.coords.value).foreach { c =>
-          c.removeEventListener(this)
-          c.unload()
-        }
-      }
-    }
-  }
-
-  private def addNewChunks(): Unit = {
-    for (ch <- chunkLoader.chunksToAdd()) {
-      ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
-      chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
-      ch.init()
-      worldPlanner.decorate(ch)
-      for (block <- ch.blocks.allBlocks) {
-        ch.requestBlockUpdate(block.coords)
-
-        for (side <- 0 until 8) {
-          if (block.coords.onChunkEdge(side)) {
-            val neighCoords = block.coords.neighbor(side)
-            getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side)))
-              .foreach(_.requestBlockUpdate(neighCoords))
-          }
-        }
-      }
-    }
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity

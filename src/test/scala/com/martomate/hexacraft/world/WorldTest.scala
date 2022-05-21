@@ -19,14 +19,19 @@ class WorldTest extends AnyFlatSpec with Matchers {
 
     world.tick(camera)
 
-    val col = world.provideColumn(ColumnRelWorld(3, -4))
-    col.coords shouldBe ColumnRelWorld(3, -4)
-    world.getChunk(ChunkRelWorld(-300, 2, -95)) shouldBe None
+    val cCoords = ChunkRelWorld(3, 7, -4)
 
-    val cCoords = ChunkRelWorld(3, 0, -4)
-    col.setChunk(Chunk(cCoords, world, provider))
+    val col = world.provideColumn(cCoords.getColumnRelWorld)
+    col.coords shouldBe cCoords.getColumnRelWorld
 
-    val bCoords = BlockRelWorld(3*16+5, 0, -4*16+3)
+    // Set a chunk in the world
+    world.getChunk(cCoords) shouldBe None
+    val chunk = Chunk(cCoords, world, provider)
+    col.setChunk(chunk)
+    world.getChunk(cCoords) shouldBe Some(chunk)
+
+    // Set a block in the chunk
+    val bCoords = BlockRelWorld(5, 1, 3, cCoords)
     world.getBlock(bCoords) shouldBe BlockState.Air
     world.setBlock(bCoords, BlockState(Blocks.Stone, 2))
     world.getBlock(bCoords) shouldBe BlockState(Blocks.Stone, 2)

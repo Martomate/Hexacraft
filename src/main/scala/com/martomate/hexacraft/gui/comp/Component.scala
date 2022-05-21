@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.event._
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, Shaders, TextureSingle}
