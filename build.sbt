@@ -10,12 +10,11 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10",
-  scalaVersion := "2.13.7",
+  scalaVersion := "2.13.8",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-Xlint"),
   javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None),
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
-  testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
   logBuffered := false,
   fork := true
 )
@@ -43,10 +42,9 @@ def lwjglDependencies = {
   ))
 }
 
-val scalatestVersion = "3.2.11"
+val scalatestVersion = "3.2.12"
 
 def otherDependencies = Seq(
-  "org.scalactic" %% "scalactic" % scalatestVersion,
   "org.joml" % "joml" % "1.10.4",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
