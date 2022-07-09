@@ -16,8 +16,10 @@ class RealGameMouse extends GameMouse {
 
   def moveTo(x: Double, y: Double): Unit = {
     if (!skipMouseMovedUpdate) mouseMoved.set(x - pos.x, y - pos.y)
-    mousePos.set(x, y)
 
-    skipMouseMovedUpdate = false
+    if (x != pos.x || y != pos.y)
+      skipMouseMovedUpdate = false
+
+    mousePos.set(x, y)
   }
 }

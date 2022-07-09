@@ -111,7 +111,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     }
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
+    GL11.glViewport(0, 0, window.framebufferSize.x, window.framebufferSize.y)
 
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)
@@ -214,8 +214,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
-      window.windowSize.x * window.pixelScale.x,
-      window.windowSize.y * window.pixelScale.y,
+      window.framebufferSize.x,
+      window.framebufferSize.y,
       0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
@@ -229,8 +229,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32,
-      window.windowSize.x * window.pixelScale.x,
-      window.windowSize.y * window.pixelScale.y,
+      window.framebufferSize.x,
+      window.framebufferSize.y,
       0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)

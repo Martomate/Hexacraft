@@ -15,7 +15,6 @@ import org.joml.{Vector2i, Vector2ic}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11, GL43}
-import org.lwjgl.system.MemoryUtil
 
 import java.io.File
 
@@ -23,12 +22,13 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
-  private val _pixelScale = new Vector2i(1, 1)
-
   def windowSize: Vector2ic = _windowSize
-  def pixelScale: Vector2ic = _pixelScale
+
+  private val _framebufferSize = new Vector2i(0, 0) // Initialized in initWindow
+  def framebufferSize: Vector2ic = _framebufferSize
 
   private val glfwHelper = new GlfwHelper()
+  private val callbackHandler = new CallbackHandler()
 
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
   private val window: Long = initWindow()
@@ -39,9 +39,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   override val keyboard: GameKeyboard = key => glfwGetKey(window, key)
 
-  override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
-
   override val scenes: SceneStack = new SceneStackImpl
+
+  override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
 
   def resetMousePos(): Unit = {
     val (cx, cy) = glfwHelper.getCursorPos(window)
@@ -92,9 +92,53 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
         glfwSetWindowTitle(window, "Hexacraft   |   " + debugInfo)
       }
-      // Poll for window events. The key callback will only be
-      // invoked during this call.
+      // Poll for window events. The callbacks will (on most systems) only be invoked during this call.
       glfwPollEvents()
+
+      callbackHandler.handle(processCallbackEvent)
+    }
+  }
+
+  private def processCallbackEvent(event: CallbackEvent): Unit = {
+    event match {
+      case KeyPressedCallback(window, key, scancode, action, mods) =>
+        if (key == GLFW_KEY_R && action == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+          Resource.reloadAllResources()
+          scenes.foreach(_.onReloadedResources())
+          println("Reloaded resources")
+        }
+        if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+          setFullscreen()
+        }
+        scenes.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
+      case CharTypedCallback(_, character) =>
+        scenes.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
+      case MouseClickedCallback(_, button, action, mods) =>
+        val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
+        scenes.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos)))
+      case MouseScrolledCallback(_, xOff, yOff) =>
+        scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOff.toFloat, yOff.toFloat)))
+      case WindowResizedCallback(_, w, h) =>
+        if (w > 0 && h > 0) {
+          if (w != _windowSize.x || h != _windowSize.y) {
+            scenes.foreach(_.windowResized(w, h))
+          }
+          _windowSize.set(w, h)
+          resetMousePos()
+          mouse.skipNextMouseMovedUpdate()
+        }
+        Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
+      case FramebufferResizedCallback(_, w, h) =>
+        if (w > 0 && h > 0) {
+          if (w != _windowSize.x || h != _windowSize.y) {
+            GL11.glViewport(0, 0, w, h)
+          }
+          _framebufferSize.set(w, h)
+        }
+      case DebugMessageCallback(source, debugType, _, severity, message, _) =>
+        val debugMessage = new DebugMessage(source, debugType, severity)
+        val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] - $message"
+        System.err.println(s"OpenGL debug: $messageStr")
     }
   }
 
@@ -145,55 +189,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
     }
   }
 
-  private def processKeys(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit = { // action: 0 = release, 1 = press, 2 = repeat
-    if (key == GLFW_KEY_R && action == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
-      Resource.reloadAllResources()
-      scenes.foreach(_.onReloadedResources())
-      println("Reloaded resources")
-    }
-    if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
-      setFullscreen()
-    }
-    scenes.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
-  }
-
   private def setFullscreen(): Unit = {
     fullscreenManager.toggleFullscreen()
     mouse.skipNextMouseMovedUpdate()
-  }
-
-  private def processChar(window: Long, character: Int): Unit = {
-    scenes.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
-  }
-
-  /** @param mods 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with | */
-  private def processMouseButtons(window: Long, button: Int, action: Int, mods: Int): Unit = {
-    val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
-    scenes.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos)))
-  }
-
-  private def processScroll(window: Long, xOffset: Double, yOffset: Double): Unit = {
-    scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOffset.toFloat, yOffset.toFloat)))
-  }
-
-  private def processDebugMessage(source: Int, debugType: Int, id: Int, severity: Int, length: Int, messageAddress: Long, userParam: Long): Unit = {
-    val message = if (length < 0) MemoryUtil.memASCII(messageAddress) else MemoryUtil.memASCII(messageAddress, length)
-    val debugMessage = new DebugMessage(source, debugType, severity)
-    val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] - $message"
-    System.err.println(s"OpenGL debug: $messageStr")
-  }
-
-  private def resizeWindow(width: Int, height: Int): Unit = {
-    if (width > 0 && height > 0) {
-      if (width != _windowSize.x || height != _windowSize.y) {
-        GL11.glViewport(0, 0, width * pixelScale.x(), height * pixelScale.y())
-
-        scenes.foreach(_.windowResized(width, height))
-      }
-      _windowSize.set(width, height)
-      mouse.skipNextMouseMovedUpdate()
-    }
-    Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
   }
 
   private def initWindow(): Long = {
@@ -209,8 +207,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
     val window = glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", 0, 0)
     if (window == 0) throw new RuntimeException("Failed to create the GLFW window")
 
-    val (sw, sh) = glfwHelper.getPixelScale(window)
-    _pixelScale.set(sw, sh)
+    val (fw, fh) = glfwHelper.getFramebufferSize(window)
+    _framebufferSize.set(fw, fh)
 
     setupCallbacks(window)
 
@@ -226,8 +224,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   private def configureGlfw(): Unit = {
     glfwDefaultWindowHints() // optional, the current window hints are already the default
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE) // the window will stay hidden after creation
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) // the window will be resizable
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE)
@@ -240,12 +238,12 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   }
 
   private def setupCallbacks(window: Long): Unit = {
-    // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-    glfwSetKeyCallback(window, processKeys)
-    glfwSetCharCallback(window, processChar)
-    glfwSetMouseButtonCallback(window, processMouseButtons)
-    glfwSetWindowSizeCallback(window, (_, width, height) => resizeWindow(width, height))
-    glfwSetScrollCallback(window, processScroll)
+    callbackHandler.addKeyCallback(window)
+    callbackHandler.addCharCallback(window)
+    callbackHandler.addMouseButtonCallback(window)
+    callbackHandler.addWindowSizeCallback(window)
+    callbackHandler.addScrollCallback(window)
+    callbackHandler.addFramebufferSizeCallback(window)
   }
 
   private def centerWindow(window: Long): Unit = {
@@ -266,7 +264,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
     if (isDebug && GL.getCapabilities.GL_KHR_debug) {
       GL11.glEnable(GL43.GL_DEBUG_OUTPUT)
-      GL43.glDebugMessageCallback(processDebugMessage, 0L)
+      callbackHandler.addDebugMessageCallback()
     }
   }
 
