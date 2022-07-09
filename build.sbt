@@ -2,13 +2,9 @@ enablePlugins(LauncherJarPlugin)
 
 val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
 
-lazy val Benchmark = config("bench") extend Test
-
 lazy val root = Project("hexacraft", file("."))
   .settings(Defaults.coreDefaultSettings: _*)
   .settings(mainSettings: _*)
-  .configs(Benchmark)
-  .settings(inConfig(Benchmark)(Defaults.testSettings): _*)
 
 def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   name := "Hexacraft",
@@ -20,7 +16,6 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   publishArtifact := false,
   libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
   testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
-  parallelExecution in Benchmark := false,
   logBuffered := false,
   fork := true
 )
@@ -60,6 +55,5 @@ def otherDependencies = Seq(
 def testDependencies = Seq(
   "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
-  "org.scalamock" %% "scalamock" % "5.2.0" % "test",
-  "com.storm-enroute" %% "scalameter" % "0.21" % "bench"
+  "org.scalamock" %% "scalamock" % "5.2.0" % "test"
 )
