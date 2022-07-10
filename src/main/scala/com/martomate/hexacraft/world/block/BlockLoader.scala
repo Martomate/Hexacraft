@@ -64,7 +64,7 @@ object BlockLoader extends IBlockLoader {
   def loadBlockType(name: String): IndexedSeq[Int] = {
     val retOpt = for {
       texIdxMap <- Option(texIdxMap)
-      file <- FileUtils.getResourceFile("spec/blocks/" + name + ".json")
+      file <- FileUtils.getResourceFile(s"spec/blocks/$name.json")
       reader <- Option(FileUtils.getBufferedReader(file))
     } yield {
       val base = Json.parse(reader).asObject()

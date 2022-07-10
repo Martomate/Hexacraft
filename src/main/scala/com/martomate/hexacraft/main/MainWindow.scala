@@ -130,8 +130,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
         Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       case FramebufferResizedCallback(_, w, h) =>
         if (w > 0 && h > 0) {
-          if (w != _windowSize.x || h != _windowSize.y) {
+          if (w != _framebufferSize.x || h != _framebufferSize.y) {
             GL11.glViewport(0, 0, w, h)
+            scenes.foreach(_.framebufferResized(w, h))
           }
           _framebufferSize.set(w, h)
         }

@@ -198,6 +198,10 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
     if (debugScene != null) debugScene.windowResized(width, height)
   }
+
+  override def framebufferResized(width: Int, height: Int): Unit = {
+    worldRenderer.framebufferResized(width, height)
+  }
   
   override def windowTitle: String = ""
 
