@@ -43,11 +43,12 @@ class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene{
   private def uniqueFile(baseFolder: File, fileName: String): File = {
     var file: File = null
     var count = 0
-    do {
+    while
       count += 1
       val name = if (count == 1) fileName else fileName + " " + count
       file = new File(baseFolder, name)
-    } while (file.exists())
+      file.exists()
+    do ()
 
     file
   }

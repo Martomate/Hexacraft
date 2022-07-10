@@ -75,7 +75,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
         // remove and find the next highest
         var y: Int = height
         var ch: Option[Chunk] = None
-        do {
+        while
           y -= 1
           ch = getChunk(ChunkRelColumn.create(y >> 4))
           ch match {
@@ -87,7 +87,8 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
             case None =>
               y = Short.MinValue
           }//.filter(_.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
-        } while (ch.isDefined)
+          ch.isDefined
+        do ()
 
         _heightMap(coords.cx)(coords.cz) = y.toShort
       }

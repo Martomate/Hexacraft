@@ -228,14 +228,12 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   }
 
   def getBrightness(block: BlockRelWorld): Float = {
-    if (block != null)
-      getChunk(block.getChunkRelWorld) match {
-        case Some(c) =>
-          c.lighting.getBrightness(block.getBlockRelChunk)
-        case None =>
-          1.0f
-      }
-    else 1.0f
+    getChunk(block.getChunkRelWorld) match {
+      case Some(c) =>
+        c.lighting.getBrightness(block.getBlockRelChunk)
+      case None =>
+        1.0f
+    }
   }
 
   def onReloadedResources(): Unit = {

@@ -21,7 +21,7 @@ object MigrationManager {
         s"The world saved at ${saveDir.getAbsolutePath} was saved using a too new version. " +
           s"The latest supported version is $LatestVersion but the version was $version.")
 
-    for (v <- version until LatestVersion) {
+    for (v <- version.toInt until LatestVersion) {
       migrateFrom(v, saveDir)
       nbtData.getValue.put("version", new ShortTag("version", (v + 1).toShort))
       NBTUtil.saveTag(nbtData, saveFile)

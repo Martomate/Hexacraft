@@ -14,9 +14,6 @@ class PointerWrapperTest extends AnyFlatSpec with Matchers {
   it should "pass single-element arrays as parameters" in {
     val pw = new PointerWrapper
     pw.ints { (px, py) =>
-      px shouldBe a [Array[_]]
-      py shouldBe a [Array[_]]
-
       px.length shouldBe 1
       py.length shouldBe 1
     }
@@ -42,9 +39,6 @@ class PointerWrapperTest extends AnyFlatSpec with Matchers {
   it should "pass single-element arrays as parameters" in {
     val pw = new PointerWrapper
     pw.doubles { (px, py) =>
-      px shouldBe a [Array[_]]
-      py shouldBe a [Array[_]]
-
       px.length shouldBe 1
       py.length shouldBe 1
     }
