@@ -1,11 +1,10 @@
 package com.martomate.hexacraft.world.camera
 
 import com.martomate.hexacraft.resource.Shader
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.player.Player
 import org.joml.{Vector3d, Vector3f}
 
 class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
@@ -30,18 +29,12 @@ class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
   def setPosition(x: Double, y: Double, z: Double): Unit = {
     position.x = x
     position.y = y
-    position.z = z
-    position.z %= worldSize.circumference
-    if (position.z < 0) position.z += worldSize.circumference
+    position.z = MathUtils.fitZ(z, worldSize.circumference)
   }
 
-  def setPositionAndRotation(player: Player): Unit = {
-    setPosition(player.position)
-    setRotation(player.rotation.x.toFloat, player.rotation.y.toFloat, player.rotation.z.toFloat)
-  }
-
-  def move(dx: Double, dy: Double, dz: Double): Unit = {
-    setPosition(position.x + dx, position.y + dy, position.z + dz)
+  def setPositionAndRotation(position: Vector3d, rotation: Vector3d): Unit = {
+    setPosition(position)
+    setRotation(rotation.x.toFloat, rotation.y.toFloat, rotation.z.toFloat)
   }
 
   def setRotation(vec: Vector3f): Unit = setRotation(vec.x, vec.y, vec.z)

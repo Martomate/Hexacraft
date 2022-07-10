@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.render.segment.{ChunkSegsWithKey, Segment}
-import org.scalamock.scalatest.MockFactory
 
-class ChunkSegsWithKeyTest extends ChunkSegsTest with MockFactory {
+class ChunkSegsWithKeyTest extends ChunkSegsTest {
   "lastKeyAndSegment" should "return the correct key if nothing is removed" in {
     val segs = make
     segs.add(12, Segment(5, 6))

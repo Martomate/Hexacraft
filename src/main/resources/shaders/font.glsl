@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 in vec2 position;
 in vec2 textureCoords;
 
@@ -17,7 +17,7 @@ void main(void){
     pass_textureCoords = textureCoords;
 }
 
-#shader frag
+#pragma shader frag
 in vec2 pass_textureCoords;
 
 out vec4 out_color;

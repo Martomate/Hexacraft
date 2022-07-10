@@ -1,14 +1,14 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.event.{KeyEvent, MouseClickEvent, ScrollEvent}
-import com.martomate.hexacraft.game.debug.{DebugInfoProvider, DebugScene}
-import com.martomate.hexacraft.game.pause.{PausableScene, PauseMenu}
+import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
+import com.martomate.hexacraft.menu.debug.DebugScene
+import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, Shaders}
-import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
+import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
@@ -21,7 +21,7 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{RayTracer, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11
@@ -71,6 +71,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
   private val entityModelLoader = new EntityModelLoader
 
+  private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
 
   private var debugScene: DebugScene = _
@@ -112,7 +113,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
           window.scenes.pushScene(new PauseMenu(this))
           setPaused(true)
         case GLFW_KEY_M =>
-          setUseMouse(!playerInputHandler.moveWithMouse)
+          setUseMouse(!moveWithMouse)
         case GLFW_KEY_F =>
           world.player.flying = !world.player.flying
         case GLFW_KEY_F7 =>
@@ -142,13 +143,13 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def setUseMouse(useMouse: Boolean): Unit = {
-    playerInputHandler.moveWithMouse = useMouse
-    setMouseCursorInvisible(playerInputHandler.moveWithMouse)
+    moveWithMouse = useMouse
+    setMouseCursorInvisible(moveWithMouse)
     window.resetMousePos()
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {
-    if (playerInputHandler.moveWithMouse) {
+    if (moveWithMouse) {
       val dy = -math.signum(event.yoffset).toInt
       if (dy != 0) {
         val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
@@ -168,7 +169,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     if (paused != isPaused) {
       isPaused = paused
 
-      setMouseCursorInvisible(!paused && playerInputHandler.moveWithMouse)
+      setMouseCursorInvisible(!paused && moveWithMouse)
     }
   }
 
@@ -197,6 +198,10 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
     if (debugScene != null) debugScene.windowResized(width, height)
   }
+
+  override def framebufferResized(width: Int, height: Int): Unit = {
+    worldRenderer.framebufferResized(width, height)
+  }
   
   override def windowTitle: String = ""
 
@@ -212,16 +217,16 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def renderCrosshair(): Unit = {
-    if (!isPaused && playerInputHandler.moveWithMouse) {
+    if (!isPaused && moveWithMouse) {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
   }
 
   override def tick(): Unit = {
-    if (!isPaused) playerInputHandler.tick()
+    if (!isPaused) playerInputHandler.tick(moveWithMouse)
 
-    camera.setPositionAndRotation(world.player)
+    camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
     for (shader <- shadersNeedingCamera)
@@ -248,7 +253,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def updateMousePicker(): Unit = {
-    mousePicker.setRayFromScreen(if (!playerInputHandler.moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
+    mousePicker.setRayFromScreen(if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0))
     worldRenderer.selectedBlockAndSide = if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None
   }
 
@@ -296,7 +301,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   override def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer = {
-    val renderer = new GUIBlocksRenderer(1, xOff = 1.5f, yOff = -0.9f, initBrightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
+    val renderer = new GUIBlocksRenderer(1, xOff = 1.5f, yOff = -0.9f, brightnessFunc = (_, _) => world.getBrightness(camera.blockCoords))(_ => world.player.blockInHand)
     renderer.setViewMatrix(new Matrix4f().translate(0, 0, -2f).rotateZ(-3.1415f / 12).rotateX(3.1415f / 6).translate(0, -0.25f, 0))
     renderer
   }

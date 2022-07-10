@@ -2,8 +2,8 @@ package com.martomate.hexacraft.world.entity
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTSavable, NBTUtil}
+import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.block.HexBox
-import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 

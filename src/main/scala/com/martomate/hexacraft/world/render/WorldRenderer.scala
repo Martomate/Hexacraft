@@ -56,9 +56,9 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
   private val selectedBlockVAO: VAO = makeSelectedBlockVAO
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
 
-  private val mainColorTexture = makeMainColorTexture()
-  private val mainDepthTexture = makeMainDepthTexture()
-  private val mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture)
+  private var mainColorTexture = makeMainColorTexture(window.framebufferSize.x, window.framebufferSize.y)
+  private var mainDepthTexture = makeMainDepthTexture(window.framebufferSize.x, window.framebufferSize.y)
+  private var mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture, window.framebufferSize.x, window.framebufferSize.y)
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
   def selectedBlock: Option[BlockRelWorld] = _selectedBlockAndSide.map(_._1)
@@ -111,7 +111,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     }
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
+    GL11.glViewport(0, 0, window.framebufferSize.x, window.framebufferSize.y)
 
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)
@@ -139,6 +139,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
       renderer.unload()
     })
     chunk.removeEventListener(chunkRenderUpdater)
+  }
+
+  def framebufferResized(width: Int, height: Int): Unit = {
+    mainFrameBuffer.unload()
+
+    mainColorTexture = makeMainColorTexture(width, height)
+    mainDepthTexture = makeMainDepthTexture(width, height)
+    mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture, width, height)
   }
 
   def unload(): Unit = {
@@ -207,15 +215,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
       .create()
   }
 
-  // TODO: what about resize of the window??
-  private def makeMainColorTexture(): Int = {
+  private def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): Int = {
     val texID = GL11.glGenTextures()
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
-      window.windowSize.x * window.pixelScale.x,
-      window.windowSize.y * window.pixelScale.y,
+      framebufferWidth,
+      framebufferHeight,
       0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
@@ -223,14 +230,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     texID
   }
 
-  private def makeMainDepthTexture(): Int = {
+  private def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): Int = {
     val texID = GL11.glGenTextures()
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32,
-      window.windowSize.x * window.pixelScale.x,
-      window.windowSize.y * window.pixelScale.y,
+      framebufferWidth,
+      framebufferHeight,
       0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
@@ -238,8 +245,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     texID
   }
 
-  private def makeMainFrameBuffer(colorTexture: Int, depthTexture: Int): FrameBuffer = {
-    val fb = new FrameBuffer(window.windowSize.x * window.pixelScale.x, window.windowSize.y * window.pixelScale.y)
+  private def makeMainFrameBuffer(colorTexture: Int, depthTexture: Int, framebufferWidth: Int, framebufferHeight: Int): FrameBuffer = {
+    val fb = new FrameBuffer(framebufferWidth, framebufferHeight)
     fb.bind()
     GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
     GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, colorTexture, 0)

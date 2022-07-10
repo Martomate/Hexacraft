@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.main
 
 import org.lwjgl.opengl.GL43
-import org.lwjgl.system.MemoryUtil
 
 class DebugMessage(messageSource: Int, messageType: Int, messageSeverity: Int) {
   def sourceStr: String = messageSource match {

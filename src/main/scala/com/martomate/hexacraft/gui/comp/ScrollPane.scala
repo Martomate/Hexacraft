@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.event._
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
@@ -8,7 +8,8 @@ import org.lwjgl.opengl.GL11
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(_location: LocationInfo) extends Component(_location) {
-  private var (xOffset, yOffset): (Float, Float) = (0, 0)
+  private var xOffset: Float = 0
+  private var yOffset: Float = 0
 
   private val components: ArrayBuffer[Component] = ArrayBuffer.empty[Component]
 

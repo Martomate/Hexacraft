@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.block
 
-import java.net.URL
-
-import com.eclipsesource.json.{Json, JsonObject, JsonValue}
+import com.eclipsesource.json.{Json, JsonValue}
 import com.martomate.hexacraft.resource.{ResourceWrapper, TextureArray, TextureToLoad}
 import com.martomate.hexacraft.util.FileUtils
+
+import java.net.URL
 import javax.imageio.ImageIO
 
 trait IBlockLoader {
@@ -64,7 +64,7 @@ object BlockLoader extends IBlockLoader {
   def loadBlockType(name: String): IndexedSeq[Int] = {
     val retOpt = for {
       texIdxMap <- Option(texIdxMap)
-      file <- FileUtils.getResourceFile("spec/blocks/" + name + ".json")
+      file <- FileUtils.getResourceFile(s"spec/blocks/$name.json")
       reader <- Option(FileUtils.getBufferedReader(file))
     } yield {
       val base = Json.parse(reader).asObject()

@@ -1,11 +1,10 @@
-package com.martomate.hexacraft.world.column
+package com.martomate.hexacraft.world.chunk
 
 import com.flowpowered.nbt.ShortArrayTag
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.chunk.{ChunkBlockListener, ChunkEventListener, Chunk}
-import com.martomate.hexacraft.world.collision.CollisionDetector
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldProvider
@@ -13,7 +12,7 @@ import com.martomate.hexacraft.world.settings.WorldProvider
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldSettings: WorldProvider)(implicit cylSize: CylinderSize) extends ChunkBlockListener with ChunkEventListener {
+class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider) extends ChunkBlockListener with ChunkEventListener {
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -31,7 +30,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   private def saveFilePath: String = s"data/${coords.value}/column.dat"
 
   private val _heightMap: IndexedSeq[Array[Short]] = {
-    val columnNBT = worldSettings.loadState(saveFilePath)
+    val columnNBT = worldProvider.loadState(saveFilePath)
     NBTUtil.getShortArray(columnNBT, "heightMap") match {
       case Some(heightNBT) =>
         for (x <- 0 until 16) yield Array.tabulate(16)(z => heightNBT((x << 4) | z))
@@ -76,7 +75,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
         // remove and find the next highest
         var y: Int = height
         var ch: Option[Chunk] = None
-        do {
+        while
           y -= 1
           ch = getChunk(ChunkRelColumn.create(y >> 4))
           ch match {
@@ -88,7 +87,8 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
             case None =>
               y = Short.MinValue
           }//.filter(_.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
-        } while (ch.isDefined)
+          ch.isDefined
+        do ()
 
         _heightMap(coords.cx)(coords.cz) = y.toShort
       }
@@ -126,7 +126,7 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   def unload(): Unit = {
     chunks.foreachValue(_.unload())
 
-    worldSettings.saveState(NBTUtil.makeCompoundTag("column", Seq(
+    worldProvider.saveState(NBTUtil.makeCompoundTag("column", Seq(
       new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))
     )), saveFilePath)
 

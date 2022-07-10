@@ -1,22 +1,26 @@
-#shader vert
+#pragma shader vert
 
 in vec2 position;
 
+out vec2 fragPosition;
+
 void main() {
 	gl_Position = vec4(position, 0.0, 1.0);
+	fragPosition = position;
 }
 
-#shader frag
+#pragma shader frag
+
+in vec2 fragPosition;
 
 out vec4 color;
 
-uniform vec2 windowSize;
 uniform mat4 invProjMatr;
 uniform mat4 invViewMatr;
 uniform vec3 sun;
 
 void main() {
-	vec4 coordsBeforeMatr = vec4(gl_FragCoord.x / windowSize.x * 2 - 1, gl_FragCoord.y / windowSize.y * 2 - 1, -1, 1);
+	vec4 coordsBeforeMatr = vec4(fragPosition.x, fragPosition.y, -1, 1);
 	vec4 coordsAfterProj = invProjMatr * coordsBeforeMatr;
 	vec3 ray = normalize((invViewMatr * vec4(coordsAfterProj.xy, -1, 0)).xyz);
 	vec3 theSun = normalize(sun);

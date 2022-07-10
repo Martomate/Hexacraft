@@ -1,18 +1,16 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.world.collision.CollisionDetector
+import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 
 class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, player: Player, collisionDetector: CollisionDetector) {
-  var moveWithMouse = false
-
-  def tick(): Unit = {
-    updatePlayer()
+  def tick(moveWithMouse: Boolean): Unit = {
+    updatePlayer(moveWithMouse)
   }
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
-  private def updatePlayer(): Unit = {
+  private def updatePlayer(moveWithMouse: Boolean): Unit = {
     def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
     
     val speed = if (keyPressed(GLFW_KEY_LEFT_CONTROL))    0.075

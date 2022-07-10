@@ -1,7 +1,6 @@
-package com.martomate.hexacraft.world.collision
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
-import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
@@ -29,8 +28,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
                objectCoords: SkewCylCoords,
                targetBounds: HexBox,
                targetCylCoords: CylCoords): Boolean = {
-    val (bc, fc) = CoordUtils.getEnclosingBlock(targetCylCoords.toBlockCoords)
-    val targetCoords = BlockCoords(bc, fixZ = false).offset(fc.x, fc.y, fc.z).toSkewCylCoords
+    val targetCoords = targetCylCoords.toSkewCylCoords
     val objectVelocity = SkewCylCoords(0, 0, 0, fixZ = false)
 
     distanceToCollision(objectBounds, objectCoords, objectVelocity, targetBounds, targetCoords)._1 == 0
@@ -40,11 +38,12 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   def positionAndVelocityAfterCollision(box: HexBox, pos: Vector3d, velocity: Vector3d): (Vector3d, Vector3d) = {
     chunkCache.clearCache()
 
-    var result = (pos, velocity)
+    val vel = new Vector3d(velocity)
+    var result = (pos, vel)
     val parts = (velocity.length * 10).toInt + 1
-    velocity.div(parts)
+    result._2.div(parts)
     for (_ <- 1 to parts) {
-      result = _collides(box, result._1, velocity, 100)
+      result = _collides(box, result._1, vel, 100)
     }
     result._2.mul(parts)
     result
@@ -144,9 +143,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
         vel.sub(normal.mul(dot))
         val result = _collides(objectBounds, newPos, vel, ttl-1)
         //val falseLen = result._2.length
-        if (minDist != 1) {
-          result._2.mul(1 / (1 - minDist))
-        }
+        result._2.mul(1 / (1 - minDist))
         result
       } else (pos, new Vector3d) // inside a block
     } else (pos.add(velocity, new Vector3d), velocity) // no collision found

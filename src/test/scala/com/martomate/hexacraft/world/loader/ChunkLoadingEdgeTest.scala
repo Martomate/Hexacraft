@@ -2,29 +2,30 @@ package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import org.scalamock.scalatest.MockFactory
+import org.mockito.Mockito.verify
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 
-class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
+class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockitoSugar {
   implicit val cylSize : CylinderSize = new CylinderSize(4)
 
   "isLoaded" should "be false in the beginning" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.isLoaded(ChunkRelWorld(2, 4, 3)) shouldBe false
     edge.isLoaded(ChunkRelWorld(0, 0, 0)) shouldBe false
     edge.isLoaded(ChunkRelWorld(2, 4, 3)) shouldBe false
     edge.isLoaded(ChunkRelWorld(2,-4,-3)) shouldBe false
   }
   it should "return true after loading" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.isLoaded(ChunkRelWorld(2, 4, 3)) shouldBe false
     edge.loadChunk(ChunkRelWorld(2, 4, 3))
     edge.isLoaded(ChunkRelWorld(0, 0, 0)) shouldBe false
     edge.isLoaded(ChunkRelWorld(2, 4, 3)) shouldBe true
   }
   it should "return false after unloading" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.isLoaded(ChunkRelWorld(2, 4, 3)) shouldBe false
     edge.loadChunk(ChunkRelWorld(2, 4, 3))
     edge.unloadChunk(ChunkRelWorld(2, 4, 3))
@@ -32,12 +33,12 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   "onEdge" should "be false in the beginning" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.onEdge(ChunkRelWorld(5, 6, 4)) shouldBe false
     edge.onEdge(ChunkRelWorld(0, 0, 0)) shouldBe false
   }
   it should "be true for the neighbors after adding one block and it's neighbors" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val coords = ChunkRelWorld(4, 6, 5)
 
     edge.loadChunk(coords)
@@ -49,7 +50,7 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
       edge.onEdge(n) shouldBe true
   }
   it should "be false after removing the last block" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val coords = ChunkRelWorld(4, 6, 5)
     edge.loadChunk(coords)
     for (n <- coords.neighbors)
@@ -67,13 +68,13 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   "canLoad" should "be false in the beginning" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.canLoad(ChunkRelWorld(8, 2, 5)) shouldBe false
     edge.canLoad(ChunkRelWorld(0, 0, 0)) shouldBe false
   }
 
   it should "be true for the neighbors after adding one block" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val coords = ChunkRelWorld(4, 6, 5)
 
     edge.loadChunk(coords)
@@ -84,7 +85,7 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   it should "be false after loading the chunk" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val first = ChunkRelWorld(4, 6, 4)
     val coords = ChunkRelWorld(4, 6, 5)
 
@@ -95,7 +96,7 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   it should "be true after removing a block" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val first = ChunkRelWorld(4, 6, 4)
     val coords = ChunkRelWorld(4, 6, 5)
 
@@ -107,7 +108,7 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   it should "be false after removing the last block" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.loadChunk(ChunkRelWorld(0,0,0))
     edge.loadChunk(ChunkRelWorld(2,5,4))
     edge.loadChunk(ChunkRelWorld(2,-2,7))
@@ -124,40 +125,38 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
   }
 
   "listeners" should "be called on load" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val listener = mock[ChunkLoadingEdgeListener]
     edge.addListener(listener)
 
-    val coords = ChunkRelWorld(2,4,3)
-    listener.onChunkOnEdge _ expects(coords, true)
-    for (n <- coords.neighbors)
-      listener.onChunkLoadable _ expects(n, true)
-
     edge.loadChunk(ChunkRelWorld(2,4,3))
+
+    val coords = ChunkRelWorld(2,4,3)
+    verify(listener).onChunkOnEdge(coords, onEdge = true)
+    for (n <- coords.neighbors)
+      verify(listener).onChunkLoadable(n, loadable = true)
   }
   it should "be called on remove"  in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     edge.loadChunk(ChunkRelWorld(2,4,3))
 
     val listener = mock[ChunkLoadingEdgeListener]
     edge.addListener(listener)
 
-    val coords = ChunkRelWorld(2,4,3)
-    listener.onChunkOnEdge _ expects(coords, false)
-    for (n <- coords.neighbors)
-      listener.onChunkLoadable _ expects(n, false)
-
     edge.unloadChunk(ChunkRelWorld(2,4,3))
+
+    val coords = ChunkRelWorld(2,4,3)
+    verify(listener).onChunkOnEdge(coords, onEdge = false)
+    for (n <- coords.neighbors)
+      verify(listener).onChunkLoadable(n, loadable = false)
   }
 
   "removeListener" should "remove the listener" in {
-    val edge = make
+    val edge = new ChunkLoadingEdge
     val listener = mock[ChunkLoadingEdgeListener]
     edge.addListener(listener)
     edge.removeListener(listener)
 
     edge.loadChunk(ChunkRelWorld(2,4,3))
   }
-
-  def make: ChunkLoadingEdge = new ChunkLoadingEdge
 }

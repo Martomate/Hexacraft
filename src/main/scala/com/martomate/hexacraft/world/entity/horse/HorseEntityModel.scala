@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.entity.horse
 
 import com.eclipsesource.json.JsonObject
 import com.martomate.hexacraft.resource.TextureSingle
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.entity.base.BasicEntityPart
@@ -13,7 +13,7 @@ class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
     extends EntityModel {
   private val partsNBT = setup.get("parts").asObject()
 
-  def makeHexBox(r: Int, b: Float, h: Int): HexBox =
+  def makeHexBox(r: Int, b: Int, h: Int): HexBox =
     new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
   private val legLength = 32
@@ -130,20 +130,10 @@ class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
     backRightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
     backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
-    val neckSin = clamp(math.sin(phase / 2).toFloat * 2, -1, 1)
+    val neckSin = MathUtils.clamp(math.sin(phase / 2).toFloat * 2, -1, 1)
     neck.rotation.z = -pi / 2 + neckSin * pi / 4
-    head.rotation.x = lerp(neckSin, -1, 1, pi / 4, pi / 2)
+    head.rotation.x = MathUtils.remap(neckSin, -1, 1, pi / 4, pi / 2)
   }
-
-  private def lerp(a: Float,
-                   loIn: Float,
-                   hiIn: Float,
-                   loOut: Float,
-                   hiOut: Float): Float =
-    (a - loIn) / (hiIn - loIn) * (hiOut - loOut) + loOut
-
-  private def clamp(a: Float, lo: Float, hi: Float): Float =
-    if (a < lo) lo else if (a > hi) hi else a
 
   override def texture: TextureSingle =
     TextureSingle.getTexture(

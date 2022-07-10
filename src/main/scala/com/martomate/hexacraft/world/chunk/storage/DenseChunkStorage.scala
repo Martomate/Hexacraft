@@ -6,8 +6,6 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-import scala.collection.mutable.ArrayBuffer
-
 class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize) extends ChunkStorage(_chunkCoords) {
   def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
     this(storage.chunkCoords)

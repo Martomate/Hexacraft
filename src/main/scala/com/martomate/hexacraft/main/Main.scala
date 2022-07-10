@@ -28,7 +28,7 @@ object Main {
 
   private def logThrowable(e: Throwable, saveFolder: File): Unit = {
     val now = OffsetDateTime.now()
-    val logFile = new File(saveFolder, s"logs/error_${now}.log")
+    val logFile = new File(saveFolder, s"logs/error_$now.log")
     logFile.getParentFile.mkdirs()
     e.printStackTrace(new PrintStream(new FileOutputStream(logFile)))
     System.err.println("The program has crashed. The crash report can be found in: " + logFile.getAbsolutePath)

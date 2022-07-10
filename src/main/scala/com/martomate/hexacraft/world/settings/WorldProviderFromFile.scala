@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.settings
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.save.MigrationManager
+import com.martomate.hexacraft.world.MigrationManager
 
 import java.io.File
 

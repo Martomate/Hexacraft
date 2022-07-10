@@ -91,7 +91,7 @@ object NBTUtil {
     else {
       tag.getValue.get(name) match {
         case t: Tag[_] => Some(t)
-        case _ => None
+        case null => None
       }
     }
   }

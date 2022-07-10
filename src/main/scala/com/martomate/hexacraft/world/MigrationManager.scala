@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.save
+package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.ShortTag
 import com.martomate.hexacraft.util.NBTUtil
@@ -9,6 +9,8 @@ import scala.util.{Success, Try}
 object MigrationManager {
   val LatestVersion: Short = 2
 
+  // TODO: write tests for old versions by using nullable infrastructure
+
   def migrateIfNeeded(saveDir: File): Unit = {
     val saveFile = new File(saveDir, "world.dat")
     val nbtData = NBTUtil.loadTag(saveFile)
@@ -17,20 +19,20 @@ object MigrationManager {
     if (version > LatestVersion)
       throw new IllegalArgumentException(
         s"The world saved at ${saveDir.getAbsolutePath} was saved using a too new version. " +
-        s"The latest supported version is $LatestVersion but the version was $version.")
+          s"The latest supported version is $LatestVersion but the version was $version.")
 
-    for (v <- version until LatestVersion) {
+    for (v <- version.toInt until LatestVersion) {
       migrateFrom(v, saveDir)
-      nbtData.getValue.put("version", new ShortTag("version", (v+1).toShort))
+      nbtData.getValue.put("version", new ShortTag("version", (v + 1).toShort))
       NBTUtil.saveTag(nbtData, saveFile)
     }
   }
 
   /**
-    * Upgrades the save file from version `fromVersion` to version `fromVersion + 1`
-    * <br><br>
-    * <b>NOTE:</b> This might be irreversible!
-    */
+   * Upgrades the save file from version `fromVersion` to version `fromVersion + 1`
+   * <br><br>
+   * <b>NOTE:</b> This might be irreversible!
+   */
   private def migrateFrom(fromVersion: Int, saveDir: File): Unit = fromVersion match {
     case 1 => migrateFromV1(saveDir)
     case _ =>

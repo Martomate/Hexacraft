@@ -5,13 +5,12 @@ import java.util.Random
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import com.martomate.hexacraft.util.NBTUtil
 
-class WorldGenSettings(val nbt: CompoundTag, val defaultSettings: WorldSettings) {
-  val seed                        : Long   = NBTUtil.getLong  (nbt, "seed", defaultSettings.seed.getOrElse(new Random().nextLong))
-  val blockGenScale               : Double = NBTUtil.getDouble(nbt, "blockGenScale", 0.1)
-  val heightMapGenScale           : Double = NBTUtil.getDouble(nbt, "heightMapGenScale", 0.02)
-  val blockDensityGenScale        : Double = NBTUtil.getDouble(nbt, "blockDensityGenScale", 0.01)
-  val biomeHeightMapGenScale      : Double = NBTUtil.getDouble(nbt, "biomeHeightMapGenScale", 0.002)
-  val biomeHeightVariationGenScale: Double = NBTUtil.getDouble(nbt, "biomeHeightVariationGenScale", 0.002)
+class WorldGenSettings(val seed: Long,
+                       val blockGenScale: Double,
+                       val heightMapGenScale: Double,
+                       val blockDensityGenScale: Double,
+                       val biomeHeightMapGenScale: Double,
+                       val biomeHeightVariationGenScale: Double) {
 
   def toNBT: CompoundTag = NBTUtil.makeCompoundTag("gen", Seq(
     new LongTag("seed", seed),
@@ -21,4 +20,17 @@ class WorldGenSettings(val nbt: CompoundTag, val defaultSettings: WorldSettings)
     new DoubleTag("biomeHeightGenScale", biomeHeightMapGenScale),
     new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenScale)
   ))
+}
+
+object WorldGenSettings {
+  def fromNBT(nbt: CompoundTag, defaultSettings: WorldSettings): WorldGenSettings = {
+    new WorldGenSettings(
+      NBTUtil.getLong(nbt, "seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
+      NBTUtil.getDouble(nbt, "blockGenScale", 0.1),
+      NBTUtil.getDouble(nbt, "heightMapGenScale", 0.02),
+      NBTUtil.getDouble(nbt, "blockDensityGenScale", 0.01),
+      NBTUtil.getDouble(nbt, "biomeHeightMapGenScale", 0.002),
+      NBTUtil.getDouble(nbt, "biomeHeightVariationGenScale", 0.002)
+    )
+  }
 }

@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.event._
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 
 abstract class Scene(implicit window: GameWindow) extends Component(LocationInfo16x9(0, 0, 1, 1)) {
   def windowResized(w: Int, h: Int): Unit = ()
+  def framebufferResized(w: Int, h: Int): Unit = ()
   def windowTitle: String = ""
 
   def isOpaque: Boolean = true

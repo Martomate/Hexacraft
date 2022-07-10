@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 
 import scala.collection.mutable
 
-class EntitiesInChunk(world: BlocksInWorld) {
+class EntitiesInChunk(world: BlocksInWorld, registry: EntityRegistry) {
   private val entities: mutable.Set[Entity] = mutable.Set.empty
 
   var needsToSave: Boolean = false
@@ -31,7 +31,7 @@ class EntitiesInChunk(world: BlocksInWorld) {
     for (tag <- list) {
       val compTag = tag.asInstanceOf[CompoundTag]
       val entType = NBTUtil.getString(compTag, "type", "")
-      EntityRegistry.load(entType, world) match {
+      registry.get(entType).map(_.createEntity(world)) match {
         case Some(ent) =>
           ent.fromNBT(compTag)
           this += ent

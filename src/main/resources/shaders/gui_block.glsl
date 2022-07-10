@@ -1,4 +1,4 @@
-#shader vert
+#pragma shader vert
 #define PI 3.141592653589793
 #define y60 0.866025403784439
 
@@ -41,7 +41,7 @@ void main() {
 	fragBrightness = brightness;
 }
 
-#shader frag
+#pragma shader frag
 #define y60 0.866025403784439
 
 ivec2 triCoordsToStorage(in ivec2 triCoords);

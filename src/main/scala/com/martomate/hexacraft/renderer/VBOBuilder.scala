@@ -12,7 +12,7 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
   val vboID: Int = GL15.glGenBuffers()
   GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
 
-  private trait SomeChannel
+  private sealed trait SomeChannel
   private case class IntChannel(index: Int, dims: Int, elementSize: Int, _type: Int, offset: Int) extends SomeChannel
   private case class FloatChannel(index: Int, dims: Int, elementSize: Int, _type: Int, normalized: Boolean, offset: Int) extends SomeChannel
 
