@@ -2,11 +2,12 @@ package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import org.scalamock.scalatest.MockFactory
+import org.mockito.Mockito.verify
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 
-class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
+class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockitoSugar {
   implicit val cylSize : CylinderSize = new CylinderSize(4)
 
   "isLoaded" should "be false in the beginning" in {
@@ -128,12 +129,12 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
     val listener = mock[ChunkLoadingEdgeListener]
     edge.addListener(listener)
 
-    val coords = ChunkRelWorld(2,4,3)
-    (listener.onChunkOnEdge _).expects(coords, true)
-    for (n <- coords.neighbors)
-      (listener.onChunkLoadable _).expects(n, true)
-
     edge.loadChunk(ChunkRelWorld(2,4,3))
+
+    val coords = ChunkRelWorld(2,4,3)
+    verify(listener).onChunkOnEdge(coords, onEdge = true)
+    for (n <- coords.neighbors)
+      verify(listener).onChunkLoadable(n, loadable = true)
   }
   it should "be called on remove"  in {
     val edge = new ChunkLoadingEdge
@@ -142,12 +143,12 @@ class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockFactory {
     val listener = mock[ChunkLoadingEdgeListener]
     edge.addListener(listener)
 
-    val coords = ChunkRelWorld(2,4,3)
-    (listener.onChunkOnEdge _).expects(coords, false)
-    for (n <- coords.neighbors)
-      (listener.onChunkLoadable _).expects(n, false)
-
     edge.unloadChunk(ChunkRelWorld(2,4,3))
+
+    val coords = ChunkRelWorld(2,4,3)
+    verify(listener).onChunkOnEdge(coords, onEdge = false)
+    for (n <- coords.neighbors)
+      verify(listener).onChunkLoadable(n, loadable = false)
   }
 
   "removeListener" should "remove the listener" in {

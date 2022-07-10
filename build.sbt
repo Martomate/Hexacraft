@@ -53,5 +53,5 @@ def otherDependencies = Seq(
 def testDependencies = Seq(
   "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
-  "org.scalamock" %% "scalamock" % "5.2.0" % "test"
+  "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test"
 )
