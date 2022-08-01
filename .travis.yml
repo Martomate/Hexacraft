@@ -12,8 +12,6 @@ before_cache:
 
 language: scala
 scala:
-  - 3.1.3
+  - 3.2.0
 script:
-  - sbt coverage test coverageReport && sbt coverageAggregate
-after_success:
-  - sbt coveralls
+  - sbt coverage test coverageReport coveralls
