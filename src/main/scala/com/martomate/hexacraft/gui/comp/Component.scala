@@ -11,7 +11,7 @@ import com.martomate.hexacraft.gui.{
 import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, Shaders, TextureSingle}
-import fontMeshCreator.{FontType, GUIText}
+import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
 

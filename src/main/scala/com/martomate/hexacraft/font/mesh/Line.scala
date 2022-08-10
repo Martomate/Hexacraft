@@ -1,0 +1,57 @@
+package com.martomate.hexacraft.font.mesh
+
+import scala.collection.mutable
+
+/**
+ * Represents a line of text during the loading of a text.
+ *
+ * @author Karl
+ *
+ * Creates an empty line.
+ * @param spaceWidth
+ *            - the screen-space width of a space character.
+ * @param fontSize
+ *            - the size of font being used.
+ * @param maxLength
+ *            - the screen-space maximum length of a line.
+ */
+class Line (val spaceWidth: Double, val fontSize: Double, var maxLength: Double) {
+  private var spaceSize: Double = spaceWidth * fontSize
+  private val words: mutable.ArrayBuffer[Word] = new mutable.ArrayBuffer[Word]
+  private var currentLineLength: Double = 0
+
+  /**
+   * Attempt to add a word to the line. If the line can fit the word in
+   * without reaching the maximum line length then the word is added and the
+   * line length increased.
+   *
+   * @param word
+   *            - the word to try to add.
+   * @return {@code true} if the word has successfully been added to the line.
+   */
+  def attemptToAddWord(word: Word): Boolean = {
+    var additionalLength: Double = word.getWordWidth
+    additionalLength += (if (words.nonEmpty) spaceSize else 0)
+    if (currentLineLength + additionalLength <= maxLength) {
+      words += word
+      currentLineLength += additionalLength
+      true
+    }
+    else false
+  }
+
+  /**
+   * @return The max length of the line.
+   */
+  def getMaxLength: Double = maxLength
+
+  /**
+   * @return The current screen-space length of the line.
+   */
+  def getLineLength: Double = currentLineLength
+
+  /**
+   * @return The list of words in the line.
+   */
+  def getWords: Seq[Word] = words.toSeq
+}

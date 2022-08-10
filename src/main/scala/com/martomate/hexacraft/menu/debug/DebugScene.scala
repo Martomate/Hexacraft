@@ -5,7 +5,7 @@ import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.scene.Scene
 import com.martomate.hexacraft.world.DebugInfoProvider
-import fontMeshCreator.GUIText
+import com.martomate.hexacraft.font.mesh.GUIText
 
 import scala.collection.mutable
 
