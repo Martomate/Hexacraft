@@ -7,7 +7,13 @@ object TextMeshCreator {
   val LINE_HEIGHT: Double = 0.03f
   val SPACE_ASCII: Int = 32
 
-  private def addVertices(vertices: mutable.ArrayBuffer[Float], x: Double, y: Double, maxX: Double, maxY: Double): Unit = {
+  private def addVertices(
+      vertices: mutable.ArrayBuffer[Float],
+      x: Double,
+      y: Double,
+      maxX: Double,
+      maxY: Double
+  ): Unit = {
     vertices += x.toFloat
     vertices += y.toFloat
     vertices += x.toFloat
@@ -22,7 +28,13 @@ object TextMeshCreator {
     vertices += y.toFloat
   }
 
-  private def addTexCoords(texCoords: mutable.ArrayBuffer[Float], x: Double, y: Double, maxX: Double, maxY: Double): Unit = {
+  private def addTexCoords(
+      texCoords: mutable.ArrayBuffer[Float],
+      x: Double,
+      y: Double,
+      maxX: Double,
+      maxY: Double
+  ): Unit = {
     texCoords += x.toFloat
     texCoords += y.toFloat
     texCoords += x.toFloat
@@ -46,8 +58,8 @@ object TextMeshCreator {
   }
 }
 
-class TextMeshCreator (val metaFile: URL) {
-  private var metaData: MetaFile = new MetaFile(metaFile)
+class TextMeshCreator(val metaFile: URL) {
+  private var metaData: MetaFile = MetaFile.fromUrl(metaFile)
 
   def createTextMesh(text: GUIText): TextMeshData = {
     val lines = createStructure(text)
@@ -55,20 +67,20 @@ class TextMeshCreator (val metaFile: URL) {
   }
 
   private def createStructure(text: GUIText): Seq[Line] = {
-    val chars: Array[Char] = text.getTextString.toCharArray
+    val chars: Array[Char] = text.textString.toCharArray
     val lines = new mutable.ArrayBuffer[Line]
-    var currentLine: Line = new Line(metaData.getSpaceWidth, text.getFontSize, text.getMaxLineSize)
-    var currentWord: Word = new Word(text.getFontSize)
+    var currentLine: Line = new Line(metaData.getSpaceWidth, text.fontSize, text.lineMaxSize)
+    var currentWord: Word = new Word(text.fontSize)
     for (c <- chars) {
       val ascii: Int = c.toInt
       if (ascii == TextMeshCreator.SPACE_ASCII) {
         val added: Boolean = currentLine.attemptToAddWord(currentWord)
         if (!added) {
           lines += currentLine
-          currentLine = new Line(metaData.getSpaceWidth, text.getFontSize, text.getMaxLineSize)
+          currentLine = new Line(metaData.getSpaceWidth, text.fontSize, text.lineMaxSize)
           currentLine.attemptToAddWord(currentWord)
         }
-        currentWord = new Word(text.getFontSize)
+        currentWord = new Word(text.fontSize)
       } else {
         val character: Character = metaData.getCharacter(ascii)
         currentWord.addCharacter(character)
@@ -78,11 +90,16 @@ class TextMeshCreator (val metaFile: URL) {
     lines.toSeq
   }
 
-  private def completeStructure(lines: mutable.ArrayBuffer[Line], currentLine: Line, currentWord: Word, text: GUIText): Unit = {
+  private def completeStructure(
+      lines: mutable.ArrayBuffer[Line],
+      currentLine: Line,
+      currentWord: Word,
+      text: GUIText
+  ): Unit = {
     val added: Boolean = currentLine.attemptToAddWord(currentWord)
     lines += currentLine
     if (!added) {
-      val newLine = new Line(metaData.getSpaceWidth, text.getFontSize, text.getMaxLineSize)
+      val newLine = new Line(metaData.getSpaceWidth, text.fontSize, text.lineMaxSize)
       newLine.attemptToAddWord(currentWord)
       lines += newLine
     }
@@ -90,32 +107,47 @@ class TextMeshCreator (val metaFile: URL) {
 
   private def createQuadVertices(text: GUIText, lines: Seq[Line]): TextMeshData = {
     text.setNumberOfLines(lines.size)
-    text.setLineWidths(lines.map(_.getLineLength))
+    text.setLineWidths(lines.map(_.currentLineLength))
     var curserX: Double = 0f
     var curserY: Double = 0f
     val vertices: mutable.ArrayBuffer[Float] = new mutable.ArrayBuffer[Float]
     val textureCoords: mutable.ArrayBuffer[Float] = new mutable.ArrayBuffer[Float]
     for (line <- lines) {
-      if (text.isCentered) curserX = (line.getMaxLength - line.getLineLength) / 2
+      if (text.isCentered) curserX = (line.maxLength - line.currentLineLength) / 2
       for (word <- line.getWords) {
         for (letter <- word.getCharacters) {
-          addVerticesForCharacter(curserX, curserY, letter, text.getFontSize, vertices)
-          TextMeshCreator.addTexCoords(textureCoords, letter.getxTextureCoord, letter.getyTextureCoord, letter.getXMaxTextureCoord, letter.getYMaxTextureCoord)
-          curserX += letter.getxAdvance * text.getFontSize
+          addVerticesForCharacter(curserX, curserY, letter, text.fontSize, vertices)
+          TextMeshCreator.addTexCoords(
+            textureCoords,
+            letter.xTextureCoord,
+            letter.yTextureCoord,
+            letter.xMaxTextureCoord,
+            letter.yMaxTextureCoord
+          )
+          curserX += letter.xAdvance * text.fontSize
         }
-        curserX += metaData.getSpaceWidth * text.getFontSize
+        curserX += metaData.getSpaceWidth * text.fontSize
       }
       curserX = 0
-      curserY += TextMeshCreator.LINE_HEIGHT * text.getFontSize
+      curserY += TextMeshCreator.LINE_HEIGHT * text.fontSize
     }
-    new TextMeshData(TextMeshCreator.listToArray(vertices), TextMeshCreator.listToArray(textureCoords))
+    new TextMeshData(
+      TextMeshCreator.listToArray(vertices),
+      TextMeshCreator.listToArray(textureCoords)
+    )
   }
 
-  private def addVerticesForCharacter(curserX: Double, curserY: Double, character: Character, fontSize: Double, vertices: mutable.ArrayBuffer[Float]): Unit = {
-    val x: Double = curserX + (character.getxOffset * fontSize)
-    val y: Double = curserY + (character.getyOffset * fontSize)
-    val maxX: Double = x + (character.getSizeX * fontSize)
-    val maxY: Double = y + (character.getSizeY * fontSize)
+  private def addVerticesForCharacter(
+      curserX: Double,
+      curserY: Double,
+      character: Character,
+      fontSize: Double,
+      vertices: mutable.ArrayBuffer[Float]
+  ): Unit = {
+    val x: Double = curserX + (character.xOffset * fontSize)
+    val y: Double = curserY + (character.yOffset * fontSize)
+    val maxX: Double = x + (character.sizeX * fontSize)
+    val maxY: Double = y + (character.sizeY * fontSize)
     val properX: Double = x
     val properY: Double = -y
     val properMaxX: Double = maxX

@@ -18,7 +18,7 @@ class TextField(
   private val textColor = new Vector3f(1.0f)
   private val guiText: GUIText = Component
     .makeText(initText, location, maxFontSize, centered)
-    .setColour(textColor.x, textColor.y, textColor.z)
+    .setColor(textColor.x, textColor.y, textColor.z)
   private val cursorText = Component
     .makeText(
       "|",
@@ -31,7 +31,7 @@ class TextField(
       maxFontSize * 1.1f,
       centered = false
     )
-    .setColour(textColor.x, textColor.y, textColor.z)
+    .setColor(textColor.x, textColor.y, textColor.z)
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
 
@@ -42,7 +42,7 @@ class TextField(
 
   def setText(newText: String): Unit = {
     val prevText = text
-    val prevFontSize = guiText.getFontSize
+    val prevFontSize = guiText.fontSize
     try {
       guiText.setTextAndFitSize(newText, maxFontSize)
     } catch {
@@ -51,15 +51,15 @@ class TextField(
         guiText.setTextAndFitSize(prevText, prevFontSize)
     }
     if (cursorTextVisible) removeText(cursorText)
-    val fontSize = guiText.getFontSize
+    val fontSize = guiText.fontSize
     cursorText.setPosition(
       location.x + location.w / 2f + guiText.getLineWidth(0).toFloat / 2f - fontSize * 0.002f,
-      cursorText.getPosition.y
+      cursorText.position.y
     )
     cursorText.setFontSize(fontSize * 1.1f)
     if (cursorTextVisible) addText(cursorText)
   }
-  def text: String = guiText.getText
+  def text: String = guiText.textString
 
   def setBackgroundColor(r: Float, g: Float, b: Float, a: Float): Unit = bgColor.set(r, g, b, a)
   def setTextColor(r: Float, g: Float, b: Float): Unit = textColor.set(r, g, b)

@@ -91,6 +91,6 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
   }
 
   private def alignTexts(aspectRatio: Float): Unit = {
-    texts.foreach(t => t.setPosition(-aspectRatio + 0.01f * 2 * 16 / 9, t.getPosition.y))
+    texts.foreach(t => t.setPosition(-aspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
   }
 }

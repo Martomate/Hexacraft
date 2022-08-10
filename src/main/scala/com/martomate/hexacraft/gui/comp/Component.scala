@@ -90,7 +90,7 @@ object Component {
       textSize: Float,
       centered: Boolean = true
   ): GUIText = {
-    val guiText = new GUIText(
+    val guiText = GUIText(
       text,
       textSize,
       Component.font,
@@ -98,7 +98,7 @@ object Component {
       location.w,
       centered
     )
-    guiText.setColour(0.9f, 0.9f, 0.9f)
+    guiText.setColor(0.9f, 0.9f, 0.9f)
     guiText
   }
 }

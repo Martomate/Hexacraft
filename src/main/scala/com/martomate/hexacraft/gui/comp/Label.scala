@@ -8,7 +8,7 @@ class Label(text: String, _location: LocationInfo, textSize: Float, centered: Bo
   addText(guiText)
 
   def withColor(r: Float, g: Float, b: Float): Label = {
-    guiText.setColour(r, g, b)
+    guiText.setColor(r, g, b)
     this
   }
 }

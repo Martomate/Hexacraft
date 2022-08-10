@@ -15,17 +15,17 @@ class TextMaster {
   }
 
   def loadText(text: GUIText): Unit = {
-    val font = text.getFont
+    val font = text.font
 
     val textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[GUIText])
     textBatch += text
   }
 
   def removeText(text: GUIText): Unit = {
-    val textBatch = texts(text.getFont)
+    val textBatch = texts(text.font)
     textBatch -= text
     if (textBatch.isEmpty) {
-      texts -= text.getFont
+      texts -= text.font
       // TODO: remove VAO
     }
   }

@@ -14,7 +14,7 @@ object Fonts {
   def loadFont(name: String, path: String): FontType = {
     if (fonts contains name) fonts(name)
     else {
-      val f = new FontType(
+      val f = FontType.fromUrl(
         TextureSingle.getTexture(path).id,
         FileUtils.getResourceFile(path + ".fnt").get
       )
