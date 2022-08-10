@@ -11,7 +11,9 @@ import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
 import scala.collection.mutable
 import scala.util.Random
 
-class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory, mainSeed: Long)(implicit
+    cylSize: CylinderSize
+) extends WorldFeaturePlanner {
   private val plannedSheep: mutable.Map[ChunkRelWorld, PlannedEntitySpawn] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -34,8 +36,7 @@ class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory, mainSeed: 
           val cz = rand.nextInt(16)
           val y = column.heightMap(cx, cz)
           if (y >= coords.Y * 16 && y < (coords.Y + 1) * 16) {
-            sheep.position = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords))
-              .toCylCoords
+            sheep.position = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
               .offset(0, 0.001f, 0)
             thePlan.addEntity(sheep)
           }

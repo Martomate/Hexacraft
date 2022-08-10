@@ -11,7 +11,9 @@ import org.joml.{Vector2fc, Vector3d, Vector4f}
 import scala.annotation.tailrec
 import scala.collection.immutable
 
-class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(implicit cylSize: CylinderSize) {
+class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(implicit
+    cylSize: CylinderSize
+) {
   private val ray = new Vector3d()
   private var rayValid = false
 
@@ -30,7 +32,8 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
     }
   }
 
-  private def toTheRight(PA: Vector3d, PB: Vector3d): Boolean = PA.dot(PB.cross(ray, new Vector3d)) <= 0
+  private def toTheRight(PA: Vector3d, PB: Vector3d): Boolean =
+    PA.dot(PB.cross(ray, new Vector3d)) <= 0
 
   private def sideIndex(points: Seq[Vector3d]) = {
     if (toTheRight(points(0 + 6), points(0))) {
@@ -53,7 +56,13 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
     } else 0
   }
 
-  private def setAB_dependingOnSide(points: Seq[Vector3d], PA: Vector3d, PB: Vector3d, index: Int, side: Int) = {
+  private def setAB_dependingOnSide(
+      points: Seq[Vector3d],
+      PA: Vector3d,
+      PB: Vector3d,
+      index: Int,
+      side: Int
+  ) = {
     if (side == 0) {
       points((index + 1) % 6).sub(points(index), PA)
       points((index + 5) % 6).sub(points(index), PB)
@@ -90,33 +99,40 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
   }
 
   private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords): Vector3d =
-    (BlockCoords(blockPos).toCylCoords + offset).toNormalCoords(CylCoords(camera.view.position)).toVector3d
+    (BlockCoords(blockPos).toCylCoords + offset)
+      .toNormalCoords(CylCoords(camera.view.position))
+      .toVector3d
 
-  private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean = world.getBlock(hitBlockCoords) match {
-    case block if block.blockType != Blocks.Air =>
-      val points = for (v <- block.blockType.bounds(block.metadata).vertices) yield {
-        asNormalCoords(hitBlockCoords, v)
-      }
-      val PA = new Vector3d
-      val PB = new Vector3d
-
-      (0 until 8).exists(side => {
-        val seq = if (side < 2) {
-          getSeqForTopOrBottom(points, PA, PB, side)
-        } else {
-          getSeqForSide(points, PA, PB, side)
+  private def blockTouched(hitBlockCoords: BlockRelWorld): Boolean =
+    world.getBlock(hitBlockCoords) match {
+      case block if block.blockType != Blocks.Air =>
+        val points = for (v <- block.blockType.bounds(block.metadata).vertices) yield {
+          asNormalCoords(hitBlockCoords, v)
         }
-        allElementsSame(seq)
-      })
-    case _ => false
-  }
+        val PA = new Vector3d
+        val PB = new Vector3d
+
+        (0 until 8).exists(side => {
+          val seq = if (side < 2) {
+            getSeqForTopOrBottom(points, PA, PB, side)
+          } else {
+            getSeqForSide(points, PA, PB, side)
+          }
+          allElementsSame(seq)
+        })
+      case _ => false
+    }
 
   private def allElementsSame(seq: immutable.IndexedSeq[Boolean]) = {
     !seq.exists(_ != seq(0))
   }
 
   @tailrec
-  private def traceIt(current: BlockRelWorld, blockFoundFn: BlockRelWorld => Boolean, ttl: Int): Option[(BlockRelWorld, Option[Int])] = {
+  private def traceIt(
+      current: BlockRelWorld,
+      blockFoundFn: BlockRelWorld => Boolean,
+      ttl: Int
+  ): Option[(BlockRelWorld, Option[Int])] = {
     if (ttl < 0) // TODO: this is a temporary fix for ray-loops
       return None
 
@@ -139,17 +155,20 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
 
         if (blockFoundFn(hitBlockCoords) && blockTouched(hitBlockCoords)) {
           Some((hitBlockCoords, Some(oppositeSide(side))))
-        } else traceIt(hitBlockCoords, blockFoundFn, ttl-1)
+        } else traceIt(hitBlockCoords, blockFoundFn, ttl - 1)
       } else None
     } else {
-      System.err.println("At least one bug has not been figured out yet! (Rayloops in RayTracer.trace.traceIt)")
+      System.err.println(
+        "At least one bug has not been figured out yet! (Rayloops in RayTracer.trace.traceIt)"
+      )
       None
     }
   }
 
   def trace(blockFoundFn: BlockRelWorld => Boolean): Option[(BlockRelWorld, Option[Int])] = {
     if (!rayValid) None
-    else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords)) Some((camera.blockCoords, None))
+    else if (blockFoundFn(camera.blockCoords) && blockTouched(camera.blockCoords))
+      Some((camera.blockCoords, None))
     else traceIt(camera.blockCoords, blockFoundFn, 1000)
   }
 }

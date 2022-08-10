@@ -9,20 +9,30 @@ import scala.collection.mutable
 sealed trait CallbackEvent
 
 /** @param action 0 = release, 1 = press, 2 = repeat */
-case class KeyPressedCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int) extends CallbackEvent
+case class KeyPressedCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int)
+    extends CallbackEvent
 
 case class CharTypedCallback(window: Long, character: Int) extends CallbackEvent
 
 /** @param mods 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with | */
-case class MouseClickedCallback(window: Long, button: Int, action: Int, mods: Int) extends CallbackEvent
+case class MouseClickedCallback(window: Long, button: Int, action: Int, mods: Int)
+    extends CallbackEvent
 
-case class MouseScrolledCallback(window: Long, xoffset: Double, yoffset: Double) extends CallbackEvent
+case class MouseScrolledCallback(window: Long, xoffset: Double, yoffset: Double)
+    extends CallbackEvent
 
 case class WindowResizedCallback(window: Long, w: Int, h: Int) extends CallbackEvent
 
 case class FramebufferResizedCallback(window: Long, w: Int, h: Int) extends CallbackEvent
 
-case class DebugMessageCallback(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long) extends CallbackEvent
+case class DebugMessageCallback(
+    source: Int,
+    debugType: Int,
+    id: Int,
+    severity: Int,
+    message: String,
+    userParam: Long
+) extends CallbackEvent
 
 class CallbackHandler {
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
@@ -53,8 +63,18 @@ class CallbackHandler {
   private def onScrollCallback(window: Long, dx: Double, dy: Double): Unit =
     callbackQueue.enqueue(MouseScrolledCallback(window, dx, dy))
 
-  private def onDebugMessageCallback(source: Int, debugType: Int, id: Int, severity: Int, length: Int, messageAddress: Long, userParam: Long): Unit = {
-    val message = if (length < 0) MemoryUtil.memASCII(messageAddress) else MemoryUtil.memASCII(messageAddress, length)
+  private def onDebugMessageCallback(
+      source: Int,
+      debugType: Int,
+      id: Int,
+      severity: Int,
+      length: Int,
+      messageAddress: Long,
+      userParam: Long
+  ): Unit = {
+    val message =
+      if (length < 0) MemoryUtil.memASCII(messageAddress)
+      else MemoryUtil.memASCII(messageAddress, length)
     callbackQueue.enqueue(DebugMessageCallback(source, debugType, id, severity, message, userParam))
   }
 
@@ -62,11 +82,14 @@ class CallbackHandler {
 
   def addCharCallback(window: Long): Unit = GLFW.glfwSetCharCallback(window, onCharCallback)
 
-  def addMouseButtonCallback(window: Long): Unit = GLFW.glfwSetMouseButtonCallback(window, onMouseButtonCallback)
+  def addMouseButtonCallback(window: Long): Unit =
+    GLFW.glfwSetMouseButtonCallback(window, onMouseButtonCallback)
 
-  def addWindowSizeCallback(window: Long): Unit = GLFW.glfwSetWindowSizeCallback(window, onWindowSizeCallback)
+  def addWindowSizeCallback(window: Long): Unit =
+    GLFW.glfwSetWindowSizeCallback(window, onWindowSizeCallback)
 
-  def addFramebufferSizeCallback(window: Long): Unit = GLFW.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
+  def addFramebufferSizeCallback(window: Long): Unit =
+    GLFW.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
 
   def addScrollCallback(window: Long): Unit = GLFW.glfwSetScrollCallback(window, onScrollCallback)
 

@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.util
 
-/**
-  * The real cylinder size (the number of chunks around the cylinder) is:<br>
-  * <code>ringSize = 2&#94;sizeExponent</code>
+/** The real cylinder size (the number of chunks around the cylinder) is:<br> <code>ringSize =
+  * 2&#94;sizeExponent</code>
   *
-  * @param worldSize the size exponent, <b>max-value: 20</b>
+  * @param worldSize
+  *   the size exponent, <b>max-value: 20</b>
   */
 class CylinderSize(val worldSize: Int) {
   require(worldSize >= 0 && worldSize <= 20)
@@ -27,7 +27,9 @@ class CylinderSize(val worldSize: Int) {
   /** The radius of the cylinder */
   def radius: Double = CylinderSize.y60 / hexAngle
 
-  /** The circumference of the cylinder.<br><br>This is NOT the number of blocks, for that see <code>totalSize</code>. */
+  /** The circumference of the cylinder.<br><br>This is NOT the number of blocks, for that see
+    * <code>totalSize</code>.
+    */
   def circumference: Double = totalSize * CylinderSize.y60
 
   implicit def impl: CylinderSize = this

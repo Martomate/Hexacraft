@@ -8,7 +8,8 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 
 import scala.collection.mutable
 
-class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize) extends ChunkStorage(_chunkCoords) {
+class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize)
+    extends ChunkStorage(_chunkCoords) {
   def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
     this(storage.chunkCoords)
     for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
@@ -38,8 +39,10 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
   def isDense: Boolean = false
 
   def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks = NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
-    val meta = NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16*16*16, 0))
+    val blocks =
+      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+    val meta =
+      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
 
     for (i <- blocks.indices) {
       if (blocks(i) != 0) {
@@ -50,9 +53,11 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
   }
 
   def toNBT: Seq[Tag[_]] = {
-    val ids = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
-    val meta = Array.tabulate[Byte](16*16*16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
-    Seq(new ByteArrayTag("blocks", ids),
-        new ByteArrayTag("metadata", meta))
+    val ids = Array.tabulate[Byte](16 * 16 * 16)(i =>
+      blocks.get(i.toShort).map(_.blockType.id).getOrElse(0)
+    )
+    val meta =
+      Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
+    Seq(new ByteArrayTag("blocks", ids), new ByteArrayTag("metadata", meta))
   }
 }

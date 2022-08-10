@@ -6,7 +6,14 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 import org.joml.Matrix4f
 
-class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Float = 0, yOff: Float = 0, brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f)(blockProvider: Int => Block) {
+class GUIBlocksRenderer(
+    w: Int,
+    h: Int = 1,
+    separation: Float = 0.2f,
+    xOff: Float = 0,
+    yOff: Float = 0,
+    brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
+)(blockProvider: Int => Block) {
   private val guiBlockRenderer = new BlockRendererCollection(s => new FlatBlockRenderer(s, 0))
   private val guiBlockShader: Shader = Shaders.GuiBlock
   private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
@@ -31,7 +38,7 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
   }
 
   def updateContent(): Unit = {
-    for (side <- 0 until 8) guiBlockRenderer.updateContent(side, 9*9) { buf =>
+    for (side <- 0 until 8) guiBlockRenderer.updateContent(side, 9 * 9) { buf =>
       for (y <- 0 until h) {
         for (x <- 0 until w) {
           val blockToDraw = blockProvider(x)
@@ -39,8 +46,10 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f, xOff: Floa
             buf.putFloat(x * separation + xOff)
             buf.putFloat(y * separation + yOff)
             buf.putInt(blockToDraw.blockTex(side))
-            buf.putFloat(1.0f) //blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
-            buf.putFloat(1)//brightnessFunc(x, y))
+            buf.putFloat(
+              1.0f
+            ) // blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
+            buf.putFloat(1) // brightnessFunc(x, y))
           }
         }
       }

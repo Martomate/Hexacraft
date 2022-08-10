@@ -1,6 +1,12 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{
+  CharEvent,
+  KeyEvent,
+  MouseClickEvent,
+  MouseMoveEvent,
+  ScrollEvent
+}
 
 import scala.collection.mutable.ArrayBuffer
 

@@ -95,9 +95,11 @@ class Shader private (config: ShaderConfig) extends Resource {
 
   def setUniform1f(name: String, a: Float): Unit = setUniform(name)(GL20.glUniform1f(_, a))
 
-  def setUniform2f(name: String, a: Float, b: Float): Unit = setUniform(name)(GL20.glUniform2f(_, a, b))
+  def setUniform2f(name: String, a: Float, b: Float): Unit =
+    setUniform(name)(GL20.glUniform2f(_, a, b))
 
-  def setUniform3f(name: String, a: Float, b: Float, c: Float): Unit = setUniform(name)(GL20.glUniform3f(_, a, b, c))
+  def setUniform3f(name: String, a: Float, b: Float, c: Float): Unit =
+    setUniform(name)(GL20.glUniform3f(_, a, b, c))
 
   def setUniform4f(name: String, a: Float, b: Float, c: Float, d: Float): Unit =
     setUniform(name)(GL20.glUniform4f(_, a, b, c, d))
@@ -106,7 +108,8 @@ class Shader private (config: ShaderConfig) extends Resource {
 
   def setUniform3f(name: String, vec: Vector3f): Unit = setUniform3f(name, vec.x, vec.y, vec.z)
 
-  def setUniform4f(name: String, vec: Vector4f): Unit = setUniform4f(name, vec.x, vec.y, vec.z, vec.w)
+  def setUniform4f(name: String, vec: Vector4f): Unit =
+    setUniform4f(name, vec.x, vec.y, vec.z, vec.w)
 
   def setUniformMat4(name: String, matrix: Matrix4f): Unit = {
     setUniform(name)(loc => {

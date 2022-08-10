@@ -1,7 +1,13 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{
+  CharEvent,
+  KeyEvent,
+  MouseClickEvent,
+  MouseMoveEvent,
+  ScrollEvent
+}
 import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 

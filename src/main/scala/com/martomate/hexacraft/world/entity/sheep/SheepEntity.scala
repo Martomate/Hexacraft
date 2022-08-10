@@ -9,7 +9,12 @@ import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
 import com.martomate.hexacraft.world.entity.base.BasicEntity
 
-class SheepEntity(_model: EntityModel, world: BlocksInWorld, aiFactory: EntityAIFactory[SheepEntity])(implicit cylSizeImpl: CylinderSize) extends BasicEntity(_model) {
+class SheepEntity(
+    _model: EntityModel,
+    world: BlocksInWorld,
+    aiFactory: EntityAIFactory[SheepEntity]
+)(implicit cylSizeImpl: CylinderSize)
+    extends BasicEntity(_model) {
   override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
 
   override def id: String = "sheep"
@@ -30,11 +35,17 @@ class SheepEntity(_model: EntityModel, world: BlocksInWorld, aiFactory: EntityAI
     NBTUtil.getCompoundTag(tag, "ai").foreach(aiTag => ai.fromNBT(aiTag))
   }
 
-  override def toNBT: Seq[Tag[_]] = super.toNBT :+ new StringTag("type", "sheep") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
+  override def toNBT: Seq[Tag[_]] =
+    super.toNBT :+ new StringTag("type", "sheep") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
 }
 
 object SheepEntity {
-  def atStartPos(pos: CylCoords, world: BlocksInWorld, aiFactory: EntityAIFactory[SheepEntity], model: EntityModel)(implicit cylSizeImpl: CylinderSize): SheepEntity = {
+  def atStartPos(
+      pos: CylCoords,
+      world: BlocksInWorld,
+      aiFactory: EntityAIFactory[SheepEntity],
+      model: EntityModel
+  )(implicit cylSizeImpl: CylinderSize): SheepEntity = {
     val pl = new SheepEntity(model, world, aiFactory)
     pl.position = pos
     pl

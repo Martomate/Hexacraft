@@ -7,7 +7,9 @@ import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener}
 import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 
-class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(implicit cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
+class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(implicit
+    cylSize: CylinderSize
+) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
     new SheepPlanner(world, registry.get("sheep").get, mainSeed)
@@ -30,7 +32,9 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
 }
 
 object WorldPlanner {
-  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(implicit cylSize: CylinderSize): WorldPlanner = {
+  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(
+      implicit cylSize: CylinderSize
+  ): WorldPlanner = {
     val wp = new WorldPlanner(world, registry, mainSeed)
 
     wp

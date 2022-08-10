@@ -34,7 +34,9 @@ abstract class Entity(implicit cylSizeImpl: CylinderSize) extends NBTSavable {
   def tick(collisionDetector: CollisionDetector): Unit = ()
 
   def fromNBT(tag: CompoundTag): Unit = {
-    NBTUtil.getCompoundTag(tag, "pos").foreach(t => position = CylCoords(NBTUtil.setVector(t, new Vector3d)))
+    NBTUtil
+      .getCompoundTag(tag, "pos")
+      .foreach(t => position = CylCoords(NBTUtil.setVector(t, new Vector3d)))
     NBTUtil.getCompoundTag(tag, "velocity").foreach(t => NBTUtil.setVector(t, velocity))
     NBTUtil.getCompoundTag(tag, "rotation").foreach(t => NBTUtil.setVector(t, rotation))
   }

@@ -15,7 +15,6 @@ class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
   def addListener(listener: ChunkLoadingEdgeListener): Unit = listeners += listener
   def removeListener(listener: ChunkLoadingEdgeListener): Unit = listeners -= listener
 
-
   def isLoaded(chunk: ChunkRelWorld): Boolean = chunksLoaded.contains(chunk)
 
   def onEdge(chunk: ChunkRelWorld): Boolean = chunksEdge.contains(chunk)

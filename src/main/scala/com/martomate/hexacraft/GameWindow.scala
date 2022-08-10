@@ -21,4 +21,3 @@ trait GameWindow {
     (mouse.pos.y / windowSize.y * 2 - 1).toFloat
   )
 }
-

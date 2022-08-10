@@ -10,7 +10,9 @@ import com.martomate.hexacraft.world.settings.{WorldProviderFromFile, WorldSetti
 import java.io.File
 
 class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
-  addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
+  addComponent(
+    new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
+  )
 
   addComponent(makeScrollPane)
 
@@ -34,7 +36,9 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   private def makeWorldButton(world: WorldInfo, listIndex: Int): Button = {
     Button(world.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * listIndex, 0.4f, 0.075f)) {
       window.scenes.popScenesUntil(MenuScene.isMainMenu)
-      window.scenes.pushScene(new GameScene(new WorldProviderFromFile(world.saveFile, WorldSettings.none)))
+      window.scenes.pushScene(
+        new GameScene(new WorldProviderFromFile(world.saveFile, WorldSettings.none))
+      )
     }
   }
 
@@ -47,7 +51,9 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
     }
   }
 
-  private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: File => S)(implicit ord: Ordering[S]): Seq[File] = {
+  private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: File => S)(implicit
+      ord: Ordering[S]
+  ): Seq[File] = {
     baseFolder
       .listFiles()
       .map(worldFolder => (worldFolder, new File(worldFolder, "world.dat")))

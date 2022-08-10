@@ -5,10 +5,22 @@ import com.martomate.hexacraft.util._
 import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener, ChunkColumn, ChunkColumnListener, ChunkGenerator}
+import com.martomate.hexacraft.world.chunk.{
+  Chunk,
+  ChunkAddedOrRemovedListener,
+  ChunkColumn,
+  ChunkColumnListener,
+  ChunkGenerator
+}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld, NeighborOffsets, Offset}
+import com.martomate.hexacraft.world.coord.integer.{
+  BlockRelWorld,
+  ChunkRelWorld,
+  ColumnRelWorld,
+  NeighborOffsets,
+  Offset
+}
 import com.martomate.hexacraft.world.entity.Entity
 import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
@@ -29,7 +41,10 @@ object World {
   var shouldChillChunkLoader = false
 }
 
-class World(val worldProvider: WorldProvider) extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
+class World(val worldProvider: WorldProvider)
+    extends BlockSetAndGet
+    with BlocksInWorld
+    with ChunkColumnListener {
   private val worldInfo: WorldInfo = worldProvider.getWorldInfo
 
   val size: CylinderSize = worldInfo.worldSize
@@ -38,7 +53,8 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   private val entityRegistry = makeEntityRegistry()
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
+  private val worldPlanner: WorldPlanner =
+    WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -54,9 +70,12 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
 
   val player: Player = makePlayer
 
-  private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] = ArrayBuffer.empty
-  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners += listener
-  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit = chunkAddedOrRemovedListeners -= listener
+  private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] =
+    ArrayBuffer.empty
+  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
+    chunkAddedOrRemovedListeners += listener
+  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
+    chunkAddedOrRemovedListeners -= listener
 
   addChunkAddedOrRemovedListener(worldPlanner)
   addChunkAddedOrRemovedListener(chunkLoader)
@@ -65,16 +84,25 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
 
   private def makeEntityRegistry(): EntityRegistry = {
     val modelFactory: EntityModelLoader = new EntityModelLoader()
-    EntityRegistry.from(Map(
-      "player" -> (world => new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)),
-      "sheep" -> (world => new SheepEntity(modelFactory.load("sheep"), world, SheepAIFactory))
-    ))
+    EntityRegistry.from(
+      Map(
+        "player" -> (world =>
+          new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)
+        ),
+        "sheep" -> (world => new SheepEntity(modelFactory.load("sheep"), world, SheepAIFactory))
+      )
+    )
   }
 
   private def makeChunkLoader(): ChunkLoader = {
     new ChunkLoaderDistPQ(
       chunkLoadingOrigin,
-      coords => new Chunk(coords, new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry), lightPropagator),
+      coords =>
+        new Chunk(
+          coords,
+          new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry),
+          lightPropagator
+        ),
       coords => getChunk(coords).foreach(_.saveIfNeeded()),
       renderDistance,
       () => World.shouldChillChunkLoader
@@ -91,7 +119,9 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
 
   def getBlock(coords: BlockRelWorld): BlockState =
-    getChunk(coords.getChunkRelWorld).map(_.getBlock(coords.getBlockRelChunk)).getOrElse(BlockState.Air)
+    getChunk(coords.getChunkRelWorld)
+      .map(_.getBlock(coords.getBlockRelChunk))
+      .getOrElse(BlockState.Air)
 
   def provideColumn(coords: ColumnRelWorld): ChunkColumn = {
     ensureColumnExists(coords)
@@ -197,7 +227,9 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
     }
   }
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(
+    World.ticksBetweenEntityRelocation
+  )
 
   private def performEntityRelocation(): Unit = {
     val entList = for {
@@ -257,15 +289,21 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
   }
 
   private def toNBT: CompoundTag = {
-    NBTUtil.makeCompoundTag("world", Seq(
-      new ShortTag("version", MigrationManager.LatestVersion),
-      NBTUtil.makeCompoundTag("general", Seq(
-        new ByteTag("worldSize", size.worldSize.toByte),
-        new StringTag("name", worldInfo.worldName)
-      )),
-      worldGenerator.toNBT,
-      player.toNBT
-    ))
+    NBTUtil.makeCompoundTag(
+      "world",
+      Seq(
+        new ShortTag("version", MigrationManager.LatestVersion),
+        NBTUtil.makeCompoundTag(
+          "general",
+          Seq(
+            new ByteTag("worldSize", size.worldSize.toByte),
+            new StringTag("name", worldInfo.worldName)
+          )
+        ),
+        worldGenerator.toNBT,
+        player.toNBT
+      )
+    )
   }
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit =
@@ -273,9 +311,9 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
 
   override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
     def affectedChunkOffset(where: Byte): Int = where match {
-      case  0 => -1
-      case 15 =>  1
-      case  _ =>  0
+      case 0  => -1
+      case 15 => 1
+      case _  => 0
     }
 
     def isInNeighborChunk(chunkOffset: Offset) = {
@@ -303,8 +341,7 @@ class World(val worldProvider: WorldProvider) extends BlockSetAndGet with Blocks
               n.requestRenderUpdate()
               n.requestBlockUpdate(c2)
             })
-          }
-          else c.requestBlockUpdate(c2)
+          } else c.requestBlockUpdate(c2)
         }
       case None =>
     }

@@ -34,7 +34,10 @@ class FrameBuffer(val width: Int, val height: Int) {
   def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
 }
 
-class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit window: GameWindow, cylSize: CylinderSize) extends ChunkAddedOrRemovedListener {
+class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
+    window: GameWindow,
+    cylSize: CylinderSize
+) extends ChunkAddedOrRemovedListener {
   private val entityShader = Shaders.Entity
   private val entitySideShader = Shaders.EntitySide
   private val skyShader = Shaders.Sky
@@ -45,20 +48,30 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
   worldCombinerShader.setUniform1i("worldDepthTexture", 1)
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
-  private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorIdentity(chunkHandler)
+  private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorIdentity(
+    chunkHandler
+  )
 
   private val skyVAO: VAO = makeSkyVAO
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
   private val worldCombinerVAO: VAO = makeSkyVAO
-  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP)
+    with NoDepthTest
 
   private val selectedBlockVAO: VAO = makeSelectedBlockVAO
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
 
-  private var mainColorTexture = makeMainColorTexture(window.framebufferSize.x, window.framebufferSize.y)
-  private var mainDepthTexture = makeMainDepthTexture(window.framebufferSize.x, window.framebufferSize.y)
-  private var mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture, window.framebufferSize.x, window.framebufferSize.y)
+  private var mainColorTexture =
+    makeMainColorTexture(window.framebufferSize.x, window.framebufferSize.y)
+  private var mainDepthTexture =
+    makeMainDepthTexture(window.framebufferSize.x, window.framebufferSize.y)
+  private var mainFrameBuffer = makeMainFrameBuffer(
+    mainColorTexture,
+    mainDepthTexture,
+    window.framebufferSize.x,
+    window.framebufferSize.y
+  )
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
   def selectedBlock: Option[BlockRelWorld] = _selectedBlockAndSide.map(_._1)
@@ -81,11 +94,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
   private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
     new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
-    val r = chunkRenderers.get(coords)
-    r.foreach(chunkRenderSelector.updateChunk)
-    r.isDefined
-  }, renderDistance)
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(
+    coords => {
+      val r = chunkRenderers.get(coords)
+      r.foreach(chunkRenderSelector.updateChunk)
+      r.isDefined
+    },
+    renderDistance
+  )
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)
@@ -134,10 +150,12 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     chunk.addEventListener(chunkRenderUpdater)
   }
   override def onChunkRemoved(chunk: Chunk): Unit = {
-    chunkRenderers.remove(chunk.coords).foreach(renderer => {
-      chunkRenderSelector.removeChunk(renderer)
-      renderer.unload()
-    })
+    chunkRenderers
+      .remove(chunk.coords)
+      .foreach(renderer => {
+        chunkRenderSelector.removeChunk(renderer)
+        renderer.unload()
+      })
     chunk.removeEventListener(chunkRenderUpdater)
   }
 
@@ -162,9 +180,6 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
     GL11.glDeleteTextures(mainDepthTexture)
   }
 
-
-
-
   private def renderEntities(): Unit = {
     for (side <- 0 until 8) {
       val sh = if (side < 2) entityShader else entitySideShader
@@ -187,31 +202,39 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
   }
 
   private def makeSelectedBlockVAO: VAO = {
-    def expandFn(v: CylCoords): Seq[Float] = Seq(v.x * 1.0025, (v.y - 0.25) * 1.0025 + 0.25, v.z * 1.0025).map(_.toFloat)
+    def expandFn(v: CylCoords): Seq[Float] =
+      Seq(v.x * 1.0025, (v.y - 0.25) * 1.0025 + 0.25, v.z * 1.0025).map(_.toFloat)
 
     def fn(s: Int): Seq[Float] = BlockState.getVertices(s + 2).flatMap(expandFn)
 
-    val vertexData = Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
+    val vertexData =
+      Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
 
     new VAOBuilder(25)
-      .addVBO(VBOBuilder(25)
-                .floats(0, 3)
-                .create()
-                .fillFloats(0, vertexData))
-      .addVBO(VBOBuilder(1, GL15.GL_DYNAMIC_DRAW, 1)
-                .ints(1, 3)
-                .floats(2, 3)
-                .floats(3, 1)
-                .create())
+      .addVBO(
+        VBOBuilder(25)
+          .floats(0, 3)
+          .create()
+          .fillFloats(0, vertexData)
+      )
+      .addVBO(
+        VBOBuilder(1, GL15.GL_DYNAMIC_DRAW, 1)
+          .ints(1, 3)
+          .floats(2, 3)
+          .floats(3, 1)
+          .create()
+      )
       .create()
   }
 
   private def makeSkyVAO: VAO = {
     new VAOBuilder(4)
-      .addVBO(VBOBuilder(4)
-                .floats(0, 2)
-                .create()
-                .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1)))
+      .addVBO(
+        VBOBuilder(4)
+          .floats(0, 2)
+          .create()
+          .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
+      )
       .create()
   }
 
@@ -220,10 +243,17 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
+    GL11.glTexImage2D(
+      GL11.GL_TEXTURE_2D,
+      0,
+      GL11.GL_RGBA,
       framebufferWidth,
       framebufferHeight,
-      0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, null.asInstanceOf[ByteBuffer])
+      0,
+      GL11.GL_RGBA,
+      GL11.GL_UNSIGNED_BYTE,
+      null.asInstanceOf[ByteBuffer]
+    )
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
@@ -235,17 +265,29 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
 
     TextureSingle.unbind()
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT32,
+    GL11.glTexImage2D(
+      GL11.GL_TEXTURE_2D,
+      0,
+      GL14.GL_DEPTH_COMPONENT32,
       framebufferWidth,
       framebufferHeight,
-      0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, null.asInstanceOf[FloatBuffer])
+      0,
+      GL11.GL_DEPTH_COMPONENT,
+      GL11.GL_FLOAT,
+      null.asInstanceOf[FloatBuffer]
+    )
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
     texID
   }
 
-  private def makeMainFrameBuffer(colorTexture: Int, depthTexture: Int, framebufferWidth: Int, framebufferHeight: Int): FrameBuffer = {
+  private def makeMainFrameBuffer(
+      colorTexture: Int,
+      depthTexture: Int,
+      framebufferWidth: Int,
+      framebufferHeight: Int
+  ): FrameBuffer = {
     val fb = new FrameBuffer(framebufferWidth, framebufferHeight)
     fb.bind()
     GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
@@ -258,9 +300,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit wi
   private def updateSelectedBlockVAO(coords: BlockRelWorld) = {
     val blockState = world.getBlock(coords)
 
-    val buf = BufferUtils.createByteBuffer(7 * 4)
-      .putInt(coords.x).putInt(coords.y).putInt(coords.z)
-      .putFloat(0).putFloat(0).putFloat(0)
+    val buf = BufferUtils
+      .createByteBuffer(7 * 4)
+      .putInt(coords.x)
+      .putInt(coords.y)
+      .putInt(coords.z)
+      .putFloat(0)
+      .putFloat(0)
+      .putFloat(0)
       .putFloat(blockState.blockType.blockHeight(blockState.metadata))
 
     buf.flip()

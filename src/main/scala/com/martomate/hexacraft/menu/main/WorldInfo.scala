@@ -13,7 +13,8 @@ object WorldInfo {
     val nbt = stream.readTag().asInstanceOf[CompoundTag]
     stream.close()
 
-    val name = NBTUtil.getCompoundTag(nbt, "general")
+    val name = NBTUtil
+      .getCompoundTag(nbt, "general")
       .flatMap(general => NBTUtil.getString(general, "worldName"))
       .getOrElse(saveFile.getName)
     new WorldInfo(saveFile, name)

@@ -12,10 +12,13 @@ object ChunkRenderUpdater {
   val ticksBetweenColumnLoading = 5
 }
 
-class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderDistance: => Double)(implicit worldSize: CylinderSize) extends ChunkEventListener {
+class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderDistance: => Double)(
+    implicit worldSize: CylinderSize
+) extends ChunkEventListener {
   private val origin = new PosAndDir
 
-  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
+  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] =
+    new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
 
   def update(camera: Camera): Unit = {
     origin.setPosAndDirFrom(camera.view)
@@ -26,15 +29,20 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
       chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
     }
 
-    val numUpdatesToPerform = if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
+    val numUpdatesToPerform =
+      if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
     for (_ <- 1 to numUpdatesToPerform) {
       if (!chunkRenderUpdateQueue.isEmpty) {
-        while (!updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
+        while (
+          !updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty
+        ) {}
       }
     }
   }
 
-  private val reprioritizeTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading)
+  private val reprioritizeTimer: TickableTimer = TickableTimer(
+    ChunkRenderUpdater.ticksBetweenColumnLoading
+  )
 
   private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double = {
     def distTo(x: Int, y: Int, z: Int): Double = {
@@ -44,7 +52,7 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
       origin.pos.distanceSq(cyl) * (1.25 - math.pow((dot + 1) / 2, 4)) / 1.25
     }
     var dist = distTo(8, 8, 8)
-    if (dist < 16) {// if it's close, refine estimate
+    if (dist < 16) { // if it's close, refine estimate
       for (n <- 0 until 8) {
         val i = n & 1
         val j = n >> 1 & 1
@@ -55,9 +63,10 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
     dist
   }
 
-  override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = ()// TODO: Interface Segregation
+  override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = () // TODO: Interface Segregation
 
-  override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = chunkRenderUpdateQueue.enqueue(coords)
+  override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
+    chunkRenderUpdateQueue.enqueue(coords)
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ()
 }

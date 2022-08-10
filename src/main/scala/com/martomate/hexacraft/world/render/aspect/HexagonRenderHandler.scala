@@ -12,7 +12,8 @@ class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
   private def bufferHandlerMaker(s: Int): BufferHandler[_] =
     new BufferHandler(1000000, new BlockVAORenderBufferFactory(s))
 
-  private val sideHandlers: IndexedSeq[RenderAspectHandler] = IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
+  private val sideHandlers: IndexedSeq[RenderAspectHandler] =
+    IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
 
   def render(): Unit = {
     for (side <- 0 until 8) {

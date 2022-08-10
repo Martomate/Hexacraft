@@ -4,11 +4,13 @@ import java.nio.ByteBuffer
 
 import org.joml.Matrix4f
 
-case class EntityPartDataForShader(modelMatrix: Matrix4f,
-                                   texOffset: (Int, Int),
-                                   texSize: (Int, Int),
-                                   blockTex: Int,
-                                   brightness: Float) {
+case class EntityPartDataForShader(
+    modelMatrix: Matrix4f,
+    texOffset: (Int, Int),
+    texSize: (Int, Int),
+    blockTex: Int,
+    brightness: Float
+) {
   def fill(buf: ByteBuffer): Unit = {
     modelMatrix.get(buf)
     buf.position(buf.position() + 16 * 4)

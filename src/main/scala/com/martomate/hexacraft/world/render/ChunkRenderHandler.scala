@@ -29,7 +29,9 @@ class ChunkRenderHandler {
   def removeChunk(chunk: ChunkRenderer): Unit = updateHandlers(chunk, None)
 
   private def updateHandlers(chunk: ChunkRenderer, data: Option[ChunkRenderData]): Unit = {
-    hexagonHandlers.getOrElseUpdate(blockTexture, new HexagonRenderHandler(blockShader, blockSideShader)).setChunkContent(chunk, data.map(_.blockSide))
+    hexagonHandlers
+      .getOrElseUpdate(blockTexture, new HexagonRenderHandler(blockShader, blockSideShader))
+      .setChunkContent(chunk, data.map(_.blockSide))
   }
 
   def unload(): Unit = {

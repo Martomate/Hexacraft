@@ -40,14 +40,24 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
 
   private def addLabel(text: String): Unit = {
     yOff += 0.02f
-    val guiText = Component.makeText(text, LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
+    val guiText = Component.makeText(
+      text,
+      LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
+      2,
+      centered = false
+    )
     addText(guiText)
     yOff += 0.03f
     texts += guiText
   }
 
   private def addDebugText(id: String, display: String, defaultValue: String = ""): Unit = {
-    val text = Component.makeText(defaultValue, LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f), 2, centered = false)
+    val text = Component.makeText(
+      defaultValue,
+      LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
+      2,
+      centered = false
+    )
     addText(text)
     yOff += 0.03f
     textDisplayMap += id -> display

@@ -16,23 +16,30 @@ class Player {
 
   val inventory = new Inventory
 
-  def blockInHand: Block = inventory(selectedItemSlot)// TODO: temporary, make inventory system
+  def blockInHand: Block = inventory(selectedItemSlot) // TODO: temporary, make inventory system
 
   def toNBT: CompoundTag = {
-    NBTUtil.makeCompoundTag("player", Seq(
-      NBTUtil.makeVectorTag("position", position),
-      NBTUtil.makeVectorTag("rotation", rotation),
-      NBTUtil.makeVectorTag("velocity", velocity),
-      new ByteTag("flying", flying),
-      new ShortTag("selectedItemSlot", selectedItemSlot.toShort)
-    ))
+    NBTUtil.makeCompoundTag(
+      "player",
+      Seq(
+        NBTUtil.makeVectorTag("position", position),
+        NBTUtil.makeVectorTag("rotation", rotation),
+        NBTUtil.makeVectorTag("velocity", velocity),
+        new ByteTag("flying", flying),
+        new ShortTag("selectedItemSlot", selectedItemSlot.toShort)
+      )
+    )
   }
 }
 
 object Player {
   def atStartPos(initialFootCoords: CylCoords): Player = {
     val player = new Player()
-    player.position.set(initialFootCoords.x, initialFootCoords.y - player.bounds.bottom, initialFootCoords.z)
+    player.position.set(
+      initialFootCoords.x,
+      initialFootCoords.y - player.bounds.bottom,
+      initialFootCoords.z
+    )
     player
   }
 

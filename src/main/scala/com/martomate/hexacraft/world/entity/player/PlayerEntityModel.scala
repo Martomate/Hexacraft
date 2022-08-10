@@ -9,7 +9,8 @@ import com.martomate.hexacraft.world.entity.base.BasicEntityPart
 import com.martomate.hexacraft.world.entity.{EntityModel, EntityPart}
 import org.joml.Vector3f
 
-class PlayerEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) extends EntityModel {
+class PlayerEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
+    extends EntityModel {
   private val partsNBT = setup.get("parts").asObject()
 
   def makeHexBox(r: Int, b: Float, h: Int): HexBox =

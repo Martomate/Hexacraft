@@ -3,7 +3,7 @@ package com.martomate.hexacraft.util
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class UniquePQ[S](func: S => Double, ord: Ordering[Double]) {// PQ with fast lookup and resorting
+class UniquePQ[S](func: S => Double, ord: Ordering[Double]) { // PQ with fast lookup and resorting
   private type DS = (Double, S)
 
   private val pq: mutable.PriorityQueue[DS] = mutable.PriorityQueue.empty(ord.on(_._1))

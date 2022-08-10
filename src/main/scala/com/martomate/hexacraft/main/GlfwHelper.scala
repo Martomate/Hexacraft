@@ -32,8 +32,8 @@ class GlfwHelper {
     pointerWrapper.doubles((px, py) => GLFW.glfwGetCursorPos(window, px, py))
   }
 
-  /** Determines the current monitor that the specified window is being displayed on.
-    * If the monitor could not be determined, the primary monitor will be returned.
+  /** Determines the current monitor that the specified window is being displayed on. If the monitor
+    * could not be determined, the primary monitor will be returned.
     */
   def getCurrentMonitor(window: Long): Long = {
     val (wx, wy) = getWindowPos(window)
@@ -42,7 +42,12 @@ class GlfwHelper {
     getCurrentMonitor(wx, wy, ww, wh)
   }
 
-  def getCurrentMonitor(windowPosX: Int, windowPosY: Int, windowWidth: Int, windowHeight: Int): Long = {
+  def getCurrentMonitor(
+      windowPosX: Int,
+      windowPosY: Int,
+      windowWidth: Int,
+      windowHeight: Int
+  ): Long = {
     var bestOverlap = 0
     var bestMonitor = 0L
 

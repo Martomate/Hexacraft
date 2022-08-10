@@ -31,7 +31,9 @@ object Main {
     val logFile = new File(saveFolder, s"logs/error_$now.log")
     logFile.getParentFile.mkdirs()
     e.printStackTrace(new PrintStream(new FileOutputStream(logFile)))
-    System.err.println("The program has crashed. The crash report can be found in: " + logFile.getAbsolutePath)
+    System.err.println(
+      "The program has crashed. The crash report can be found in: " + logFile.getAbsolutePath
+    )
   }
 
   private def setNatviesFolder(): Unit = {

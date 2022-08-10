@@ -15,15 +15,19 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 object Chunk {
-  def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(implicit cylSize: CylinderSize): Chunk = {
+  def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(implicit
+      cylSize: CylinderSize
+  ): Chunk = {
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val entityRegistry = EntityRegistry.empty
-    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
+    val chunkGenerator =
+      new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
   }
 }
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator) extends BlockInChunkAccessor {
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator)
+    extends BlockInChunkAccessor {
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -49,7 +53,8 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
-  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = storage.mapBlock(coords, func)
+  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T =
+    storage.mapBlock(coords, func)
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
     val before = getBlock(blockCoords)
@@ -75,7 +80,8 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
     }
   }
 
-  def requestBlockUpdate(coords: BlockRelChunk): Unit = eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
+  def requestBlockUpdate(coords: BlockRelChunk): Unit =
+    eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
 
   def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 

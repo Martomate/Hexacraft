@@ -9,8 +9,7 @@ import com.martomate.hexacraft.world.entity.base.BasicEntityPart
 import com.martomate.hexacraft.world.entity.{EntityModel, EntityPart}
 import org.joml.Vector3f
 
-class SheepEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
-    extends EntityModel {
+class SheepEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) extends EntityModel {
   private val partsNBT = setup.get("parts").asObject()
 
   def makeHexBox(r: Int, b: Float, h: Int): HexBox =
@@ -104,7 +103,7 @@ class SheepEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
     Seq(head, body, frontRightLeg, frontLeftLeg, backRightLeg, backLeftLeg)
   var time = 0f
   override def tick(): Unit = {
-    //val pi = math.Pi.toFloat
+    // val pi = math.Pi.toFloat
 
     time += 1f / 60
 
@@ -116,9 +115,9 @@ class SheepEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize)
     backRightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
     backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
-    //val neckSin = clamp(math.sin(phase / 2).toFloat * 2, -1, 1)
-    //head.rotation.z = lerp(neckSin, -1, 1, pi / 2 - pi / 4, pi / 2)
-    //head.rotation.x = lerp(neckSin, -1, 1, 0, pi / 4)
+    // val neckSin = clamp(math.sin(phase / 2).toFloat * 2, -1, 1)
+    // head.rotation.z = lerp(neckSin, -1, 1, pi / 2 - pi / 4, pi / 2)
+    // head.rotation.x = lerp(neckSin, -1, 1, 0, pi / 4)
   }
 
   override def texture: TextureSingle =

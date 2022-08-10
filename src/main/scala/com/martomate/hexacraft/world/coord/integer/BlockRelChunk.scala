@@ -3,7 +3,9 @@ package com.martomate.hexacraft.world.coord.integer
 import com.martomate.hexacraft.util.CylinderSize
 
 object BlockRelChunk {
-  def apply(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk((x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf))
+  def apply(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk(
+    (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)
+  )
 }
 
 case class BlockRelChunk(value: Int) extends AnyVal { // xyz
@@ -30,7 +32,9 @@ case class BlockRelChunk(value: Int) extends AnyVal { // xyz
     BlockRelChunk(xx, yy, zz)
   }
 
-  def globalNeighbor(side: Int, chunk: ChunkRelWorld)(implicit cylSize: CylinderSize): BlockRelWorld = {
+  def globalNeighbor(side: Int, chunk: ChunkRelWorld)(implicit
+      cylSize: CylinderSize
+  ): BlockRelWorld = {
     val off = NeighborOffsets(side)
     val xx = cx + off.dx
     val yy = cy + off.dy

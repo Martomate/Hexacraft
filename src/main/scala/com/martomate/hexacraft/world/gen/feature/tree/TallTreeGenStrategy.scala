@@ -6,7 +6,8 @@ import com.martomate.hexacraft.world.coord.integer.Offset
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class TallTreeGenStrategy(height: Int, rand: Random)(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
+class TallTreeGenStrategy(height: Int, rand: Random)(logBlock: Block, leavesBlock: Block)
+    extends TreeGenStrategy {
   override def blocks: Seq[BlockSpec] = {
     val arr = ArrayBuffer.empty[BlockSpec]
     val treeTop = Offset(0, height, 0)

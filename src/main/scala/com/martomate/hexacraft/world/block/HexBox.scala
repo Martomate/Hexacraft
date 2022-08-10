@@ -8,7 +8,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   val smallRadius: Double = radius * CylinderSize.y60
 
   def vertices: IndexedSeq[CylCoords] = {
-    //val ints = Seq(1, 2, 0, 3, 5, 4)
+    // val ints = Seq(1, 2, 0, 3, 5, 4)
 
     for {
       s <- 0 to 1

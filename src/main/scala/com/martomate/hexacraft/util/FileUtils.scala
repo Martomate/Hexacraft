@@ -15,15 +15,18 @@ object FileUtils {
 
   def listFilesInResource(path: URL): java.util.stream.Stream[String] = {
     if (path.toURI.getScheme.equalsIgnoreCase("file")) {
-      Files.list(Paths.get(path.toURI))
+      Files
+        .list(Paths.get(path.toURI))
         .filter(p => Files.isRegularFile(p))
         .map(_.getFileName.toString)
     } else {
-      val pathStr = java.net.URLDecoder.decode(path.getPath.substring(5), StandardCharsets.UTF_8.name())
+      val pathStr =
+        java.net.URLDecoder.decode(path.getPath.substring(5), StandardCharsets.UTF_8.name())
       val jarSepIndex = pathStr.indexOf('!')
       val jar = new JarFile(pathStr.substring(0, jarSepIndex))
       val query = pathStr.substring(jarSepIndex + 2)
-      jar.stream()
+      jar
+        .stream()
         .map[String](_.getName)
         .filter(_.startsWith(query))
         .map[String](_.substring(query.length))

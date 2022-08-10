@@ -5,21 +5,26 @@ import java.util.Random
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import com.martomate.hexacraft.util.NBTUtil
 
-class WorldGenSettings(val seed: Long,
-                       val blockGenScale: Double,
-                       val heightMapGenScale: Double,
-                       val blockDensityGenScale: Double,
-                       val biomeHeightMapGenScale: Double,
-                       val biomeHeightVariationGenScale: Double) {
+class WorldGenSettings(
+    val seed: Long,
+    val blockGenScale: Double,
+    val heightMapGenScale: Double,
+    val blockDensityGenScale: Double,
+    val biomeHeightMapGenScale: Double,
+    val biomeHeightVariationGenScale: Double
+) {
 
-  def toNBT: CompoundTag = NBTUtil.makeCompoundTag("gen", Seq(
-    new LongTag("seed", seed),
-    new DoubleTag("blockGenScale", blockGenScale),
-    new DoubleTag("heightMapGenScale", heightMapGenScale),
-    new DoubleTag("blockDensityGenScale", blockDensityGenScale),
-    new DoubleTag("biomeHeightGenScale", biomeHeightMapGenScale),
-    new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenScale)
-  ))
+  def toNBT: CompoundTag = NBTUtil.makeCompoundTag(
+    "gen",
+    Seq(
+      new LongTag("seed", seed),
+      new DoubleTag("blockGenScale", blockGenScale),
+      new DoubleTag("heightMapGenScale", heightMapGenScale),
+      new DoubleTag("blockDensityGenScale", blockDensityGenScale),
+      new DoubleTag("biomeHeightGenScale", biomeHeightMapGenScale),
+      new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenScale)
+    )
+  )
 }
 
 object WorldGenSettings {

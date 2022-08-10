@@ -37,6 +37,14 @@ class FullscreenManager(window: Long, glfwHelper: GlfwHelper) {
     val monitor = glfwHelper.getCurrentMonitor(wx, wy, ww, wh)
     val mode = GLFW.glfwGetVideoMode(monitor)
 
-    GLFW.glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate())
+    GLFW.glfwSetWindowMonitor(
+      window,
+      monitor,
+      0,
+      0,
+      mode.width(),
+      mode.height(),
+      mode.refreshRate()
+    )
   }
 }

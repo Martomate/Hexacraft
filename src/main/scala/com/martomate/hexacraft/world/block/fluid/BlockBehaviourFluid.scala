@@ -10,7 +10,9 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffse
 class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask
 
-  override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet)(implicit cylSize: CylinderSize): Unit = {
+  override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet)(implicit
+      cylSize: CylinderSize
+  ): Unit = {
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
     val bottomCoords = coords.offset(0, -1, 0)
@@ -26,7 +28,10 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
       val fluidBelowAfter = math.min(totalFluid, fluidLevelMask + 1)
       val fluidHereAfter = totalFluid - fluidBelowAfter
 
-      world.setBlock(bottomCoords, new BlockState(block, (fluidLevelMask + 1 - fluidBelowAfter).toByte))
+      world.setBlock(
+        bottomCoords,
+        new BlockState(block, (fluidLevelMask + 1 - fluidBelowAfter).toByte)
+      )
       depth = fluidLevelMask + 1 - fluidHereAfter
     } else {
       for (off <- NeighborOffsets.all if off.dy == 0) {
@@ -36,7 +41,9 @@ class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
         if (ns.blockType == Blocks.Air) {
           val belowNeighborBlock = world.getBlock(nCoords.offset(0, -1, 0))
           val belowNeighbor = belowNeighborBlock.blockType
-          if (depth < 0x1f || (depth == 0x1f && (belowNeighbor == Blocks.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))) {
+          if (
+            depth < 0x1f || (depth == 0x1f && (belowNeighbor == Blocks.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))
+          ) {
             world.setBlock(nCoords, new BlockState(block, 0x1f.toByte))
             depth += 1
           }

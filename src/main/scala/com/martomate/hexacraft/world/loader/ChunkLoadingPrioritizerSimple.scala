@@ -6,10 +6,12 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable
 
-class ChunkLoadingPrioritizerSimple(origin: PosAndDir,
-                                    distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
-                                    maxDist: Double
-                                   )(implicit cylSize: CylinderSize) extends ChunkLoadingPrioritizer {
+class ChunkLoadingPrioritizerSimple(
+    origin: PosAndDir,
+    distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
+    maxDist: Double
+)(implicit cylSize: CylinderSize)
+    extends ChunkLoadingPrioritizer {
 
   private val chunksLoaded: mutable.Set[ChunkRelWorld] = new mutable.HashSet
   private val chunksLoadingEdge: mutable.Set[ChunkRelWorld] = new mutable.HashSet
@@ -49,7 +51,11 @@ class ChunkLoadingPrioritizerSimple(origin: PosAndDir,
       if (!chunksLoaded(coords)) Some(coords) else None
     } else {
       chunksLoadingEdge.iterator
-        .map(_.neighbors.find(coords => !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks))
+        .map(
+          _.neighbors.find(coords =>
+            !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks
+          )
+        )
         .find(_.isDefined)
         .flatten
     }

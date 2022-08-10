@@ -12,20 +12,32 @@ object VBO {
   def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
     GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
-    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, fromOffset, toOffset, length)
+    GL31.glCopyBufferSubData(
+      GL31.GL_COPY_READ_BUFFER,
+      GL31.GL_COPY_WRITE_BUFFER,
+      fromOffset,
+      toOffset,
+      length
+    )
   }
 }
 
-class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage: Int, channels: Seq[VBOChannel]) extends Resource {
+class VBO(
+    private val vboID: Int,
+    init_count: Int,
+    val stride: Int,
+    val vboUsage: Int,
+    channels: Seq[VBOChannel]
+) extends Resource {
   var _count: Int = init_count
   def count: Int = _count
-  
+
   bind()
   channels.foreach(_.setAttributes())
   GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
-  
+
   protected def reload(): Unit = ()
-  
+
   def bufferSize: Int = count * stride
 
   def bind(): Unit = {
@@ -47,16 +59,28 @@ class VBO(private val vboID: Int, init_count: Int, val stride: Int, val vboUsage
     this
   }
 
-  def fillFloats(start: Int, content: collection.Seq[Float]): VBO = fillWith(start, content, 4, _.putFloat)
+  def fillFloats(start: Int, content: collection.Seq[Float]): VBO =
+    fillWith(start, content, 4, _.putFloat)
 
-  def fillInts(start: Int, content: collection.Seq[Int]): VBO = fillWith(start, content, 4, _.putInt)
+  def fillInts(start: Int, content: collection.Seq[Int]): VBO =
+    fillWith(start, content, 4, _.putInt)
 
   def fill(start: Int, content: collection.Seq[VertexData]): VBO =
     if (content.nonEmpty)
-      fillWith[VertexData](start, content, content.head.bytesPerVertex, buf => data => data.fill(buf))
+      fillWith[VertexData](
+        start,
+        content,
+        content.head.bytesPerVertex,
+        buf => data => data.fill(buf)
+      )
     else this
 
-  private def fillWith[T](start: Int, content: collection.Seq[T], tSize: Int, howToFill: ByteBuffer => T => Any): VBO = {
+  private def fillWith[T](
+      start: Int,
+      content: collection.Seq[T],
+      tSize: Int,
+      howToFill: ByteBuffer => T => Any
+  ): VBO = {
     val buf = BufferUtils.createByteBuffer(content.size * tSize)
     content.foreach(howToFill(buf))
     buf.flip()

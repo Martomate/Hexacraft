@@ -11,7 +11,13 @@ abstract class MenuScene(implicit window: GameWindow) extends Scene with SubComp
   def isMainMenu: Boolean = false
 
   override def render(transformation: GUITransformation): Unit = {
-    if (hasDefaultBackground) Component.drawImage(MenuScene.entireBackground, transformation.x, transformation.y, TextureSingle.getTexture("textures/gui/menu/background"))
+    if (hasDefaultBackground)
+      Component.drawImage(
+        MenuScene.entireBackground,
+        transformation.x,
+        transformation.y,
+        TextureSingle.getTexture("textures/gui/menu/background")
+      )
     super.render(transformation)
   }
 }
@@ -22,6 +28,6 @@ object MenuScene {
 
   val isMainMenu: Scene => Boolean = {
     case m: MenuScene => m.isMainMenu
-    case _ => false
+    case _            => false
   }
 }

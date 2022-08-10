@@ -11,56 +11,56 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 
 object NBTUtil {
-  def getBoolean(tag: CompoundTag, key: String, default: =>Boolean): Boolean = {
+  def getBoolean(tag: CompoundTag, key: String, default: => Boolean): Boolean = {
     getByte(tag, key, if (default) 1 else 0) == 1
   }
 
-  def getByte(tag: CompoundTag, key: String, default: =>Byte): Byte = {
+  def getByte(tag: CompoundTag, key: String, default: => Byte): Byte = {
     if (tag == null) default
     else {
       tag.getValue.get(key) match {
         case t: ByteTag => t.getValue.byteValue()
-        case _ => default
+        case _          => default
       }
     }
   }
 
-  def getShort(tag: CompoundTag, key: String, default: =>Short): Short = {
+  def getShort(tag: CompoundTag, key: String, default: => Short): Short = {
     if (tag == null) default
     else {
       tag.getValue.get(key) match {
         case t: ShortTag => t.getValue.shortValue()
-        case _ => default
+        case _           => default
       }
     }
   }
 
-  def getLong(tag: CompoundTag, key: String, default: =>Long): Long = {
+  def getLong(tag: CompoundTag, key: String, default: => Long): Long = {
     if (tag == null) default
     else {
       tag.getValue.get(key) match {
         case t: LongTag => t.getValue.longValue()
-        case _ => default
-      }
-    }
-  }
-  
-  def getDouble(tag: CompoundTag, key: String, default: =>Double): Double = {
-    if (tag == null) default
-    else {
-      tag.getValue.get(key) match {
-        case t: DoubleTag => t.getValue.doubleValue()
-        case _ => default
+        case _          => default
       }
     }
   }
 
-  def getString(tag: CompoundTag, key: String, default: =>String): String = {
+  def getDouble(tag: CompoundTag, key: String, default: => Double): Double = {
+    if (tag == null) default
+    else {
+      tag.getValue.get(key) match {
+        case t: DoubleTag => t.getValue.doubleValue()
+        case _            => default
+      }
+    }
+  }
+
+  def getString(tag: CompoundTag, key: String, default: => String): String = {
     if (tag == null) default
     else {
       tag.getValue.get(key) match {
         case t: StringTag => t.getValue
-        case _ => default
+        case _            => default
       }
     }
   }
@@ -70,7 +70,7 @@ object NBTUtil {
     else {
       tag.getValue.get(key) match {
         case t: StringTag => Some(t.getValue)
-        case _ => None
+        case _            => None
       }
     }
   }
@@ -81,17 +81,17 @@ object NBTUtil {
     else {
       tag.getValue.get(key) match {
         case t: ListTag[_] => Some(t.getValue.asScala.toSeq)
-        case _ => None
+        case _             => None
       }
     }
   }
-  
+
   def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
     if (tag == null) None
     else {
       tag.getValue.get(name) match {
         case t: Tag[_] => Some(t)
-        case null => None
+        case null      => None
       }
     }
   }
@@ -101,17 +101,21 @@ object NBTUtil {
     else {
       tag.getValue.get(name) match {
         case t: CompoundTag => Some(t)
-        case _ => None
+        case _              => None
       }
     }
   }
 
   def getByteArray(tag: CompoundTag, name: String): Option[ArraySeq[Byte]] = {
-    NBTUtil.getTag(tag, name).map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ByteArrayTag].getValue))
+    NBTUtil
+      .getTag(tag, name)
+      .map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ByteArrayTag].getValue))
   }
 
   def getShortArray(tag: CompoundTag, name: String): Option[ArraySeq[Short]] = {
-    NBTUtil.getTag(tag, name).map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ShortArrayTag].getValue))
+    NBTUtil
+      .getTag(tag, name)
+      .map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ShortArrayTag].getValue))
   }
 
   def setVector(tag: CompoundTag, vector: Vector3d): Vector3d = {
@@ -127,39 +131,48 @@ object NBTUtil {
     new CompoundTag(name, map)
   }
 
-  def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(name, Seq(
-    new DoubleTag("x", vector.x),
-    new DoubleTag("y", vector.y),
-    new DoubleTag("z", vector.z)
-  ))
-  
-  def saveTag(tag: Tag[_], nbtFile: File): Unit = {
-    AsyncFileIO.submit(nbtFile, nbtFile => {
-      nbtFile.getParentFile.mkdirs()
+  def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(
+    name,
+    Seq(
+      new DoubleTag("x", vector.x),
+      new DoubleTag("y", vector.y),
+      new DoubleTag("z", vector.z)
+    )
+  )
 
-      val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
-      try {
-        nbtOut.writeTag(tag)
-      } finally {
-        nbtOut.close()
+  def saveTag(tag: Tag[_], nbtFile: File): Unit = {
+    AsyncFileIO.submit(
+      nbtFile,
+      nbtFile => {
+        nbtFile.getParentFile.mkdirs()
+
+        val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
+        try {
+          nbtOut.writeTag(tag)
+        } finally {
+          nbtOut.close()
+        }
       }
-    })
+    )
   }
 
   def loadTag(file: File): CompoundTag = {
     if (file.isFile) {
-      val readOperation = AsyncFileIO.submit(file, file => {
-        val stream = new NBTInputStream(Files.newInputStream(file.toPath))
-        try {
-          stream.readTag().asInstanceOf[CompoundTag]
-        } catch {
-          case e: IOException =>
-            println(file.getAbsolutePath + " couldn't be read as NBT")
-            throw e
-        } finally {
-          stream.close()
+      val readOperation = AsyncFileIO.submit(
+        file,
+        file => {
+          val stream = new NBTInputStream(Files.newInputStream(file.toPath))
+          try {
+            stream.readTag().asInstanceOf[CompoundTag]
+          } catch {
+            case e: IOException =>
+              println(file.getAbsolutePath + " couldn't be read as NBT")
+              throw e
+          } finally {
+            stream.close()
+          }
         }
-      })
+      )
 
       Await.result(readOperation, Duration(5, SECONDS))
     } else {

@@ -12,10 +12,13 @@ import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
-class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: CylinderSize) extends ChunkRenderer {
-  private val opaqueDeterminer: ChunkOpaqueDeterminer = new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
+class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: CylinderSize)
+    extends ChunkRenderer {
+  private val opaqueDeterminer: ChunkOpaqueDeterminer =
+    new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
 
-  def canGetToSide(fromSide: Int, toSide: Int): Boolean = opaqueDeterminer.canGetToSide(fromSide, toSide)
+  def canGetToSide(fromSide: Int, toSide: Int): Boolean =
+    opaqueDeterminer.canGetToSide(fromSide, toSide)
 
   private var renderData: ChunkRenderData = _
   def getRenderData: ChunkRenderData = renderData
@@ -32,7 +35,8 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
 
       val chunkCache = new ChunkCache(world)
 
-      val sidesToRender = Array.tabulate[java.util.BitSet](8)(_ => new java.util.BitSet(16 * 16 * 16))
+      val sidesToRender =
+        Array.tabulate[java.util.BitSet](8)(_ => new java.util.BitSet(16 * 16 * 16))
       val sideBrightness = Array.ofDim[Float](8, 16 * 16 * 16)
       val sidesCount = Array.ofDim[Int](8)
 
@@ -75,7 +79,8 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
       val newBuffers = for (side <- 0 until 8) yield {
         val shouldRender = sidesToRender(side)
         val brightness = sideBrightness(side)
-        val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
+        val buf =
+          BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
 
         populateBuffer(blocks, side, shouldRender, brightness, buf)
         buf
@@ -92,8 +97,13 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
     opaqueDeterminer.invalidate()
   }
 
-  private def populateBuffer(blocks: Array[LocalBlockState], side: Int, shouldRender: java.util.BitSet,
-                             brightness: Array[Float], buf: ByteBuffer): Unit = {
+  private def populateBuffer(
+      blocks: Array[LocalBlockState],
+      side: Int,
+      shouldRender: java.util.BitSet,
+      brightness: Array[Float],
+      buf: ByteBuffer
+  ): Unit = {
     val verticesPerInstance = if (side < 2) 6 else 4
 
     val chunkCoords = chunk.coords
@@ -117,7 +127,9 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
 
         var i2 = 0
         while (i2 < verticesPerInstance) {
-          buf.putFloat(brightness(bCoords.value)) // TODO: change in the future to make lighting smoother
+          buf.putFloat(
+            brightness(bCoords.value)
+          ) // TODO: change in the future to make lighting smoother
           i2 += 1
         }
       }
@@ -138,10 +150,13 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
         val parts = for (part <- model.parts) yield {
           baseT.mul(part.transform, tr)
           val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
-          val coords = CoordUtils.getEnclosingBlock(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)._1
+          val coords = CoordUtils
+            .getEnclosingBlock(CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords)
+            ._1
           val cCoords = coords.getChunkRelWorld
           val partChunk = if (cCoords == chunk.coords) Some(chunk) else world.getChunk(cCoords)
-          val brightness: Float = partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)
+          val brightness: Float =
+            partChunk.map(_.lighting.getBrightness(coords.getBlockRelChunk)).getOrElse(0)
           EntityPartDataForShader(
             new Matrix4f(tr),
             part.textureOffset(side),
@@ -159,6 +174,5 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
     if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2
   }
 
-  def unload(): Unit = {
-  }
+  def unload(): Unit = {}
 }

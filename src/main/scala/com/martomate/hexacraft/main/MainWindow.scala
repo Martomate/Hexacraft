@@ -41,7 +41,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   override val scenes: SceneStack = new SceneStackImpl
 
-  override def setCursorLayout(cursorLayout: Int): Unit = glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
+  override def setCursorLayout(cursorLayout: Int): Unit =
+    glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
 
   def resetMousePos(): Unit = {
     val (cx, cy) = glfwHelper.getCursorPos(window)
@@ -102,7 +103,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
   private def processCallbackEvent(event: CallbackEvent): Unit = {
     event match {
       case KeyPressedCallback(window, key, scancode, action, mods) =>
-        if (key == GLFW_KEY_R && action == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+        if (
+          key == GLFW_KEY_R && action == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS
+        ) {
           Resource.reloadAllResources()
           scenes.foreach(_.onReloadedResources())
           println("Reloaded resources")
@@ -115,7 +118,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
         scenes.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
       case MouseClickedCallback(_, button, action, mods) =>
         val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
-        scenes.reverseIterator.exists(_.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos)))
+        scenes.reverseIterator.exists(
+          _.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos))
+        )
       case MouseScrolledCallback(_, xOff, yOff) =>
         scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOff.toFloat, yOff.toFloat)))
       case WindowResizedCallback(_, w, h) =>
@@ -138,7 +143,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
         }
       case DebugMessageCallback(source, debugType, _, severity, message, _) =>
         val debugMessage = new DebugMessage(source, debugType, severity)
-        val messageStr = s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] - $message"
+        val messageStr =
+          s"[${debugMessage.severityStr}] [${debugMessage.typeStr}] [${debugMessage.sourceStr}] - $message"
         System.err.println(s"OpenGL debug: $messageStr")
     }
   }
@@ -149,7 +155,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
 
   private def render(): Unit = {
     def render(idx: Int): Unit = {
-      if (idx > 0 && !scenes(idx).isOpaque) render(idx-1)
+      if (idx > 0 && !scenes(idx).isOpaque) render(idx - 1)
 
       scenes(idx).render(GUITransformation(0, 0))
     }
@@ -171,7 +177,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
     try {
       implicit val windowImplicit: GameWindowExtended = this
       Shader.init()
-      BlockLoader.init()// this loads it to memory
+      BlockLoader.init() // this loads it to memory
       Blocks.init()
       scenes.pushScene(new MainMenu)
       resetMousePos()
@@ -280,4 +286,3 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended {
     AsyncFileIO.unload()
   }
 }
-

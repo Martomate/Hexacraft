@@ -9,7 +9,12 @@ import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
 import com.martomate.hexacraft.world.entity.base.BasicEntity
 
-class PlayerEntity(_model: EntityModel, world: BlocksInWorld, aiFactory: EntityAIFactory[PlayerEntity])(implicit cylSizeImpl: CylinderSize) extends BasicEntity(_model) {
+class PlayerEntity(
+    _model: EntityModel,
+    world: BlocksInWorld,
+    aiFactory: EntityAIFactory[PlayerEntity]
+)(implicit cylSizeImpl: CylinderSize)
+    extends BasicEntity(_model) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
 
   override def id: String = "player"
@@ -31,11 +36,17 @@ class PlayerEntity(_model: EntityModel, world: BlocksInWorld, aiFactory: EntityA
     NBTUtil.getCompoundTag(tag, "ai").foreach(aiTag => ai.fromNBT(aiTag))
   }
 
-  override def toNBT: Seq[Tag[_]] = super.toNBT :+ new StringTag("type", "player") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
+  override def toNBT: Seq[Tag[_]] =
+    super.toNBT :+ new StringTag("type", "player") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
 }
 
 object PlayerEntity {
-  def atStartPos(pos: CylCoords, world: BlocksInWorld, aiFactory: EntityAIFactory[PlayerEntity], model: EntityModel)(implicit cylSizeImpl: CylinderSize): PlayerEntity = {
+  def atStartPos(
+      pos: CylCoords,
+      world: BlocksInWorld,
+      aiFactory: EntityAIFactory[PlayerEntity],
+      model: EntityModel
+  )(implicit cylSizeImpl: CylinderSize): PlayerEntity = {
     val pl = new PlayerEntity(model, world, aiFactory)
     pl.position = pos
     pl

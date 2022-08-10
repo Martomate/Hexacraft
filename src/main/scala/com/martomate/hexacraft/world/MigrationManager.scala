@@ -19,7 +19,8 @@ object MigrationManager {
     if (version > LatestVersion)
       throw new IllegalArgumentException(
         s"The world saved at ${saveDir.getAbsolutePath} was saved using a too new version. " +
-          s"The latest supported version is $LatestVersion but the version was $version.")
+          s"The latest supported version is $LatestVersion but the version was $version."
+      )
 
     for (v <- version.toInt until LatestVersion) {
       migrateFrom(v, saveDir)
@@ -28,11 +29,9 @@ object MigrationManager {
     }
   }
 
-  /**
-   * Upgrades the save file from version `fromVersion` to version `fromVersion + 1`
-   * <br><br>
-   * <b>NOTE:</b> This might be irreversible!
-   */
+  /** Upgrades the save file from version `fromVersion` to version `fromVersion + 1` <br><br>
+    * <b>NOTE:</b> This might be irreversible!
+    */
   private def migrateFrom(fromVersion: Int, saveDir: File): Unit = fromVersion match {
     case 1 => migrateFromV1(saveDir)
     case _ =>
@@ -49,7 +48,8 @@ object MigrationManager {
               val to = new File(saveDir, s"data/${coords >> 12}/${coords & 0xfff}.dat")
               if (!to.exists()) {
                 to.getParentFile.mkdirs()
-                if (!file.renameTo(to)) println(s"Failed to move ${file.getAbsolutePath} to ${to.getAbsolutePath}")
+                if (!file.renameTo(to))
+                  println(s"Failed to move ${file.getAbsolutePath} to ${to.getAbsolutePath}")
               }
             case _ =>
           }

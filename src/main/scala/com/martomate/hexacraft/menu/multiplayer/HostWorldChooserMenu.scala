@@ -11,11 +11,13 @@ import com.martomate.hexacraft.scene.GameWindowExtended
 import scala.util.Random
 
 class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
-  addComponent(new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
+  addComponent(
+    new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
+  )
   private val scrollPane = new ScrollPane(LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
 
-  getWorlds.zipWithIndex.map {
-    case (f, i) =>
+  getWorlds.zipWithIndex
+    .map { case (f, i) =>
       Button(f.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
         val id = registerWorld(f.name)
         println("The server got id: " + id)
@@ -25,7 +27,8 @@ class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
         //  This will be blocking until a client wants to connect or after a timeout
         //  If this is not done in a certain time period the server will be deregistered from the server registry
       }
-  }.foreach(b => scrollPane.addComponent(b))
+    }
+    .foreach(b => scrollPane.addComponent(b))
   addComponent(scrollPane)
 
   addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.05f, 0.4f, 0.1f)) {

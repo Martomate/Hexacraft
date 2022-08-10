@@ -5,11 +5,16 @@ import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.{Entity, EntityModel}
 
-abstract class BasicEntity(override val model: EntityModel)(implicit cylSizeImpl: CylinderSize) extends Entity {
+abstract class BasicEntity(override val model: EntityModel)(implicit cylSizeImpl: CylinderSize)
+    extends Entity {
   override def tick(collisionDetector: CollisionDetector): Unit = {
     velocity.y -= 9.82 / 60
     velocity.div(60)
-    val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(boundingBox, position.toVector3d, velocity)
+    val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(
+      boundingBox,
+      position.toVector3d,
+      velocity
+    )
     position = CylCoords(pos)
     velocity.set(vel)
     velocity.mul(60)

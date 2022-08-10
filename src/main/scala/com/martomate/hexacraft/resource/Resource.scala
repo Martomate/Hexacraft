@@ -9,7 +9,7 @@ object Resource {
     resources.clone().foreach(_.free1())
     resources.clear()
   }
-  
+
   def reloadAllResources(): Unit = {
     resources.foreach(_.reload())
   }
@@ -31,7 +31,7 @@ abstract class Resource {
       unload()
     }
   }
-  
+
   protected def reload(): Unit
   protected def unload(): Unit
 }

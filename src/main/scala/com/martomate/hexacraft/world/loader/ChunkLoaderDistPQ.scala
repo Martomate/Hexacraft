@@ -8,12 +8,14 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld
 import scala.collection.mutable
 import scala.concurrent.Future
 
-class ChunkLoaderDistPQ(origin: PosAndDir,
-                        chunkFactory: ChunkRelWorld => Chunk,
-                        chunkUnloader: ChunkRelWorld => Unit,
-                        maxDist: Double,
-                        chillSwitch: () => Boolean
-                       )(implicit cylSize: CylinderSize) extends ChunkLoader {
+class ChunkLoaderDistPQ(
+    origin: PosAndDir,
+    chunkFactory: ChunkRelWorld => Chunk,
+    chunkUnloader: ChunkRelWorld => Unit,
+    maxDist: Double,
+    chillSwitch: () => Boolean
+)(implicit cylSize: CylinderSize)
+    extends ChunkLoader {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val LoadsPerTick = 1
@@ -21,7 +23,8 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
 
-  private val prioritizer: ChunkLoadingPrioritizer = new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
+  private val prioritizer: ChunkLoadingPrioritizer =
+    new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -31,7 +34,7 @@ class ChunkLoaderDistPQ(origin: PosAndDir,
 
   override def tick(): Unit = {
     prioritizer.tick()
-    val (maxLoad, maxUnload) = if(chillSwitch()) (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
+    val (maxLoad, maxUnload) = if (chillSwitch()) (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
     for (_ <- 1 to LoadsPerTick) {
       if (chunksLoading.size < maxLoad) {
         prioritizer.nextAddableChunk.foreach { coords =>

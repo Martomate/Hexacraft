@@ -87,15 +87,18 @@ class ShaderBuilder(name: String) {
         "Shader"
       }
       val maxLen = math.max(GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
-      System.err.println(s"$shaderTypeName failed to compile ($name).\nError log:\n"
-        + GL20.glGetShaderInfoLog(shaderID, maxLen))
+      System.err.println(
+        s"$shaderTypeName failed to compile ($name).\nError log:\n"
+          + GL20.glGetShaderInfoLog(shaderID, maxLen)
+      )
     }
     shaders.put(shaderType, shaderID)
     this
   }
 
   def bindAttribs(attribs: String*): ShaderBuilder = {
-    for (i <- attribs.indices) if (attribs(i) != "") GL20.glBindAttribLocation(programID, i, attribs(i))
+    for (i <- attribs.indices)
+      if (attribs(i) != "") GL20.glBindAttribLocation(programID, i, attribs(i))
     this
   }
 

@@ -44,13 +44,15 @@ class EntitiesInChunk(world: BlocksInWorld, registry: EntityRegistry) {
 
   def toNBT: Seq[Tag[_]] = {
     import scala.jdk.CollectionConverters._
-    Seq(new ListTag[CompoundTag](
-      "entities",
-      classOf[CompoundTag],
-      entities
-        .map(e => NBTUtil.makeCompoundTag("", e.toNBT))
-        .toList
-        .asJava
-      ))
+    Seq(
+      new ListTag[CompoundTag](
+        "entities",
+        classOf[CompoundTag],
+        entities
+          .map(e => NBTUtil.makeCompoundTag("", e.toNBT))
+          .toList
+          .asJava
+      )
+    )
   }
 }

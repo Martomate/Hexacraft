@@ -13,7 +13,8 @@ abstract class ChunkRenderSelector(handler: ChunkRenderHandler) {
   def tick(origin: CylCoords): Unit
 }
 
-class ChunkRenderSelectorIdentity(handler: ChunkRenderHandler) extends ChunkRenderSelector(handler) {
+class ChunkRenderSelectorIdentity(handler: ChunkRenderHandler)
+    extends ChunkRenderSelector(handler) {
   override def addChunk(chunk: ChunkRenderer): Unit = handler.addChunk(chunk)
 
   override def updateChunk(chunk: ChunkRenderer): Unit = handler.updateChunk(chunk)
@@ -24,7 +25,8 @@ class ChunkRenderSelectorIdentity(handler: ChunkRenderHandler) extends ChunkRend
 }
 
 // TODO: This does not work since e.g. the top of the chunk much have contact with the air! DO NOT USE!
-class ChunkRenderSelectorNotBuried(handler: ChunkRenderHandler) extends ChunkRenderSelector(handler) {
+class ChunkRenderSelectorNotBuried(handler: ChunkRenderHandler)
+    extends ChunkRenderSelector(handler) {
   private def notBuried(chunk: ChunkRenderer): Boolean =
     (0 until 8).exists(from => (0 until 8).exists(to => chunk.canGetToSide(from, to)))
 

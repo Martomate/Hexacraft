@@ -12,7 +12,12 @@ import com.martomate.hexacraft.world.settings.WorldProvider
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider) extends ChunkBlockListener with ChunkEventListener {
+class ChunkColumn(
+    val coords: ColumnRelWorld,
+    worldGenerator: WorldGenerator,
+    worldProvider: WorldProvider
+) extends ChunkBlockListener
+    with ChunkEventListener {
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   def isEmpty: Boolean = chunks.isEmpty
@@ -63,9 +68,10 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   }
   def allChunks: Iterable[Chunk] = chunks.values
 
-  private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt foreach { oldChunk =>
-    oldChunk.removeEventListener(this)
-    oldChunk.removeBlockEventListener(this)
+  private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt foreach {
+    oldChunk =>
+      oldChunk.removeEventListener(this)
+      oldChunk.removeBlockEventListener(this)
   }
 
   def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
@@ -80,13 +86,15 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
           ch = getChunk(ChunkRelColumn.create(y >> 4))
           ch match {
             case Some(chunk) =>
-              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air)
+              if (
+                chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air
+              )
                 ch = None
               else
                 y -= 1
             case None =>
               y = Short.MinValue
-          }//.filter(_.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
+          } // .filter(_.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz, coords.cylSize)).blockType != Block.Air)
           ch.isDefined
         do ()
 
@@ -106,11 +114,12 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
     for (x <- 0 until 16) {
       for (z <- 0 until 16) {
         val height = heightMap(x, z)
-        (yy + 15 to yy by -1).filter(_ > height).find(y =>
-          chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Blocks.Air
-        ).foreach(h => {
-          _heightMap(x)(z) = h.toShort
-        })
+        (yy + 15 to yy by -1)
+          .filter(_ > height)
+          .find(y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Blocks.Air)
+          .foreach(h => {
+            _heightMap(x)(z) = h.toShort
+          })
       }
     }
   }
@@ -126,9 +135,15 @@ class ChunkColumn(val coords: ColumnRelWorld, worldGenerator: WorldGenerator, wo
   def unload(): Unit = {
     chunks.foreachValue(_.unload())
 
-    worldProvider.saveState(NBTUtil.makeCompoundTag("column", Seq(
-      new ShortArrayTag("heightMap", Array.tabulate(16*16)(i => heightMap(i >> 4, i & 0xf)))
-    )), saveFilePath)
+    worldProvider.saveState(
+      NBTUtil.makeCompoundTag(
+        "column",
+        Seq(
+          new ShortArrayTag("heightMap", Array.tabulate(16 * 16)(i => heightMap(i >> 4, i & 0xf)))
+        )
+      ),
+      saveFilePath
+    )
 
     eventListeners.clear()
   }

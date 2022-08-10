@@ -12,7 +12,8 @@ class ChunkSegmentHandler {
 
   def hasMapping(chunk: ChunkRenderer): Boolean = contentMap.get(chunk).exists(_.totalLength != 0)
 
-  def totalLengthForChunk(chunk: ChunkRenderer): Int = contentMap.get(chunk).map(_.totalLength).getOrElse(0)
+  def totalLengthForChunk(chunk: ChunkRenderer): Int =
+    contentMap.get(chunk).map(_.totalLength).getOrElse(0)
 
   def add(chunk: ChunkRenderer, segment: Segment): Unit = {
     contentMap.getOrElseUpdate(chunk, new ChunkSegs).add(segment)
@@ -20,13 +21,17 @@ class ChunkSegmentHandler {
   }
 
   // TODO: Handle removal of parts of existing segments
-  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c <= a, d >= b */
+  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c
+    * <= a, d >= b
+    */
   def remove(chunk: ChunkRenderer, segment: Segment): Unit = {
     allSegments.remove(chunk, segment)
     contentMap.get(chunk).exists(_.remove(segment))
   }
 
-  def segments(chunk: ChunkRenderer): Iterable[Segment] = contentMap.getOrElse(chunk, Iterable.empty)
+  def segments(chunk: ChunkRenderer): Iterable[Segment] =
+    contentMap.getOrElse(chunk, Iterable.empty)
 
-  def lastSegment(): Option[(ChunkRenderer, Segment)] = if (allSegments.totalLength > 0) Some(allSegments.lastKeyAndSegment()) else None
+  def lastSegment(): Option[(ChunkRenderer, Segment)] =
+    if (allSegments.totalLength > 0) Some(allSegments.lastKeyAndSegment()) else None
 }

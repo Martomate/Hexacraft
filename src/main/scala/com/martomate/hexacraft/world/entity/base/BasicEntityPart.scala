@@ -6,8 +6,13 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityPart
 import org.joml.{Matrix4f, Vector3f}
 
-class BasicEntityPart(override val box: HexBox, pos: CylCoords, val rotation: Vector3f,
-                      parentPart: EntityPart = null, setup: JsonObject = new JsonObject) extends EntityPart {
+class BasicEntityPart(
+    override val box: HexBox,
+    pos: CylCoords,
+    val rotation: Vector3f,
+    parentPart: EntityPart = null,
+    setup: JsonObject = new JsonObject
+) extends EntityPart {
   private val boxRadius = (box.radius * 32 / 0.5f).round
   private val boxHeight = ((box.top - box.bottom) * 32 / 0.5f).round
 
@@ -20,7 +25,9 @@ class BasicEntityPart(override val box: HexBox, pos: CylCoords, val rotation: Ve
     } else (0, 0)
   }
 
-  override def baseTransform: Matrix4f = (if (parentPart != null) new Matrix4f(parentPart.baseTransform) else new Matrix4f())
+  override def baseTransform: Matrix4f = (if (parentPart != null)
+                                            new Matrix4f(parentPart.baseTransform)
+                                          else new Matrix4f())
     .translate(pos.toVector3f)
     .rotateZ(rotation.z)
     .rotateX(rotation.x)

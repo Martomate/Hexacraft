@@ -22,11 +22,11 @@ object CoordUtils {
       val zp = zz + 0.5 * xx
       val wp = zp - xp
 
-      if      (xp >  0.5) findBlockPos(xInt + 1, zInt)
+      if (xp > 0.5) findBlockPos(xInt + 1, zInt)
       else if (xp < -0.5) findBlockPos(xInt - 1, zInt)
-      else if (zp >  0.5) findBlockPos(xInt,     zInt + 1)
-      else if (zp < -0.5) findBlockPos(xInt,     zInt - 1)
-      else if (wp >  0.5) findBlockPos(xInt - 1, zInt + 1)
+      else if (zp > 0.5) findBlockPos(xInt, zInt + 1)
+      else if (zp < -0.5) findBlockPos(xInt, zInt - 1)
+      else if (wp > 0.5) findBlockPos(xInt - 1, zInt + 1)
       else if (wp < -0.5) findBlockPos(xInt + 1, zInt - 1)
       else (xInt, zInt)
     }
@@ -40,14 +40,18 @@ object CoordUtils {
     (BlockRelWorld(xInt, yInt, zInt), BlockCoords(xx, y - yInt, zz, fixZ = false))
   }
 
-  def approximateIntCoords(coords: BlockCoords)(implicit cylinderSize: CylinderSize): BlockRelWorld = {
+  def approximateIntCoords(
+      coords: BlockCoords
+  )(implicit cylinderSize: CylinderSize): BlockRelWorld = {
     val X = math.round(coords.x).toInt
     val Y = math.round(coords.y).toInt
     val Z = math.round(coords.z).toInt
     BlockRelWorld(X, Y, Z)
   }
 
-  def approximateChunkCoords(coords: CylCoords)(implicit cylinderSize: CylinderSize): ChunkRelWorld = {
+  def approximateChunkCoords(
+      coords: CylCoords
+  )(implicit cylinderSize: CylinderSize): ChunkRelWorld = {
     approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
   }
 

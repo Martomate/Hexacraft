@@ -48,45 +48,113 @@ object Shaders {
   def WaterDepth: Shader = Shader.get(ShaderNames.WaterDepth).get
 
   def registerAll(): Unit = {
-    Shader.register(ShaderConfig(ShaderNames.Block, "block")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex",
-                                   "blockHeight",
-                                   "brightness")
-                      .withDefines("isSide" -> "0"))
-    Shader.register(ShaderConfig(ShaderNames.BlockSide, "block")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex",
-                                   "blockHeight",
-                                   "brightness")
-                      .withDefines("isSide" -> "1"))
-    Shader.register(ShaderConfig(ShaderNames.Entity, "entity_part")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "modelMatrix", "", "", "",
-                                   "texOffset",
-                                   "texDim", "blockTex", "brightness")
-                      .withDefines("isSide" -> "0"))
-    Shader.register(ShaderConfig(ShaderNames.EntitySide, "entity_part")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "modelMatrix", "", "", "",
-                                   "texOffset",
-                                   "texDim", "blockTex", "brightness")
-                      .withDefines("isSide" -> "1"))
-    Shader.register(ShaderConfig(ShaderNames.GuiBlock, "gui_block")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex",
-                                   "blockHeight",
-                                   "brightness")
-                      .withDefines("isSide" -> "0"))
-    Shader.register(ShaderConfig(ShaderNames.GuiBlockSide, "gui_block")
-                      .withAttribs("position", "texCoords", "normal", "vertexIndex", "blockPos", "blockTex",
-                                   "blockHeight",
-                                   "brightness")
-                      .withDefines("isSide" -> "1"))
+    Shader.register(
+      ShaderConfig(ShaderNames.Block, "block")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "blockPos",
+          "blockTex",
+          "blockHeight",
+          "brightness"
+        )
+        .withDefines("isSide" -> "0")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.BlockSide, "block")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "blockPos",
+          "blockTex",
+          "blockHeight",
+          "brightness"
+        )
+        .withDefines("isSide" -> "1")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.Entity, "entity_part")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "modelMatrix",
+          "",
+          "",
+          "",
+          "texOffset",
+          "texDim",
+          "blockTex",
+          "brightness"
+        )
+        .withDefines("isSide" -> "0")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.EntitySide, "entity_part")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "modelMatrix",
+          "",
+          "",
+          "",
+          "texOffset",
+          "texDim",
+          "blockTex",
+          "brightness"
+        )
+        .withDefines("isSide" -> "1")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.GuiBlock, "gui_block")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "blockPos",
+          "blockTex",
+          "blockHeight",
+          "brightness"
+        )
+        .withDefines("isSide" -> "0")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.GuiBlockSide, "gui_block")
+        .withAttribs(
+          "position",
+          "texCoords",
+          "normal",
+          "vertexIndex",
+          "blockPos",
+          "blockTex",
+          "blockHeight",
+          "brightness"
+        )
+        .withDefines("isSide" -> "1")
+    )
 
-    Shader.register(ShaderConfig(ShaderNames.SelectedBlock, "selected_block")
-                      .withAttribs("position", "blockPos", "color", "blockHeight"))
+    Shader.register(
+      ShaderConfig(ShaderNames.SelectedBlock, "selected_block")
+        .withAttribs("position", "blockPos", "color", "blockHeight")
+    )
     Shader.register(ShaderConfig(ShaderNames.Sky, "sky").withAttribs("position"))
     Shader.register(ShaderConfig(ShaderNames.Crosshair, "crosshair").withAttribs("position"))
     Shader.register(ShaderConfig(ShaderNames.Image, "image").withAttribs("position"))
     Shader.register(ShaderConfig(ShaderNames.Color, "color").withAttribs("position"))
     Shader.register(ShaderConfig(ShaderNames.Font, "font").withAttribs("position", "textureCoords"))
-    Shader.register(ShaderConfig(ShaderNames.WorldCombiner, "world_combiner").withAttribs("position"))
-    Shader.register(ShaderConfig(ShaderNames.WaterDepth, "water_depth").withAttribs("the same stuff as block..?"))
+    Shader.register(
+      ShaderConfig(ShaderNames.WorldCombiner, "world_combiner").withAttribs("position")
+    )
+    Shader.register(
+      ShaderConfig(ShaderNames.WaterDepth, "water_depth").withAttribs("the same stuff as block..?")
+    )
   }
 }

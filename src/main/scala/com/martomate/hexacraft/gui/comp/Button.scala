@@ -6,17 +6,29 @@ import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 
 object Button {
-  def apply(text: String, location: LocationInfo)(clickAction: =>Unit): Button = new Button(text, location, clickAction)
+  def apply(text: String, location: LocationInfo)(clickAction: => Unit): Button =
+    new Button(text, location, clickAction)
 }
 
-class Button(text: String, _location: LocationInfo, clickAction: =>Unit) extends Component(_location) {
+class Button(text: String, _location: LocationInfo, clickAction: => Unit)
+    extends Component(_location) {
   addText(Component.makeText(text, location, 4.0f).setTextAndFitSize(text, 4.0f))
 
   override def render(transformation: GUITransformation): Unit = {
     if (location.containsMouse(transformation.x, transformation.y)) {
-      Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0.7f, 0.7f, 0.7f, 0.75f))
+      Component.drawRect(
+        location,
+        transformation.x,
+        transformation.y,
+        new Vector4f(0.7f, 0.7f, 0.7f, 0.75f)
+      )
     } else {
-      Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0.6f, 0.6f, 0.6f, 0.75f))
+      Component.drawRect(
+        location,
+        transformation.x,
+        transformation.y,
+        new Vector4f(0.6f, 0.6f, 0.6f, 0.75f)
+      )
     }
     super.render(transformation)
   }

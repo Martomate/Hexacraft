@@ -2,7 +2,11 @@ package com.martomate.hexacraft.world.coord.fp
 
 import org.joml.{Vector3d, Vector3f}
 
-private[fp] abstract class AbstractCoords[T <: AbstractCoords[T]](val x: Double, val y: Double, val z: Double) {
+private[fp] abstract class AbstractCoords[T <: AbstractCoords[T]](
+    val x: Double,
+    val y: Double,
+    val z: Double
+) {
   def +(that: T): T = offset(that.x, that.y, that.z)
   def -(that: T): T = offset(-that.x, -that.y, -that.z)
   def offset(dx: Double, dy: Double, dz: Double): T

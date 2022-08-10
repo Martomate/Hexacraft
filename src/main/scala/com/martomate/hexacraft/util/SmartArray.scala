@@ -2,7 +2,8 @@ package com.martomate.hexacraft.util
 
 import scala.collection.mutable
 
-class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Array[T]) extends mutable.IndexedSeq[T] {
+class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Array[T])
+    extends mutable.IndexedSeq[T] {
   private var arr: Array[T] = _
 
   def apply(idx: Int): T = if (arr != null) arr(idx) else default

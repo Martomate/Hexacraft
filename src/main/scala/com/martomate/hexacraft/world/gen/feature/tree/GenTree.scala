@@ -15,7 +15,9 @@ class GenTree(at: BlockRelWorld, strategy: TreeGenStrategy)(implicit cylSize: Cy
     worldChange
   }
 
-  private def setBlockAt(at: BlockRelWorld, c: Offset, b: Block)(world: PlannedWorldChange): Unit = {
+  private def setBlockAt(at: BlockRelWorld, c: Offset, b: Block)(
+      world: PlannedWorldChange
+  ): Unit = {
     val ch = at.offset(c)
     val bs = new BlockState(b)
     world.setBlock(ch, bs)

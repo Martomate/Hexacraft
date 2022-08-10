@@ -1,6 +1,12 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, MouseMoveEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{
+  CharEvent,
+  KeyEvent,
+  MouseClickEvent,
+  MouseMoveEvent,
+  ScrollEvent
+}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11

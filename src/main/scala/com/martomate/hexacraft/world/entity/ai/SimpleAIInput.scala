@@ -9,7 +9,8 @@ import org.joml.Vector3d
 
 class SimpleAIInput(world: BlocksInWorld) extends EntityAIInput {
   def blockInFront(position: CylCoords, rotation: Vector3d, dist: Double): Block = {
-    val blockInFrontCoords = position.offset(dist * math.cos(rotation.y), 0, dist * -math.sin(rotation.y))
+    val blockInFrontCoords =
+      position.offset(dist * math.cos(rotation.y), 0, dist * -math.sin(rotation.y))
     world.getBlock(cylToBlockCoords(blockInFrontCoords)).blockType
   }
 

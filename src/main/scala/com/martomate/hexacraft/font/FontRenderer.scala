@@ -11,7 +11,11 @@ import scala.collection.mutable.ArrayBuffer
 class FontRenderer {
   private val shader = Shaders.Font
 
-  def render(texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]], xoffset: Float, yoffset: Float): Unit = {
+  def render(
+      texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],
+      xoffset: Float,
+      yoffset: Float
+  ): Unit = {
     prepare()
     for (font <- texts.keys) {
       GL13.glActiveTexture(GL13.GL_TEXTURE0)
@@ -42,7 +46,7 @@ class FontRenderer {
   private def endRendering(): Unit = {
     GL11.glDisable(GL11.GL_BLEND)
     GL11.glEnable(GL11.GL_DEPTH_TEST)
-    TextureSingle.unbind()// important
-    VAO.unbindVAO()// important
+    TextureSingle.unbind() // important
+    VAO.unbindVAO() // important
   }
 }

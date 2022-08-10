@@ -13,15 +13,19 @@ trait IBlockLoader {
 
 object BlockLoader extends IBlockLoader {
   private var texIdxMap: Map[String, Int] = _
-  
+
   def init(): Unit = {
-    TextureArray.registerTextureArray("blocks", BlockTexture.blockTextureSize, new ResourceWrapper(loadAllBlockTextures()))
+    TextureArray.registerTextureArray(
+      "blocks",
+      BlockTexture.blockTextureSize,
+      new ResourceWrapper(loadAllBlockTextures())
+    )
   }
-  
+
   def loadAllBlockTextures(): Seq[TextureToLoad] = {
     val nameToIdx = collection.mutable.Map.empty[String, Int]
     val images = collection.mutable.ArrayBuffer.empty[TextureToLoad]
-    
+
     def loadImages(file: URL): Seq[TextureToLoad] = {
       val image = ImageIO.read(file)
       val w = image.getWidth
@@ -37,7 +41,7 @@ object BlockLoader extends IBlockLoader {
       nameToIdx += name -> images.size
       images ++= loadImages(new URL(dir, fileName))
     }
-    
+
     texIdxMap = nameToIdx.toMap
     images.toSeq
   }
@@ -71,8 +75,12 @@ object BlockLoader extends IBlockLoader {
       val textures = base.get("textures").asObject()
       val all = textures.get("all")
       val side = textures.get("side") or all
-      val topIdx = texIdxMap((textures.get("top") or all).asString()) | offsets(textures.get("topOffsets")) << 12
-      val bottomIdx = texIdxMap((textures.get("bottom") or all).asString()) | offsets(textures.get("bottomOffsets")) << 12
+      val topIdx = texIdxMap((textures.get("top") or all).asString()) | offsets(
+        textures.get("topOffsets")
+      ) << 12
+      val bottomIdx = texIdxMap((textures.get("bottom") or all).asString()) | offsets(
+        textures.get("bottomOffsets")
+      ) << 12
       val sidesIdx = (2 until 8).map(i => texIdxMap((textures.get(s"side$i") or side).asString()))
       topIdx +: bottomIdx +: sidesIdx
     }

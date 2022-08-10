@@ -6,7 +6,10 @@ import com.martomate.hexacraft.world.render.segment.Segment
 
 import scala.collection.mutable.ArrayBuffer
 
-class BufferHandler[T <: RenderBuffer[T]](instancesPerBuffer: Int, bufferFactory: RenderBufferFactory[T]) {
+class BufferHandler[T <: RenderBuffer[T]](
+    instancesPerBuffer: Int,
+    bufferFactory: RenderBufferFactory[T]
+) {
   protected val BufSize: Int = bufferFactory.bytesPerInstance * instancesPerBuffer
 
   protected val buffers: ArrayBuffer[T] = ArrayBuffer.empty
@@ -56,7 +59,13 @@ class BufferHandler[T <: RenderBuffer[T]](instancesPerBuffer: Int, bufferFactory
     }
   }
 
-  protected def copyInternal(fromBuffer: Int, fromIdx: Int, toBuffer: Int, toIdx: Int, len: Int): Unit = buffers(fromBuffer).copyTo(buffers(toBuffer), fromIdx, toIdx, len)
+  protected def copyInternal(
+      fromBuffer: Int,
+      fromIdx: Int,
+      toBuffer: Int,
+      toIdx: Int,
+      len: Int
+  ): Unit = buffers(fromBuffer).copyTo(buffers(toBuffer), fromIdx, toIdx, len)
 
   def render(length: Int): Unit = {
     if (length > 0) {

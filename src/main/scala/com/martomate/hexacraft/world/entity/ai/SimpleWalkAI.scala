@@ -32,7 +32,8 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput) extends EntityA
       timeout = timeLimit
     } else {
       // move towards goal
-      val blockInFront = input.blockInFront(entity.position, entity.rotation, entity.boundingBox.radius + speed * 4)
+      val blockInFront =
+        input.blockInFront(entity.position, entity.rotation, entity.boundingBox.radius + speed * 4)
 
       if (blockInFront != Blocks.Air && entity.velocity.y == 0) {
         movingForce.y = 3.5
@@ -46,7 +47,7 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput) extends EntityA
 
     timeout -= 1
 
-/*    val speed = 40
+    /*    val speed = 40
     val velLen = math.hypot(player.velocity.x, player.velocity.z)
     if (velLen > speed) {
       velocity.x *= speed / velLen

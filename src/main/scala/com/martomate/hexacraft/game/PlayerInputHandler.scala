@@ -5,22 +5,28 @@ import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import org.lwjgl.glfw.GLFW._
 
-class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, player: Player, collisionDetector: CollisionDetector) {
+class PlayerInputHandler(
+    mouse: GameMouse,
+    keyboard: GameKeyboard,
+    player: Player,
+    collisionDetector: CollisionDetector
+) {
   def tick(moveWithMouse: Boolean): Unit = {
     updatePlayer(moveWithMouse)
   }
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
   private def updatePlayer(moveWithMouse: Boolean): Unit = {
     def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
-    
-    val speed = if (keyPressed(GLFW_KEY_LEFT_CONTROL))    0.075
-           else if (keyPressed(GLFW_KEY_LEFT_ALT))       12.0
-           else if (keyPressed(GLFW_KEY_RIGHT_CONTROL)) 120.0
-           else                                           4.3
-    
+
+    val speed =
+      if (keyPressed(GLFW_KEY_LEFT_CONTROL)) 0.075
+      else if (keyPressed(GLFW_KEY_LEFT_ALT)) 12.0
+      else if (keyPressed(GLFW_KEY_RIGHT_CONTROL)) 120.0
+      else 4.3
+
     val rSpeed = 0.05
     if (player.flying) player.velocity.y = 0
-    
+
     val cosMove = Math.cos(player.rotation.y) * speed
     val sinMove = Math.sin(player.rotation.y) * speed
     if (keyPressed(GLFW_KEY_W)) {
@@ -47,12 +53,12 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, player: Playe
       if (player.flying) player.velocity.y = -speed
     }
 
-    if (keyPressed(GLFW_KEY_UP)         ) player.rotation.x -= rSpeed
-    if (keyPressed(GLFW_KEY_DOWN)       ) player.rotation.x += rSpeed
-    if (keyPressed(GLFW_KEY_LEFT)       ) player.rotation.y -= rSpeed
-    if (keyPressed(GLFW_KEY_RIGHT)      ) player.rotation.y += rSpeed
-    if (keyPressed(GLFW_KEY_PAGE_UP)    ) player.rotation.z -= rSpeed
-    if (keyPressed(GLFW_KEY_PAGE_DOWN)  ) player.rotation.z += rSpeed
+    if (keyPressed(GLFW_KEY_UP)) player.rotation.x -= rSpeed
+    if (keyPressed(GLFW_KEY_DOWN)) player.rotation.x += rSpeed
+    if (keyPressed(GLFW_KEY_LEFT)) player.rotation.y -= rSpeed
+    if (keyPressed(GLFW_KEY_RIGHT)) player.rotation.y += rSpeed
+    if (keyPressed(GLFW_KEY_PAGE_UP)) player.rotation.z -= rSpeed
+    if (keyPressed(GLFW_KEY_PAGE_DOWN)) player.rotation.z += rSpeed
 
     if (keyPressed(GLFW_KEY_R) && keyPressed(GLFW_KEY_DELETE)) {
       player.rotation.set(0, 0, 0)
@@ -90,11 +96,15 @@ class PlayerInputHandler(mouse: GameMouse, keyboard: GameKeyboard, player: Playe
       player.velocity.x *= speed / velLen
       player.velocity.z *= speed / velLen
     }
-    
+
     if (!player.flying) {
       player.velocity.y -= 9.82 / 60
       player.velocity.div(60)
-      val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(player.bounds, player.position, player.velocity)
+      val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(
+        player.bounds,
+        player.position,
+        player.velocity
+      )
       player.position.set(pos)
       player.velocity.set(vel)
       player.velocity.mul(60)

@@ -12,7 +12,11 @@ class PosAndDir(implicit cylinderSize: CylinderSize) {
   def setPosAndDirFrom(camera: CameraView): Vector3d = {
     pos = CylCoords(camera.position)
     val vec4 = new Vector4d(0, 0, -1, 0).mul(camera.invMatrix)
-    dir.set(vec4.x, vec4.y, vec4.z) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
+    dir.set(
+      vec4.x,
+      vec4.y,
+      vec4.z
+    ) // new Vector3d(0, 0, -1).rotateX(-player.rotation.x).rotateY(-player.rotation.y))
   }
 
 }

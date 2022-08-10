@@ -15,7 +15,7 @@ class MainMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(Button("Multiplayer", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new MultiplayerMenu)
   })
-  */
+   */
   addComponent(Button("Settings", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
     window.scenes.pushScene(new SettingsMenu)
   })

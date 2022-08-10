@@ -11,7 +11,8 @@ object VAO {
   }
 }
 
-class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VBO]) extends Resource {
+class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VBO])
+    extends Resource {
   def bind(): Unit = {
     if (VAO.boundVAO != this) {
       VAO.boundVAO = this
@@ -20,7 +21,7 @@ class VAO(vaoID: Int, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VB
   }
 
   def id: Int = vaoID
-  
+
   protected def reload(): Unit = ()
 
   protected def unload(): Unit = {

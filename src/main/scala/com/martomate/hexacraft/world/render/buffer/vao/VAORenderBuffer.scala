@@ -20,7 +20,8 @@ class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer[VAO
     buf.limit(lim)
   }
 
-  override def copyTo(buffer: VAORenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = VBO.copy(vboToFill, buffer.vboToFill, fromIdx, toIdx, len)
+  override def copyTo(buffer: VAORenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit =
+    VBO.copy(vboToFill, buffer.vboToFill, fromIdx, toIdx, len)
 
   def render(length: Int): Unit = renderer.render(length / vboToFill.stride)
 

@@ -8,9 +8,10 @@ class ChunkSegs extends mutable.Iterable[Segment] {
     if (s1.overlaps(s2)) 0
     else s1.start - s2.start
   }
-  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty { (s1, s2) =>
-    if (s2.contains(s1)) 0
-    else s1.start - s2.start
+  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty {
+    (s1, s2) =>
+      if (s2.contains(s1)) 0
+      else s1.start - s2.start
   }
   private var _totalLength = 0
 
@@ -30,7 +31,9 @@ class ChunkSegs extends mutable.Iterable[Segment] {
     _add(seg)
   }
 
-  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c <= a, d >= b */
+  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c
+    * <= a, d >= b
+    */
   def remove(seg: Segment): Boolean = {
     containedInSegments(seg) match {
       case Some(other) =>

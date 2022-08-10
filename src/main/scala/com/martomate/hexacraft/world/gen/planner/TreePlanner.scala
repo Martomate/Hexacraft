@@ -5,13 +5,19 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.gen.feature.tree.{GenTree, HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
+import com.martomate.hexacraft.world.gen.feature.tree.{
+  GenTree,
+  HugeTreeGenStrategy,
+  ShortTreeGenStrategy,
+  TallTreeGenStrategy
+}
 import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
 
 import scala.collection.mutable
 import scala.util.Random
 
-class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize)
+    extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -44,14 +50,26 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylind
     }
   }
 
-  private def attemptTreeGenerationAt(coords: ChunkRelWorld, column: ChunkColumn, cx: Int, cz: Int, allowBig: Boolean): Unit = {
+  private def attemptTreeGenerationAt(
+      coords: ChunkRelWorld,
+      column: ChunkColumn,
+      cx: Int,
+      cz: Int,
+      allowBig: Boolean
+  ): Unit = {
     val yy = column.generatedHeightMap(cx)(cz)
     if (yy >= coords.Y * 16 && yy < (coords.Y + 1) * 16) {
       generateTree(coords, cx, cz, yy, allowBig)
     }
   }
 
-  private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
+  private def generateTree(
+      coords: ChunkRelWorld,
+      cx: Int,
+      cz: Int,
+      yy: Short,
+      allowBig: Boolean
+  ): Unit = {
     val rand = new Random(mainSeed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
     // short and tall trees can be birches, but the huge ones cannot
@@ -66,7 +84,9 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: Cylind
       else new ShortTreeGenStrategy(logBlock, leavesBlock)
     }
 
-    val tree = new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz), treeGenStrategy).generate()
+    val tree =
+      new GenTree(BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz), treeGenStrategy)
+        .generate()
     generateChanges(tree)
   }
 
