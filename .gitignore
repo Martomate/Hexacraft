@@ -77,12 +77,23 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
+project/project/
+project/target/
 .history
 .cache
 .lib/
 
 # End of https://www.gitignore.io/api/sbt,intellij
 
-.bsp/
+# bloop and metals
+.bloop
+.bsp
+
+# metals
+project/metals.sbt
+.metals
+
+# vs code
+.vscode
 
 .DS_Store

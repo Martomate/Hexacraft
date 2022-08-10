@@ -28,18 +28,20 @@ def lwjglDependencies = {
     "natives-linux",
     "natives-linux-arm64",
     "natives-macos",
-    "natives-macos-arm64",
+    "natives-macos-arm64"
   )
 
   Seq(
     "org.lwjgl" % "lwjgl" % lwjglVersion,
     "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
     "org.lwjgl" % "lwjgl-opengl" % lwjglVersion
-  ) ++ platforms.flatMap(platform => Seq(
-    "org.lwjgl" % "lwjgl" % lwjglVersion classifier platform,
-    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier platform,
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier platform
-  ))
+  ) ++ platforms.flatMap(platform =>
+    Seq(
+      "org.lwjgl" % "lwjgl" % lwjglVersion classifier platform,
+      "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier platform,
+      "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier platform
+    )
+  )
 }
 
 val scalatestVersion = "3.2.12"
