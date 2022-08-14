@@ -5,7 +5,7 @@ import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, Scroll
 import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.location.LocationInfo16x9
 
-abstract class Scene(implicit window: GameWindow) extends Component(LocationInfo16x9(0, 0, 1, 1)) {
+abstract class Scene(implicit window: GameWindow) extends Component {
   def windowResized(w: Int, h: Int): Unit = ()
   def framebufferResized(w: Int, h: Int): Unit = ()
   def windowTitle: String = ""

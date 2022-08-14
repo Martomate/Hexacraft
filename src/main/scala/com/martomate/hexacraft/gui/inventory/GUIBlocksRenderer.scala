@@ -4,14 +4,13 @@ import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.resource.{Shader, Shaders, TextureArray}
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
-import org.joml.Matrix4f
+import org.joml.{Matrix4f, Vector3f}
 
 class GUIBlocksRenderer(
     w: Int,
     h: Int = 1,
     separation: Float = 0.2f,
-    xOff: Float = 0,
-    yOff: Float = 0,
+    offset: () => (Float, Float) = () => (0, 0),
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 )(blockProvider: Int => Block) {
   private val guiBlockRenderer = new BlockRendererCollection(s => new FlatBlockRenderer(s, 0))
@@ -38,10 +37,12 @@ class GUIBlocksRenderer(
   }
 
   def updateContent(): Unit = {
+    val (xOff, yOff) = offset()
+
     for (side <- 0 until 8) guiBlockRenderer.updateContent(side, 9 * 9) { buf =>
       for (y <- 0 until h) {
         for (x <- 0 until w) {
-          val blockToDraw = blockProvider(x)
+          val blockToDraw = blockProvider(x + y * w)
           if (blockToDraw.canBeRendered) {
             buf.putFloat(x * separation + xOff)
             buf.putFloat(y * separation + yOff)

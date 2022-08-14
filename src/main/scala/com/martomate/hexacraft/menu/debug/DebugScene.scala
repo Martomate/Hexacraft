@@ -9,7 +9,7 @@ import com.martomate.hexacraft.font.mesh.GUIText
 
 import scala.collection.mutable
 
-class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends Scene()(window) {
+class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends Scene {
   private val textDisplayMap = mutable.Map.empty[String, String]
   private val textValueMap = mutable.Map.empty[String, GUIText]
   private val texts = mutable.ArrayBuffer.empty[GUIText]

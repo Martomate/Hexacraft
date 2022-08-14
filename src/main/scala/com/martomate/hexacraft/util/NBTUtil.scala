@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.util
 
-import com.flowpowered.nbt._
+import com.flowpowered.nbt.*
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import org.joml.Vector3d
 
@@ -129,6 +129,15 @@ object NBTUtil {
     val map = new CompoundMap()
     for (tag <- children) map.put(tag)
     new CompoundTag(name, map)
+  }
+
+  def makeListTag[T <: Tag[_]](name: String, clazz: Class[T], children: Seq[T]): ListTag[T] = {
+    import scala.jdk.CollectionConverters._
+    new ListTag[T](
+      name,
+      clazz,
+      children.toList.asJava
+    )
   }
 
   def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(
