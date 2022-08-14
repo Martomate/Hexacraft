@@ -2,8 +2,8 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.gui.location.LocationInfo
 
-class Label(text: String, _location: LocationInfo, textSize: Float, centered: Boolean = true)
-    extends Component(_location) {
+class Label(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true)
+    extends Component {
   private val guiText = Component.makeText(text, location, textSize, centered)
   addText(guiText)
 

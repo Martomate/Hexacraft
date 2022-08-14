@@ -6,8 +6,8 @@ import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.world.player.Inventory
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(_locationInfo: LocationInfo, inventory: Inventory)(implicit window: GameWindow)
-    extends Component(_locationInfo)
+class Toolbar(location: LocationInfo, inventory: Inventory)(implicit window: GameWindow)
+    extends Component
     with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -20,7 +20,7 @@ class Toolbar(_locationInfo: LocationInfo, inventory: Inventory)(implicit window
   private var selectedIndex = 0
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
-  private val guiBlockRenderer = new GUIBlocksRenderer(9, 1, 0.2f, -4 * 0.2f, -0.83f)(x =>
+  private val guiBlockRenderer = new GUIBlocksRenderer(9, 1, 0.2f, () => (-4 * 0.2f, -0.83f))(x =>
     inventory(x)
   )
   guiBlockRenderer.setViewMatrix(
@@ -31,7 +31,7 @@ class Toolbar(_locationInfo: LocationInfo, inventory: Inventory)(implicit window
       .translate(0, -0.25f, 0)
   )
 
-  inventory.addListener(() => guiBlockRenderer.updateContent())
+  inventory.addChangeListener(() => guiBlockRenderer.updateContent())
 
   override def render(transformation: GUITransformation): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor)

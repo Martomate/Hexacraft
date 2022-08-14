@@ -10,8 +10,7 @@ object Button {
     new Button(text, location, clickAction)
 }
 
-class Button(text: String, _location: LocationInfo, clickAction: => Unit)
-    extends Component(_location) {
+class Button(text: String, location: LocationInfo, clickAction: => Unit) extends Component {
   addText(Component.makeText(text, location, 4.0f).setTextAndFitSize(text, 4.0f))
 
   override def render(transformation: GUITransformation): Unit = {

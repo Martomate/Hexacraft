@@ -2,11 +2,11 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, Toolbar}
+import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
 import com.martomate.hexacraft.menu.debug.DebugScene
 import com.martomate.hexacraft.menu.pause.PauseMenu
-import com.martomate.hexacraft.renderer._
+import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.resource.{Shader, Shaders}
 import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
 import com.martomate.hexacraft.util.TickableTimer
@@ -23,7 +23,7 @@ import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
 import com.martomate.hexacraft.world.{DebugInfoProvider, RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
-import org.lwjgl.glfw.GLFW._
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
 
 class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended)
@@ -69,18 +69,8 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance)
   world.addChunkAddedOrRemovedListener(worldRenderer)
 
-  val camera: Camera = new Camera(
-    new CameraProjection(
-      70f,
-      window.aspectRatio,
-      0.02f,
-      world.size.worldSize match {
-        case 0 => 100000f
-        case 1 => 10000f
-        case _ => 1000f
-      }
-    )
-  )
+  val camera: Camera = new Camera(makeCameraProjection)
+
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler =
     new PlayerInputHandler(window.mouse, window.keyboard, world.player, world.collisionDetector)
@@ -95,6 +85,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
+  private var isInPopup: Boolean = false
 
   private var debugScene: DebugScene = _
 
@@ -137,6 +128,21 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
         case GLFW_KEY_ESCAPE =>
           window.scenes.pushScene(new PauseMenu(this))
           setPaused(true)
+        case GLFW_KEY_E =>
+          if !isPaused
+          then
+            val inventoryScene = new InventoryScene(
+              world.player.inventory,
+              () => {
+                window.scenes.popScenesUntil(_ == this)
+                isInPopup = false
+                setUseMouse(true)
+              }
+            )
+
+            setUseMouse(false)
+            isInPopup = true
+            window.scenes.pushScene(inventoryScene)
         case GLFW_KEY_M =>
           setUseMouse(!moveWithMouse)
         case GLFW_KEY_F =>
@@ -188,7 +194,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {
-    if (moveWithMouse) {
+    if (!isPaused && !isInPopup && moveWithMouse) {
       val dy = -math.signum(event.yoffset).toInt
       if (dy != 0) {
         val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
@@ -256,14 +262,14 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   }
 
   private def renderCrosshair(): Unit = {
-    if (!isPaused && moveWithMouse) {
+    if (!isPaused && !isInPopup && moveWithMouse) {
       crosshairShader.enable()
       crosshairRenderer.render()
     }
   }
 
   override def tick(): Unit = {
-    if (!isPaused) playerInputHandler.tick(moveWithMouse)
+    if (!isPaused && !isInPopup) playerInputHandler.tick(moveWithMouse)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
@@ -296,7 +302,8 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
       if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0)
     )
     worldRenderer.selectedBlockAndSide =
-      if (!isPaused) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air) else None
+      if (!isPaused && !isInPopup) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air)
+      else None
   }
 
   private def performLeftMouseClick(): Unit = {
@@ -352,8 +359,9 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer = {
     val renderer = new GUIBlocksRenderer(
       1,
-      xOff = 1.5f,
-      yOff = -0.9f,
+      1,
+      0,
+      () => (1.5f, -0.9f),
       brightnessFunc = (_, _) => world.getBrightness(camera.blockCoords)
     )(_ => world.player.blockInHand)
     renderer.setViewMatrix(
@@ -382,5 +390,18 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     )
     toolbar.setSelectedIndex(player.selectedItemSlot)
     toolbar
+  }
+
+  private def makeCameraProjection = {
+    new CameraProjection(
+      70f,
+      window.aspectRatio,
+      0.02f,
+      world.size.worldSize match {
+        case 0 => 100000f
+        case 1 => 10000f
+        case _ => 1000f
+      }
+    )
   }
 }

@@ -7,7 +7,7 @@ import org.lwjgl.opengl.GL11
 
 import scala.collection.mutable.ArrayBuffer
 
-class ScrollPane(_location: LocationInfo) extends Component(_location) {
+class ScrollPane(location: LocationInfo) extends Component {
   private var xOffset: Float = 0
   private var yOffset: Float = 0
 

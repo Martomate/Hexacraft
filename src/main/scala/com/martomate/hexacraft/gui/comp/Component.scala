@@ -9,7 +9,7 @@ import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
 
-abstract class Component(protected val location: LocationInfo) {
+abstract class Component {
   private val textMaster = new TextMaster()
 
   protected def addText(text: GUIText): Unit = {
