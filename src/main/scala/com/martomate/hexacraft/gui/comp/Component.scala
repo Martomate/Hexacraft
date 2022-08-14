@@ -1,13 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
-import com.martomate.hexacraft.gui.{
-  CharEvent,
-  KeyEvent,
-  MouseClickEvent,
-  MouseMoveEvent,
-  ScrollEvent
-}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shader, Shaders, TextureSingle}
@@ -32,7 +26,6 @@ abstract class Component(protected val location: LocationInfo) {
     textMaster.render(transformation.x, transformation.y)
   }
 
-  def onMouseMoveEvent(event: MouseMoveEvent): Boolean = false
   def onMouseClickEvent(event: MouseClickEvent): Boolean = false
   def onScrollEvent(event: ScrollEvent): Boolean = false
   def onKeyEvent(event: KeyEvent): Boolean = false

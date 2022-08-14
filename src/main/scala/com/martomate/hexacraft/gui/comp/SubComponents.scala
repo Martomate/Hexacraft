@@ -1,12 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.gui.{
-  CharEvent,
-  KeyEvent,
-  MouseClickEvent,
-  MouseMoveEvent,
-  ScrollEvent
-}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -15,10 +9,6 @@ trait SubComponents extends Component {
 
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     comps.exists(_.onMouseClickEvent(event)) || super.onMouseClickEvent(event)
-  }
-
-  override def onMouseMoveEvent(event: MouseMoveEvent): Boolean = {
-    comps.exists(_.onMouseMoveEvent(event)) || super.onMouseMoveEvent(event)
   }
 
   override def onScrollEvent(event: ScrollEvent): Boolean = {

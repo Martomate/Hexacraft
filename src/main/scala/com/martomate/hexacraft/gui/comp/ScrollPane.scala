@@ -1,12 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.gui.{
-  CharEvent,
-  KeyEvent,
-  MouseClickEvent,
-  MouseMoveEvent,
-  ScrollEvent
-}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
@@ -52,12 +46,6 @@ class ScrollPane(_location: LocationInfo) extends Component(_location) {
   override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
     if (containsMouse) {
       components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xOffset, -yOffset)))
-    } else false
-  }
-
-  override def onMouseMoveEvent(event: MouseMoveEvent): Boolean = {
-    if (containsMouse) {
-      components.exists(_.onMouseMoveEvent(event))
     } else false
   }
 
