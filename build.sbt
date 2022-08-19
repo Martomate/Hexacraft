@@ -1,6 +1,6 @@
-enablePlugins(LauncherJarPlugin)
+import scala.util.Properties.isMac
 
-val isMac = System.getProperty("os.name").toLowerCase().contains("mac")
+enablePlugins(LauncherJarPlugin)
 
 lazy val root = Project("hexacraft", file("."))
   .settings(Defaults.coreDefaultSettings: _*)
@@ -54,6 +54,7 @@ def otherDependencies = Seq(
 
 def testDependencies = Seq(
   "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
+  "org.scalatest" %% "scalatest-wordspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
   "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test"
 )
