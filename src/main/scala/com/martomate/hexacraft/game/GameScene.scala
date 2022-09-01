@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.location.LocationInfoIdentity
+import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.menu.debug.DebugScene
 import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.*
@@ -21,7 +21,7 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{DebugInfoProvider, RayTracer, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, Ray, RayTracer, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
@@ -283,7 +283,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
     blockInHandRenderer.updateContent()
 
-    updateMousePicker()
+    worldRenderer.selectedBlockAndSide = updatedMousePicker()
 
     if (rightMouseButtonTimer.tick()) {
       performRightMouseClick()
@@ -297,13 +297,15 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     if (debugScene != null) debugScene.tick()
   }
 
-  private def updateMousePicker(): Unit = {
-    mousePicker.setRayFromScreen(
-      if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0)
-    )
-    worldRenderer.selectedBlockAndSide =
-      if (!isPaused && !isInPopup) mousePicker.trace(c => world.getBlock(c).blockType != Blocks.Air)
-      else None
+  private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] = {
+    if !isPaused && !isInPopup
+    then
+      val screenCoords = if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0)
+      for
+        ray <- Ray.fromScreen(camera, screenCoords)
+        hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType != Blocks.Air)
+      yield hit
+    else None
   }
 
   private def performLeftMouseClick(): Unit = {

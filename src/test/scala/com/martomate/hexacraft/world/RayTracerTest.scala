@@ -19,20 +19,22 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     val world: BlocksInWorld = FakeBlocksInWorld.empty(new FakeWorldProvider(1289))
     val camera = new Camera(makeCameraProjection)
 
-    val rayTracer = new RayTracer(world, camera, 5.0)
-
-    rayTracer.setRayFromScreen(new Vector2f(-0.3f, 0.2f))
+    val ray = Ray.fromScreen(camera, new Vector2f(-0.3f, 0.2f)).get
 
     // There are no blocks so it should fail
-    rayTracer.trace(_ => true) shouldBe None
+    val rayTracer = new RayTracer(world, camera, 5.0)
+    rayTracer.trace(ray, _ => true) shouldBe None
   }
 
   it should "return a block if the camera is in it" in {
     val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
-    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(provider, Map(
-      location -> new BlockState(Blocks.Dirt)
-    ))
+    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map(
+        location -> new BlockState(Blocks.Dirt)
+      )
+    )
 
     // Create a camera at the location
     val camera = new Camera(makeCameraProjection)
@@ -40,20 +42,23 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     camera.updateCoords()
     camera.updateViewMatrix()
 
-    // Create a ray tracer
-    val rayTracer = new RayTracer(world, camera, 5.0)
-    rayTracer.setRayFromScreen(new Vector2f(0, 0))
+    // Create a ray
+    val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
 
     // The ray tracer should find the block
-    rayTracer.trace(_ => true) shouldBe Some((location, None))
+    val rayTracer = new RayTracer(world, camera, 5.0)
+    rayTracer.trace(ray, _ => true) shouldBe Some((location, None))
   }
 
   it should "return None if the mouse is not on the screen" in {
     val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
-    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(provider, Map(
-      location -> new BlockState(Blocks.Dirt)
-    ))
+    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map(
+        location -> new BlockState(Blocks.Dirt)
+      )
+    )
 
     // Create a camera at the location
     val camera = new Camera(makeCameraProjection)
@@ -61,32 +66,23 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     camera.updateCoords()
     camera.updateViewMatrix()
 
-    // Create a ray tracer
-    val rayTracer = new RayTracer(world, camera, 5.0)
-
     // Look outside of the screen
-    rayTracer.setRayFromScreen(new Vector2f(1.2f, 0))
-    rayTracer.trace(_ => true) shouldBe None
-
-    rayTracer.setRayFromScreen(new Vector2f(-1.2f, 0))
-    rayTracer.trace(_ => true) shouldBe None
-
-    rayTracer.setRayFromScreen(new Vector2f(0, 1.2f))
-    rayTracer.trace(_ => true) shouldBe None
-
-    rayTracer.setRayFromScreen(new Vector2f(0, -1.2f))
-    rayTracer.trace(_ => true) shouldBe None
-
-    rayTracer.setRayFromScreen(new Vector2f(1.3f, -1.2f))
-    rayTracer.trace(_ => true) shouldBe None
+    Ray.fromScreen(camera, new Vector2f(1.2f, 0)) shouldBe None
+    Ray.fromScreen(camera, new Vector2f(-1.2f, 0)) shouldBe None
+    Ray.fromScreen(camera, new Vector2f(0, 1.2f)) shouldBe None
+    Ray.fromScreen(camera, new Vector2f(0, -1.2f)) shouldBe None
+    Ray.fromScreen(camera, new Vector2f(1.3f, -1.2f)) shouldBe None
   }
 
   it should "return a block right in front of the camera" in {
     val provider = new FakeWorldProvider(1289)
-    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(provider, Map(
-      BlockRelWorld(0, 0, 0) -> new BlockState(Blocks.Air),
-      BlockRelWorld(0, 0, 1) -> new BlockState(Blocks.Dirt)
-    ))
+    val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map(
+        BlockRelWorld(0, 0, 0) -> new BlockState(Blocks.Air),
+        BlockRelWorld(0, 0, 1) -> new BlockState(Blocks.Dirt)
+      )
+    )
 
     // Create a camera looking in the positive Z-direction
     val camera = new Camera(makeCameraProjection)
@@ -95,12 +91,12 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     camera.updateCoords()
     camera.updateViewMatrix()
 
-    // Create a ray tracer
-    val rayTracer = new RayTracer(world, camera, 5.0)
-    rayTracer.setRayFromScreen(new Vector2f(0, 0))
+    // Create a ray
+    val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
 
     // The ray tracer should find the block
-    rayTracer.trace(_ => true) shouldBe Some((BlockRelWorld(0, 0, 1), Some(6)))
+    val rayTracer = new RayTracer(world, camera, 5.0)
+    rayTracer.trace(ray, _ => true) shouldBe Some((BlockRelWorld(0, 0, 1), Some(6)))
   }
 
   // TODO: there is a bug where a ray can escape confinement if it starts at (0,0,0) with a y-rotation of Pi/2
