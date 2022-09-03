@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world
 
+import com.martomate.hexacraft.util.MathUtils.oppositeSide
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.chunk.Chunk
@@ -300,9 +301,5 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     }
 
     neighborMap.view.mapValues(_.toSeq).toMap
-  }
-
-  private def oppositeSide(s: Int): Int = {
-    if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2
   }
 }

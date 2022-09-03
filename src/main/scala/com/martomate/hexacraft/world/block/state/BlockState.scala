@@ -6,7 +6,8 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 object BlockState {
   val Air: BlockState = new BlockState(Blocks.Air)
 
-  val vertices: Seq[CylCoords] = new HexBox(0.5f, 0, 0.5f).vertices
+  val boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
+  val vertices: Seq[CylCoords] = boundingBox.vertices
 
   def getVertices(side: Int): Seq[CylCoords] = side match {
     case 0 => vertices.take(6)

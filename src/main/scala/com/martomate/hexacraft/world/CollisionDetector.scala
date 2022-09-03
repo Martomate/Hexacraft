@@ -100,12 +100,12 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val yHi = math.floor((objectCoords.y + objectBounds.top) * 2).toInt
 
     val candidates =
-      for {
+      for
         y <- yLo to yHi
         dx <- -1 to 1
         dz <- -1 to 1
         if dx * dz != 1 // remove corners
-      } yield distanceToBlock(
+      yield distanceToBlock(
         objectBounds,
         objectCoords,
         objectVelocity,
@@ -148,9 +148,8 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
         )
       } else None
     } else {
-      Some(
-        (0, -1)
-      ) // Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
+      Some((0, -1))
+      // Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
     }
   }
 
@@ -204,23 +203,28 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       fixZ = false
     )
 
-    val (x1, y1, z1, x2, y2, z2) = (
-      pos1.x + 0.5 * pos1.z,
-      pos1.y,
-      pos1.z + 0.5 * pos1.x,
-      pos2.x + 0.5 * pos2.z,
-      pos2.y,
-      pos2.z + 0.5 * pos2.x
-    )
-    val (r1, r2, b1, b2, t1, t2) =
-      (box1.smallRadius, box2.smallRadius, box1.bottom, box2.bottom, box1.top, box2.top)
+    val x1 = pos1.x + 0.5 * pos1.z
+    val y1 = pos1.y
+    val z1 = pos1.z + 0.5 * pos1.x
+    val x2 = pos2.x + 0.5 * pos2.z
+    val y2 = pos2.y
+    val z2 = pos2.z + 0.5 * pos2.x
+
+    val r1 = box1.smallRadius
+    val r2 = box2.smallRadius
+    val b1 = box1.bottom
+    val b2 = box2.bottom
+    val t1 = box1.top
+    val t2 = box2.top
 
     val dx = x2 - x1
     val dy = y2 - y1
     val dz = z2 - z1
     val d = r2 + r1
 
-    val (vx, vy, vz) = (vel1.x + 0.5 * vel1.z, vel1.y, vel1.z + 0.5 * vel1.x)
+    val vx = vel1.x + 0.5 * vel1.z
+    val vy = vel1.y
+    val vz = vel1.z + 0.5 * vel1.x
 
     // index corresponds to `reflectionDirs`
     val distances = Array(
@@ -231,7 +235,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       d + dz, //       (z2      + r2) - (z1      - r1),
       d - dz, //       (z1      + r1) - (z2      - r2),
       d + dz - dx, //  (z2 - x2 + r2) - (z1 - x1 - r1),
-      d - dz + dx //  (z1 - x1 + r1) - (z2 - x2 - r2)
+      d - dz + dx //   (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
     if (distances.forall(_ >= 0)) { // no intersection before moving
