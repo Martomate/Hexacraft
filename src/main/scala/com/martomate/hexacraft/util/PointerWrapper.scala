@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.util
 
-class PointerWrapper {
+class PointerWrapper:
   private val int1 = Array.ofDim[Int](1)
   private val int2 = Array.ofDim[Int](1)
 
@@ -18,4 +18,3 @@ class PointerWrapper {
 
     (double1(0), double2(0))
   }
-}

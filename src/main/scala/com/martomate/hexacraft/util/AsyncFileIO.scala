@@ -5,7 +5,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
 
-object AsyncFileIO {
+object AsyncFileIO:
   private implicit val executionContext: ExecutionContextExecutorService =
     ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(8))
 
@@ -16,22 +16,19 @@ object AsyncFileIO {
 
     lockedFiles.synchronized {
       while (lockedFiles.contains(realPath))
-        lockedFiles.wait()
+      do lockedFiles.wait()
 
       lockedFiles += realPath
     }
-    try {
+    try
       job(file)
-    } finally {
+    finally
       lockedFiles.synchronized {
         lockedFiles -= realPath
         lockedFiles.notifyAll()
       }
-    }
   }
 
-  def unload(): Unit = {
+  def unload(): Unit =
     executionContext.shutdown()
     executionContext.awaitTermination(60, TimeUnit.SECONDS)
-  }
-}

@@ -3,7 +3,7 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.GameMouse
 import org.joml.{Vector2d, Vector2dc}
 
-class RealGameMouse extends GameMouse {
+class RealGameMouse extends GameMouse:
   private val mousePos = new Vector2d()
   private val mouseMoved = new Vector2d()
   private var skipMouseMovedUpdate = false
@@ -14,12 +14,11 @@ class RealGameMouse extends GameMouse {
 
   def skipNextMouseMovedUpdate(): Unit = skipMouseMovedUpdate = true
 
-  def moveTo(x: Double, y: Double): Unit = {
-    if (!skipMouseMovedUpdate) mouseMoved.set(x - pos.x, y - pos.y)
+  def moveTo(x: Double, y: Double): Unit =
+    if !skipMouseMovedUpdate
+    then mouseMoved.set(x - pos.x, y - pos.y)
 
-    if (x != pos.x || y != pos.y)
-      skipMouseMovedUpdate = false
+    if x != pos.x || y != pos.y
+    then skipMouseMovedUpdate = false
 
     mousePos.set(x, y)
-  }
-}

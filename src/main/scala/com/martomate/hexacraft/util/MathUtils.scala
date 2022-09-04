@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.util
 
-object MathUtils {
+object MathUtils:
   def fitZ(z: Double, circumference: Double): Double =
     val zz = z % circumference
     if zz < 0
@@ -29,4 +29,3 @@ object MathUtils {
 
   def oppositeSide(s: Int): Int =
     if (s < 2) 1 - s else (s - 2 + 3) % 6 + 2
-}

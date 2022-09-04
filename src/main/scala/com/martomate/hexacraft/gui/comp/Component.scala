@@ -83,14 +83,8 @@ object Component {
       textSize: Float,
       centered: Boolean = true
   ): GUIText = {
-    val guiText = GUIText(
-      text,
-      textSize,
-      Component.font,
-      new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize),
-      location.w,
-      centered
-    )
+    val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
+    val guiText = GUIText(text, textSize, Component.font, position, location.w, centered)
     guiText.setColor(0.9f, 0.9f, 0.9f)
     guiText
   }

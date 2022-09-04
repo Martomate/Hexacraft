@@ -7,9 +7,8 @@ case class KeyEvent(key: Int, scancode: Int, action: Int, mods: Int) extends Eve
 case class CharEvent(character: Int) extends Event
 
 case class MouseClickEvent(button: Int, action: Int, mods: Int, mousePos: (Float, Float))
-    extends Event {
+    extends Event:
   def withMouseTranslation(dx: Float, dy: Float): MouseClickEvent =
     copy(mousePos = (mousePos._1 + dx, mousePos._2 + dy))
-}
 
 case class ScrollEvent(xoffset: Float, yoffset: Float) extends Event

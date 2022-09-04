@@ -20,9 +20,8 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(implicit window: Gam
   private var selectedIndex = 0
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
-  private val guiBlockRenderer = new GUIBlocksRenderer(9, 1, 0.2f, () => (-4 * 0.2f, -0.83f))(x =>
-    inventory(x)
-  )
+  private val guiBlockRenderer =
+    new GUIBlocksRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
   guiBlockRenderer.setViewMatrix(
     new Matrix4f()
       .translate(0, 0, -14f)

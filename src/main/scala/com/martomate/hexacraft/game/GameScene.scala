@@ -10,7 +10,7 @@ import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.resource.{Shader, Shaders}
 import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -30,8 +30,7 @@ import org.lwjgl.opengl.GL11
 class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended)
     extends Scene
     with PausableScene
-    with DebugInfoProvider {
-  // Camera, player, mouse-picker, world, etc.
+    with DebugInfoProvider:
 
   private val blockShader: Shader = Shaders.Block
   private val blockSideShader: Shader = Shaders.BlockSide
@@ -61,8 +60,8 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     Seq(skyShader, blockShader, blockSideShader, entityShader, entitySideShader)
 
   private val crosshairVAO: VAO = makeCrosshairVAO
-  private val crosshairRenderer: Renderer = new Renderer(crosshairVAO, GL11.GL_LINES)
-    with NoDepthTest
+  private val crosshairRenderer: Renderer =
+    new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
   private val world = new World(worldProvider)
   import world.size.impl
@@ -93,57 +92,53 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   setUniforms()
   setUseMouse(true)
 
-  override def onReloadedResources(): Unit = {
+  override def onReloadedResources(): Unit =
     setUniforms()
     world.onReloadedResources()
-  }
 
-  private def setUniforms(): Unit = {
+  private def setUniforms(): Unit =
     setProjMatrixForAll()
 
-    for (shader <- shadersNeedingTotalSize)
-      shader.setUniform1i("totalSize", world.size.totalSize)
+    for shader <- shadersNeedingTotalSize
+    do shader.setUniform1i("totalSize", world.size.totalSize)
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
     Shader.foreach(
       _.setUniform2f("windowSize", window.windowSize.x.toFloat, window.windowSize.y.toFloat)
     )
-  }
 
-  private def setProjMatrixForAll(): Unit = {
-    for (shader <- shadersNeedingProjMatrix)
-      camera.setProjMatrix(shader)
+  private def setProjMatrixForAll(): Unit =
+    for shader <- shadersNeedingProjMatrix
+    do camera.setProjMatrix(shader)
 
     worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
     worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
-  }
 
-  override def onKeyEvent(event: KeyEvent): Boolean = {
-    if (event.action == GLFW_PRESS) {
-      event.key match {
+  override def onKeyEvent(event: KeyEvent): Boolean =
+    if event.action == GLFW_PRESS
+    then
+      event.key match
         case GLFW_KEY_B =>
           val newCoords = camera.blockCoords.offset(0, -4, 0)
-          if (world.getBlock(newCoords).blockType == Blocks.Air)
-            world.setBlock(newCoords, new BlockState(world.player.blockInHand))
+
+          if world.getBlock(newCoords).blockType == Blocks.Air
+          then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
           window.scenes.pushScene(new PauseMenu(this))
           setPaused(true)
         case GLFW_KEY_E =>
           if !isPaused
           then
-            val inventoryScene = new InventoryScene(
-              world.player.inventory,
-              () => {
-                window.scenes.popScenesUntil(_ == this)
-                isInPopup = false
-                setUseMouse(true)
-              }
-            )
+            val closeScene: () => Unit = () => {
+              window.scenes.popScenesUntil(_ == this)
+              isInPopup = false
+              setUseMouse(true)
+            }
 
             setUseMouse(false)
             isInPopup = true
-            window.scenes.pushScene(inventoryScene)
+            window.scenes.pushScene(new InventoryScene(world.player.inventory, closeScene))
         case GLFW_KEY_M =>
           setUseMouse(!moveWithMouse)
         case GLFW_KEY_F =>
@@ -154,87 +149,68 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
           val idx = key - GLFW_KEY_1
           setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
-          world.addEntity(
-            PlayerEntity.atStartPos(
-              CylCoords(world.player.position),
-              world,
-              PlayerAIFactory,
-              entityModelLoader.load("player")
-            )
-          )
+          val startPos = CylCoords(world.player.position)
+          val playerModel = entityModelLoader.load("player")
+
+          world.addEntity(PlayerEntity.atStartPos(startPos, world, PlayerAIFactory, playerModel))
         case GLFW_KEY_L =>
-          world.addEntity(
-            SheepEntity.atStartPos(
-              CylCoords(world.player.position),
-              world,
-              SheepAIFactory,
-              entityModelLoader.load("sheep")
-            )
-          )
+          val startPos = CylCoords(world.player.position)
+          val sheepModel = entityModelLoader.load("sheep")
+
+          world.addEntity(SheepEntity.atStartPos(startPos, world, SheepAIFactory, sheepModel))
         case GLFW_KEY_K =>
           world.removeAllEntities()
         case _ =>
-      }
-    }
     true
-  }
 
-  private def setDebugScreenVisible(visible: Boolean): Unit = {
-    if (visible) {
-      if (debugScene == null) debugScene = new DebugScene(this)
-    } else {
-      if (debugScene != null) debugScene.unload()
+  private def setDebugScreenVisible(visible: Boolean): Unit =
+    if visible
+    then
+      if debugScene == null
+      then debugScene = new DebugScene(this)
+    else
+      if debugScene != null
+      then debugScene.unload()
       debugScene = null
-    }
-  }
 
-  private def setUseMouse(useMouse: Boolean): Unit = {
+  private def setUseMouse(useMouse: Boolean): Unit =
     moveWithMouse = useMouse
     setMouseCursorInvisible(moveWithMouse)
     window.resetMousePos()
-  }
 
-  override def onScrollEvent(event: ScrollEvent): Boolean = {
-    if (!isPaused && !isInPopup && moveWithMouse) {
+  override def onScrollEvent(event: ScrollEvent): Boolean =
+    if !isPaused && !isInPopup && moveWithMouse
+    then
       val dy = -math.signum(event.yoffset).toInt
-      if (dy != 0) {
+      if dy != 0
+      then
         val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
         setSelectedItemSlot(itemSlot)
-      }
       true
-    } else super.onScrollEvent(event)
-  }
+    else super.onScrollEvent(event)
 
-  private def setSelectedItemSlot(itemSlot: Int): Unit = {
+  private def setSelectedItemSlot(itemSlot: Int): Unit =
     world.player.selectedItemSlot = itemSlot
     blockInHandRenderer.updateContent()
     toolbar.setSelectedIndex(itemSlot)
-  }
 
-  def setPaused(paused: Boolean): Unit = {
-    if (paused != isPaused) {
+  def setPaused(paused: Boolean): Unit =
+    if isPaused != paused
+    then
       isPaused = paused
-
       setMouseCursorInvisible(!paused && moveWithMouse)
-    }
-  }
 
-  private def setMouseCursorInvisible(invisible: Boolean): Unit = {
-    window.setCursorLayout(if (invisible) GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
-  }
+  private def setMouseCursorInvisible(invisible: Boolean): Unit =
+    window.setCursorLayout(if invisible then GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
-    event.button match {
-      case 0 =>
-        leftMouseButtonTimer.active = event.action != GLFW_RELEASE
-      case 1 =>
-        rightMouseButtonTimer.active = event.action != GLFW_RELEASE
+  override def onMouseClickEvent(event: MouseClickEvent): Boolean =
+    event.button match
+      case 0 => leftMouseButtonTimer.active = event.action != GLFW_RELEASE
+      case 1 => rightMouseButtonTimer.active = event.action != GLFW_RELEASE
       case _ =>
-    }
     true
-  }
 
-  override def windowResized(width: Int, height: Int): Unit = {
+  override def windowResized(width: Int, height: Int): Unit =
     camera.proj.aspect = width.toFloat / height
     camera.updateProjMatrix()
 
@@ -242,16 +218,15 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
     skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
 
-    if (debugScene != null) debugScene.windowResized(width, height)
-  }
+    if debugScene != null
+    then debugScene.windowResized(width, height)
 
-  override def framebufferResized(width: Int, height: Int): Unit = {
+  override def framebufferResized(width: Int, height: Int): Unit =
     worldRenderer.framebufferResized(width, height)
-  }
 
   override def windowTitle: String = ""
 
-  override def render(transformation: GUITransformation): Unit = {
+  override def render(transformation: GUITransformation): Unit =
     worldRenderer.render(camera)
 
     renderCrosshair()
@@ -259,28 +234,30 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     blockInHandRenderer.render(transformation)
     toolbar.render(transformation)
 
-    if (debugScene != null) debugScene.render(transformation)
-  }
+    if debugScene != null
+    then debugScene.render(transformation)
 
-  private def renderCrosshair(): Unit = {
-    if (!isPaused && !isInPopup && moveWithMouse) {
+  private def renderCrosshair(): Unit =
+    if !isPaused && !isInPopup && moveWithMouse
+    then
       crosshairShader.enable()
       crosshairRenderer.render()
-    }
-  }
 
-  override def tick(): Unit = {
-    if (!isPaused && !isInPopup) playerInputHandler.tick(moveWithMouse)
+  override def tick(): Unit =
+    if !isPaused && !isInPopup
+    then playerInputHandler.tick(moveWithMouse)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
-    for (shader <- shadersNeedingCamera)
-      camera.updateUniforms(shader)
+
+    for shader <- shadersNeedingCamera
+    do camera.updateUniforms(shader)
 
     skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
-    for (shader <- shadersNeedingSun)
-      shader.setUniform3f("sun", 0, 1, -1)
+
+    for shader <- shadersNeedingSun
+    do shader.setUniform3f("sun", 0, 1, -1)
 
     blockInHandRenderer.updateContent()
 
@@ -295,86 +272,77 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
 
     world.tick(camera)
     worldRenderer.tick(camera)
-    if (debugScene != null) debugScene.tick()
-  }
 
-  private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] = {
-    if !isPaused && !isInPopup
-    then
-      val screenCoords = if (!moveWithMouse) window.normalizedMousePos else new Vector2f(0, 0)
+    if debugScene != null
+    then debugScene.tick()
+
+  private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] =
+    if isPaused || isInPopup
+    then None
+    else
+      val screenCoords =
+        if moveWithMouse
+        then new Vector2f(0, 0)
+        else window.normalizedMousePos
       for
         ray <- Ray.fromScreen(camera, screenCoords)
         hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType != Blocks.Air)
       yield hit
-    else None
-  }
 
-  private def performLeftMouseClick(): Unit = {
-    worldRenderer.selectedBlockAndSide match {
+  private def performLeftMouseClick(): Unit =
+    worldRenderer.selectedBlockAndSide match
       case Some((coords, _)) =>
-        if (world.getBlock(coords).blockType != Blocks.Air) {
-          world.removeBlock(coords)
-        }
+        if world.getBlock(coords).blockType != Blocks.Air
+        then world.removeBlock(coords)
       case _ =>
-    }
-  }
 
-  private def performRightMouseClick(): Unit = {
-    worldRenderer.selectedBlockAndSide match {
-      case Some((coords1, Some(side))) =>
-        val offset = NeighborOffsets(side)
-        val coords = coords1.offset(offset)
-        tryPlacingBlockAt(coords)
+  private def performRightMouseClick(): Unit =
+    worldRenderer.selectedBlockAndSide match
+      case Some((coords, Some(side))) =>
+        val coordsInFront = coords.offset(NeighborOffsets(side))
+        tryPlacingBlockAt(coordsInFront)
       case _ =>
-    }
-  }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
-    if (world.getBlock(coords).blockType == Blocks.Air) {
+  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit =
+    if world.getBlock(coords).blockType == Blocks.Air
+    then
       val blockType = world.player.blockInHand
       val state = new BlockState(blockType)
-      if (
-        !world.collisionDetector.collides(
-          blockType.bounds(state.metadata),
-          BlockCoords(coords).toCylCoords,
-          world.player.bounds,
-          CylCoords(camera.position)
-        )
-      ) {
-        world.setBlock(coords, state)
-      }
-    }
-  }
 
-  override def unload(): Unit = {
+      val collides = world.collisionDetector.collides(
+        blockType.bounds(state.metadata),
+        BlockCoords(coords).toCylCoords,
+        world.player.bounds,
+        CylCoords(camera.position)
+      )
+
+      if !collides
+      then world.setBlock(coords, state)
+
+  override def unload(): Unit =
+    setMouseCursorInvisible(false)
+
     world.unload()
     worldRenderer.unload()
     crosshairVAO.free()
     toolbar.unload()
     blockInHandRenderer.unload()
-    setMouseCursorInvisible(false)
-    if (debugScene != null) debugScene.unload()
-  }
+
+    if debugScene != null
+    then debugScene.unload()
 
   override def viewDistance: Double = world.renderDistance
 
-  private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer = {
-    val renderer = new GUIBlocksRenderer(
-      1,
-      1,
-      0,
-      () => (1.5f, -0.9f),
-      brightnessFunc = (_, _) => world.getBrightness(camera.blockCoords)
-    )(_ => world.player.blockInHand)
-    renderer.setViewMatrix(
-      new Matrix4f()
-        .translate(0, 0, -2f)
-        .rotateZ(-3.1415f / 12)
-        .rotateX(3.1415f / 6)
-        .translate(0, -0.25f, 0)
-    )
+  private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer =
+    val blockProvider = () => world.player.blockInHand
+    val offsetFunc = () => (1.5f, -0.9f)
+    val brightnessFunc = () => world.getBrightness(camera.blockCoords)
+
+    val viewMatrix = makeBlockInHandViewMatrix
+
+    val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
+    renderer.setViewMatrix(viewMatrix)
     renderer
-  }
 
   private def makeCrosshairVAO: VAO = new VAOBuilder(4)
     .addVBO(
@@ -385,25 +353,24 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     )
     .create()
 
-  private def makeToolbar(player: Player): Toolbar = {
-    val toolbar = new Toolbar(
-      new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f),
-      player.inventory
-    )
+  private def makeToolbar(player: Player): Toolbar =
+    val location = new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
+
+    val toolbar = new Toolbar(location, player.inventory)
     toolbar.setSelectedIndex(player.selectedItemSlot)
     toolbar
-  }
 
-  private def makeCameraProjection = {
-    new CameraProjection(
-      70f,
-      window.aspectRatio,
-      0.02f,
-      world.size.worldSize match {
-        case 0 => 100000f
-        case 1 => 10000f
-        case _ => 1000f
-      }
-    )
-  }
-}
+  private def makeCameraProjection =
+    val far = world.size.worldSize match
+      case 0 => 100000f
+      case 1 => 10000f
+      case _ => 1000f
+
+    new CameraProjection(70f, window.aspectRatio, 0.02f, far)
+
+  private def makeBlockInHandViewMatrix =
+    new Matrix4f()
+      .translate(0, 0, -2f)
+      .rotateZ(-3.1415f / 12)
+      .rotateX(3.1415f / 6)
+      .translate(0, -0.25f, 0)

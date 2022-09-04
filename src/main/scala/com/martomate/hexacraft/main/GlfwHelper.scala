@@ -3,56 +3,50 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.util.PointerWrapper
 import org.lwjgl.glfw.GLFW
 
-class GlfwHelper {
+class GlfwHelper:
   private val pointerWrapper = new PointerWrapper()
 
-  def getWindowPos(window: Long): (Int, Int) = {
+  def getWindowPos(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetWindowPos(window, px, py))
-  }
 
-  def getWindowSize(window: Long): (Int, Int) = {
+  def getWindowSize(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetWindowSize(window, px, py))
-  }
 
-  def getFramebufferSize(window: Long): (Int, Int) = {
+  def getFramebufferSize(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetFramebufferSize(window, px, py))
-  }
 
-  def getPixelScale(window: Long): (Int, Int) = {
+  def getPixelScale(window: Long): (Int, Int) =
     val (fw, fh) = getFramebufferSize(window)
     val (ww, wh) = getWindowSize(window)
     (fw / ww, fh / wh)
-  }
 
-  def getMonitorPos(window: Long): (Int, Int) = {
+  def getMonitorPos(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetMonitorPos(window, px, py))
-  }
 
-  def getCursorPos(window: Long): (Double, Double) = {
+  def getCursorPos(window: Long): (Double, Double) =
     pointerWrapper.doubles((px, py) => GLFW.glfwGetCursorPos(window, px, py))
-  }
 
   /** Determines the current monitor that the specified window is being displayed on. If the monitor
     * could not be determined, the primary monitor will be returned.
     */
-  def getCurrentMonitor(window: Long): Long = {
+  def getCurrentMonitor(window: Long): Long =
     val (wx, wy) = getWindowPos(window)
     val (ww, wh) = getWindowSize(window)
 
     getCurrentMonitor(wx, wy, ww, wh)
-  }
 
   def getCurrentMonitor(
       windowPosX: Int,
       windowPosY: Int,
       windowWidth: Int,
       windowHeight: Int
-  ): Long = {
+  ): Long =
     var bestOverlap = 0
     var bestMonitor = 0L
 
     val monitors = GLFW.glfwGetMonitors()
-    while (monitors.hasRemaining) {
+    while monitors.hasRemaining
+    do
       val monitor = monitors.get
 
       val (monitorPosX, monitorPosY) = getMonitorPos(monitor)
@@ -70,12 +64,11 @@ class GlfwHelper {
       val overlapHeight = Math.max(0, overlapBottom - overlapTop)
       val overlap = overlapWidth * overlapHeight
 
-      if (bestOverlap < overlap) {
+      if bestOverlap < overlap
+      then
         bestOverlap = overlap
         bestMonitor = monitor
-      }
-    }
-    if (bestMonitor != 0L) bestMonitor else GLFW.glfwGetPrimaryMonitor()
-  }
 
-}
+    if bestMonitor != 0L
+    then bestMonitor
+    else GLFW.glfwGetPrimaryMonitor()

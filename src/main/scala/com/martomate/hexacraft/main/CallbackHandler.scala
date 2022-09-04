@@ -34,16 +34,14 @@ case class DebugMessageCallback(
     userParam: Long
 ) extends CallbackEvent
 
-class CallbackHandler {
+class CallbackHandler:
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
 
-  def handle(handler: CallbackEvent => Unit): Unit = {
-    if (callbackQueue.nonEmpty) {
-      while (callbackQueue.nonEmpty) {
-        handler(callbackQueue.dequeue())
-      }
-    }
-  }
+  def handle(handler: CallbackEvent => Unit): Unit =
+    if callbackQueue.nonEmpty
+    then
+      while callbackQueue.nonEmpty
+      do handler(callbackQueue.dequeue())
 
   private def onKeyCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit =
     callbackQueue.enqueue(KeyPressedCallback(window, key, scancode, action, mods))
@@ -71,12 +69,12 @@ class CallbackHandler {
       length: Int,
       messageAddress: Long,
       userParam: Long
-  ): Unit = {
+  ): Unit =
     val message =
-      if (length < 0) MemoryUtil.memASCII(messageAddress)
+      if length < 0
+      then MemoryUtil.memASCII(messageAddress)
       else MemoryUtil.memASCII(messageAddress, length)
     callbackQueue.enqueue(DebugMessageCallback(source, debugType, id, severity, message, userParam))
-  }
 
   def addKeyCallback(window: Long): Unit = GLFW.glfwSetKeyCallback(window, onKeyCallback)
 
@@ -94,4 +92,3 @@ class CallbackHandler {
   def addScrollCallback(window: Long): Unit = GLFW.glfwSetScrollCallback(window, onScrollCallback)
 
   def addDebugMessageCallback(): Unit = GL43.glDebugMessageCallback(onDebugMessageCallback, 0L)
-}
