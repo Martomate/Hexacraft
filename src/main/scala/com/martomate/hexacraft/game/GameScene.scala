@@ -19,9 +19,10 @@ import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
 import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
+import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{DebugInfoProvider, Ray, RayTracer, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, World}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
@@ -331,12 +332,11 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
     if (world.getBlock(coords).blockType == Blocks.Air) {
       val blockType = world.player.blockInHand
-      val skewCoords = BlockCoords(coords).toSkewCylCoords
       val state = new BlockState(blockType)
       if (
         !world.collisionDetector.collides(
           blockType.bounds(state.metadata),
-          skewCoords,
+          BlockCoords(coords).toCylCoords,
           world.player.bounds,
           CylCoords(camera.position)
         )
