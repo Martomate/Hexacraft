@@ -8,7 +8,7 @@ import com.martomate.hexacraft.menu.MenuScene
 import com.martomate.hexacraft.scene.GameWindowExtended
 import com.martomate.hexacraft.world.settings.{WorldProviderFromFile, WorldSettings}
 
-import scala.util.{Random, Try}
+import scala.util.Random
 
 class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(
@@ -42,10 +42,10 @@ class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene {
     try {
       val baseFolder = new File(window.saveFolder, "saves")
       val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
-      val size = Try(sizeTF.text.toByte).toOption.filter(s => s >= 0 && s <= 20)
+      val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20)
       val seed = Some(seedTF.text)
         .filter(_.nonEmpty)
-        .map(s => new Random(s.##.toLong << 32 | s.reverse.##).nextLong())
+        .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
       window.scenes.popScenesUntil(MenuScene.isMainMenu)
       window.scenes.pushScene(
         new GameScene(new WorldProviderFromFile(file, WorldSettings(Some(nameTF.text), size, seed)))
