@@ -15,7 +15,7 @@ object WorldInfo {
 
     val name = NBTUtil
       .getCompoundTag(nbt, "general")
-      .flatMap(general => NBTUtil.getString(general, "worldName"))
+      .flatMap(general => NBTUtil.getString(general, "name"))
       .getOrElse(saveFile.getName)
     new WorldInfo(saveFile, name)
   }

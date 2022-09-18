@@ -17,7 +17,7 @@ object WorldInfo {
   def fromNBT(nbtData: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
     val generalSettings: CompoundTag = NBTUtil.getCompoundTag(nbtData, "general").orNull
     val name: String =
-      NBTUtil.getString(generalSettings, "worldName", worldSettings.name.getOrElse(saveDir.getName))
+      NBTUtil.getString(generalSettings, "name", worldSettings.name.getOrElse(saveDir.getName))
     val size: CylinderSize = new CylinderSize(
       NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7))
     )
