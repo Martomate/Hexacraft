@@ -24,7 +24,7 @@ abstract class MenuScene(implicit window: GameWindow) extends Scene with SubComp
 
 object MenuScene {
   def entireBackground(implicit window: GameWindow): LocationInfo =
-    new LocationInfoIdentity(-window.aspectRatio, -1, window.aspectRatio * 2, 2)
+    LocationInfoIdentity(-window.aspectRatio, -1, window.aspectRatio * 2, 2)
 
   val isMainMenu: Scene => Boolean = {
     case m: MenuScene => m.isMainMenu

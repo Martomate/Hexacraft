@@ -108,7 +108,7 @@ class TextField(
       .setColor(textColor.x, textColor.y, textColor.z)
 
   private def makeCursorText() =
-    val textLocation = new LocationInfoIdentity(
+    val textLocation = LocationInfoIdentity(
       location.x + location.w / 2f - maxFontSize * 0.002f,
       location.y + maxFontSize * 0.002f,
       location.h / 4,

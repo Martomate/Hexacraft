@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.location.LocationInfoIdentity
+import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.menu.debug.DebugScene
 import com.martomate.hexacraft.menu.pause.PauseMenu
@@ -354,7 +354,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
     .create()
 
   private def makeToolbar(player: Player): Toolbar =
-    val location = new LocationInfoIdentity(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
+    val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
 
     val toolbar = new Toolbar(location, player.inventory)
     toolbar.setSelectedIndex(player.selectedItemSlot)

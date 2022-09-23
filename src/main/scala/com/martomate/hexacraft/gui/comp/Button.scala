@@ -1,16 +1,21 @@
 package com.martomate.hexacraft.gui.comp
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.MouseClickEvent
 import com.martomate.hexacraft.gui.location.LocationInfo
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 
 object Button:
-  def apply(text: String, location: LocationInfo)(clickAction: => Unit): Button =
+  def apply(text: String, location: LocationInfo)(clickAction: => Unit)(using GameWindow): Button =
     new Button(text, location, clickAction)
 
-class Button(text: String, location: LocationInfo, clickAction: => Unit) extends Component:
+class Button(text: String, location: LocationInfo, clickAction: => Unit)(using GameWindow)
+    extends Component
+    with Boundable:
   addText(Component.makeText(text, location, 4.0f).setTextAndFitSize(text, 4.0f))
+
+  override def bounds: LocationInfo = location
 
   override def render(transformation: GUITransformation): Unit =
     val containsMouse = location.containsMouse(transformation.x, transformation.y)
