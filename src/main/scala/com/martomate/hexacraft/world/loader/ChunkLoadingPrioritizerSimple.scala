@@ -22,7 +22,6 @@ class ChunkLoadingPrioritizerSimple(
     chunksLoaded += chunk
     chunksLoadingEdge += chunk
     removeNonEdgeNeighbors(chunk)
-    assert(chunksLoadingEdge contains chunk)
   }
 
   private def removeNonEdgeNeighbors(chunk: ChunkRelWorld): Unit = {
