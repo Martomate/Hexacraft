@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.gui.inventory
 
 import com.martomate.hexacraft.GameWindow
+import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.gui.comp._
-import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
 import com.martomate.hexacraft.world.player.Inventory
 import org.joml.{Matrix4f, Vector4f}
 

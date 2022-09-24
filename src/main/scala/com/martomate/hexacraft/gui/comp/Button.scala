@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.MouseClickEvent
-import com.martomate.hexacraft.gui.location.LocationInfo
+import com.martomate.hexacraft.gui.{LocationInfo, MouseClickEvent}
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 

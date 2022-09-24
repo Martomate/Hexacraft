@@ -2,8 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.location.{LocationInfo, LocationInfoIdentity}
-import com.martomate.hexacraft.gui.{KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.menu.debug.DebugScene
 import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.*

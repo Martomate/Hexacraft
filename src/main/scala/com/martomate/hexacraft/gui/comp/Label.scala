@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.gui.location.LocationInfo
+import com.martomate.hexacraft.gui.LocationInfo
 
 class Label(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true)
     extends Component:

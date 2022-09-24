@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.menu.multiplayer
 
+import com.martomate.hexacraft.gui.LocationInfo16x9
 import java.net.InetAddress
 
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
-import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.menu.MenuScene
 import com.martomate.hexacraft.scene.GameWindowExtended
 

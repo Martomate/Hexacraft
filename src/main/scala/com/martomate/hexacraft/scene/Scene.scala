@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo16x9, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.Component
-import com.martomate.hexacraft.gui.location.LocationInfo16x9
 
 abstract class Scene(implicit window: GameWindow) extends Component {
   def windowResized(w: Int, h: Int): Unit = ()

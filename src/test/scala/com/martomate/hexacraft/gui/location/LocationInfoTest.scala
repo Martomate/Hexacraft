@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.gui.location
 
 import com.martomate.hexacraft.GameWindow
+import com.martomate.hexacraft.gui.LocationInfo16x9
 import org.scalatest.flatspec.AnyFlatSpec
 
 class LocationInfoTest extends AnyFlatSpec {

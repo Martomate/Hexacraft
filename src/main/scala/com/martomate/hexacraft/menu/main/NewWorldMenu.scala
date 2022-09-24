@@ -2,8 +2,8 @@ package com.martomate.hexacraft.menu.main
 
 import java.io.File
 import com.martomate.hexacraft.game.GameScene
+import com.martomate.hexacraft.gui.LocationInfo16x9
 import com.martomate.hexacraft.gui.comp._
-import com.martomate.hexacraft.gui.location.LocationInfo16x9
 import com.martomate.hexacraft.menu.MenuScene
 import com.martomate.hexacraft.scene.GameWindowExtended
 import com.martomate.hexacraft.world.settings.{WorldProviderFromFile, WorldSettings}

@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.gui.location
+package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
 
