@@ -13,58 +13,60 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
 
   def initBrightnesses(chunk: Chunk, lights: Map[BlockRelChunk, BlockState]): Unit = {
     chunkCache.clearCache()
+
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, Chunk)]
+
     for ((c, b) <- lights) {
       chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
       queueTorch += ((c, chunk))
     }
 
-    def enqueueIfTransparent(coords: BlockRelChunk, neigh: Chunk): Unit = {
+    def shouldEnqueueSunlight(coords: BlockRelChunk, neigh: Chunk) = {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neigh.coords.getColumnRelWorld).get
-      if (neigh.coords.Y * 16 + coords.cy > neighCol.heightMap(coords.cx, coords.cz)) {
-        if (
-          block.blockType
-            .isTransparent(block.metadata, 0) && block.blockType.isTransparent(block.metadata, 1)
-        ) {
-          neigh.lighting.setSunlight(coords, 15)
-          queueSun15 += ((coords, neigh))
-        }
-      }
+      if neigh.coords.Y * 16 + coords.cy > neighCol.heightMap(coords.cx, coords.cz)
+      then
+        val transparentTop = block.blockType.isTransparent(block.metadata, 0)
+        val transparentBottom = block.blockType.isTransparent(block.metadata, 1)
+        transparentTop && transparentBottom
+      else false
     }
 
-    for (y <- -1 to 16) {
-      for (z <- -1 to 16) {
-        Seq(
-          (-1, y, z),
-          (16, y, z),
-          (y, -1, z),
-          (y, 16, z),
-          (y, z, -1),
-          (y, z, 16)
-        ) foreach { t =>
-          val c2 = BlockRelWorld(t._1, t._2, t._3, chunk.coords)
-          val c2c = c2.getBlockRelChunk
-          Option(chunkCache.getChunk(c2.getChunkRelWorld)) match {
-            case Some(neigh) =>
-              if (neigh.lighting.getTorchlight(c2c) > 1) {
-                queueTorch += ((c2c, neigh))
-              }
-              if (t._2 == 16 && (t._1 & ~15 | t._3 & ~15) == 0) {
-                enqueueIfTransparent(c2c, neigh)
-              }
-              val lightHere = neigh.lighting.getSunlight(c2c)
-              if (lightHere > 0 && lightHere < 15) {
-                queueSunFromNeighbor += ((c2c, neigh))
-              }
-            case _ =>
-              if (t._2 == 16 && (t._1 & ~15 | t._3 & ~15) == 0) {
-                enqueueIfTransparent(c2c.offset(0, -1, 0), chunk)
-              }
-          }
-        }
+    def handleEdge(x: Int, y: Int, z: Int) = {
+      val c2 = BlockRelWorld(x, y, z, chunk.coords)
+      val c2c = c2.getBlockRelChunk
+      val isAboveChunk = y == 16 && (x & ~15 | z & ~15) == 0
+
+      chunkCache.getChunk(c2.getChunkRelWorld) match
+        case null =>
+          if isAboveChunk && shouldEnqueueSunlight(c2c.offset(0, -1, 0), chunk)
+          then
+            chunk.lighting.setSunlight(c2c.offset(0, -1, 0), 15)
+            queueSun15 += ((c2c.offset(0, -1, 0), chunk))
+        case neigh =>
+          if neigh.lighting.getTorchlight(c2c) > 1
+          then queueTorch += ((c2c, neigh))
+
+          if isAboveChunk && shouldEnqueueSunlight(c2c, neigh)
+          then
+            neigh.lighting.setSunlight(c2c, 15)
+            queueSun15 += ((c2c, neigh))
+
+          val lightHere = neigh.lighting.getSunlight(c2c)
+          if lightHere > 0 && lightHere < 15
+          then queueSunFromNeighbor += ((c2c, neigh))
+    }
+
+    for (s <- -1 to 16) {
+      for (t <- -1 to 16) {
+        handleEdge(-1, s, t)
+        handleEdge(16, s, t)
+        handleEdge(s, -1, t)
+        handleEdge(s, 16, t)
+        handleEdge(s, t, -1)
+        handleEdge(s, t, 16)
       }
     }
 
@@ -80,28 +82,18 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     propagateTorchlight(queue)
   }
 
-  def updateSunlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
-    chunkCache.clearCache()
-    chunk.lighting.setSunlight(coords, 0)
-    removeSunlight(chunk, coords)
-  }
-
   def removeTorchlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
     chunkCache.clearCache()
-    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)](
-      (coords, chunk, chunk.lighting.getTorchlight(coords))
-    )
+    val currentLight = chunk.lighting.getTorchlight(coords)
     chunk.lighting.setTorchlight(coords, 0)
-    propagateTorchlightRemoval(queue)
+    propagateTorchlightRemoval(mutable.Queue((coords, chunk, currentLight)))
   }
 
   def removeSunlight(chunk: Chunk, coords: BlockRelChunk): Unit = {
     chunkCache.clearCache()
-    val queue = mutable.Queue[(BlockRelChunk, Chunk, Int)](
-      (coords, chunk, chunk.lighting.getSunlight(coords))
-    )
+    val currentLight = chunk.lighting.getSunlight(coords)
     chunk.lighting.setSunlight(coords, 0)
-    propagateSunlightRemoval(queue)
+    propagateSunlightRemoval(mutable.Queue((coords, chunk, currentLight)))
   }
 
   private def propagateTorchlightRemoval(
@@ -112,10 +104,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
-      val top = queue.dequeue()
-      val here = top._1
-      val chunk = top._2
-      val level = top._3
+      val (here, chunk, level) = queue.dequeue()
 
       chunksNeedingRenderUpdate += chunk
 
@@ -149,10 +138,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
-      val top = queue.dequeue()
-      val here = top._1
-      val chunk = top._2
-      val level = top._3
+      val (here, chunk, level) = queue.dequeue()
 
       chunksNeedingRenderUpdate += chunk
 
@@ -183,9 +169,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
     while (queue.nonEmpty) {
-      val top = queue.dequeue()
-      val here = top._1
-      val chunk = top._2
+      val (here, chunk) = queue.dequeue()
 
       val nextLevel = chunk.lighting.getTorchlight(here) - 1
 
