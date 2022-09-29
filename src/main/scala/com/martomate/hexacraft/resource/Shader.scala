@@ -51,10 +51,13 @@ class Shader private (config: ShaderConfig) extends Resource {
   load()
 
   protected def load(): Unit = {
-    val b = ShaderBuilder.start(config.name)
-    b.setDefines(config.defines)
-    b.loadAll(config.fileName + ".glsl")
-    shaderID = b.bindAttribs(config.attribs: _*).attatchAll().linkAndFinish()
+    shaderID = ShaderBuilder
+      .start(config.name)
+      .setDefines(config.defines)
+      .loadAll(config.fileName + ".glsl")
+      .bindAttribs(config.attribs: _*)
+      .attachAll()
+      .linkAndFinish()
 
     uniformLocations.clear()
     attributeLocations.clear()

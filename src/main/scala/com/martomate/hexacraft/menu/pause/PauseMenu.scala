@@ -3,10 +3,10 @@ package com.martomate.hexacraft.menu.pause
 import com.martomate.hexacraft.gui.{KeyEvent, LocationInfo16x9}
 import com.martomate.hexacraft.gui.comp.Button
 import com.martomate.hexacraft.menu.MenuScene
-import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene}
+import com.martomate.hexacraft.scene.GameWindowExtended
 import org.lwjgl.glfw.GLFW
 
-class PauseMenu(scene: PausableScene)(implicit window: GameWindowExtended) extends MenuScene {
+class PauseMenu(setPaused: Boolean => Unit)(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(Button("Back to game", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
   addComponent(Button("Back to menu", LocationInfo16x9(0.4f, 0.25f, 0.2f, 0.1f))(quit()))
   hasDefaultBackground = false
@@ -15,7 +15,7 @@ class PauseMenu(scene: PausableScene)(implicit window: GameWindowExtended) exten
 
   private def unpause(): Unit = {
     window.scenes.popScene()
-    scene.setPaused(false)
+    setPaused(false)
   }
 
   private def quit(): Unit = {

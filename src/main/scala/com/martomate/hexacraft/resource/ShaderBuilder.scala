@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.resource
 
 import java.io.IOException
-
 import com.martomate.hexacraft.util.FileUtils
 import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
+
+import scala.collection.mutable
 
 object ShaderBuilder {
   def start(name: String): ShaderBuilder = new ShaderBuilder(name)
@@ -20,11 +21,12 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  def setDefines(defines: Seq[(String, String)]): Unit = {
+  def setDefines(defines: Seq[(String, String)]): ShaderBuilder = {
     definesText = defines.map(d => s"#define ${d._1} ${d._2}\n").mkString
+    this
   }
 
-  def getShaderType(shaderType: String): Int = {
+  private def getShaderType(shaderType: String): Int = {
     shaderType match {
       case "vs" | "vert" => GL20.GL_VERTEX_SHADER
       case "fs" | "frag" => GL20.GL_FRAGMENT_SHADER
@@ -37,10 +39,10 @@ class ShaderBuilder(name: String) {
     }
   }
 
-  def header: String = "#version 330 core\n\n" + definesText
+  private def header: String = "#version 330 core\n\n" + definesText
 
-  def loadSource(path: String): String = {
-    val source = new StringBuilder()
+  private def loadSource(path: String): String = {
+    val source = new mutable.StringBuilder()
 
     try {
       val reader = FileUtils.getBufferedReader(FileUtils.getResourceFile(prefix + path).get)
@@ -69,11 +71,7 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  def load(shaderType: Int, path: String): ShaderBuilder = {
-    loadShader(shaderType, loadSource(path))
-  }
-
-  def loadShader(shaderType: Int, source: String): ShaderBuilder = {
+  private def loadShader(shaderType: Int, source: String): ShaderBuilder = {
     val shaderID = GL20.glCreateShader(shaderType)
 
     GL20.glShaderSource(shaderID, header + source)
@@ -102,7 +100,7 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  def attatchAll(): ShaderBuilder = {
+  def attachAll(): ShaderBuilder = {
     for (i <- shaders.values) GL20.glAttachShader(programID, i)
     this
   }

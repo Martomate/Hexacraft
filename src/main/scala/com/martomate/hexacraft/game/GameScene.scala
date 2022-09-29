@@ -2,12 +2,18 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.{KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{
+  KeyEvent,
+  LocationInfo,
+  LocationInfoIdentity,
+  MouseClickEvent,
+  ScrollEvent
+}
 import com.martomate.hexacraft.menu.debug.DebugScene
 import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.resource.{Shader, Shaders}
-import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
+import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
@@ -27,7 +33,6 @@ import org.lwjgl.opengl.GL11
 
 class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended)
     extends Scene
-    with PausableScene
     with DebugInfoProvider:
 
   private val blockShader: Shader = Shaders.Block
@@ -123,7 +128,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
           if world.getBlock(newCoords).blockType == Blocks.Air
           then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
-          window.scenes.pushScene(new PauseMenu(this))
+          window.scenes.pushScene(new PauseMenu(this.setPaused))
           setPaused(true)
         case GLFW_KEY_E =>
           if !isPaused
@@ -225,7 +230,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   override def windowTitle: String = ""
 
   override def render(transformation: GUITransformation): Unit =
-    worldRenderer.render(camera)
+    worldRenderer.render()
 
     renderCrosshair()
 

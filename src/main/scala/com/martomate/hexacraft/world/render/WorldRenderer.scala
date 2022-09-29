@@ -10,29 +10,12 @@ import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.render.selector._
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
 import java.nio.{ByteBuffer, FloatBuffer}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
-class FrameBuffer(val width: Int, val height: Int) {
-  private val fbID = GL30.glGenFramebuffers()
-
-  def bind(): Unit = {
-    TextureSingle.unbind()
-    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbID)
-    GL11.glViewport(0, 0, width, height)
-  }
-
-  def unbind(): Unit = {
-    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0)
-  }
-
-  def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
-}
 
 class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
     window: GameWindow,
@@ -48,9 +31,6 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
   worldCombinerShader.setUniform1i("worldDepthTexture", 1)
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
-  private val chunkRenderSelector: ChunkRenderSelector = new ChunkRenderSelectorIdentity(
-    chunkHandler
-  )
 
   private val skyVAO: VAO = makeSkyVAO
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
@@ -74,7 +54,6 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
   )
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
-  def selectedBlock: Option[BlockRelWorld] = _selectedBlockAndSide.map(_._1)
   def selectedSide: Option[Int] = _selectedBlockAndSide.flatMap(_._2)
   def selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = _selectedBlockAndSide
 
@@ -97,7 +76,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(
     coords => {
       val r = chunkRenderers.get(coords)
-      r.foreach(chunkRenderSelector.updateChunk)
+      r.foreach(chunkHandler.updateChunk)
       r.isDefined
     },
     renderDistance
@@ -105,11 +84,9 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
 
   def tick(camera: Camera): Unit = {
     chunkRenderUpdater.update(camera)
-
-    chunkRenderSelector.tick(CylCoords(camera.view.position))
   }
 
-  def render(camera: Camera): Unit = {
+  def render(): Unit = {
     mainFrameBuffer.bind()
 
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
@@ -153,7 +130,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
     chunkRenderers
       .remove(chunk.coords)
       .foreach(renderer => {
-        chunkRenderSelector.removeChunk(renderer)
+        chunkHandler.removeChunk(renderer)
         renderer.unload()
       })
     chunk.removeEventListener(chunkRenderUpdater)

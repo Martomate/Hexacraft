@@ -12,13 +12,8 @@ import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
-class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: CylinderSize)
+class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(using CylinderSize)
     extends ChunkRenderer {
-  private val opaqueDeterminer: ChunkOpaqueDeterminer =
-    new ChunkOpaqueDeterminerSimple(chunk.coords, chunk)
-
-  def canGetToSide(fromSide: Int, toSide: Int): Boolean =
-    opaqueDeterminer.canGetToSide(fromSide, toSide)
 
   private var renderData: ChunkRenderData = _
   def getRenderData: ChunkRenderData = renderData
@@ -94,7 +89,6 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(implicit cylSize: Cy
       chunk.lighting.init(Array.empty)
     }
     renderData = ChunkRenderData(buffers.toIndexedSeq)
-    opaqueDeterminer.invalidate()
   }
 
   private def populateBuffer(
