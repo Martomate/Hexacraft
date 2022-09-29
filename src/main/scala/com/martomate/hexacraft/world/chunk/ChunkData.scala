@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.chunk.storage.{
   DenseChunkStorage,
   SparseChunkStorage
 }
-import com.martomate.hexacraft.world.entity.registry.EntityRegistry
+import com.martomate.hexacraft.world.entity.EntityRegistry
 
 class ChunkData(init_storage: ChunkStorage, world: BlocksInWorld, registry: EntityRegistry)(implicit
     cylSize: CylinderSize

@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.SmartArray
 import com.martomate.hexacraft.world.LightPropagator
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 

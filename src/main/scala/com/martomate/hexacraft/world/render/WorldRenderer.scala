@@ -5,7 +5,7 @@ import com.martomate.hexacraft.renderer._
 import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
 import com.martomate.hexacraft.world.coord.fp.CylCoords

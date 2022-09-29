@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.entity.loader
+package com.martomate.hexacraft.world.entity
 
 import com.eclipsesource.json.{Json, JsonObject}
 import com.martomate.hexacraft.util.{CylinderSize, FileUtils}
@@ -9,7 +9,7 @@ import com.martomate.hexacraft.world.entity.base.BasicEntityModel
 import com.martomate.hexacraft.world.entity.player.PlayerEntityModel
 import com.martomate.hexacraft.world.entity.sheep.SheepEntityModel
 
-class EntityModelLoader(basePath: String = "spec/entities")(implicit cylinderSize: CylinderSize) {
+class EntityModelLoader(basePath: String = "spec/entities")(using CylinderSize) {
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {
     case "player" => new PlayerEntityModel(setup)
     case "sheep"  => new SheepEntityModel(setup)

@@ -2,8 +2,7 @@ package com.martomate.hexacraft.world.ray
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.util.MathUtils.oppositeSide
-import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{Blocks, HexBox}
+import com.martomate.hexacraft.world.block.{BlockState, Blocks, HexBox}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}

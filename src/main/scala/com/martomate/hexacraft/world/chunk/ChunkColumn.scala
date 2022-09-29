@@ -3,8 +3,7 @@ package com.martomate.hexacraft.world.chunk
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.CollisionDetector
-import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{BlockState, Blocks}
 import com.martomate.hexacraft.world.coord.integer._
 import com.martomate.hexacraft.world.gen.WorldGenerator
 import com.martomate.hexacraft.world.settings.WorldProvider

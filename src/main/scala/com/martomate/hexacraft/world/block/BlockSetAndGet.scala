@@ -1,6 +1,5 @@
-package com.martomate.hexacraft.world.block.setget
+package com.martomate.hexacraft.world.block
 
-import com.martomate.hexacraft.world.block.state.BlockState
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 trait BlockSetAndGet {

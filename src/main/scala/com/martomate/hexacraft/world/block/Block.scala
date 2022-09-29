@@ -2,7 +2,6 @@ package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.behaviour.{BlockBehaviour, BlockBehaviourNothing}
-import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 object Block {

@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.entity.registry
+package com.martomate.hexacraft.world.entity
 
 import com.martomate.hexacraft.world.entity.EntityFactory
 

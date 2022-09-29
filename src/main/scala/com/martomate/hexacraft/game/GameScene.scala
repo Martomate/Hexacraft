@@ -9,12 +9,11 @@ import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.resource.{Shader, Shaders}
 import com.martomate.hexacraft.scene.{GameWindowExtended, PausableScene, Scene}
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.block.{Block, Blocks}
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
+import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
 import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player

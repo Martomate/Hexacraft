@@ -2,9 +2,7 @@ package com.martomate.hexacraft.world.block.fluid
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.behaviour.BlockBehaviour
-import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
-import com.martomate.hexacraft.world.block.state.BlockState
-import com.martomate.hexacraft.world.block.{Block, Blocks}
+import com.martomate.hexacraft.world.block.{Block, BlockSetAndGet, BlockState, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
 class BlockBehaviourFluid(block: Block) extends BlockBehaviour {

@@ -4,7 +4,7 @@ import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener}
-import com.martomate.hexacraft.world.entity.registry.EntityRegistry
+import com.martomate.hexacraft.world.entity.EntityRegistry
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 
 class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(implicit

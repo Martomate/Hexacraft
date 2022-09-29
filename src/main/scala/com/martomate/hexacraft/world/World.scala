@@ -2,8 +2,7 @@ package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util._
-import com.martomate.hexacraft.world.block.setget.BlockSetAndGet
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{BlockSetAndGet, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{
   Chunk,
@@ -21,10 +20,8 @@ import com.martomate.hexacraft.world.coord.integer.{
   NeighborOffsets,
   Offset
 }
-import com.martomate.hexacraft.world.entity.Entity
-import com.martomate.hexacraft.world.entity.loader.EntityModelLoader
+import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
 import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
-import com.martomate.hexacraft.world.entity.registry.EntityRegistry
 import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}

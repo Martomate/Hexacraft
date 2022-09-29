@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world.gen.feature.tree
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.Block
-import com.martomate.hexacraft.world.block.state.BlockState
+import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import com.martomate.hexacraft.world.gen.PlannedWorldChange
 

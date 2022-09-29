@@ -3,8 +3,7 @@ package com.martomate.hexacraft.world.chunk
 import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.entity.Entity
-import com.martomate.hexacraft.world.entity.registry.EntityRegistry
+import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 
 import scala.collection.mutable
 

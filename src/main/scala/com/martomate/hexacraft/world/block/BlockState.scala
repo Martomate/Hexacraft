@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.world.block.state
+package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
