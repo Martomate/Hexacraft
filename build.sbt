@@ -56,5 +56,7 @@ def testDependencies = Seq(
   "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-wordspec" % scalatestVersion % "test",
   "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
-  "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test"
+  "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test",
+  "com.tngtech.archunit" % "archunit" % "1.0.0-rc1" % "test",
+  "org.slf4j" % "slf4j-nop" % "2.0.1" % "test" // Needed for ArchUnit
 )
