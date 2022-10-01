@@ -8,11 +8,13 @@ object BlockTexture {
 
 class BlockTexture(name: String, blockLoader: IBlockLoader) extends Resource {
   private var _indices: Seq[Int] = _
+
+  /** @return `(offsets << 12 | texture_array_index)` for each side */
   def indices: Seq[Int] = _indices
 
   load()
 
-  def load(): Unit = {
+  private def load(): Unit = {
     _indices = blockLoader.loadBlockType(name)
   }
 

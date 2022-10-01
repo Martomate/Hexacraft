@@ -1,17 +1,19 @@
 package com.martomate.hexacraft.world.block
 
-import com.eclipsesource.json.{Json, JsonValue}
+import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 import com.martomate.hexacraft.resource.{ResourceWrapper, TextureArray, TextureToLoad}
 import com.martomate.hexacraft.util.FileUtils
+import com.martomate.hexacraft.world.block.BlockLoader.texIdxMap
 
 import java.net.URL
 import javax.imageio.ImageIO
 
-trait IBlockLoader {
-  def loadBlockType(name: String): IndexedSeq[Int]
-}
+trait IBlockLoader:
 
-object BlockLoader extends IBlockLoader {
+  /** @return `(offsets << 12 | texture_array_index)` for each side */
+  def loadBlockType(name: String): IndexedSeq[Int]
+
+object BlockLoader extends IBlockLoader:
   private var texIdxMap: Map[String, Int] = _
 
   def init(): Unit = {
@@ -33,6 +35,7 @@ object BlockLoader extends IBlockLoader {
       val numImages = w / h
       for (i <- 0 until numImages) yield TextureToLoad(image.getRGB(i * h, 0, h, h, null, 0, h))
     }
+
     val dir = FileUtils.getResourceFile("textures/blocks/").get
     val files = FileUtils.listFilesInResource(dir).toArray[String](len => new Array(len))
     for (fileName <- files) {
@@ -46,48 +49,15 @@ object BlockLoader extends IBlockLoader {
     images.toSeq
   }
 
-  def offsets(value: JsonValue): Int = {
-    if (value == null) 0
-    else {
-      val obj = value.asObject()
-
-      val off0 = obj.getInt("0", 0)
-      val off1 = obj.getInt("1", 0)
-      val off2 = obj.getInt("2", 0)
-      val off3 = obj.getInt("3", 0)
-      val off4 = obj.getInt("4", 0)
-      val off5 = obj.getInt("5", 0)
-
-      if (off0 != 0) 0 // not allowed
-      else {
-        off1 << 16 | off2 << 12 | off3 << 8 | off4 << 4 | off5
-      }
-    }
-  }
-
   def loadBlockType(name: String): IndexedSeq[Int] = {
-    val retOpt = for {
+    val specOpt = for {
       texIdxMap <- Option(texIdxMap)
       file <- FileUtils.getResourceFile(s"spec/blocks/$name.json")
       reader <- Option(FileUtils.getBufferedReader(file))
     } yield {
       val base = Json.parse(reader).asObject()
-      val textures = base.get("textures").asObject()
-      val all = textures.get("all")
-      val side = textures.get("side") or all
-      val topIdx = texIdxMap((textures.get("top") or all).asString()) | offsets(
-        textures.get("topOffsets")
-      ) << 12
-      val bottomIdx = texIdxMap((textures.get("bottom") or all).asString()) | offsets(
-        textures.get("bottomOffsets")
-      ) << 12
-      val sidesIdx = (2 until 8).map(i => texIdxMap((textures.get(s"side$i") or side).asString()))
-      topIdx +: bottomIdx +: sidesIdx
+      val spec = BlockSpec.fromJson(base)
+      spec.textures.indices(texIdxMap)
     }
-    retOpt getOrElse IndexedSeq.fill(8)(0)
+    specOpt.getOrElse(IndexedSeq.fill(8)(0))
   }
-
-  implicit class DefaultJsonImplicitClass(left: JsonValue) {
-    def or(right: JsonValue): JsonValue = if (left == null) right else left
-  }
-}
