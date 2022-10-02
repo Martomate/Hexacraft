@@ -32,8 +32,8 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
 }
 
 object WorldPlanner {
-  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(
-      implicit cylSize: CylinderSize
+  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(implicit
+      cylSize: CylinderSize
   ): WorldPlanner = {
     val wp = new WorldPlanner(world, registry, mainSeed)
 

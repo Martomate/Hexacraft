@@ -3,8 +3,7 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.renderer._
 import org.lwjgl.opengl.{GL11, GL15}
 
-class FlatBlockRenderer(_side: Int, _init_maxInstances: Int)
-    extends BlockRenderer(_side, _init_maxInstances) {
+class FlatBlockRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
   override protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(
       VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
@@ -25,6 +24,5 @@ class FlatBlockRenderer(_side: Int, _init_maxInstances: Int)
     )
     .create()
 
-  override val renderer: Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
-    with NoDepthTest
+  override val renderer: Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 }

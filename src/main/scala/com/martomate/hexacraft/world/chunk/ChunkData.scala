@@ -3,11 +3,7 @@ package com.martomate.hexacraft.world.chunk
 import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.chunk.storage.{
-  ChunkStorage,
-  DenseChunkStorage,
-  SparseChunkStorage
-}
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.entity.EntityRegistry
 
 class ChunkData(init_storage: ChunkStorage, world: BlocksInWorld, registry: EntityRegistry)(implicit

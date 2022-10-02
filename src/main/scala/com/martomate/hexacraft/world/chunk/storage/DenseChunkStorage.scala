@@ -41,8 +41,7 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderS
     var idx = 0
     for (i <- blockTypes.indices) {
       if (blockTypes(i) != 0) {
-        arr(idx) =
-          LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
+        arr(idx) = LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
         idx += 1
       }
     }

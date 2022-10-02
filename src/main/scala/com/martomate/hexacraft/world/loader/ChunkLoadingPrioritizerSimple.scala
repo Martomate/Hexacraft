@@ -51,9 +51,7 @@ class ChunkLoadingPrioritizerSimple(
     } else {
       chunksLoadingEdge.iterator
         .map(
-          _.neighbors.find(coords =>
-            !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks
-          )
+          _.neighbors.find(coords => !chunksLoaded(coords) && distSqFunc(origin, coords) <= maxDistSqInBlocks)
         )
         .find(_.isDefined)
         .flatten

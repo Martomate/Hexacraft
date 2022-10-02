@@ -52,9 +52,7 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: Cylinder
   }
 
   def toNBT: Seq[Tag[_]] = {
-    val ids = Array.tabulate[Byte](16 * 16 * 16)(i =>
-      blocks.get(i.toShort).map(_.blockType.id).getOrElse(0)
-    )
+    val ids = Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
     val meta =
       Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
     Seq(new ByteArrayTag("blocks", ids), new ByteArrayTag("metadata", meta))

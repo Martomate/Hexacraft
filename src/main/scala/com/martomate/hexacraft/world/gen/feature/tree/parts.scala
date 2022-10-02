@@ -34,8 +34,7 @@ case class PlatformGenerator(r: Int) extends PartGenerator {
   }
 }
 
-case class ImperfectPlatformGenerator(rand: Random, r: Int, imperfection: Float)
-    extends PartGenerator {
+case class ImperfectPlatformGenerator(rand: Random, r: Int, imperfection: Float) extends PartGenerator {
   override def generate(): Seq[Offset] = {
     val offsets = PlatformGenerator(r).generate()
 

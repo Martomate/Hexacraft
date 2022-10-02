@@ -8,10 +8,9 @@ class ChunkSegs extends mutable.Iterable[Segment] {
     if (s1.overlaps(s2)) 0
     else s1.start - s2.start
   }
-  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty {
-    (s1, s2) =>
-      if (s2.contains(s1)) 0
-      else s1.start - s2.start
+  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty { (s1, s2) =>
+    if (s2.contains(s1)) 0
+    else s1.start - s2.start
   }
   private var _totalLength = 0
 

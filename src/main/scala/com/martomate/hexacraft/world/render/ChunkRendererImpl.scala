@@ -12,8 +12,7 @@ import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
-class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(using CylinderSize)
-    extends ChunkRenderer {
+class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(using CylinderSize) extends ChunkRenderer {
 
   private var renderData: ChunkRenderData = _
   def getRenderData: ChunkRenderData = renderData

@@ -12,8 +12,8 @@ object ChunkRenderUpdater {
   val ticksBetweenColumnLoading = 5
 }
 
-class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderDistance: => Double)(
-    implicit worldSize: CylinderSize
+class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderDistance: => Double)(implicit
+    worldSize: CylinderSize
 ) extends ChunkEventListener {
   private val origin = new PosAndDir
 
@@ -33,9 +33,7 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean, renderD
       if (chunkRenderUpdateQueue.size > 10) ChunkRenderUpdater.chunkRenderUpdatesPerTick else 1
     for (_ <- 1 to numUpdatesToPerform) {
       if (!chunkRenderUpdateQueue.isEmpty) {
-        while (
-          !updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty
-        ) {}
+        while (!updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
       }
     }
   }

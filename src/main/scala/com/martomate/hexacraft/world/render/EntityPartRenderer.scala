@@ -3,8 +3,7 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
 import org.lwjgl.opengl.{GL11, GL15}
 
-class EntityPartRenderer(_side: Int, _init_maxInstances: Int)
-    extends BlockRenderer(_side, _init_maxInstances) {
+class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {
   override protected def initVAO(): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(
       VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)

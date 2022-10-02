@@ -67,10 +67,9 @@ class ChunkColumn(
   }
   def allChunks: Iterable[Chunk] = chunks.values
 
-  private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt foreach {
-    oldChunk =>
-      oldChunk.removeEventListener(this)
-      oldChunk.removeBlockEventListener(this)
+  private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt foreach { oldChunk =>
+    oldChunk.removeEventListener(this)
+    oldChunk.removeBlockEventListener(this)
   }
 
   def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit = {
@@ -85,9 +84,7 @@ class ChunkColumn(
           ch = getChunk(ChunkRelColumn.create(y >> 4))
           ch match {
             case Some(chunk) =>
-              if (
-                chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air
-              )
+              if (chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air)
                 ch = None
               else
                 y -= 1

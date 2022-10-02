@@ -36,8 +36,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
   private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
   private val worldCombinerVAO: VAO = makeSkyVAO
-  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP)
-    with NoDepthTest
+  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
 
   private val selectedBlockVAO: VAO = makeSelectedBlockVAO
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)

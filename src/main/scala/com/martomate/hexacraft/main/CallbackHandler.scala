@@ -9,17 +9,14 @@ import scala.collection.mutable
 sealed trait CallbackEvent
 
 /** @param action 0 = release, 1 = press, 2 = repeat */
-case class KeyPressedCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int)
-    extends CallbackEvent
+case class KeyPressedCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int) extends CallbackEvent
 
 case class CharTypedCallback(window: Long, character: Int) extends CallbackEvent
 
 /** @param mods 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with | */
-case class MouseClickedCallback(window: Long, button: Int, action: Int, mods: Int)
-    extends CallbackEvent
+case class MouseClickedCallback(window: Long, button: Int, action: Int, mods: Int) extends CallbackEvent
 
-case class MouseScrolledCallback(window: Long, xoffset: Double, yoffset: Double)
-    extends CallbackEvent
+case class MouseScrolledCallback(window: Long, xoffset: Double, yoffset: Double) extends CallbackEvent
 
 case class WindowResizedCallback(window: Long, w: Int, h: Int) extends CallbackEvent
 

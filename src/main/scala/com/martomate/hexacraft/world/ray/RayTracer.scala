@@ -78,8 +78,7 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(impli
       (5 to 1 by -1)
         .find(index => !ray.toTheRight(points.down(index), points.up(index)))
         .getOrElse(0)
-    else
-      (1 to 5).find(index => ray.toTheRight(points.down(index), points.up(index))).getOrElse(6) - 1
+    else (1 to 5).find(index => ray.toTheRight(points.down(index), points.up(index))).getOrElse(6) - 1
 
   private def actualSide(ray: Ray, points: PointHexagon, index: Int) =
     if ray.toTheRight(points.up(index), points.up((index + 1) % 6))

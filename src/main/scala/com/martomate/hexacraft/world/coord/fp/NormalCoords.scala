@@ -2,8 +2,7 @@ package com.martomate.hexacraft.world.coord.fp
 
 import org.joml.Vector3d
 
-class NormalCoords private (_x: Double, _y: Double, _z: Double)
-    extends AbstractCoords[NormalCoords](_x, _y, _z) {
+class NormalCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[NormalCoords](_x, _y, _z) {
   def toCylCoords(reference: NormalCoords): CylCoords = ???
   def toSkewCylCoords(reference: NormalCoords): SkewCylCoords = toCylCoords(
     reference

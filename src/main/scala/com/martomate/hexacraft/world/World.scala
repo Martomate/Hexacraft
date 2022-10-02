@@ -38,10 +38,7 @@ object World {
   var shouldChillChunkLoader = false
 }
 
-class World(val worldProvider: WorldProvider)
-    extends BlockSetAndGet
-    with BlocksInWorld
-    with ChunkColumnListener {
+class World(val worldProvider: WorldProvider) extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
   private val worldInfo: WorldInfo = worldProvider.getWorldInfo
 
   val size: CylinderSize = worldInfo.worldSize
@@ -83,9 +80,7 @@ class World(val worldProvider: WorldProvider)
     val modelFactory: EntityModelLoader = new EntityModelLoader()
     EntityRegistry.from(
       Map(
-        "player" -> (world =>
-          new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)
-        ),
+        "player" -> (world => new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)),
         "sheep" -> (world => new SheepEntity(modelFactory.load("sheep"), world, SheepAIFactory))
       )
     )

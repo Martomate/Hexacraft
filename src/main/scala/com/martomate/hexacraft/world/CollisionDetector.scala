@@ -202,9 +202,7 @@ class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize):
     if !distances.forall(_ >= 0)
     then (1, -1)
     else // no intersection before moving
-      val velDists = reflectionDirs.map(t =>
-        t.dx * vx + t.dy * vy + t.dz * vz
-      ) // the length of v along the normals
+      val velDists = reflectionDirs.map(t => t.dx * vx + t.dy * vy + t.dz * vz) // the length of v along the normals
       // TODO: possible bug: the dot product above uses normals that are not normalized. Could this lead to incorrect velDists?
       if !distances.indices.exists(i => distances(i) <= velDists(i))
       then (0, -1)
