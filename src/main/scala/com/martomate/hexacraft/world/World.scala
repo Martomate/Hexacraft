@@ -26,7 +26,7 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
-import com.martomate.hexacraft.world.settings.{WorldInfo, WorldProvider}
+import com.martomate.hexacraft.world.settings.WorldInfo
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

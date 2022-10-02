@@ -16,8 +16,7 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
-import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{DebugInfoProvider, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11

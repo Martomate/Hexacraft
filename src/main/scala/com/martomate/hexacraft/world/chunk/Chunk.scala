@@ -1,13 +1,12 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
-import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator}
+import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 import com.martomate.hexacraft.world.gen.WorldGenerator
-import com.martomate.hexacraft.world.settings.WorldProvider
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer

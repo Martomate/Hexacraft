@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
-import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo, WorldProvider}
+import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo}
 
 class FakeWorldProvider(seed: Long)(implicit cylSize: CylinderSize) extends WorldProvider {
   override def getWorldInfo: WorldInfo = new WorldInfo(

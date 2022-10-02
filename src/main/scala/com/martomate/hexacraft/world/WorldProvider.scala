@@ -1,6 +1,7 @@
-package com.martomate.hexacraft.world.settings
+package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.world.settings.WorldInfo
 
 trait WorldProvider {
   def getWorldInfo: WorldInfo
