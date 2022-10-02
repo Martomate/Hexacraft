@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.gui.inventory
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent}
+import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, Scene}
 import com.martomate.hexacraft.gui.comp.*
-import com.martomate.hexacraft.scene.Scene
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.player.Inventory
 import org.joml.{Matrix4f, Vector4f}

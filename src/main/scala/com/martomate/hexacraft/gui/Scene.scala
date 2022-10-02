@@ -1,7 +1,6 @@
-package com.martomate.hexacraft.scene
+package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo16x9, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.Component
 
 abstract class Scene(implicit window: GameWindow) extends Component {

@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.menu.multiplayer
 
-import com.martomate.hexacraft.gui.LocationInfo16x9
+import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9}
 import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.menu.MenuScene
-import com.martomate.hexacraft.scene.GameWindowExtended
 
 class MultiplayerMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(new Label("Multiplayer", LocationInfo16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))

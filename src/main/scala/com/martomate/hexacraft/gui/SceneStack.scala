@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.scene
+package com.martomate.hexacraft.gui
 
 import scala.collection.Seq
 

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.scene.{Scene, SceneStack}
+import com.martomate.hexacraft.gui.{Scene, SceneStack}
 
 import scala.collection.mutable.ArrayBuffer
 

@@ -1,8 +1,8 @@
-package com.martomate.hexacraft.scene
-
-import java.io.File
+package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
+
+import java.io.File
 
 trait GameWindowExtended extends GameWindow {
   def scenes: SceneStack

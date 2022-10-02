@@ -49,7 +49,6 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .layer("Menu", "com.martomate.hexacraft.menu..")
       .layer("Renderer", "com.martomate.hexacraft.renderer..")
       .layer("Resource", "com.martomate.hexacraft.resource..")
-      .layer("Scene", "com.martomate.hexacraft.scene..")
       .layer("Util", "com.martomate.hexacraft.util..")
       .layer("World", "com.martomate.hexacraft.world..")
       .optionalLayer("JOML", "org.joml..")
@@ -61,11 +60,11 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Resource", "Util", "JOML", "OpenGL"))
       .whereLayer(
         "Game",
-        _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Resource", "Scene", "Util", "World", "JOML")
+        _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Resource", "Util", "World", "JOML")
       )
       .whereLayer(
         "GUI",
-        _.mayOnlyAccessLayers("root", "Font", "Renderer", "Resource", "Scene", "Util", "World", "JOML", "OpenGL")
+        _.mayOnlyAccessLayers("root", "Font", "Renderer", "Resource", "Util", "World", "JOML", "OpenGL")
       )
       .whereLayer(
         "Main",
@@ -75,7 +74,6 @@ class RootArchTest extends AnyFlatSpec with Matchers {
           "Menu",
           "Renderer",
           "Resource",
-          "Scene",
           "Util",
           "World",
           "JOML",
@@ -86,11 +84,10 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       )
       .whereLayer(
         "Menu",
-        _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Resource", "Scene", "Util", "World", "JOML", "NBT")
+        _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Resource", "Util", "World", "JOML", "NBT")
       )
       .whereLayer("Renderer", _.mayOnlyAccessLayers("Resource", "LWJGL", "OpenGL"))
       .whereLayer("Resource", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL", "OpenGL"))
-      .whereLayer("Scene", _.mayOnlyAccessLayers("root", "GUI"))
       .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT"))
       .whereLayer(
         "World",
