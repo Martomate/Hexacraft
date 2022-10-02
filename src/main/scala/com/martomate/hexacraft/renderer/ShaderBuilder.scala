@@ -1,9 +1,9 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.renderer
 
-import java.io.IOException
 import com.martomate.hexacraft.util.FileUtils
 import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
 
+import java.io.IOException
 import scala.collection.mutable
 
 object ShaderBuilder {

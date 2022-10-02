@@ -1,9 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.renderer._
-import com.martomate.hexacraft.resource.Shaders
-import com.martomate.hexacraft.resource.TextureSingle
+import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.BlockState

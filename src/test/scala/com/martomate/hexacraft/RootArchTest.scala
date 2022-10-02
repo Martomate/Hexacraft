@@ -48,7 +48,6 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .layer("Main", "com.martomate.hexacraft.main..")
       .layer("Menu", "com.martomate.hexacraft.menu..")
       .layer("Renderer", "com.martomate.hexacraft.renderer..")
-      .layer("Resource", "com.martomate.hexacraft.resource..")
       .layer("Util", "com.martomate.hexacraft.util..")
       .layer("World", "com.martomate.hexacraft.world..")
       .optionalLayer("JOML", "org.joml..")
@@ -57,14 +56,14 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .optionalLayer("LWJGL", "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer("OpenGL", "org.lwjgl.opengl..")
       .optionalLayer("GLFW", "org.lwjgl.glfw..")
-      .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Resource", "Util", "JOML", "OpenGL"))
+      .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "OpenGL"))
       .whereLayer(
         "Game",
-        _.mayOnlyAccessLayers("root", "Font", "GUI", "Renderer", "Resource", "Util", "World", "JOML", "NBT")
+        _.mayOnlyAccessLayers("root", "Font", "GUI", "Renderer", "Util", "World", "JOML", "NBT")
       )
       .whereLayer(
         "GUI",
-        _.mayOnlyAccessLayers("root", "Font", "Renderer", "Resource", "Util", "World", "JOML", "OpenGL")
+        _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "World", "JOML", "OpenGL")
       )
       .whereLayer(
         "Main",
@@ -73,7 +72,6 @@ class RootArchTest extends AnyFlatSpec with Matchers {
           "GUI",
           "Menu",
           "Renderer",
-          "Resource",
           "Util",
           "World",
           "JOML",
@@ -84,14 +82,13 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       )
       .whereLayer(
         "Menu",
-        _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Resource", "Util", "World", "JOML", "NBT")
+        _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Util", "World", "JOML", "NBT")
       )
-      .whereLayer("Renderer", _.mayOnlyAccessLayers("Resource", "LWJGL", "OpenGL"))
-      .whereLayer("Resource", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL", "OpenGL"))
+      .whereLayer("Renderer", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL", "OpenGL"))
       .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT"))
       .whereLayer(
         "World",
-        _.mayOnlyAccessLayers("Renderer", "Resource", "Util", "JOML", "JSON", "LWJGL", "NBT", "OpenGL")
+        _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT", "OpenGL")
       )
       .check(allClasses)
   }

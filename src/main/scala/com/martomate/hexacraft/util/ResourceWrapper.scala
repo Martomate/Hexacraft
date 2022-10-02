@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.util
 
 class ResourceWrapper[T](make: => T) extends Resource {
   private var elem: T = _

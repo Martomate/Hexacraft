@@ -1,5 +1,6 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.renderer
 
+import com.martomate.hexacraft.util.{Resource, ResourceWrapper}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.{GL11, GL12, GL30}
 

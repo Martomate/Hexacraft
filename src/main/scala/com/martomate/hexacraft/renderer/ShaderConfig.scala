@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.renderer
 
 /** @param name
   *   The name used to get this shader using `Shader.get`

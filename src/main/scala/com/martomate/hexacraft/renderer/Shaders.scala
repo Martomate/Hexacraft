@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.renderer
 
 object Shaders {
   object ShaderNames {

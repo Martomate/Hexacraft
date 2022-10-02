@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.block
 
-import com.martomate.hexacraft.resource.Resource
+import com.martomate.hexacraft.util.Resource
 
 object BlockTexture {
   val blockTextureSize: Int = 32

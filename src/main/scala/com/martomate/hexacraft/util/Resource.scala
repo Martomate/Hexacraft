@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.util
 
 import scala.collection.mutable
 

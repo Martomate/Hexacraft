@@ -4,9 +4,8 @@ import com.martomate.hexacraft.*
 import com.martomate.hexacraft.gui.{CharEvent, GameWindowExtended, KeyEvent, MouseClickEvent, SceneStack, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
-import com.martomate.hexacraft.renderer.VAO
-import com.martomate.hexacraft.resource.{Resource, Shader}
-import com.martomate.hexacraft.util.AsyncFileIO
+import com.martomate.hexacraft.renderer.{Shader, VAO}
+import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}

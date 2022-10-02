@@ -1,9 +1,10 @@
-package com.martomate.hexacraft.resource
+package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.FileUtils
-import javax.imageio.ImageIO
+import com.martomate.hexacraft.util.{FileUtils, Resource}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.{GL11, GL12}
+
+import javax.imageio.ImageIO
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
