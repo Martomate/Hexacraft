@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.gui.inventory
+package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity}

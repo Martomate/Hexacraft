@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.gui.inventory
+package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.resource.{Shader, Shaders, TextureArray}

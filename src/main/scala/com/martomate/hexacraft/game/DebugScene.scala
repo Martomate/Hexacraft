@@ -1,10 +1,10 @@
-package com.martomate.hexacraft.menu.debug
+package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.comp.Component
-import com.martomate.hexacraft.world.DebugInfoProvider
 import com.martomate.hexacraft.font.mesh.GUIText
+import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.gui.{LocationInfo16x9, Scene}
+import com.martomate.hexacraft.world.DebugInfoProvider
 
 import scala.collection.mutable
 

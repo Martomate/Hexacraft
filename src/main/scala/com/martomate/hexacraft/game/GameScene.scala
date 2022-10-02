@@ -1,10 +1,8 @@
 package com.martomate.hexacraft.game
 
+import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.{GameWindowExtended, KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, Scene, ScrollEvent}
-import com.martomate.hexacraft.menu.debug.DebugScene
-import com.martomate.hexacraft.menu.pause.PauseMenu
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.resource.{Shader, Shaders}
 import com.martomate.hexacraft.util.TickableTimer

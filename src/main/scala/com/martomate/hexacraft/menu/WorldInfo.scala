@@ -1,10 +1,10 @@
-package com.martomate.hexacraft.menu.main
-
-import java.io.{File, FileInputStream}
+package com.martomate.hexacraft.menu
 
 import com.flowpowered.nbt.CompoundTag
 import com.flowpowered.nbt.stream.NBTInputStream
 import com.martomate.hexacraft.util.NBTUtil
+
+import java.io.{File, FileInputStream}
 
 object WorldInfo {
   def apply(saveFile: File): WorldInfo = {

@@ -1,8 +1,7 @@
-package com.martomate.hexacraft.menu.settings
+package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9}
 import com.martomate.hexacraft.gui.comp.Button
-import com.martomate.hexacraft.menu.MenuScene
+import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
 
 class SettingsMenu(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(Button("Coming soon!", LocationInfo16x9(0.4f, 0.55f, 0.2f, 0.1f)) {

@@ -3,7 +3,7 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.*
 import com.martomate.hexacraft.gui.{CharEvent, GameWindowExtended, KeyEvent, MouseClickEvent, SceneStack, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.menu.main.MainMenu
+import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.resource.{Resource, Shader}
 import com.martomate.hexacraft.util.AsyncFileIO

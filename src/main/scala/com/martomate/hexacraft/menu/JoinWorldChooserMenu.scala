@@ -1,14 +1,19 @@
-package com.martomate.hexacraft.menu.multiplayer
-
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9}
-import java.net.InetAddress
+package com.martomate.hexacraft.menu
 
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
-import com.martomate.hexacraft.menu.MenuScene
+import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
 
+import java.net.InetAddress
 import scala.util.Random
 
+object JoinWorldChooserMenu {
+  case class OnlineWorldInfo(id: Long, name: String, description: String)
+  case class OnlineWorldConnectionDetails(address: InetAddress, port: Int, time: Long)
+}
+
 class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
+  import JoinWorldChooserMenu.*
+
   addComponent(
     new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
   )
@@ -50,5 +55,3 @@ class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
     )
   }
 }
-case class OnlineWorldInfo(id: Long, name: String, description: String)
-case class OnlineWorldConnectionDetails(address: InetAddress, port: Int, time: Long)
