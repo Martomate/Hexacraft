@@ -61,7 +61,7 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private val world = new World(worldProvider)
   import world.size.impl
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance, window.framebufferSize)
   world.addChunkAddedOrRemovedListener(worldRenderer)
 
   val camera: Camera = new Camera(makeCameraProjection)

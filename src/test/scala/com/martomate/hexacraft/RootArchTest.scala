@@ -94,7 +94,7 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT"))
       .whereLayer(
         "World",
-        _.mayOnlyAccessLayers("root", "Renderer", "Resource", "Util", "JOML", "JSON", "LWJGL", "NBT", "OpenGL")
+        _.mayOnlyAccessLayers("Renderer", "Resource", "Util", "JOML", "JSON", "LWJGL", "NBT", "OpenGL")
       )
       .check(allClasses)
   }
