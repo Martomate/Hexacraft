@@ -58,7 +58,7 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .optionalLayer("GLFW", "org.lwjgl.glfw..")
       .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "OpenGL"))
       .whereLayer("Game", _.mayOnlyAccessLayers("root", "Font", "GUI", "Renderer", "Util", "World", "JOML", "NBT"))
-      .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "World", "JOML", "OpenGL"))
+      .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "JOML", "OpenGL"))
       .whereLayer(
         "Main",
         _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Util", "World", "JOML", "LWJGL", "OpenGL", "GLFW")

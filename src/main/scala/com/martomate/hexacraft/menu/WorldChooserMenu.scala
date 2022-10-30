@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
 
-class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
+class WorldChooserMenu(saveFolder: File)(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(
     new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
   )
@@ -18,7 +18,7 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
     window.scenes.popScene()
   })
   addComponent(Button("New world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f)) {
-    window.scenes.pushScene(new NewWorldMenu)
+    window.scenes.pushScene(new NewWorldMenu(saveFolder))
   })
 
   private def makeScrollPane: ScrollPane = {
@@ -43,7 +43,7 @@ class WorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
   }
 
   private def getWorlds: Seq[WorldInfo] = {
-    val baseFolder = new File(window.saveFolder, "saves")
+    val baseFolder = new File(saveFolder, "saves")
     if (baseFolder.exists()) {
       for (saveFile <- saveFoldersSortedBy(baseFolder, -_.lastModified)) yield WorldInfo(saveFile)
     } else {

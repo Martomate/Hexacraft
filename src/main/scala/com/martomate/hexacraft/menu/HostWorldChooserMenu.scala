@@ -7,7 +7,7 @@ import com.martomate.hexacraft.menu.WorldInfo
 import java.io.File
 import scala.util.Random
 
-class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
+class HostWorldChooserMenu(saveFolder: File)(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(
     new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
   )
@@ -33,7 +33,7 @@ class HostWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
   })
 
   private def getWorlds: Seq[WorldInfo] = {
-    val baseFolder = new File(window.saveFolder, "saves")
+    val baseFolder = new File(saveFolder, "saves")
     if (baseFolder.exists()) {
       baseFolder
         .listFiles()

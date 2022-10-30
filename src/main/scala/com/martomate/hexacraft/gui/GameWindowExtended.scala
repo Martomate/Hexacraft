@@ -7,8 +7,6 @@ import java.io.File
 trait GameWindowExtended extends GameWindow {
   def scenes: SceneStack
 
-  def saveFolder: File
-
   def resetMousePos(): Unit
 
   def setCursorLayout(cursorLayout: Int): Unit

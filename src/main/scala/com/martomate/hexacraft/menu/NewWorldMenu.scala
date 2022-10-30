@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.settings.WorldSettings
 import java.io.File
 import scala.util.Random
 
-class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene {
+class NewWorldMenu(saveFolder: File)(implicit window: GameWindowExtended) extends MenuScene {
   addComponent(
     new Label("World name", LocationInfo16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
@@ -38,7 +38,7 @@ class NewWorldMenu(implicit window: GameWindowExtended) extends MenuScene {
 
   private def createWorld(): Unit = {
     try {
-      val baseFolder = new File(window.saveFolder, "saves")
+      val baseFolder = new File(saveFolder, "saves")
       val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
       val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20)
       val seed = Some(seedTF.text)

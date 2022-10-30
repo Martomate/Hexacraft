@@ -175,7 +175,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       Shader.init()
       BlockLoader.init() // this loads it to memory
       Blocks.init()
-      scenes.pushScene(new MainMenu)
+      scenes.pushScene(new MainMenu(saveFolder))
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
