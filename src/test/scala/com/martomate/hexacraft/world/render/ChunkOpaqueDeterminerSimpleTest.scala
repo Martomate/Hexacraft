@@ -1,12 +1,9 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockState, Blocks}
-import com.martomate.hexacraft.world.chunk.storage.{
-  ChunkStorage,
-  DenseChunkStorage,
-  SparseChunkStorage
-}
+import com.martomate.hexacraft.world.FakeBlockLoader
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -14,8 +11,12 @@ import org.scalatest.matchers.should.Matchers
 class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   def make(chunk: ChunkStorage): ChunkOpaqueDeterminer =
     new ChunkOpaqueDeterminer(chunk.chunkCoords, chunk)
-  implicit val cylSize: CylinderSize = new CylinderSize(4)
-  val coords00 = ChunkRelWorld(0, 0, 0)
+  given CylinderSize = new CylinderSize(4)
+  given BlockLoader = new FakeBlockLoader
+  given BlockFactory = new BlockFactory
+  implicit val Blocks: Blocks = new Blocks
+
+  private val coords00 = ChunkRelWorld(0, 0, 0)
 
   "canGetToSide" should "return true for empty chunk" in {
     val det = make(new SparseChunkStorage(coords00))

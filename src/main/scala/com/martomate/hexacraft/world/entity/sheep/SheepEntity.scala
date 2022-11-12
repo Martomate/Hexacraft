@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.entity.sheep
 import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
-import com.martomate.hexacraft.world.block.HexBox
+import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
@@ -13,7 +13,7 @@ class SheepEntity(
     _model: EntityModel,
     world: BlocksInWorld,
     aiFactory: EntityAIFactory[SheepEntity]
-)(implicit cylSizeImpl: CylinderSize)
+)(using CylinderSize, Blocks)
     extends BasicEntity(_model) {
   override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
 
@@ -45,7 +45,7 @@ object SheepEntity {
       world: BlocksInWorld,
       aiFactory: EntityAIFactory[SheepEntity],
       model: EntityModel
-  )(implicit cylSizeImpl: CylinderSize): SheepEntity = {
+  )(using CylinderSize, Blocks): SheepEntity = {
     val pl = new SheepEntity(model, world, aiFactory)
     pl.position = pos
     pl

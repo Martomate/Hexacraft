@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.entity.player
 import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
-import com.martomate.hexacraft.world.block.HexBox
+import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory}
@@ -13,7 +13,7 @@ class PlayerEntity(
     _model: EntityModel,
     world: BlocksInWorld,
     aiFactory: EntityAIFactory[PlayerEntity]
-)(implicit cylSizeImpl: CylinderSize)
+)(using CylinderSize, Blocks)
     extends BasicEntity(_model) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
 
@@ -46,7 +46,7 @@ object PlayerEntity {
       world: BlocksInWorld,
       aiFactory: EntityAIFactory[PlayerEntity],
       model: EntityModel
-  )(implicit cylSizeImpl: CylinderSize): PlayerEntity = {
+  )(using CylinderSize, Blocks): PlayerEntity = {
     val pl = new PlayerEntity(model, world, aiFactory)
     pl.position = pos
     pl

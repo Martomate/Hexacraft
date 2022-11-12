@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.Entity
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput) extends EntityAI {
+class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using Blocks: Blocks) extends EntityAI {
   private val movingForce = new Vector3d
   private var target: CylCoords = CylCoords(0, 0, 0)(entity.position.cylSize)
 

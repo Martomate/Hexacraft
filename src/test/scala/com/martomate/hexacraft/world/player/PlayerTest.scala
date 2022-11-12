@@ -1,13 +1,17 @@
 package com.martomate.hexacraft.world.player
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.FakeBlockLoader
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class PlayerTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(8)
+  given CylinderSize = new CylinderSize(8)
+  given BlockLoader = new FakeBlockLoader
+  given BlockFactory = new BlockFactory
+  implicit val Blocks: Blocks = new Blocks
 
   "saving" should "save all the fields as NBT" in {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))

@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.resource.TextureSingle
 import org.lwjgl.opengl.{GL11, GL30}
 
 class FrameBuffer(val width: Int, val height: Int) {

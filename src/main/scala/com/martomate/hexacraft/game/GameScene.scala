@@ -1,13 +1,17 @@
 package com.martomate.hexacraft.game
 
+import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.gui.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.{KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, ScrollEvent}
-import com.martomate.hexacraft.menu.debug.DebugScene
-import com.martomate.hexacraft.menu.pause.PauseMenu
+import com.martomate.hexacraft.gui.{
+  GameWindowExtended,
+  KeyEvent,
+  LocationInfo,
+  LocationInfoIdentity,
+  MouseClickEvent,
+  Scene,
+  ScrollEvent
+}
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.resource.{Shader, Shaders}
-import com.martomate.hexacraft.scene.{GameWindowExtended, Scene}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
@@ -19,13 +23,14 @@ import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
-import com.martomate.hexacraft.world.settings.WorldProvider
-import com.martomate.hexacraft.world.{DebugInfoProvider, World}
+import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
 
-class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended) extends Scene with DebugInfoProvider:
+class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, Blocks: Blocks)
+    extends Scene
+    with DebugInfoProvider:
 
   private val blockShader: Shader = Shaders.Block
   private val blockSideShader: Shader = Shaders.BlockSide
@@ -61,14 +66,16 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
   private val world = new World(worldProvider)
   import world.size.impl
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance, window.framebufferSize)
   world.addChunkAddedOrRemovedListener(worldRenderer)
 
   val camera: Camera = new Camera(makeCameraProjection)
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler =
-    new PlayerInputHandler(window.mouse, window.keyboard, world.player, world.collisionDetector)
+    new PlayerInputHandler(window.mouse, window.keyboard, world.player)
+  private val playerPhysicsHandler: PlayerPhysicsHandler =
+    new PlayerPhysicsHandler(world.player, world.collisionDetector)
 
   private val toolbar: Toolbar = makeToolbar(world.player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
@@ -239,8 +246,9 @@ class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtende
       crosshairRenderer.render()
 
   override def tick(): Unit =
-    if !isPaused && !isInPopup
-    then playerInputHandler.tick(moveWithMouse)
+    val maxSpeed = playerInputHandler.maxSpeed
+    if !isPaused && !isInPopup then playerInputHandler.tick(moveWithMouse, maxSpeed)
+    if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()

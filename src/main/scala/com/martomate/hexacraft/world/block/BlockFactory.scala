@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.world.block.fluid.BlockFluid
 
-class BlockFactory {
+class BlockFactory(using BlockLoader) {
   def apply(name: String): Block = name match {
-    case "air"          => BlockAir
+    case "air"          => new BlockAir
     case "stone"        => new Block(1, "stone", "Stone")
     case "grass"        => new Block(2, "grass", "Grass")
     case "dirt"         => new Block(3, "dirt", "Dirt")

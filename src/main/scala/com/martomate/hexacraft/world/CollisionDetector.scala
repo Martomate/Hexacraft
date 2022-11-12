@@ -9,7 +9,7 @@ import org.joml.Vector3d
 
 class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords)
 
-class CollisionDetector(world: BlocksInWorld)(implicit cylSize: CylinderSize):
+class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Blocks: Blocks):
   private val reflectionDirs = Array(
     Offset(0, -1, 0),
     Offset(0, 1, 0),

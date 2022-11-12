@@ -1,14 +1,14 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.BlockState
+import com.martomate.hexacraft.world.block.{BlockState, Blocks}
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
 import scala.collection.mutable
 
-class FakeBlocksInWorld private(provider: FakeWorldProvider)(implicit cylSize: CylinderSize) extends BlocksInWorld {
+class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize, Blocks) extends BlocksInWorld {
   private val worldGenerator = new WorldGenerator(provider.getWorldInfo.gen)
   private var cols: Map[ColumnRelWorld, ChunkColumn] = Map.empty
 
@@ -46,10 +46,13 @@ class FakeBlocksInWorld private(provider: FakeWorldProvider)(implicit cylSize: C
 }
 
 object FakeBlocksInWorld {
-  def empty(provider: FakeWorldProvider)(implicit cylSize: CylinderSize): FakeBlocksInWorld =
+  def empty(provider: FakeWorldProvider)(using CylinderSize, Blocks): FakeBlocksInWorld =
     new FakeBlocksInWorld(provider)
 
-  def withBlocks(provider: FakeWorldProvider, blocks: Map[BlockRelWorld, BlockState])(implicit cylSize: CylinderSize): FakeBlocksInWorld = {
+  def withBlocks(provider: FakeWorldProvider, blocks: Map[BlockRelWorld, BlockState])(using
+      CylinderSize,
+      Blocks
+  ): FakeBlocksInWorld = {
     val world = new FakeBlocksInWorld(provider)
     for (coords -> block <- blocks) {
       val col = world.provideColumn(coords.getColumnRelWorld)

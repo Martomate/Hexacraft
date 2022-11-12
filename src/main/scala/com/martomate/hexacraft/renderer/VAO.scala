@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.resource.Resource
+import com.martomate.hexacraft.util.Resource
 import org.lwjgl.opengl.GL30
 
 object VAO {

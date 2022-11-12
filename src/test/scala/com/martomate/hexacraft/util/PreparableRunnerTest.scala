@@ -7,7 +7,7 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
 
   "onPrepare" should "be called when prepare is called" in {
     var prepFired: Boolean = false
-    val runner = new PreparableRunner({prepFired = true}, throw new RuntimeException("activation before preparation"))
+    val runner = new PreparableRunner({ prepFired = true }, throw new RuntimeException("activation before preparation"))
 
     runner.prepare()
     prepFired shouldBe true
@@ -15,7 +15,7 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
 
   it should "only be called once between activations" in {
     var prepFired: Boolean = false
-    val runner = new PreparableRunner({prepFired = true}, throw new RuntimeException("activation before preparation"))
+    val runner = new PreparableRunner({ prepFired = true }, throw new RuntimeException("activation before preparation"))
 
     runner.prepare()
     prepFired shouldBe true
@@ -30,7 +30,7 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
   it must "be called before activate for onActivate to run" in {
     var prepFired: Boolean = false
     var actFired: Boolean = false
-    val runner = new PreparableRunner({prepFired = true}, {actFired = true})
+    val runner = new PreparableRunner({ prepFired = true }, { actFired = true })
 
     runner.activate()
     actFired shouldBe false
@@ -44,7 +44,7 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
 
   "onActivate" should "only be called once per preparation" in {
     var actFired: Boolean = false
-    val runner = new PreparableRunner((), {actFired = true})
+    val runner = new PreparableRunner((), { actFired = true })
 
     runner.prepare()
 
@@ -58,10 +58,10 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
     }
   }
 
-  "it" should "be reusable" in {
+  "the runner" should "be reusable" in {
     var prepFired: Boolean = false
     var activateFired: Boolean = false
-    val runner = new PreparableRunner({prepFired = true}, {activateFired = true})
+    val runner = new PreparableRunner({ prepFired = true }, { activateFired = true })
     for (_ <- 1 to 4) {
       runner.prepare()
       assert(prepFired)

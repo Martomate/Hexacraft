@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.camera
 
-import com.martomate.hexacraft.resource.Shader
+import com.martomate.hexacraft.renderer.Shader
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}

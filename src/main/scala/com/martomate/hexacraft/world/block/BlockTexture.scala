@@ -1,12 +1,12 @@
 package com.martomate.hexacraft.world.block
 
-import com.martomate.hexacraft.resource.Resource
+import com.martomate.hexacraft.util.Resource
 
 object BlockTexture {
   val blockTextureSize: Int = 32
 }
 
-class BlockTexture(name: String, blockLoader: IBlockLoader) extends Resource {
+class BlockTexture(name: String)(using blockLoader: BlockLoader) extends Resource {
   private var _indices: Seq[Int] = _
 
   /** @return `(offsets << 12 | texture_array_index)` for each side */

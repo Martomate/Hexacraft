@@ -1,18 +1,16 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft._
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.*
+import com.martomate.hexacraft.gui.{CharEvent, GameWindowExtended, KeyEvent, MouseClickEvent, SceneStack, ScrollEvent}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.menu.main.MainMenu
-import com.martomate.hexacraft.renderer.VAO
-import com.martomate.hexacraft.resource.{Resource, Shader}
-import com.martomate.hexacraft.scene.{GameWindowExtended, SceneStack}
-import com.martomate.hexacraft.util.AsyncFileIO
+import com.martomate.hexacraft.menu.MainMenu
+import com.martomate.hexacraft.renderer.{Shader, VAO}
+import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
-import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import org.joml.{Vector2i, Vector2ic}
-import org.lwjgl.glfw.GLFW._
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.opengl.{GL, GL11, GL43}
 
@@ -175,9 +173,10 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     try
       implicit val windowImplicit: GameWindowExtended = this
       Shader.init()
-      BlockLoader.init() // this loads it to memory
-      Blocks.init()
-      scenes.pushScene(new MainMenu)
+      given BlockLoader = BlockLoader.instance // this loads it to memory
+      given BlockFactory = new BlockFactory
+      given Blocks = new Blocks
+      scenes.pushScene(new MainMenu(saveFolder))
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()

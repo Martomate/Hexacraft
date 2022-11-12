@@ -15,8 +15,8 @@ object BlockSpec:
       sides: IndexedSeq[Option[String]],
       top: Option[String],
       bottom: Option[String],
-      topOffsets: Textures.Offsets,
-      bottomOffsets: Textures.Offsets
+      topOffsets: Offsets,
+      bottomOffsets: Offsets
   ):
     def indices(texIdxMap: Map[String, Int]): IndexedSeq[Int] =
       val topIdx = texIdxMap(top.orElse(all).orNull) | topOffsets.packed << 12
@@ -46,25 +46,25 @@ object BlockSpec:
       Textures(all, side, sides, top, bottom, topOffsets, bottomOffsets)
     }
 
-    case class Offsets(off: IndexedSeq[Int]):
-      require(off.size == 6)
+  case class Offsets(off: IndexedSeq[Int]):
+    require(off.size == 6)
 
-      def packed: Int =
-        if off(0) != 0
-        then 0 // not allowed
-        else off(1) << 16 | off(2) << 12 | off(3) << 8 | off(4) << 4 | off(5)
+    def packed: Int =
+      if off(0) != 0
+      then 0 // not allowed
+      else off(1) << 16 | off(2) << 12 | off(3) << 8 | off(4) << 4 | off(5)
 
-    object Offsets:
-      def default: Offsets = Offsets(IndexedSeq.fill(6)(0))
+  object Offsets:
+    def default: Offsets = Offsets(IndexedSeq.fill(6)(0))
 
-      def fromJson(obj: JsonObject): Offsets =
-        Offsets(
-          IndexedSeq(
-            obj.getInt("0", 0),
-            obj.getInt("1", 0),
-            obj.getInt("2", 0),
-            obj.getInt("3", 0),
-            obj.getInt("4", 0),
-            obj.getInt("5", 0)
-          )
+    def fromJson(obj: JsonObject): Offsets =
+      Offsets(
+        IndexedSeq(
+          obj.getInt("0", 0),
+          obj.getInt("1", 0),
+          obj.getInt("2", 0),
+          obj.getInt("3", 0),
+          obj.getInt("4", 0),
+          obj.getInt("5", 0)
         )
+      )

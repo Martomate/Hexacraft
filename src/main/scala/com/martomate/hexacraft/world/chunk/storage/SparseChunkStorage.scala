@@ -7,9 +7,9 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 
 import scala.collection.mutable
 
-class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize)
+class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSize, Blocks: Blocks)
     extends ChunkStorage(_chunkCoords) {
-  def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
+  def this(storage: ChunkStorage)(using cylSize: CylinderSize, Blocks: Blocks) = {
     this(storage.chunkCoords)
     for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
   }

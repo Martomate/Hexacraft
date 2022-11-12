@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.resource.TextureSingle
+import com.martomate.hexacraft.renderer.TextureSingle
 
 trait EntityModel {
   def parts: Seq[EntityPart]

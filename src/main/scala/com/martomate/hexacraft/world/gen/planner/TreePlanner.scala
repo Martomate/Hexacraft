@@ -16,7 +16,8 @@ import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange
 import scala.collection.mutable
 import scala.util.Random
 
-class TreePlanner(world: BlocksInWorld, mainSeed: Long)(implicit cylSize: CylinderSize) extends WorldFeaturePlanner {
+class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize, Blocks: Blocks)
+    extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, PlannedChunkChange] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 

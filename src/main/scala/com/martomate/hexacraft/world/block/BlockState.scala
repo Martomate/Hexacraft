@@ -4,7 +4,7 @@ import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 object BlockState {
-  val Air: BlockState = new BlockState(Blocks.Air)
+  val Air: BlockState = new BlockState(Blocks.instance.Air)
 
   val boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
   val vertices: Seq[CylCoords] = boundingBox.vertices

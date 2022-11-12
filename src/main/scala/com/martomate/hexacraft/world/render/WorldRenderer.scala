@@ -1,25 +1,27 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.renderer._
-import com.martomate.hexacraft.resource.{Shaders, TextureSingle}
+import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{ChunkAddedOrRemovedListener, Chunk}
+import com.martomate.hexacraft.world.chunk.Chunk
+import com.martomate.hexacraft.world.chunk.ChunkAddedOrRemovedListener
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
+import org.joml.Vector2ic
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._
 
-import java.nio.{ByteBuffer, FloatBuffer}
+import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
-    window: GameWindow,
-    cylSize: CylinderSize
+class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFramebufferSize: Vector2ic)(using
+    CylinderSize
 ) extends ChunkAddedOrRemovedListener {
   private val entityShader = Shaders.Entity
   private val entitySideShader = Shaders.EntitySide
@@ -42,14 +44,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
   private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
 
   private var mainColorTexture =
-    makeMainColorTexture(window.framebufferSize.x, window.framebufferSize.y)
+    makeMainColorTexture(initialFramebufferSize.x, initialFramebufferSize.y)
   private var mainDepthTexture =
-    makeMainDepthTexture(window.framebufferSize.x, window.framebufferSize.y)
+    makeMainDepthTexture(initialFramebufferSize.x, initialFramebufferSize.y)
   private var mainFrameBuffer = makeMainFrameBuffer(
     mainColorTexture,
     mainDepthTexture,
-    window.framebufferSize.x,
-    window.framebufferSize.y
+    initialFramebufferSize.x,
+    initialFramebufferSize.y
   )
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
@@ -103,7 +105,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double)(implicit
     }
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, window.framebufferSize.x, window.framebufferSize.y)
+    GL11.glViewport(0, 0, mainFrameBuffer.width, mainFrameBuffer.height)
 
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainColorTexture)

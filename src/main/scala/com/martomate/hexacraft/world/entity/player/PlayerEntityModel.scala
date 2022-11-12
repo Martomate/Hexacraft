@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.entity.player
 
 import com.eclipsesource.json.JsonObject
-import com.martomate.hexacraft.resource.TextureSingle
+import com.martomate.hexacraft.renderer.TextureSingle
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
