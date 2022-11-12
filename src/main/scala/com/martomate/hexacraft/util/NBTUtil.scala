@@ -34,6 +34,16 @@ object NBTUtil {
     }
   }
 
+  def getInt(tag: CompoundTag, key: String, default: => Int): Int = {
+    if (tag == null) default
+    else {
+      tag.getValue.get(key) match {
+        case t: IntTag => t.getValue.intValue()
+        case _         => default
+      }
+    }
+  }
+
   def getLong(tag: CompoundTag, key: String, default: => Long): Long = {
     if (tag == null) default
     else {
