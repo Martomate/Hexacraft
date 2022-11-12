@@ -15,7 +15,7 @@ class ChunkGenerator(
     worldProvider: WorldProvider,
     worldGenerator: WorldGenerator,
     registry: EntityRegistry
-)(implicit cylSize: CylinderSize) {
+)(using cylSize: CylinderSize, Blocks: Blocks) {
 
   private def filePath: String =
     "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"

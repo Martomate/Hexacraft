@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.player
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.block.{Block, HexBox}
+import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.Vector3d
 
@@ -32,7 +32,7 @@ class Player(val inventory: Inventory) {
 }
 
 object Player {
-  def atStartPos(initialFootCoords: CylCoords): Player = {
+  def atStartPos(initialFootCoords: CylCoords)(using Blocks): Player = {
     val player = new Player(Inventory.default)
     player.position.set(
       initialFootCoords.x,
@@ -42,7 +42,7 @@ object Player {
     player
   }
 
-  def fromNBT(tag: CompoundTag): Player = {
+  def fromNBT(tag: CompoundTag)(using Blocks): Player = {
     val inventory =
       NBTUtil.getCompoundTag(tag, "inventory") match
         case Some(tag) => Inventory.fromNBT(tag)

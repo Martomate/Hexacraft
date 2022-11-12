@@ -2,7 +2,15 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.gui.{GameWindowExtended, KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, Scene, ScrollEvent}
+import com.martomate.hexacraft.gui.{
+  GameWindowExtended,
+  KeyEvent,
+  LocationInfo,
+  LocationInfoIdentity,
+  MouseClickEvent,
+  Scene,
+  ScrollEvent
+}
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
@@ -20,7 +28,9 @@ import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
 
-class GameScene(worldProvider: WorldProvider)(implicit window: GameWindowExtended) extends Scene with DebugInfoProvider:
+class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, Blocks: Blocks)
+    extends Scene
+    with DebugInfoProvider:
 
   private val blockShader: Shader = Shaders.Block
   private val blockSideShader: Shader = Shaders.BlockSide

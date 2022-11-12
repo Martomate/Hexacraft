@@ -1,12 +1,18 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.chunk.storage
 
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import org.scalatest.matchers.should.Matchers
 
-class SparseChunkStorageTest extends ChunkStorageTest((coords, size) => new SparseChunkStorage(coords)(implicitly(size))) with Matchers {
-  import cylSize.impl
-  
+class SparseChunkStorageTest
+    extends ChunkStorageTest((coords, size, blocks) =>
+      given CylinderSize = size
+      given Blocks = blocks
+      new SparseChunkStorage(coords)
+    )
+    with Matchers {
   val makeOtherStorage: ChunkRelWorld => ChunkStorage = new DenseChunkStorage(_)
 
   "isDense" should "be false" in {
@@ -20,7 +26,7 @@ class SparseChunkStorageTest extends ChunkStorageTest((coords, size) => new Spar
     fillStorage_Dirt359_Stone350(storage)
     val sparse = new SparseChunkStorage(storage)
 
-    sparse shouldBe a [SparseChunkStorage]
+    sparse shouldBe a[SparseChunkStorage]
     sparse.numBlocks shouldBe 2
   }
 
@@ -29,7 +35,7 @@ class SparseChunkStorageTest extends ChunkStorageTest((coords, size) => new Spar
     fillStorage_Dirt359_Stone350(storage)
     val sparse = new SparseChunkStorage(storage)
 
-    sparse shouldBe a [SparseChunkStorage]
+    sparse shouldBe a[SparseChunkStorage]
     sparse.numBlocks shouldBe 2
   }
 }

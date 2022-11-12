@@ -14,7 +14,8 @@ class ChunkColumn(
     val coords: ColumnRelWorld,
     worldGenerator: WorldGenerator,
     worldProvider: WorldProvider
-) extends ChunkBlockListener
+)(using Blocks: Blocks)
+    extends ChunkBlockListener
     with ChunkEventListener {
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 

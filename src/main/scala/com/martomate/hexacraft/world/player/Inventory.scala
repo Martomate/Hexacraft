@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.block.{Block, Blocks}
 
 import scala.collection.mutable.ArrayBuffer
 
-class Inventory(init_slots: Map[Int, Block]) {
+class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
   private val changeListeners = ArrayBuffer.empty[() => Unit]
   def addChangeListener(onChanged: () => Unit): Unit = changeListeners += onChanged
 
@@ -26,7 +26,7 @@ class Inventory(init_slots: Map[Int, Block]) {
         "slots",
         classOf[CompoundTag],
         slots.toSeq.zipWithIndex
-          .filter(a => a._1 != Blocks.Air)
+          .filter(a => a._1.id != Blocks.Air.id)
           .map { case (block, idx) =>
             NBTUtil.makeCompoundTag(
               "",
@@ -48,7 +48,7 @@ class Inventory(init_slots: Map[Int, Block]) {
 }
 
 object Inventory {
-  def default: Inventory = {
+  def default(using Blocks: Blocks): Inventory = {
     new Inventory(
       Map(
         0 -> Blocks.Dirt,
@@ -65,7 +65,7 @@ object Inventory {
     )
   }
 
-  def fromNBT(nbt: CompoundTag): Inventory = {
+  def fromNBT(nbt: CompoundTag)(using Blocks): Inventory = {
     NBTUtil.getList(nbt, "slots") match
       case Some(slotTags) =>
         val slots = slotTags.flatMap {

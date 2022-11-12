@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
-import com.martomate.hexacraft.util._
-import com.martomate.hexacraft.world.block.{BlockSetAndGet, BlockState}
+import com.martomate.hexacraft.util.*
+import com.martomate.hexacraft.world.block.{BlockSetAndGet, BlockState, Blocks}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.{
   Chunk,
@@ -38,7 +38,10 @@ object World {
   var shouldChillChunkLoader = false
 }
 
-class World(val worldProvider: WorldProvider) extends BlockSetAndGet with BlocksInWorld with ChunkColumnListener {
+class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
+    extends BlockSetAndGet
+    with BlocksInWorld
+    with ChunkColumnListener {
   private val worldInfo: WorldInfo = worldProvider.getWorldInfo
 
   val size: CylinderSize = worldInfo.worldSize

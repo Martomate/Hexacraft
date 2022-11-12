@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.coord.integer.{NeighborOffsets, Offset}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenStrategy {
+class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random)(using Blocks: Blocks) extends TreeGenStrategy {
   override def blocks: Seq[(Offset, Block)] = {
     val builder = new Builder
 

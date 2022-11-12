@@ -1,18 +1,24 @@
-package com.martomate.hexacraft.world.storage
+package com.martomate.hexacraft.world.chunk.storage
 
 import com.flowpowered.nbt.ByteArrayTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
-import com.martomate.hexacraft.world.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.FakeBlockLoader
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize) => ChunkStorage) extends AnyFlatSpec with Matchers {
-  protected val cylSize: CylinderSize = new CylinderSize(4)
-  import cylSize.impl
+abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize, Blocks) => ChunkStorage)
+    extends AnyFlatSpec
+    with Matchers {
+  protected implicit val cylSize: CylinderSize = new CylinderSize(4)
+  given BlockLoader = new FakeBlockLoader
+  given BlockFactory = new BlockFactory
+  implicit val Blocks: Blocks = new Blocks
 
-  def makeStorage(coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage = storageFactory(coords, cylSize)
+  def makeStorage(coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage =
+    storageFactory(coords, implicitly[CylinderSize], implicitly[Blocks])
 
   "the storage" should "be correct for 0 blocks" in {
     val storage = makeStorage()
@@ -36,7 +42,7 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
 
-    storage.numBlocks shouldBe 16*16*16
+    storage.numBlocks shouldBe 16 * 16 * 16
   }
 
   "Air" should "not count as a block" in {
@@ -106,18 +112,27 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
   }
 
   "fromNBT" should "work with blocks and metadata" in {
-    val tag = NBTUtil.makeCompoundTag("", Seq(
-      new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
-        case 0 => Blocks.Dirt.id
-        case 1 => Blocks.Stone.id
-        case _ => 0
-      }),
-      new ByteArrayTag("metadata", Array.tabulate(16*16*16) {
-        case 0 => 6
-        case 1 => 2
-        case _ => 0
-      })
-    ))
+    val tag = NBTUtil.makeCompoundTag(
+      "",
+      Seq(
+        new ByteArrayTag(
+          "blocks",
+          Array.tabulate(16 * 16 * 16) {
+            case 0 => Blocks.Dirt.id
+            case 1 => Blocks.Stone.id
+            case _ => 0
+          }
+        ),
+        new ByteArrayTag(
+          "metadata",
+          Array.tabulate(16 * 16 * 16) {
+            case 0 => 6
+            case 1 => 2
+            case _ => 0
+          }
+        )
+      )
+    )
     val storage = makeStorage(ChunkRelWorld(0))
 
     storage.fromNBT(tag)
@@ -127,13 +142,19 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
   }
 
   it should "work without metadata" in {
-    val tag = NBTUtil.makeCompoundTag("", Seq(
-      new ByteArrayTag("blocks", Array.tabulate(16*16*16) {
-        case 0 => Blocks.Dirt.id
-        case 1 => Blocks.Stone.id
-        case _ => 0
-      })
-    ))
+    val tag = NBTUtil.makeCompoundTag(
+      "",
+      Seq(
+        new ByteArrayTag(
+          "blocks",
+          Array.tabulate(16 * 16 * 16) {
+            case 0 => Blocks.Dirt.id
+            case 1 => Blocks.Stone.id
+            case _ => 0
+          }
+        )
+      )
+    )
     val storage = makeStorage(ChunkRelWorld(0))
 
     storage.fromNBT(tag)
@@ -143,13 +164,19 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
   }
 
   it should "work without blocks" in {
-    val tag = NBTUtil.makeCompoundTag("", Seq(
-      new ByteArrayTag("metadata", Array.tabulate(16*16*16) {
-        case 0 => 6
-        case 1 => 2
-        case _ => 0
-      })
-    ))
+    val tag = NBTUtil.makeCompoundTag(
+      "",
+      Seq(
+        new ByteArrayTag(
+          "metadata",
+          Array.tabulate(16 * 16 * 16) {
+            case 0 => 6
+            case 1 => 2
+            case _ => 0
+          }
+        )
+      )
+    )
     val storage = makeStorage(ChunkRelWorld(0))
 
     storage.fromNBT(tag)
@@ -165,22 +192,22 @@ abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, Cy
 
     val blocksTag = nbt(0)
     blocksTag.getName shouldBe "blocks"
-    blocksTag shouldBe a [ByteArrayTag]
+    blocksTag shouldBe a[ByteArrayTag]
     val blocksArray = blocksTag.asInstanceOf[ByteArrayTag].getValue
-    blocksArray.length shouldBe 16*16*16
+    blocksArray.length shouldBe 16 * 16 * 16
 
     val metadataTag = nbt(1)
     metadataTag.getName shouldBe "metadata"
-    metadataTag shouldBe a [ByteArrayTag]
+    metadataTag shouldBe a[ByteArrayTag]
     val metadataArray = metadataTag.asInstanceOf[ByteArrayTag].getValue
-    metadataArray.length shouldBe 16*16*16
+    metadataArray.length shouldBe 16 * 16 * 16
 
     blocksArray(coords359.getBlockRelChunk.value) shouldBe Blocks.Dirt.id
     blocksArray(coords350.getBlockRelChunk.value) shouldBe Blocks.Stone.id
     metadataArray(coords359.getBlockRelChunk.value) shouldBe 6
     metadataArray(coords350.getBlockRelChunk.value) shouldBe 2
   }
-  
+
   protected def coords350: BlockRelWorld = coordsAt(3, 5, 0)
   protected def coords351: BlockRelWorld = coordsAt(3, 5, 1)
   protected def coords359: BlockRelWorld = coordsAt(3, 5, 9)

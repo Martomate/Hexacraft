@@ -3,11 +3,13 @@ package com.martomate.hexacraft.world.chunk
 import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.entity.EntityRegistry
 
-class ChunkData(init_storage: ChunkStorage, world: BlocksInWorld, registry: EntityRegistry)(implicit
-    cylSize: CylinderSize
+class ChunkData(init_storage: ChunkStorage, world: BlocksInWorld, registry: EntityRegistry)(using
+    CylinderSize,
+    Blocks
 ) {
   var storage: ChunkStorage = init_storage
   val entities: EntitiesInChunk = new EntitiesInChunk(world, registry)

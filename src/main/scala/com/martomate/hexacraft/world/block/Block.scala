@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.block
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.behaviour.{BlockBehaviour, BlockBehaviourNothing}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 object Block {
@@ -11,10 +10,10 @@ object Block {
   def byId(id: Byte): Block = blocks(id)
 }
 
-class Block(val id: Byte, val name: String, val displayName: String) {
+class Block(val id: Byte, val name: String, val displayName: String)(using BlockLoader) {
   Block.blocks(id) = this
 
-  protected lazy val texture = new BlockTexture(name, BlockLoader)
+  protected lazy val texture = new BlockTexture(name)
   def bounds(metadata: Byte) = new HexBox(0.5f, 0, 0.5f * blockHeight(metadata))
 
   def blockTex(side: Int): Int = texture.indices(side)
@@ -27,8 +26,9 @@ class Block(val id: Byte, val name: String, val displayName: String) {
   def blockHeight(metadata: Byte): Float = 1.0f
 
   protected val behaviour: BlockBehaviour = new BlockBehaviourNothing
-  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet)(implicit
-      cylSize: CylinderSize
+  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet)(using
+      CylinderSize,
+      Blocks
   ): Unit = behaviour.onUpdated(coords, world)
 
   override def equals(o: Any): Boolean = o match {

@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
@@ -9,7 +9,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class WorldTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(8)
+  given CylinderSize = new CylinderSize(8)
+  given BlockLoader = new FakeBlockLoader
+  given BlockFactory = new BlockFactory
+  implicit val Blocks: Blocks = new Blocks
 
   "the world" should "not crash" in {
     val provider = new FakeWorldProvider(1234)

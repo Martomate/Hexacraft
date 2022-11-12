@@ -1,17 +1,20 @@
 package com.martomate.hexacraft.world.collision
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockState, Blocks, HexBox}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks, HexBox}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
-import com.martomate.hexacraft.world.{CollisionDetector, FakeBlocksInWorld, FakeWorldProvider}
+import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import org.joml.Vector3d
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CollisionDetectorTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(8)
+  given CylinderSize = new CylinderSize(8)
+  given BlockLoader = new FakeBlockLoader
+  given BlockFactory = new BlockFactory
+  implicit val Blocks: Blocks = new Blocks
 
   private val box1 = new HexBox(0.4f, 0.1f, 0.3f)
   private val box2 = new HexBox(0.5f, 0.15f, 0.45f)

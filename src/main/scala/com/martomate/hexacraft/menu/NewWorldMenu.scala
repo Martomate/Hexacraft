@@ -3,12 +3,13 @@ package com.martomate.hexacraft.menu
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
 import scala.util.Random
 
-class NewWorldMenu(saveFolder: File)(implicit window: GameWindowExtended) extends MenuScene {
+class NewWorldMenu(saveFolder: File)(using window: GameWindowExtended, Blocks: Blocks) extends MenuScene {
   addComponent(
     new Label("World name", LocationInfo16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)

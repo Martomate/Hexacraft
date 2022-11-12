@@ -11,8 +11,9 @@ import org.joml.{Vector2fc, Vector3d, Vector3dc, Vector4f}
 
 import scala.annotation.tailrec
 
-class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(implicit
-    cylSize: CylinderSize
+class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
+    cylSize: CylinderSize,
+    Blocks: Blocks
 ):
   def trace(
       ray: Ray,

@@ -5,7 +5,7 @@ import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity, Scene}
 import com.martomate.hexacraft.renderer.TextureSingle
 
-abstract class MenuScene(implicit window: GameWindow) extends Scene with SubComponents {
+abstract class MenuScene(using GameWindow) extends Scene with SubComponents {
   protected var hasDefaultBackground: Boolean = true
   def isMainMenu: Boolean = false
 

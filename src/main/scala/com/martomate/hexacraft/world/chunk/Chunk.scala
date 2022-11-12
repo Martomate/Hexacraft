@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator, WorldProvider}
-import com.martomate.hexacraft.world.block.{Block, BlockState}
+import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
@@ -12,8 +12,9 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 object Chunk {
-  def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(implicit
-      cylSize: CylinderSize
+  def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(using
+      CylinderSize,
+      Blocks
   ): Chunk = {
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val entityRegistry = EntityRegistry.empty

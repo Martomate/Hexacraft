@@ -3,12 +3,14 @@ package com.martomate.hexacraft.world.gen
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener}
 import com.martomate.hexacraft.world.entity.EntityRegistry
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 
-class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(implicit
-    cylSize: CylinderSize
+class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using
+    CylinderSize,
+    Blocks
 ) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
@@ -32,8 +34,9 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
 }
 
 object WorldPlanner {
-  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(implicit
-      cylSize: CylinderSize
+  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(using
+      CylinderSize,
+      Blocks
   ): WorldPlanner = {
     val wp = new WorldPlanner(world, registry, mainSeed)
 
