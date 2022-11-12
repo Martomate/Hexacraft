@@ -8,30 +8,27 @@ import org.lwjgl.glfw.GLFW._
 class PlayerInputHandler(
     mouse: GameMouse,
     keyboard: GameKeyboard,
-    player: Player,
-    collisionDetector: CollisionDetector
+    player: Player
 ):
-  def tick(moveWithMouse: Boolean): Unit = updatePlayer(moveWithMouse)
+  private def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
+
+  def maxSpeed: Double =
+    if keyPressed(GLFW_KEY_LEFT_CONTROL)
+    then 0.075
+    else if keyPressed(GLFW_KEY_LEFT_ALT)
+    then 12.0
+    else if keyPressed(GLFW_KEY_RIGHT_CONTROL)
+    then 120.0
+    else 4.3
 
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
-  private def updatePlayer(moveWithMouse: Boolean): Unit =
-    def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
-
-    val speed =
-      if keyPressed(GLFW_KEY_LEFT_CONTROL)
-      then 0.075
-      else if keyPressed(GLFW_KEY_LEFT_ALT)
-      then 12.0
-      else if keyPressed(GLFW_KEY_RIGHT_CONTROL)
-      then 120.0
-      else 4.3
-
+  def tick(moveWithMouse: Boolean, maxSpeed: Double): Unit =
     val rSpeed = 0.05
     if player.flying
     then player.velocity.y = 0
 
-    val cosMove = Math.cos(player.rotation.y) * speed
-    val sinMove = Math.sin(player.rotation.y) * speed
+    val cosMove = Math.cos(player.rotation.y) * maxSpeed
+    val sinMove = Math.sin(player.rotation.y) * maxSpeed
 
     if keyPressed(GLFW_KEY_W)
     then
@@ -56,14 +53,14 @@ class PlayerInputHandler(
     if keyPressed(GLFW_KEY_SPACE)
     then
       if player.flying
-      then player.velocity.y = speed
+      then player.velocity.y = maxSpeed
       else if player.velocity.y == 0
       then player.velocity.y = 5
 
     if keyPressed(GLFW_KEY_LEFT_SHIFT)
     then
       if player.flying
-      then player.velocity.y = -speed
+      then player.velocity.y = -maxSpeed
 
     if keyPressed(GLFW_KEY_UP)
     then player.rotation.x -= rSpeed
@@ -106,26 +103,3 @@ class PlayerInputHandler(
     then player.rotation.z += (math.Pi * 2)
     else if player.rotation.z > math.Pi * 2
     then player.rotation.z -= (math.Pi * 2)
-
-    player.velocity.x *= 0.75
-    player.velocity.z *= 0.75
-
-    val velLen = math.hypot(player.velocity.x, player.velocity.z)
-    if velLen > speed
-    then
-      player.velocity.x *= speed / velLen
-      player.velocity.z *= speed / velLen
-
-    if player.flying
-    then player.position.add(player.velocity.x / 60, player.velocity.y / 60, player.velocity.z / 60)
-    else
-      player.velocity.y -= 9.82 / 60
-      player.velocity.div(60)
-      val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(
-        player.bounds,
-        player.position,
-        player.velocity
-      )
-      player.position.set(pos)
-      player.velocity.set(vel)
-      player.velocity.mul(60)

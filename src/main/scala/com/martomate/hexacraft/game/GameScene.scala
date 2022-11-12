@@ -73,7 +73,9 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler =
-    new PlayerInputHandler(window.mouse, window.keyboard, world.player, world.collisionDetector)
+    new PlayerInputHandler(window.mouse, window.keyboard, world.player)
+  private val playerPhysicsHandler: PlayerPhysicsHandler =
+    new PlayerPhysicsHandler(world.player, world.collisionDetector)
 
   private val toolbar: Toolbar = makeToolbar(world.player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
@@ -244,8 +246,9 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
       crosshairRenderer.render()
 
   override def tick(): Unit =
-    if !isPaused && !isInPopup
-    then playerInputHandler.tick(moveWithMouse)
+    val maxSpeed = playerInputHandler.maxSpeed
+    if !isPaused && !isInPopup then playerInputHandler.tick(moveWithMouse, maxSpeed)
+    if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
