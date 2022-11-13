@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CylCoordsTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(3)
+  implicit val cylSize: CylinderSize = CylinderSize(3)
   val eps = 1e-9
 
   "distanceSq" should "be 0 for itself" in {

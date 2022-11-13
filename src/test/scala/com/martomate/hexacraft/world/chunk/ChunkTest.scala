@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class ChunkTest extends AnyFlatSpec with Matchers {
-  given CylinderSize = new CylinderSize(6)
+  given CylinderSize = CylinderSize(6)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   given Blocks = new Blocks

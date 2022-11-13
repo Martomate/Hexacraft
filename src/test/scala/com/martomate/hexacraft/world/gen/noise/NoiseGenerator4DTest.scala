@@ -40,7 +40,7 @@ class NoiseGenerator4DTest extends AnyFlatSpec with Matchers {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
-    val size = new CylinderSize(5)
+    val size = CylinderSize(5)
     import size.impl
     val scale = 100
     for (_ <- 1 to 10) {

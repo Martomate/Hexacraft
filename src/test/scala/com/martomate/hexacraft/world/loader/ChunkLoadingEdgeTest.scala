@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 
 class ChunkLoadingEdgeTest extends AnyFlatSpec with Matchers with MockitoSugar {
-  implicit val cylSize : CylinderSize = new CylinderSize(4)
+  implicit val cylSize : CylinderSize = CylinderSize(4)
 
   "isLoaded" should "be false in the beginning" in {
     val edge = new ChunkLoadingEdge

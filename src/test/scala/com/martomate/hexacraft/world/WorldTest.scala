@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class WorldTest extends AnyFlatSpec with Matchers {
-  given CylinderSize = new CylinderSize(8)
+  given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
