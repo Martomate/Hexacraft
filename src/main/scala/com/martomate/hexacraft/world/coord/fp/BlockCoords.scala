@@ -5,11 +5,7 @@ import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 class BlockCoords private (_x: Double, _y: Double, _z: Double)(implicit
     val cylSize: CylinderSize
-) extends AbstractCoords[BlockCoords](
-      _x,
-      _y,
-      MathUtils.fitZ(_z, cylSize.totalSize)
-    ) {
+) extends AbstractCoords[BlockCoords](_x, _y, _z) {
 
   def toNormalCoords(reference: CylCoords): NormalCoords = toSkewCylCoords.toNormalCoords(reference)
   def toCylCoords: CylCoords = toSkewCylCoords.toCylCoords
@@ -24,8 +20,9 @@ class BlockCoords private (_x: Double, _y: Double, _z: Double)(implicit
 /** BlockCoords are like SkewCylCoords but with a different axis scale */
 object BlockCoords {
   def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize): BlockCoords =
-    new BlockCoords(_x, _y, _z)
-  def apply(c: BlockRelWorld)(implicit cylSize: CylinderSize): BlockCoords = new BlockCoords(c.x, c.y, c.z)
+    new BlockCoords(_x, _y, MathUtils.fitZ(_z, cylSize.totalSize))
+  def apply(c: BlockRelWorld)(implicit cylSize: CylinderSize): BlockCoords =
+    new BlockCoords(c.x, c.y, MathUtils.fitZ(c.z, cylSize.totalSize))
 
   case class Offset(_x: Double, _y: Double, _z: Double) extends AbstractCoords[BlockCoords.Offset](_x, _y, _z) {
     def toCylCoordsOffset: CylCoords.Offset = toSkewCylCoordsOffset.toCylCoordsOffset

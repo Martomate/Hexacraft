@@ -5,11 +5,7 @@ import com.martomate.hexacraft.world.coord.fp
 
 class SkewCylCoords private (_x: Double, _y: Double, _z: Double)(implicit
     val cylSize: CylinderSize
-) extends AbstractCoords[SkewCylCoords](
-      _x,
-      _y,
-      MathUtils.fitZ(_z, cylSize.circumference)
-    ) {
+) extends AbstractCoords[SkewCylCoords](_x, _y, _z) {
 
   def toNormalCoords(reference: CylCoords): NormalCoords = toCylCoords.toNormalCoords(reference)
   def toCylCoords: CylCoords = CylCoords(x * CylinderSize.y60, y, z + x * 0.5)
@@ -24,7 +20,8 @@ class SkewCylCoords private (_x: Double, _y: Double, _z: Double)(implicit
 
 /** CylCoords with the x axis rotated 30 deg */
 object SkewCylCoords {
-  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize) = new SkewCylCoords(_x, _y, _z)
+  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize) =
+    new SkewCylCoords(_x, _y, MathUtils.fitZ(_z, cylSize.circumference))
 
   case class Offset(_x: Double, _y: Double, _z: Double) extends AbstractCoords[SkewCylCoords.Offset](_x, _y, _z) {
     def toCylCoordsOffset: CylCoords.Offset = CylCoords.Offset(x * CylinderSize.y60, y, z + x * 0.5)
