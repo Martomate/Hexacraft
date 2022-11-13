@@ -13,7 +13,7 @@ class EntityModelLoader(basePath: String = "spec/entities")(using CylinderSize) 
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {
     case "player" => new PlayerEntityModel(setup)
     case "sheep"  => new SheepEntityModel(setup)
-    case _        => new BasicEntityModel(CylCoords(0, 0, 0), new HexBox(0, 0, 0))
+    case _        => new BasicEntityModel(CylCoords.Offset(0, 0, 0), new HexBox(0, 0, 0))
   }
 
   def load(name: String): EntityModel = {

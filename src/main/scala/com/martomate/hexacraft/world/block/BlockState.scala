@@ -7,9 +7,9 @@ object BlockState {
   val Air: BlockState = new BlockState(Blocks.instance.Air)
 
   val boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
-  val vertices: Seq[CylCoords] = boundingBox.vertices
+  val vertices: Seq[CylCoords.Offset] = boundingBox.vertices
 
-  def getVertices(side: Int): Seq[CylCoords] = side match {
+  def getVertices(side: Int): Seq[CylCoords.Offset] = side match {
     case 0 => vertices.take(6)
     case 1 => vertices.takeRight(6).reverse
     case _ =>

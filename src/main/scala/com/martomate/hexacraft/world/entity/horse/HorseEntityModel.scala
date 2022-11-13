@@ -32,12 +32,13 @@ class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) e
 
   private val neck = new BasicEntityPart(
     makeHexBox(neckRadius, neckRadius + 2, neckDepth),
-    BlockCoords(
-      (bodyLength - neckRadius * 2 + 2) * pixSizeX,
-      (legLength + legYOffset) / 32d + (bodyRadius - neckRadius * 2 - 2) / 32d * CylinderSize.y60,
-      -(bodyLength - neckRadius * 2 + 2) * pixSizeZ,
-      fixZ = false
-    ).toCylCoords,
+    BlockCoords
+      .Offset(
+        (bodyLength - neckRadius * 2 + 2) * pixSizeX,
+        (legLength + legYOffset) / 32d + (bodyRadius - neckRadius * 2 - 2) / 32d * CylinderSize.y60,
+        -(bodyLength - neckRadius * 2 + 2) * pixSizeZ
+      )
+      .toCylCoordsOffset,
     new Vector3f(
       0,
       math.Pi.toFloat / 2,
@@ -47,58 +48,62 @@ class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) e
   )
   private val head = new BasicEntityPart(
     makeHexBox(headRadius, -neckRadius, headDepth),
-    BlockCoords(0, neckDepth / 32d, 0, fixZ = false).toCylCoords,
+    BlockCoords.Offset(0, neckDepth / 32d, 0).toCylCoordsOffset,
     new Vector3f(math.Pi.toFloat / 4, 0, 0),
     parentPart = neck,
     setup = partsNBT.get("head").asObject()
   )
   private val body = new BasicEntityPart(
     makeHexBox(bodyRadius, 0, bodyLength),
-    BlockCoords(0, (legLength + legYOffset) / 32d, 0, fixZ = false).toCylCoords,
+    BlockCoords.Offset(0, (legLength + legYOffset) / 32d, 0).toCylCoordsOffset,
     new Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2),
     setup = partsNBT.get("body").asObject()
   )
   private val frontRightLeg = new BasicEntityPart(
     makeHexBox(legRadius, 0, legLength),
-    BlockCoords(
-      (bodyLength - legRadius) * pixSizeX,
-      legLength / 32d,
-      legOffset / 32d - (bodyLength - legRadius) * pixSizeZ,
-      fixZ = false
-    ).toCylCoords,
+    BlockCoords
+      .Offset(
+        (bodyLength - legRadius) * pixSizeX,
+        legLength / 32d,
+        legOffset / 32d - (bodyLength - legRadius) * pixSizeZ
+      )
+      .toCylCoordsOffset,
     new Vector3f(math.Pi.toFloat, 0, 0),
     setup = partsNBT.get("front_right_leg").asObject()
   )
   private val frontLeftLeg = new BasicEntityPart(
     makeHexBox(legRadius, 0, legLength),
-    BlockCoords(
-      (bodyLength - legRadius) * pixSizeX,
-      legLength / 32d,
-      -legOffset / 32d - (bodyLength - legRadius) * pixSizeZ,
-      fixZ = false
-    ).toCylCoords,
+    BlockCoords
+      .Offset(
+        (bodyLength - legRadius) * pixSizeX,
+        legLength / 32d,
+        -legOffset / 32d - (bodyLength - legRadius) * pixSizeZ
+      )
+      .toCylCoordsOffset,
     new Vector3f(math.Pi.toFloat, 0, 0),
     setup = partsNBT.get("front_left_leg").asObject()
   )
   private val backRightLeg = new BasicEntityPart(
     makeHexBox(legRadius, 0, legLength),
-    BlockCoords(
-      legRadius * pixSizeX,
-      legLength / 32d,
-      legOffset / 32d - legRadius * pixSizeZ,
-      fixZ = false
-    ).toCylCoords,
+    BlockCoords
+      .Offset(
+        legRadius * pixSizeX,
+        legLength / 32d,
+        legOffset / 32d - legRadius * pixSizeZ
+      )
+      .toCylCoordsOffset,
     new Vector3f(math.Pi.toFloat, 0, 0),
     setup = partsNBT.get("back_right_leg").asObject()
   )
   private val backLeftLeg = new BasicEntityPart(
     makeHexBox(legRadius, 0, legLength),
-    BlockCoords(
-      legRadius / 32d * 0.5f / CylinderSize.y60 / CylinderSize.y60,
-      legLength / 32d,
-      -legOffset / 32d - legRadius * pixSizeZ,
-      fixZ = false
-    ).toCylCoords,
+    BlockCoords
+      .Offset(
+        legRadius / 32d * 0.5f / CylinderSize.y60 / CylinderSize.y60,
+        legLength / 32d,
+        -legOffset / 32d - legRadius * pixSizeZ
+      )
+      .toCylCoordsOffset,
     new Vector3f(math.Pi.toFloat, 0, 0),
     setup = partsNBT.get("back_left_leg").asObject()
   )

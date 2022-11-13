@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   val smallRadius: Double = radius * CylinderSize.y60
 
-  def vertices: IndexedSeq[CylCoords] = {
+  def vertices: IndexedSeq[CylCoords.Offset] = {
     // val ints = Seq(1, 2, 0, 3, 5, 4)
 
     for {
@@ -17,7 +17,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
       val v = i * Math.PI / 3
       val x = Math.cos(v).toFloat
       val z = Math.sin(v).toFloat
-      CylCoords(x * radius, (1 - s) * (top - bottom) + bottom, z * radius, fixZ = false)(null)
+      CylCoords.Offset(x * radius, (1 - s) * (top - bottom) + bottom, z * radius)
     }
   }
 }

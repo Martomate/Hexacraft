@@ -52,17 +52,30 @@ class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(impl
   override def offset(dx: Double, dy: Double, dz: Double): CylCoords =
     CylCoords(x + dx, y + dy, z + dz, fixZ)
   def offset(v: Vector3d): CylCoords = offset(v.x, v.y, v.z)
+  def offset(v: CylCoords.Offset): CylCoords = offset(v.x, v.y, v.z)
 }
 
 /** NormalCoords with z axis wrapped around a cylinder. The y axis is perpendicular to the x and z
   * axes and also exponential
   */
 object CylCoords {
-  def apply(vec: Vector3d)(implicit cylSize: CylinderSize): CylCoords = apply(vec, fixZ = true)
-  def apply(vec: Vector3d, fixZ: Boolean)(implicit cylSize: CylinderSize) =
-    new CylCoords(vec.x, vec.y, vec.z, fixZ)
+  def apply(vec: Vector3d)(implicit cylSize: CylinderSize): CylCoords = new CylCoords(vec.x, vec.y, vec.z, fixZ = true)
   def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize): CylCoords =
     apply(_x, _y, _z, fixZ = true)
+
   def apply(_x: Double, _y: Double, _z: Double, fixZ: Boolean)(implicit cylSize: CylinderSize) =
     new CylCoords(_x, _y, _z, fixZ)
+
+  case class Offset(_x: Double, _y: Double, _z: Double) extends AbstractCoords[CylCoords.Offset](_x, _y, _z) {
+    def toSkewCylCoordsOffset: SkewCylCoords.Offset =
+      SkewCylCoords.Offset(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60)
+    def toBlockCoordsOffset: BlockCoords.Offset = toSkewCylCoordsOffset.toBlockCoordsOffset
+
+    override def offset(dx: Double, dy: Double, dz: Double): CylCoords.Offset =
+      CylCoords.Offset(x + dx, y + dy, z + dz)
+
+    def offset(v: Vector3d): CylCoords.Offset = offset(v.x, v.y, v.z)
+  }
+  object Offset:
+    def apply(vec: Vector3d): Offset = Offset(vec.x, vec.y, vec.z)
 }
