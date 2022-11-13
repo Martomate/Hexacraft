@@ -3,12 +3,12 @@ package com.martomate.hexacraft.world.coord.fp
 import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
 import org.joml.Vector3d
 
-class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(implicit
+class CylCoords private (_x: Double, _y: Double, _z: Double)(implicit
     val cylSize: CylinderSize
 ) extends AbstractCoords[CylCoords](
       _x,
       _y,
-      if (fixZ) MathUtils.fitZ(_z, cylSize.circumference) else _z
+      MathUtils.fitZ(_z, cylSize.circumference)
     ) {
 
   def toNormalCoords(ref: CylCoords): NormalCoords = {
@@ -21,7 +21,7 @@ class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(impl
     NormalCoords((this.x - ref.x) * mult, y * scale * mult - cylSize.radius, z * scale * mult)
   }
   def toSkewCylCoords: SkewCylCoords =
-    SkewCylCoords(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60, fixZ)
+    SkewCylCoords(x / CylinderSize.y60, y, z - x * 0.5 / CylinderSize.y60)
   def toBlockCoords: BlockCoords = toSkewCylCoords.toBlockCoords
 
   def distanceSq(c: CylCoords): Double = {
@@ -49,8 +49,7 @@ class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(impl
     math.atan2(dz, dx)
   }
 
-  override def offset(dx: Double, dy: Double, dz: Double): CylCoords =
-    CylCoords(x + dx, y + dy, z + dz, fixZ)
+  override def offset(dx: Double, dy: Double, dz: Double): CylCoords = CylCoords(x + dx, y + dy, z + dz)
   def offset(v: Vector3d): CylCoords = offset(v.x, v.y, v.z)
   def offset(v: CylCoords.Offset): CylCoords = offset(v.x, v.y, v.z)
 }
@@ -59,12 +58,8 @@ class CylCoords private (_x: Double, _y: Double, _z: Double, fixZ: Boolean)(impl
   * axes and also exponential
   */
 object CylCoords {
-  def apply(vec: Vector3d)(implicit cylSize: CylinderSize): CylCoords = new CylCoords(vec.x, vec.y, vec.z, fixZ = true)
-  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize): CylCoords =
-    apply(_x, _y, _z, fixZ = true)
-
-  def apply(_x: Double, _y: Double, _z: Double, fixZ: Boolean)(implicit cylSize: CylinderSize) =
-    new CylCoords(_x, _y, _z, fixZ)
+  def apply(vec: Vector3d)(implicit cylSize: CylinderSize): CylCoords = new CylCoords(vec.x, vec.y, vec.z)
+  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize): CylCoords = new CylCoords(_x, _y, _z)
 
   case class Offset(_x: Double, _y: Double, _z: Double) extends AbstractCoords[CylCoords.Offset](_x, _y, _z) {
     def toSkewCylCoordsOffset: SkewCylCoords.Offset =
