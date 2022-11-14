@@ -8,9 +8,7 @@ import org.joml.Vector3d
 import scala.annotation.tailrec
 
 object CoordUtils {
-  def getEnclosingBlock(vec: BlockCoords): (BlockRelWorld, BlockCoords.Offset) = {
-    import vec.cylSize.impl
-
+  def getEnclosingBlock(vec: BlockCoords)(using CylinderSize): (BlockRelWorld, BlockCoords.Offset) = {
     val (x, y, z) = (vec.x, vec.y, vec.z)
 
     @tailrec
@@ -40,20 +38,15 @@ object CoordUtils {
     (BlockRelWorld(xInt, yInt, zInt), BlockCoords.Offset(xx, y - yInt, zz))
   }
 
-  def approximateIntCoords(
-      coords: BlockCoords
-  )(implicit cylinderSize: CylinderSize): BlockRelWorld = {
+  def approximateIntCoords(coords: BlockCoords)(using CylinderSize): BlockRelWorld = {
     val X = math.round(coords.x).toInt
     val Y = math.round(coords.y).toInt
     val Z = math.round(coords.z).toInt
     BlockRelWorld(X, Y, Z)
   }
 
-  def approximateChunkCoords(
-      coords: CylCoords
-  )(implicit cylinderSize: CylinderSize): ChunkRelWorld = {
+  def approximateChunkCoords(coords: CylCoords)(using CylinderSize): ChunkRelWorld =
     approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
-  }
 
   def vectorToOffset(vec: Vector3d): Offset = {
     val blockCoords = CylCoords.Offset(vec).toBlockCoordsOffset

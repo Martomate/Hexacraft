@@ -56,7 +56,7 @@ class ChunkLoadingPrioritizerPQ(
     while (addableChunks.nonEmpty && !edge.canLoad(addableChunks.head)) addableChunks.dequeue()
 
     if (addableChunks.isEmpty) {
-      val coords = CoordUtils.approximateChunkCoords(origin.pos)(origin.pos.cylSize)
+      val coords = CoordUtils.approximateChunkCoords(origin.pos)
       if (!edge.isLoaded(coords)) Some(coords) else None
     } else {
       Some(addableChunks.head).filter(distSqFunc(origin, _) <= maxDistSqInBlocks)

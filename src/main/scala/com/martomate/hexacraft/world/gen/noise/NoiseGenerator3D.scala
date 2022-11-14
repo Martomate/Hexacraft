@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.gen.noise
 
-import java.util.Random
+import com.martomate.hexacraft.util.CylinderSize
 
+import java.util.Random
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 class NoiseGenerator3D(random: Random, val numOctaves: Int, val scale: Double) {
@@ -18,8 +19,8 @@ class NoiseGenerator3D(random: Random, val numOctaves: Int, val scale: Double) {
     result
   }
 
-  def genNoiseFromCylXZ(c: CylCoords): Double = {
-    val angle = c.z / c.cylSize.radius
-    genNoise(c.x, math.sin(angle) * c.cylSize.radius, math.cos(angle) * c.cylSize.radius)
+  def genNoiseFromCylXZ(c: CylCoords)(using cylSize: CylinderSize): Double = {
+    val angle = c.z / cylSize.radius
+    genNoise(c.x, math.sin(angle) * cylSize.radius, math.cos(angle) * cylSize.radius)
   }
 }
