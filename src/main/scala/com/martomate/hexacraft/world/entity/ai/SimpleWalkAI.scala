@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.world.entity.ai
 
-import com.flowpowered.nbt._
-import com.martomate.hexacraft.util.NBTUtil
+import com.flowpowered.nbt.*
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.Entity
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using Blocks: Blocks) extends EntityAI {
+class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
   private val movingForce = new Vector3d
-  private var target: CylCoords = CylCoords(0, 0, 0)(entity.position.cylSize)
+  private var target: CylCoords = CylCoords(0, 0, 0)
 
   private var timeout: Int = 0
 
@@ -27,7 +27,7 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using Blocks: B
       val angle = math.random() * 2 * math.Pi
       val targetX = entity.position.x + reach * math.cos(angle)
       val targetZ = entity.position.z + reach * -math.sin(angle)
-      target = CylCoords(targetX, 0, targetZ)(entity.position.cylSize)
+      target = CylCoords(targetX, 0, targetZ)
 
       timeout = timeLimit
     } else {
@@ -60,7 +60,7 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using Blocks: B
   override def fromNBT(tag: CompoundTag): Unit = {
     val targetX = NBTUtil.getDouble(tag, "targetX", 0)
     val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
-    target = CylCoords(targetX, 0, targetZ)(entity.position.cylSize)
+    target = CylCoords(targetX, 0, targetZ)
     timeout = NBTUtil.getShort(tag, "timeout", 0)
   }
 

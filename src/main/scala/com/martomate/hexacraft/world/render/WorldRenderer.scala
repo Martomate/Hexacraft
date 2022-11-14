@@ -180,7 +180,7 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
   }
 
   private def makeSelectedBlockVAO: VAO = {
-    def expandFn(v: CylCoords): Seq[Float] =
+    def expandFn(v: CylCoords.Offset): Seq[Float] =
       Seq(v.x * 1.0025, (v.y - 0.25) * 1.0025 + 0.25, v.z * 1.0025).map(_.toFloat)
 
     def fn(s: Int): Seq[Float] = BlockState.getVertices(s + 2).flatMap(expandFn)

@@ -11,7 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CollisionDetectorTest extends AnyFlatSpec with Matchers {
-  given CylinderSize = new CylinderSize(8)
+  given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
@@ -180,24 +180,24 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
       detector: CollisionDetector,
       box: HexBox,
       pos: SkewCylCoords,
-      velocity: SkewCylCoords,
-      shouldStopAfter: Option[SkewCylCoords]
+      velocity: SkewCylCoords.Offset,
+      shouldStopAfter: Option[SkewCylCoords.Offset]
   ): Unit = {
     val (newPos, newVel) = detector.positionAndVelocityAfterCollision(
       box,
       pos.toCylCoords.toVector3d,
-      velocity.toCylCoords.toVector3d
+      velocity.toCylCoordsOffset.toVector3d
     )
 
     val (expectedNewPos, expectedNewVel) = shouldStopAfter match {
       case Some(coords) =>
-        (pos + coords, SkewCylCoords(0, 0, 0, fixZ = false))
+        (pos.offset(coords), SkewCylCoords.Offset(0, 0, 0))
       case None =>
-        (pos + velocity, velocity)
+        (pos.offset(velocity), velocity)
     }
 
     newPos.distance(expectedNewPos.toCylCoords.toVector3d) shouldBe 0.0 +- 1e-6
-    newVel.distance(expectedNewVel.toCylCoords.toVector3d) shouldBe 0.0 +- 1e-6
+    newVel.distance(expectedNewVel.toCylCoordsOffset.toVector3d) shouldBe 0.0 +- 1e-6
   }
 
   "positionAndVelocityAfterCollision" should "do nothing if velocity is 0" in {
@@ -233,8 +233,8 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision (it should not move)
     val position = BlockCoords(coords).toSkewCylCoords
-    val velocity = SkewCylCoords(3.2, 1.4, -0.9, fixZ = false)
-    val zeroMovement = SkewCylCoords(0, 0, 0, fixZ = false)
+    val velocity = SkewCylCoords.Offset(3.2, 1.4, -0.9)
+    val zeroMovement = SkewCylCoords.Offset(0, 0, 0)
     checkCollision(detector, box1, position, velocity, Some(zeroMovement))
   }
 
@@ -250,8 +250,8 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision (it should not move)
     val position = BlockCoords(coords).toSkewCylCoords
-    val velocity = SkewCylCoords(3.2, 1.4, -0.9, fixZ = false)
-    val zeroMovement = SkewCylCoords(0, 0, 0, fixZ = false)
+    val velocity = SkewCylCoords.Offset(3.2, 1.4, -0.9)
+    val zeroMovement = SkewCylCoords.Offset(0, 0, 0)
     checkCollision(detector, box1, position, velocity, Some(zeroMovement))
   }
 
@@ -274,7 +274,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision
     val box = new HexBox(0.15f, 0.1f, 0.3f)
-    val velocity = BlockCoords(0.2, 0.39, 0.71).toSkewCylCoords
+    val velocity = BlockCoords.Offset(0.2, 0.39, 0.71).toSkewCylCoordsOffset
     checkCollision(detector, box, BlockCoords(coords).toSkewCylCoords, velocity, None)
   }
 
@@ -298,7 +298,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision forward
     val back = BlockCoords(coords).toSkewCylCoords // right at the beginning of the first Air
-    val forwardMax = BlockCoords(2.5, 0, 0, fixZ = false).toSkewCylCoords
+    val forwardMax = BlockCoords
+      .Offset(2.5, 0, 0)
+      .toSkewCylCoordsOffset
       .offset(-box.smallRadius, 0, 0) // maximal movement from back to upper Dirt
 
     // Just before colliding
@@ -310,7 +312,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     // Check for collision backward
     val front =
       BlockCoords(coords).offset(2, 0, 0).toSkewCylCoords // right at the beginning of the last Air
-    val backwardMax = BlockCoords(-2.5, 0, 0, fixZ = false).toSkewCylCoords
+    val backwardMax = BlockCoords
+      .Offset(-2.5, 0, 0)
+      .toSkewCylCoordsOffset
       .offset(box.smallRadius, 0, 0) // maximal movement from front to lower Dirt
 
     // Just before colliding
@@ -340,7 +344,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision up
     val bottom = BlockCoords(coords).toSkewCylCoords // right at the beginning of the first Air
-    val upMax = BlockCoords(0, 3, 0, fixZ = false).toSkewCylCoords
+    val upMax = BlockCoords
+      .Offset(0, 3, 0)
+      .toSkewCylCoordsOffset
       .offset(0, -0.3, 0) // maximal movement from back to upper Dirt
 
     // Just before colliding
@@ -354,7 +360,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
       BlockCoords(coords)
         .offset(0, 2.0, 0)
         .toSkewCylCoords // right at the beginning of the last Air
-    val downMax = BlockCoords(0, -2, 0, fixZ = false).toSkewCylCoords
+    val downMax = BlockCoords
+      .Offset(0, -2, 0)
+      .toSkewCylCoordsOffset
       .offset(0, -0.1, 0) // maximal movement from front to lower Dirt
 
     // Just before colliding
@@ -384,7 +392,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision forward
     val back = BlockCoords(coords).toSkewCylCoords // right at the beginning of the first Air
-    val forwardMax = BlockCoords(0, 0, 2.5, fixZ = false).toSkewCylCoords
+    val forwardMax = BlockCoords
+      .Offset(0, 0, 2.5)
+      .toSkewCylCoordsOffset
       .offset(0, 0, -box.smallRadius) // maximal movement from back to upper Dirt
 
     // Just before colliding
@@ -396,7 +406,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     // Check for collision backward
     val front =
       BlockCoords(coords).offset(0, 0, 2).toSkewCylCoords // right at the beginning of the last Air
-    val backwardMax = BlockCoords(0, 0, -2.5, fixZ = false).toSkewCylCoords
+    val backwardMax = BlockCoords
+      .Offset(0, 0, -2.5)
+      .toSkewCylCoordsOffset
       .offset(0, 0, box.smallRadius) // maximal movement from front to lower Dirt
 
     // Just before colliding
@@ -426,7 +438,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
 
     // Check for collision forward
     val back = BlockCoords(coords).toSkewCylCoords // right at the beginning of the first Air
-    val forwardMax = BlockCoords(2.5, 0, -2.5, fixZ = false).toSkewCylCoords
+    val forwardMax = BlockCoords
+      .Offset(2.5, 0, -2.5)
+      .toSkewCylCoordsOffset
       .offset(-box.smallRadius, 0, box.smallRadius) // maximal movement from back to upper Dirt
 
     // Just before colliding
@@ -438,7 +452,9 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     // Check for collision backward
     val front =
       BlockCoords(coords).offset(2, 0, -2).toSkewCylCoords // right at the beginning of the last Air
-    val backwardMax = BlockCoords(-2.5, 0, 2.5, fixZ = false).toSkewCylCoords
+    val backwardMax = BlockCoords
+      .Offset(-2.5, 0, 2.5)
+      .toSkewCylCoordsOffset
       .offset(box.smallRadius, 0, -box.smallRadius) // maximal movement from front to lower Dirt
 
     // Just before colliding

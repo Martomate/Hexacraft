@@ -16,10 +16,10 @@ object PointHexagon:
       yield asNormalCoords(location, v, camera).toVector3d
     new PointHexagon(points)
 
-  private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords, camera: Camera)(implicit
+  private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords.Offset, camera: Camera)(implicit
       cylSize: CylinderSize
   ): NormalCoords =
-    val blockCoords = BlockCoords(blockPos).toCylCoords + offset
+    val blockCoords = BlockCoords(blockPos).toCylCoords.offset(offset)
     blockCoords.toNormalCoords(CylCoords(camera.view.position))
 
 class PointHexagon(points: Seq[Vector3d]):

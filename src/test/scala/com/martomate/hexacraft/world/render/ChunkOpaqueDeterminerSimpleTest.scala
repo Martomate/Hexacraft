@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   def make(chunk: ChunkStorage): ChunkOpaqueDeterminer =
     new ChunkOpaqueDeterminer(chunk.chunkCoords, chunk)
-  given CylinderSize = new CylinderSize(4)
+  given CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks

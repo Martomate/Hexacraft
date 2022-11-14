@@ -6,9 +6,7 @@ package com.martomate.hexacraft.util
   * @param worldSize
   *   the size exponent, <b>max-value: 20</b>
   */
-class CylinderSize(val worldSize: Int):
-  require(worldSize >= 0 && worldSize <= 20)
-
+case class CylinderSize(worldSize: Int) extends AnyVal:
   /** The number of chunks around the cylinder */
   def ringSize: Int = 1 << worldSize
 
@@ -36,3 +34,7 @@ class CylinderSize(val worldSize: Int):
 
 object CylinderSize:
   val y60: Double = Math.sqrt(3) / 2
+
+  def apply(worldSize: Int): CylinderSize =
+    require(worldSize >= 0 && worldSize <= 20)
+    new CylinderSize(worldSize)

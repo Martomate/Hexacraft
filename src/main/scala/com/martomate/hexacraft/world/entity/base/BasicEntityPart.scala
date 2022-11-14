@@ -8,7 +8,7 @@ import org.joml.{Matrix4f, Vector3f}
 
 class BasicEntityPart(
     override val box: HexBox,
-    pos: CylCoords,
+    pos: CylCoords.Offset,
     val rotation: Vector3f,
     parentPart: EntityPart = null,
     setup: JsonObject = new JsonObject

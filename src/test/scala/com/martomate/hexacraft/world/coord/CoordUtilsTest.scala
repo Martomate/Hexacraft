@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CoordUtilsTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(4)
+  implicit val cylSize: CylinderSize = CylinderSize(4)
 
   "approximateIntCoords" should "return the input when it's integers" in {
     val f = CoordUtils.approximateIntCoords _

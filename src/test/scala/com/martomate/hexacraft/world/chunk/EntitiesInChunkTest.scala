@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 class EntitiesInChunkTest extends AnyFlatSpec with Matchers {
   def make = new EntitiesInChunk(null, EntityRegistry.empty)
 
-  private implicit val sizeImpl: CylinderSize = new CylinderSize(4)
+  private implicit val sizeImpl: CylinderSize = CylinderSize(4)
   class MockEntity extends Entity {
     override def model: EntityModel = ???
 

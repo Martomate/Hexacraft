@@ -13,7 +13,7 @@ class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
   def rotation: Vector3f = view.rotation
 
   var blockCoords: BlockRelWorld = _
-  var placeInBlock: BlockCoords = _
+  var placeInBlock: BlockCoords.Offset = _
 
   updateViewMatrix()
   updateProjMatrix()

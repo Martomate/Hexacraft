@@ -18,7 +18,7 @@ object WorldInfo {
     val generalSettings: CompoundTag = NBTUtil.getCompoundTag(nbtData, "general").orNull
     val name: String =
       NBTUtil.getString(generalSettings, "name", worldSettings.name.getOrElse(saveDir.getName))
-    val size: CylinderSize = new CylinderSize(
+    val size: CylinderSize = CylinderSize(
       NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7))
     )
     val gen: WorldGenSettings =

@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCo
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import org.joml.Vector3d
 
-class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords)
+class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords.Offset)
 
 class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Blocks: Blocks):
   private val reflectionDirs = Array(
@@ -21,7 +21,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
     Offset(-1, 0, 1)
   )
   private val reflDirsCyl = reflectionDirs map { case Offset(x, y, z) =>
-    SkewCylCoords(x, y, z, fixZ = false).toCylCoords
+    SkewCylCoords.Offset(x, y, z).toCylCoordsOffset
   }
 
   private val chunkCache: ChunkCache = new ChunkCache(world)
@@ -32,7 +32,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
       targetBounds: HexBox,
       targetCoords: CylCoords
   ): Boolean =
-    val box = new MovingBox(objectBounds, objectCoords, CylCoords(0, 0, 0, fixZ = false))
+    val box = new MovingBox(objectBounds, objectCoords, CylCoords.Offset(0, 0, 0))
     distanceToCollision(box, targetBounds, targetCoords.toSkewCylCoords)._1 == 0
 
   /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
@@ -48,8 +48,8 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
     val parts = (velocity.length * 10).toInt + 1
     result._2.div(parts)
     for (_ <- 1 to parts)
-      val currentPos = CylCoords(result._1, fixZ = false)
-      val currentVelocity = CylCoords(vel, fixZ = false)
+      val currentPos = CylCoords(result._1)
+      val currentVelocity = CylCoords.Offset(vel)
       result = _collides(new MovingBox(box, currentPos, currentVelocity), 100)
     result._2.mul(parts)
     result
@@ -60,16 +60,16 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
     else if box.velocity.x == 0 && box.velocity.y == 0 && box.velocity.z == 0 // velocity is 0
     then (box.pos.toVector3d, box.velocity.toVector3d)
     else
-      val futureCoords = (box.pos + box.velocity).toBlockCoords
+      val futureCoords = box.pos.offset(box.velocity).toBlockCoords
       val (bc, fc) = CoordUtils.getEnclosingBlock(futureCoords)
-      val futurePos = BlockCoords(bc, fixZ = false).offset(fc).toCylCoords
+      val futurePos = BlockCoords(bc).offset(fc).toCylCoords
       val futureBox = new MovingBox(box.bounds, futurePos, box.velocity)
 
       minDistAndReflectionDir(futureBox, bc) match
         case Some((minDist, reflectionDir)) =>
           resultAfterCollision(box, minDist, reflectionDir, ttl)
         case None =>
-          ((box.pos + box.velocity).toVector3d, box.velocity.toVector3d) // no collision found
+          (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d) // no collision found
 
   /** This will check all blocks that could intersect the bounds of the object. If any block
     * intersects the bounds of the object it will return (dist: 0, side: -1) If no blocks are in the
@@ -109,7 +109,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
       then None
       else
         val targetBounds = blockState.blockType.bounds(blockState.metadata)
-        val targetCoords = BlockCoords(targetBlock, fixZ = false).toSkewCylCoords
+        val targetCoords = BlockCoords(targetBlock).toSkewCylCoords
 
         Some(distanceToCollision(box, targetBounds, targetCoords))
 
@@ -120,7 +120,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
       ttl: Int
   ): (Vector3d, Vector3d) =
     if minDist >= 1d // no collision found
-    then ((box.pos + box.velocity).toVector3d, box.velocity.toVector3d)
+    then (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d)
     else if reflectionDir == -1 // inside a block
     then (box.pos.toVector3d, new Vector3d)
     else resultAfterCollisionImpl(box, minDist, reflectionDir, ttl)
@@ -137,7 +137,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
     val vel = box.velocity.toVector3d.mul(1 - minDist)
     val dot = vel.dot(normal)
     vel.sub(normal.mul(dot))
-    val result = _collides(new MovingBox(box.bounds, newPos, CylCoords(vel, fixZ = false)), ttl - 1)
+    val result = _collides(new MovingBox(box.bounds, newPos, CylCoords.Offset(vel)), ttl - 1)
     result._2.mul(1 / (1 - minDist))
     result
 
@@ -155,13 +155,12 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
       _pos2: SkewCylCoords
   ): (Double, Int) =
     val pos1 = box1.pos.toSkewCylCoords
-    val vel1 = box1.velocity.toSkewCylCoords
+    val vel1 = box1.velocity.toSkewCylCoordsOffset
     // The following line ensures that the code works when z is close to 0
-    val pos2 = SkewCylCoords(
+    val pos2 = SkewCylCoords.Offset(
       _pos2.x,
       _pos2.y,
-      MathUtils.absmin(_pos2.z - pos1.z, cylSize.circumference) + pos1.z,
-      fixZ = false
+      MathUtils.absmin(_pos2.z - pos1.z, cylSize.circumference) + pos1.z
     )
 
     val x1 = pos1.x + 0.5 * pos1.z

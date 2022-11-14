@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 abstract class ChunkStorageTest(protected val storageFactory: (ChunkRelWorld, CylinderSize, Blocks) => ChunkStorage)
     extends AnyFlatSpec
     with Matchers {
-  protected implicit val cylSize: CylinderSize = new CylinderSize(4)
+  protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks

@@ -46,7 +46,7 @@ class ChunkLoadingPrioritizerSimple(
 
   override def nextAddableChunk: Option[ChunkRelWorld] = {
     if (chunksLoadingEdge.isEmpty) {
-      val coords = CoordUtils.approximateChunkCoords(origin.pos)(origin.pos.cylSize)
+      val coords = CoordUtils.approximateChunkCoords(origin.pos)
       if (!chunksLoaded(coords)) Some(coords) else None
     } else {
       chunksLoadingEdge.iterator

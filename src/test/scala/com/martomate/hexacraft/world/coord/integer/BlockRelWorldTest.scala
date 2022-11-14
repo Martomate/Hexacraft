@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class BlockRelWorldTest extends AnyFlatSpec with Matchers {
-  private val cylSize = new CylinderSize(4)
+  private val cylSize = CylinderSize(4)
   import cylSize.impl
 
   "chunk xyz" should "be correct in normal range" in {

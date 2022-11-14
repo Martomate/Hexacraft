@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
-  implicit val cylSize: CylinderSize = new CylinderSize(4)
+  implicit val cylSize: CylinderSize = CylinderSize(4)
 
   def make(origin: PosAndDir = new PosAndDir(),
            distSqFunc: (PosAndDir, ChunkRelWorld) => Double = distSqFuncDefault,
