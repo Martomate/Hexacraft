@@ -154,12 +154,12 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
           val startPos = CylCoords(world.player.position)
           val playerModel = entityModelLoader.load("player")
 
-          world.addEntity(PlayerEntity.atStartPos(startPos, world, PlayerAIFactory, playerModel))
+          world.addEntity(PlayerEntity.atStartPos(startPos, PlayerAIFactory, playerModel))
         case GLFW_KEY_L =>
           val startPos = CylCoords(world.player.position)
           val sheepModel = entityModelLoader.load("sheep")
 
-          world.addEntity(SheepEntity.atStartPos(startPos, world, SheepAIFactory, sheepModel))
+          world.addEntity(SheepEntity.atStartPos(startPos, SheepAIFactory, sheepModel))
         case GLFW_KEY_K =>
           world.removeAllEntities()
         case _ =>

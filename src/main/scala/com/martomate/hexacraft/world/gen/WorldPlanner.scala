@@ -5,10 +5,11 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener}
-import com.martomate.hexacraft.world.entity.EntityRegistry
+import com.martomate.hexacraft.world.entity.{EntityModelLoader, EntityRegistry}
 import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
 
 class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using
+    EntityModelLoader,
     CylinderSize,
     Blocks
 ) extends ChunkAddedOrRemovedListener {
@@ -35,6 +36,7 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
 
 object WorldPlanner {
   def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long, nbt: CompoundTag)(using
+      EntityModelLoader,
       CylinderSize,
       Blocks
   ): WorldPlanner = {

@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
+import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
 
 import scala.collection.mutable
 
@@ -42,17 +43,20 @@ class EntitiesInChunk {
 object EntitiesInChunk:
   def empty: EntitiesInChunk = new EntitiesInChunk
 
-  def fromNBT(nbt: CompoundTag)(world: BlocksInWorld, registry: EntityRegistry): EntitiesInChunk =
+  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using
+      EntityModelLoader,
+      CylinderSize,
+      Blocks
+  ): EntitiesInChunk =
     val res = new EntitiesInChunk
 
     for list <- NBTUtil.getList(nbt, "entities") do
       for tag <- list do
         val compTag = tag.asInstanceOf[CompoundTag]
         val entType = NBTUtil.getString(compTag, "type", "")
-        registry.get(entType).map(_.createEntity(world)) match
-          case Some(ent) =>
-            ent.fromNBT(compTag)
-            res += ent
+        registry.get(entType) match
+          case Some(factory) =>
+            res += factory.fromNBT(compTag)
           case None =>
             println(s"Entity-type '$entType' not found")
         res.needsToSave = true

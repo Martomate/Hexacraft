@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.world.entity
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
-import com.martomate.hexacraft.util.{CylinderSize, NBTSavable, NBTUtil}
-import com.martomate.hexacraft.world.CollisionDetector
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
-abstract class Entity(using CylinderSize) extends NBTSavable {
+abstract class Entity(using CylinderSize) {
   def model: EntityModel
   def id: String
 
@@ -31,15 +31,7 @@ abstract class Entity(using CylinderSize) extends NBTSavable {
     .rotateX(rotation.x.toFloat)
     .rotateY(rotation.y.toFloat)
 
-  def tick(collisionDetector: CollisionDetector): Unit = ()
-
-  def fromNBT(tag: CompoundTag): Unit = {
-    NBTUtil
-      .getCompoundTag(tag, "pos")
-      .foreach(t => position = CylCoords(NBTUtil.setVector(t, new Vector3d)))
-    NBTUtil.getCompoundTag(tag, "velocity").foreach(t => NBTUtil.setVector(t, velocity))
-    NBTUtil.getCompoundTag(tag, "rotation").foreach(t => NBTUtil.setVector(t, rotation))
-  }
+  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ()
 
   def toNBT: Seq[Tag[_]] = Seq(
     NBTUtil.makeVectorTag("pos", position.toVector3d),

@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import com.martomate.hexacraft.world.entity.EntityRegistry
+import com.martomate.hexacraft.world.entity.{EntityModelLoader, EntityRegistry}
 
 class ChunkData(var storage: ChunkStorage, val entities: EntitiesInChunk)(using CylinderSize, Blocks):
   var isDecorated: Boolean = false
@@ -27,12 +27,13 @@ object ChunkData:
   def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): ChunkData =
     new ChunkData(storage, EntitiesInChunk.empty)
 
-  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld, world: BlocksInWorld, registry: EntityRegistry)(using
+  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld, registry: EntityRegistry)(using
+      EntityModelLoader,
       CylinderSize,
       Blocks
   ): ChunkData =
     val storage = DenseChunkStorage.fromNBT(nbt)(coords)
-    val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(world, registry)
+    val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(registry)
 
     val data = new ChunkData(storage, entitiesInChunk)
     data.isDecorated = NBTUtil.getBoolean(nbt, "isDecorated", default = false)

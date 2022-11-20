@@ -47,11 +47,12 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
+  private val modelFactory: EntityModelLoader = new EntityModelLoader()
   private val entityRegistry = makeEntityRegistry()
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner =
-    WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
+    WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)(using modelFactory)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -80,11 +81,10 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   saveWorldData()
 
   private def makeEntityRegistry(): EntityRegistry = {
-    val modelFactory: EntityModelLoader = new EntityModelLoader()
     EntityRegistry.from(
       Map(
-        "player" -> (world => new PlayerEntity(modelFactory.load("player"), world, PlayerAIFactory)),
-        "sheep" -> (world => new SheepEntity(modelFactory.load("sheep"), world, SheepAIFactory))
+        "player" -> PlayerEntity,
+        "sheep" -> SheepEntity
       )
     )
   }
@@ -95,7 +95,7 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
       coords =>
         new Chunk(
           coords,
-          new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry),
+          new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry)(using modelFactory),
           lightPropagator
         ),
       coords => getChunk(coords).foreach(_.saveIfNeeded()),
@@ -209,7 +209,7 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
       performEntityRelocation()
     }
 
-    columns.values.foreach(_.tick(collisionDetector))
+    columns.values.foreach(_.tick(this, collisionDetector))
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)

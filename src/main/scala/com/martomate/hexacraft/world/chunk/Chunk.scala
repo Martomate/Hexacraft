@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPro
 import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
+import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
 import scala.annotation.tailrec
@@ -13,6 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object Chunk {
   def apply(coords: ChunkRelWorld, world: BlocksInWorld, worldProvider: WorldProvider)(using
+      EntityModelLoader,
       CylinderSize,
       Blocks
   ): Chunk = {
@@ -87,7 +88,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
     for (side <- 0 until 8)
       eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
 
-  def tick(collisionDetector: CollisionDetector): Unit = {
+  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
     chunkData.optimizeStorage()
 
     tickEntities(entities.allEntities)
@@ -95,7 +96,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
     @tailrec
     def tickEntities(ents: Iterable[Entity]): Unit = {
       if (ents.nonEmpty) {
-        ents.head.tick(collisionDetector)
+        ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
       }
     }

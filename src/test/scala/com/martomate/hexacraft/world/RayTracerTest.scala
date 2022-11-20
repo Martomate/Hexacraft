@@ -5,6 +5,7 @@ import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockStat
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import org.joml.Vector2f
 import org.scalatest.flatspec.AnyFlatSpec
@@ -14,7 +15,8 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
-  implicit val Blocks: Blocks = new Blocks
+  given Blocks: Blocks = new Blocks
+  given EntityModelLoader = new EntityModelLoader
 
   private def makeCameraProjection = new CameraProjection(70, 1.6f, 0.01f, 1000f)
 

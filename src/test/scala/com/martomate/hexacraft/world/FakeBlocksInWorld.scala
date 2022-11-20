@@ -4,6 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{BlockState, Blocks}
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
 import scala.collection.mutable
@@ -50,6 +51,7 @@ object FakeBlocksInWorld {
     new FakeBlocksInWorld(provider)
 
   def withBlocks(provider: FakeWorldProvider, blocks: Map[BlockRelWorld, BlockState])(using
+      EntityModelLoader,
       CylinderSize,
       Blocks
   ): FakeBlocksInWorld = {

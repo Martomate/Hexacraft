@@ -4,6 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.entity.EntityModelLoader
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -12,6 +13,7 @@ class ChunkCacheTest extends AnyFlatSpec with Matchers {
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   given Blocks = new Blocks
+  given EntityModelLoader = new EntityModelLoader
 
   "the cache" should "return chunks from the world" in {
     val provider = new FakeWorldProvider(1289)

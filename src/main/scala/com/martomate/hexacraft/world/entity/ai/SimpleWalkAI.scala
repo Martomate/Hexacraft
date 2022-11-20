@@ -2,12 +2,13 @@ package com.martomate.hexacraft.world.entity.ai
 
 import com.flowpowered.nbt.*
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.Entity
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
+class SimpleWalkAI[E <: Entity](input: EntityAIInput)(using CylinderSize)(using Blocks: Blocks) extends EntityAI[E] {
   private val movingForce = new Vector3d
   private var target: CylCoords = CylCoords(0, 0, 0)
 
@@ -17,7 +18,7 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using CylinderS
   private val reach: Double = 5
   private val speed = 0.2
 
-  def tick(): Unit = {
+  def tick(world: BlocksInWorld, entity: E): Unit = {
     val distSq = entity.position.distanceXZSq(target)
 
     movingForce.set(0)
@@ -33,7 +34,7 @@ class SimpleWalkAI[E <: Entity](entity: E, input: EntityAIInput)(using CylinderS
     } else {
       // move towards goal
       val blockInFront =
-        input.blockInFront(entity.position, entity.rotation, entity.boundingBox.radius + speed * 4)
+        input.blockInFront(world, entity.position, entity.rotation, entity.boundingBox.radius + speed * 4)
 
       if (blockInFront != Blocks.Air && entity.velocity.y == 0) {
         movingForce.y = 3.5

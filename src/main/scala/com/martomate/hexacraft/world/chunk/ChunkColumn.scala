@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.chunk
 
 import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
-import com.martomate.hexacraft.world.{CollisionDetector, WorldProvider}
+import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import com.martomate.hexacraft.world.block.{BlockState, Blocks}
-import com.martomate.hexacraft.world.coord.integer._
+import com.martomate.hexacraft.world.coord.integer.*
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
 import scala.collection.mutable
@@ -120,8 +120,8 @@ class ChunkColumn(
     }
   }
 
-  def tick(collisionDetector: CollisionDetector): Unit = {
-    chunks.foreachValue(_.tick(collisionDetector))
+  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
+    chunks.foreachValue(_.tick(world, collisionDetector))
   }
 
   def onReloadedResources(): Unit = {
