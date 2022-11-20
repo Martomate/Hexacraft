@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
-abstract class Entity(implicit cylSizeImpl: CylinderSize) extends NBTSavable {
+abstract class Entity(using CylinderSize) extends NBTSavable {
   def model: EntityModel
   def id: String
 

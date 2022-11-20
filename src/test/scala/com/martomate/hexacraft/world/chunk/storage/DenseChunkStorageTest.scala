@@ -7,7 +7,10 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import org.scalatest.matchers.should.Matchers
 
 class DenseChunkStorageTest
-    extends ChunkStorageTest((coords, size, _) => new DenseChunkStorage(coords)(implicitly(size)))
+    extends ChunkStorageTest(
+      (coords, size, _) => new DenseChunkStorage(coords)(using size),
+      (nbt, coords, size, _) => DenseChunkStorage.fromNBT(nbt)(coords)(using size)
+    )
     with Matchers {
 
   val makeOtherStorage: ChunkRelWorld => ChunkStorage = new SparseChunkStorage(_)
@@ -21,7 +24,7 @@ class DenseChunkStorageTest
   "the copy constructor" should "accept this storage type" in {
     val storage = makeStorage(cc0)
     fillStorage_Dirt359_Stone350(storage)
-    val dense = new DenseChunkStorage(storage)
+    val dense = DenseChunkStorage.fromStorage(storage)
 
     dense shouldBe a[DenseChunkStorage]
     dense.numBlocks shouldBe 2
@@ -30,7 +33,7 @@ class DenseChunkStorageTest
   it should "accept other storage types" in {
     val storage = makeOtherStorage(cc0)
     fillStorage_Dirt359_Stone350(storage)
-    val dense = new DenseChunkStorage(storage)
+    val dense = DenseChunkStorage.fromStorage(storage)
 
     dense shouldBe a[DenseChunkStorage]
     dense.numBlocks shouldBe 2

@@ -23,12 +23,10 @@ class ChunkGenerator(
   def loadData(): ChunkData = {
     val nbt = worldProvider.loadState(filePath)
 
-    val storage: ChunkStorage = new DenseChunkStorage(coords)
-    val data = new ChunkData(storage, world, registry)
-
     if (!nbt.getValue.isEmpty) {
-      data.fromNBT(nbt)
+      ChunkData.fromNBT(nbt)(coords, world, registry)
     } else {
+      val storage: ChunkStorage = new DenseChunkStorage(coords)
       val column = world.provideColumn(coords.getColumnRelWorld)
       val blockNoise = worldGenerator.getBlockInterpolator(coords)
 
@@ -39,8 +37,9 @@ class ChunkGenerator(
         if (noise > limit)
           storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
       }
+
+      ChunkData.fromStorage(storage)
     }
-    data
   }
 
   def saveData(data: CompoundTag): Unit = {

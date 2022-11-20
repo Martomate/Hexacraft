@@ -9,10 +9,6 @@ import scala.collection.mutable
 
 class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSize, Blocks: Blocks)
     extends ChunkStorage(_chunkCoords) {
-  def this(storage: ChunkStorage)(using cylSize: CylinderSize, Blocks: Blocks) = {
-    this(storage.chunkCoords)
-    for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
-  }
 
   private val blocks = mutable.LongMap.withDefault[BlockState](_ => BlockState.Air)
 
@@ -37,20 +33,6 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSiz
   def numBlocks: Int = blocks.size
   def isDense: Boolean = false
 
-  def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks =
-      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
-    val meta =
-      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
-
-    for (i <- blocks.indices) {
-      if (blocks(i) != 0) {
-        setBlock(BlockRelChunk(i), new BlockState(Block.byId(blocks(i)), meta(i)))
-//        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
-      }
-    }
-  }
-
   def toNBT: Seq[Tag[_]] = {
     val ids = Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
     val meta =
@@ -58,3 +40,24 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSiz
     Seq(new ByteArrayTag("blocks", ids), new ByteArrayTag("metadata", meta))
   }
 }
+
+object SparseChunkStorage:
+  def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): SparseChunkStorage =
+    val result = new SparseChunkStorage(storage.chunkCoords)
+    for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
+    result
+
+  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld)(using CylinderSize, Blocks): SparseChunkStorage =
+    val result = new SparseChunkStorage(coords)
+
+    val blocks =
+      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+    val meta =
+      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+
+    for
+      i <- blocks.indices
+      if blocks(i) != 0
+    do result.setBlock(BlockRelChunk(i), new BlockState(Block.byId(blocks(i)), meta(i)))
+
+    result

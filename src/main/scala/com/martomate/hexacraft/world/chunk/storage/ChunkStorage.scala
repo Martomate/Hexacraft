@@ -17,7 +17,6 @@ abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) extends BlockInChunk
 
   def isDense: Boolean
 
-  def fromNBT(nbt: CompoundTag): Unit
   def toNBT: Seq[Tag[_]]
 }
 

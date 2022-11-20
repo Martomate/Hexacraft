@@ -5,13 +5,7 @@ import com.martomate.hexacraft.util.{ConstantSeq, CylinderSize, NBTUtil, SmartAr
 import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderSize)
-    extends ChunkStorage(_chunkCoords) {
-  def this(storage: ChunkStorage)(implicit cylSize: CylinderSize) = {
-    this(storage.chunkCoords)
-    for (LocalBlockState(i, b) <- storage.allBlocks) setBlock(i, b)
-  }
-
+class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(using CylinderSize) extends ChunkStorage(_chunkCoords) {
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)
   private val metadata = SmartArray.withByteArray(16 * 16 * 16, 0)
   private var _numBlocks = 0
@@ -51,22 +45,6 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderS
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
 
-  def fromNBT(nbt: CompoundTag): Unit = {
-    val blocks =
-      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
-    val meta =
-      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
-
-    for (i <- blockTypes.indices) {
-      blockTypes(i) = blocks(i)
-      metadata(i) = meta(i)
-      if (blockTypes(i) != 0) {
-        _numBlocks += 1
-//        chunk.requestBlockUpdate(BlockRelChunk(i, chunk.world))
-      }
-    }
-  }
-
   def toNBT: Seq[Tag[_]] = {
     Seq(
       new ByteArrayTag("blocks", blockTypes.toArray),
@@ -74,3 +52,24 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(implicit cylSize: CylinderS
     )
   }
 }
+
+object DenseChunkStorage:
+  def fromStorage(storage: ChunkStorage)(using CylinderSize): DenseChunkStorage =
+    val result = new DenseChunkStorage(storage.chunkCoords)
+    for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
+    result
+
+  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld)(using CylinderSize): DenseChunkStorage =
+    val storage = new DenseChunkStorage(coords)
+
+    val blocks =
+      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+    val meta =
+      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+
+    for i <- storage.blockTypes.indices do
+      storage.blockTypes(i) = blocks(i)
+      storage.metadata(i) = meta(i)
+      if storage.blockTypes(i) != 0 then storage._numBlocks += 1
+
+    storage
