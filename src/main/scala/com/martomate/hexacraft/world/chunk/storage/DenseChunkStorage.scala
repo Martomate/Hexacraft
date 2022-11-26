@@ -2,10 +2,10 @@ package com.martomate.hexacraft.world.chunk.storage
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, CylinderSize, NBTUtil, SmartArray}
-import com.martomate.hexacraft.world.block.{Block, BlockState}
+import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
-class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(using CylinderSize) extends ChunkStorage(_chunkCoords) {
+class DenseChunkStorage(using CylinderSize) extends ChunkStorage {
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)
   private val metadata = SmartArray.withByteArray(16 * 16 * 16, 0)
   private var _numBlocks = 0
@@ -53,14 +53,16 @@ class DenseChunkStorage(_chunkCoords: ChunkRelWorld)(using CylinderSize) extends
   }
 }
 
-object DenseChunkStorage:
+object DenseChunkStorage extends ChunkStorageFactory:
+  override def empty(using CylinderSize, Blocks): ChunkStorage = new DenseChunkStorage
+
   def fromStorage(storage: ChunkStorage)(using CylinderSize): DenseChunkStorage =
-    val result = new DenseChunkStorage(storage.chunkCoords)
+    val result = new DenseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result
 
-  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld)(using CylinderSize): DenseChunkStorage =
-    val storage = new DenseChunkStorage(coords)
+  override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): DenseChunkStorage =
+    val storage = new DenseChunkStorage
 
     val blocks =
       NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))

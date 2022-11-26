@@ -24,9 +24,9 @@ class ChunkGenerator(
     val nbt = worldProvider.loadState(filePath)
 
     if (!nbt.getValue.isEmpty) {
-      ChunkData.fromNBT(nbt)(coords, registry)
+      ChunkData.fromNBT(nbt)(registry)
     } else {
-      val storage: ChunkStorage = new DenseChunkStorage(coords)
+      val storage: ChunkStorage = new DenseChunkStorage
       val column = world.provideColumn(coords.getColumnRelWorld)
       val blockNoise = worldGenerator.getBlockInterpolator(coords)
 

@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.flowpowered.nbt.{CompoundTag, Tag}
+import com.flowpowered.nbt.Tag
 import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.chunk.BlockInChunkAccessor
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 
-abstract class ChunkStorage(val chunkCoords: ChunkRelWorld) extends BlockInChunkAccessor {
+abstract class ChunkStorage extends BlockInChunkAccessor {
   def blockType(coords: BlockRelChunk): Block
 
   def getBlock(coords: BlockRelChunk): BlockState

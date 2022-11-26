@@ -27,12 +27,12 @@ object ChunkData:
   def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): ChunkData =
     new ChunkData(storage, EntitiesInChunk.empty)
 
-  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld, registry: EntityRegistry)(using
+  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using
       EntityModelLoader,
       CylinderSize,
       Blocks
   ): ChunkData =
-    val storage = DenseChunkStorage.fromNBT(nbt)(coords)
+    val storage = DenseChunkStorage.fromNBT(nbt)
     val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(registry)
 
     val data = new ChunkData(storage, entitiesInChunk)

@@ -7,9 +7,7 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 
 import scala.collection.mutable
 
-class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSize, Blocks: Blocks)
-    extends ChunkStorage(_chunkCoords) {
-
+class SparseChunkStorage(using cylSize: CylinderSize, Blocks: Blocks) extends ChunkStorage {
   private val blocks = mutable.LongMap.withDefault[BlockState](_ => BlockState.Air)
 
   def blockType(coords: BlockRelChunk): Block = blocks(coords.value.toShort).blockType
@@ -41,14 +39,16 @@ class SparseChunkStorage(_chunkCoords: ChunkRelWorld)(using cylSize: CylinderSiz
   }
 }
 
-object SparseChunkStorage:
+object SparseChunkStorage extends ChunkStorageFactory:
+  override def empty(using CylinderSize, Blocks): ChunkStorage = new SparseChunkStorage
+
   def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): SparseChunkStorage =
-    val result = new SparseChunkStorage(storage.chunkCoords)
+    val result = new SparseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result
 
-  def fromNBT(nbt: CompoundTag)(coords: ChunkRelWorld)(using CylinderSize, Blocks): SparseChunkStorage =
-    val result = new SparseChunkStorage(coords)
+  override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): SparseChunkStorage =
+    val result = new SparseChunkStorage
 
     val blocks =
       NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))

@@ -19,8 +19,7 @@ object Chunk {
   ): Chunk = {
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val entityRegistry = EntityRegistry.empty
-    val chunkGenerator =
-      new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
+    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
   }
 }

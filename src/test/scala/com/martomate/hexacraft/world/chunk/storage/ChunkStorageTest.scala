@@ -9,30 +9,20 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-abstract class ChunkStorageTest(
-    protected val storageFactory: (ChunkRelWorld, CylinderSize, Blocks) => ChunkStorage,
-    protected val storageFromNbt: (CompoundTag, ChunkRelWorld, CylinderSize, Blocks) => ChunkStorage
-) extends AnyFlatSpec
-    with Matchers {
+abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends AnyFlatSpec with Matchers {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
 
-  def makeStorage(coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage =
-    storageFactory(coords, implicitly[CylinderSize], implicitly[Blocks])
-
-  def makeStorageFromNbt(nbt: CompoundTag, coords: ChunkRelWorld = ChunkRelWorld(0)): ChunkStorage =
-    storageFromNbt(nbt, coords, implicitly[CylinderSize], implicitly[Blocks])
-
   "the storage" should "be correct for 0 blocks" in {
-    val storage = makeStorage()
+    val storage = storageFactory.empty
 
     storage.numBlocks shouldBe 0
   }
 
   it should "be correct for 1 block" in {
-    val storage = makeStorage()
+    val storage = storageFactory.empty
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
@@ -42,7 +32,7 @@ abstract class ChunkStorageTest(
   }
 
   it should "be correct for many blocks" in {
-    val storage = makeStorage()
+    val storage = storageFactory.empty
 
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
@@ -51,7 +41,7 @@ abstract class ChunkStorageTest(
   }
 
   "Air" should "not count as a block" in {
-    val storage = makeStorage()
+    val storage = storageFactory.empty
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
@@ -138,7 +128,7 @@ abstract class ChunkStorageTest(
         )
       )
     )
-    val storage = makeStorageFromNbt(tag, ChunkRelWorld(0))
+    val storage = storageFactory.fromNBT(tag)
 
     storage.numBlocks shouldBe 2
     storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
@@ -158,7 +148,7 @@ abstract class ChunkStorageTest(
         )
       )
     )
-    val storage = makeStorageFromNbt(tag, ChunkRelWorld(0))
+    val storage = storageFactory.fromNBT(tag)
 
     storage.numBlocks shouldBe 2
     storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
@@ -178,7 +168,7 @@ abstract class ChunkStorageTest(
         )
       )
     )
-    val storage = makeStorageFromNbt(tag, ChunkRelWorld(0))
+    val storage = storageFactory.fromNBT(tag)
 
     storage.numBlocks shouldBe 0
     storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Air
@@ -214,7 +204,7 @@ abstract class ChunkStorageTest(
   protected def cc0: ChunkRelWorld = ChunkRelWorld(0)
 
   protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
-    val storage = makeStorage(ChunkRelWorld(0))
+    val storage = storageFactory.empty
     fillStorage_Dirt359_Stone350(storage)
     storage
   }

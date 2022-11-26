@@ -9,8 +9,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
-  def make(chunk: ChunkStorage): ChunkOpaqueDeterminer =
-    new ChunkOpaqueDeterminer(chunk.chunkCoords, chunk)
+  def make(chunkCoords: ChunkRelWorld, storage: ChunkStorage): ChunkOpaqueDeterminer =
+    new ChunkOpaqueDeterminer(chunkCoords, storage)
   given CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
@@ -19,14 +19,14 @@ class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   private val coords00 = ChunkRelWorld(0, 0, 0)
 
   "canGetToSide" should "return true for empty chunk" in {
-    val det = make(new SparseChunkStorage(coords00))
+    val det = make(coords00, new SparseChunkStorage)
 
     testAllSides(det)((_, _) => true)
   }
 
   it should "return false for full chunk" in {
-    val chunk = new DenseChunkStorage(coords00)
-    val det = make(chunk)
+    val chunk = new DenseChunkStorage
+    val det = make(coords00, chunk)
 
     val block = new BlockState(Blocks.Dirt)
     for {
@@ -39,8 +39,8 @@ class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for a blocked off side" in {
-    val chunk = new DenseChunkStorage(coords00)
-    val det = make(chunk)
+    val chunk = new DenseChunkStorage
+    val det = make(coords00, chunk)
 
     val block = new BlockState(Blocks.Dirt)
     for {
@@ -54,8 +54,8 @@ class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for side on opposite side of a wall" in {
-    val chunk = new DenseChunkStorage(coords00)
-    val det = make(chunk)
+    val chunk = new DenseChunkStorage
+    val det = make(coords00, chunk)
 
     val block = new BlockState(Blocks.Dirt)
     for {
@@ -67,8 +67,8 @@ class ChunkOpaqueDeterminerSimpleTest extends AnyFlatSpec with Matchers {
   }
 
   "invalidate" should "refresh the side data" in {
-    val chunk = new DenseChunkStorage(coords00)
-    val det = make(chunk)
+    val chunk = new DenseChunkStorage
+    val det = make(coords00, chunk)
 
     testAllSides(det)((_, _) => true)
 
