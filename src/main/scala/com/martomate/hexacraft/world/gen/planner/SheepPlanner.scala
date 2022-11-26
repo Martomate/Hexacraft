@@ -34,14 +34,13 @@ class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory[?], mainSee
         val thePlan = new PlannedEntitySpawn
         val count = rand.nextInt(maxSheepPerGroup) + 1
         for (_ <- 0 until count) {
-          val sheep = sheepFactory.createEntity
           val column = world.provideColumn(coords.getColumnRelWorld)
           val cx = rand.nextInt(16)
           val cz = rand.nextInt(16)
           val y = column.heightMap(cx, cz)
           if (y >= coords.Y * 16 && y < (coords.Y + 1) * 16) {
-            sheep.position = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
-              .offset(0, 0.001f, 0)
+            val sheepStartPos = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords.offset(0, 0.001f, 0)
+            val sheep = sheepFactory.atStartPos(sheepStartPos)
             thePlan.addEntity(sheep)
           }
         }

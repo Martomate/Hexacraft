@@ -7,35 +7,47 @@ import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
-abstract class Entity(using CylinderSize) {
-  def model: EntityModel
-  def id: String
-
-  private var _position: CylCoords = CylCoords(0, 0, 0)
-  def position: CylCoords = _position
-  def position_=(pos: CylCoords): Unit = _position = pos
-
-  private var _rotation: Vector3d = new Vector3d
-  def rotation: Vector3d = _rotation
-  protected def rotation_=(rot: Vector3d): Unit = _rotation = rot
-
-  private var _velocity: Vector3d = new Vector3d
-  def velocity: Vector3d = _velocity
-  protected def velocity_=(vel: Vector3d): Unit = _velocity = vel
-
-  def boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
-
-  def transform: Matrix4f = new Matrix4f()
-    .translate(position.toVector3f)
-    .rotateZ(rotation.z.toFloat)
-    .rotateX(rotation.x.toFloat)
-    .rotateY(rotation.y.toFloat)
-
-  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ()
-
+class EntityBaseData(
+    var position: CylCoords,
+    var rotation: Vector3d = new Vector3d,
+    var velocity: Vector3d = new Vector3d
+):
   def toNBT: Seq[Tag[_]] = Seq(
     NBTUtil.makeVectorTag("pos", position.toVector3d),
     NBTUtil.makeVectorTag("velocity", velocity),
     NBTUtil.makeVectorTag("rotation", rotation)
   )
+
+object EntityBaseData:
+  def fromNBT(tag: CompoundTag)(using CylinderSize): EntityBaseData =
+    val position = NBTUtil
+      .getCompoundTag(tag, "pos")
+      .map(t => CylCoords(NBTUtil.setVector(t, new Vector3d)))
+      .getOrElse(CylCoords(0, 0, 0))
+
+    val data = new EntityBaseData(position = position)
+    NBTUtil.getCompoundTag(tag, "velocity").foreach(t => NBTUtil.setVector(t, data.velocity))
+    NBTUtil.getCompoundTag(tag, "rotation").foreach(t => NBTUtil.setVector(t, data.rotation))
+    data
+
+abstract class Entity(protected val data: EntityBaseData)(using CylinderSize) {
+  def model: EntityModel
+  def id: String
+
+  def position: CylCoords = data.position
+  def position_=(pos: CylCoords): Unit = data.position = pos
+  def rotation: Vector3d = data.rotation
+  def velocity: Vector3d = data.velocity
+
+  def boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
+
+  def transform: Matrix4f = new Matrix4f()
+    .translate(data.position.toVector3f)
+    .rotateZ(data.rotation.z.toFloat)
+    .rotateX(data.rotation.x.toFloat)
+    .rotateY(data.rotation.y.toFloat)
+
+  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ()
+
+  def toNBT: Seq[Tag[_]] = data.toNBT
 }

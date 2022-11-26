@@ -21,8 +21,8 @@ import com.martomate.hexacraft.world.coord.integer.{
   Offset
 }
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
-import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
-import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
+import com.martomate.hexacraft.world.entity.player.PlayerEntity
+import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player

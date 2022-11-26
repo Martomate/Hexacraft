@@ -18,8 +18,8 @@ import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
-import com.martomate.hexacraft.world.entity.player.{PlayerAIFactory, PlayerEntity}
-import com.martomate.hexacraft.world.entity.sheep.{SheepAIFactory, SheepEntity}
+import com.martomate.hexacraft.world.entity.player.PlayerEntity
+import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
@@ -152,14 +152,12 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
           setSelectedItemSlot(idx)
         case GLFW_KEY_P =>
           val startPos = CylCoords(world.player.position)
-          val playerModel = entityModelLoader.load("player")
 
-          world.addEntity(PlayerEntity.atStartPos(startPos, PlayerAIFactory, playerModel))
+          world.addEntity(PlayerEntity.atStartPos(startPos)(using entityModelLoader))
         case GLFW_KEY_L =>
           val startPos = CylCoords(world.player.position)
-          val sheepModel = entityModelLoader.load("sheep")
 
-          world.addEntity(SheepEntity.atStartPos(startPos, SheepAIFactory, sheepModel))
+          world.addEntity(SheepEntity.atStartPos(startPos)(using entityModelLoader))
         case GLFW_KEY_K =>
           world.removeAllEntities()
         case _ =>
