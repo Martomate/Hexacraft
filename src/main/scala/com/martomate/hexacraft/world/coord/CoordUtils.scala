@@ -3,8 +3,8 @@ package com.martomate.hexacraft.world.coord
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
-import org.joml.Vector3d
 
+import org.joml.Vector3d
 import scala.annotation.tailrec
 
 object CoordUtils {

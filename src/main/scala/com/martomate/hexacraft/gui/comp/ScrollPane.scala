@@ -3,9 +3,9 @@ package com.martomate.hexacraft.gui.comp
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.util.MathUtils
+
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
-
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(

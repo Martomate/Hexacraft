@@ -9,12 +9,12 @@ import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
-import org.joml.{Vector2i, Vector2ic}
-import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
-import org.lwjgl.opengl.{GL, GL11, GL43}
 
 import java.io.File
+import org.joml.{Vector2i, Vector2ic}
+import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
+import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.opengl.{GL, GL11, GL43}
 
 class MainWindow(isDebug: Boolean) extends GameWindowExtended:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")

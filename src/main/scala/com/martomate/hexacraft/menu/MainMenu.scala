@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.world.block.Blocks
 
 import java.io.File

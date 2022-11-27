@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
 
+import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
 import scala.collection.mutable
 
 class EntitiesInChunk {

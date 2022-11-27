@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.settings
 
-import java.util.Random
+import com.martomate.hexacraft.util.NBTUtil
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
-import com.martomate.hexacraft.util.NBTUtil
+import java.util.Random
 
 class WorldGenSettings(
     val seed: Long,

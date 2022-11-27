@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.world.render.segment.{ChunkSegs, Segment}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -48,7 +49,7 @@ class ChunkSegsTest extends AnyFlatSpec with Matchers {
     val segs = make
     segs.add(Segment(2, 43))
     segs.remove(Segment(6, 23)) shouldBe true
-    segs.toSeq shouldBe Seq(Segment(2, 4), Segment(2+4+23, 43-4-23))
+    segs.toSeq shouldBe Seq(Segment(2, 4), Segment(2 + 4 + 23, 43 - 4 - 23))
   }
   it should "not remove it if there is only partial overlap" in {
     val segs = make

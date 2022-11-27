@@ -4,6 +4,7 @@ import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.{Shader, Shaders, TextureArray}
 import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
+
 import org.joml.{Matrix4f, Vector3f}
 
 object GUIBlocksRenderer:

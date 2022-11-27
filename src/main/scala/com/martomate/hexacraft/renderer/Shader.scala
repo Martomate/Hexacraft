@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.renderer
 
 import com.martomate.hexacraft.util.Resource
+
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20

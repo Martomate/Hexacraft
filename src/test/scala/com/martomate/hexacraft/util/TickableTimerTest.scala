@@ -5,9 +5,9 @@ import org.scalatest.matchers.should.Matchers
 
 class TickableTimerTest extends AnyFlatSpec with Matchers {
   "period" must "be positive" in {
-    an [IllegalArgumentException] should be thrownBy TickableTimer(-1000)
-    an [IllegalArgumentException] should be thrownBy TickableTimer(-1)
-    an [IllegalArgumentException] should be thrownBy TickableTimer(0)
+    an[IllegalArgumentException] should be thrownBy TickableTimer(-1000)
+    an[IllegalArgumentException] should be thrownBy TickableTimer(-1)
+    an[IllegalArgumentException] should be thrownBy TickableTimer(0)
     noException should be thrownBy TickableTimer(1)
     noException should be thrownBy TickableTimer(1000)
   }
@@ -21,8 +21,8 @@ class TickableTimerTest extends AnyFlatSpec with Matchers {
   }
 
   "delay" must "be non-negative" in {
-    an [IllegalArgumentException] should be thrownBy TickableTimer(1, -1000)
-    an [IllegalArgumentException] should be thrownBy TickableTimer(1, -1)
+    an[IllegalArgumentException] should be thrownBy TickableTimer(1, -1000)
+    an[IllegalArgumentException] should be thrownBy TickableTimer(1, -1)
     noException should be thrownBy TickableTimer(1, 0)
     noException should be thrownBy TickableTimer(1, 1000)
   }

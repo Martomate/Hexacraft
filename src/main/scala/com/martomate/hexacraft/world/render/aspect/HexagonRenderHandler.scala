@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.world.render.aspect
 
 import com.martomate.hexacraft.renderer.Shader
-import java.nio.ByteBuffer
 import com.martomate.hexacraft.world.render.ChunkRenderer
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
 import com.martomate.hexacraft.world.render.buffer.vao.BlockVAORenderBufferFactory
+
+import java.nio.ByteBuffer
 
 class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
 

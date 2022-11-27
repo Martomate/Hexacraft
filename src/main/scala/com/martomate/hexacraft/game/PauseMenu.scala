@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.gui.comp.Button
 import com.martomate.hexacraft.gui.{GameWindowExtended, KeyEvent, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.gui.comp.Button
+
 import org.lwjgl.glfw.GLFW
 
 class PauseMenu(setPaused: Boolean => Unit)(implicit window: GameWindowExtended) extends MenuScene {

@@ -2,10 +2,9 @@ package com.martomate.hexacraft.util
 
 import com.flowpowered.nbt.*
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
-import org.joml.Vector3d
-
 import java.io.{File, IOException}
 import java.nio.file.Files
+import org.joml.Vector3d
 import scala.collection.immutable.ArraySeq
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}

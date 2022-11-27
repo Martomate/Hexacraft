@@ -2,15 +2,15 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
-import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.chunk.Chunk
+import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import org.joml.{Matrix4f, Vector4f}
-import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
+import org.joml.{Matrix4f, Vector4f}
+import org.lwjgl.BufferUtils
 
 class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(using CylinderSize) extends ChunkRenderer {
 

@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.block
 
-import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 import com.martomate.hexacraft.renderer.{TextureArray, TextureToLoad}
 import com.martomate.hexacraft.util.{FileUtils, ResourceWrapper}
 
+import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 import java.net.URL
 import javax.imageio.ImageIO
 import scala.collection.mutable

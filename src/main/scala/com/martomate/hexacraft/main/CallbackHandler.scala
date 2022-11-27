@@ -3,7 +3,6 @@ package com.martomate.hexacraft.main
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.GL43
 import org.lwjgl.system.MemoryUtil
-
 import scala.collection.mutable
 
 sealed trait CallbackEvent

@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.renderer.VertexData
+
+import java.nio.ByteBuffer
 import org.joml.{Vector2f, Vector3f}
 
 case class BlockVertexData(

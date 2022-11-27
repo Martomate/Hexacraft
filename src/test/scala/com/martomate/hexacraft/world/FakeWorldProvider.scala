@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.world
 
-import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo}
+
+import com.flowpowered.nbt.CompoundTag
 
 class FakeWorldProvider(seed: Long)(implicit cylSize: CylinderSize) extends WorldProvider {
   override def getWorldInfo: WorldInfo = new WorldInfo(
@@ -10,7 +11,8 @@ class FakeWorldProvider(seed: Long)(implicit cylSize: CylinderSize) extends Worl
     cylSize,
     new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001),
     NBTUtil.makeCompoundTag("", Seq.empty),
-    NBTUtil.makeCompoundTag("", Seq.empty))
+    NBTUtil.makeCompoundTag("", Seq.empty)
+  )
 
   private var fs: Map[String, CompoundTag] = Map.empty
 

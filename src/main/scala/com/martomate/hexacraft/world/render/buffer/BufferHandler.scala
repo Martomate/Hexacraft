@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.world.render.buffer
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.world.render.segment.Segment
 
+import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 class BufferHandler[T <: RenderBuffer[T]](

@@ -1,12 +1,12 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.flowpowered.nbt.ShortArrayTag
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
-import com.martomate.hexacraft.world.block.{BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.*
 import com.martomate.hexacraft.world.gen.WorldGenerator
 
+import com.flowpowered.nbt.ShortArrayTag
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

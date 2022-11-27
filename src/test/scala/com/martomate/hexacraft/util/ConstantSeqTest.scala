@@ -11,7 +11,7 @@ class ConstantSeqTest extends AnyFlatSpec with Matchers {
   }
 
   it must "be non-negative" in {
-    an [IllegalArgumentException] should be thrownBy new ConstantSeq[String](-1, "a string")
+    an[IllegalArgumentException] should be thrownBy new ConstantSeq[String](-1, "a string")
     noException should be thrownBy new ConstantSeq[String](0, "a string")
   }
 

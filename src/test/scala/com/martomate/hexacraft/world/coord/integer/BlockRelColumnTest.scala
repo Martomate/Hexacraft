@@ -12,17 +12,17 @@ class BlockRelColumnTest extends AnyFlatSpec with Matchers {
   }
 
   it should "be correct outside normal range" in {
-    val c = BlockRelColumn(-14, 3 + 5*16, 7 - 3*16, 5 + 200 * 16)
+    val c = BlockRelColumn(-14, 3 + 5 * 16, 7 - 3 * 16, 5 + 200 * 16)
     c.cx shouldBe 3
     c.cy shouldBe 7
     c.cz shouldBe 5
   }
 
   "Y" should "be correct in entire range" in {
-    BlockRelColumn(   -14, 3, 7, 5).Y shouldBe -14
-    BlockRelColumn( 0x7ff, 3, 7, 5).Y shouldBe 0x7ff
-    BlockRelColumn( 0x800, 3, 7, 5).Y shouldBe -0x800
-    BlockRelColumn( 0xfff, 3, 7, 5).Y shouldBe -1
+    BlockRelColumn(-14, 3, 7, 5).Y shouldBe -14
+    BlockRelColumn(0x7ff, 3, 7, 5).Y shouldBe 0x7ff
+    BlockRelColumn(0x800, 3, 7, 5).Y shouldBe -0x800
+    BlockRelColumn(0xfff, 3, 7, 5).Y shouldBe -1
     BlockRelColumn(0x1000, 3, 7, 5).Y shouldBe 0
   }
 

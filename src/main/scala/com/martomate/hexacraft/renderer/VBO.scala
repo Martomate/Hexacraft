@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.renderer
 
 import com.martomate.hexacraft.util.Resource
+
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl._

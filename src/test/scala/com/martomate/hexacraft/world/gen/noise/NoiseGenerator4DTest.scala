@@ -1,8 +1,9 @@
 package com.martomate.hexacraft.world.gen.noise
 
-import java.util.Random
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+
+import java.util.Random
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.MathUtils.oppositeSide
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.MathUtils.oppositeSide
 import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}

@@ -7,9 +7,11 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import scala.collection.mutable
 
 class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
-  override def make(origin: PosAndDir,
-                    distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
-                    maxDist: Double): ChunkLoadingPrioritizer =
+  override def make(
+      origin: PosAndDir,
+      distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
+      maxDist: Double
+  ): ChunkLoadingPrioritizer =
     new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
 
   "nextAddableChunk" should "return chunks in order of increasing distance after adding the first one" in {
@@ -30,8 +32,11 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
     val maxDistSqInBlocks = math.pow(maxDist * 16, 2)
     val prio = make(origin, maxDist = maxDist)
     val chunks: mutable.Set[ChunkRelWorld] =
-      mutable.HashSet(ChunkRelWorld(0, 0, 0).extendedNeighbors(4)
-        .filter(c => distSqFuncDefault(origin, c) <= maxDistSqInBlocks): _*)
+      mutable.HashSet(
+        ChunkRelWorld(0, 0, 0)
+          .extendedNeighbors(4)
+          .filter(c => distSqFuncDefault(origin, c) <= maxDistSqInBlocks): _*
+      )
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
       prio += chunk
       chunks -= chunk
@@ -43,12 +48,12 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
     val prio = make(origin).asInstanceOf[ChunkLoadingPrioritizerPQ]
     prio += prio.nextAddableChunk.get
 
-    nextAddableChunkWPos( 32,  8,  8) shouldBe Some(ChunkRelWorld( 1, 0, 0))
-    nextAddableChunkWPos(-32,  8,  8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
-    nextAddableChunkWPos(  8, 32,  8) shouldBe Some(ChunkRelWorld( 0, 1, 0))
-    nextAddableChunkWPos(  8,-32,  8) shouldBe Some(ChunkRelWorld( 0,-1, 0))
-    nextAddableChunkWPos(  8,  8, 32) shouldBe Some(ChunkRelWorld( 0, 0, 1))
-    nextAddableChunkWPos(  8,  8,-32) shouldBe Some(ChunkRelWorld( 0, 0,-1))
+    nextAddableChunkWPos(32, 8, 8) shouldBe Some(ChunkRelWorld(1, 0, 0))
+    nextAddableChunkWPos(-32, 8, 8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
+    nextAddableChunkWPos(8, 32, 8) shouldBe Some(ChunkRelWorld(0, 1, 0))
+    nextAddableChunkWPos(8, -32, 8) shouldBe Some(ChunkRelWorld(0, -1, 0))
+    nextAddableChunkWPos(8, 8, 32) shouldBe Some(ChunkRelWorld(0, 0, 1))
+    nextAddableChunkWPos(8, 8, -32) shouldBe Some(ChunkRelWorld(0, 0, -1))
 
     def nextAddableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
       origin.pos = BlockCoords(x, y, z).toCylCoords
@@ -84,12 +89,12 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
     prio += ChunkRelWorld(0, -1, 0)
     prio += ChunkRelWorld(0, 0, -1)
 
-    nextRemovableChunkWPos( 32,   8,   8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
-    nextRemovableChunkWPos(-32,   8,   8) shouldBe Some(ChunkRelWorld( 1, 0, 0))
-    nextRemovableChunkWPos(   8, 32,   8) shouldBe Some(ChunkRelWorld( 0,-1, 0))
-    nextRemovableChunkWPos(   8,-32,   8) shouldBe Some(ChunkRelWorld( 0, 1, 0))
-    nextRemovableChunkWPos(   8,   8, 32) shouldBe Some(ChunkRelWorld( 0, 0,-1))
-    nextRemovableChunkWPos(   8,   8,-32) shouldBe Some(ChunkRelWorld( 0, 0, 1))
+    nextRemovableChunkWPos(32, 8, 8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
+    nextRemovableChunkWPos(-32, 8, 8) shouldBe Some(ChunkRelWorld(1, 0, 0))
+    nextRemovableChunkWPos(8, 32, 8) shouldBe Some(ChunkRelWorld(0, -1, 0))
+    nextRemovableChunkWPos(8, -32, 8) shouldBe Some(ChunkRelWorld(0, 1, 0))
+    nextRemovableChunkWPos(8, 8, 32) shouldBe Some(ChunkRelWorld(0, 0, -1))
+    nextRemovableChunkWPos(8, 8, -32) shouldBe Some(ChunkRelWorld(0, 0, 1))
 
     def nextRemovableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
       origin.pos = BlockCoords(x, y, z).toCylCoords

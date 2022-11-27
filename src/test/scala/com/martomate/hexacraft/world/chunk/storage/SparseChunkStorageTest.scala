@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
+
+import com.flowpowered.nbt.CompoundTag
 import org.scalatest.matchers.should.Matchers
 
 class SparseChunkStorageTest extends ChunkStorageTest(SparseChunkStorage) with Matchers {

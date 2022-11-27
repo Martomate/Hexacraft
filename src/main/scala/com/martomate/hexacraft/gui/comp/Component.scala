@@ -1,9 +1,10 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
+import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, MouseClickEvent, ScrollEvent}
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
+
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
 

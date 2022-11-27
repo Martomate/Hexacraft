@@ -2,9 +2,10 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.FakeBlockLoader
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

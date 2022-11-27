@@ -9,7 +9,10 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
 
   "onPrepare" should "be called when prepare is called" in {
     var prepFired: Option[String] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), _ => throw new RuntimeException("activation before preparation"))
+    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(
+      s => prepFired = Some(s),
+      _ => throw new RuntimeException("activation before preparation")
+    )
 
     runner.prepare("1337")
     prepFired shouldBe Some("1337")
@@ -17,7 +20,10 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
 
   it should "only be called once between activations" in {
     var prepFired: Option[String] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), _ => throw new RuntimeException("activation before preparation"))
+    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(
+      s => prepFired = Some(s),
+      _ => throw new RuntimeException("activation before preparation")
+    )
 
     runner.prepare("1337")
     prepFired shouldBe Some("1337")
@@ -32,7 +38,8 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
   it must "be called before activate for onActivate to run" in {
     var prepFired: Option[String] = None
     var actFired: Option[String] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
+    val runner: PreparableRunnerWithIndex[String] =
+      new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
 
     runner.activate("1337")
     actFired shouldBe None
@@ -46,7 +53,8 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
 
   "onActivate" should "only be called once per preparation" in {
     var actFired: Option[String] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(_ => (), s => actFired = Some(s))
+    val runner: PreparableRunnerWithIndex[String] =
+      new PreparableRunnerWithIndex(indexFn)(_ => (), s => actFired = Some(s))
 
     runner.prepare("1337")
 
@@ -63,7 +71,8 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
   "it" should "be reusable" in {
     var prepFired: Option[String] = None
     var actFired: Option[String] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
+    val runner: PreparableRunnerWithIndex[String] =
+      new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
     for (_ <- 1 to 4) {
       runner.prepare("1337")
       prepFired shouldBe Some("1337")
@@ -77,7 +86,8 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
 
   it should "handle different indices separately" in {
     var prepFired: Option[(String, Boolean)] = None
-    val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some((s, true)), s => prepFired = Some((s, false)))
+    val runner: PreparableRunnerWithIndex[String] =
+      new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some((s, true)), s => prepFired = Some((s, false)))
 
     def testPrepare(idx: String): Unit = {
       runner.prepare(idx)

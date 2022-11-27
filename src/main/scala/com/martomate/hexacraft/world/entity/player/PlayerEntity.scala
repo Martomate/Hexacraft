@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world.entity.player
 
-import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
@@ -8,6 +7,8 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityFactory, EntityModel, EntityModelLoader}
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, EntityAIFactory, SimpleWalkAI}
 import com.martomate.hexacraft.world.entity.base.BasicEntity
+
+import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 
 class PlayerEntity(
     _model: EntityModel,

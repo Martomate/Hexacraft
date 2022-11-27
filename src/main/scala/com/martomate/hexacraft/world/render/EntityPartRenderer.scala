@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
+
 import org.lwjgl.opengl.{GL11, GL15}
 
 class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances) {

@@ -61,7 +61,7 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     q.enqueue("c")
     val s = q.size
     q.dequeue()
-    q.size shouldBe s-1
+    q.size shouldBe s - 1
   }
   it should "allow items to be re-added after removal" in {
     val q = new UniquePQ[String](_ => 1, defOrder)
@@ -95,15 +95,15 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     var reference = 1
     def f(s: String): Double = math.abs(s.length - reference)
     val q = new UniquePQ[String](f, defOrder)
-    q.enqueue("a")   // a   -> |1-1| = 0
-    q.enqueue("aa")  // aa  -> |2-1| = 1
+    q.enqueue("a") // a   -> |1-1| = 0
+    q.enqueue("aa") // aa  -> |2-1| = 1
     q.enqueue("aaa") // aaa -> |3-1| = 2
 
     reference = 3
     q.reprioritizeAndFilter(_ => true)
 
-    q.dequeue() shouldBe "a"   // a   -> |1-3| = 2
-    q.dequeue() shouldBe "aa"  // aa  -> |2-3| = 1
+    q.dequeue() shouldBe "a" // a   -> |1-3| = 2
+    q.dequeue() shouldBe "aa" // aa  -> |2-3| = 1
     q.dequeue() shouldBe "aaa" // aaa -> |3-3| = 0
   }
   it should "filter out items" in {
@@ -112,7 +112,7 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     q.enqueue("aa")
     q.enqueue("aaa")
 
-    q.reprioritizeAndFilter {case (_, s) => !s.equals("aa")}
+    q.reprioritizeAndFilter { case (_, s) => !s.equals("aa") }
 
     q.dequeue() shouldBe "aaa"
     q.dequeue() shouldBe "a"

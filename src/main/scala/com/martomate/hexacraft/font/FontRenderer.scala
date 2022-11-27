@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
-import org.lwjgl.opengl.{GL11, GL13, GL30}
+import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
 
+import org.lwjgl.opengl.{GL11, GL13, GL30}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

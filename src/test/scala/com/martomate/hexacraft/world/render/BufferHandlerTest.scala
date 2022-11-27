@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.world.render.buffer.{BufferHandler, RenderBuffer, RenderBufferFactory}
 import com.martomate.hexacraft.world.render.segment.Segment
+
+import java.nio.ByteBuffer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -19,7 +19,7 @@ class BufferHandlerTest extends AnyFlatSpec with Matchers {
   }
   it should "transfer the data into the correct buffer assuming no border is crossed" in {
     val dest = new LocalRenderBuffer(BufferSize)
-    val handler = make(maxInstances => dest ensuring(maxInstances == InstancesPerBuffer))
+    val handler = make(maxInstances => dest ensuring (maxInstances == InstancesPerBuffer))
     handler.set(Segment(1, 3), rampFilledBuffer(1, 13))
     dest.localBuffer.array().toSeq.take(6) shouldBe Seq(0, 1, 2, 3, 0, 0).map(_.toByte)
   }
@@ -86,4 +86,3 @@ class BufferHandlerTest extends AnyFlatSpec with Matchers {
     override def unload(): Unit = ???
   }
 }
-

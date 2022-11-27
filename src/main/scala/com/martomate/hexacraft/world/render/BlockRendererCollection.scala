@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
 import java.nio.ByteBuffer
-
 import org.lwjgl.BufferUtils
 
 class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T) {

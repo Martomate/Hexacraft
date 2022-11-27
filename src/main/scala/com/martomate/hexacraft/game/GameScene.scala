@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.gui.{
   GameWindowExtended,
   KeyEvent,
@@ -11,9 +10,11 @@ import com.martomate.hexacraft.gui.{
   Scene,
   ScrollEvent
 }
+import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
-import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
+import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
+import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
@@ -23,7 +24,7 @@ import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
-import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
+
 import org.joml.{Matrix4f, Vector2f}
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11

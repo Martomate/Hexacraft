@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
 import java.nio.ByteBuffer
-
 import org.joml.Matrix4f
 
 case class EntityPartDataForShader(

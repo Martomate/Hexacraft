@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{ConstantSeq, CylinderSize, NBTUtil}
-import com.martomate.hexacraft.world.block.{Block, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
+import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import scala.collection.mutable
 
 class SparseChunkStorage(using cylSize: CylinderSize, Blocks: Blocks) extends ChunkStorage {

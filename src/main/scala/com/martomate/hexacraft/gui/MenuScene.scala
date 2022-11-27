@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity, Scene}
+import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.renderer.TextureSingle
 
 abstract class MenuScene(using GameWindow) extends Scene with SubComponents {

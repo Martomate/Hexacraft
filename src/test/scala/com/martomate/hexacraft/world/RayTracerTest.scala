@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
+
 import org.joml.Vector2f
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

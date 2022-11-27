@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.block.fluid
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{Block, BlockBehaviour, BlockSetAndGet, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{Block, BlockBehaviour, Blocks, BlockSetAndGet, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
 object BlockBehaviourFluid {

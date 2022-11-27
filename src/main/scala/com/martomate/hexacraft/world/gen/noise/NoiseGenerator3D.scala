@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.gen.noise
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import java.util.Random
-import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 class NoiseGenerator3D(random: Random, val numOctaves: Int, val scale: Double) {
   private[this] val noiseGens = Seq.fill(numOctaves)(new SingleNoiseGen3D(random))

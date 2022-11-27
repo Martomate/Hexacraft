@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.coord
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -40,23 +41,23 @@ class CoordUtilsTest extends AnyFlatSpec with Matchers {
     val f = CoordUtils.approximateChunkCoords _
     f(BlockCoords(0, 0, 0).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
     f(BlockCoords(0, 0, cylSize.totalSize).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
-    f(BlockCoords(20*16, 0, 0).toCylCoords) shouldBe ChunkRelWorld(20, 0, 0)
-    f(BlockCoords(0, 20*16, 0).toCylCoords) shouldBe ChunkRelWorld(0, 20, 0)
-    f(BlockCoords(0, 0, 2*16).toCylCoords) shouldBe ChunkRelWorld(0, 0, 2)
-    f(BlockCoords(20*16, 10*16, 0).toCylCoords) shouldBe ChunkRelWorld(20, 10, 0)
-    f(BlockCoords(0, 10*16, 2*16).toCylCoords) shouldBe ChunkRelWorld(0, 10, 2)
-    f(BlockCoords(10*16, 0, 2*16).toCylCoords) shouldBe ChunkRelWorld(10, 0, 2)
+    f(BlockCoords(20 * 16, 0, 0).toCylCoords) shouldBe ChunkRelWorld(20, 0, 0)
+    f(BlockCoords(0, 20 * 16, 0).toCylCoords) shouldBe ChunkRelWorld(0, 20, 0)
+    f(BlockCoords(0, 0, 2 * 16).toCylCoords) shouldBe ChunkRelWorld(0, 0, 2)
+    f(BlockCoords(20 * 16, 10 * 16, 0).toCylCoords) shouldBe ChunkRelWorld(20, 10, 0)
+    f(BlockCoords(0, 10 * 16, 2 * 16).toCylCoords) shouldBe ChunkRelWorld(0, 10, 2)
+    f(BlockCoords(10 * 16, 0, 2 * 16).toCylCoords) shouldBe ChunkRelWorld(10, 0, 2)
   }
 
   it should "floor the input to it's chunk corner" in {
     val f = CoordUtils.approximateChunkCoords _
-    f(BlockCoords(0+5, 0+2, 0+15).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
-    f(BlockCoords(0+14, 0+1, cylSize.totalSize+9).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
-    f(BlockCoords(20*16+15, 0+5, 0+4).toCylCoords) shouldBe ChunkRelWorld(20, 0, 0)
-    f(BlockCoords(10, -20*16+3, 0).toCylCoords) shouldBe ChunkRelWorld(0, -20, 0)
-    f(BlockCoords(0, 0, -2*16+1).toCylCoords) shouldBe ChunkRelWorld(0, 0, cylSize.ringSize - 2)
-    f(BlockCoords(-20*16+15, 10*16, -1).toCylCoords) shouldBe ChunkRelWorld(-20, 10, cylSize.ringSize - 1)
-    f(BlockCoords(0, 10*16, 2*16+4).toCylCoords) shouldBe ChunkRelWorld(0, 10, 2)
-    f(BlockCoords(10*16+15, 15, 2*16+15).toCylCoords) shouldBe ChunkRelWorld(10, 0, 2)
+    f(BlockCoords(0 + 5, 0 + 2, 0 + 15).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
+    f(BlockCoords(0 + 14, 0 + 1, cylSize.totalSize + 9).toCylCoords) shouldBe ChunkRelWorld(0, 0, 0)
+    f(BlockCoords(20 * 16 + 15, 0 + 5, 0 + 4).toCylCoords) shouldBe ChunkRelWorld(20, 0, 0)
+    f(BlockCoords(10, -20 * 16 + 3, 0).toCylCoords) shouldBe ChunkRelWorld(0, -20, 0)
+    f(BlockCoords(0, 0, -2 * 16 + 1).toCylCoords) shouldBe ChunkRelWorld(0, 0, cylSize.ringSize - 2)
+    f(BlockCoords(-20 * 16 + 15, 10 * 16, -1).toCylCoords) shouldBe ChunkRelWorld(-20, 10, cylSize.ringSize - 1)
+    f(BlockCoords(0, 10 * 16, 2 * 16 + 4).toCylCoords) shouldBe ChunkRelWorld(0, 10, 2)
+    f(BlockCoords(10 * 16 + 15, 15, 2 * 16 + 15).toCylCoords) shouldBe ChunkRelWorld(10, 0, 2)
   }
 }

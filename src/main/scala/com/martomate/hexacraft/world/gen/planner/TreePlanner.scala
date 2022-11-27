@@ -5,13 +5,13 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
 import com.martomate.hexacraft.world.gen.feature.tree.{
   GenTree,
   HugeTreeGenStrategy,
   ShortTreeGenStrategy,
   TallTreeGenStrategy
 }
-import com.martomate.hexacraft.world.gen.{PlannedChunkChange, PlannedWorldChange}
 
 import scala.collection.mutable
 import scala.util.Random

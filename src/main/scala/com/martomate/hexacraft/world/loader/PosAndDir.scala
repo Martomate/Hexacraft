@@ -3,6 +3,7 @@ package com.martomate.hexacraft.world.loader
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.camera.CameraView
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+
 import org.joml.{Vector3d, Vector4d}
 
 class PosAndDir(implicit cylinderSize: CylinderSize) {

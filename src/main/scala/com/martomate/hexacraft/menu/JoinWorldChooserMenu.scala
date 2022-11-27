@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 
 import java.net.InetAddress
 import scala.util.Random

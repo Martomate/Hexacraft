@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.entity.{EntityModelLoader, EntityRegistry}
+
+import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 
 class ChunkData(var storage: ChunkStorage, val entities: EntitiesInChunk)(using CylinderSize, Blocks):
   var isDecorated: Boolean = false

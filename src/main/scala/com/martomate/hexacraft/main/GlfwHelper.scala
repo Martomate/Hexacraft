@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.util.PointerWrapper
+
 import org.lwjgl.glfw.GLFW
 
 class GlfwHelper:

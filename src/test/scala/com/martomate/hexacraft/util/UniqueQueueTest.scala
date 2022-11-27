@@ -52,7 +52,7 @@ class UniqueQueueTest extends AnyFlatSpec with Matchers {
     q.enqueue("c")
     val s = q.size
     q.dequeue()
-    q.size shouldBe s-1
+    q.size shouldBe s - 1
   }
 
   it should "allow items to be re-added after removal" in {

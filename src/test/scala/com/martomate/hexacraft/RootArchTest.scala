@@ -3,10 +3,9 @@ package com.martomate.hexacraft
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import com.tngtech.archunit.library.Architectures.*
+import java.nio.file.Paths
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import java.nio.file.Paths
 
 class RootArchTest extends AnyFlatSpec with Matchers {
   import ArchUnitHelpers.*

@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer._
+
 import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.opengl.{GL11, GL15}
 

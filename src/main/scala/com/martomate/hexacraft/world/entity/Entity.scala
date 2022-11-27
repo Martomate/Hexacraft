@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.world.entity
 
-import com.flowpowered.nbt.{CompoundTag, Tag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+
+import com.flowpowered.nbt.{CompoundTag, Tag}
 import org.joml.{Matrix4f, Vector3d}
 
 class EntityBaseData(

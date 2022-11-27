@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.settings
 
-import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 
+import com.flowpowered.nbt.CompoundTag
 import java.io.File
 
 class WorldInfo(

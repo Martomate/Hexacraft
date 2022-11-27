@@ -11,12 +11,12 @@ import com.martomate.hexacraft.world.chunk.ChunkAddedOrRemovedListener
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import org.joml.Vector2ic
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl._
 
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
+import org.joml.Vector2ic
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 

@@ -2,7 +2,8 @@ package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.entity.{EntityBaseData, Entity, EntityModel, EntityRegistry}
+import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModel, EntityRegistry}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

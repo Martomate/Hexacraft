@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.player
 
-import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 
+import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
 import scala.collection.mutable.ArrayBuffer
 
 class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {

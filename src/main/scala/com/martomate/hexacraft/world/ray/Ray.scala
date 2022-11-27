@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.ray
 
 import com.martomate.hexacraft.world.camera.Camera
+
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 class Ray(val v: Vector3d):

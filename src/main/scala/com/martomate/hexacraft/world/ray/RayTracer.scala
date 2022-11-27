@@ -2,13 +2,13 @@ package com.martomate.hexacraft.world.ray
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.util.MathUtils.oppositeSide
-import com.martomate.hexacraft.world.block.{BlockState, Blocks, HexBox}
+import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.block.{Blocks, BlockState, HexBox}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.BlocksInWorld
-import org.joml.{Vector2fc, Vector3d, Vector3dc, Vector4f}
 
+import org.joml.{Vector2fc, Vector3d, Vector3dc, Vector4f}
 import scala.annotation.tailrec
 
 class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using

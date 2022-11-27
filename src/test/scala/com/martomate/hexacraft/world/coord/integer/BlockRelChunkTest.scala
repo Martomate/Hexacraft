@@ -12,7 +12,7 @@ class BlockRelChunkTest extends AnyFlatSpec with Matchers {
   }
 
   it should "be correct outside normal range" in {
-    val c = BlockRelChunk(3 + 5*16, 7 - 3*16, 5 + 200 * 16)
+    val c = BlockRelChunk(3 + 5 * 16, 7 - 3 * 16, 5 + 200 * 16)
     c.cx shouldBe 3
     c.cy shouldBe 7
     c.cz shouldBe 5

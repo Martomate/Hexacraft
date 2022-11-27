@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.renderer
 
 import org.lwjgl.opengl.GL30
-
 import scala.collection.mutable.ArrayBuffer
 
 class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {

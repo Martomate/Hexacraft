@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.render.buffer.vao
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.renderer.{InstancedRenderer, Renderer, VAO, VBO}
 import com.martomate.hexacraft.world.render.buffer.RenderBuffer
+
+import java.nio.ByteBuffer
 import org.lwjgl.opengl.GL11
 
 class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer[VAORenderBuffer] {

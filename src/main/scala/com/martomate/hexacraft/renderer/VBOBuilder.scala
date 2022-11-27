@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.renderer
 
 import org.lwjgl.opengl.{GL11, GL15}
-
 import scala.collection.mutable.ArrayBuffer
 
 object VBOBuilder {

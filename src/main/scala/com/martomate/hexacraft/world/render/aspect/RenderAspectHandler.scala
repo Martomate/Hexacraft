@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.world.render.aspect
 
-import java.nio.ByteBuffer
-
 import com.martomate.hexacraft.world.render.ChunkRenderer
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
 import com.martomate.hexacraft.world.render.segment.{ChunkSegmentHandler, ChunkSegs, Segment}
+
+import java.nio.ByteBuffer
 
 class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   private val segmentHandler: ChunkSegmentHandler = new ChunkSegmentHandler

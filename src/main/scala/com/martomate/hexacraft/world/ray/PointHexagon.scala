@@ -5,6 +5,7 @@ import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+
 import org.joml.Vector3d
 
 object PointHexagon:

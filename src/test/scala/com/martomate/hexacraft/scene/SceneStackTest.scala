@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.scene
 
 import com.martomate.hexacraft.gui.SceneStack
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -1,11 +1,12 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.flowpowered.nbt.{ByteArrayTag, CompoundTag}
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.FakeBlockLoader
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+
+import com.flowpowered.nbt.{ByteArrayTag, CompoundTag}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

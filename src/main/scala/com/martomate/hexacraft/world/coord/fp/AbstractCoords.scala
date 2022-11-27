@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.util.CylinderSize
+
 import org.joml.{Vector3d, Vector3f}
 
 private[fp] abstract class AbstractCoords[T <: AbstractCoords[T]](

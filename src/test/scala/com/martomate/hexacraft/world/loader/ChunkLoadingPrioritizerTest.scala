@@ -4,16 +4,18 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
-import scala.collection.mutable
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import scala.collection.mutable
 
 abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
   implicit val cylSize: CylinderSize = CylinderSize(4)
 
-  def make(origin: PosAndDir = new PosAndDir(),
-           distSqFunc: (PosAndDir, ChunkRelWorld) => Double = distSqFuncDefault,
-           maxDist: Double = 4): ChunkLoadingPrioritizer
+  def make(
+      origin: PosAndDir = new PosAndDir(),
+      distSqFunc: (PosAndDir, ChunkRelWorld) => Double = distSqFuncDefault,
+      maxDist: Double = 4
+  ): ChunkLoadingPrioritizer
 
   protected def distSqFuncDefault(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -31,7 +33,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
     val prio = make(makePos(0, 0, 0))
     val coords = ChunkRelWorld(0, 0, 0)
     prio += coords
-    coords.neighbors should contain (prio.nextAddableChunk.get)
+    coords.neighbors should contain(prio.nextAddableChunk.get)
   }
 
   it should "be a neighbor of a loaded chunk" in {
@@ -142,7 +144,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
     val prio = make(origin)
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
-    origin.pos = makePos(10*16, 0, 0).pos
+    origin.pos = makePos(10 * 16, 0, 0).pos
     prio.nextRemovableChunk shouldBe Some(start)
   }
 

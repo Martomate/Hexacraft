@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.main
 
-import java.io.{File, FileOutputStream, PrintStream}
 import com.martomate.hexacraft.util.os.OSUtils
-import org.lwjgl.system.Configuration
 
+import java.io.{File, FileOutputStream, PrintStream}
 import java.time.OffsetDateTime
+import org.lwjgl.system.Configuration
 
 object Main:
   def main(args: Array[String]): Unit =

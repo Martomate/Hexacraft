@@ -2,6 +2,7 @@ package com.martomate.hexacraft.font.mesh
 
 import com.martomate.hexacraft.font.TextMaster
 import com.martomate.hexacraft.renderer.VAO
+
 import org.joml.{Vector2f, Vector3f, Vector3fc}
 
 /** Represents a piece of text in the game.
