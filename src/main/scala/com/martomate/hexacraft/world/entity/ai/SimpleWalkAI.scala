@@ -9,7 +9,7 @@ import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData}
 import com.flowpowered.nbt.*
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI[E <: Entity](input: EntityAIInput)(using CylinderSize)(using Blocks: Blocks) extends EntityAI[E] {
+class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
   private val movingForce = new Vector3d
   private var target: CylCoords = CylCoords(0, 0, 0)
 
@@ -18,6 +18,8 @@ class SimpleWalkAI[E <: Entity](input: EntityAIInput)(using CylinderSize)(using 
   private val timeLimit: Int = 5 * 60
   private val reach: Double = 5
   private val speed = 0.2
+
+  private val input: SimpleAIInput = new SimpleAIInput
 
   def tick(world: BlocksInWorld, entityBaseData: EntityBaseData, entityBoundingBox: HexBox): Unit = {
     val distSq = entityBaseData.position.distanceXZSq(target)
@@ -73,15 +75,14 @@ class SimpleWalkAI[E <: Entity](input: EntityAIInput)(using CylinderSize)(using 
 }
 
 object SimpleWalkAI:
-  def create[E <: Entity](using CylinderSize, Blocks): SimpleWalkAI[E] =
-    new SimpleWalkAI[E](new SimpleAIInput)
+  def create(using CylinderSize, Blocks): SimpleWalkAI = new SimpleWalkAI
 
-  def fromNBT[E <: Entity](tag: CompoundTag)(using CylinderSize, Blocks): SimpleWalkAI[E] = {
+  def fromNBT(tag: CompoundTag)(using CylinderSize, Blocks): SimpleWalkAI = {
     val targetX = NBTUtil.getDouble(tag, "targetX", 0)
     val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
     val target = NBTUtil.getShort(tag, "timeout", 0)
 
-    val ai = new SimpleWalkAI[E](new SimpleAIInput)
+    val ai = new SimpleWalkAI
     ai.target = CylCoords(targetX, 0, targetZ)
     ai.timeout = target
     ai

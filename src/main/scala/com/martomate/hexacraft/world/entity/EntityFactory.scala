@@ -8,7 +8,7 @@ import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.flowpowered.nbt.CompoundTag
 import org.joml.Vector3d
 
-trait EntityFactory[E <: Entity]:
-  def atStartPos(pos: CylCoords)(using EntityModelLoader, CylinderSize, Blocks): E
+trait EntityFactory:
+  def atStartPos(pos: CylCoords)(using CylinderSize, Blocks): Entity
 
-  def fromNBT(tag: CompoundTag)(using EntityModelLoader, CylinderSize, Blocks): E
+  def fromNBT(tag: CompoundTag)(using CylinderSize, Blocks): Entity

@@ -10,7 +10,7 @@ import com.martomate.hexacraft.world.entity.base.BasicEntityPart
 import com.eclipsesource.json.JsonObject
 import org.joml.Vector3f
 
-class HorseEntityModel(setup: JsonObject)(implicit cylinderSize: CylinderSize) extends EntityModel {
+class HorseEntityModel(setup: JsonObject)(using CylinderSize) extends EntityModel {
   private val partsNBT = setup.get("parts").asObject()
 
   def makeHexBox(r: Int, b: Int, h: Int): HexBox =

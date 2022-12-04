@@ -13,7 +13,7 @@ import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
 import scala.collection.mutable
 import scala.util.Random
 
-class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory[?], mainSeed: Long)(using
+class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mainSeed: Long)(using
     EntityModelLoader,
     CylinderSize,
     Blocks
@@ -21,7 +21,7 @@ class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory[?], mainSee
   private val plannedSheep: mutable.Map[ChunkRelWorld, PlannedEntitySpawn] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
-  private val maxSheepPerGroup = 7
+  private val maxEntitiesPerGroup = 7
 
   override def decorate(chunk: Chunk): Unit = {
     plannedSheep.get(chunk.coords).foreach(_.spawnEntities(chunk))
@@ -32,7 +32,7 @@ class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory[?], mainSee
       val rand = new Random(mainSeed ^ coords.value + 364453868)
       if (rand.nextDouble() < 0.01) {
         val thePlan = new PlannedEntitySpawn
-        val count = rand.nextInt(maxSheepPerGroup) + 1
+        val count = rand.nextInt(maxEntitiesPerGroup) + 1
         for (_ <- 0 until count) {
           val column = world.provideColumn(coords.getColumnRelWorld)
           val cx = rand.nextInt(16)
@@ -40,7 +40,7 @@ class SheepPlanner(world: BlocksInWorld, sheepFactory: EntityFactory[?], mainSee
           val y = column.heightMap(cx, cz)
           if (y >= coords.Y * 16 && y < (coords.Y + 1) * 16) {
             val sheepStartPos = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords.offset(0, 0.001f, 0)
-            val sheep = sheepFactory.atStartPos(sheepStartPos)
+            val sheep = entityFactory.atStartPos(sheepStartPos)
             thePlan.addEntity(sheep)
           }
         }

@@ -3,25 +3,13 @@ package com.martomate.hexacraft.world
 import com.martomate.hexacraft.util.*
 import com.martomate.hexacraft.world.block.{Blocks, BlockSetAndGet, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.{
-  Chunk,
-  ChunkAddedOrRemovedListener,
-  ChunkColumn,
-  ChunkColumnListener,
-  ChunkGenerator
-}
+import com.martomate.hexacraft.world.chunk.*
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{
-  BlockRelWorld,
-  ChunkRelWorld,
-  ColumnRelWorld,
-  NeighborOffsets,
-  Offset
-}
+import com.martomate.hexacraft.world.coord.integer.*
 import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
-import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
+import com.martomate.hexacraft.world.entity.player.PlayerFactory
+import com.martomate.hexacraft.world.entity.sheep.SheepFactory
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
 import com.martomate.hexacraft.world.player.Player
@@ -47,12 +35,11 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
-  private val modelFactory: EntityModelLoader = new EntityModelLoader()
-  private val entityRegistry = makeEntityRegistry()
+  given EntityModelLoader = new EntityModelLoader
+  val entityRegistry: EntityRegistry = makeEntityRegistry()
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner =
-    WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)(using modelFactory)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -83,8 +70,8 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   private def makeEntityRegistry(): EntityRegistry = {
     EntityRegistry.from(
       Map(
-        "player" -> PlayerEntity,
-        "sheep" -> SheepEntity
+        "player" -> new PlayerFactory,
+        "sheep" -> new SheepFactory
       )
     )
   }
@@ -95,7 +82,7 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
       coords =>
         new Chunk(
           coords,
-          new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry)(using modelFactory),
+          new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry),
           lightPropagator
         ),
       coords => getChunk(coords).foreach(_.saveIfNeeded()),

@@ -1,15 +1,7 @@
 package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
-import com.martomate.hexacraft.gui.{
-  GameWindowExtended,
-  KeyEvent,
-  LocationInfo,
-  LocationInfoIdentity,
-  MouseClickEvent,
-  Scene,
-  ScrollEvent
-}
+import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
@@ -19,8 +11,6 @@ import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
-import com.martomate.hexacraft.world.entity.player.PlayerEntity
-import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
@@ -83,8 +73,6 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
-
-  private val entityModelLoader = new EntityModelLoader
 
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
@@ -154,11 +142,11 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
         case GLFW_KEY_P =>
           val startPos = CylCoords(world.player.position)
 
-          world.addEntity(PlayerEntity.atStartPos(startPos)(using entityModelLoader))
+          world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
         case GLFW_KEY_L =>
           val startPos = CylCoords(world.player.position)
 
-          world.addEntity(SheepEntity.atStartPos(startPos)(using entityModelLoader))
+          world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
         case GLFW_KEY_K =>
           world.removeAllEntities()
         case _ =>

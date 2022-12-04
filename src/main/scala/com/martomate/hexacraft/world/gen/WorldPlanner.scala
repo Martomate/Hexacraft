@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkAddedOrRemovedListener}
 import com.martomate.hexacraft.world.entity.{EntityModelLoader, EntityRegistry}
-import com.martomate.hexacraft.world.gen.planner.{SheepPlanner, TreePlanner, WorldFeaturePlanner}
+import com.martomate.hexacraft.world.gen.planner.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
 import com.flowpowered.nbt.CompoundTag
 
@@ -16,7 +16,7 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
 ) extends ChunkAddedOrRemovedListener {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
-    new SheepPlanner(world, registry.get("sheep").get, mainSeed)
+    new EntityGroupPlanner(world, registry.get("sheep").get, mainSeed)
   )
 
   def decorate(chunk: Chunk): Unit = {

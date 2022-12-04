@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData}
 import com.flowpowered.nbt.{CompoundTag, Tag}
 import org.joml.Vector3dc
 
-abstract class EntityAI[E <: Entity] {
+trait EntityAI {
   def tick(world: BlocksInWorld, entityBaseData: EntityBaseData, entityBoundingBox: HexBox): Unit
   def acceleration(): Vector3dc
 

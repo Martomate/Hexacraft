@@ -10,7 +10,7 @@ import com.martomate.hexacraft.world.entity.sheep.SheepEntityModel
 
 import com.eclipsesource.json.{Json, JsonObject}
 
-class EntityModelLoader(basePath: String = "spec/entities")(using CylinderSize) {
+class EntityModelLoader(basePath: String = "spec/entities") {
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {
     case "player" => new PlayerEntityModel(setup)
     case "sheep"  => new SheepEntityModel(setup)
