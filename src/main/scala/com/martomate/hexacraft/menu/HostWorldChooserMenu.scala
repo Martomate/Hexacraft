@@ -38,7 +38,7 @@ class HostWorldChooserMenu(saveFolder: File)(implicit window: GameWindowExtended
       baseFolder
         .listFiles()
         .filter(f => new File(f, "world.dat").exists())
-        .map(saveFile => WorldInfo(saveFile))
+        .map(saveFile => WorldInfo.fromFile(saveFile))
         .toSeq
     } else {
       Seq.empty[WorldInfo]

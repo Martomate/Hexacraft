@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.chunk
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
+import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 
 import com.flowpowered.nbt.{CompoundTag, ListTag, Tag}
 import scala.collection.mutable
@@ -43,11 +43,7 @@ class EntitiesInChunk {
 object EntitiesInChunk:
   def empty: EntitiesInChunk = new EntitiesInChunk
 
-  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using
-      EntityModelLoader,
-      CylinderSize,
-      Blocks
-  ): EntitiesInChunk =
+  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using CylinderSize, Blocks): EntitiesInChunk =
     val res = new EntitiesInChunk
 
     for list <- NBTUtil.getList(nbt, "entities") do

@@ -1,17 +1,35 @@
 package com.martomate.hexacraft.world.settings
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.world.MigrationManager
 
-import com.flowpowered.nbt.CompoundTag
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import java.io.File
 
 class WorldInfo(
     val worldName: String,
     val worldSize: CylinderSize,
     val gen: WorldGenSettings,
-    val planner: CompoundTag,
     val player: CompoundTag
-)
+) {
+  def toNBT: CompoundTag = {
+    NBTUtil.makeCompoundTag(
+      "world",
+      Seq(
+        new ShortTag("version", MigrationManager.LatestVersion),
+        NBTUtil.makeCompoundTag(
+          "general",
+          Seq(
+            new ByteTag("worldSize", worldSize.worldSize.toByte),
+            new StringTag("name", worldName)
+          )
+        ),
+        gen.toNBT,
+        player
+      )
+    )
+  }
+}
 
 object WorldInfo {
   def fromNBT(nbtData: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
@@ -23,9 +41,8 @@ object WorldInfo {
     )
     val gen: WorldGenSettings =
       WorldGenSettings.fromNBT(NBTUtil.getCompoundTag(nbtData, "gen").orNull, worldSettings)
-    val planner: CompoundTag = NBTUtil.getCompoundTag(nbtData, "planner").orNull
     val player: CompoundTag = NBTUtil.getCompoundTag(nbtData, "player").orNull
 
-    new WorldInfo(name, size, gen, planner, player)
+    new WorldInfo(name, size, gen, player)
   }
 }

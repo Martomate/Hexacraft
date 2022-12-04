@@ -19,7 +19,7 @@ class WorldTest extends AnyFlatSpec with Matchers {
 
   "the world" should "not crash" in {
     val provider = new FakeWorldProvider(1234)
-    val world = new World(provider)
+    val world = World(provider)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     world.tick(camera)

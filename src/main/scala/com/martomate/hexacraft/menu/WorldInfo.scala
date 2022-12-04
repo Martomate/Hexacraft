@@ -7,7 +7,7 @@ import com.flowpowered.nbt.stream.NBTInputStream
 import java.io.{File, FileInputStream}
 
 object WorldInfo {
-  def apply(saveFile: File): WorldInfo = {
+  def fromFile(saveFile: File): WorldInfo = {
     val nbtFile = new File(saveFile, "world.dat")
     val stream = new NBTInputStream(new FileInputStream(nbtFile))
     val nbt = stream.readTag().asInstanceOf[CompoundTag]

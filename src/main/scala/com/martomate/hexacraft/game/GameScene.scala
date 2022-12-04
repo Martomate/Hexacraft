@@ -54,7 +54,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private val crosshairRenderer: Renderer =
     new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
 
-  private val world = new World(worldProvider)
+  private val world = World(worldProvider)
   import world.size.impl
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance, window.framebufferSize)

@@ -46,7 +46,8 @@ class WorldChooserMenu(saveFolder: File)(using window: GameWindowExtended, Block
   private def getWorlds: Seq[WorldInfo] = {
     val baseFolder = new File(saveFolder, "saves")
     if (baseFolder.exists()) {
-      for (saveFile <- saveFoldersSortedBy(baseFolder, -_.lastModified)) yield WorldInfo(saveFile)
+      for (saveFile <- saveFoldersSortedBy(baseFolder, -_.lastModified))
+        yield WorldInfo.fromFile(saveFile)
     } else {
       Seq.empty[WorldInfo]
     }

@@ -6,7 +6,7 @@ import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import com.martomate.hexacraft.world.entity.{EntityFactory, EntityModelLoader}
+import com.martomate.hexacraft.world.entity.EntityFactory
 import com.martomate.hexacraft.world.entity.sheep.SheepEntity
 import com.martomate.hexacraft.world.gen.PlannedEntitySpawn
 
@@ -14,7 +14,6 @@ import scala.collection.mutable
 import scala.util.Random
 
 class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mainSeed: Long)(using
-    EntityModelLoader,
     CylinderSize,
     Blocks
 ) extends WorldFeaturePlanner {

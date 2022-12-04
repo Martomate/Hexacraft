@@ -5,7 +5,7 @@ import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import com.martomate.hexacraft.world.entity.{EntityModelLoader, EntityRegistry}
+import com.martomate.hexacraft.world.entity.EntityRegistry
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
 
@@ -28,11 +28,7 @@ object ChunkData:
   def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): ChunkData =
     new ChunkData(storage, EntitiesInChunk.empty)
 
-  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using
-      EntityModelLoader,
-      CylinderSize,
-      Blocks
-  ): ChunkData =
+  def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using CylinderSize, Blocks): ChunkData =
     val storage = DenseChunkStorage.fromNBT(nbt)
     val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(registry)
 

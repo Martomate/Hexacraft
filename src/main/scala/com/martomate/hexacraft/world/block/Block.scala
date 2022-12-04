@@ -36,4 +36,6 @@ class Block(val id: Byte, val name: String, val displayName: String)(using Block
       id == other.id
     case _ => false
   }
+
+  override def toString: String = displayName
 }

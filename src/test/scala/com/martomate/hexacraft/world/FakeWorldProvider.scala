@@ -10,7 +10,6 @@ class FakeWorldProvider(seed: Long)(implicit cylSize: CylinderSize) extends Worl
     "test world",
     cylSize,
     new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001),
-    NBTUtil.makeCompoundTag("", Seq.empty),
     NBTUtil.makeCompoundTag("", Seq.empty)
   )
 

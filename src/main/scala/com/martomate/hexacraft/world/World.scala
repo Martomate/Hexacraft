@@ -24,22 +24,32 @@ object World {
   val ticksBetweenEntityRelocation = 120
 
   var shouldChillChunkLoader = false
+
+  def apply(provider: WorldProvider)(using Blocks): World = {
+    val worldInfo = provider.getWorldInfo
+    new World(provider, worldInfo, makeEntityRegistry(using worldInfo.worldSize))
+  }
+
+  def makeEntityRegistry(using CylinderSize, Blocks): EntityRegistry = {
+    given EntityModelLoader = new EntityModelLoader()
+    EntityRegistry.from(
+      Map(
+        "player" -> new PlayerFactory,
+        "sheep" -> new SheepFactory
+      )
+    )
+  }
 }
 
-class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
+class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
     extends BlockSetAndGet
     with BlocksInWorld
     with ChunkColumnListener {
-  private val worldInfo: WorldInfo = worldProvider.getWorldInfo
-
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
-  given EntityModelLoader = new EntityModelLoader
-  val entityRegistry: EntityRegistry = makeEntityRegistry()
-
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed, worldInfo.planner)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -66,15 +76,6 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   addChunkAddedOrRemovedListener(chunkLoader)
 
   saveWorldData()
-
-  private def makeEntityRegistry(): EntityRegistry = {
-    EntityRegistry.from(
-      Map(
-        "player" -> new PlayerFactory,
-        "sheep" -> new SheepFactory
-      )
-    )
-  }
 
   private def makeChunkLoader(): ChunkLoader = {
     new ChunkLoaderDistPQ(
@@ -265,27 +266,14 @@ class World(val worldProvider: WorldProvider)(using Blocks: Blocks)
   }
 
   private def saveWorldData(): Unit = {
-    val worldTag = toNBT
+    val worldTag = new WorldInfo(
+      worldInfo.worldName,
+      worldInfo.worldSize,
+      worldInfo.gen,
+      player.toNBT
+    ).toNBT
 
     worldProvider.saveState(worldTag, "world.dat")
-  }
-
-  private def toNBT: CompoundTag = {
-    NBTUtil.makeCompoundTag(
-      "world",
-      Seq(
-        new ShortTag("version", MigrationManager.LatestVersion),
-        NBTUtil.makeCompoundTag(
-          "general",
-          Seq(
-            new ByteTag("worldSize", size.worldSize.toByte),
-            new StringTag("name", worldInfo.worldName)
-          )
-        ),
-        worldGenerator.toNBT,
-        player.toNBT
-      )
-    )
   }
 
   override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit =
