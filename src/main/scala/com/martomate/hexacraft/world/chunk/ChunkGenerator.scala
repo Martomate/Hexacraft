@@ -27,18 +27,8 @@ class ChunkGenerator(
     if (!nbt.getValue.isEmpty) {
       ChunkData.fromNBT(nbt)(registry)
     } else {
-      val storage: ChunkStorage = new DenseChunkStorage
       val column = world.provideColumn(coords.getColumnRelWorld)
-      val blockNoise = worldGenerator.getBlockInterpolator(coords)
-
-      for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
-        val noise = blockNoise(i, j, k)
-        val yToGo = coords.Y * 16 + j - column.generatedHeightMap(i)(k)
-        val limit = limitForBlockNoise(yToGo)
-        if (noise > limit)
-          storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
-      }
-
+      val storage: ChunkStorage = worldGenerator.blocksInChunk(coords, column.generatedHeightMap)
       ChunkData.fromStorage(storage)
     }
   }

@@ -21,15 +21,7 @@ class ChunkColumn(
 
   def isEmpty: Boolean = chunks.isEmpty
 
-  private[world] val generatedHeightMap = {
-    val interp = worldGenerator.getHeightmapInterpolator(coords)
-
-    for (x <- 0 until 16) yield {
-      for (z <- 0 until 16) yield {
-        interp(x, z).toShort
-      }
-    }
-  }
+  private[world] val generatedHeightMap = worldGenerator.heightMap(coords)
 
   private def saveFilePath: String = s"data/${coords.value}/column.dat"
 
