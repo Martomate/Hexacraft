@@ -9,8 +9,8 @@ case class EntityPartDataForShader(
     texSize: (Int, Int),
     blockTex: Int,
     brightness: Float
-) {
-  def fill(buf: ByteBuffer): Unit = {
+):
+  def fill(buf: ByteBuffer): Unit =
     modelMatrix.get(buf)
     buf.position(buf.position() + 16 * 4)
     buf.putInt(texOffset._1)
@@ -19,5 +19,3 @@ case class EntityPartDataForShader(
     buf.putInt(texSize._2)
     buf.putInt(blockTex)
     buf.putFloat(brightness)
-  }
-}

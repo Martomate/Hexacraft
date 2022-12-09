@@ -5,37 +5,31 @@ import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
 
 import scala.collection.mutable
 
-class ChunkRenderHandler {
+class ChunkRenderHandler:
   private val hexagonHandlers: mutable.Map[Texture, HexagonRenderHandler] = mutable.Map.empty
 
   private val blockShader = Shaders.Block
   private val blockSideShader = Shaders.BlockSide
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
-  def render(): Unit = {
-    for ((t, r) <- hexagonHandlers) {
+  def render(): Unit =
+    for (t, r) <- hexagonHandlers do
       t.bind()
       r.render()
-    }
-  }
 
   def addChunk(chunk: ChunkRenderer): Unit = updateChunk(chunk)
 
-  def updateChunk(chunk: ChunkRenderer): Unit = {
+  def updateChunk(chunk: ChunkRenderer): Unit =
     chunk.updateContent()
     updateHandlers(chunk, Some(chunk.getRenderData))
-  }
 
   def removeChunk(chunk: ChunkRenderer): Unit = updateHandlers(chunk, None)
 
-  private def updateHandlers(chunk: ChunkRenderer, data: Option[ChunkRenderData]): Unit = {
+  private def updateHandlers(chunk: ChunkRenderer, data: Option[ChunkRenderData]): Unit =
     hexagonHandlers
       .getOrElseUpdate(blockTexture, new HexagonRenderHandler(blockShader, blockSideShader))
       .setChunkContent(chunk, data.map(_.blockSide))
-  }
 
-  def unload(): Unit = {
+  def unload(): Unit =
     hexagonHandlers.values.foreach(_.unload())
     hexagonHandlers.clear()
-  }
-}

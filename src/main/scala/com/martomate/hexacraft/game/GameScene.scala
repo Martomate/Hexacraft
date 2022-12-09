@@ -57,7 +57,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private val world = World(worldProvider)
   import world.size.impl
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, world.renderDistance, window.framebufferSize)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, window.framebufferSize)
   world.addChunkAddedOrRemovedListener(worldRenderer)
 
   val camera: Camera = new Camera(makeCameraProjection)
@@ -261,7 +261,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     }
 
     world.tick(camera)
-    worldRenderer.tick(camera)
+    worldRenderer.tick(camera, world.renderDistance)
 
     if debugScene != null
     then debugScene.tick()

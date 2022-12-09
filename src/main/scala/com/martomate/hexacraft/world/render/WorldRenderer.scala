@@ -20,17 +20,11 @@ import org.lwjgl.opengl._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFramebufferSize: Vector2ic)(using
-    CylinderSize
-) extends ChunkAddedOrRemovedListener {
-  private val entityShader = Shaders.Entity
-  private val entitySideShader = Shaders.EntitySide
-  private val skyShader = Shaders.Sky
-  private val selectedBlockShader = Shaders.SelectedBlock
-  private val worldCombinerShader = Shaders.WorldCombiner
+class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize)
+    extends ChunkAddedOrRemovedListener:
 
-  worldCombinerShader.setUniform1i("worldColorTexture", 0)
-  worldCombinerShader.setUniform1i("worldDepthTexture", 1)
+  Shaders.WorldCombiner.setUniform1i("worldColorTexture", 0)
+  Shaders.WorldCombiner.setUniform1i("worldDepthTexture", 1)
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
@@ -55,54 +49,45 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
   )
 
   private var _selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
-  def selectedSide: Option[Int] = _selectedBlockAndSide.flatMap(_._2)
+  private def selectedSide: Option[Int] = _selectedBlockAndSide.flatMap(_._2)
   def selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = _selectedBlockAndSide
 
-  def selectedBlockAndSide_=(blockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit = {
-    if (_selectedBlockAndSide != blockAndSide) {
-      _selectedBlockAndSide = blockAndSide
+  def selectedBlockAndSide_=(blockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit =
+    if _selectedBlockAndSide != blockAndSide then _selectedBlockAndSide = blockAndSide
 
-      blockAndSide match {
-        case Some((coords, Some(_))) =>
-          updateSelectedBlockVAO(coords)
-        case _ =>
-      }
-    }
-  }
+    blockAndSide match
+      case Some((coords, Some(_))) =>
+        updateSelectedBlockVAO(coords)
+      case _ =>
 
   private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
   private val entityRenderers: BlockRendererCollection[EntityPartRenderer] =
     new BlockRendererCollection(s => new EntityPartRenderer(s, 0))
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(
-    coords => {
-      val r = chunkRenderers.get(coords)
-      r.foreach(chunkHandler.updateChunk)
-      r.isDefined
-    },
-    renderDistance
-  )
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
+    val r = chunkRenderers.get(coords)
+    r.foreach(chunkHandler.updateChunk)
+    r.isDefined
+  })
 
-  def tick(camera: Camera): Unit = {
-    chunkRenderUpdater.update(camera)
-  }
+  def tick(camera: Camera, renderDistance: Double): Unit =
+    chunkRenderUpdater.update(camera, renderDistance)
 
-  def render(): Unit = {
+  def render(): Unit =
     mainFrameBuffer.bind()
 
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
 
-    skyShader.enable()
+    Shaders.Sky.enable()
     skyRenderer.render()
 
     // World content
     chunkHandler.render()
     renderEntities()
 
-    if (selectedSide.isDefined) {
-      selectedBlockShader.enable()
+    if selectedSide.isDefined then
+      Shaders.SelectedBlock.enable()
       selectedBlockRenderer.render()
-    }
 
     mainFrameBuffer.unbind()
     GL11.glViewport(0, 0, mainFrameBuffer.width, mainFrameBuffer.height)
@@ -112,40 +97,37 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
     GL13.glActiveTexture(GL13.GL_TEXTURE1)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainDepthTexture)
 
-    worldCombinerShader.enable()
+    Shaders.WorldCombiner.enable()
     worldCombinerRenderer.render()
 
     GL13.glActiveTexture(GL13.GL_TEXTURE1)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
     GL13.glActiveTexture(GL13.GL_TEXTURE0)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
-  }
 
-  override def onChunkAdded(chunk: Chunk): Unit = {
+  override def onChunkAdded(chunk: Chunk): Unit =
     val renderer = new ChunkRendererImpl(chunk, world)
     chunkRenderers(chunk.coords) = renderer
 //    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
-  }
-  override def onChunkRemoved(chunk: Chunk): Unit = {
-    chunkRenderers
-      .remove(chunk.coords)
-      .foreach(renderer => {
+
+  override def onChunkRemoved(chunk: Chunk): Unit =
+    chunkRenderers.remove(chunk.coords) match
+      case Some(renderer) =>
         chunkHandler.removeChunk(renderer)
         renderer.unload()
-      })
-    chunk.removeEventListener(chunkRenderUpdater)
-  }
+      case None =>
 
-  def framebufferResized(width: Int, height: Int): Unit = {
+    chunk.removeEventListener(chunkRenderUpdater)
+
+  def framebufferResized(width: Int, height: Int): Unit =
     mainFrameBuffer.unload()
 
     mainColorTexture = makeMainColorTexture(width, height)
     mainDepthTexture = makeMainDepthTexture(width, height)
     mainFrameBuffer = makeMainFrameBuffer(mainColorTexture, mainDepthTexture, width, height)
-  }
 
-  def unload(): Unit = {
+  def unload(): Unit =
     skyVAO.free()
     selectedBlockVAO.free()
     worldCombinerVAO.free()
@@ -156,17 +138,17 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
 
     GL11.glDeleteTextures(mainColorTexture)
     GL11.glDeleteTextures(mainDepthTexture)
-  }
 
-  private def renderEntities(): Unit = {
-    for (side <- 0 until 8) {
-      val sh = if (side < 2) entityShader else entitySideShader
+  private def renderEntities(): Unit =
+    for side <- 0 until 8 do
+      val sh = if side < 2 then Shaders.Entity else Shaders.EntitySide
       sh.enable()
       sh.setUniform1i("side", side)
 
       val entityDataList: mutable.Buffer[EntityDataForShader] = ListBuffer.empty
-      chunkRenderers.values.foreach(_.appendEntityRenderData(side, entityDataList += _))
-      for ((model, partLists) <- entityDataList.groupBy(_.model)) {
+      for r <- chunkRenderers.values do r.appendEntityRenderData(side, entityDataList += _)
+
+      for (model, partLists) <- entityDataList.groupBy(_.model) do
         val data = partLists.flatMap(_.parts)
 
         entityRenderers.updateContent(side, data.size) { buf =>
@@ -175,18 +157,14 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
         model.texture.bind()
         sh.setUniform1i("texSize", model.texSize)
         entityRenderers.renderBlockSide(side)
-      }
-    }
-  }
 
-  private def makeSelectedBlockVAO: VAO = {
+  private def makeSelectedBlockVAO: VAO =
     def expandFn(v: CylCoords.Offset): Seq[Float] =
       Seq(v.x * 1.0025, (v.y - 0.25) * 1.0025 + 0.25, v.z * 1.0025).map(_.toFloat)
 
     def fn(s: Int): Seq[Float] = BlockState.getVertices(s + 2).flatMap(expandFn)
 
-    val vertexData =
-      Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
+    val vertexData = Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
 
     new VAOBuilder(25)
       .addVBO(
@@ -203,9 +181,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
           .create()
       )
       .create()
-  }
 
-  private def makeSkyVAO: VAO = {
+  private def makeSkyVAO: VAO =
     new VAOBuilder(4)
       .addVBO(
         VBOBuilder(4)
@@ -214,9 +191,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
           .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
       )
       .create()
-  }
 
-  private def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): Int = {
+  private def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
     val texID = GL11.glGenTextures()
 
     TextureSingle.unbind()
@@ -236,9 +212,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
     texID
-  }
 
-  private def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): Int = {
+  private def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
     val texID = GL11.glGenTextures()
 
     TextureSingle.unbind()
@@ -258,14 +233,13 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
 
     texID
-  }
 
   private def makeMainFrameBuffer(
       colorTexture: Int,
       depthTexture: Int,
       framebufferWidth: Int,
       framebufferHeight: Int
-  ): FrameBuffer = {
+  ): FrameBuffer =
     val fb = new FrameBuffer(framebufferWidth, framebufferHeight)
     fb.bind()
     GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
@@ -273,9 +247,8 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
     GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthTexture, 0)
 
     fb
-  }
 
-  private def updateSelectedBlockVAO(coords: BlockRelWorld) = {
+  private def updateSelectedBlockVAO(coords: BlockRelWorld) =
     val blockState = world.getBlock(coords)
 
     val buf = BufferUtils
@@ -290,5 +263,3 @@ class WorldRenderer(world: BlocksInWorld, renderDistance: => Double, initialFram
 
     buf.flip()
     selectedBlockVAO.vbos(1).fill(0, buf)
-  }
-}

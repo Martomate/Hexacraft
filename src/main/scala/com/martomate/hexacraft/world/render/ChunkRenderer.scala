@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-trait ChunkRenderer {
+trait ChunkRenderer:
   def getRenderData: ChunkRenderData
 
   def updateContent(): Unit
@@ -8,4 +8,3 @@ trait ChunkRenderer {
   def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit
 
   def unload(): Unit
-}
