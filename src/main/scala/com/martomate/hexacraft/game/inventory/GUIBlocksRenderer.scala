@@ -20,7 +20,7 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     rendererLocation: () => (Float, Float) = () => (0, 0),
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 ):
-  private val guiBlockRenderer = new BlockRendererCollection(s => new FlatBlockRenderer(s, 0))
+  private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
   private val guiBlockShader: Shader = Shaders.GuiBlock
   private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")

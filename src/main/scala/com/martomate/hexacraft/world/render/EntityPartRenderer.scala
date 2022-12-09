@@ -4,20 +4,25 @@ import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBO
 
 import org.lwjgl.opengl.{GL11, GL15}
 
-class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRenderer(_side, _init_maxInstances):
-  override protected def initVAO(): VAO =
-    new VAOBuilder(verticesPerInstance, maxInstances)
+object EntityPartRenderer:
+  def forSide(side: Int): BlockRenderer =
+    val vao = initVAO(side)
+    val renderer = makeRenderer(vao)
+    BlockRenderer(side, vao, renderer)
+
+  private def initVAO(side: Int): VAO =
+    new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
       .addVBO(
-        VBOBuilder(verticesPerInstance, GL15.GL_STATIC_DRAW)
+        VBOBuilder(BlockRenderer.verticesPerInstance(side), GL15.GL_STATIC_DRAW)
           .floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
           .create()
-          .fill(0, setupBlockVBO(side))
+          .fill(0, BlockRenderer.setupBlockVBO(side))
       )
       .addVBO(
-        VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+        VBOBuilder(0, GL15.GL_DYNAMIC_DRAW, 1)
           .floats(4, 4)
           .floats(5, 4)
           .floats(6, 4)
@@ -30,4 +35,4 @@ class EntityPartRenderer(_side: Int, _init_maxInstances: Int) extends BlockRende
       )
       .create()
 
-  override val renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)

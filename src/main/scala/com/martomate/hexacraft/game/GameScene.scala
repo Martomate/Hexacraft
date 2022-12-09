@@ -68,6 +68,8 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private val playerPhysicsHandler: PlayerPhysicsHandler =
     new PlayerPhysicsHandler(world.player, world.collisionDetector)
 
+  private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
+
   private val toolbar: Toolbar = makeToolbar(world.player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
 
@@ -216,7 +218,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   override def windowTitle: String = ""
 
   override def render(transformation: GUITransformation): Unit =
-    worldRenderer.render()
+    worldRenderer.render(selectedBlockAndSide)
 
     renderCrosshair()
 
@@ -251,7 +253,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
     blockInHandRenderer.updateContent()
 
-    worldRenderer.selectedBlockAndSide = updatedMousePicker()
+    selectedBlockAndSide = updatedMousePicker()
 
     if (rightMouseButtonTimer.tick()) {
       performRightMouseClick()
@@ -280,14 +282,14 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
       yield hit
 
   private def performLeftMouseClick(): Unit =
-    worldRenderer.selectedBlockAndSide match
+    selectedBlockAndSide match
       case Some((coords, _)) =>
         if world.getBlock(coords).blockType != Blocks.Air
         then world.removeBlock(coords)
       case _ =>
 
   private def performRightMouseClick(): Unit =
-    worldRenderer.selectedBlockAndSide match
+    selectedBlockAndSide match
       case Some((coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
         tryPlacingBlockAt(coordsInFront)

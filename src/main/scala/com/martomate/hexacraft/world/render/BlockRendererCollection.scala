@@ -3,10 +3,10 @@ package com.martomate.hexacraft.world.render
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
 
-class BlockRendererCollection[T <: BlockRenderer](rendererFactory: Int => T):
-  private val blockRenderers: IndexedSeq[T] = IndexedSeq.tabulate(2)(s => rendererFactory(s))
-  private val blockSideRenderers: IndexedSeq[T] = IndexedSeq.tabulate(6)(s => rendererFactory(s + 2))
-  private val allBlockRenderers: IndexedSeq[T] = blockRenderers ++ blockSideRenderers
+class BlockRendererCollection(rendererFactory: Int => BlockRenderer):
+  private val blockRenderers: IndexedSeq[BlockRenderer] = IndexedSeq.tabulate(2)(s => rendererFactory(s))
+  private val blockSideRenderers: IndexedSeq[BlockRenderer] = IndexedSeq.tabulate(6)(s => rendererFactory(s + 2))
+  private val allBlockRenderers: IndexedSeq[BlockRenderer] = blockRenderers ++ blockSideRenderers
 
   def renderBlockSide(side: Int): Unit =
     val r = allBlockRenderers(side)
