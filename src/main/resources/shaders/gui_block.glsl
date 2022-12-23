@@ -7,6 +7,7 @@ in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
 in int vertexIndex;
+in int ss;
 
 // Per instance
 in vec2 blockPos;
@@ -19,6 +20,7 @@ out FragIn {
 	vec3 normal;
 } fragIn;
 flat out int fragBlockTex;
+flat out int fragSs;
 flat out float fragBrightness;
 
 uniform mat4 projMatrix;
@@ -38,6 +40,7 @@ void main() {
 	gl_Position.z = 0;
 	fragIn.texCoords = texCoords;
 	fragBlockTex = blockTex;
+	fragSs = ss;
 	fragBrightness = brightness;
 }
 
@@ -51,6 +54,7 @@ in FragIn {
 	vec3 normal;
 } fragIn;
 flat in int fragBlockTex;
+flat in int fragSs;
 flat in float fragBrightness;
 
 out vec4 color;
@@ -73,34 +77,29 @@ void main() {
 	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
 	vec3 cc = 1 - abs(pp);
 
-	int ss, ppp = (pp.x >= 0 ? 1 : 0) << 2 | (pp.y >= 0 ? 1 : 0) << 1 | (pp.z >= 0 ? 1 : 0);
+	int ppp = (pp.x >= 0 ? 1 : 0) << 2 | (pp.y >= 0 ? 1 : 0) << 1 | (pp.z >= 0 ? 1 : 0);
+	int ss = fragSs;
 
 	switch (ppp) {
 		case 6: // 110
 			cc.x = 1-cc.x;
-			ss = 0;
 			break;
 		case 1: // 001
 			cc.x = 1-cc.x;
-			ss = 3;
 			break;
 		case 5: // 101
 		case 7: // 111
 			cc.y = 1-cc.y;
-			ss = 1;
 			break;
 		case 2: // 010
 		case 0: // 000
 			cc.y = 1-cc.y;
-			ss = 4;
 			break;
 		case 3: // 011
 			cc.z = 1-cc.z;
-			ss = 2;
 			break;
 		case 4: // 100
 			cc.z = 1-cc.z;
-			ss = 5;
 			break;
 	}
 

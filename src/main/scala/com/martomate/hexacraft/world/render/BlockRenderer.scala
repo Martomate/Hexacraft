@@ -42,7 +42,7 @@ object BlockRenderer:
       val tex = new Vector2f((1 + (if s == 0 then -x else x)) / 2, (1 + z) / 2)
       val norm = new Vector3f(0, 1f - 2f * s, 0)
 
-      BlockVertexData(pos, tex, norm, a)
+      BlockVertexData(pos, tex, norm, a, i / 3)
 
   private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] =
     val ints = Seq(0, 1, 3, 2, 0, 3)
@@ -61,4 +61,4 @@ object BlockRenderer:
       val tex = new Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
       val norm = new Vector3f(nx, 0, nz)
 
-      BlockVertexData(pos, tex, norm, a)
+      BlockVertexData(pos, tex, norm, a, 0)

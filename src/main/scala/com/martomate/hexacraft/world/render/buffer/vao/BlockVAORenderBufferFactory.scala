@@ -24,15 +24,16 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
         .floats(1, 2)
         .floats(2, 3)
         .ints(3, 1)
+        .ints(4, 1)
         .create()
         .fill(0, BlockRenderer.setupBlockVBO(side))
     )
     .addVBO(
-      VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1) // GL_DYNAMIC_DRAW
-        .ints(4, 3)
-        .ints(5, 1)
-        .floats(6, 1)
-        .floatsArray(7, 1)(
+      VBOBuilder(maxInstances, GL15.GL_DYNAMIC_DRAW, 1)
+        .ints(5, 3)
+        .ints(6, 1)
+        .floats(7, 1)
+        .floatsArray(8, 1)(
           brightnessesPerInstance
         ) // after this index should be 'this index' + brightnessesPerInstance
         .create()
