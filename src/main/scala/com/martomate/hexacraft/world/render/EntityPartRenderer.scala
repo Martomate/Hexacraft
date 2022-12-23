@@ -35,4 +35,4 @@ object EntityPartRenderer:
       )
       .create()
 
-  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, GL11.GL_TRIANGLES)

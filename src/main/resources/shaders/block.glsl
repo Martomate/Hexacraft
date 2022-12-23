@@ -16,7 +16,7 @@ in float blockHeight;
 #if isSide
 in float brightness[4];
 #else
-in float brightness[6];
+in float brightness[7];
 #endif
 
 out FragIn {

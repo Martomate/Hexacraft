@@ -93,7 +93,7 @@ class ChunkRendererImpl(chunk: Chunk, world: BlocksInWorld)(using CylinderSize) 
       brightness: Array[Float],
       buf: ByteBuffer
   ): Unit =
-    val verticesPerInstance = if (side < 2) 6 else 4
+    val verticesPerInstance = if (side < 2) 7 else 4
 
     val chunkCoords = chunk.coords
 

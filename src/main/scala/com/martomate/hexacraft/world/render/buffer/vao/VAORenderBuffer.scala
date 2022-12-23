@@ -6,10 +6,10 @@ import com.martomate.hexacraft.world.render.buffer.RenderBuffer
 import java.nio.ByteBuffer
 import org.lwjgl.opengl.GL11
 
-class VAORenderBuffer(val vao: VAO, val idxToFill: Int) extends RenderBuffer[VAORenderBuffer] {
-  def vboToFill: VBO = vao.vbos(idxToFill)
+class VAORenderBuffer(val vao: VAO, val idxToFill: Int, renderingMode: Int) extends RenderBuffer[VAORenderBuffer] {
+  private def vboToFill: VBO = vao.vbos(idxToFill)
 
-  protected val renderer: Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP)
+  protected val renderer: Renderer = new InstancedRenderer(vao, renderingMode)
 
   override def set(start: Int, length: Int, buf: ByteBuffer): Unit = {
     val lim = buf.limit()

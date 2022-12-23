@@ -31,4 +31,4 @@ object FlatBlockRenderer:
       )
       .create()
 
-  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLES) with NoDepthTest
