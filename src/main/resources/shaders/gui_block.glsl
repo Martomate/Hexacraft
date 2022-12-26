@@ -18,6 +18,7 @@ in float brightness;
 out FragIn {
 	vec2 texCoords;
 	vec3 normal;
+	vec3 cc; // TODO: rename!
 } fragIn;
 flat out int fragBlockTex;
 flat out int fragSs;
@@ -42,6 +43,27 @@ void main() {
 	fragBlockTex = blockTex;
 	fragSs = ss;
 	fragBrightness = brightness;
+
+	float yy = (texCoords.y * 2 - 1) / y60;
+	float xx = texCoords.x + yy * 0.25;
+	yy = (yy + 1) * 0.5;
+	float zz = yy - xx + 0.5;
+	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
+	vec3 cc = 1 - abs(pp);
+
+	switch (ss % 3) {
+		case 0:
+			cc.x = 1-cc.x;
+			break;
+		case 1:
+			cc.y = 1-cc.y;
+			break;
+		case 2:
+			cc.z = 1-cc.z;
+			break;
+	}
+
+	fragIn.cc = cc;
 }
 
 #pragma shader frag
@@ -52,6 +74,7 @@ ivec2 triCoordsToStorage(in ivec2 triCoords);
 in FragIn {
 	vec2 texCoords;
 	vec3 normal;
+	vec3 cc;
 } fragIn;
 flat in int fragBlockTex;
 flat in int fragSs;
@@ -70,38 +93,8 @@ void main() {
 #if isSide
 	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
 #else
-	float yy = (fragIn.texCoords.y * 2 - 1) / y60;
-	float xx = fragIn.texCoords.x + yy * 0.25;
-	yy = (yy + 1) * 0.5;
-	float zz = yy - xx + 0.5;
-	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
-	vec3 cc = 1 - abs(pp);
-
-	int ppp = (pp.x >= 0 ? 1 : 0) << 2 | (pp.y >= 0 ? 1 : 0) << 1 | (pp.z >= 0 ? 1 : 0);
+	vec3 cc = fragIn.cc; // this is 1 - barycentric coords
 	int ss = fragSs;
-
-	switch (ppp) {
-		case 6: // 110
-			cc.x = 1-cc.x;
-			break;
-		case 1: // 001
-			cc.x = 1-cc.x;
-			break;
-		case 5: // 101
-		case 7: // 111
-			cc.y = 1-cc.y;
-			break;
-		case 2: // 010
-		case 0: // 000
-			cc.y = 1-cc.y;
-			break;
-		case 3: // 011
-			cc.z = 1-cc.z;
-			break;
-		case 4: // 100
-			cc.z = 1-cc.z;
-			break;
-	}
 
 	float factor = cc.y;
 	int xInt = int(cc.x*texSizef);
