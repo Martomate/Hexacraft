@@ -7,7 +7,7 @@ in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
 in int vertexIndex;
-in int ss;
+in int faceIndex;
 
 // Per instance
 in mat4 modelMatrix;
@@ -20,17 +20,18 @@ struct FragInFlat {
 	ivec2 texOffset;
 	ivec2 texDim;
 	int blockTex;
-	int ss;
+	int faceIndex;
 	float brightness;
 };
 
-flat out FragInFlat fragInFlat;
-
-out FragIn {
+struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
 	vec3 cc; // TODO: rename!
-} fragIn;
+};
+
+flat out FragInFlat fragInFlat;
+out FragIn fragIn;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
@@ -67,7 +68,7 @@ void main() {
 	fragInFlat.texOffset = texOffset;
 	fragInFlat.texDim = texDim;
 	fragInFlat.blockTex = blockTex;
-	fragInFlat.ss = ss;
+	fragInFlat.faceIndex = faceIndex;
 	fragInFlat.brightness = brightness;
 
 	float yy = (texCoords.y * 2 - 1) / y60;
@@ -77,7 +78,7 @@ void main() {
 	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
 	vec3 cc = 1 - abs(pp);
 
-	switch (ss % 3) {
+	switch (faceIndex % 3) {
 		case 0:
 			cc.x = 1-cc.x;
 			break;
@@ -99,17 +100,18 @@ struct FragInFlat {
 	ivec2 texOffset;
 	ivec2 texDim;
 	int blockTex;
-	int ss;
+	int faceIndex;
 	float brightness;
 };
 
-flat in FragInFlat fragInFlat;
-
-in FragIn {
+struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
 	vec3 cc;
-} fragIn;
+};
+
+flat in FragInFlat fragInFlat;
+in FragIn fragIn;
 
 out vec4 color;
 
@@ -126,7 +128,7 @@ void main() {
 	color = texelFetch(texSampler, ivec2(texX, texY) + fragInFlat.texOffset, 0);
 #else
 	vec3 cc = fragIn.cc; // this is 1 - barycentric coords
-	int ss = fragInFlat.ss;
+	int ss = fragInFlat.faceIndex;
 
     int texDim = fragInFlat.texDim.x;
 	float factor = cc.y;

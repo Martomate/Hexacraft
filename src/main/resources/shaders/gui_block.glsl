@@ -7,7 +7,7 @@ in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
 in int vertexIndex;
-in int ss;
+in int faceIndex;
 
 // Per instance
 in vec2 blockPos;
@@ -15,14 +15,20 @@ in int blockTex;
 in float blockHeight;
 in float brightness;
 
-out FragIn {
+struct FragInFlat {
+	int blockTex;
+	int faceIndex;
+	float brightness;
+};
+
+struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
 	vec3 cc; // TODO: rename!
-} fragIn;
-flat out int fragBlockTex;
-flat out int fragSs;
-flat out float fragBrightness;
+};
+
+flat out FragInFlat fragInFlat;
+out FragIn fragIn;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix = mat4(1);
@@ -40,9 +46,9 @@ void main() {
 	gl_Position.xy += vec2(blockPos.x / aspect, blockPos.y) * gl_Position.w;
 	gl_Position.z = 0;
 	fragIn.texCoords = texCoords;
-	fragBlockTex = blockTex;
-	fragSs = ss;
-	fragBrightness = brightness;
+	fragInFlat.blockTex = blockTex;
+	fragInFlat.faceIndex = faceIndex;
+	fragInFlat.brightness = brightness;
 
 	float yy = (texCoords.y * 2 - 1) / y60;
 	float xx = texCoords.x + yy * 0.25;
@@ -51,7 +57,7 @@ void main() {
 	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
 	vec3 cc = 1 - abs(pp);
 
-	switch (ss % 3) {
+	switch (faceIndex % 3) {
 		case 0:
 			cc.x = 1-cc.x;
 			break;
@@ -71,14 +77,20 @@ void main() {
 
 ivec2 triCoordsToStorage(in ivec2 triCoords);
 
-in FragIn {
+struct FragInFlat {
+	int blockTex;
+	int faceIndex;
+	float brightness;
+};
+
+struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
 	vec3 cc;
-} fragIn;
-flat in int fragBlockTex;
-flat in int fragSs;
-flat in float fragBrightness;
+};
+
+flat in FragInFlat fragInFlat;
+in FragIn fragIn;
 
 out vec4 color;
 
@@ -88,20 +100,20 @@ uniform int texSize = 32;
 
 void main() {
 	float texSizef = float(texSize);
-	int texDepth = fragBlockTex & 0xfff;
+	int texDepth = fragInFlat.blockTex & 0xfff;
 
 #if isSide
 	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
 #else
 	vec3 cc = fragIn.cc; // this is 1 - barycentric coords
-	int ss = fragSs;
+	int ss = fragInFlat.faceIndex;
 
 	float factor = cc.y;
 	int xInt = int(cc.x*texSizef);
 	int zInt = int(cc.z*texSizef);
 	float px = (xInt-zInt) / factor / texSizef;
 
-	int texOffset = (fragBlockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
+	int texOffset = (fragInFlat.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 
 	vec2 tex = vec2(1 + px, 1) * factor * texSizef;
 	int texX = clamp(int(tex.x), 0, texSize * 2);
@@ -117,7 +129,7 @@ void main() {
 
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
-	color.rgb *= fragBrightness * visibility;
+	color.rgb *= fragInFlat.brightness * visibility;
 }
 
 // Recursive storage format

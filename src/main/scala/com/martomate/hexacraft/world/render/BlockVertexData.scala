@@ -10,7 +10,7 @@ case class BlockVertexData(
     texCoords: Vector2f,
     normal: Vector3f,
     vertexIndex: Int,
-    ss: Int
+    faceIndex: Int
 ) extends VertexData {
 
   override def bytesPerVertex: Int = (3 + 2 + 3 + 1 + 1) * 4
@@ -28,6 +28,6 @@ case class BlockVertexData(
     buf.putFloat(normal.z)
 
     buf.putInt(vertexIndex)
-    buf.putInt(ss)
+    buf.putInt(faceIndex)
   }
 }

@@ -7,7 +7,7 @@ in vec3 position;
 in vec2 texCoords;
 in vec3 normal;
 in int vertexIndex;
-in int ss;
+in int faceIndex; // for top and bottom (0 to 5)
 
 // Per instance
 in ivec3 blockPos;
@@ -20,15 +20,21 @@ in float brightness[4];
 in float brightness[7];
 #endif
 
-out FragIn {
+struct FragInFlat {
+	int blockTex;
+	int faceIndex;
+};
+
+struct FragIn {
 	vec2 texCoords;
 	float mult;
 	float brightness;
 	vec3 normal;
 	vec3 ccScaled; // TODO: rename!
-} fragIn;
-flat out int fragBlockTex;
-flat out int fragSs;
+};
+
+flat out FragInFlat fragInFlat;
+out FragIn fragIn;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
@@ -64,8 +70,8 @@ void main() {
 	fragIn.texCoords.y *= blockHeight;// TODO: The blockHeight has to use exp() or something...
 #endif
 	fragIn.mult = mult;
-	fragBlockTex = blockTex;
-	fragSs = ss;
+	fragInFlat.blockTex = blockTex;
+	fragInFlat.faceIndex = faceIndex;
 	fragIn.brightness = brightness[vertexIndex];
 
 	float yy = (texCoords.y * 2 - 1) / y60;
@@ -75,7 +81,7 @@ void main() {
 	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
 	vec3 cc = 1 - abs(pp);
 
-	switch (ss % 3) {
+	switch (faceIndex % 3) {
 		case 0:
 			cc.x = 1-cc.x;
 			break;
@@ -95,15 +101,21 @@ void main() {
 
 ivec2 triCoordsToStorage(in ivec2 triCoords);
 
-in FragIn {
+struct FragInFlat {
+	int blockTex;
+	int faceIndex;
+};
+
+struct FragIn {
 	vec2 texCoords;
 	float mult;
 	float brightness;
 	vec3 normal;
 	vec3 ccScaled;
-} fragIn;
-flat in int fragBlockTex;
-flat in int fragSs;
+};
+
+flat in FragInFlat fragInFlat;
+in FragIn fragIn;
 
 out vec4 color;
 
@@ -114,21 +126,21 @@ uniform vec3 sun;
 
 void main() {
 	float texSizef = float(texSize);
-	int texDepth = fragBlockTex & 0xfff;
+	int texDepth = fragInFlat.blockTex & 0xfff;
 	vec2 texCoords = vec2(fragIn.texCoords.x / fragIn.mult, fragIn.texCoords.y / fragIn.mult);
 
 #if isSide
 	color = texture(texSampler, vec3(texCoords, texDepth));
 #else
 	vec3 cc = fragIn.ccScaled / fragIn.mult; // this is 1 - barycentric coords
-	int ss = fragSs;
+	int ss = fragInFlat.faceIndex;
 
 	float factor = cc.y;
 	int xInt = int(cc.x*texSizef);
 	int zInt = int(cc.z*texSizef);
 	float px = (xInt-zInt) / factor / texSizef;
 
-	int texOffset = (fragBlockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
+	int texOffset = (fragInFlat.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 
 	vec2 tex = vec2(1 + px, 1) * factor * texSizef;
 	int texX = clamp(int(tex.x), 0, texSize * 2);
