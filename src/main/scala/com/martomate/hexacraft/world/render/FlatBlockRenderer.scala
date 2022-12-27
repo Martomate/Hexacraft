@@ -18,17 +18,18 @@ object FlatBlockRenderer:
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
+          .ints(4, 1)
           .create()
           .fill(0, BlockRenderer.setupBlockVBO(side))
       )
       .addVBO(
         VBOBuilder(0, GL15.GL_DYNAMIC_DRAW, 1)
-          .floats(4, 2)
-          .ints(5, 1)
-          .floats(6, 1)
+          .floats(5, 2)
+          .ints(6, 1)
           .floats(7, 1)
+          .floats(8, 1)
           .create()
       )
       .create()
 
-  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLES) with NoDepthTest
