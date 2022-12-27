@@ -27,7 +27,6 @@ struct FragInFlat {
 struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
-	vec3 cc; // TODO: rename!
 };
 
 flat out FragInFlat fragInFlat;
@@ -70,27 +69,6 @@ void main() {
 	fragInFlat.blockTex = blockTex;
 	fragInFlat.faceIndex = faceIndex;
 	fragInFlat.brightness = brightness;
-
-	float yy = (texCoords.y * 2 - 1) / y60;
-	float xx = texCoords.x + yy * 0.25;
-	yy = (yy + 1) * 0.5;
-	float zz = yy - xx + 0.5;
-	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
-	vec3 cc = 1 - abs(pp);
-
-	switch (faceIndex % 3) {
-		case 0:
-			cc.x = 1-cc.x;
-			break;
-		case 1:
-			cc.y = 1-cc.y;
-			break;
-		case 2:
-			cc.z = 1-cc.z;
-			break;
-	}
-
-	fragIn.cc = cc;
 }
 
 #pragma shader frag
@@ -107,7 +85,6 @@ struct FragInFlat {
 struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
-	vec3 cc;
 };
 
 flat in FragInFlat fragInFlat;
@@ -121,13 +98,17 @@ uniform int texSize;
 uniform vec3 sun;
 
 void main() {
+	vec2 texCoords = fragIn.texCoords;
 #if isSide
-    vec2 coords = fragIn.texCoords * fragInFlat.texDim;
+    vec2 coords = texCoords * fragInFlat.texDim;
     int texX = min(int(coords.x), fragInFlat.texDim.x - 1);
     int texY = min(int(coords.y), fragInFlat.texDim.y - 1);
 	color = texelFetch(texSampler, ivec2(texX, texY) + fragInFlat.texOffset, 0);
 #else
-	vec3 cc = fragIn.cc; // this is 1 - barycentric coords
+	float yy = 1 - texCoords.y;
+	float xx = texCoords.x + texCoords.y * 0.5;
+	vec3 cc = vec3(xx, yy, 2 - xx - yy); // this is 1 - barycentric coords
+
 	int ss = fragInFlat.faceIndex;
 
     int texDim = fragInFlat.texDim.x;

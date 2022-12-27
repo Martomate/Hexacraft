@@ -30,7 +30,6 @@ struct FragIn {
 	float mult;
 	float brightness;
 	vec3 normal;
-	vec3 ccScaled; // TODO: rename!
 };
 
 flat out FragInFlat fragInFlat;
@@ -73,27 +72,6 @@ void main() {
 	fragInFlat.blockTex = blockTex;
 	fragInFlat.faceIndex = faceIndex;
 	fragIn.brightness = brightness[vertexIndex];
-
-	float yy = (texCoords.y * 2 - 1) / y60;
-	float xx = texCoords.x + yy * 0.25;
-	yy = (yy + 1) * 0.5;
-	float zz = yy - xx + 0.5;
-	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
-	vec3 cc = 1 - abs(pp);
-
-	switch (faceIndex % 3) {
-		case 0:
-			cc.x = 1-cc.x;
-			break;
-		case 1:
-			cc.y = 1-cc.y;
-			break;
-		case 2:
-			cc.z = 1-cc.z;
-			break;
-	}
-
-	fragIn.ccScaled = cc * mult;
 }
 
 #pragma shader frag
@@ -111,7 +89,6 @@ struct FragIn {
 	float mult;
 	float brightness;
 	vec3 normal;
-	vec3 ccScaled;
 };
 
 flat in FragInFlat fragInFlat;
@@ -132,7 +109,10 @@ void main() {
 #if isSide
 	color = texture(texSampler, vec3(texCoords, texDepth));
 #else
-	vec3 cc = fragIn.ccScaled / fragIn.mult; // this is 1 - barycentric coords
+	float yy = 1 - texCoords.y;
+	float xx = texCoords.x + texCoords.y * 0.5;
+	vec3 cc = vec3(xx, yy, 2 - xx - yy); // this is 1 - barycentric coords
+
 	int ss = fragInFlat.faceIndex;
 
 	float factor = cc.y;
@@ -149,8 +129,8 @@ void main() {
 	color = textureGrad(
 		texSampler,
 		vec3(vec2(stCoords) / texSizef, texDepth + texOffset),
-		dFdx(fragIn.texCoords / fragIn.mult) * 2,
-		dFdy(fragIn.texCoords / fragIn.mult) * 2);
+		dFdx(fragIn.texCoords / fragIn.mult),
+		dFdy(fragIn.texCoords / fragIn.mult));
 #endif
 
 	vec3 sunDir = normalize(sun);

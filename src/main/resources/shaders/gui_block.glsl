@@ -24,7 +24,6 @@ struct FragInFlat {
 struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
-	vec3 cc; // TODO: rename!
 };
 
 flat out FragInFlat fragInFlat;
@@ -49,27 +48,6 @@ void main() {
 	fragInFlat.blockTex = blockTex;
 	fragInFlat.faceIndex = faceIndex;
 	fragInFlat.brightness = brightness;
-
-	float yy = (texCoords.y * 2 - 1) / y60;
-	float xx = texCoords.x + yy * 0.25;
-	yy = (yy + 1) * 0.5;
-	float zz = yy - xx + 0.5;
-	vec3 pp = vec3(xx, yy, zz) * 2 - 1;
-	vec3 cc = 1 - abs(pp);
-
-	switch (faceIndex % 3) {
-		case 0:
-			cc.x = 1-cc.x;
-			break;
-		case 1:
-			cc.y = 1-cc.y;
-			break;
-		case 2:
-			cc.z = 1-cc.z;
-			break;
-	}
-
-	fragIn.cc = cc;
 }
 
 #pragma shader frag
@@ -86,7 +64,6 @@ struct FragInFlat {
 struct FragIn {
 	vec2 texCoords;
 	vec3 normal;
-	vec3 cc;
 };
 
 flat in FragInFlat fragInFlat;
@@ -101,11 +78,15 @@ uniform int texSize = 32;
 void main() {
 	float texSizef = float(texSize);
 	int texDepth = fragInFlat.blockTex & 0xfff;
+	vec2 texCoords = fragIn.texCoords;
 
 #if isSide
-	color = texture(texSampler, vec3(fragIn.texCoords, texDepth));
+	color = texture(texSampler, vec3(texCoords, texDepth));
 #else
-	vec3 cc = fragIn.cc; // this is 1 - barycentric coords
+	float yy = 1 - texCoords.y;
+	float xx = texCoords.x + texCoords.y * 0.5;
+	vec3 cc = vec3(xx, yy, 2 - xx - yy); // this is 1 - barycentric coords
+
 	int ss = fragInFlat.faceIndex;
 
 	float factor = cc.y;
@@ -123,8 +104,8 @@ void main() {
 	color = textureGrad(
 		texSampler,
 		vec3(vec2(stCoords) / texSizef, texDepth + texOffset),
-		dFdx(fragIn.texCoords) * 2,
-		dFdy(fragIn.texCoords) * 2);
+		dFdx(fragIn.texCoords),
+		dFdy(fragIn.texCoords));
 #endif
 
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
