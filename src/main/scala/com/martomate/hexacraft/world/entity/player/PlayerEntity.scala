@@ -13,7 +13,7 @@ class PlayerEntity(
     val model: EntityModel,
     initData: EntityBaseData,
     private val ai: EntityAI
-)(using CylinderSize, Blocks)
+)(using CylinderSize)
     extends Entity(initData) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
 
