@@ -31,17 +31,17 @@ case class ChunkRelWorld(value: Long) extends AnyVal {
   def Z: Int = value.toInt >> 12
   def Y: Int = (value << 20).toInt >> 20
 
-  def neighbors(implicit cylSize: CylinderSize): Seq[ChunkRelWorld] =
+  def neighbors(using CylinderSize): Seq[ChunkRelWorld] =
     ChunkRelWorld.neighborOffsets.map(offset)
 
-  def extendedNeighbors(radius: Int)(implicit cylSize: CylinderSize): Seq[ChunkRelWorld] = for {
+  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] = for {
     y <- -radius to radius
     z <- -radius to radius
     x <- -radius to radius
   } yield offset(x, y, z)
 
-  def offset(t: Offset)(implicit cylSize: CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
-  def offset(dx: Int, dy: Int, dz: Int)(implicit cylSize: CylinderSize): ChunkRelWorld =
+  def offset(t: Offset)(using CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
+  def offset(dx: Int, dy: Int, dz: Int)(using CylinderSize): ChunkRelWorld =
     ChunkRelWorld(X + dx, Y + dy, Z + dz)
 
   override def toString: String = s"($X, $Y, $Z)"

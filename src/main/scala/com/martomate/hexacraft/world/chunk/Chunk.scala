@@ -42,6 +42,9 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
   val lighting: ChunkLighting = new ChunkLighting(this, lightPropagator)
   def entities: EntitiesInChunk = chunkData.entities
 
+  def addEntity(entity: Entity): Unit = entities += entity
+  def removeEntity(entity: Entity): Unit = entities -= entity
+
   def init(): Unit = {
     requestRenderUpdate()
     requestRenderUpdateForAllNeighbors()

@@ -66,11 +66,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     ArrayBuffer.empty
   def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
     chunkAddedOrRemovedListeners += listener
-  def removeChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
-    chunkAddedOrRemovedListeners -= listener
-
-  addChunkAddedOrRemovedListener(worldPlanner)
-  addChunkAddedOrRemovedListener(chunkLoader)
 
   saveWorldData()
 
@@ -99,36 +94,41 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.getChunkRelColumn))
 
   def getBlock(coords: BlockRelWorld): BlockState =
-    getChunk(coords.getChunkRelWorld)
-      .map(_.getBlock(coords.getBlockRelChunk))
-      .getOrElse(BlockState.Air)
+    getChunk(coords.getChunkRelWorld) match
+      case Some(chunk) => chunk.getBlock(coords.getBlockRelChunk)
+      case None        => BlockState.Air
 
   def provideColumn(coords: ColumnRelWorld): ChunkColumn = ensureColumnExists(coords)
 
   def setBlock(coords: BlockRelWorld, block: BlockState): Unit =
-    getChunk(coords.getChunkRelWorld).foreach(_.setBlock(coords.getBlockRelChunk, block))
+    getChunk(coords.getChunkRelWorld) match
+      case Some(chunk) => chunk.setBlock(coords.getBlockRelChunk, block)
+      case None        =>
 
   def removeBlock(coords: BlockRelWorld): Unit =
-    getChunk(coords.getChunkRelWorld).foreach(_.removeBlock(coords.getBlockRelChunk))
+    getChunk(coords.getChunkRelWorld) match
+      case Some(chunk) => chunk.removeBlock(coords.getBlockRelChunk)
+      case None        =>
 
   def addEntity(entity: Entity): Unit =
-    chunkOfEntity(entity).foreach(_.entities += entity)
+    chunkOfEntity(entity) match
+      case Some(chunk) => chunk.addEntity(entity)
+      case None        =>
 
   def removeEntity(entity: Entity): Unit =
-    chunkOfEntity(entity).foreach(_.entities -= entity)
+    chunkOfEntity(entity) match
+      case Some(chunk) => chunk.removeEntity(entity)
+      case None        =>
 
   def removeAllEntities(): Unit =
     for
       col <- columns.values
       ch <- col.allChunks
       e <- ch.entities.allEntities.toSeq
-    do ch.entities -= e
+    do ch.removeEntity(e)
 
   private def chunkOfEntity(entity: Entity): Option[Chunk] =
-    getApproximateChunk(entity.position)
-
-  private def getApproximateChunk(coords: CylCoords): Option[Chunk] =
-    getChunk(CoordUtils.approximateChunkCoords(coords))
+    getChunk(CoordUtils.approximateChunkCoords(entity.position))
 
   private def getHeight(x: Int, z: Int): Int =
     val coords = ColumnRelWorld(x >> 4, z >> 4)
@@ -136,7 +136,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   def setChunk(ch: Chunk): Unit =
     ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
-    chunkAddedOrRemovedListeners.foreach(_.onChunkAdded(ch))
+    worldPlanner.onChunkAdded(ch)
+    chunkLoader.onChunkAdded(ch)
+    for l <- chunkAddedOrRemovedListeners do l.onChunkAdded(ch)
     ch.init()
     worldPlanner.decorate(ch)
 
@@ -146,14 +148,17 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       for side <- 0 until 8 do
         if block.coords.onChunkEdge(side) then
           val neighCoords = block.coords.neighbor(side)
-          getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side)))
-            .foreach(_.requestBlockUpdate(neighCoords))
+          getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side))) match
+            case Some(neighbor) => neighbor.requestBlockUpdate(neighCoords)
+            case None           =>
 
   def removeChunk(ch: ChunkRelWorld): Unit =
     getColumn(ch.getColumnRelWorld) match
       case Some(col) =>
         col.removeChunk(ch.getChunkRelColumn) match
           case Some(removedChunk) =>
+            worldPlanner.onChunkRemoved(removedChunk)
+            chunkLoader.onChunkRemoved(removedChunk)
             for l <- chunkAddedOrRemovedListeners do l.onChunkRemoved(removedChunk)
             removedChunk.unload()
           case None =>
@@ -195,13 +200,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       ent <- ch.entities.allEntities
     yield (ch, ent, chunkOfEntity(ent))
 
-    for (ch, ent, newOpt) <- entList do
-      newOpt match
-        case Some(newChunk) =>
-          if newChunk != ch then
-            ch.entities -= ent
-            newChunk.entities += ent
-        case None =>
+    for
+      (ch, ent, newOpt) <- entList
+      newChunk <- newOpt
+      if newChunk != ch
+    do
+      ch.removeEntity(ent)
+      newChunk.addEntity(ent)
 
   private def ensureColumnExists(here: ColumnRelWorld): ChunkColumn =
     columns.get(here.value) match
@@ -217,14 +222,14 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       case Some(c) => c.lighting.getBrightness(block.getBlockRelChunk)
       case None    => 1.0f
 
-  def onReloadedResources(): Unit = columns.values.foreach(_.onReloadedResources())
+  def onReloadedResources(): Unit = for col <- columns.values do col.onReloadedResources()
 
   def unload(): Unit =
     saveWorldData()
 
     chunkLoader.unload()
     blockUpdateTimer.active = false
-    columns.values.foreach(_.unload())
+    for col <- columns.values do col.unload()
     columns.clear()
     chunkAddedOrRemovedListeners.clear()
 
