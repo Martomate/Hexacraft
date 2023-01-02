@@ -10,117 +10,139 @@ import com.martomate.hexacraft.world.entity.base.BasicEntityPart
 import com.eclipsesource.json.JsonObject
 import org.joml.Vector3f
 
-class PlayerEntityModel(setup: JsonObject) extends EntityModel {
-  private val partsNBT = setup.get("parts").asObject()
+class PlayerEntityModel(
+    val head: BasicEntityPart,
+    val leftBodyHalf: BasicEntityPart,
+    val rightBodyHalf: BasicEntityPart,
+    val rightArm: BasicEntityPart,
+    val leftArm: BasicEntityPart,
+    val rightLeg: BasicEntityPart,
+    val leftLeg: BasicEntityPart,
+    val textureName: String
+) extends EntityModel:
+  override val parts: Seq[EntityPart] = Seq(head, leftBodyHalf, rightBodyHalf, rightArm, leftArm, rightLeg, leftLeg)
 
-  def makeHexBox(r: Int, b: Float, h: Int): HexBox =
-    new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+  private val animation = new PlayerAnimation(this)
 
-  private val legLength = 48
-  private val legRadius = 8
-  private val bodyLength = 40
-  private val bodyRadius = 8
-  private val armLength = 40
-  private val armRadius = 8
-  private val headDepth = 20
-  private val headRadius = 16
+  override def tick(): Unit = animation.tick()
 
-  private val head = new BasicEntityPart(
-    makeHexBox(headRadius, -headDepth / 2f, headDepth),
-//    BlockCoords(0, (bodyLength + legLength) / 32f + headDepth / 2 / 32f, 0).toCylCoords,
-    BlockCoords
-      .Offset(
-        0,
-        (bodyLength + legLength) / 32f + headRadius / 32f * CylinderSize.y60,
-        0
-      )
-      .toCylCoordsOffset,
-    new Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
-    setup = partsNBT.get("head").asObject()
-  )
-  private val leftBodyhalf = new BasicEntityPart(
-    makeHexBox(bodyRadius, 0, bodyLength),
-    BlockCoords.Offset(0, legLength / 32f, -0.5f * bodyRadius / 32).toCylCoordsOffset,
-    new Vector3f(0, 0, 0),
-    setup = partsNBT.get("leftbody").asObject()
-  )
-  private val rightBodyhalf = new BasicEntityPart(
-    makeHexBox(bodyRadius, 0, bodyLength),
-    BlockCoords.Offset(0, legLength / 32f, 0.5f * bodyRadius / 32).toCylCoordsOffset,
-    new Vector3f(0, 0, 0),
-    setup = partsNBT.get("rightbody").asObject()
-  )
-  private val rightArm = new BasicEntityPart(
-    makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
-    BlockCoords
-      .Offset(
-        0,
-        (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f,
-        0.5f * 2 * bodyRadius / 32 + 0.5f * armRadius / 32
-      )
-      .toCylCoordsOffset,
-    new Vector3f(math.Pi.toFloat * -6 / 6, 0, 0),
-    setup = partsNBT.get("rightarm").asObject()
-  )
-  private val leftArm = new BasicEntityPart(
-    makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
-    BlockCoords
-      .Offset(
-        0,
-        (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f,
-        -0.5f * 2 * bodyRadius / 32 - 0.5f * armRadius / 32
-      )
-      .toCylCoordsOffset,
-    new Vector3f(math.Pi.toFloat * 6 / 6, 0, 0),
-    setup = partsNBT.get("leftarm").asObject()
-  )
-  private val rightLeg = new BasicEntityPart(
-    makeHexBox(legRadius, 0, legLength),
-    BlockCoords
-      .Offset(
-        0,
-        legLength / 32f,
-        0.5f * legRadius / 32 + 0.001f
-      )
-      .toCylCoordsOffset,
-    new Vector3f(math.Pi.toFloat, 0, 0),
-    setup = partsNBT.get("rightleg").asObject()
-  )
-  private val leftLeg = new BasicEntityPart(
-    makeHexBox(legRadius, 0, legLength),
-    BlockCoords
-      .Offset(
-        0,
-        legLength / 32f,
-        -0.5f * legRadius / 32 - 0.001f
-      )
-      .toCylCoordsOffset,
-    new Vector3f(math.Pi.toFloat, 0, 0),
-    setup = partsNBT.get("leftleg").asObject()
-  )
+  override def texture: TextureSingle =
+    TextureSingle.getTexture(
+      "textures/entities/" + textureName
+    )
 
-  override val parts: Seq[EntityPart] =
-    Seq(head, leftBodyhalf, rightBodyhalf, rightArm, leftArm, rightLeg, leftLeg)
-  var time = 0f
-  override def tick(): Unit = {
+  override def texSize: Int = 256
+
+class PlayerAnimation(model: PlayerEntityModel):
+  private var time = 0f
+
+  def tick(): Unit =
     time += 1f / 60
 
     val phase = time * 2 * math.Pi
 
-    rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
-    leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
+    model.rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
+    model.leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
 
-//    rightArm.rotation.x += -0.03f * math.sin(time).toFloat
-//    leftArm.rotation.x +=  0.03f * math.sin(time).toFloat
+    model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
+    model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
-    rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
-    leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
-  }
+object PlayerEntityModel:
+  def fromJson(setup: JsonObject): PlayerEntityModel =
+    val partsNBT = setup.get("parts").asObject()
 
-  override def texture: TextureSingle =
-    TextureSingle.getTexture(
-      "textures/entities/" + setup.getString("texture", "")
+    def makeHexBox(r: Int, b: Float, h: Int): HexBox =
+      new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+
+    val legLength = 48
+    val legRadius = 8
+    val bodyLength = 40
+    val bodyRadius = 8
+    val armLength = 40
+    val armRadius = 8
+    val headDepth = 20
+    val headRadius = 16
+
+    val head = new BasicEntityPart(
+      makeHexBox(headRadius, -headDepth / 2f, headDepth),
+      BlockCoords
+        .Offset(
+          0,
+          (bodyLength + legLength) / 32f + headRadius / 32f * CylinderSize.y60,
+          0
+        )
+        .toCylCoordsOffset,
+      new Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
+      setup = partsNBT.get("head").asObject()
+    )
+    val leftBodyHalf = new BasicEntityPart(
+      makeHexBox(bodyRadius, 0, bodyLength),
+      BlockCoords.Offset(0, legLength / 32f, -0.5f * bodyRadius / 32).toCylCoordsOffset,
+      new Vector3f(0, 0, 0),
+      setup = partsNBT.get("leftbody").asObject()
+    )
+    val rightBodyHalf = new BasicEntityPart(
+      makeHexBox(bodyRadius, 0, bodyLength),
+      BlockCoords.Offset(0, legLength / 32f, 0.5f * bodyRadius / 32).toCylCoordsOffset,
+      new Vector3f(0, 0, 0),
+      setup = partsNBT.get("rightbody").asObject()
+    )
+    val rightArm = new BasicEntityPart(
+      makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
+      BlockCoords
+        .Offset(
+          0,
+          (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f,
+          0.5f * 2 * bodyRadius / 32 + 0.5f * armRadius / 32
+        )
+        .toCylCoordsOffset,
+      new Vector3f(math.Pi.toFloat * -6 / 6, 0, 0),
+      setup = partsNBT.get("rightarm").asObject()
+    )
+    val leftArm = new BasicEntityPart(
+      makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
+      BlockCoords
+        .Offset(
+          0,
+          (legLength + bodyLength - armRadius * CylinderSize.y60.toFloat) / 32f,
+          -0.5f * 2 * bodyRadius / 32 - 0.5f * armRadius / 32
+        )
+        .toCylCoordsOffset,
+      new Vector3f(math.Pi.toFloat * 6 / 6, 0, 0),
+      setup = partsNBT.get("leftarm").asObject()
+    )
+    val rightLeg = new BasicEntityPart(
+      makeHexBox(legRadius, 0, legLength),
+      BlockCoords
+        .Offset(
+          0,
+          legLength / 32f,
+          0.5f * legRadius / 32 + 0.001f
+        )
+        .toCylCoordsOffset,
+      new Vector3f(math.Pi.toFloat, 0, 0),
+      setup = partsNBT.get("rightleg").asObject()
+    )
+    val leftLeg = new BasicEntityPart(
+      makeHexBox(legRadius, 0, legLength),
+      BlockCoords
+        .Offset(
+          0,
+          legLength / 32f,
+          -0.5f * legRadius / 32 - 0.001f
+        )
+        .toCylCoordsOffset,
+      new Vector3f(math.Pi.toFloat, 0, 0),
+      setup = partsNBT.get("leftleg").asObject()
     )
 
-  override def texSize: Int = 256
-}
+    new PlayerEntityModel(
+      head,
+      leftBodyHalf,
+      rightBodyHalf,
+      rightArm,
+      leftArm,
+      rightLeg,
+      leftLeg,
+      setup.getString("texture", "")
+    )

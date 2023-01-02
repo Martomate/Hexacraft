@@ -42,10 +42,8 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
   val lighting: ChunkLighting = new ChunkLighting(this, lightPropagator)
   def entities: EntitiesInChunk = chunkData.entities
 
-  def init(): Unit = {
-    requestRenderUpdate()
-    requestRenderUpdateForAllNeighbors()
-  }
+  def addEntity(entity: Entity): Unit = entities += entity
+  def removeEntity(entity: Entity): Unit = entities -= entity
 
   def blocks: ChunkStorage = storage
 
@@ -83,10 +81,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
   def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
 
-  private def requestRenderUpdateForAllNeighbors(): Unit =
-    for (side <- 0 until 8)
-      eventListeners.foreach(_.onChunksNeighborNeedsRenderUpdate(coords, side))
-
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
     chunkData.optimizeStorage()
 
@@ -111,8 +105,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
   def unload(): Unit = {
     saveIfNeeded()
-
-    requestRenderUpdateForAllNeighbors()
 
     blockEventListeners.clear()
     eventListeners.clear()

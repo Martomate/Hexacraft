@@ -11,11 +11,7 @@ class EntitiesInChunkTest extends AnyFlatSpec with Matchers {
   def make = new EntitiesInChunk
 
   private implicit val sizeImpl: CylinderSize = CylinderSize(4)
-  class MockEntity extends Entity(new EntityBaseData(CylCoords(0, 0, 0))) {
-    override def model: EntityModel = ???
-
-    override def id: String = "TestEntity"
-  }
+  class MockEntity extends Entity(new EntityBaseData(CylCoords(0, 0, 0)), null)
 
   "+=" should "add the entity" in {
     val entities = make

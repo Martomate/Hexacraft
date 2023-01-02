@@ -10,14 +10,12 @@ import com.martomate.hexacraft.world.entity.ai.{EntityAI, SimpleWalkAI}
 import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 
 class PlayerEntity(
-    val model: EntityModel,
+    model: EntityModel,
     initData: EntityBaseData,
     private val ai: EntityAI
-)(using CylinderSize, Blocks)
-    extends Entity(initData) {
+)(using CylinderSize)
+    extends Entity(initData, model) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
-
-  override def id: String = "player"
 
   override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
     ai.tick(world, data, boundingBox)

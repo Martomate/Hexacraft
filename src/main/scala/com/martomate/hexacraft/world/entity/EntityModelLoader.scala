@@ -12,9 +12,9 @@ import com.eclipsesource.json.{Json, JsonObject}
 
 class EntityModelLoader(basePath: String = "spec/entities") {
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {
-    case "player" => new PlayerEntityModel(setup)
-    case "sheep"  => new SheepEntityModel(setup)
-    case _        => new BasicEntityModel(CylCoords.Offset(0, 0, 0), new HexBox(0, 0, 0))
+    case "player" => PlayerEntityModel.fromJson(setup)
+    case "sheep"  => SheepEntityModel.fromJson(setup)
+    case _        => BasicEntityModel.create(CylCoords.Offset(0, 0, 0), new HexBox(0, 0, 0))
   }
 
   def load(name: String): EntityModel = {

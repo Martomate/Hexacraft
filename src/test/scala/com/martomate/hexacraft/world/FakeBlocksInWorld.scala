@@ -28,7 +28,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
   override def provideColumn(coords: ColumnRelWorld): ChunkColumn = {
     if (cols.contains(coords)) cols(coords)
     else {
-      val col = new ChunkColumn(coords, worldGenerator, provider)
+      val col = ChunkColumn.create(coords, worldGenerator, provider)
       cols += coords -> col
       col
     }

@@ -1,8 +1,7 @@
 import scala.util.Properties.isMac
 
-enablePlugins(LauncherJarPlugin)
-
 lazy val root = Project("hexacraft", file("."))
+  .enablePlugins(LauncherJarPlugin)
   .settings(Defaults.coreDefaultSettings: _*)
   .settings(mainSettings: _*)
 
