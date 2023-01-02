@@ -29,13 +29,10 @@ class WorldTest extends AnyFlatSpec with Matchers {
 
     val cCoords = ChunkRelWorld(3, 7, -4)
 
-    val col = world.provideColumn(cCoords.getColumnRelWorld)
-    col.coords shouldBe cCoords.getColumnRelWorld
-
     // Set a chunk in the world
     world.getChunk(cCoords) shouldBe None
     val chunk = Chunk(cCoords, world, provider)
-    col.setChunk(chunk)
+    world.setChunk(chunk)
     world.getChunk(cCoords) shouldBe Some(chunk)
 
     // Set a block in the chunk
@@ -44,6 +41,27 @@ class WorldTest extends AnyFlatSpec with Matchers {
     world.setBlock(bCoords, BlockState(Blocks.Stone, 2))
     world.getBlock(bCoords) shouldBe BlockState(Blocks.Stone, 2)
 
+    // Clean up
+    world.unload()
+  }
+
+  it should "decorate new chunks" in {
+    val provider = new FakeWorldProvider(1234)
+    val world = World(provider)
+
+    val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
+
+    // Set a chunk in the world
+    val chunk = Chunk(chunkCoords, world, provider)
+    world.setChunk(chunk)
+
+    // The planner should have decorated the chunk
+    chunk.isDecorated shouldBe true
+
+    // There should be a tree in the chunk
+    chunk.blocks.allBlocks.exists(s => s.block.blockType == Blocks.Log) shouldBe true
+
+    // Clean up
     world.unload()
   }
 

@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.gen.planner
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
-import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn}
+import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn, ChunkColumnTerrain}
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.gen.PlannedWorldChange
@@ -43,12 +43,12 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
 
   private def attemptTreeGenerationAt(
       coords: ChunkRelWorld,
-      column: ChunkColumn,
+      column: ChunkColumnTerrain,
       cx: Int,
       cz: Int,
       allowBig: Boolean
   ): Unit =
-    val yy = column.generatedHeightMap(cx)(cz)
+    val yy = column.originalTerrainHeight(cx, cz)
     if yy >= coords.Y * 16 && yy < (coords.Y + 1) * 16 then generateTree(coords, cx, cz, yy, allowBig)
 
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit =
@@ -75,4 +75,6 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
     generateChanges(tree)
 
   private def generateChanges(tree: PlannedWorldChange): Unit =
-    for (c, ch) <- tree.chunkChanges do plannedChanges.getOrElse(c, mutable.Buffer.empty).appendAll(ch)
+    for (c, ch) <- tree.chunkChanges do plannedChanges.getOrElseUpdate(c, mutable.Buffer.empty).appendAll(ch)
+
+// TODO: fix bug where trees are not spawning anymore! (and maybe add a test for it..)

@@ -58,5 +58,3 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using C
 
   override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
     chunkRenderUpdateQueue.enqueue(coords)
-
-  override def onChunksNeighborNeedsRenderUpdate(coords: ChunkRelWorld, side: Int): Unit = ()
