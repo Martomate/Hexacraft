@@ -6,58 +6,51 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 
-class DenseChunkStorage(using CylinderSize) extends ChunkStorage {
+class DenseChunkStorage extends ChunkStorage:
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)
   private val metadata = SmartArray.withByteArray(16 * 16 * 16, 0)
   private var _numBlocks = 0
 
   def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
-  def getBlock(coords: BlockRelChunk): BlockState = {
+
+  def getBlock(coords: BlockRelChunk): BlockState =
     val _type = blockTypes(coords.value)
-    if (_type != 0) new BlockState(Block.byId(_type), metadata(coords.value))
+    if _type != 0 then new BlockState(Block.byId(_type), metadata(coords.value))
     else BlockState.Air
-  }
-  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T = {
-    func(blockType(coords), metadata(coords.value))
-  }
-  def setBlock(coords: BlockRelChunk, block: BlockState): Unit = {
+
+  def setBlock(coords: BlockRelChunk, block: BlockState): Unit =
     val idx = coords.value
-    if (blockTypes(idx) == 0) _numBlocks += 1
+    if blockTypes(idx) == 0 then _numBlocks += 1
     blockTypes(idx) = block.blockType.id
     metadata(idx) = block.metadata
-    if (blockTypes(idx) == 0) _numBlocks -= 1
-  }
-  def removeBlock(coords: BlockRelChunk): Unit = {
-    if (blockTypes(coords.value) != 0) _numBlocks -= 1
+    if blockTypes(idx) == 0 then _numBlocks -= 1
+
+  def removeBlock(coords: BlockRelChunk): Unit =
+    if blockTypes(coords.value) != 0 then _numBlocks -= 1
     blockTypes(coords.value) = 0
-  }
-  def allBlocks: Array[LocalBlockState] = {
+
+  def allBlocks: Array[LocalBlockState] =
     val arr = Array.ofDim[LocalBlockState](_numBlocks)
     var idx = 0
-    for (i <- blockTypes.indices) {
-      if (blockTypes(i) != 0) {
+    for i <- blockTypes.indices do
+      if blockTypes(i) != 0 then
         arr(idx) = LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
         idx += 1
-      }
-    }
     arr
-  }
 
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
 
-  def toNBT: Seq[Tag[_]] = {
+  def toNBT: Seq[Tag[_]] =
     Seq(
       new ByteArrayTag("blocks", blockTypes.toArray),
       new ByteArrayTag("metadata", metadata.toArray)
     )
-  }
-}
 
 object DenseChunkStorage extends ChunkStorageFactory:
   override def empty(using CylinderSize, Blocks): ChunkStorage = new DenseChunkStorage
 
-  def fromStorage(storage: ChunkStorage)(using CylinderSize): DenseChunkStorage =
+  def fromStorage(storage: ChunkStorage): DenseChunkStorage =
     val result = new DenseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result

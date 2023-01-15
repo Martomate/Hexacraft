@@ -11,21 +11,19 @@ import com.martomate.hexacraft.world.gen.WorldGenerator
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
-object Chunk {
+object Chunk:
   def apply(
       coords: ChunkRelWorld,
       world: BlocksInWorld,
       worldProvider: WorldProvider,
       entityRegistry: EntityRegistry = EntityRegistry.empty
-  )(using CylinderSize, Blocks): Chunk = {
+  )(using CylinderSize, Blocks): Chunk =
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
-  }
-}
 
 class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator)
-    extends BlockInChunkAccessor {
+    extends BlockInChunkAccessor:
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -49,79 +47,59 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
   def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
 
-  def mapBlock[T](coords: BlockRelChunk, func: (Block, Byte) => T): T =
-    storage.mapBlock(coords, func)
-
-  def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
+  def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit =
     val before = getBlock(blockCoords)
-    if (before != block) {
+    if before != block then
       storage.setBlock(blockCoords, block)
       needsToSave = true
 
-      for (listener <- blockEventListeners) {
+      for listener <- blockEventListeners do
         listener.onSetBlock(BlockRelWorld.fromChunk(blockCoords, coords), before, block)
-      }
 
       handleLightingOnSetBlock(blockCoords, block)
-    }
-  }
 
   def removeBlock(coords: BlockRelChunk): Unit = setBlock(coords, BlockState.Air)
 
-  private def handleLightingOnSetBlock(blockCoords: BlockRelChunk, block: BlockState): Unit = {
+  private def handleLightingOnSetBlock(blockCoords: BlockRelChunk, block: BlockState): Unit =
     lightPropagator.removeTorchlight(this, blockCoords)
     lightPropagator.removeSunlight(this, blockCoords)
-    if (block.blockType.lightEmitted != 0) {
+    if block.blockType.lightEmitted != 0 then
       lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
-    }
-  }
 
   def requestBlockUpdate(coords: BlockRelChunk): Unit =
-    eventListeners.foreach(_.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
+    for e <- eventListeners do e.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords))
 
-  def requestRenderUpdate(): Unit = eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))
+  def requestRenderUpdate(): Unit = for e <- eventListeners do e.onChunkNeedsRenderUpdate(coords)
 
-  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
+  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
     chunkData.optimizeStorage()
 
     tickEntities(entities.allEntities)
 
     @tailrec
-    def tickEntities(ents: Iterable[Entity]): Unit = {
-      if (ents.nonEmpty) {
+    def tickEntities(ents: Iterable[Entity]): Unit =
+      if ents.nonEmpty then
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
-      }
-    }
-  }
 
   def hasNoBlocks: Boolean = storage.numBlocks == 0
 
-  def saveIfNeeded(): Unit = {
-    if (needsToSave || entities.needsToSave) {
-      save()
-    }
-  }
+  def saveIfNeeded(): Unit = if needsToSave || entities.needsToSave then save()
 
-  def unload(): Unit = {
+  def unload(): Unit =
     saveIfNeeded()
 
     blockEventListeners.clear()
     eventListeners.clear()
-  }
 
-  private def save(): Unit = {
+  private def save(): Unit =
     val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT) // Add more tags with ++
     generator.saveData(chunkTag)
     needsToSave = false
-  }
 
   def isDecorated: Boolean = chunkData.isDecorated
-  def setDecorated(): Unit = {
-    if (!chunkData.isDecorated) {
+  def setDecorated(): Unit =
+    if !chunkData.isDecorated then
       chunkData.isDecorated = true
       needsToSave = true
       save()
-    }
-  }
-}
