@@ -47,7 +47,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
     chunkRenderers.get(coords) match
       case Some(r) =>
-        chunkHandler.updateChunk(r)
+        r.updateContent()
+        chunkHandler.updateHandlers(coords, Some(r.getRenderData))
         true
       case None =>
         false
@@ -100,15 +101,14 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
 
   override def onChunkAdded(chunk: Chunk): Unit =
-    val renderer = new ChunkRendererImpl(chunk, world)
+    val renderer = new ChunkRenderer(chunk, world)
     chunkRenderers(chunk.coords) = renderer
-//    chunkHandler.addChunk(renderer)
     chunk.addEventListener(chunkRenderUpdater)
 
   override def onChunkRemoved(chunk: Chunk): Unit =
     chunkRenderers.remove(chunk.coords) match
       case Some(renderer) =>
-        chunkHandler.removeChunk(renderer)
+        chunkHandler.updateHandlers(chunk.coords, None)
         renderer.unload()
       case None =>
 

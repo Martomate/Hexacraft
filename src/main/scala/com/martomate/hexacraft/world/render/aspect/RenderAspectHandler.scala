@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render.aspect
 
-import com.martomate.hexacraft.world.render.ChunkRenderer
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
 import com.martomate.hexacraft.world.render.segment.{ChunkSegmentHandler, ChunkSegs, Segment}
 
@@ -15,47 +15,47 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
     bufferHandler.render(length)
   }
 
-  def setChunkContent(chunk: ChunkRenderer, content: Option[ByteBuffer]): Unit = content match {
+  def setChunkContent(coords: ChunkRelWorld, content: Option[ByteBuffer]): Unit = content match {
     case Some(data) =>
-      if (segmentHandler.hasMapping(chunk)) {
-        updateChunk(chunk, data)
+      if (segmentHandler.hasMapping(coords)) {
+        updateChunk(coords, data)
       } else {
-        addNewChunk(chunk, data)
+        addNewChunk(coords, data)
       }
     case None =>
-      removeChunk(chunk)
+      removeChunk(coords)
   }
 
-  private def appendData(chunk: ChunkRenderer, data: ByteBuffer): Unit = {
+  private def appendData(coords: ChunkRelWorld, data: ByteBuffer): Unit = {
     if (data.remaining() > 0) {
       val seg = Segment(length, data.remaining())
       bufferHandler.set(seg, data)
 
-      segmentHandler.add(chunk, seg)
+      segmentHandler.add(coords, seg)
     }
   }
 
-  private def addNewChunk(chunk: ChunkRenderer, data: ByteBuffer): Unit = {
-    appendData(chunk, data)
+  private def addNewChunk(coords: ChunkRelWorld, data: ByteBuffer): Unit = {
+    appendData(coords, data)
   }
 
-  private def updateChunk(chunk: ChunkRenderer, data: ByteBuffer): Unit = {
-    val oldLen = segmentHandler.totalLengthForChunk(chunk)
+  private def updateChunk(coords: ChunkRelWorld, data: ByteBuffer): Unit = {
+    val oldLen = segmentHandler.totalLengthForChunk(coords)
     val newLen = data.remaining()
 
     if (oldLen == newLen) {
-      for (s <- segmentHandler.segments(chunk)) {
+      for (s <- segmentHandler.segments(coords)) {
         bufferHandler.set(s, data)
       }
     } else if (oldLen < newLen) {
-      for (s <- segmentHandler.segments(chunk)) {
+      for (s <- segmentHandler.segments(coords)) {
         bufferHandler.set(s, data)
       }
-      appendData(chunk, data)
+      appendData(coords, data)
     } else {
       val leftOver: ChunkSegs = new ChunkSegs
 
-      for (s <- segmentHandler.segments(chunk)) {
+      for (s <- segmentHandler.segments(coords)) {
         if (data.remaining() >= s.length)
           bufferHandler.set(s, data)
         else
@@ -70,18 +70,18 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
         leftOver.remove(first)
       }
 
-      removeData(chunk, leftOver)
+      removeData(coords, leftOver)
     }
   }
 
-  private def removeData(chunk: ChunkRenderer, segments: ChunkSegs): Unit = {
+  private def removeData(coords: ChunkRelWorld, segments: ChunkSegs): Unit = {
     while (segments.totalLength > 0) {
       val lastRem = segments.lastSegment()
       val (lastChunk, lastSeg) = segmentHandler.lastSegment().get
-      if (chunk == lastChunk) {
+      if (coords == lastChunk) {
         // remove it
         segments.remove(lastRem)
-        segmentHandler.remove(chunk, lastRem)
+        segmentHandler.remove(coords, lastRem)
       } else {
         // move data
         val firstRem = segments.firstSegment()
@@ -91,7 +91,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
 
         val destSeg = Segment(firstRem.start, len)
         segments.remove(destSeg)
-        segmentHandler.remove(chunk, destSeg)
+        segmentHandler.remove(coords, destSeg)
 
         val srcSeg = Segment(lastSeg.start + lastSeg.length - len, len)
         segmentHandler.remove(lastChunk, srcSeg)
@@ -100,11 +100,11 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
     }
   }
 
-  private def removeChunk(chunk: ChunkRenderer): Unit = {
+  private def removeChunk(coords: ChunkRelWorld): Unit = {
     val segments = new ChunkSegs
-    for (s <- segmentHandler.segments(chunk)) segments.add(s)
+    for (s <- segmentHandler.segments(coords)) segments.add(s)
 
-    removeData(chunk, segments)
+    removeData(coords, segments)
   }
 
   def unload(): Unit = bufferHandler.unload()

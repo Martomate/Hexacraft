@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.{Shaders, Texture, TextureArray}
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
 
 import scala.collection.mutable
@@ -17,18 +18,10 @@ class ChunkRenderHandler:
       t.bind()
       r.render()
 
-  def addChunk(chunk: ChunkRenderer): Unit = updateChunk(chunk)
-
-  def updateChunk(chunk: ChunkRenderer): Unit =
-    chunk.updateContent()
-    updateHandlers(chunk, Some(chunk.getRenderData))
-
-  def removeChunk(chunk: ChunkRenderer): Unit = updateHandlers(chunk, None)
-
-  private def updateHandlers(chunk: ChunkRenderer, data: Option[ChunkRenderData]): Unit =
+  def updateHandlers(coords: ChunkRelWorld, data: Option[ChunkRenderData]): Unit =
     hexagonHandlers
       .getOrElseUpdate(blockTexture, new HexagonRenderHandler(blockShader, blockSideShader))
-      .setChunkContent(chunk, data.map(_.blockSide))
+      .setChunkContent(coords, data.map(_.blockSide))
 
   def unload(): Unit =
     hexagonHandlers.values.foreach(_.unload())

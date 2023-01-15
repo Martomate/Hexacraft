@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.render.aspect
 
 import com.martomate.hexacraft.renderer.Shader
-import com.martomate.hexacraft.world.render.ChunkRenderer
+import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
 import com.martomate.hexacraft.world.render.buffer.vao.BlockVAORenderBufferFactory
 
@@ -24,8 +24,8 @@ class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
     }
   }
 
-  def setChunkContent(chunk: ChunkRenderer, content: Option[IndexedSeq[ByteBuffer]]): Unit = {
-    for (s <- 0 until 8) sideHandlers(s).setChunkContent(chunk, content.flatMap(c => Option(c(s))))
+  def setChunkContent(coords: ChunkRelWorld, content: Option[IndexedSeq[ByteBuffer]]): Unit = {
+    for (s <- 0 until 8) sideHandlers(s).setChunkContent(coords, content.flatMap(c => Option(c(s))))
   }
 
   def unload(): Unit = sideHandlers.foreach(_.unload())
