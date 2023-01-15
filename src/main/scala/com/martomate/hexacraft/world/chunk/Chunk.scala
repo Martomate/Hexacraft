@@ -37,7 +37,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
   def addBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners += listener
   def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
 
-  val lighting: ChunkLighting = new ChunkLighting(this, lightPropagator)
+  val lighting: ChunkLighting = new ChunkLighting(lightPropagator)
   def entities: EntitiesInChunk = chunkData.entities
 
   def addEntity(entity: Entity): Unit = entities += entity

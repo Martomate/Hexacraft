@@ -2,38 +2,24 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
-import com.martomate.hexacraft.world.chunk.Chunk
+import com.martomate.hexacraft.world.chunk.{Chunk, EntitiesInChunk}
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 import java.nio.ByteBuffer
 import java.util
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.BufferUtils
+import scala.collection.mutable.ArrayBuffer
 
-class ChunkRenderer(chunk: Chunk, world: BlocksInWorld)(using CylinderSize):
-  private var renderData: ChunkRenderData = _
-  def getRenderData: ChunkRenderData = renderData
-
-  def updateContent(): Unit =
-    val buffers: Array[ByteBuffer] = Array.ofDim(8)
-
-    if chunk.hasNoBlocks
-    then updateContentForEmptyChunk()
-    else updateContentForNonemptyChunk(buffers)
-
-    renderData = ChunkRenderData(buffers.toIndexedSeq)
-
-  private def updateContentForEmptyChunk(): Unit =
-    if !chunk.lighting.initialized then chunk.lighting.init(Array.empty)
-
-  private def updateContentForNonemptyChunk(buffers: Array[ByteBuffer]): Unit =
-    val blocks = chunk.blocks.allBlocks
-
-    if !chunk.lighting.initialized then chunk.lighting.init(blocks)
-
+object ChunkRenderer:
+  def getChunkRenderData(
+      chunkCoords: ChunkRelWorld,
+      blocks: Array[LocalBlockState],
+      world: BlocksInWorld
+  )(using CylinderSize): ChunkRenderData =
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
@@ -53,7 +39,7 @@ class ChunkRenderer(chunk: Chunk, world: BlocksInWorld)(using CylinderSize):
         val c = lbs.coords
         val b = lbs.block
 
-        val c2w = c.globalNeighbor(s, chunk.coords)
+        val c2w = c.globalNeighbor(s, chunkCoords)
         val c2 = c2w.getBlockRelChunk
         val crw = c2w.getChunkRelWorld
         val neigh = chunkCache.getChunk(crw)
@@ -73,20 +59,19 @@ class ChunkRenderer(chunk: Chunk, world: BlocksInWorld)(using CylinderSize):
 
         i1 += 1
 
-    val newBuffers = for (side <- 0 until 8) yield
+    val buffers = for (side <- 0 until 8) yield
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
 
-      populateBuffer(blocks, side, shouldRender, brightness, buf)
+      populateBuffer(chunkCoords, blocks, side, shouldRender, brightness, buf)
+      buf.flip()
       buf
 
-    for side <- 0 until 8 do
-      val buf = newBuffers(side)
-      buf.flip()
-      buffers(side) = buf
+    ChunkRenderData(buffers)
 
   private def populateBuffer(
+      chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       side: Int,
       shouldRender: java.util.BitSet,
@@ -94,8 +79,6 @@ class ChunkRenderer(chunk: Chunk, world: BlocksInWorld)(using CylinderSize):
       buf: ByteBuffer
   ): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
-
-    val chunkCoords = chunk.coords
 
     var i1 = 0
     val i1Lim = blocks.length
@@ -122,41 +105,41 @@ class ChunkRenderer(chunk: Chunk, world: BlocksInWorld)(using CylinderSize):
 
       i1 += 1
 
-  def appendEntityRenderData(side: Int, append: EntityDataForShader => Unit): Unit =
-    val entities = chunk.entities
+  def getEntityRenderData(entities: EntitiesInChunk, side: Int, world: BlocksInWorld)(using
+      CylinderSize
+  ): Iterable[EntityDataForShader] =
+    val chunkCache = new ChunkCache(world)
 
-    if entities.count > 0 then
-      val tr = new Matrix4f
+    val tr = new Matrix4f
 
-      for ent <- entities.allEntities do
-        val baseT = ent.transform
-        val model = ent.model
+    for ent <- entities.allEntities yield
+      val baseT = ent.transform
+      val model = ent.model
 
-        val parts = for part <- model.parts yield
-          baseT.mul(part.transform, tr)
+      val parts = for part <- model.parts yield
+        baseT.mul(part.transform, tr)
 
-          val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
-          val blockCoords = CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords
-          val coords = CoordUtils.getEnclosingBlock(blockCoords)._1
-          val cCoords = coords.getChunkRelWorld
+        val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
+        val blockCoords = CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords
+        val coords = CoordUtils.getEnclosingBlock(blockCoords)._1
+        val cCoords = coords.getChunkRelWorld
 
-          val partChunk = if cCoords == chunk.coords then Some(chunk) else world.getChunk(cCoords)
+        val partChunk = chunkCache.getChunk(cCoords)
 
-          val brightness: Float = partChunk match
-            case Some(ch) => ch.lighting.getBrightness(coords.getBlockRelChunk)
-            case None     => 0
+        val brightness: Float =
+          if partChunk != null
+          then partChunk.lighting.getBrightness(coords.getBlockRelChunk)
+          else 0
 
-          EntityPartDataForShader(
-            modelMatrix = new Matrix4f(tr),
-            texOffset = part.textureOffset(side),
-            texSize = part.textureSize(side),
-            blockTex = part.texture(side),
-            brightness
-          )
+        EntityPartDataForShader(
+          modelMatrix = new Matrix4f(tr),
+          texOffset = part.textureOffset(side),
+          texSize = part.textureSize(side),
+          blockTex = part.texture(side),
+          brightness
+        )
 
-        append(EntityDataForShader(model, parts))
+      EntityDataForShader(model, parts)
 
   private def oppositeSide(s: Int): Int =
-    if (s < 2) 1 - s else (s - 2 + 3) % 3 + 2
-
-  def unload(): Unit = ()
+    if s < 2 then 1 - s else (s - 2 + 3) % 3 + 2

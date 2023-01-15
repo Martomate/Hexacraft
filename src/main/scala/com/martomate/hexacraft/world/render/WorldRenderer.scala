@@ -16,9 +16,9 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import org.joml.Vector2ic
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl._
+import org.lwjgl.opengl.*
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize)
     extends ChunkAddedOrRemovedListener:
@@ -41,18 +41,26 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
   private var currentlySelectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
 
-  private val chunkRenderers: mutable.Map[ChunkRelWorld, ChunkRenderer] = mutable.HashMap.empty
+  private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val entityRenderers: BlockRendererCollection = new BlockRendererCollection(s => EntityPartRenderer.forSide(s))
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(coords => {
-    chunkRenderers.get(coords) match
-      case Some(r) =>
-        r.updateContent()
-        chunkHandler.updateHandlers(coords, Some(r.getRenderData))
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(updateChunkIfPresent)
+
+  private def updateChunkIfPresent(coords: ChunkRelWorld) =
+    world.getChunk(coords) match
+      case Some(ch) =>
+        val chunkBlocks = ch.blocks.allBlocks
+        if !ch.lighting.initialized then ch.lighting.init(chunkBlocks, ch)
+
+        val renderData =
+          if chunkBlocks.isEmpty
+          then ChunkRenderData.empty
+          else ChunkRenderer.getChunkRenderData(ch.coords, chunkBlocks, world)
+
+        chunkHandler.updateHandlers(coords, Some(renderData))
         true
       case None =>
         false
-  })
 
   def tick(camera: Camera, renderDistance: Double): Unit =
     chunkRenderUpdater.update(camera, renderDistance)
@@ -101,17 +109,12 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
 
   override def onChunkAdded(chunk: Chunk): Unit =
-    val renderer = new ChunkRenderer(chunk, world)
-    chunkRenderers(chunk.coords) = renderer
+    chunksToRender.add(chunk.coords)
     chunk.addEventListener(chunkRenderUpdater)
 
   override def onChunkRemoved(chunk: Chunk): Unit =
-    chunkRenderers.remove(chunk.coords) match
-      case Some(renderer) =>
-        chunkHandler.updateHandlers(chunk.coords, None)
-        renderer.unload()
-      case None =>
-
+    chunksToRender.remove(chunk.coords)
+    chunkHandler.updateHandlers(chunk.coords, None)
     chunk.removeEventListener(chunkRenderUpdater)
 
   def framebufferResized(width: Int, height: Int): Unit =
@@ -134,8 +137,12 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       sh.enable()
       sh.setUniform1i("side", side)
 
-      val entityDataList: mutable.Buffer[EntityDataForShader] = ListBuffer.empty
-      for r <- chunkRenderers.values do r.appendEntityRenderData(side, entityDataList += _)
+      val entityDataList: mutable.ArrayBuffer[EntityDataForShader] = ArrayBuffer.empty
+      for
+        c <- chunksToRender
+        ch <- world.getChunk(c)
+        if ch.entities.count > 0
+      do entityDataList ++= ChunkRenderer.getEntityRenderData(ch.entities, side, world)
 
       for (model, partLists) <- entityDataList.groupBy(_.model) do
         val data = partLists.flatMap(_.parts)
@@ -197,79 +204,3 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
             .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
         )
         .create()
-
-class MainFrameBuffer private (val colorTexture: Int, val depthTexture: Int, val frameBuffer: FrameBuffer):
-  def bind(): Unit =
-    frameBuffer.bind()
-
-  def unbind(): Unit =
-    frameBuffer.unbind()
-
-  def unload(): Unit =
-    frameBuffer.unload()
-    GL11.glDeleteTextures(colorTexture)
-    GL11.glDeleteTextures(depthTexture)
-
-object MainFrameBuffer:
-  def fromSize(width: Int, height: Int): MainFrameBuffer =
-    val colorTexture = Helpers.makeMainColorTexture(width, height)
-    val depthTexture = Helpers.makeMainDepthTexture(width, height)
-    val frameBuffer = Helpers.makeMainFrameBuffer(colorTexture, depthTexture, width, height)
-    new MainFrameBuffer(colorTexture, depthTexture, frameBuffer)
-
-  private object Helpers:
-    def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
-      val texID = GL11.glGenTextures()
-
-      TextureSingle.unbind()
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-      GL11.glTexImage2D(
-        GL11.GL_TEXTURE_2D,
-        0,
-        GL11.GL_RGBA,
-        framebufferWidth,
-        framebufferHeight,
-        0,
-        GL11.GL_RGBA,
-        GL11.GL_UNSIGNED_BYTE,
-        null.asInstanceOf[ByteBuffer]
-      )
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-
-      texID
-
-    def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
-      val texID = GL11.glGenTextures()
-
-      TextureSingle.unbind()
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-      GL11.glTexImage2D(
-        GL11.GL_TEXTURE_2D,
-        0,
-        GL14.GL_DEPTH_COMPONENT32,
-        framebufferWidth,
-        framebufferHeight,
-        0,
-        GL11.GL_DEPTH_COMPONENT,
-        GL11.GL_FLOAT,
-        null.asInstanceOf[FloatBuffer]
-      )
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-
-      texID
-
-    def makeMainFrameBuffer(
-        colorTexture: Int,
-        depthTexture: Int,
-        framebufferWidth: Int,
-        framebufferHeight: Int
-    ): FrameBuffer =
-      val fb = new FrameBuffer(framebufferWidth, framebufferHeight)
-      fb.bind()
-      GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
-      GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, colorTexture, 0)
-      GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthTexture, 0)
-
-      fb
