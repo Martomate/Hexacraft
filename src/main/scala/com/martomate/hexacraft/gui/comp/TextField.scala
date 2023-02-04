@@ -2,7 +2,7 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent}
+import com.martomate.hexacraft.gui.{Event, LocationInfo}
 
 import org.joml.{Vector3f, Vector4f}
 import org.lwjgl.glfw.GLFW
@@ -77,14 +77,14 @@ class TextField(
     Component.drawRect(location, transformation.x, transformation.y, bgColor)
     super.render(transformation)
 
-  override def onCharEvent(event: CharEvent): Boolean =
+  override def onCharEvent(event: Event.CharEvent): Boolean =
     if focused
     then
       setText(text + event.character.toChar)
       true
     else false
 
-  override def onKeyEvent(event: KeyEvent): Boolean =
+  override def onKeyEvent(event: Event.KeyEvent): Boolean =
     val keyReleased = event.action != GLFW.GLFW_RELEASE
 
     if focused && keyReleased
@@ -96,7 +96,7 @@ class TextField(
 
     super.onKeyEvent(event)
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean =
+  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
     focused = location.containsPoint(event.mousePos)
     if !focused
     then super.onMouseClickEvent(event)
@@ -108,7 +108,7 @@ class TextField(
       .setColor(textColor.x, textColor.y, textColor.z)
 
   private def makeCursorText() =
-    val textLocation = LocationInfoIdentity(
+    val textLocation = LocationInfo(
       location.x + location.w / 2f - maxFontSize * 0.002f,
       location.y + maxFontSize * 0.002f,
       location.h / 4,

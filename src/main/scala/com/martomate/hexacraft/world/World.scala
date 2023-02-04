@@ -42,7 +42,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     extends BlockSetAndGet
     with BlocksInWorld
     with ChunkBlockListener
-    with ChunkColumnListener:
+    with ChunkEventListener:
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
@@ -138,6 +138,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def setChunk(ch: Chunk): Unit =
     ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
     ch.addBlockEventListener(this)
+    ch.addEventListener(this)
     worldPlanner.onChunkAdded(ch)
     chunkLoader.onChunkAdded(ch)
     for l <- chunkAddedOrRemovedListeners do l.onChunkAdded(ch)
@@ -163,6 +164,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
         col.removeChunk(ch.getChunkRelColumn) match
           case Some(removedChunk) =>
             removedChunk.removeBlockEventListener(this)
+            removedChunk.removeEventListener(this)
             worldPlanner.onChunkRemoved(removedChunk)
             chunkLoader.onChunkRemoved(removedChunk)
             for l <- chunkAddedOrRemovedListeners do l.onChunkRemoved(removedChunk)
@@ -176,7 +178,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
         if col.isEmpty then
           columns.remove(col.coords.value) match
             case Some(removedColumn) => // should be the same as `col`
-              removedColumn.removeEventListener(this)
               removedColumn.unload()
             case None =>
       case None =>
@@ -230,7 +231,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       case None =>
         val col = ChunkColumn.create(here, worldGenerator, worldProvider)
         columns(here.value) = col
-        col.addEventListener(this)
         col
 
   def getBrightness(block: BlockRelWorld): Float =

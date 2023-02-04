@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.util.MathUtils
 
 import org.joml.Vector4f
@@ -32,7 +32,7 @@ class ScrollPane(
     GL11.glDisable(GL11.GL_SCISSOR_TEST)
     super.render(contentTransformation)
 
-  override def onScrollEvent(event: ScrollEvent): Boolean =
+  override def onScrollEvent(event: Event.ScrollEvent): Boolean =
     if containsMouse
     then
       val boxBounds = location
@@ -55,22 +55,22 @@ class ScrollPane(
       true
     else components.exists(_.onScrollEvent(event))
 
-  override def onKeyEvent(event: KeyEvent): Boolean = components.exists(_.onKeyEvent(event))
+  override def onKeyEvent(event: Event.KeyEvent): Boolean = components.exists(_.onKeyEvent(event))
 
-  override def onCharEvent(event: CharEvent): Boolean = components.exists(_.onCharEvent(event))
+  override def onCharEvent(event: Event.CharEvent): Boolean = components.exists(_.onCharEvent(event))
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean =
+  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
     if containsMouse
     then components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xOffset, -yOffset)))
     else false
 
-  def containsMouse: Boolean = location.containsMouse(0, 0)
+  private def containsMouse: Boolean = location.containsMouse(0, 0)
 
   override def unload(): Unit =
     components.foreach(_.unload())
     super.unload()
 
-  def calcContentBounds(): LocationInfo =
+  private def calcContentBounds(): LocationInfo =
     components
       .map(_.bounds)
       .reduceOption(LocationInfo.hull)

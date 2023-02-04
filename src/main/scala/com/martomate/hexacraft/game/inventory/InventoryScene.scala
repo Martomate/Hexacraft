@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.game.inventory.GUIBlocksRenderer
-import com.martomate.hexacraft.gui.{KeyEvent, LocationInfo, LocationInfoIdentity, MouseClickEvent, Scene}
+import com.martomate.hexacraft.gui.{Event, LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.player.Inventory
@@ -14,12 +14,10 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     window: GameWindow,
     Blocks: Blocks
 ) extends Scene {
-  private val location: LocationInfo =
-    LocationInfoIdentity(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
+  private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
-  private val selectedBox =
-    LocationInfoIdentity(location.x + 0.01f, location.y + 0.01f, 0.18f, 0.18f)
+  private val selectedBox = LocationInfo(location.x + 0.01f, location.y + 0.01f, 0.18f, 0.18f)
 
   /** The index of the slot under the cursor */
   private var hoverIndex: Option[Int] = None
@@ -49,7 +47,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     then floatingBlockRenderer.updateContent()
   }
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean = {
+  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = {
     if event.action == GLFW.GLFW_RELEASE && location.containsPoint(event.mousePos)
     then
       hoverIndex match
@@ -67,7 +65,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     true
   }
 
-  override def onKeyEvent(event: KeyEvent): Boolean = {
+  override def onKeyEvent(event: Event.KeyEvent): Boolean = {
     if event.action == GLFW.GLFW_PRESS
     then
       event.key match

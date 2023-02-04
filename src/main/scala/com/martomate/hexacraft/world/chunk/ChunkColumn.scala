@@ -39,8 +39,7 @@ class ChunkColumn private (
     heightMap: Array[Array[Short]]
 )(using Blocks: Blocks)
     extends ChunkColumnTerrain
-    with ChunkBlockListener
-    with ChunkEventListener:
+    with ChunkBlockListener:
 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
@@ -60,7 +59,6 @@ class ChunkColumn private (
       case oldChunkOpt =>
         handleEventsOnChunkRemoval(oldChunkOpt)
 
-        chunk.addEventListener(this)
         chunk.addBlockEventListener(this)
         onChunkLoaded(chunk)
 
@@ -73,7 +71,6 @@ class ChunkColumn private (
 
   private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt match
     case Some(oldChunk) =>
-      oldChunk.removeEventListener(this)
       oldChunk.removeBlockEventListener(this)
     case None =>
 
@@ -134,15 +131,3 @@ class ChunkColumn private (
     chunks.foreachValue(_.unload())
 
     worldProvider.saveState(this.toNBT, saveFilePath)
-
-    eventListeners.clear()
-
-  private val eventListeners: ArrayBuffer[ChunkColumnListener] = ArrayBuffer.empty
-  def addEventListener(listener: ChunkColumnListener): Unit = eventListeners += listener
-  def removeEventListener(listener: ChunkColumnListener): Unit = eventListeners -= listener
-
-  override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit =
-    eventListeners.foreach(_.onBlockNeedsUpdate(coords))
-
-  override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
-    eventListeners.foreach(_.onChunkNeedsRenderUpdate(coords))

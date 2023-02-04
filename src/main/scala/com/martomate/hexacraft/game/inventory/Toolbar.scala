@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity}
+import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp._
 import com.martomate.hexacraft.world.player.Inventory
 
@@ -12,7 +12,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(implicit window: Gam
     with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
-  private val selectedBox = LocationInfoIdentity(
+  private val selectedBox = LocationInfo(
     location.x + location.h * 0.05f,
     location.y + location.h * 0.05f,
     location.w / 9 - location.h * 0.1f,

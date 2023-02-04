@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 
 import java.net.InetAddress
@@ -15,12 +15,12 @@ class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
   import JoinWorldChooserMenu.*
 
   addComponent(
-    new Label("Choose world", LocationInfo16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
+    new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
   )
-  private val scrollPane = new ScrollPane(LocationInfo16x9(0.285f, 0.225f, 0.43f, 0.635f))
+  private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f))
   addComponent(scrollPane)
 
-  addComponent(Button("Back to menu", LocationInfo16x9(0.3f, 0.05f, 0.4f, 0.1f)) {
+  addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f)) {
     window.scenes.popScene()
   })
 
@@ -29,7 +29,7 @@ class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
   private def updateServerList(): Unit = {
     getWorlds.zipWithIndex
       .map { case (f, i) =>
-        Button(f.name, LocationInfo16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
+        Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
           val connectionDetails = loadOnlineWorld(f.id)
           println("Will connect to: " + connectionDetails)
 //          window.scenes.popScenesUntil(MenuScene.isMainMenu)

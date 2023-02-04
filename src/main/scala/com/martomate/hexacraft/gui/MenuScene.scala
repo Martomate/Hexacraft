@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{LocationInfo, LocationInfoIdentity, Scene}
+import com.martomate.hexacraft.gui.{LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.renderer.TextureSingle
 
@@ -23,7 +23,7 @@ abstract class MenuScene(using GameWindow) extends Scene with SubComponents {
 
 object MenuScene {
   def entireBackground(implicit window: GameWindow): LocationInfo =
-    LocationInfoIdentity(-window.aspectRatio, -1, window.aspectRatio * 2, 2)
+    LocationInfo(-window.aspectRatio, -1, window.aspectRatio * 2, 2)
 
   val isMainMenu: Scene => Boolean = {
     case m: MenuScene => m.isMainMenu

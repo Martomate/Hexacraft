@@ -108,7 +108,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
     worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
 
-  override def onKeyEvent(event: KeyEvent): Boolean =
+  override def onKeyEvent(event: Event.KeyEvent): Boolean =
     if event.action == GLFW_PRESS
     then
       event.key match
@@ -169,7 +169,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     setMouseCursorInvisible(moveWithMouse)
     window.resetMousePos()
 
-  override def onScrollEvent(event: ScrollEvent): Boolean =
+  override def onScrollEvent(event: Event.ScrollEvent): Boolean =
     if !isPaused && !isInPopup && moveWithMouse
     then
       val dy = -math.signum(event.yoffset).toInt
@@ -194,7 +194,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private def setMouseCursorInvisible(invisible: Boolean): Unit =
     window.setCursorLayout(if invisible then GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean =
+  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
     event.button match
       case 0 => leftMouseButtonTimer.active = event.action != GLFW_RELEASE
       case 1 => rightMouseButtonTimer.active = event.action != GLFW_RELEASE

@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.gui.{LocationInfo, MouseClickEvent}
+import com.martomate.hexacraft.gui.{Event, LocationInfo}
 
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
@@ -28,7 +28,7 @@ class Button(text: String, location: LocationInfo, clickAction: => Unit)(using G
     Component.drawRect(location, transformation.x, transformation.y, color)
     super.render(transformation)
 
-  override def onMouseClickEvent(event: MouseClickEvent): Boolean =
+  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
     val mouseReleased = event.action == GLFW.GLFW_RELEASE
     val containsMouse = location.containsPoint(event.mousePos)
 

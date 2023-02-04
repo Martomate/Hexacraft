@@ -10,6 +10,4 @@ trait GameWindowExtended extends GameWindow {
   def resetMousePos(): Unit
 
   def setCursorLayout(cursorLayout: Int): Unit
-
-  def tryQuit(): Unit
 }

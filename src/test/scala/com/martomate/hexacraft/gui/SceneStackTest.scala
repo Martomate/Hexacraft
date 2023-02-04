@@ -1,11 +1,12 @@
-package com.martomate.hexacraft.scene
+package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.gui.SceneStack
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-abstract class SceneStackTest(makeStack: => SceneStack) extends AnyFlatSpec with Matchers {
+class SceneStackTest extends AnyFlatSpec with Matchers {
+  def makeStack = new SceneStack
+
   "pushScene" should "push the given scene"
   it should "add the scene even if it already exists in the stack"
 

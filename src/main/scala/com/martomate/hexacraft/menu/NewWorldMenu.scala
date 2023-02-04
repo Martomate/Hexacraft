@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.menu
 
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo16x9, MenuScene}
+import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.settings.WorldSettings
@@ -11,31 +11,31 @@ import scala.util.Random
 
 class NewWorldMenu(saveFolder: File)(using window: GameWindowExtended, Blocks: Blocks) extends MenuScene {
   addComponent(
-    new Label("World name", LocationInfo16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
+    new Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
   )
-  private val nameTF = new TextField(LocationInfo16x9(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 2.5f)
+  private val nameTF = new TextField(LocationInfo.from16x9(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 2.5f)
   addComponent(nameTF)
 
   addComponent(
-    new Label("World size", LocationInfo16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
+    new Label("World size", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
   )
   private val sizeTF =
-    new TextField(LocationInfo16x9(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 2.5f)
+    new TextField(LocationInfo.from16x9(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 2.5f)
   addComponent(sizeTF)
 
   addComponent(
-    new Label("World seed", LocationInfo16x9(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false)
+    new Label("World seed", LocationInfo.from16x9(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
   )
-  private val seedTF = new TextField(LocationInfo16x9(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 2.5f)
+  private val seedTF = new TextField(LocationInfo.from16x9(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 2.5f)
   addComponent(seedTF)
 
-  addComponent(Button("Cancel", LocationInfo16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
+  addComponent(Button("Cancel", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
     window.scenes.popScene()
   })
-  addComponent(Button("Create world", LocationInfo16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
+  addComponent(Button("Create world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
 
   private def createWorld(): Unit = {
     try {

@@ -47,12 +47,4 @@ object LocationInfo:
 
     LocationInfo(minX, minY, maxX - minX, maxY - minY)
 
-object LocationInfo16x9:
-  def apply(x: Float, y: Float, w: Float, h: Float): LocationInfo =
-    LocationInfo.from16x9(x, y, w, h)
-
-object LocationInfoIdentity:
-  def apply(x: Float, y: Float, w: Float, h: Float): LocationInfo =
-    LocationInfo(x, y, w, h)
-
 case class FramebufferRectangle(x: Int, y: Int, w: Int, h: Int)

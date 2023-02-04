@@ -2,41 +2,31 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
-import com.martomate.hexacraft.gui.{CharEvent, KeyEvent, LocationInfo, MouseClickEvent, ScrollEvent}
+import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.renderer.*
 
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 import org.lwjgl.opengl.GL11
 
-abstract class Component {
+abstract class Component:
   private val textMaster = new TextMaster()
 
-  protected def addText(text: GUIText): Unit = {
-    textMaster.loadText(text)
-  }
-
-  protected def removeText(text: GUIText): Unit = {
-    textMaster.removeText(text)
-  }
+  protected def addText(text: GUIText): Unit = textMaster.loadText(text)
+  protected def removeText(text: GUIText): Unit = textMaster.removeText(text)
 
   def tick(): Unit = ()
 
-  def render(transformation: GUITransformation): Unit = {
-    textMaster.render(transformation.x, transformation.y)
-  }
+  def render(transformation: GUITransformation): Unit = textMaster.render(transformation.x, transformation.y)
 
-  def onMouseClickEvent(event: MouseClickEvent): Boolean = false
-  def onScrollEvent(event: ScrollEvent): Boolean = false
-  def onKeyEvent(event: KeyEvent): Boolean = false
-  def onCharEvent(event: CharEvent): Boolean = false
+  def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = false
+  def onScrollEvent(event: Event.ScrollEvent): Boolean = false
+  def onKeyEvent(event: Event.KeyEvent): Boolean = false
+  def onCharEvent(event: Event.CharEvent): Boolean = false
   def onReloadedResources(): Unit = ()
 
-  def unload(): Unit = {
-    textMaster.unload()
-  }
-}
+  def unload(): Unit = textMaster.unload()
 
-object Component {
+object Component:
   private val rectVAO: VAO = new VAOBuilder(4)
     .addVBO(VBOBuilder(4).floats(0, 2).create().fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
     .create()
@@ -47,12 +37,7 @@ object Component {
   private val imageShader: Shader = Shaders.Image
   private val colorShader: Shader = Shaders.Color
 
-  def drawImage(
-      location: LocationInfo,
-      xoffset: Float,
-      yoffset: Float,
-      image: TextureSingle
-  ): Unit = {
+  def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit =
     imageShader.enable()
     image.bind()
     val mat = new Matrix4f()
@@ -61,9 +46,8 @@ object Component {
     imageShader.setUniformMat4("transformationMatrix", mat)
     imageShader.setUniform2f("imageSize", image.width.toFloat, image.height.toFloat)
     Component.rectRenderer.render()
-  }
 
-  def drawRect(location: LocationInfo, xoffset: Float, yoffset: Float, color: Vector4f): Unit = {
+  def drawRect(location: LocationInfo, xoffset: Float, yoffset: Float, color: Vector4f): Unit =
     colorShader.enable()
 
     val mat = new Matrix4f()
@@ -72,17 +56,9 @@ object Component {
     colorShader.setUniformMat4("transformationMatrix", mat)
     colorShader.setUniform4f("col", color)
     Component.rectRenderer.render()
-  }
 
-  def makeText(
-      text: String,
-      location: LocationInfo,
-      textSize: Float,
-      centered: Boolean = true
-  ): GUIText = {
+  def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): GUIText =
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
     val guiText = GUIText(text, textSize, Component.font, position, location.w, centered)
     guiText.setColor(0.9f, 0.9f, 0.9f)
     guiText
-  }
-}

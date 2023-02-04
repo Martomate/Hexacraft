@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
-import com.martomate.hexacraft.gui.{LocationInfo16x9, Scene}
+import com.martomate.hexacraft.gui.{LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.Component
 import com.martomate.hexacraft.world.DebugInfoProvider
 
@@ -41,7 +41,7 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
     yOff += 0.02f
     val guiText = Component.makeText(
       text,
-      LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
+      LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
       2,
       centered = false
     )
@@ -53,7 +53,7 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
   private def addDebugText(id: String, display: String, defaultValue: String = ""): Unit = {
     val text = Component.makeText(
       defaultValue,
-      LocationInfo16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
+      LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f),
       2,
       centered = false
     )

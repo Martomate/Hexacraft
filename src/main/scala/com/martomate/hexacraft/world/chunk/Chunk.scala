@@ -22,8 +22,7 @@ object Chunk:
     val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator)
-    extends BlockInChunkAccessor:
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator):
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -81,8 +80,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
       if ents.nonEmpty then
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
-
-  def hasNoBlocks: Boolean = storage.numBlocks == 0
 
   def saveIfNeeded(): Unit = if needsToSave || entities.needsToSave then save()
 

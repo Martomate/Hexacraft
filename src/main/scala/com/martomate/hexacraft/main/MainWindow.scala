@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.*
-import com.martomate.hexacraft.gui.{CharEvent, GameWindowExtended, KeyEvent, MouseClickEvent, SceneStack, ScrollEvent}
+import com.martomate.hexacraft.gui.{Event, GameWindowExtended, SceneStack}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
@@ -37,7 +37,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
   override val keyboard: GameKeyboard = key => glfwGetKey(window, key)
 
-  override val scenes: SceneStack = new SceneStackImpl
+  override val scenes: SceneStack = new SceneStack
 
   override def setCursorLayout(cursorLayout: Int): Unit =
     glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
@@ -100,7 +100,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       callbackHandler.handle(processCallbackEvent)
 
   private def processCallbackEvent(event: CallbackEvent): Unit = event match
-    case KeyPressedCallback(window, key, scancode, action, mods) =>
+    case CallbackEvent.KeyPressed(window, key, scancode, action, mods) =>
       val keyIsPressed = action == GLFW_PRESS
 
       if keyIsPressed
@@ -114,17 +114,17 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
         if key == GLFW_KEY_F11
         then setFullscreen()
 
-      scenes.reverseIterator.exists(_.onKeyEvent(KeyEvent(key, scancode, action, mods)))
-    case CharTypedCallback(_, character) =>
-      scenes.reverseIterator.exists(_.onCharEvent(CharEvent(character)))
-    case MouseClickedCallback(_, button, action, mods) =>
+      scenes.reverseIterator.exists(_.onKeyEvent(Event.KeyEvent(key, scancode, action, mods)))
+    case CallbackEvent.CharTyped(_, character) =>
+      scenes.reverseIterator.exists(_.onCharEvent(Event.CharEvent(character)))
+    case CallbackEvent.MouseClicked(_, button, action, mods) =>
       val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
       scenes.reverseIterator.exists(
-        _.onMouseClickEvent(MouseClickEvent(button, action, mods, mousePos))
+        _.onMouseClickEvent(Event.MouseClickEvent(button, action, mods, mousePos))
       )
-    case MouseScrolledCallback(_, xOff, yOff) =>
-      scenes.reverseIterator.exists(_.onScrollEvent(ScrollEvent(xOff.toFloat, yOff.toFloat)))
-    case WindowResizedCallback(_, w, h) =>
+    case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
+      scenes.reverseIterator.exists(_.onScrollEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))
+    case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then
         if w != _windowSize.x || h != _windowSize.y
@@ -135,7 +135,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
         mouse.skipNextMouseMovedUpdate()
 
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
-    case FramebufferResizedCallback(_, w, h) =>
+    case CallbackEvent.FramebufferResized(_, w, h) =>
       if w > 0 && h > 0
       then
         if w != _framebufferSize.x || h != _framebufferSize.y
@@ -145,7 +145,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
         _framebufferSize.set(w, h)
 
-    case DebugMessageCallback(source, debugType, _, severity, message, _) =>
+    case CallbackEvent.DebugMessage(source, debugType, _, severity, message, _) =>
       val d = new DebugMessage(source, debugType, severity)
       val messageStr = s"[${d.severityStr}] [${d.typeStr}] [${d.sourceStr}] - $message"
       System.err.println(s"OpenGL debug: $messageStr")
@@ -176,7 +176,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given BlockFactory = new BlockFactory
       given Blocks = new Blocks
-      scenes.pushScene(new MainMenu(saveFolder))
+      scenes.pushScene(new MainMenu(saveFolder, tryQuit))
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
@@ -268,10 +268,10 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       GL11.glEnable(GL43.GL_DEBUG_OUTPUT)
       callbackHandler.addDebugMessageCallback()
 
-  def tryQuit(): Unit =
+  private def tryQuit(): Unit =
     glfwSetWindowShouldClose(window, true)
 
-  def destroy(): Unit =
+  private def destroy(): Unit =
     while scenes.nonEmpty
     do scenes.popScene()
 
