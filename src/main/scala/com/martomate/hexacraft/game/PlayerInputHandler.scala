@@ -4,26 +4,24 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.player.Player
 
-import org.lwjgl.glfw.GLFW._
+import org.joml.Vector2dc
 
-class PlayerInputHandler(
-    mouse: GameMouse,
-    keyboard: GameKeyboard,
-    player: Player
-):
-  private def keyPressed(key: Int): Boolean = keyboard.getKey(key) == GLFW_PRESS
-
+class PlayerInputHandler(keyboard: GameKeyboard, player: Player):
   def maxSpeed: Double =
-    if keyPressed(GLFW_KEY_LEFT_CONTROL)
+    import GameKeyboard.Key.*
+
+    if keyboard.keyIsPressed(MoveSlowly)
     then 0.075
-    else if keyPressed(GLFW_KEY_LEFT_ALT)
+    else if keyboard.keyIsPressed(MoveFast)
     then 12.0
-    else if keyPressed(GLFW_KEY_RIGHT_CONTROL)
+    else if keyboard.keyIsPressed(MoveSuperFast)
     then 120.0
     else 4.3
 
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
-  def tick(moveWithMouse: Boolean, maxSpeed: Double): Unit =
+  def tick(mouseMovement: Vector2dc, maxSpeed: Double): Unit =
+    import GameKeyboard.Key.*
+
     val rSpeed = 0.05
     if player.flying
     then player.velocity.y = 0
@@ -31,64 +29,61 @@ class PlayerInputHandler(
     val cosMove = Math.cos(player.rotation.y) * maxSpeed
     val sinMove = Math.sin(player.rotation.y) * maxSpeed
 
-    if keyPressed(GLFW_KEY_W)
+    if keyboard.keyIsPressed(MoveForward)
     then
       player.velocity.z -= cosMove
       player.velocity.x += sinMove
 
-    if keyPressed(GLFW_KEY_S)
+    if keyboard.keyIsPressed(MoveBackward)
     then
       player.velocity.z += cosMove
       player.velocity.x -= sinMove
 
-    if keyPressed(GLFW_KEY_D)
+    if keyboard.keyIsPressed(MoveRight)
     then
       player.velocity.x += cosMove
       player.velocity.z += sinMove
 
-    if keyPressed(GLFW_KEY_A)
+    if keyboard.keyIsPressed(MoveLeft)
     then
       player.velocity.x -= cosMove
       player.velocity.z -= sinMove
 
-    if keyPressed(GLFW_KEY_SPACE)
+    if keyboard.keyIsPressed(Jump)
     then
       if player.flying
       then player.velocity.y = maxSpeed
       else if player.velocity.y == 0
       then player.velocity.y = 5
 
-    if keyPressed(GLFW_KEY_LEFT_SHIFT)
+    if keyboard.keyIsPressed(Sneak)
     then
       if player.flying
       then player.velocity.y = -maxSpeed
 
-    if keyPressed(GLFW_KEY_UP)
+    if keyboard.keyIsPressed(LookUp)
     then player.rotation.x -= rSpeed
 
-    if keyPressed(GLFW_KEY_DOWN)
+    if keyboard.keyIsPressed(LookDown)
     then player.rotation.x += rSpeed
 
-    if keyPressed(GLFW_KEY_LEFT)
+    if keyboard.keyIsPressed(LookLeft)
     then player.rotation.y -= rSpeed
 
-    if keyPressed(GLFW_KEY_RIGHT)
+    if keyboard.keyIsPressed(LookRight)
     then player.rotation.y += rSpeed
 
-    if keyPressed(GLFW_KEY_PAGE_UP)
+    if keyboard.keyIsPressed(TurnHeadLeft)
     then player.rotation.z -= rSpeed
 
-    if keyPressed(GLFW_KEY_PAGE_DOWN)
+    if keyboard.keyIsPressed(TurnHeadRight)
     then player.rotation.z += rSpeed
 
-    if keyPressed(GLFW_KEY_R) && keyPressed(GLFW_KEY_DELETE)
+    if keyboard.keyIsPressed(ResetRotation)
     then player.rotation.set(0, 0, 0)
 
-    if moveWithMouse
-    then
-      val mouseMoved = mouse.moved
-      player.rotation.y += mouseMoved.x * rSpeed * 0.05
-      player.rotation.x -= mouseMoved.y * rSpeed * 0.05
+    player.rotation.y += mouseMovement.x * rSpeed * 0.05
+    player.rotation.x -= mouseMovement.y * rSpeed * 0.05
 
     if player.rotation.x < -math.Pi / 2
     then player.rotation.x += (math.Pi * 2)

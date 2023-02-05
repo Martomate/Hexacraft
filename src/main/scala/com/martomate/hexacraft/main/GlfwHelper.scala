@@ -16,11 +16,6 @@ class GlfwHelper:
   def getFramebufferSize(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetFramebufferSize(window, px, py))
 
-  def getPixelScale(window: Long): (Int, Int) =
-    val (fw, fh) = getFramebufferSize(window)
-    val (ww, wh) = getWindowSize(window)
-    (fw / ww, fh / wh)
-
   def getMonitorPos(window: Long): (Int, Int) =
     pointerWrapper.ints((px, py) => GLFW.glfwGetMonitorPos(window, px, py))
 

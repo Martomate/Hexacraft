@@ -85,7 +85,7 @@ class TextField(
     else false
 
   override def onKeyEvent(event: Event.KeyEvent): Boolean =
-    val keyReleased = event.action != GLFW.GLFW_RELEASE
+    val keyReleased = event.action != Event.KeyAction.Release
 
     if focused && keyReleased
     then

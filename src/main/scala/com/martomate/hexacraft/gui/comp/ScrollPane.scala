@@ -39,9 +39,9 @@ class ScrollPane(
       val contentBounds = calcContentBounds()
 
       if enableHorizontalScroll
-      then this.xOffset += event.xoffset * 0.05f
+      then this.xOffset += event.xOffset * 0.05f
 
-      this.yOffset -= event.yoffset * 0.05f
+      this.yOffset -= event.yOffset * 0.05f
 
       if boxBounds.h - contentBounds.h < 2 * padding
       then

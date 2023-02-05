@@ -16,6 +16,7 @@ import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
 
 import org.joml.{Matrix4f, Vector2f}
+import org.joml.Vector2d
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
 
@@ -64,7 +65,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler =
-    new PlayerInputHandler(window.mouse, window.keyboard, world.player)
+    new PlayerInputHandler(window.keyboard, world.player)
   private val playerPhysicsHandler: PlayerPhysicsHandler =
     new PlayerPhysicsHandler(world.player, world.collisionDetector)
 
@@ -109,7 +110,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
 
   override def onKeyEvent(event: Event.KeyEvent): Boolean =
-    if event.action == GLFW_PRESS
+    if event.action == Event.KeyAction.Press
     then
       event.key match
         case GLFW_KEY_B =>
@@ -172,7 +173,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   override def onScrollEvent(event: Event.ScrollEvent): Boolean =
     if !isPaused && !isInPopup && moveWithMouse
     then
-      val dy = -math.signum(event.yoffset).toInt
+      val dy = -math.signum(event.yOffset).toInt
       if dy != 0
       then
         val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
@@ -196,9 +197,9 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
   override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
     event.button match
-      case 0 => leftMouseButtonTimer.active = event.action != GLFW_RELEASE
-      case 1 => rightMouseButtonTimer.active = event.action != GLFW_RELEASE
-      case _ =>
+      case Event.MouseButton.Left  => leftMouseButtonTimer.active = event.action != Event.MouseAction.Release
+      case Event.MouseButton.Right => rightMouseButtonTimer.active = event.action != Event.MouseAction.Release
+      case _                       =>
     true
 
   override def windowResized(width: Int, height: Int): Unit =
@@ -236,7 +237,8 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
   override def tick(): Unit =
     val maxSpeed = playerInputHandler.maxSpeed
-    if !isPaused && !isInPopup then playerInputHandler.tick(moveWithMouse, maxSpeed)
+    if !isPaused && !isInPopup then
+      playerInputHandler.tick(if moveWithMouse then window.mouse.moved else new Vector2d(), maxSpeed)
     if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)

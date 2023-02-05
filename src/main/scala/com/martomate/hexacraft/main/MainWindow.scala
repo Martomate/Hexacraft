@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.*
+import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.gui.{Event, GameWindowExtended, SceneStack}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
@@ -35,7 +36,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
   override val mouse: RealGameMouse = new RealGameMouse
 
-  override val keyboard: GameKeyboard = key => glfwGetKey(window, key)
+  override val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(key => glfwGetKey(window, key) == GLFW_PRESS)
 
   override val scenes: SceneStack = new SceneStack
 
@@ -101,7 +102,10 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
   private def processCallbackEvent(event: CallbackEvent): Unit = event match
     case CallbackEvent.KeyPressed(window, key, scancode, action, mods) =>
-      val keyIsPressed = action == GLFW_PRESS
+      val keyAction = Event.KeyAction.fromGlfw(action)
+      val keyMods = Event.KeyMods.fromGlfw(mods)
+
+      val keyIsPressed = keyAction == Event.KeyAction.Press
 
       if keyIsPressed
       then
@@ -114,13 +118,17 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
         if key == GLFW_KEY_F11
         then setFullscreen()
 
-      scenes.reverseIterator.exists(_.onKeyEvent(Event.KeyEvent(key, scancode, action, mods)))
+      scenes.reverseIterator.exists(_.onKeyEvent(Event.KeyEvent(key, scancode, keyAction, keyMods)))
     case CallbackEvent.CharTyped(_, character) =>
       scenes.reverseIterator.exists(_.onCharEvent(Event.CharEvent(character)))
     case CallbackEvent.MouseClicked(_, button, action, mods) =>
+      val mouseButton = Event.MouseButton.fromGlfw(button)
+      val mouseAction = Event.MouseAction.fromGlfw(action)
+      val keyMods = Event.KeyMods.fromGlfw(mods)
+
       val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
       scenes.reverseIterator.exists(
-        _.onMouseClickEvent(Event.MouseClickEvent(button, action, mods, mousePos))
+        _.onMouseClickEvent(Event.MouseClickEvent(mouseButton, mouseAction, keyMods, mousePos))
       )
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
       scenes.reverseIterator.exists(_.onScrollEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))

@@ -23,7 +23,7 @@ class PauseMenu(setPaused: Boolean => Unit)(implicit window: GameWindowExtended)
   }
 
   override def onKeyEvent(event: Event.KeyEvent): Boolean = {
-    if (event.action == GLFW.GLFW_PRESS && event.key == GLFW.GLFW_KEY_ESCAPE) {
+    if (event.action == Event.KeyAction.Press && event.key == GLFW.GLFW_KEY_ESCAPE) {
       unpause()
       true
     } else super.onKeyEvent(event)

@@ -48,7 +48,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   }
 
   override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = {
-    if event.action == GLFW.GLFW_RELEASE && location.containsPoint(event.mousePos)
+    if event.action == Event.MouseAction.Release && location.containsPoint(event.mousePos)
     then
       hoverIndex match
         case Some(hover) =>
@@ -66,7 +66,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   }
 
   override def onKeyEvent(event: Event.KeyEvent): Boolean = {
-    if event.action == GLFW.GLFW_PRESS
+    if event.action == Event.KeyAction.Press
     then
       event.key match
         case GLFW.GLFW_KEY_ESCAPE | GLFW.GLFW_KEY_E =>

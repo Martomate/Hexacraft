@@ -6,32 +6,20 @@ import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
 enum CallbackEvent:
-  /** @param action 0 = release, 1 = press, 2 = repeat */
   case KeyPressed(window: Long, key: Int, scancode: Int, action: Int, mods: Int)
   case CharTyped(window: Long, character: Int)
-
-  /** @param mods 1 = Shift, 2 = Ctrl, 4 = Alt. These are combined with | */
   case MouseClicked(window: Long, button: Int, action: Int, mods: Int)
-  case MouseScrolled(window: Long, xoffset: Double, yoffset: Double)
+  case MouseScrolled(window: Long, xOffset: Double, yOffset: Double)
   case WindowResized(window: Long, w: Int, h: Int)
   case FramebufferResized(window: Long, w: Int, h: Int)
-  case DebugMessage(
-      source: Int,
-      debugType: Int,
-      id: Int,
-      severity: Int,
-      message: String,
-      userParam: Long
-  )
+  case DebugMessage(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long)
 
 class CallbackHandler:
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
 
   def handle(handler: CallbackEvent => Unit): Unit =
-    if callbackQueue.nonEmpty
-    then
-      while callbackQueue.nonEmpty
-      do handler(callbackQueue.dequeue())
+    while callbackQueue.nonEmpty
+    do handler(callbackQueue.dequeue())
 
   private def onKeyCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit =
     callbackQueue.enqueue(CallbackEvent.KeyPressed(window, key, scancode, action, mods))

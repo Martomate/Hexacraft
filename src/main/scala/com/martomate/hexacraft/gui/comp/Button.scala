@@ -29,7 +29,7 @@ class Button(text: String, location: LocationInfo, clickAction: => Unit)(using G
     super.render(transformation)
 
   override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
-    val mouseReleased = event.action == GLFW.GLFW_RELEASE
+    val mouseReleased = event.action == Event.MouseAction.Release
     val containsMouse = location.containsPoint(event.mousePos)
 
     if mouseReleased && containsMouse
