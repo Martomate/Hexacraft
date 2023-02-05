@@ -15,6 +15,7 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import org.joml.Vector2ic
+import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import scala.collection.mutable
@@ -23,8 +24,14 @@ import scala.collection.mutable.ArrayBuffer
 class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize)
     extends ChunkAddedOrRemovedListener:
 
-  Shaders.WorldCombiner.setUniform1i("worldColorTexture", 0)
-  Shaders.WorldCombiner.setUniform1i("worldDepthTexture", 1)
+  private val skyShader = Shader.get(Shaders.ShaderNames.Sky).get
+  private val entityShader = Shader.get(Shaders.ShaderNames.Entity).get
+  private val entitySideShader = Shader.get(Shaders.ShaderNames.EntitySide).get
+  private val selectedBlockShader = Shader.get(Shaders.ShaderNames.SelectedBlock).get
+  private val worldCombinerShader = Shader.get(Shaders.ShaderNames.WorldCombiner).get
+
+  worldCombinerShader.setUniform1i("worldColorTexture", 0)
+  worldCombinerShader.setUniform1i("worldDepthTexture", 1)
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
@@ -65,7 +72,26 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   def tick(camera: Camera, renderDistance: Double): Unit =
     chunkRenderUpdater.update(camera, renderDistance)
 
-  def render(selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit =
+  def onTotalSizeChanged(totalSize: Int): Unit =
+    chunkHandler.onTotalSizeChanged(totalSize)
+
+    entityShader.setUniform1i("totalSize", totalSize)
+    entitySideShader.setUniform1i("totalSize", totalSize)
+    selectedBlockShader.setUniform1i("totalSize", totalSize)
+
+  def onProjMatrixChanged(camera: Camera): Unit =
+    chunkHandler.onProjMatrixChanged(camera)
+
+    camera.setProjMatrix(entityShader)
+    camera.setProjMatrix(entitySideShader)
+    camera.setProjMatrix(selectedBlockShader)
+
+    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
+
+    worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
+    worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
+
+  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit =
     // Update the 'selectedBlockVAO' if needed
     if currentlySelectedBlockAndSide != selectedBlockAndSide
     then
@@ -80,15 +106,18 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
 
-    Shaders.Sky.enable()
+    skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
+    skyShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+    skyShader.enable()
     skyRenderer.render()
 
     // World content
-    chunkHandler.render()
-    renderEntities()
+    chunkHandler.render(camera, sun)
+    renderEntities(camera, sun)
 
     if selectedBlockAndSide.flatMap(_._2).isDefined then
-      Shaders.SelectedBlock.enable()
+      camera.updateUniforms(selectedBlockShader)
+      selectedBlockShader.enable()
       selectedBlockRenderer.render()
 
     mainFrameBuffer.unbind()
@@ -100,7 +129,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     GL13.glActiveTexture(GL13.GL_TEXTURE1)
     GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainFrameBuffer.depthTexture)
 
-    Shaders.WorldCombiner.enable()
+    worldCombinerShader.enable()
     worldCombinerRenderer.render()
 
     GL13.glActiveTexture(GL13.GL_TEXTURE1)
@@ -131,9 +160,14 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     chunkHandler.unload()
     mainFrameBuffer.unload()
 
-  private def renderEntities(): Unit =
+  private def renderEntities(camera: Camera, sun: Vector3f): Unit =
+    camera.updateUniforms(entityShader)
+    camera.updateUniforms(entitySideShader)
+    entityShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+    entitySideShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+
     for side <- 0 until 8 do
-      val sh = if side < 2 then Shaders.Entity else Shaders.EntitySide
+      val sh = if side < 2 then entityShader else entitySideShader
       sh.enable()
       sh.setUniform1i("side", side)
 

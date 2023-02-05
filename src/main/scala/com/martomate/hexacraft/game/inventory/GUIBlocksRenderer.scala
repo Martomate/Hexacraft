@@ -3,6 +3,7 @@ package com.martomate.hexacraft.game.inventory
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.{Shader, Shaders, TextureArray}
 import com.martomate.hexacraft.world.block.Block
+import com.martomate.hexacraft.world.camera.CameraProjection
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 
 import org.joml.{Matrix4f, Vector3f}
@@ -21,18 +22,27 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 ):
   private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
-  private val guiBlockShader: Shader = Shaders.GuiBlock
-  private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
+  private val guiBlockShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlock).get
+  private val guiBlockSideShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlockSide).get
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")
 
   private var viewMatrix = new Matrix4f
   def setViewMatrix(matrix: Matrix4f): Unit = viewMatrix = matrix
+
+  private var cameraProjection = new CameraProjection(70f, 16f / 9f, 0.02f, 1000)
+  def onWindowAspectRatioChanged(aspectRatio: Float): Unit =
+    cameraProjection.aspect = aspectRatio
+    cameraProjection.updateProjMatrix()
 
   updateContent()
 
   def render(transformation: GUITransformation): Unit =
     guiBlockShader.setUniformMat4("viewMatrix", viewMatrix)
     guiBlockSideShader.setUniformMat4("viewMatrix", viewMatrix)
+
+    guiBlockShader.setUniformMat4("projMatrix", cameraProjection.matrix)
+    guiBlockSideShader.setUniformMat4("projMatrix", cameraProjection.matrix)
+
     blockTexture.bind()
 
     for (side <- 0 until 8)

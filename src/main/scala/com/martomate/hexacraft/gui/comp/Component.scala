@@ -34,8 +34,8 @@ object Component:
 
   val font: FontType = Fonts.get("Verdana").get
 
-  private val imageShader: Shader = Shaders.Image
-  private val colorShader: Shader = Shaders.Color
+  private val imageShader: Shader = Shader.get(Shaders.ShaderNames.Image).get
+  private val colorShader: Shader = Shader.get(Shaders.ShaderNames.Color).get
 
   def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit =
     imageShader.enable()

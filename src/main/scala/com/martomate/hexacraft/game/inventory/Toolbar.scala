@@ -22,14 +22,19 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(implicit window: Gam
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
   private val guiBlockRenderer =
-    new GUIBlocksRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
-  guiBlockRenderer.setViewMatrix(
-    new Matrix4f()
-      .translate(0, 0, -14f)
-      .rotateX(3.1415f / 6)
-      .rotateY(3.1415f / 24)
-      .translate(0, -0.25f, 0)
-  )
+    val renderer = new GUIBlocksRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
+    renderer.setViewMatrix(
+      new Matrix4f()
+        .translate(0, 0, -14f)
+        .rotateX(3.1415f / 6)
+        .rotateY(3.1415f / 24)
+        .translate(0, -0.25f, 0)
+    )
+    renderer.onWindowAspectRatioChanged(window.aspectRatio)
+    renderer
+
+  def onWindowAspectRatioChanged(aspectRatio: Float): Unit =
+    guiBlockRenderer.onWindowAspectRatioChanged(aspectRatio)
 
   inventory.addChangeListener(() => guiBlockRenderer.updateContent())
 

@@ -2,13 +2,14 @@ package com.martomate.hexacraft.font
 
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
+import com.martomate.hexacraft.renderer.Shader
 
 import org.lwjgl.opengl.{GL11, GL13, GL30}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class FontRenderer {
-  private val shader = Shaders.Font
+  private val shader = Shader.get(Shaders.ShaderNames.Font).get
 
   def render(
       texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],

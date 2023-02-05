@@ -18,35 +18,6 @@ object Shaders {
     val WaterDepth: String = "water_depth"
   }
 
-  // TODO: move some of these closer to where they are used
-  def Block: Shader = Shader.get(ShaderNames.Block).get
-
-  def BlockSide: Shader = Shader.get(ShaderNames.BlockSide).get
-
-  def Entity: Shader = Shader.get(ShaderNames.Entity).get
-
-  def EntitySide: Shader = Shader.get(ShaderNames.EntitySide).get
-
-  def GuiBlock: Shader = Shader.get(ShaderNames.GuiBlock).get
-
-  def GuiBlockSide: Shader = Shader.get(ShaderNames.GuiBlockSide).get
-
-  def SelectedBlock: Shader = Shader.get(ShaderNames.SelectedBlock).get
-
-  def Sky: Shader = Shader.get(ShaderNames.Sky).get
-
-  def Crosshair: Shader = Shader.get(ShaderNames.Crosshair).get
-
-  def Image: Shader = Shader.get(ShaderNames.Image).get
-
-  def Color: Shader = Shader.get(ShaderNames.Color).get
-
-  def Font: Shader = Shader.get(ShaderNames.Font).get
-
-  def WorldCombiner: Shader = Shader.get(ShaderNames.WorldCombiner).get
-
-  def WaterDepth: Shader = Shader.get(ShaderNames.WaterDepth).get
-
   def registerAll(): Unit = {
     Shader.register(
       ShaderConfig(ShaderNames.Block, "block")

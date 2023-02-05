@@ -17,6 +17,7 @@ import com.martomate.hexacraft.world.render.WorldRenderer
 
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
+import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11
 
@@ -24,33 +25,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     extends Scene
     with DebugInfoProvider:
 
-  private val blockShader: Shader = Shaders.Block
-  private val blockSideShader: Shader = Shaders.BlockSide
-  private val entityShader: Shader = Shaders.Entity
-  private val entitySideShader: Shader = Shaders.EntitySide
-  private val guiBlockShader: Shader = Shaders.GuiBlock
-  private val guiBlockSideShader: Shader = Shaders.GuiBlockSide
-  private val selectedBlockShader: Shader = Shaders.SelectedBlock
-  private val skyShader: Shader = Shaders.Sky
-  private val crosshairShader: Shader = Shaders.Crosshair
-  private val worldCombinerShader = Shaders.WorldCombiner
-
-  private val shadersNeedingTotalSize: Seq[Shader] =
-    Seq(blockShader, blockSideShader, entityShader, entitySideShader, selectedBlockShader)
-  private val shadersNeedingProjMatrix: Seq[Shader] = Seq(
-    blockShader,
-    blockSideShader,
-    entityShader,
-    entitySideShader,
-    guiBlockShader,
-    guiBlockSideShader,
-    selectedBlockShader
-  )
-  private val shadersNeedingCamera: Seq[Shader] =
-    Seq(blockShader, blockSideShader, entityShader, entitySideShader, selectedBlockShader)
-  private val shadersNeedingSun: Seq[Shader] =
-    Seq(skyShader, blockShader, blockSideShader, entityShader, entitySideShader)
-
+  private val crosshairShader: Shader = Shader.get(Shaders.ShaderNames.Crosshair).get
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
     new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
@@ -93,21 +68,14 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private def setUniforms(): Unit =
     setProjMatrixForAll()
 
-    for shader <- shadersNeedingTotalSize
-    do shader.setUniform1i("totalSize", world.size.totalSize)
-
-    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
+    worldRenderer.onTotalSizeChanged(world.size.totalSize)
 
     Shader.foreach(
       _.setUniform2f("windowSize", window.windowSize.x.toFloat, window.windowSize.y.toFloat)
     )
 
   private def setProjMatrixForAll(): Unit =
-    for shader <- shadersNeedingProjMatrix
-    do camera.setProjMatrix(shader)
-
-    worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
-    worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
+    worldRenderer.onProjMatrixChanged(camera)
 
   override def onKeyEvent(event: Event.KeyEvent): Boolean =
     if event.action == Event.KeyAction.Press
@@ -207,8 +175,8 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     camera.updateProjMatrix()
 
     setProjMatrixForAll()
-
-    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
+    blockInHandRenderer.onWindowAspectRatioChanged(width.toFloat / height)
+    toolbar.onWindowAspectRatioChanged(width.toFloat / height)
 
     if debugScene != null
     then debugScene.windowResized(width, height)
@@ -219,7 +187,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   override def windowTitle: String = ""
 
   override def render(transformation: GUITransformation): Unit =
-    worldRenderer.render(selectedBlockAndSide)
+    worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()
 
@@ -244,14 +212,6 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
-
-    for shader <- shadersNeedingCamera
-    do camera.updateUniforms(shader)
-
-    skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
-
-    for shader <- shadersNeedingSun
-    do shader.setUniform3f("sun", 0, 1, -1)
 
     blockInHandRenderer.updateContent()
 
@@ -336,6 +296,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
     val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
     renderer.setViewMatrix(viewMatrix)
+    renderer.onWindowAspectRatioChanged(window.aspectRatio)
     renderer
 
   private def makeCrosshairVAO: VAO = new VAOBuilder(4)

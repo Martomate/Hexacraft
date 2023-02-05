@@ -47,6 +47,9 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     then floatingBlockRenderer.updateContent()
   }
 
+  override def windowResized(w: Int, h: Int): Unit =
+    guiBlockRenderer.onWindowAspectRatioChanged(w.toFloat / h)
+
   override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = {
     if event.action == Event.MouseAction.Release && location.containsPoint(event.mousePos)
     then
@@ -114,6 +117,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
 
     val renderer = new GUIBlocksRenderer(9, 4, 0.2f)(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
+    renderer.onWindowAspectRatioChanged(window.aspectRatio)
     renderer
   }
 
@@ -127,6 +131,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
 
     val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
+    renderer.onWindowAspectRatioChanged(window.aspectRatio)
     renderer
   }
 
