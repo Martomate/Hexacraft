@@ -1,7 +1,6 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.segment
 
 import com.martomate.hexacraft.world.render.segment.{ChunkSegs, Segment}
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

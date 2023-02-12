@@ -1,11 +1,11 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.buffer
 
 import com.martomate.hexacraft.world.render.buffer.{BufferHandler, RenderBuffer, RenderBufferFactory}
 import com.martomate.hexacraft.world.render.segment.Segment
-
-import java.nio.ByteBuffer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import java.nio.ByteBuffer
 
 class BufferHandlerTest extends AnyFlatSpec with Matchers {
   private val BytesPerInstance: Int = 3

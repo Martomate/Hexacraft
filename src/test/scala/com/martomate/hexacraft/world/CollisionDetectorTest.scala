@@ -1,13 +1,12 @@
-package com.martomate.hexacraft.world.collision
+package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState, HexBox}
+import com.martomate.hexacraft.world.block.*
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
-
+import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import org.joml.Vector3d
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

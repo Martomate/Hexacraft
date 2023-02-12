@@ -21,3 +21,6 @@ class Entity(protected val data: EntityBaseData, val model: EntityModel) {
 
   def toNBT: Seq[Tag[_]] = data.toNBT
 }
+
+// TODO: Create an Entity.Snapshot class that contains all the data needed for an entity, and make sure that an Entity
+//  can be converted to and from the Snapshot type. The Snapshot can then be converted to and from NBT.

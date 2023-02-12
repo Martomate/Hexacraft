@@ -1,6 +1,6 @@
-package com.martomate.hexacraft.world.render
+package com.martomate.hexacraft.world.render.segment
 
-import com.martomate.hexacraft.world.render.segment.{ChunkSegsWithKey, Segment}
+import com.martomate.hexacraft.world.render.segment.{ChunkSegsTest, ChunkSegsWithKey, Segment}
 
 class ChunkSegsWithKeyTest extends ChunkSegsTest {
   "lastKeyAndSegment" should "return the correct key if nothing is removed" in {
