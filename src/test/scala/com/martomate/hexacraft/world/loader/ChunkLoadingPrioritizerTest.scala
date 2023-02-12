@@ -4,11 +4,10 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 import scala.collection.mutable
 
-abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
+abstract class ChunkLoadingPrioritizerTest extends FunSuite {
   implicit val cylSize: CylinderSize = CylinderSize(4)
 
   def make(
@@ -22,21 +21,21 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
 
   protected def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
 
-  "nextAddableChunk" should "be the chunk of the origin in the beginning" in {
-    make(makePos(0, 0, 0)).nextAddableChunk shouldBe Some(ChunkRelWorld(0, 0, 0))
-    make(makePos(17, 0, 0)).nextAddableChunk shouldBe Some(ChunkRelWorld(1, 0, 0))
-    make(makePos(-4, 0, 0)).nextAddableChunk shouldBe Some(ChunkRelWorld(-1, 0, 0))
-    make(makePos(-4, 160, -30)).nextAddableChunk shouldBe Some(ChunkRelWorld(-1, 10, -2))
+  test("nextAddableChunk should be the chunk of the origin in the beginning") {
+    assertEquals(make(makePos(0, 0, 0)).nextAddableChunk, Some(ChunkRelWorld(0, 0, 0)))
+    assertEquals(make(makePos(17, 0, 0)).nextAddableChunk, Some(ChunkRelWorld(1, 0, 0)))
+    assertEquals(make(makePos(-4, 0, 0)).nextAddableChunk, Some(ChunkRelWorld(-1, 0, 0)))
+    assertEquals(make(makePos(-4, 160, -30)).nextAddableChunk, Some(ChunkRelWorld(-1, 10, -2)))
   }
 
-  it should "be a neighbor after adding the origin" in {
+  test("nextAddableChunk should be a neighbor after adding the origin") {
     val prio = make(makePos(0, 0, 0))
     val coords = ChunkRelWorld(0, 0, 0)
     prio += coords
-    coords.neighbors should contain(prio.nextAddableChunk.get)
+    assert(coords.neighbors.contains(prio.nextAddableChunk.get))
   }
 
-  it should "be a neighbor of a loaded chunk" in {
+  test("nextAddableChunk should be a neighbor of a loaded chunk") {
     val prio = make()
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
@@ -44,7 +43,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
 
     for (_ <- 0 until 100) {
       prio.nextAddableChunk.foreach { newChunk =>
-        (newChunk, newChunk.neighbors.exists(chunks.contains)) shouldBe ((newChunk, true))
+        assertEquals((newChunk, newChunk.neighbors.exists(chunks.contains)), ((newChunk, true)))
 
         prio += newChunk
         chunks += newChunk
@@ -52,7 +51,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "not already be loaded" in {
+  test("nextAddableChunk should not already be loaded") {
     val prio = make()
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
@@ -60,7 +59,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
 
     for (_ <- 0 until 100) {
       prio.nextAddableChunk.foreach { newChunk =>
-        chunks should not contain newChunk
+        assert(!chunks.contains(newChunk))
 
         prio += newChunk
         chunks += newChunk
@@ -68,7 +67,7 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "not add forever" in {
+  test("nextAddableChunk should not add forever") {
     val prio = make()
 
     val MAX_ADDED = 1000
@@ -84,78 +83,78 @@ abstract class ChunkLoadingPrioritizerTest extends AnyFlatSpec with Matchers {
       }
     }
 
-    finished shouldBe true
+    assert(finished)
   }
 
-  it should "not assume the chunk will be added" in {
+  test("nextAddableChunk should not assume the chunk will be added") {
     val prio = make()
 
     prio += prio.nextAddableChunk.get
 
     val chunk = prio.nextAddableChunk
-    prio.nextAddableChunk shouldBe chunk
-    prio.nextAddableChunk shouldBe chunk
-    prio.nextAddableChunk shouldBe chunk
+    assertEquals(prio.nextAddableChunk, chunk)
+    assertEquals(prio.nextAddableChunk, chunk)
+    assertEquals(prio.nextAddableChunk, chunk)
   }
 
-  "nextRemovableChunk" should "be None in the beginning" in {
-    make(makePos(0, 0, 0)).nextRemovableChunk shouldBe None
-    make(makePos(17, 0, 0)).nextRemovableChunk shouldBe None
-    make(makePos(-4, 0, 0)).nextRemovableChunk shouldBe None
-    make(makePos(-4, 160, -30)).nextRemovableChunk shouldBe None
+  test("nextRemovableChunk should be None in the beginning") {
+    assertEquals(make(makePos(0, 0, 0)).nextRemovableChunk, None)
+    assertEquals(make(makePos(17, 0, 0)).nextRemovableChunk, None)
+    assertEquals(make(makePos(-4, 0, 0)).nextRemovableChunk, None)
+    assertEquals(make(makePos(-4, 160, -30)).nextRemovableChunk, None)
   }
 
-  it should "be a the None after adding the origin" in {
+  test("nextRemovableChunk should be a the None after adding the origin") {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
-    prio.nextRemovableChunk shouldBe None
+    assertEquals(prio.nextRemovableChunk, None)
   }
 
-  it should "be None after adding and removing the origin" in {
+  test("nextRemovableChunk should be None after adding and removing the origin") {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
     prio -= start
-    prio.nextRemovableChunk shouldBe None
+    assertEquals(prio.nextRemovableChunk, None)
   }
 
-  it should "be C after adding the origin and then C far away" in {
+  test("nextRemovableChunk should be C after adding the origin and then C far away") {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     val far = ChunkRelWorld(10, 0, 0)
     prio += start
     prio += far
-    prio.nextRemovableChunk shouldBe Some(far)
+    assertEquals(prio.nextRemovableChunk, Some(far))
   }
 
-  it should "be None after adding and removing C far away" in {
+  test("nextRemovableChunk should be None after adding and removing C far away") {
     val prio = make(makePos(0, 0, 0))
     val start = ChunkRelWorld(0, 0, 0)
     val far = ChunkRelWorld(10, 0, 0)
     prio += start
     prio += far
     prio -= far
-    prio.nextRemovableChunk shouldBe None
+    assertEquals(prio.nextRemovableChunk, None)
   }
 
-  it should "be the old origin after moving far away" in {
+  test("nextRemovableChunk should be the old origin after moving far away") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin)
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
     origin.pos = makePos(10 * 16, 0, 0).pos
-    prio.nextRemovableChunk shouldBe Some(start)
+    assertEquals(prio.nextRemovableChunk, Some(start))
   }
 
-  it should "not assume the chunk will be removed" in {
+  test("nextRemovableChunk should not assume the chunk will be removed") {
     val prio = make()
 
     prio += ChunkRelWorld(100, 0, 0)
 
     val chunk = prio.nextRemovableChunk
-    prio.nextRemovableChunk shouldBe chunk
-    prio.nextRemovableChunk shouldBe chunk
-    prio.nextRemovableChunk shouldBe chunk
+    assertEquals(prio.nextRemovableChunk, chunk)
+    assertEquals(prio.nextRemovableChunk, chunk)
+    assertEquals(prio.nextRemovableChunk, chunk)
   }
 }

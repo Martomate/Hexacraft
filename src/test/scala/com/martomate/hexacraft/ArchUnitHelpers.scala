@@ -34,9 +34,15 @@ object ArchUnitHelpers:
       check(arch.whereLayer(name))
 
   extension (cs: JavaClasses)
-    def ignoreScalatests(): JavaClasses =
+    def ignoreScalaTests(): JavaClasses =
       def isTest(c: JavaClass): Boolean =
         c.getRawSuperclass
           .filter(s => s.getName.contains("org.scalatest") || isTest(s))
+          .isPresent
+      cs.that(makeFilter("Ignore tests", !isTest(_)))
+    def ignoreMTests(): JavaClasses =
+      def isTest(c: JavaClass): Boolean =
+        c.getRawSuperclass
+          .filter(s => s.getName.contains("munit") || isTest(s))
           .isPresent
       cs.that(makeFilter("Ignore tests", !isTest(_)))

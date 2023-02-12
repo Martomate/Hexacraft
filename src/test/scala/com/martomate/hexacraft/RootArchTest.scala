@@ -4,17 +4,17 @@ import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import com.tngtech.archunit.library.Architectures.*
 import java.nio.file.Paths
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class RootArchTest extends AnyFlatSpec with Matchers {
+class RootArchTest extends FunSuite {
   import ArchUnitHelpers.*
 
   private val allClasses = new ClassFileImporter()
     .importPackages("com.martomate.hexacraft..")
-    .ignoreScalatests()
+    .ignoreScalaTests()
+    .ignoreMTests()
 
-  "world" should "not depend on gui" in {
+  test("world should not depend on gui") {
     noClasses()
       .that()
       .resideInAPackage("com.martomate.hexacraft.world..")
@@ -24,7 +24,7 @@ class RootArchTest extends AnyFlatSpec with Matchers {
       .check(allClasses)
   }
 
-  "util" should "not depend on world" in {
+  test("util should not depend on world") {
     noClasses()
       .that()
       .resideInAPackage("com.martomate.hexacraft.util..")
@@ -35,7 +35,7 @@ class RootArchTest extends AnyFlatSpec with Matchers {
   }
 
   // TODO: reduce package dependencies and update this test accordingly
-  "packages" should "not depend on too many other packages" in {
+  test("packages should not depend on too many other packages") {
     layeredArchitecture()
       .consideringAllDependencies()
       .ignoreDependencyToJava()

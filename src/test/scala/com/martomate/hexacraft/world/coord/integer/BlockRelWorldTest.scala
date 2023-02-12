@@ -2,77 +2,82 @@ package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.util.CylinderSize
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class BlockRelWorldTest extends AnyFlatSpec with Matchers {
+class BlockRelWorldTest extends FunSuite {
   private val cylSize = CylinderSize(4)
   import cylSize.impl
 
-  "chunk xyz" should "be correct in normal range" in {
+  test("chunk xyz should be correct in normal range") {
     val c = BlockRelWorld(532, -14, 17, 3, 7, 5)
-    c.cx shouldBe 3
-    c.cy shouldBe 7
-    c.cz shouldBe 5
+    assertEquals(c.cx, 3.toByte)
+    assertEquals(c.cy, 7.toByte)
+    assertEquals(c.cz, 5.toByte)
   }
 
-  it should "be correct outside normal range" in {
+  test("chunk xyz should be correct outside normal range") {
     val c = BlockRelWorld(532, -14, 17, 3 + 5 * 16, 7 - 3 * 16, 5 + 200 * 16)
-    c.cx shouldBe 3
-    c.cy shouldBe 7
-    c.cz shouldBe 5
+    assertEquals(c.cx, 3.toByte)
+    assertEquals(c.cy, 7.toByte)
+    assertEquals(c.cz, 5.toByte)
   }
 
-  "Y" should "be correct in entire range" in {
-    BlockRelWorld(532, -14, 17, 3, 7, 5).Y shouldBe -14
-    BlockRelWorld(532, 0x7ff, 17, 3, 7, 5).Y shouldBe 0x7ff
-    BlockRelWorld(532, 0x800, 17, 3, 7, 5).Y shouldBe -0x800
-    BlockRelWorld(532, 0xfff, 17, 3, 7, 5).Y shouldBe -1
-    BlockRelWorld(532, 0x1000, 17, 3, 7, 5).Y shouldBe 0
+  test("Y should be correct in entire range") {
+    assertEquals(BlockRelWorld(532, -14, 17, 3, 7, 5).Y, -14)
+    assertEquals(BlockRelWorld(532, 0x7ff, 17, 3, 7, 5).Y, 0x7ff)
+    assertEquals(BlockRelWorld(532, 0x800, 17, 3, 7, 5).Y, -0x800)
+    assertEquals(BlockRelWorld(532, 0xfff, 17, 3, 7, 5).Y, -1)
+    assertEquals(BlockRelWorld(532, 0x1000, 17, 3, 7, 5).Y, 0)
   }
 
-  "X" should "be correct in entire range" in {
-    BlockRelWorld(-14, -14, 17, 3, 7, 5).X shouldBe -14
-    BlockRelWorld(0x7ffff, -14, 17, 3, 7, 5).X shouldBe 0x7ffff
-    BlockRelWorld(0x80000, -14, 17, 3, 7, 5).X shouldBe -0x80000
-    BlockRelWorld(0xfffff, -14, 17, 3, 7, 5).X shouldBe -1
-    BlockRelWorld(0x100000, -14, 17, 3, 7, 5).X shouldBe 0
+  test("X should be correct in entire range") {
+    assertEquals(BlockRelWorld(-14, -14, 17, 3, 7, 5).X, -14)
+    assertEquals(BlockRelWorld(0x7ffff, -14, 17, 3, 7, 5).X, 0x7ffff)
+    assertEquals(BlockRelWorld(0x80000, -14, 17, 3, 7, 5).X, -0x80000)
+    assertEquals(BlockRelWorld(0xfffff, -14, 17, 3, 7, 5).X, -1)
+    assertEquals(BlockRelWorld(0x100000, -14, 17, 3, 7, 5).X, 0)
   }
 
-  "Z" should "be correct in entire range" in {
-    BlockRelWorld(532, -14, 1, 3, 7, 5).Z shouldBe 1
-    BlockRelWorld(532, -14, -1, 3, 7, 5).Z shouldBe 15
-    BlockRelWorld(532, -14, 16, 3, 7, 5).Z shouldBe 0
-    BlockRelWorld(532, -14, 16 * 25235, 3, 7, 5).Z shouldBe 0
+  test("Z should be correct in entire range") {
+    assertEquals(BlockRelWorld(532, -14, 1, 3, 7, 5).Z, 1)
+    assertEquals(BlockRelWorld(532, -14, -1, 3, 7, 5).Z, 15)
+    assertEquals(BlockRelWorld(532, -14, 16, 3, 7, 5).Z, 0)
+    assertEquals(BlockRelWorld(532, -14, 16 * 25235, 3, 7, 5).Z, 0)
   }
 
-  "xyz" should "be correct in normal range" in {
+  test("xyz should be correct in normal range") {
     val c = BlockRelWorld(532, -14, 17, 3, 7, 5)
-    c.x shouldBe 532 * 16 + 3
-    c.y shouldBe -14 * 16 + 7
-    c.z shouldBe 1 * 16 + 5
+    assertEquals(c.x, 532 * 16 + 3)
+    assertEquals(c.y, -14 * 16 + 7)
+    assertEquals(c.z, 1 * 16 + 5)
   }
 
-  "convenient constructor" should "give correct result" in {
+  test("convenient constructor should give correct result") {
     val c = BlockRelWorld(532 * 16 + 3, -14 * 16 + 7, -15 * 16 + 5)
-    c.x shouldBe 532 * 16 + 3
-    c.y shouldBe -14 * 16 + 7
-    c.z shouldBe 1 * 16 + 5
+    assertEquals(c.x, 532 * 16 + 3)
+    assertEquals(c.y, -14 * 16 + 7)
+    assertEquals(c.z, 1 * 16 + 5)
   }
 
-  "offset" should "give correct result" in {
+  test("offset should give correct result") {
     val c = BlockRelWorld(532, -14, 17, 3, 7, 5).offset(-4, 71, -12345)
-    c.x shouldBe 532 * 16 - 1
-    c.y shouldBe -14 * 16 + 78
-    c.z shouldBe 13 * 16 + 12
+    assertEquals(c.x, 532 * 16 - 1)
+    assertEquals(c.y, -14 * 16 + 78)
+    assertEquals(c.z, 13 * 16 + 12)
   }
 
-  "value" should "be in XXXXXZZZZZYYYxyz-format and correct" in {
-    BlockRelWorld(532, -14, 17, 3, 7, 5).value shouldBe
+  test("value should be in XXXXXZZZZZYYYxyz-format and correct") {
+    assertEquals(
+      BlockRelWorld(532, -14, 17, 3, 7, 5).value,
       532L << 44 | (17L & 15) << 24 | (-14 & 0xfff) << 12 | 3 << 8 | 7 << 4 | 5
-    BlockRelWorld(-532, -14, 17, 3, 7, 5).value shouldBe
+    )
+    assertEquals(
+      BlockRelWorld(-532, -14, 17, 3, 7, 5).value,
       (-532L & 0xfffff) << 44 | (17L & 15) << 24 | (-14 & 0xfff) << 12 | 3 << 8 | 7 << 4 | 5
-    BlockRelWorld(532, -14, -17, 3, 7, 5).value shouldBe
+    )
+    assertEquals(
+      BlockRelWorld(532, -14, -17, 3, 7, 5).value,
       532L << 44 | (-17L & 15) << 24 | (-14 & 0xfff) << 12 | 3 << 8 | 7 << 4 | 5
+    )
   }
 }

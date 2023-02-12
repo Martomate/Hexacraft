@@ -4,11 +4,10 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import java.util.Random
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class NoiseGenerator3DTest extends AnyFlatSpec with Matchers {
-  "the noise" should "be the same for the same input" in {
+class NoiseGenerator3DTest extends FunSuite {
+  test("the noise should be the same for the same input") {
     val rand = new Random
     val seed = rand.nextLong
     val gen = makeGen(seed)
@@ -18,11 +17,11 @@ class NoiseGenerator3DTest extends AnyFlatSpec with Matchers {
     for (_ <- 1 to 10) {
       val (x, y, z) = nextDouble3(rand, scale)
 
-      gen.genNoise(x, y, z) shouldBe gen2.genNoise(x, y, z)
+      assert(gen.genNoise(x, y, z) == gen2.genNoise(x, y, z))
     }
   }
 
-  it should "not be constant" in {
+  test("the noise should not be constant") {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
@@ -34,10 +33,10 @@ class NoiseGenerator3DTest extends AnyFlatSpec with Matchers {
       gen.genNoise(x, y, z)
     }
 
-    values.toSet.size should be > 1
+    assert(values.toSet.size > 1)
   }
 
-  "genNoiseFromCylXZ" should "be correct" in {
+  test("genNoiseFromCylXZ should be correct") {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
@@ -51,7 +50,7 @@ class NoiseGenerator3DTest extends AnyFlatSpec with Matchers {
       val noiseFromCyl = gen.genNoiseFromCylXZ(cyl)
       val expectedNoise = gen.genNoise(cyl.x, math.sin(angle) * size.radius, math.cos(angle) * size.radius)
 
-      noiseFromCyl shouldBe expectedNoise
+      assertEquals(noiseFromCyl, expectedNoise)
     }
   }
 

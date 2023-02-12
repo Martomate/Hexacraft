@@ -6,30 +6,29 @@ import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStor
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import com.flowpowered.nbt.CompoundTag
-import org.scalatest.matchers.should.Matchers
 
-class DenseChunkStorageTest extends ChunkStorageTest(DenseChunkStorage) with Matchers {
-  "isDense" should "be true" in {
+class DenseChunkStorageTest extends ChunkStorageTest(DenseChunkStorage) {
+  test("isDense should be true") {
     val storage = new DenseChunkStorage
 
-    storage.isDense shouldBe true
+    assert(storage.isDense)
   }
 
-  "the copy constructor" should "accept this storage type" in {
+  test("the copy constructor should accept this storage type") {
     val storage = new DenseChunkStorage
     fillStorage_Dirt359_Stone350(storage)
     val dense = DenseChunkStorage.fromStorage(storage)
 
-    dense shouldBe a[DenseChunkStorage]
-    dense.numBlocks shouldBe 2
+    assert(dense.isInstanceOf[DenseChunkStorage])
+    assertEquals(dense.numBlocks, 2)
   }
 
-  it should "accept other storage types" in {
+  test("the copy constructor should accept other storage types") {
     val storage = new SparseChunkStorage
     fillStorage_Dirt359_Stone350(storage)
     val dense = DenseChunkStorage.fromStorage(storage)
 
-    dense shouldBe a[DenseChunkStorage]
-    dense.numBlocks shouldBe 2
+    assert(dense.isInstanceOf[DenseChunkStorage])
+    assertEquals(dense.numBlocks, 2)
   }
 }

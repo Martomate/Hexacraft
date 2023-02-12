@@ -1,13 +1,12 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
+class PreparableRunnerWithIndexTest extends FunSuite {
 
   val indexFn: String => Int = s => s.toInt
 
-  "onPrepare" should "be called when prepare is called" in {
+  test("onPrepare should be called when prepare is called") {
     var prepFired: Option[String] = None
     val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(
       s => prepFired = Some(s),
@@ -15,10 +14,10 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
     )
 
     runner.prepare("1337")
-    prepFired shouldBe Some("1337")
+    assertEquals(prepFired, Some("1337"))
   }
 
-  it should "only be called once between activations" in {
+  test("onPrepare should only be called once between activations") {
     var prepFired: Option[String] = None
     val runner: PreparableRunnerWithIndex[String] = new PreparableRunnerWithIndex(indexFn)(
       s => prepFired = Some(s),
@@ -26,32 +25,32 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
     )
 
     runner.prepare("1337")
-    prepFired shouldBe Some("1337")
+    assertEquals(prepFired, Some("1337"))
     prepFired = None
 
     for (_ <- 1 to 4) {
       runner.prepare("1337")
-      prepFired shouldBe None
+      assertEquals(prepFired, None)
     }
   }
 
-  it must "be called before activate for onActivate to run" in {
+  test("onPrepare must be called before activate for onActivate to run") {
     var prepFired: Option[String] = None
     var actFired: Option[String] = None
     val runner: PreparableRunnerWithIndex[String] =
       new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
 
     runner.activate("1337")
-    actFired shouldBe None
+    assertEquals(actFired, None)
 
     runner.prepare("1337")
-    prepFired shouldBe Some("1337")
+    assertEquals(prepFired, Some("1337"))
 
     runner.activate("1337")
-    actFired shouldBe Some("1337")
+    assertEquals(actFired, Some("1337"))
   }
 
-  "onActivate" should "only be called once per preparation" in {
+  test("onActivate should only be called once per preparation") {
     var actFired: Option[String] = None
     val runner: PreparableRunnerWithIndex[String] =
       new PreparableRunnerWithIndex(indexFn)(_ => (), s => actFired = Some(s))
@@ -59,45 +58,45 @@ class PreparableRunnerWithIndexTest extends AnyFlatSpec with Matchers {
     runner.prepare("1337")
 
     runner.activate("1337")
-    actFired shouldBe Some("1337")
+    assertEquals(actFired, Some("1337"))
     actFired = None
 
     for (_ <- 1 to 4) {
       runner.activate("1337")
-      actFired shouldBe None
+      assertEquals(actFired, None)
     }
   }
 
-  "it" should "be reusable" in {
+  test("onActivate should be reusable") {
     var prepFired: Option[String] = None
     var actFired: Option[String] = None
     val runner: PreparableRunnerWithIndex[String] =
       new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some(s), s => actFired = Some(s))
     for (_ <- 1 to 4) {
       runner.prepare("1337")
-      prepFired shouldBe Some("1337")
+      assertEquals(prepFired, Some("1337"))
       prepFired = None
 
       runner.activate("1337")
-      actFired shouldBe Some("1337")
+      assertEquals(actFired, Some("1337"))
       actFired = None
     }
   }
 
-  it should "handle different indices separately" in {
+  test("onActivate should handle different indices separately") {
     var prepFired: Option[(String, Boolean)] = None
     val runner: PreparableRunnerWithIndex[String] =
       new PreparableRunnerWithIndex(indexFn)(s => prepFired = Some((s, true)), s => prepFired = Some((s, false)))
 
     def testPrepare(idx: String): Unit = {
       runner.prepare(idx)
-      prepFired shouldBe Some((idx, true))
+      assertEquals(prepFired, Some((idx, true)))
       prepFired = None
     }
 
     def testActivate(idx: String): Unit = {
       runner.activate(idx)
-      prepFired shouldBe Some((idx, false))
+      assertEquals(prepFired, Some((idx, false)))
       prepFired = None
     }
 

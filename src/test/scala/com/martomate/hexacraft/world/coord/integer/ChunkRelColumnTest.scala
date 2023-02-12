@@ -1,22 +1,21 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class ChunkRelColumnTest extends AnyFlatSpec with Matchers {
-  "Y" can "use the entire range" in {
-    ChunkRelColumn.create(-14).Y shouldBe -14
-    ChunkRelColumn.create(0x7ff).Y shouldBe 0x7ff
-    ChunkRelColumn.create(0x800).Y shouldBe -0x800
-    ChunkRelColumn.create(0xfff).Y shouldBe -1
-    ChunkRelColumn.create(0x1000).Y shouldBe 0
+class ChunkRelColumnTest extends FunSuite {
+  test("Y can use the entire range") {
+    assertEquals(ChunkRelColumn.create(-14).Y, -14)
+    assertEquals(ChunkRelColumn.create(0x7ff).Y, 0x7ff)
+    assertEquals(ChunkRelColumn.create(0x800).Y, -0x800)
+    assertEquals(ChunkRelColumn.create(0xfff).Y, -1)
+    assertEquals(ChunkRelColumn.create(0x1000).Y, 0)
   }
 
-  "value" should "be in YYY-format and correct" in {
-    ChunkRelColumn.create(-14).value shouldBe -14 & 0xfff
-    ChunkRelColumn.create(0x7ff).value shouldBe 0x7ff
-    ChunkRelColumn.create(0x800).value shouldBe -0x800 & 0xfff
-    ChunkRelColumn.create(0xfff).value shouldBe -1 & 0xfff
-    ChunkRelColumn.create(0x1000).value shouldBe 0
+  test("value should be in YYY-format and correct") {
+    assertEquals(ChunkRelColumn.create(-14).value, -14 & 0xfff)
+    assertEquals(ChunkRelColumn.create(0x7ff).value, 0x7ff)
+    assertEquals(ChunkRelColumn.create(0x800).value, -0x800 & 0xfff)
+    assertEquals(ChunkRelColumn.create(0xfff).value, -1 & 0xfff)
+    assertEquals(ChunkRelColumn.create(0x1000).value, 0)
   }
 }

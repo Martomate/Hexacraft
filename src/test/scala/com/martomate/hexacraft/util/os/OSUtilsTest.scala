@@ -1,36 +1,34 @@
 package com.martomate.hexacraft.util.os
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class OSUtilsTest extends AnyFlatSpec with Matchers {
-  "os" should "be Windows if os.name is Windows 10" in {
+class OSUtilsTest extends FunSuite {
+  test("os should be Windows if os.name is Windows 10") {
     System.setProperty("os.name", "Windows 10")
-    OSUtils.os shouldBe Windows
+    assertEquals(OSUtils.os, Windows)
   }
-  it should "be Linux if os.name is Linux" in {
+  test("os should be Linux if os.name is Linux") {
     System.setProperty("os.name", "Linux")
-    OSUtils.os shouldBe Linux
+    assertEquals(OSUtils.os, Linux)
   }
-  it should "be Mac if os.name is Mac OS X" in {
+  test("os should be Mac if os.name is Mac OS X") {
     System.setProperty("os.name", "Mac OS X")
-    OSUtils.os shouldBe Mac
+    assertEquals(OSUtils.os, Mac)
   }
-  it should "be Mac if os.name is macOS" in {
+  test("os should be Mac if os.name is macOS") {
     System.setProperty("os.name", "macOS")
-    OSUtils.os shouldBe Mac
+    assertEquals(OSUtils.os, Mac)
   }
-  it should "be Mac if os.name is Darwin" in {
+  test("os should be Mac if os.name is Darwin") {
     System.setProperty("os.name", "Darwin")
-    OSUtils.os shouldBe Mac
+    assertEquals(OSUtils.os, Mac)
   }
-  it should "be Linux if os.name is OpenBSD" in {
+  test("os should be Linux if os.name is OpenBSD") {
     System.setProperty("os.name", "OpenBSD")
-    OSUtils.os shouldBe Linux
+    assertEquals(OSUtils.os, Linux)
   }
-  it should "be Linux if os.name is unknown" in {
+  test("os should be Linux if os.name is unknown") {
     System.setProperty("os.name", "Future OS")
-    OSUtils.os shouldBe Linux
+    assertEquals(OSUtils.os, Linux)
   }
-
 }

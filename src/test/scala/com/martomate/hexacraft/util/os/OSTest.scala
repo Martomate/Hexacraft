@@ -1,33 +1,32 @@
 package com.martomate.hexacraft.util.os
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class OSTest extends AnyFlatSpec with Matchers {
-  "name" should "be the name of the OS with capital initial letter" in {
-    Windows.name shouldBe "Windows"
-    Mac.name shouldBe "Mac"
-    Linux.name shouldBe "Linux"
+class OSTest extends FunSuite {
+  test("name should be the name of the OS with capital initial letter") {
+    assertEquals(Windows.name, "Windows")
+    assertEquals(Mac.name, "Mac")
+    assertEquals(Linux.name, "Linux")
   }
 
-  "appdataPath" should "be appdata for Windows" in {
+  test("appdataPath should be appdata for Windows") {
     val ans = System.getenv("appdata")
-    Windows.appdataPath shouldBe ans
+    assertEquals(Windows.appdataPath, ans)
   }
-  it should "be user.home for Linux" in {
+  test("appdataPath should be user.home for Linux") {
     val prev = System.getProperty("user.home")
     System.setProperty("user.home", "temp_path")
     try {
-      Linux.appdataPath shouldBe "temp_path"
+      assertEquals(Linux.appdataPath, "temp_path")
     } finally {
       System.setProperty("user.home", prev)
     }
   }
-  it should "be user.home for Mac" in {
+  test("appdataPath should be user.home for Mac") {
     val prev = System.getProperty("user.home")
     System.setProperty("user.home", "temp_path")
     try {
-      Mac.appdataPath shouldBe "temp_path"
+      assertEquals(Mac.appdataPath, "temp_path")
     } finally {
       System.setProperty("user.home", prev)
     }

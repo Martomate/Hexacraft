@@ -10,17 +10,16 @@ import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModel
 import com.martomate.hexacraft.world.entity.base.BasicEntityModel
 import com.martomate.hexacraft.world.entity.player.{PlayerEntity, PlayerEntityModel, PlayerFactory}
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class WorldTest extends AnyFlatSpec with Matchers {
+class WorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
-  "the world" should "not crash" in {
+  test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
     val world = World(provider)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
@@ -30,22 +29,22 @@ class WorldTest extends AnyFlatSpec with Matchers {
     val cCoords = ChunkRelWorld(3, 7, -4)
 
     // Set a chunk in the world
-    world.getChunk(cCoords) shouldBe None
+    assertEquals(world.getChunk(cCoords), None)
     val chunk = Chunk(cCoords, world, provider)
     world.setChunk(chunk)
-    world.getChunk(cCoords) shouldBe Some(chunk)
+    assertEquals(world.getChunk(cCoords), Some(chunk))
 
     // Set a block in the chunk
     val bCoords = BlockRelWorld(5, 1, 3, cCoords)
-    world.getBlock(bCoords) shouldBe BlockState.Air
+    assertEquals(world.getBlock(bCoords), BlockState.Air)
     world.setBlock(bCoords, BlockState(Blocks.Stone, 2))
-    world.getBlock(bCoords) shouldBe BlockState(Blocks.Stone, 2)
+    assertEquals(world.getBlock(bCoords), BlockState(Blocks.Stone, 2))
 
     // Clean up
     world.unload()
   }
 
-  it should "decorate new chunks" in {
+  test("the world should decorate new chunks") {
     val provider = new FakeWorldProvider(1234)
     val world = World(provider)
 
@@ -56,16 +55,16 @@ class WorldTest extends AnyFlatSpec with Matchers {
     world.setChunk(chunk)
 
     // The planner should have decorated the chunk
-    chunk.isDecorated shouldBe true
+    assert(chunk.isDecorated)
 
     // There should be a tree in the chunk
-    chunk.blocks.allBlocks.exists(s => s.block.blockType == Blocks.Log) shouldBe true
+    assert(chunk.blocks.allBlocks.exists(s => s.block.blockType == Blocks.Log))
 
     // Clean up
     world.unload()
   }
 
-  it should "load chunks close to the camera" in {
+  test("the world should load chunks close to the camera") {
     val provider = new FakeWorldProvider(1234)
     val world = World(provider)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
@@ -74,7 +73,7 @@ class WorldTest extends AnyFlatSpec with Matchers {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords)).toCylCoords.toVector3d)
 
     // The chunk should be unloaded from the beginning
-    world.getChunk(cCoords).isDefined shouldBe false
+    assert(world.getChunk(cCoords).isEmpty)
 
     // Run the game a bit
     world.tick(camera)
@@ -82,13 +81,13 @@ class WorldTest extends AnyFlatSpec with Matchers {
     world.tick(camera)
 
     // The chunk should be loaded
-    world.getChunk(cCoords).isDefined shouldBe true
+    assert(world.getChunk(cCoords).isDefined)
 
     // Clean up
     world.unload()
   }
 
-  it should "unload chunks far from the camera" in {
+  test("the world should unload chunks far from the camera") {
     val provider = new FakeWorldProvider(1234)
     val world = World(provider)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
@@ -102,7 +101,7 @@ class WorldTest extends AnyFlatSpec with Matchers {
     world.tick(camera)
 
     // The chunk should be loaded
-    world.getChunk(cCoords).isDefined shouldBe true
+    assert(world.getChunk(cCoords).isDefined)
 
     // Move far away
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords.offset(100, 0, 0))).toCylCoords.toVector3d)
@@ -113,13 +112,13 @@ class WorldTest extends AnyFlatSpec with Matchers {
     world.tick(camera)
 
     // The chunk should be unloaded
-    world.getChunk(cCoords).isDefined shouldBe false
+    assert(world.getChunk(cCoords).isEmpty)
 
     // Clean up
     world.unload()
   }
 
-  it should "allow entities to be added to and removed from a loaded chunk" in {
+  test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
     val world = World(provider)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
@@ -139,23 +138,23 @@ class WorldTest extends AnyFlatSpec with Matchers {
 
     world.addEntity(entity)
 
-    ticks shouldBe 0
+    assertEquals(ticks, 0)
     world.tick(camera)
-    ticks shouldBe 1
+    assertEquals(ticks, 1)
 
     world.removeEntity(entity)
 
     world.tick(camera)
-    ticks shouldBe 1
+    assertEquals(ticks, 1)
 
     world.addEntity(entity)
 
     world.tick(camera)
-    ticks shouldBe 2
+    assertEquals(ticks, 2)
 
     world.removeAllEntities()
 
     world.tick(camera)
-    ticks shouldBe 2
+    assertEquals(ticks, 2)
   }
 }

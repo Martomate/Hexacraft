@@ -2,24 +2,22 @@ package com.martomate.hexacraft.gui
 
 import com.martomate.hexacraft.GameWindow
 
-import org.scalatest.flatspec.AnyFlatSpec
+import munit.FunSuite
 
-class LocationInfoTest extends AnyFlatSpec {
-  implicit val windowImplicit: GameWindow = null
-
-  "16x9" should "have a 16x9 aspect ratio" in {
+class LocationInfoTest extends FunSuite {
+  test("from16x9 should have a 16x9 aspect ratio") {
     val info = LocationInfo.from16x9(0, 0, 1, 1)
-    assertResult(-16f / 9)(info.x)
-    assertResult(-1)(info.y)
-    assertResult(2 * 16f / 9)(info.w)
-    assertResult(2)(info.h)
+    assertEquals(info.x, -16f / 9)
+    assertEquals(info.y, -1f)
+    assertEquals(info.w, 2 * 16f / 9)
+    assertEquals(info.h, 2f)
   }
 
-  it should "have a 16x9 aspect ratio at arbitrary point" in {
+  test("from16x9 should have a 16x9 aspect ratio at arbitrary point") {
     val info = LocationInfo.from16x9(0.3f, 0.23f, 0.78f, 0.54f)
-    assertResult((0.3f * 2 - 1) * 16f / 9)(info.x)
-    assertResult(0.23f * 2 - 1)(info.y)
-    assertResult(0.78f * 2 * 16f / 9)(info.w)
-    assertResult(0.54f * 2)(info.h)
+    assertEquals(info.x, (0.3f * 2 - 1) * 16f / 9)
+    assertEquals(info.y, 0.23f * 2 - 1)
+    assertEquals(info.w, 0.78f * 2 * 16f / 9)
+    assertEquals(info.h, 0.54f * 2)
   }
 }

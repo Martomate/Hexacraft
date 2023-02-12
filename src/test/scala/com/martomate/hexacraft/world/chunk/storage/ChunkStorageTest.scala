@@ -7,107 +7,106 @@ import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockStat
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag}
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends AnyFlatSpec with Matchers {
+abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends FunSuite {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
 
-  "the storage" should "be correct for 0 blocks" in {
+  test("the storage should be correct for 0 blocks") {
     val storage = storageFactory.empty
 
-    storage.numBlocks shouldBe 0
+    assertEquals(storage.numBlocks, 0)
   }
 
-  it should "be correct for 1 block" in {
+  test("the storage should be correct for 1 block") {
     val storage = storageFactory.empty
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
 
-    storage.numBlocks shouldBe 1
+    assertEquals(storage.numBlocks, 1)
   }
 
-  it should "be correct for many blocks" in {
+  test("the storage should be correct for many blocks") {
     val storage = storageFactory.empty
 
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
 
-    storage.numBlocks shouldBe 16 * 16 * 16
+    assertEquals(storage.numBlocks, 16 * 16 * 16)
   }
 
-  "Air" should "not count as a block" in {
+  test("Air should not count as a block") {
     val storage = storageFactory.empty
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
     storage.setBlock(coords, new BlockState(Blocks.Air))
 
-    storage.numBlocks shouldBe 0
+    assertEquals(storage.numBlocks, 0)
   }
 
-  "blockType" should "be correct for existing block" in {
+  test("blockType should be correct for existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Stone
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Stone)
   }
 
-  it should "be Air for non-existing block" in {
+  test("blockType should be Air for non-existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    storage.blockType(coords351.getBlockRelChunk) shouldBe Blocks.Air
+    assertEquals(storage.blockType(coords351.getBlockRelChunk), Blocks.Air)
   }
 
-  "removeBlock" should "work for existing blocks" in {
+  test("removeBlock should work for existing blocks") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords350.getBlockRelChunk)
 
-    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Air
-    storage.numBlocks shouldBe 1
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Air)
+    assertEquals(storage.numBlocks, 1)
   }
 
-  it should "do nothing for non-existing blocks" in {
+  test("removeBlock should do nothing for non-existing blocks") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
     storage.removeBlock(coords351.getBlockRelChunk)
 
-    storage.blockType(coords350.getBlockRelChunk) shouldBe Blocks.Stone
-    storage.numBlocks shouldBe 2
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Stone)
+    assertEquals(storage.numBlocks, 2)
   }
 
-  "getBlock" should "work for existing blocks" in {
+  test("getBlock should work for existing blocks") {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords350.getBlockRelChunk)
 
-    block.blockType shouldBe Blocks.Stone
-    block.metadata shouldBe 2
+    assertEquals(block.blockType, Blocks.Stone)
+    assertEquals(block.metadata, 2.toByte)
   }
 
-  it should "return Air for non-existing block" in {
+  test("getBlock should return Air for non-existing block") {
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords351.getBlockRelChunk)
 
-    block.blockType shouldBe Blocks.Air
+    assertEquals(block.blockType, Blocks.Air)
   }
 
-  "allBlocks" should "return all blocks" in {
+  test("allBlocks should return all blocks") {
     val storage = makeStorage_Dirt359_Stone350
     val storageSize = storage.numBlocks
 
     val all = storage.allBlocks
 
-    all.size shouldBe storageSize
+    assertEquals(all.size, storageSize)
     for (LocalBlockState(c, b) <- all)
-      storage.getBlock(c) shouldBe b
+      assertEquals(storage.getBlock(c), b)
   }
 
-  "fromNBT" should "work with blocks and metadata" in {
+  test("fromNBT should work with blocks and metadata") {
     val tag = NBTUtil.makeCompoundTag(
       "",
       Seq(
@@ -131,11 +130,11 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Any
     )
     val storage = storageFactory.fromNBT(tag)
 
-    storage.numBlocks shouldBe 2
-    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
+    assertEquals(storage.numBlocks, 2)
+    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
   }
 
-  it should "work without metadata" in {
+  test("fromNBT should work without metadata") {
     val tag = NBTUtil.makeCompoundTag(
       "",
       Seq(
@@ -151,11 +150,11 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Any
     )
     val storage = storageFactory.fromNBT(tag)
 
-    storage.numBlocks shouldBe 2
-    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Stone
+    assertEquals(storage.numBlocks, 2)
+    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
   }
 
-  it should "work without blocks" in {
+  test("fromNBT should work without blocks") {
     val tag = NBTUtil.makeCompoundTag(
       "",
       Seq(
@@ -171,31 +170,31 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Any
     )
     val storage = storageFactory.fromNBT(tag)
 
-    storage.numBlocks shouldBe 0
-    storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk) shouldBe Blocks.Air
+    assertEquals(storage.numBlocks, 0)
+    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Air)
   }
 
-  "toNBT" should "work" in {
+  test("toNBT should work") {
     val storage = makeStorage_Dirt359_Stone350
     val nbt = storage.toNBT
-    nbt.size shouldBe 2
+    assertEquals(nbt.size, 2)
 
     val blocksTag = nbt(0)
-    blocksTag.getName shouldBe "blocks"
-    blocksTag shouldBe a[ByteArrayTag]
+    assertEquals(blocksTag.getName, "blocks")
+    assert(blocksTag.isInstanceOf[ByteArrayTag])
     val blocksArray = blocksTag.asInstanceOf[ByteArrayTag].getValue
-    blocksArray.length shouldBe 16 * 16 * 16
+    assertEquals(blocksArray.length, 16 * 16 * 16)
 
     val metadataTag = nbt(1)
-    metadataTag.getName shouldBe "metadata"
-    metadataTag shouldBe a[ByteArrayTag]
+    assertEquals(metadataTag.getName, "metadata")
+    assert(metadataTag.isInstanceOf[ByteArrayTag])
     val metadataArray = metadataTag.asInstanceOf[ByteArrayTag].getValue
-    metadataArray.length shouldBe 16 * 16 * 16
+    assertEquals(metadataArray.length, 16 * 16 * 16)
 
-    blocksArray(coords359.getBlockRelChunk.value) shouldBe Blocks.Dirt.id
-    blocksArray(coords350.getBlockRelChunk.value) shouldBe Blocks.Stone.id
-    metadataArray(coords359.getBlockRelChunk.value) shouldBe 6
-    metadataArray(coords350.getBlockRelChunk.value) shouldBe 2
+    assertEquals(blocksArray(coords359.getBlockRelChunk.value), Blocks.Dirt.id)
+    assertEquals(blocksArray(coords350.getBlockRelChunk.value), Blocks.Stone.id)
+    assertEquals(metadataArray(coords359.getBlockRelChunk.value), 6.toByte)
+    assertEquals(metadataArray(coords350.getBlockRelChunk.value), 2.toByte)
   }
 
   protected def coords350: BlockRelWorld = coordsAt(3, 5, 0)

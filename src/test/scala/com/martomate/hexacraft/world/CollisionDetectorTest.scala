@@ -1,17 +1,17 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import com.martomate.hexacraft.world.block.*
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, Offset}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
-import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import org.joml.Vector3d
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
-class CollisionDetectorTest extends AnyFlatSpec with Matchers {
+import munit.FunSuite
+import org.joml.Vector3d
+
+class CollisionDetectorTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
@@ -22,160 +22,192 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
   private val box2 = new HexBox(0.5f, 0.15f, 0.45f)
   private val pos: CylCoords = BlockCoords(1, 27, -3).toCylCoords
 
-  "collides" should "return true for boxes at the same location" in {
+  test("collides should return true for boxes at the same location") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    detector.collides(box1, pos, box2, pos) shouldBe true
+    assert(detector.collides(box1, pos, box2, pos))
   }
 
-  it should "work in the y-direction" in {
+  test("collides should work in the y-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, box1.top - box2.bottom - 0.001f, 0).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, box1.top - box2.bottom + 0.001f, 0).toCylCoords
-    ) shouldBe false
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, box1.bottom - box2.top + 0.001f, 0).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, box1.bottom - box2.top - 0.001f, 0).toCylCoords
-    ) shouldBe false
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, box1.top - box2.bottom - 0.001f, 0).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, box1.top - box2.bottom + 0.001f, 0).toCylCoords
+      )
+    )
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, box1.bottom - box2.top + 0.001f, 0).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, box1.bottom - box2.top - 0.001f, 0).toCylCoords
+      )
+    )
   }
 
-  it should "work in the z-direction" in {
+  test("collides should work in the z-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius - 0.001).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius + 0.001f).toCylCoords
-    ) shouldBe false
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius + 0.001f).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius - 0.001f).toCylCoords
-    ) shouldBe false
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius - 0.001).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius + 0.001f).toCylCoords
+      )
+    )
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius + 0.001f).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius - 0.001f).toCylCoords
+      )
+    )
   }
 
-  it should "work in the x-direction" in {
+  test("collides should work in the x-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius - 0.001, 0, 0).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius + 0.001f, 0, 0).toCylCoords
-    ) shouldBe false
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius + 0.001f, 0, 0).toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius - 0.001f, 0, 0).toCylCoords
-    ) shouldBe false
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius - 0.001, 0, 0).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius + 0.001f, 0, 0).toCylCoords
+      )
+    )
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius + 0.001f, 0, 0).toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius - 0.001f, 0, 0).toCylCoords
+      )
+    )
   }
 
-  it should "work in the w-direction" in {
+  test("collides should work in the w-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords
-        .offset(
-          box1.smallRadius + box2.smallRadius - 0.001,
-          0,
-          -(box1.smallRadius + box2.smallRadius - 0.001)
-        )
-        .toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords
-        .offset(
-          box1.smallRadius + box2.smallRadius + 0.001f,
-          0,
-          -(box1.smallRadius + box2.smallRadius + 0.001f)
-        )
-        .toCylCoords
-    ) shouldBe false
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords
-        .offset(
-          -box1.smallRadius - box2.smallRadius + 0.001f,
-          0,
-          -(-box1.smallRadius - box2.smallRadius + 0.001f)
-        )
-        .toCylCoords
-    ) shouldBe true
-    detector.collides(
-      box1,
-      pos,
-      box2,
-      pos.toSkewCylCoords
-        .offset(
-          -box1.smallRadius - box2.smallRadius - 0.001f,
-          0,
-          -(-box1.smallRadius - box2.smallRadius - 0.001f)
-        )
-        .toCylCoords
-    ) shouldBe false
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords
+          .offset(
+            box1.smallRadius + box2.smallRadius - 0.001,
+            0,
+            -(box1.smallRadius + box2.smallRadius - 0.001)
+          )
+          .toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords
+          .offset(
+            box1.smallRadius + box2.smallRadius + 0.001f,
+            0,
+            -(box1.smallRadius + box2.smallRadius + 0.001f)
+          )
+          .toCylCoords
+      )
+    )
+    assert(
+      detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords
+          .offset(
+            -box1.smallRadius - box2.smallRadius + 0.001f,
+            0,
+            -(-box1.smallRadius - box2.smallRadius + 0.001f)
+          )
+          .toCylCoords
+      )
+    )
+    assert(
+      !detector.collides(
+        box1,
+        pos,
+        box2,
+        pos.toSkewCylCoords
+          .offset(
+            -box1.smallRadius - box2.smallRadius - 0.001f,
+            0,
+            -(-box1.smallRadius - box2.smallRadius - 0.001f)
+          )
+          .toCylCoords
+      )
+    )
   }
 
   def checkCollision(
@@ -198,11 +230,11 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
         (pos.offset(velocity), velocity)
     }
 
-    newPos.distance(expectedNewPos.toCylCoords.toVector3d) shouldBe 0.0 +- 1e-6
-    newVel.distance(expectedNewVel.toCylCoordsOffset.toVector3d) shouldBe 0.0 +- 1e-6
+    assertEqualsDouble(newPos.distance(expectedNewPos.toCylCoords.toVector3d), 0.0, 1e-6)
+    assertEqualsDouble(newVel.distance(expectedNewVel.toCylCoordsOffset.toVector3d), 0.0, 1e-6)
   }
 
-  "positionAndVelocityAfterCollision" should "do nothing if velocity is 0" in {
+  test("positionAndVelocityAfterCollision should do nothing if velocity is 0") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -213,14 +245,17 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Check for collision
-    detector.positionAndVelocityAfterCollision(
-      box1,
-      BlockCoords(coords).toCylCoords.toVector3d,
-      new Vector3d
-    ) shouldBe (BlockCoords(coords).toCylCoords.toVector3d, new Vector3d)
+    assertEquals(
+      detector.positionAndVelocityAfterCollision(
+        box1,
+        BlockCoords(coords).toCylCoords.toVector3d,
+        new Vector3d
+      ),
+      (BlockCoords(coords).toCylCoords.toVector3d, new Vector3d)
+    )
   }
 
-  it should "do nothing if inside a block" in {
+  test("positionAndVelocityAfterCollision should do nothing if inside a block") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -240,7 +275,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box1, position, velocity, Some(zeroMovement))
   }
 
-  it should "do nothing if the chunk is not loaded" in {
+  test("positionAndVelocityAfterCollision should do nothing if the chunk is not loaded") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -248,7 +283,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     // Ensure the chunk is NOT loaded
     val coords = BlockRelWorld(17, -48, 3)
     world.provideColumn(coords.getColumnRelWorld)
-    world.getChunk(coords.getChunkRelWorld) shouldBe None
+    assertEquals(world.getChunk(coords.getChunkRelWorld), None)
 
     // Check for collision (it should not move)
     val position = BlockCoords(coords).toSkewCylCoords
@@ -257,7 +292,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box1, position, velocity, Some(zeroMovement))
   }
 
-  it should "add velocity to position if there is no collision" in {
+  test("positionAndVelocityAfterCollision should add velocity to position if there is no collision") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -280,7 +315,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box, BlockCoords(coords).toSkewCylCoords, velocity, None)
   }
 
-  it should "work in the x-direction" in {
+  test("positionAndVelocityAfterCollision should work in the x-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -326,7 +361,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box, front, backwardMax.offset(-0.001, 0, 0), Some(backwardMax))
   }
 
-  it should "work in the y-direction" in {
+  test("positionAndVelocityAfterCollision should work in the y-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -374,7 +409,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box, top, downMax.offset(0, -0.001, 0), Some(downMax))
   }
 
-  it should "work in the z-direction" in {
+  test("positionAndVelocityAfterCollision should work in the z-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
@@ -420,7 +455,7 @@ class CollisionDetectorTest extends AnyFlatSpec with Matchers {
     checkCollision(detector, box, front, backwardMax.offset(0, 0, -0.001), Some(backwardMax))
   }
 
-  it should "work in the w-direction" in {
+  test("positionAndVelocityAfterCollision should work in the w-direction") {
     val provider = new FakeWorldProvider(37)
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)

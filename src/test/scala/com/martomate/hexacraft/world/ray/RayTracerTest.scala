@@ -1,18 +1,18 @@
 package com.martomate.hexacraft.world.ray
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, BlockState, Blocks}
+import com.martomate.hexacraft.world.{BlocksInWorld, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
+import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
-import com.martomate.hexacraft.world.{BlocksInWorld, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import org.joml.Vector2f
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
-class RayTracerTest extends AnyFlatSpec with Matchers {
+import munit.FunSuite
+import org.joml.Vector2f
+
+class RayTracerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
@@ -21,7 +21,7 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
 
   private def makeCameraProjection = new CameraProjection(70, 1.6f, 0.01f, 1000f)
 
-  "the raytracer" should "not crash" in {
+  test("the raytracer should not crash") {
     val world: BlocksInWorld = FakeBlocksInWorld.empty(new FakeWorldProvider(1289))
     val camera = new Camera(makeCameraProjection)
 
@@ -29,10 +29,10 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
 
     // There are no blocks so it should fail
     val rayTracer = new RayTracer(world, camera, 5.0)
-    rayTracer.trace(ray, _ => true) shouldBe None
+    assertEquals(rayTracer.trace(ray, _ => true), None)
   }
 
-  it should "return a block if the camera is in it" in {
+  test("the raytracer should return a block if the camera is in it") {
     val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
@@ -53,10 +53,10 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
 
     // The ray tracer should find the block
     val rayTracer = new RayTracer(world, camera, 5.0)
-    rayTracer.trace(ray, _ => true) shouldBe Some((location, None))
+    assertEquals(rayTracer.trace(ray, _ => true), Some((location, None)))
   }
 
-  it should "return None if the mouse is not on the screen" in {
+  test("the raytracer should return None if the mouse is not on the screen") {
     val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
@@ -73,14 +73,14 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
     camera.updateViewMatrix()
 
     // Look outside of the screen
-    Ray.fromScreen(camera, new Vector2f(1.2f, 0)) shouldBe None
-    Ray.fromScreen(camera, new Vector2f(-1.2f, 0)) shouldBe None
-    Ray.fromScreen(camera, new Vector2f(0, 1.2f)) shouldBe None
-    Ray.fromScreen(camera, new Vector2f(0, -1.2f)) shouldBe None
-    Ray.fromScreen(camera, new Vector2f(1.3f, -1.2f)) shouldBe None
+    assertEquals(Ray.fromScreen(camera, new Vector2f(1.2f, 0)), None)
+    assertEquals(Ray.fromScreen(camera, new Vector2f(-1.2f, 0)), None)
+    assertEquals(Ray.fromScreen(camera, new Vector2f(0, 1.2f)), None)
+    assertEquals(Ray.fromScreen(camera, new Vector2f(0, -1.2f)), None)
+    assertEquals(Ray.fromScreen(camera, new Vector2f(1.3f, -1.2f)), None)
   }
 
-  it should "return a block right in front of the camera" in {
+  test("the raytracer should return a block right in front of the camera") {
     val provider = new FakeWorldProvider(1289)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
       provider,
@@ -102,7 +102,7 @@ class RayTracerTest extends AnyFlatSpec with Matchers {
 
     // The ray tracer should find the block
     val rayTracer = new RayTracer(world, camera, 5.0)
-    rayTracer.trace(ray, _ => true) shouldBe Some((BlockRelWorld(0, 0, 1), Some(6)))
+    assertEquals(rayTracer.trace(ray, _ => true), Some((BlockRelWorld(0, 0, 1), Some(6))))
   }
 
   // TODO: there is a bug where a ray can escape confinement if it starts at (0,0,0) with a y-rotation of Pi/2

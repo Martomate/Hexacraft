@@ -1,47 +1,46 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class SmartArrayTest extends AnyFlatSpec with Matchers {
-  "SmartArray.apply" should "create a SmartArray with correct default element" in {
+class SmartArrayTest extends FunSuite {
+  test("SmartArray.apply should create a SmartArray with correct default element") {
     val default = "abc"
     val arr = SmartArray(5, default)(s => new Array(s))
-    arr(0) shouldBe default
-    arr(4) shouldBe default
+    assertEquals(arr(0), default)
+    assertEquals(arr(4), default)
   }
-  it should "use the default value if nothing else exists" in {
+  test("SmartArray.apply should use the default value if nothing else exists") {
     val default = "abc"
     val arr = SmartArray(5, default)(s => new Array(s))
     arr(1) = default
     arr(2) = "a great string"
-    arr(0) shouldBe default
-    arr(1) shouldBe default
-    arr(2) shouldBe "a great string"
-    arr(4) shouldBe default
+    assertEquals(arr(0), default)
+    assertEquals(arr(1), default)
+    assertEquals(arr(2), "a great string")
+    assertEquals(arr(4), default)
   }
-  "SmartArray.withByteArray" should "create a SmartArray with correct default element" in {
+  test("SmartArray.withByteArray should create a SmartArray with correct default element") {
     val default = 3.toByte
     val arr = SmartArray.withByteArray(5, default)
-    arr(0) shouldBe default
-    arr(4) shouldBe default
+    assertEquals(arr(0), default)
+    assertEquals(arr(4), default)
   }
-  it should "use the default value if nothing else exists" in {
+  test("SmartArray.withByteArray should use the default value if nothing else exists") {
     val default = 3.toByte
     val arr = SmartArray.withByteArray(5, default)
     arr(1) = default
     arr(2) = 8.toByte
-    arr(0) shouldBe default
-    arr(1) shouldBe default
-    arr(2) shouldBe 8.toByte
-    arr(4) shouldBe default
+    assertEquals(arr(0), default)
+    assertEquals(arr(1), default)
+    assertEquals(arr(2), 8.toByte)
+    assertEquals(arr(4), default)
   }
-  "length" should "return the length of the array" in {
+  test("length should return the length of the array") {
     val arr = SmartArray(7, "a")(s => new Array(s))
-    arr.length shouldBe 7
+    assertEquals(arr.length, 7)
     arr(2) = "bcd"
-    arr.length shouldBe 7
+    assertEquals(arr.length, 7)
     arr(2) = "a"
-    arr.length shouldBe 7
+    assertEquals(arr.length, 7)
   }
 }

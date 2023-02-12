@@ -6,17 +6,16 @@ import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class ChunkCacheTest extends AnyFlatSpec with Matchers {
+class ChunkCacheTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   given Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
-  "the cache" should "return chunks from the world" in {
+  test("the cache should return chunks from the world") {
     val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.empty(provider)
     val cache = new ChunkCache(world)
@@ -28,24 +27,24 @@ class ChunkCacheTest extends AnyFlatSpec with Matchers {
     column.setChunk(chunk)
 
     // The cache should return the chunk
-    cache.getChunk(coords) shouldBe chunk
+    assertEquals(cache.getChunk(coords), chunk)
 
     // Remove the chunk (and clear the cache)
     column.removeChunk(coords.getChunkRelColumn)
     cache.clearCache()
 
     // It should return null
-    cache.getChunk(coords) shouldBe null
+    assertEquals(cache.getChunk(coords), null)
   }
 
-  it should "work at the origin" in {
+  test("the cache should work at the origin") {
     val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.empty(provider)
     val cache = new ChunkCache(world)
 
     // Start with an empty world
     val coords = ChunkRelWorld(0, 0, 0)
-    cache.getChunk(coords) shouldBe null
+    assertEquals(cache.getChunk(coords), null)
     cache.clearCache()
 
     // Load a chunk
@@ -54,13 +53,13 @@ class ChunkCacheTest extends AnyFlatSpec with Matchers {
     column.setChunk(chunk)
 
     // The cache should return it
-    cache.getChunk(coords) shouldBe chunk
+    assertEquals(cache.getChunk(coords), chunk)
 
     // Remove the chunk (and clear the cache)
     column.removeChunk(coords.getChunkRelColumn)
     cache.clearCache()
 
     // The cache should return null
-    cache.getChunk(coords) shouldBe null
+    assertEquals(cache.getChunk(coords), null)
   }
 }

@@ -4,54 +4,53 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModel, EntityRegistry}
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class EntitiesInChunkTest extends AnyFlatSpec with Matchers {
+class EntitiesInChunkTest extends FunSuite {
   def make = new EntitiesInChunk
 
   private implicit val sizeImpl: CylinderSize = CylinderSize(4)
   class MockEntity extends Entity(new EntityBaseData(CylCoords(0, 0, 0)), null)
 
-  "+=" should "add the entity" in {
+  test("+= should add the entity") {
     val entities = make
 
-    entities.count shouldBe 0
+    assertEquals(entities.count, 0)
     entities += new MockEntity
-    entities.count shouldBe 1
+    assertEquals(entities.count, 1)
     entities += new MockEntity
-    entities.count shouldBe 2
+    assertEquals(entities.count, 2)
   }
 
-  it should "not add duplicates" in {
+  test("+= should not add duplicates") {
     val entities = make
 
     val ent = new MockEntity
-    entities.count shouldBe 0
+    assertEquals(entities.count, 0)
     entities += ent
-    entities.count shouldBe 1
+    assertEquals(entities.count, 1)
     entities += ent
-    entities.count shouldBe 1
+    assertEquals(entities.count, 1)
   }
 
-  "-=" should "remove the entity" in {
+  test("-= should remove the entity") {
     val entities = make
 
     val ent = new MockEntity
     entities += ent
     entities += new MockEntity
-    entities.count shouldBe 2
+    assertEquals(entities.count, 2)
     entities -= ent
-    entities.count shouldBe 1
+    assertEquals(entities.count, 1)
   }
 
-  it should "not remove anything if not found" in {
+  test("-= should not remove anything if not found") {
     val entities = make
 
     val ent = new MockEntity
     val ent2 = new MockEntity
     entities += ent
     entities -= ent2
-    entities.count shouldBe 1
+    assertEquals(entities.count, 1)
   }
 }

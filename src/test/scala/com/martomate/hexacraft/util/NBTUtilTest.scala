@@ -1,13 +1,12 @@
 package com.martomate.hexacraft.util
 
-import com.flowpowered.nbt._
+import com.flowpowered.nbt.*
+import munit.FunSuite
 import org.joml.Vector3d
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
-class NBTUtilTest extends AnyFlatSpec with Matchers {
+class NBTUtilTest extends FunSuite {
   def makeCTag(children: Tag[_]*) = new CompoundTag("tag", new CompoundMap(children.asJava))
 
   def testGet[T](
@@ -17,17 +16,17 @@ class NBTUtilTest extends AnyFlatSpec with Matchers {
       expected: T,
       defaultValue: T
   ): Unit = {
-    name should "return the value if the entry exists" in {
-      method(tag, "tag", defaultValue) shouldBe expected
+    test(s"$name should return the value if the entry exists") {
+      assertEquals(method(tag, "tag", defaultValue), expected)
     }
 
-    it should "return the default value if the entry doesn't exist" in {
-      method(tag, "tags", defaultValue) shouldBe defaultValue
+    test(s"$name should return the default value if the entry doesn't exist") {
+      assertEquals(method(tag, "tags", defaultValue), defaultValue)
     }
 
-    it should "return the default value if the tag or name is null" in {
-      method(null, "tag", defaultValue) shouldBe defaultValue
-      method(tag, null, defaultValue) shouldBe defaultValue
+    test(s"$name should return the default value if the tag or name is null") {
+      assertEquals(method(null, "tag", defaultValue), defaultValue)
+      assertEquals(method(tag, null, defaultValue), defaultValue)
     }
   }
 
@@ -37,17 +36,17 @@ class NBTUtilTest extends AnyFlatSpec with Matchers {
       tag: CompoundTag,
       expected: T
   ): Unit = {
-    name should "return Some(the value) if the entry exists" in {
-      method(tag, "tag") shouldBe Some(expected)
+    test(s"$name should return Some(the value) if the entry exists") {
+      assertEquals(method(tag, "tag"), Some(expected))
     }
 
-    it should "return None if the entry doesn't exist" in {
-      method(tag, "tags") shouldBe None
+    test(s"$name should return None if the entry doesn't exist") {
+      assertEquals(method(tag, "tags"), None)
     }
 
-    it should "return None if the tag or name is null" in {
-      method(null, "tag") shouldBe None
-      method(tag, null) shouldBe None
+    test(s"$name should return None if the tag or name is null") {
+      assertEquals(method(null, "tag"), None)
+      assertEquals(method(tag, null), None)
     }
   }
 
@@ -92,27 +91,27 @@ class NBTUtilTest extends AnyFlatSpec with Matchers {
   testGetOption("getByteArray", NBTUtil.getByteArray, byteArrCTag, ArraySeq.unsafeWrapArray(byteArr))
   testGetOption("getShortArray", NBTUtil.getShortArray, shortArrCTag, ArraySeq.unsafeWrapArray(shortArr))
 
-  "setVector" should "set the correct values" in {
+  test("setVector should set the correct values") {
     val cTag = makeCTag(new DoubleTag("x", 1.23), new DoubleTag("z", 4.32), new DoubleTag("y", 9.87))
     val vec = new Vector3d()
 
-    NBTUtil.setVector(cTag, vec) shouldBe vec
+    assertEquals(NBTUtil.setVector(cTag, vec), vec)
 
-    vec.x shouldBe 1.23
-    vec.y shouldBe 9.87
-    vec.z shouldBe 4.32
+    assertEquals(vec.x, 1.23)
+    assertEquals(vec.y, 9.87)
+    assertEquals(vec.z, 4.32)
   }
 
-  "makeVectorTag" should "set the correct values" in {
+  test("makeVectorTag should set the correct values") {
     val vec = new Vector3d(1.23, 9.87, 4.32)
 
     val cTag = NBTUtil.makeVectorTag("tag", vec)
 
-    cTag shouldBe makeCTag(new DoubleTag("x", 1.23), new DoubleTag("y", 9.87), new DoubleTag("z", 4.32))
+    assertEquals(cTag, makeCTag(new DoubleTag("x", 1.23), new DoubleTag("y", 9.87), new DoubleTag("z", 4.32)))
   }
 
   val bigTag = makeCTag(new ByteTag("byteTag", 13.toByte), makeCTag(new ShortTag("shortTag", 1212.toShort)))
-  "makeCompoundTag" should "return a CompoundTag with the provided tag in it" in {
-    NBTUtil.makeCompoundTag("tag", Seq(bigTag)) shouldBe makeCTag(bigTag)
+  test("makeCompoundTag should return a CompoundTag with the provided tag in it") {
+    assertEquals(NBTUtil.makeCompoundTag("tag", Seq(bigTag)), makeCTag(bigTag))
   }
 }

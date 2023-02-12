@@ -1,32 +1,31 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class BlockRelChunkTest extends AnyFlatSpec with Matchers {
-  "xyz" should "be correct in normal range" in {
+class BlockRelChunkTest extends FunSuite {
+  test("xyz should be correct in normal range") {
     val c = BlockRelChunk(3, 7, 5)
-    c.cx shouldBe 3
-    c.cy shouldBe 7
-    c.cz shouldBe 5
+    assertEquals(c.cx, 3.toByte)
+    assertEquals(c.cy, 7.toByte)
+    assertEquals(c.cz, 5.toByte)
   }
 
-  it should "be correct outside normal range" in {
+  test("xyz should be correct outside normal range") {
     val c = BlockRelChunk(3 + 5 * 16, 7 - 3 * 16, 5 + 200 * 16)
-    c.cx shouldBe 3
-    c.cy shouldBe 7
-    c.cz shouldBe 5
+    assertEquals(c.cx, 3.toByte)
+    assertEquals(c.cy, 7.toByte)
+    assertEquals(c.cz, 5.toByte)
   }
 
-  "value" should "be in xyz-format and correct" in {
+  test("value should be in xyz-format and correct") {
     val c = BlockRelChunk(3, 7, 5)
-    c.value shouldBe (3 << 8 | 7 << 4 | 5)
+    assertEquals(c.value, (3 << 8 | 7 << 4 | 5))
   }
 
-  "offset" should "be correct" in {
+  test("offset should be correct") {
     val c = BlockRelChunk(3, 7, 5).offset(-4, -1, 14)
-    c.cx shouldBe 15
-    c.cy shouldBe 6
-    c.cz shouldBe 3
+    assertEquals(c.cx, 15.toByte)
+    assertEquals(c.cy, 6.toByte)
+    assertEquals(c.cz, 3.toByte)
   }
 }

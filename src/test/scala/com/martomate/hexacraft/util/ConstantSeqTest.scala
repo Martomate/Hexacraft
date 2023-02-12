@@ -1,36 +1,39 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class ConstantSeqTest extends AnyFlatSpec with Matchers {
+class ConstantSeqTest extends FunSuite {
   val seq = new ConstantSeq[String](3, "a string")
 
-  "length" should "be the size of the seq" in {
-    seq.length shouldBe 3
+  test("length should be the size of the seq") {
+    assertEquals(seq.length, 3)
   }
 
-  it must "be non-negative" in {
-    an[IllegalArgumentException] should be thrownBy new ConstantSeq[String](-1, "a string")
-    noException should be thrownBy new ConstantSeq[String](0, "a string")
+  test("length must be non-negative") {
+    // this should fail
+    intercept[IllegalArgumentException](new ConstantSeq[String](-1, "a string"))
+
+    // this should be fine
+    new ConstantSeq[String](0, "a string")
   }
 
-  "apply" should "work for indices within [0, length)" in {
-    seq(0) shouldBe "a string"
-    seq(1) shouldBe "a string"
-    seq(2) shouldBe "a string"
+  test("apply should work for indices within [0, length)") {
+    assertEquals(seq(0), "a string")
+    assertEquals(seq(1), "a string")
+    assertEquals(seq(2), "a string")
   }
 
-  "for loops" should "run length steps" in {
+  test("for loops should run length steps") {
     var count = 0
     for (a <- seq) {
       count += 1
-      a shouldBe "a string"
+      assertEquals(a, "a string")
     }
-    count shouldBe 3
+    assertEquals(count, 3)
   }
 
-  "The seq" should "use constant space" in {
-    noException should be thrownBy new ConstantSeq[String](Int.MaxValue, "A string of great length!!")
+  test("The seq should use constant space") {
+    // no exception should be thrown
+    new ConstantSeq[String](Int.MaxValue, "A string of great length!!")
   }
 }

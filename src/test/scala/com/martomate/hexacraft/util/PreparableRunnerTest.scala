@@ -1,64 +1,63 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class PreparableRunnerTest extends AnyFlatSpec with Matchers {
+class PreparableRunnerTest extends FunSuite {
 
-  "onPrepare" should "be called when prepare is called" in {
+  test("onPrepare should be called when prepare is called") {
     var prepFired: Boolean = false
     val runner = new PreparableRunner({ prepFired = true }, throw new RuntimeException("activation before preparation"))
 
     runner.prepare()
-    prepFired shouldBe true
+    assert(prepFired)
   }
 
-  it should "only be called once between activations" in {
+  test("onPrepare should only be called once between activations") {
     var prepFired: Boolean = false
     val runner = new PreparableRunner({ prepFired = true }, throw new RuntimeException("activation before preparation"))
 
     runner.prepare()
-    prepFired shouldBe true
+    assert(prepFired)
     prepFired = false
 
     for (_ <- 1 to 4) {
       runner.prepare()
-      prepFired shouldBe false
+      assert(!prepFired)
     }
   }
 
-  it must "be called before activate for onActivate to run" in {
+  test("onPrepare must be called before activate for onActivate to run") {
     var prepFired: Boolean = false
     var actFired: Boolean = false
     val runner = new PreparableRunner({ prepFired = true }, { actFired = true })
 
     runner.activate()
-    actFired shouldBe false
+    assert(!actFired)
 
     runner.prepare()
-    prepFired shouldBe true
+    assert(prepFired)
 
     runner.activate()
-    actFired shouldBe true
+    assert(actFired)
   }
 
-  "onActivate" should "only be called once per preparation" in {
+  test("onActivate should only be called once per preparation") {
     var actFired: Boolean = false
     val runner = new PreparableRunner((), { actFired = true })
 
     runner.prepare()
 
     runner.activate()
-    actFired shouldBe true
+    assert(actFired)
     actFired = false
 
     for (_ <- 1 to 4) {
       runner.activate()
-      actFired shouldBe false
+      assert(!actFired)
     }
   }
 
-  "the runner" should "be reusable" in {
+  test("the runner should be reusable") {
     var prepFired: Boolean = false
     var activateFired: Boolean = false
     val runner = new PreparableRunner({ prepFired = true }, { activateFired = true })
@@ -72,5 +71,4 @@ class PreparableRunnerTest extends AnyFlatSpec with Matchers {
       activateFired = false
     }
   }
-
 }

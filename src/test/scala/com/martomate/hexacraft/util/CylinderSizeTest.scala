@@ -1,20 +1,19 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class CylinderSizeTest extends AnyFlatSpec with Matchers {
-  "all aspects of the cylinder size" should "be determined by worldSize" in {
+class CylinderSizeTest extends FunSuite {
+  test("all aspects of the cylinder size should be determined by worldSize") {
     for (s <- 1 to 20) {
       val size = CylinderSize(s)
-      size.worldSize shouldBe s
-      size.ringSize shouldBe (1 << size.worldSize)
-      size.ringSizeMask shouldBe (size.ringSize - 1)
-      size.totalSize shouldBe (size.ringSize * 16)
-      size.totalSizeMask shouldBe (size.totalSize - 1)
-      size.hexAngle shouldBe ((2 * math.Pi) / size.totalSize)
-      size.radius shouldBe (CylinderSize.y60 / size.hexAngle)
-      size.circumference shouldBe (size.totalSize * CylinderSize.y60)
+      assertEquals(size.worldSize, s)
+      assertEquals(size.ringSize, 1 << size.worldSize)
+      assertEquals(size.ringSizeMask, size.ringSize - 1)
+      assertEquals(size.totalSize, size.ringSize * 16)
+      assertEquals(size.totalSizeMask, size.totalSize - 1)
+      assertEquals(size.hexAngle, (2 * math.Pi) / size.totalSize)
+      assertEquals(size.radius, CylinderSize.y60 / size.hexAngle)
+      assertEquals(size.circumference, size.totalSize * CylinderSize.y60)
     }
   }
 }

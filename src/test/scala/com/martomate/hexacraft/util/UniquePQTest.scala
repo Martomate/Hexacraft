@@ -1,39 +1,38 @@
 package com.martomate.hexacraft.util
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 
-class UniquePQTest extends AnyFlatSpec with Matchers {
+class UniquePQTest extends FunSuite {
   private val defOrder = Ordering.Double.TotalOrdering
 
-  "an empty queue" should "have size 0 from the beginning" in {
-    new UniquePQ[String](_ => 1, defOrder).size shouldBe 0
+  test("an empty queue should have size 0 from the beginning") {
+    assertEquals(new UniquePQ[String](_ => 1, defOrder).size, 0)
   }
-  it should "be empty" in {
-    new UniquePQ[String](_ => 1, defOrder).isEmpty shouldBe true
+  test("an empty queue should be empty") {
+    assert(new UniquePQ[String](_ => 1, defOrder).isEmpty)
   }
-  it should "have size 1 after enqueue" in {
+  test("an empty queue should have size 1 after enqueue") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
-    q.size shouldBe 1
+    assertEquals(q.size, 1)
   }
-  it should "fail to dequeue" in {
-    an[NoSuchElementException] should be thrownBy new UniquePQ[String](_ => 1, defOrder).dequeue()
+  test("an empty queue should fail to dequeue") {
+    intercept[NoSuchElementException](new UniquePQ[String](_ => 1, defOrder).dequeue())
   }
 
-  "a non-empty queue" should "not be empty" in {
+  test("a non-empty queue should not be empty") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
-    q.isEmpty shouldBe false
+    assert(!q.isEmpty)
   }
-  it should "have the right size from the beginning" in {
+  test("a non-empty queue should have the right size from the beginning") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     q.enqueue("b")
     q.enqueue("c")
-    q.size shouldBe 3
+    assertEquals(q.size, 3)
   }
-  it should "increase it's size after enqueueing a new element" in {
+  test("a non-empty queue should increase it's size after enqueueing a new element") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     q.enqueue("b")
@@ -44,16 +43,16 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     q.enqueue("c")
     val s = q.size
     q.enqueue("d")
-    q.size shouldBe s + 1
+    assertEquals(q.size, s + 1)
   }
-  it should "not increase it's size after enqueueing an existing element" in {
+  test("a non-empty queue should not increase it's size after enqueueing an existing element") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     val s = q.size
     q.enqueue("a")
-    q.size shouldBe s
+    assertEquals(q.size, s)
   }
-  it should "decrease it's size after dequeue" in {
+  test("a non-empty queue should decrease it's size after dequeue") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     q.enqueue("b")
@@ -61,37 +60,37 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     q.enqueue("c")
     val s = q.size
     q.dequeue()
-    q.size shouldBe s - 1
+    assertEquals(q.size, s - 1)
   }
-  it should "allow items to be re-added after removal" in {
+  test("a non-empty queue should allow items to be re-added after removal") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
-    q.size shouldBe 1
+    assertEquals(q.size, 1)
     q.dequeue()
-    q.size shouldBe 0
+    assertEquals(q.size, 0)
     q.enqueue("a")
-    q.size shouldBe 1
+    assertEquals(q.size, 1)
   }
-  "dequeue" should "return items with highest priority first" in {
+  test("dequeue should return items with highest priority first") {
     val q = new UniquePQ[String](s => s.length, defOrder)
     q.enqueue("aa")
     q.enqueue("a")
     q.enqueue("aaa")
-    q.dequeue() shouldBe "aaa"
-    q.dequeue() shouldBe "aa"
-    q.dequeue() shouldBe "a"
+    assertEquals(q.dequeue(), "aaa")
+    assertEquals(q.dequeue(), "aa")
+    assertEquals(q.dequeue(), "a")
   }
-  "clear" should "remove all items, resetting the queue" in {
+  test("clear should remove all items, resetting the queue") {
     val q = new UniquePQ[String](_ => 1, defOrder)
     q.enqueue("a")
     q.enqueue("b")
     q.clear()
-    q.size shouldBe 0
-    q.isEmpty shouldBe true
+    assertEquals(q.size, 0)
+    assert(q.isEmpty)
     q.enqueue("a")
-    q.size shouldBe 1
+    assertEquals(q.size, 1)
   }
-  "reprioritizeAndFilter" should "reorder items" in {
+  test("reprioritizeAndFilter should reorder items") {
     var reference = 1
     def f(s: String): Double = math.abs(s.length - reference)
     val q = new UniquePQ[String](f, defOrder)
@@ -102,11 +101,11 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
     reference = 3
     q.reprioritizeAndFilter(_ => true)
 
-    q.dequeue() shouldBe "a" // a   -> |1-3| = 2
-    q.dequeue() shouldBe "aa" // aa  -> |2-3| = 1
-    q.dequeue() shouldBe "aaa" // aaa -> |3-3| = 0
+    assertEquals(q.dequeue(), "a") //   a   -> |1-3| = 2
+    assertEquals(q.dequeue(), "aa") //  aa  -> |2-3| = 1
+    assertEquals(q.dequeue(), "aaa") // aaa -> |3-3| = 0
   }
-  it should "filter out items" in {
+  test("reprioritizeAndFilter should filter out items") {
     val q = new UniquePQ[String](s => s.length, defOrder)
     q.enqueue("a")
     q.enqueue("aa")
@@ -114,7 +113,7 @@ class UniquePQTest extends AnyFlatSpec with Matchers {
 
     q.reprioritizeAndFilter { case (_, s) => !s.equals("aa") }
 
-    q.dequeue() shouldBe "aaa"
-    q.dequeue() shouldBe "a"
+    assertEquals(q.dequeue(), "aaa")
+    assertEquals(q.dequeue(), "a")
   }
 }

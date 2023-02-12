@@ -1,116 +1,116 @@
 package com.martomate.hexacraft.world.render.segment
 
 import com.martomate.hexacraft.world.render.segment.{ChunkSegs, Segment}
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
-class ChunkSegsTest extends AnyFlatSpec with Matchers {
-  "add" should "add the segment if it doesn't exist" in {
+import munit.FunSuite
+
+class ChunkSegsTest extends FunSuite {
+  test("add should add the segment if it doesn't exist") {
     val segs = make
     val seg = Segment(5, 8)
     segs.add(seg)
-    segs.toSeq shouldBe Seq(seg)
+    assertEquals(segs.toSeq, Seq(seg))
   }
-  it should "complain if it already exists" in {
+  test("add should complain if it already exists") {
     val segs = make
     val seg = Segment(5, 8)
     segs.add(seg)
-    assertThrows[IllegalArgumentException](segs.add(seg))
+    intercept[IllegalArgumentException](segs.add(seg))
   }
-  it should "complain if it overlaps an existing segment" in {
+  test("add should complain if it overlaps an existing segment") {
     val segs = make
     segs.add(Segment(5, 8))
-    assertThrows[IllegalArgumentException](segs.add(Segment(6, 4)))
-    assertThrows[IllegalArgumentException](segs.add(Segment(6, 12)))
-    assertThrows[IllegalArgumentException](segs.add(Segment(2, 4)))
-    assertThrows[IllegalArgumentException](segs.add(Segment(2, 12)))
+    intercept[IllegalArgumentException](segs.add(Segment(6, 4)))
+    intercept[IllegalArgumentException](segs.add(Segment(6, 12)))
+    intercept[IllegalArgumentException](segs.add(Segment(2, 4)))
+    intercept[IllegalArgumentException](segs.add(Segment(2, 12)))
   }
-  it should "not complain if it doesn't overlap an existing segment" in {
+  test("add should not complain if it doesn't overlap an existing segment") {
     val segs = make
     segs.add(Segment(5, 8))
     segs.add(Segment(2, 3))
     segs.add(Segment(13, 3))
   }
 
-  "remove" should "remove the segment if it exists, and return true" in {
+  test("remove should remove the segment if it exists, and return true") {
     val segs = make
     segs.add(Segment(6, 23))
-    segs.remove(Segment(6, 23)) shouldBe true
-    segs.toSeq shouldBe empty
+    assert(segs.remove(Segment(6, 23)))
+    assert(segs.toSeq.isEmpty)
   }
-  it should "not remove it if it doesn't exist" in {
+  test("remove should not remove it if it doesn't exist") {
     val segs = make
     segs.add(Segment(2, 3))
-    segs.remove(Segment(6, 23)) shouldBe false
-    segs.toSeq shouldBe Seq(Segment(2, 3))
+    assert(!segs.remove(Segment(6, 23)))
+    assertEquals(segs.toSeq, Seq(Segment(2, 3)))
   }
-  it should "remove this part of an existing segment that contains this" in {
+  test("remove should remove this part of an existing segment that contains this") {
     val segs = make
     segs.add(Segment(2, 43))
-    segs.remove(Segment(6, 23)) shouldBe true
-    segs.toSeq shouldBe Seq(Segment(2, 4), Segment(2 + 4 + 23, 43 - 4 - 23))
+    assert(segs.remove(Segment(6, 23)))
+    assertEquals(segs.toSeq, Seq(Segment(2, 4), Segment(2 + 4 + 23, 43 - 4 - 23)))
   }
-  it should "not remove it if there is only partial overlap" in {
+  test("remove should not remove it if there is only partial overlap") {
     val segs = make
     segs.add(Segment(2, 13))
-    segs.remove(Segment(6, 23)) shouldBe false
-    segs.toSeq shouldBe Seq(Segment(2, 13))
+    assert(!segs.remove(Segment(6, 23)))
+    assertEquals(segs.toSeq, Seq(Segment(2, 13)))
   }
 
-  "totalLength" should "be 0 for a new ChunkSegs" in {
-    make.totalLength shouldBe 0
+  test("totalLength should be 0 for a new ChunkSegs") {
+    assertEquals(make.totalLength, 0)
   }
-  it should "be the sum of the lengths of the segments" in {
+  test("totalLength should be the sum of the lengths of the segments") {
     val segs = make
     segs.add(Segment(16, 5))
     segs.add(Segment(2, 4))
     segs.add(Segment(12, 1))
-    segs.totalLength shouldBe 5 + 4 + 1
+    assertEquals(segs.totalLength, 5 + 4 + 1)
   }
 
-  "firstSegment" should "be the segment with lowest 'start'" in {
+  test("firstSegment should be the segment with lowest 'start'") {
     val segs = make
     segs.add(Segment(16, 5))
     segs.add(Segment(2, 4))
     segs.add(Segment(12, 1))
-    segs.firstSegment() shouldBe Segment(2, 4)
+    assertEquals(segs.firstSegment(), Segment(2, 4))
   }
-  it should "be correct even if the first element has been removed" in {
+  test("firstSegment should be correct even if the first element has been removed") {
     val segs = make
     segs.add(Segment(16, 5))
     segs.add(Segment(2, 4))
     segs.add(Segment(12, 1))
     segs.remove(Segment(2, 2))
-    segs.firstSegment() shouldBe Segment(4, 2)
+    assertEquals(segs.firstSegment(), Segment(4, 2))
   }
 
-  "lastSegment" should "be the segment with highest 'start'" in {
+  test("lastSegment should be the segment with highest 'start'") {
     val segs = make
     segs.add(Segment(16, 5))
     segs.add(Segment(2, 4))
     segs.add(Segment(12, 1))
-    segs.lastSegment() shouldBe Segment(16, 5)
+    assertEquals(segs.lastSegment(), Segment(16, 5))
   }
-  it should "be correct even if the last element has been removed" in {
-    val segs = make
-    segs.add(Segment(16, 5))
-    segs.add(Segment(2, 4))
-    segs.add(Segment(12, 1))
-    segs.remove(Segment(18, 3))
-    segs.lastSegment() shouldBe Segment(16, 2)
-  }
-
-  "iterator" should "be empty if there are no segments" in {
-    make.iterator shouldBe empty
-  }
-  it should "return all the segments in order" in {
+  test("lastSegment should be correct even if the last element has been removed") {
     val segs = make
     segs.add(Segment(16, 5))
     segs.add(Segment(2, 4))
     segs.add(Segment(12, 1))
     segs.remove(Segment(18, 3))
+    assertEquals(segs.lastSegment(), Segment(16, 2))
+  }
 
-    segs.iterator.toSeq shouldBe Seq(Segment(2, 4), Segment(12, 1), Segment(16, 2))
+  test("iterator should be empty if there are no segments") {
+    assert(make.iterator.isEmpty)
+  }
+  test("iterator should return all the segments in order") {
+    val segs = make
+    segs.add(Segment(16, 5))
+    segs.add(Segment(2, 4))
+    segs.add(Segment(12, 1))
+    segs.remove(Segment(18, 3))
+
+    assertEquals(segs.iterator.toSeq, Seq(Segment(2, 4), Segment(12, 1), Segment(16, 2)))
   }
 
   def make: ChunkSegs = new ChunkSegs

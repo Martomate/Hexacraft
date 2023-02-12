@@ -8,19 +8,18 @@ import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.player.Player
 
+import munit.FunSuite
 import org.joml.Vector2d
 import org.lwjgl.glfw.GLFW
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import scala.collection.mutable
 
-class PlayerInputHandlerTest extends AnyFlatSpec with Matchers {
+class PlayerInputHandlerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
   given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
 
-  "tick" should "ask the keyboard for pressed keys" in {
+  test("tick should ask the keyboard for pressed keys") {
     import GameKeyboard.Key
     val keyboardCalls = mutable.Set.empty[GameKeyboard.Key]
     val keyboard: GameKeyboard = key =>
@@ -31,10 +30,10 @@ class PlayerInputHandlerTest extends AnyFlatSpec with Matchers {
 
     handler.tick(new Vector2d(), 1.0)
 
-    keyboardCalls.toSet should contain(Key.MoveForward)
+    assert(keyboardCalls.toSet.contains(Key.MoveForward))
   }
 
-  it should "not rotate the player if mouse has not moved" in {
+  test("tick should not rotate the player if mouse has not moved") {
     val keyboard: GameKeyboard = _ => false
     val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler(keyboard, player)
@@ -42,12 +41,12 @@ class PlayerInputHandlerTest extends AnyFlatSpec with Matchers {
     player.rotation.set(0.1, 0.2, 0.3)
     handler.tick(new Vector2d(), 1.0)
 
-    player.rotation.x shouldBe 0.1
-    player.rotation.y shouldBe 0.2
-    player.rotation.z shouldBe 0.3
+    assertEqualsDouble(player.rotation.x, 0.1, 1e-6)
+    assertEqualsDouble(player.rotation.y, 0.2, 1e-6)
+    assertEqualsDouble(player.rotation.z, 0.3, 1e-6)
   }
 
-  it should "rotate the player if mouse has moved" in {
+  test("test should rotate the player if mouse has moved") {
     val keyboard: GameKeyboard = _ => false
     val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler(keyboard, player)
@@ -55,8 +54,8 @@ class PlayerInputHandlerTest extends AnyFlatSpec with Matchers {
     player.rotation.set(0.1, 0.2, 0.3)
     handler.tick(new Vector2d(1, 2), 1.0)
 
-    player.rotation.x shouldBe 0.095
-    player.rotation.y shouldBe 0.2025
-    player.rotation.z shouldBe 0.3
+    assertEqualsDouble(player.rotation.x, 0.095, 1e-6)
+    assertEqualsDouble(player.rotation.y, 0.2025, 1e-6)
+    assertEqualsDouble(player.rotation.z, 0.3, 1e-6)
   }
 }

@@ -43,8 +43,6 @@ def lwjglDependencies = {
   )
 }
 
-val scalatestVersion = "3.2.12"
-
 def otherDependencies = Seq(
   "org.joml" % "joml" % "1.10.4",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
@@ -52,9 +50,7 @@ def otherDependencies = Seq(
 )
 
 def testDependencies = Seq(
-  "org.scalatest" %% "scalatest-flatspec" % scalatestVersion % "test",
-  "org.scalatest" %% "scalatest-wordspec" % scalatestVersion % "test",
-  "org.scalatest" %% "scalatest-shouldmatchers" % scalatestVersion % "test",
+  "org.scalameta" %% "munit" % "0.7.29" % "test",
   "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test",
   "com.tngtech.archunit" % "archunit" % "1.0.0-rc1" % "test",
   "org.slf4j" % "slf4j-nop" % "2.0.1" % "test" // Needed for ArchUnit

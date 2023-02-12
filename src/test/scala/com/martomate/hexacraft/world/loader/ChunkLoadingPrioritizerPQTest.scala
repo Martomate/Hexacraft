@@ -14,19 +14,19 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
   ): ChunkLoadingPrioritizer =
     new ChunkLoadingPrioritizerPQ(origin, distSqFunc, maxDist)
 
-  "nextAddableChunk" should "return chunks in order of increasing distance after adding the first one" in {
+  test("nextAddableChunk should return chunks in order of increasing distance after adding the first one") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin)
     prio += prio.nextAddableChunk.get
     var prevDistSq: Double = 0
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
       val distSq = distSqFuncDefault(origin, chunk)
-      distSq should be >= prevDistSq
+      assert(distSq >= prevDistSq)
       prevDistSq = distSq
       prio += chunk
     }
   }
-  it should "not skip chunks, creating holes" in {
+  test("nextAddableChunk should not skip chunks, creating holes") {
     val origin = makePos(0, 0, 0)
     val maxDist = 10
     val maxDistSqInBlocks = math.pow(maxDist * 16, 2)
@@ -41,19 +41,19 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
       prio += chunk
       chunks -= chunk
     }
-    chunks shouldBe empty
+    assert(chunks.isEmpty)
   }
-  it should "retain order when origin is moved" in {
+  test("nextAddableChunk should retain order when origin is moved") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin).asInstanceOf[ChunkLoadingPrioritizerPQ]
     prio += prio.nextAddableChunk.get
 
-    nextAddableChunkWPos(32, 8, 8) shouldBe Some(ChunkRelWorld(1, 0, 0))
-    nextAddableChunkWPos(-32, 8, 8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
-    nextAddableChunkWPos(8, 32, 8) shouldBe Some(ChunkRelWorld(0, 1, 0))
-    nextAddableChunkWPos(8, -32, 8) shouldBe Some(ChunkRelWorld(0, -1, 0))
-    nextAddableChunkWPos(8, 8, 32) shouldBe Some(ChunkRelWorld(0, 0, 1))
-    nextAddableChunkWPos(8, 8, -32) shouldBe Some(ChunkRelWorld(0, 0, -1))
+    assertEquals(nextAddableChunkWPos(32, 8, 8), Some(ChunkRelWorld(1, 0, 0)))
+    assertEquals(nextAddableChunkWPos(-32, 8, 8), Some(ChunkRelWorld(-1, 0, 0)))
+    assertEquals(nextAddableChunkWPos(8, 32, 8), Some(ChunkRelWorld(0, 1, 0)))
+    assertEquals(nextAddableChunkWPos(8, -32, 8), Some(ChunkRelWorld(0, -1, 0)))
+    assertEquals(nextAddableChunkWPos(8, 8, 32), Some(ChunkRelWorld(0, 0, 1)))
+    assertEquals(nextAddableChunkWPos(8, 8, -32), Some(ChunkRelWorld(0, 0, -1)))
 
     def nextAddableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
       origin.pos = BlockCoords(x, y, z).toCylCoords
@@ -61,9 +61,9 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
       prio.nextAddableChunk
     }
   }
-  it should "retain order when origin is rotated"
+  test("nextAddableChunk should retain order when origin is rotated".ignore) {}
 
-  "nextRemovableChunk" should "return chunks in farthest-first order" in {
+  test("nextRemovableChunk should return chunks in farthest-first order") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin)
     for (_ <- 1 to 100) prio.nextAddableChunk.foreach(prio += _)
@@ -71,14 +71,14 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
     var prevDistSq: Double = Double.MaxValue
     SeqUtils.whileSome(100, prio.nextRemovableChunk) { chunk =>
       val distSq = distSqFuncDefault(origin, chunk)
-      distSq should be <= prevDistSq
+      assert(distSq <= prevDistSq)
       prevDistSq = distSq
       prio -= chunk
     }
 
-    prio.nextRemovableChunk shouldBe None
+    assertEquals(prio.nextRemovableChunk, None)
   }
-  it should "retain order when origin is moved" in {
+  test("nextRemovableChunk should retain order when origin is moved") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin, maxDist = 1).asInstanceOf[ChunkLoadingPrioritizerPQ]
     prio += ChunkRelWorld(0, 0, 0)
@@ -89,12 +89,12 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
     prio += ChunkRelWorld(0, -1, 0)
     prio += ChunkRelWorld(0, 0, -1)
 
-    nextRemovableChunkWPos(32, 8, 8) shouldBe Some(ChunkRelWorld(-1, 0, 0))
-    nextRemovableChunkWPos(-32, 8, 8) shouldBe Some(ChunkRelWorld(1, 0, 0))
-    nextRemovableChunkWPos(8, 32, 8) shouldBe Some(ChunkRelWorld(0, -1, 0))
-    nextRemovableChunkWPos(8, -32, 8) shouldBe Some(ChunkRelWorld(0, 1, 0))
-    nextRemovableChunkWPos(8, 8, 32) shouldBe Some(ChunkRelWorld(0, 0, -1))
-    nextRemovableChunkWPos(8, 8, -32) shouldBe Some(ChunkRelWorld(0, 0, 1))
+    assertEquals(nextRemovableChunkWPos(32, 8, 8), Some(ChunkRelWorld(-1, 0, 0)))
+    assertEquals(nextRemovableChunkWPos(-32, 8, 8), Some(ChunkRelWorld(1, 0, 0)))
+    assertEquals(nextRemovableChunkWPos(8, 32, 8), Some(ChunkRelWorld(0, -1, 0)))
+    assertEquals(nextRemovableChunkWPos(8, -32, 8), Some(ChunkRelWorld(0, 1, 0)))
+    assertEquals(nextRemovableChunkWPos(8, 8, 32), Some(ChunkRelWorld(0, 0, -1)))
+    assertEquals(nextRemovableChunkWPos(8, 8, -32), Some(ChunkRelWorld(0, 0, 1)))
 
     def nextRemovableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
       origin.pos = BlockCoords(x, y, z).toCylCoords
@@ -102,5 +102,5 @@ class ChunkLoadingPrioritizerPQTest extends ChunkLoadingPrioritizerTest {
       prio.nextRemovableChunk
     }
   }
-  it should "retain order when origin is rotated"
+  test("nextRemovableChunk should retain order when origin is rotated".ignore) {}
 }
