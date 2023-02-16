@@ -31,8 +31,6 @@ class HorseEntityModel(
       "textures/entities/" + textureName
     )
 
-  override def texSize: Int = 256
-
 class HorseAnimation(model: HorseEntityModel):
   var time = 0f
 

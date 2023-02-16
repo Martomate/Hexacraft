@@ -30,8 +30,6 @@ class SheepEntityModel(
       "textures/entities/" + textureName
     )
 
-  override def texSize: Int = 256
-
 class SheepAnimation(model: SheepEntityModel):
   var time = 0f
 

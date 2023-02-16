@@ -6,7 +6,6 @@ trait EntityModel {
   def parts: Seq[EntityPart]
 
   def texture: TextureSingle
-  def texSize: Int
 
   def tick(): Unit
 }

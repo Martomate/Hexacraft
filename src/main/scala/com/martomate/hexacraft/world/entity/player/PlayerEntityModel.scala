@@ -31,8 +31,6 @@ class PlayerEntityModel(
       "textures/entities/" + textureName
     )
 
-  override def texSize: Int = 256
-
 class PlayerAnimation(model: PlayerEntityModel):
   private var time = 0f
 

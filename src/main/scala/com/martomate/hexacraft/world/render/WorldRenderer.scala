@@ -178,14 +178,14 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         if ch.entities.count > 0
       do entityDataList ++= ChunkRenderer.getEntityRenderData(ch.entities, side, world)
 
-      for (model, partLists) <- entityDataList.groupBy(_.model) do
+      for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do
         val data = partLists.flatMap(_.parts)
 
         entityRenderers.updateContent(side, data.size) { buf =>
           data.foreach(_.fill(buf))
         }
-        model.texture.bind()
-        sh.setUniform1i("texSize", model.texSize)
+        texture.bind()
+        sh.setUniform1i("texSize", texture.width)
         entityRenderers.renderBlockSide(side)
 
   private def updateSelectedBlockVAO(coords: BlockRelWorld) =

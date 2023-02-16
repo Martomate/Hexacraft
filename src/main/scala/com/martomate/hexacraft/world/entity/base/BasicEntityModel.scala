@@ -19,6 +19,4 @@ class BasicEntityModel(pos: CylCoords.Offset, box: HexBox) extends EntityModel {
   override def tick(): Unit = ()
 
   override def texture: TextureSingle = ???
-
-  override def texSize: Int = ???
 }
