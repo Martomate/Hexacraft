@@ -128,7 +128,7 @@ class WorldTest extends FunSuite {
     // Make sure the chunk is loaded
     camera.setPosition(entityPosition.toVector3d)
     world.tick(camera)
-    Thread.sleep(10)
+    Thread.sleep(20)
     world.tick(camera)
 
     var ticks = 0
