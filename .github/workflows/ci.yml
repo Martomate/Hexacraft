@@ -16,10 +16,14 @@ jobs:
         with:
           java-version: "openjdk@1.17"
       - name: Coursier cache
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Run tests
-        run: sbt coverage test coverageReport coveralls
+        run: sbt coverage test
         shell: bash
+      - name: Coveralls
+        run: sbt coverageReport coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Clean up cache
         run: |
           rm -rf "$HOME/.ivy2/local" || true
