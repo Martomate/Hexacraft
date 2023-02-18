@@ -2,12 +2,13 @@ package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.LocationInfo
-import com.martomate.hexacraft.gui.comp._
+import com.martomate.hexacraft.gui.comp.*
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, inventory: Inventory)(implicit window: GameWindow)
+class Toolbar(location: LocationInfo, inventory: Inventory)(using window: GameWindow, Blocks: Blocks)
     extends Component
     with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)

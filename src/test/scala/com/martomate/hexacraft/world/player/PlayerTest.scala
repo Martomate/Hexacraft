@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.player
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.FakeBlockLoader
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import munit.FunSuite
@@ -10,7 +10,6 @@ import munit.FunSuite
 class PlayerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
 
   test("saving should save all the fields as NBT") {

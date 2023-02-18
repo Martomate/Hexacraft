@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.chunk.storage
 
 import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
 import com.martomate.hexacraft.world.FakeBlockLoader
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
@@ -12,7 +12,6 @@ import munit.FunSuite
 abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends FunSuite {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   implicit val Blocks: Blocks = new Blocks
 
   test("the storage should be correct for 0 blocks") {

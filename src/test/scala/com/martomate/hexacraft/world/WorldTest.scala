@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -15,7 +15,6 @@ import munit.FunSuite
 class WorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 

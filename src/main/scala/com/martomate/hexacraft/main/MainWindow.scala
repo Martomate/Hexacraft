@@ -9,7 +9,7 @@ import com.martomate.hexacraft.renderer.{Shader, VAO}
 import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 
 import java.io.File
 import org.joml.{Vector2i, Vector2ic}
@@ -182,7 +182,6 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       implicit val windowImplicit: GameWindowExtended = this
       Shader.init()
       given BlockLoader = BlockLoader.instance // this loads it to memory
-      given BlockFactory = new BlockFactory
       given Blocks = new Blocks
       scenes.pushScene(new MainMenu(saveFolder, tryQuit))
       resetMousePos()

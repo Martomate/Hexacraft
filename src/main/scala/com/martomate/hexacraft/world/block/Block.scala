@@ -10,13 +10,11 @@ object Block {
   def byId(id: Byte): Block = blocks(id)
 }
 
-class Block(val id: Byte, val name: String, val displayName: String)(using BlockLoader) {
+class Block(val id: Byte, val name: String, val displayName: String) {
   Block.blocks(id) = this
 
-  protected lazy val texture = new BlockTexture(name)
   def bounds(metadata: Byte) = new HexBox(0.5f, 0, 0.5f * blockHeight(metadata))
 
-  def blockTex(side: Int): Int = texture.indices(side)
   def canBeRendered: Boolean = true
 
   def isTransparent(metadata: Byte, side: Int): Boolean = false

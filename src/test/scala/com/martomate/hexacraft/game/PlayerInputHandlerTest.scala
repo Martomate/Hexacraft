@@ -4,7 +4,7 @@ import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.main.RealGameMouse
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.FakeBlockLoader
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.player.Player
 
@@ -16,7 +16,6 @@ import scala.collection.mutable
 class PlayerInputHandlerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
 
   test("tick should ask the keyboard for pressed keys") {

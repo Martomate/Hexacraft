@@ -4,7 +4,7 @@ import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.block.BlockState
+import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.chunk.ChunkAddedOrRemovedListener
@@ -21,7 +21,7 @@ import org.lwjgl.opengl.*
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize)
+class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize, Blocks)
     extends ChunkAddedOrRemovedListener:
 
   private val skyShader = Shader.get(Shaders.ShaderNames.Sky).get

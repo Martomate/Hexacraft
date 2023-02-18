@@ -11,14 +11,14 @@ import scala.collection.mutable
 trait BlockLoader:
 
   /** @return `(offsets << 12 | texture_array_index)` for each side */
-  def loadBlockType(name: String): IndexedSeq[Int]
+  def loadBlockType(spec: BlockSpec): IndexedSeq[Int]
 
 object BlockLoader:
   lazy val instance: BlockLoader =
     val _instance = new BlockLoaderImpl()
     TextureArray.registerTextureArray(
       "blocks",
-      BlockTexture.blockTextureSize,
+      32,
       new ResourceWrapper(_instance.loadAllBlockTextures())
     )
     _instance
@@ -48,15 +48,10 @@ object BlockLoader:
       texIdxMap = nameToIdx.toMap
       images.toSeq
 
-    def loadBlockType(name: String): IndexedSeq[Int] = {
-      val specOpt = for
-        texIdxMap <- Option(texIdxMap)
-        file <- FileUtils.getResourceFile(s"spec/blocks/$name.json")
-        reader <- Option(FileUtils.getBufferedReader(file))
-      yield
-        val base = Json.parse(reader).asObject()
-        val spec = BlockSpec.fromJson(base)
-        spec.textures.indices(texIdxMap)
+    def loadBlockType(spec: BlockSpec): IndexedSeq[Int] = {
+      val specOpt =
+        for texIdxMap <- Option(texIdxMap)
+        yield spec.textures.indices(texIdxMap)
 
       specOpt.getOrElse(IndexedSeq.fill(8)(0))
     }

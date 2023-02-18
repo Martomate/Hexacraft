@@ -14,7 +14,6 @@ import org.joml.Vector3d
 class CollisionDetectorTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 

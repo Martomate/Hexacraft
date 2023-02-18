@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.entity.EntityModelLoader
 
@@ -11,7 +11,6 @@ import munit.FunSuite
 class ChunkTest extends FunSuite {
   given CylinderSize = CylinderSize(6)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   given Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 

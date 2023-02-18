@@ -2,6 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.{Chunk, EntitiesInChunk}
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.CoordUtils
@@ -19,7 +20,7 @@ object ChunkRenderer:
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       world: BlocksInWorld
-  )(using CylinderSize): ChunkRenderData =
+  )(using CylinderSize)(using Blocks: Blocks): ChunkRenderData =
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
@@ -77,7 +78,7 @@ object ChunkRenderer:
       shouldRender: java.util.BitSet,
       brightness: Array[Float],
       buf: ByteBuffer
-  ): Unit =
+  )(using Blocks: Blocks): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
 
     var i1 = 0
@@ -94,7 +95,7 @@ object ChunkRenderer:
         buf.putInt(coords.z)
 
         val blockType = block.blockType
-        buf.putInt(blockType.blockTex(side))
+        buf.putInt(Blocks.textures(blockType.name)(side))
         buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0

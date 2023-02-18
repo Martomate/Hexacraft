@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.{Shader, Shaders, TextureArray}
-import com.martomate.hexacraft.world.block.Block
+import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.camera.CameraProjection
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
 
@@ -13,14 +13,14 @@ object GUIBlocksRenderer:
       blockProvider: () => Block,
       rendererLocation: () => (Float, Float) = () => (0, 0),
       brightnessFunc: () => Float = () => 1.0f
-  ): GUIBlocksRenderer =
+  )(using Blocks: Blocks): GUIBlocksRenderer =
     new GUIBlocksRenderer(1, 1)(_ => blockProvider(), rendererLocation, (_, _) => brightnessFunc())
 
 class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     blockProvider: Int => Block,
     rendererLocation: () => (Float, Float) = () => (0, 0),
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
-):
+)(using Blocks: Blocks):
   private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
   private val guiBlockShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlock).get
   private val guiBlockSideShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlockSide).get
@@ -63,7 +63,7 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
             then
               buf.putFloat(x * separation + xOff)
               buf.putFloat(y * separation + yOff)
-              buf.putInt(blockToDraw.blockTex(side))
+              buf.putInt(Blocks.textures(blockToDraw.name)(side))
               buf.putFloat(
                 1.0f
               ) // blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))

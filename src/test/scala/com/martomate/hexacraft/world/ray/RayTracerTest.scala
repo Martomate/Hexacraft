@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.ray
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{BlocksInWorld, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import com.martomate.hexacraft.world.block.{BlockFactory, BlockLoader, Blocks, BlockState}
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
@@ -15,7 +15,6 @@ import org.joml.Vector2f
 class RayTracerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given BlockFactory = new BlockFactory
   given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
