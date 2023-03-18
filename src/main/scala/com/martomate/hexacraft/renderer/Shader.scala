@@ -1,10 +1,9 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.Resource
+import com.martomate.hexacraft.util.{OpenGL, Resource}
 
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL20
 
 object Shader {
   private var activeShader: Shader = _
@@ -29,7 +28,7 @@ object Shader {
 
   def unload(): Unit = {
     activeShader = null
-    GL20.glUseProgram(0)
+    OpenGL.glUseProgram(0)
   }
 
   def cleanUp(): Unit = {
@@ -73,7 +72,7 @@ class Shader private (config: ShaderConfig) extends Resource {
   def getUniformLocation(name: String): Int = uniformLocations.get(name) match {
     case Some(loc) => loc
     case None =>
-      val loc = GL20.glGetUniformLocation(shaderID, name)
+      val loc = OpenGL.glGetUniformLocation(shaderID, name)
       uniformLocations.put(name, loc)
       loc
   }
@@ -81,13 +80,13 @@ class Shader private (config: ShaderConfig) extends Resource {
   def getAttribLocation(name: String): Int = attributeLocations.get(name) match {
     case Some(loc) => loc
     case None =>
-      val loc = GL20.glGetAttribLocation(shaderID, name)
+      val loc = OpenGL.glGetAttribLocation(shaderID, name)
       attributeLocations.put(name, loc)
       loc
   }
 
   def bindAttribute(loc: Int, name: String): Unit = {
-    GL20.glBindAttribLocation(shaderID, loc, name)
+    OpenGL.glBindAttribLocation(shaderID, loc, name)
   }
 
   private def setUniform(name: String)(func: Int => Unit): Unit = {
@@ -96,18 +95,18 @@ class Shader private (config: ShaderConfig) extends Resource {
     if (loc != -1) func(loc)
   }
 
-  def setUniform1i(name: String, a: Int): Unit = setUniform(name)(GL20.glUniform1i(_, a))
+  def setUniform1i(name: String, a: Int): Unit = setUniform(name)(OpenGL.glUniform1i(_, a))
 
-  def setUniform1f(name: String, a: Float): Unit = setUniform(name)(GL20.glUniform1f(_, a))
+  def setUniform1f(name: String, a: Float): Unit = setUniform(name)(OpenGL.glUniform1f(_, a))
 
   def setUniform2f(name: String, a: Float, b: Float): Unit =
-    setUniform(name)(GL20.glUniform2f(_, a, b))
+    setUniform(name)(OpenGL.glUniform2f(_, a, b))
 
   def setUniform3f(name: String, a: Float, b: Float, c: Float): Unit =
-    setUniform(name)(GL20.glUniform3f(_, a, b, c))
+    setUniform(name)(OpenGL.glUniform3f(_, a, b, c))
 
   def setUniform4f(name: String, a: Float, b: Float, c: Float, d: Float): Unit =
-    setUniform(name)(GL20.glUniform4f(_, a, b, c, d))
+    setUniform(name)(OpenGL.glUniform4f(_, a, b, c, d))
 
   def setUniform2f(name: String, vec: Vector2f): Unit = setUniform2f(name, vec.x, vec.y)
 
@@ -120,7 +119,7 @@ class Shader private (config: ShaderConfig) extends Resource {
     setUniform(name)(loc => {
       matrix.get(Shader.matrixBuffer)
       Shader.matrixBuffer.rewind()
-      GL20.glUniformMatrix4fv(loc, false, Shader.matrixBuffer)
+      OpenGL.glUniformMatrix4fv(loc, false, Shader.matrixBuffer)
       Shader.matrixBuffer.clear()
     })
   }
@@ -128,13 +127,13 @@ class Shader private (config: ShaderConfig) extends Resource {
   def enable(): Unit = {
     if (Shader.activeShader != this) {
       Shader.activeShader = this
-      GL20.glUseProgram(shaderID)
+      OpenGL.glUseProgram(shaderID)
     }
   }
 
   protected def unload(): Unit = {
     if (Shader.activeShader == this) Shader.unload()
-    GL20.glDeleteProgram(shaderID)
+    OpenGL.glDeleteProgram(shaderID)
     shaderID = 0
   }
 }

@@ -1,5 +1,7 @@
 package com.martomate.hexacraft.renderer
 
+import com.martomate.hexacraft.util.OpenGL
+
 import org.lwjgl.opengl.{GL11, GL15}
 import scala.collection.mutable.ArrayBuffer
 
@@ -9,8 +11,8 @@ object VBOBuilder {
 }
 
 class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
-  val vboID: Int = GL15.glGenBuffers()
-  GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
+  val vboID: Int = OpenGL.glGenBuffers()
+  OpenGL.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
 
   private sealed trait SomeChannel
   private case class IntChannel(index: Int, dims: Int, elementSize: Int, _type: Int, offset: Int) extends SomeChannel

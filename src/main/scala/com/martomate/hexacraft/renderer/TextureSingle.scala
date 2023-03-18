@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{FileUtils, Resource}
+import com.martomate.hexacraft.util.{FileUtils, OpenGL, Resource}
 
 import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils
@@ -13,7 +13,7 @@ object TextureSingle {
 
   def unbind(): Unit = {
     TextureSingle.boundTexture = null
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+    OpenGL.glBindTexture(GL11.GL_TEXTURE_2D, 0)
   }
 
   def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
@@ -47,9 +47,9 @@ class TextureSingle(val name: String) extends Resource with Texture {
         .put((pix(i) >> 0).toByte)
         .put((pix(i) >> 24).toByte)
     buf.flip
-    texID = GL11.glGenTextures()
+    texID = OpenGL.glGenTextures()
     bind()
-    GL11.glTexImage2D(
+    OpenGL.glTexImage2D(
       GL11.GL_TEXTURE_2D,
       0,
       GL11.GL_RGBA,
@@ -61,10 +61,10 @@ class TextureSingle(val name: String) extends Resource with Texture {
       buf
     )
 
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+    OpenGL.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
+    OpenGL.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
   }
 
   protected def reload(): Unit = {
@@ -75,12 +75,12 @@ class TextureSingle(val name: String) extends Resource with Texture {
   def bind(): Unit = {
     if (TextureSingle.boundTexture != this) {
       TextureSingle.boundTexture = this
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
+      OpenGL.glBindTexture(GL11.GL_TEXTURE_2D, texID)
     }
   }
 
   def unload(): Unit = {
     if (TextureSingle.boundTexture == this) TextureSingle.unbind()
-    GL11.glDeleteTextures(texID)
+    OpenGL.glDeleteTextures(texID)
   }
 }

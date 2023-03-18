@@ -1,24 +1,18 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.Resource
+import com.martomate.hexacraft.util.{OpenGL, Resource}
 
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl._
+import org.lwjgl.opengl.{GL15, GL31}
 
 object VBO {
   private var boundVBO: VBO = _
 
   def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
-    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
-    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
-    GL31.glCopyBufferSubData(
-      GL31.GL_COPY_READ_BUFFER,
-      GL31.GL_COPY_WRITE_BUFFER,
-      fromOffset,
-      toOffset,
-      length
-    )
+    OpenGL.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
+    OpenGL.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
+    OpenGL.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, fromOffset, toOffset, length)
   }
 }
 
@@ -34,7 +28,7 @@ class VBO(
 
   bind()
   channels.foreach(_.setAttributes())
-  GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
+  OpenGL.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
 
   protected def reload(): Unit = ()
 
@@ -43,19 +37,19 @@ class VBO(
   def bind(): Unit = {
     if (VBO.boundVBO != this) {
       VBO.boundVBO = this
-      GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
+      OpenGL.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
     }
   }
 
   def resize(newCount: Int): Unit = {
     _count = newCount
     bind()
-    GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
+    OpenGL.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
   }
 
   def fill(start: Int, content: ByteBuffer): VBO = {
     bind()
-    GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, start * stride, content)
+    OpenGL.glBufferSubData(GL15.GL_ARRAY_BUFFER, start * stride, content)
     this
   }
 
@@ -88,6 +82,6 @@ class VBO(
   }
 
   protected def unload(): Unit = {
-    GL15.glDeleteBuffers(vboID)
+    OpenGL.glDeleteBuffers(vboID)
   }
 }

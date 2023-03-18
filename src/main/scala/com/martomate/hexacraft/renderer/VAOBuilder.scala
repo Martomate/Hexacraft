@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.renderer
 
-import org.lwjgl.opengl.GL30
+import com.martomate.hexacraft.util.OpenGL
+
 import scala.collection.mutable.ArrayBuffer
 
 class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
   private val vbos: ArrayBuffer[VBO] = new ArrayBuffer(1)
-  val vaoID: Int = GL30.glGenVertexArrays()
-  GL30.glBindVertexArray(vaoID)
+  val vaoID: Int = OpenGL.glGenVertexArrays()
+  OpenGL.glBindVertexArray(vaoID)
 
   def addVBO(vbo: VBO): VAOBuilder = {
     vbos += vbo

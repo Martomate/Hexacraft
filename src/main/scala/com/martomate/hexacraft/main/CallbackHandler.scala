@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.main
 
+import com.martomate.hexacraft.util.OpenGL
+
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL43
 import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
@@ -69,4 +70,4 @@ class CallbackHandler:
 
   def addScrollCallback(window: Long): Unit = GLFW.glfwSetScrollCallback(window, onScrollCallback)
 
-  def addDebugMessageCallback(): Unit = GL43.glDebugMessageCallback(onDebugMessageCallback, 0L)
+  def addDebugMessageCallback(): Unit = OpenGL.glDebugMessageCallback(onDebugMessageCallback, 0L)

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{Resource, ResourceWrapper}
+import com.martomate.hexacraft.util.{OpenGL, Resource, ResourceWrapper}
 
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.{GL11, GL12, GL30}
@@ -12,7 +12,7 @@ object TextureArray {
 
   def unbind(): Unit = {
     TextureArray.boundTextureArray = null
-    GL11.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, 0)
+    OpenGL.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, 0)
   }
 
   def getTextureArray(name: String): TextureArray = textures(name)
@@ -57,9 +57,9 @@ class TextureArray(
       }
     }
     buf.flip
-    texID = GL11.glGenTextures()
+    texID = OpenGL.glGenTextures()
     bind()
-    GL12.glTexImage3D(
+    OpenGL.glTexImage3D(
       GL30.GL_TEXTURE_2D_ARRAY,
       0,
       GL11.GL_RGBA,
@@ -72,15 +72,15 @@ class TextureArray(
       buf
     )
 
-    GL11.glTexParameteri(
+    OpenGL.glTexParameteri(
       GL30.GL_TEXTURE_2D_ARRAY,
       GL11.GL_TEXTURE_MIN_FILTER,
       GL11.GL_NEAREST_MIPMAP_LINEAR
     )
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
-    GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D_ARRAY)
+    OpenGL.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
+    OpenGL.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glGenerateMipmap(GL30.GL_TEXTURE_2D_ARRAY)
   }
 
   protected def reload(): Unit = {
@@ -91,12 +91,12 @@ class TextureArray(
   def bind(): Unit = {
     if (TextureArray.boundTextureArray != this) {
       TextureArray.boundTextureArray = this
-      GL11.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, texID)
+      OpenGL.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, texID)
     }
   }
 
   def unload(): Unit = {
     if (TextureArray.boundTextureArray == this) TextureArray.unbind()
-    GL11.glDeleteTextures(texID)
+    OpenGL.glDeleteTextures(texID)
   }
 }
