@@ -19,7 +19,6 @@ import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.opengl.GL11
 
 class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, Blocks: Blocks)
     extends Scene

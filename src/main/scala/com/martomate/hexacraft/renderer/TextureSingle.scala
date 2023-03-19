@@ -4,14 +4,17 @@ import com.martomate.hexacraft.util.{FileUtils, OpenGL, Resource}
 import com.martomate.hexacraft.util.OpenGL.{
   TexelDataFormat,
   TexelDataType,
+  TexIntParameter,
+  TexMagFilter,
+  TexMinFilter,
   TextureId,
   TextureInternalFormat,
-  TextureTarget
+  TextureTarget,
+  TexWrap
 }
 
 import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL12}
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
@@ -68,10 +71,10 @@ class TextureSingle(val name: String) extends Resource with Texture {
       buf
     )
 
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MinFilter(TexMinFilter.Linear))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MagFilter(TexMagFilter.Nearest))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapS(TexWrap.ClampToEdge))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapT(TexWrap.ClampToEdge))
   }
 
   protected def reload(): Unit = {

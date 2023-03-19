@@ -134,10 +134,29 @@ object OpenGL {
       case Regular => GL30.GL_FRAMEBUFFER
   }
 
+  enum FrameBufferAttachment {
+    case ColorAttachment(index: Int)
+    case DepthAttachment
+
+    def toGL: Int = this match
+      case FrameBufferAttachment.ColorAttachment(index) => GL30.GL_COLOR_ATTACHMENT0 + index
+      case FrameBufferAttachment.DepthAttachment        => GL30.GL_DEPTH_ATTACHMENT
+  }
+
   def glGenFramebuffer(): FrameBufferId = GL30.glGenFramebuffers()
 
   def glBindFramebuffer(target: FrameBufferTarget, framebuffer: FrameBufferId): Unit =
     GL30.glBindFramebuffer(target.toGL, framebuffer)
+
+  def glDrawBuffer(buf: FrameBufferAttachment): Unit = GL11.glDrawBuffer(buf.toGL)
+
+  def glFramebufferTexture(
+      target: FrameBufferTarget,
+      attachment: FrameBufferAttachment,
+      texture: TextureId,
+      level: Int
+  ): Unit =
+    GL32.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
 
   def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = GL30.glDeleteFramebuffers(framebuffer)
 
@@ -145,11 +164,13 @@ object OpenGL {
 
   enum PrimitiveMode {
     case Lines
+    case LineStrip
     case Triangles
     case TriangleStrip
 
     def toGL: Int = this match
       case PrimitiveMode.Lines         => GL11.GL_LINES
+      case PrimitiveMode.LineStrip     => GL11.GL_LINE_STRIP
       case PrimitiveMode.Triangles     => GL11.GL_TRIANGLES
       case PrimitiveMode.TriangleStrip => GL11.GL_TRIANGLE_STRIP
   }
@@ -177,23 +198,29 @@ object OpenGL {
 
   enum TextureInternalFormat {
     case Rgba
+    case DepthComponent32
 
     def toGL: Int = this match
-      case TextureInternalFormat.Rgba => GL11.GL_RGBA
+      case TextureInternalFormat.Rgba             => GL11.GL_RGBA
+      case TextureInternalFormat.DepthComponent32 => GL14.GL_DEPTH_COMPONENT32
   }
 
   enum TexelDataFormat {
     case Rgba
+    case DepthComponent
 
     def toGL: Int = this match
-      case TexelDataFormat.Rgba => GL11.GL_RGBA
+      case TexelDataFormat.Rgba           => GL11.GL_RGBA
+      case TexelDataFormat.DepthComponent => GL11.GL_DEPTH_COMPONENT
   }
 
   enum TexelDataType {
     case UnsignedByte
+    case Float
 
     def toGL: Int = this match
       case TexelDataType.UnsignedByte => GL11.GL_UNSIGNED_BYTE
+      case TexelDataType.Float        => GL11.GL_FLOAT
   }
 
   def glGenTextures(): TextureId = GL11.glGenTextures()
@@ -210,6 +237,29 @@ object OpenGL {
       format: TexelDataFormat,
       texelDataType: TexelDataType,
       pixels: ByteBuffer
+  ): Unit =
+    GL11.glTexImage2D(
+      target.toGL,
+      level,
+      internalFormat.toGL,
+      width,
+      height,
+      border,
+      format.toGL,
+      texelDataType.toGL,
+      pixels
+    )
+
+  def glTexImage2D(
+      target: TextureTarget,
+      level: Int,
+      internalFormat: TextureInternalFormat,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: TexelDataFormat,
+      texelDataType: TexelDataType,
+      pixels: FloatBuffer
   ): Unit =
     GL11.glTexImage2D(
       target.toGL,
@@ -248,7 +298,62 @@ object OpenGL {
       pixels
     )
 
-  def glTexParameteri(target: TextureTarget, pname: Int, param: Int): Unit =
+  enum TexMagFilter {
+    case Linear
+    case Nearest
+
+    def toGL: Int = this match
+      case TexMagFilter.Linear  => GL11.GL_LINEAR
+      case TexMagFilter.Nearest => GL11.GL_NEAREST
+  }
+
+  enum TexMinFilter {
+    case Linear
+    case Nearest
+    case NearestMipmapNearest
+    case LinearMipmapNearest
+    case NearestMipmapLinear
+    case LinearMipmapLinear
+
+    def toGL: Int = this match
+      case TexMinFilter.Linear               => GL11.GL_LINEAR
+      case TexMinFilter.Nearest              => GL11.GL_NEAREST
+      case TexMinFilter.NearestMipmapNearest => GL11.GL_NEAREST_MIPMAP_NEAREST
+      case TexMinFilter.LinearMipmapNearest  => GL11.GL_LINEAR_MIPMAP_NEAREST
+      case TexMinFilter.NearestMipmapLinear  => GL11.GL_NEAREST_MIPMAP_LINEAR
+      case TexMinFilter.LinearMipmapLinear   => GL11.GL_LINEAR_MIPMAP_LINEAR
+  }
+
+  enum TexWrap {
+    case ClampToEdge
+    case ClampToBorder
+    case MirroredRepeat
+    case Repeat
+
+    def toGL: Int = this match
+      case TexWrap.ClampToEdge    => GL12.GL_CLAMP_TO_EDGE
+      case TexWrap.ClampToBorder  => GL13.GL_CLAMP_TO_BORDER
+      case TexWrap.MirroredRepeat => GL14.GL_MIRRORED_REPEAT
+      case TexWrap.Repeat         => GL11.GL_REPEAT
+  }
+
+  enum TexIntParameter {
+    case MagFilter(filter: TexMagFilter)
+    case MinFilter(filter: TexMinFilter)
+    case TextureWrapS(wrap: TexWrap)
+    case TextureWrapT(wrap: TexWrap)
+    case TextureWrapR(wrap: TexWrap)
+
+    def toGL: (Int, Int) = this match
+      case TexIntParameter.MagFilter(filter)  => (GL11.GL_TEXTURE_MAG_FILTER, filter.toGL)
+      case TexIntParameter.MinFilter(filter)  => (GL11.GL_TEXTURE_MIN_FILTER, filter.toGL)
+      case TexIntParameter.TextureWrapS(wrap) => (GL11.GL_TEXTURE_WRAP_S, wrap.toGL)
+      case TexIntParameter.TextureWrapT(wrap) => (GL11.GL_TEXTURE_WRAP_T, wrap.toGL)
+      case TexIntParameter.TextureWrapR(wrap) => (GL12.GL_TEXTURE_WRAP_R, wrap.toGL)
+  }
+
+  def glTexParameteri(target: TextureTarget, p: TexIntParameter): Unit =
+    val (pname, param) = p.toGL
     GL11.glTexParameteri(target.toGL, pname, param)
 
   def glGenerateMipmap(target: TextureTarget): Unit = GL30.glGenerateMipmap(target.toGL)

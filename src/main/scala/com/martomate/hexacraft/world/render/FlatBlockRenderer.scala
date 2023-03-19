@@ -3,8 +3,6 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.OpenGL
 
-import org.lwjgl.opengl.{GL11, GL15}
-
 object FlatBlockRenderer:
   def forSide(side: Int): BlockRenderer =
     val vao = initVAO(side)

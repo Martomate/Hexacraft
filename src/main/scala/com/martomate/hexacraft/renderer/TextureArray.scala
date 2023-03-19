@@ -4,7 +4,6 @@ import com.martomate.hexacraft.util.{OpenGL, Resource, ResourceWrapper}
 import com.martomate.hexacraft.util.OpenGL.{TexelDataFormat, TexelDataType, TextureInternalFormat}
 
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL12}
 
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]
@@ -75,12 +74,20 @@ class TextureArray(
 
     OpenGL.glTexParameteri(
       OpenGL.TextureTarget.Texture2DArray,
-      GL11.GL_TEXTURE_MIN_FILTER,
-      GL11.GL_NEAREST_MIPMAP_LINEAR
+      OpenGL.TexIntParameter.MinFilter(OpenGL.TexMinFilter.NearestMipmapLinear)
     )
-    OpenGL.glTexParameteri(OpenGL.TextureTarget.Texture2DArray, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    OpenGL.glTexParameteri(OpenGL.TextureTarget.Texture2DArray, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    OpenGL.glTexParameteri(OpenGL.TextureTarget.Texture2DArray, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.MagFilter(OpenGL.TexMagFilter.Nearest)
+    )
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.TextureWrapS(OpenGL.TexWrap.ClampToEdge)
+    )
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.TextureWrapT(OpenGL.TexWrap.ClampToEdge)
+    )
     OpenGL.glGenerateMipmap(OpenGL.TextureTarget.Texture2DArray)
   }
 

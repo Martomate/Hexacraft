@@ -5,7 +5,6 @@ import com.martomate.hexacraft.util.OpenGL
 import com.martomate.hexacraft.world.render.buffer.RenderBuffer
 
 import java.nio.ByteBuffer
-import org.lwjgl.opengl.GL11
 
 class VAORenderBuffer(val vao: VAO, val idxToFill: Int, renderingMode: OpenGL.PrimitiveMode)
     extends RenderBuffer[VAORenderBuffer] {

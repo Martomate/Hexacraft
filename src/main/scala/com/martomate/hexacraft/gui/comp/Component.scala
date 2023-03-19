@@ -7,7 +7,6 @@ import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.OpenGL
 
 import org.joml.{Matrix4f, Vector2f, Vector4f}
-import org.lwjgl.opengl.GL11
 
 abstract class Component:
   private val textMaster = new TextMaster()

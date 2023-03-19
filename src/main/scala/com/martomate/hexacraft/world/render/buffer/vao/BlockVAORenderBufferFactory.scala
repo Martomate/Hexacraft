@@ -6,7 +6,6 @@ import com.martomate.hexacraft.world.render.{BlockRenderer, BlockVertexData}
 import com.martomate.hexacraft.world.render.buffer.RenderBufferFactory
 
 import org.joml.{Vector2f, Vector3f}
-import org.lwjgl.opengl.{GL11, GL15}
 
 class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORenderBuffer] {
   private val verticesPerInstance: Int = if (side < 2) 3 * 6 else 3 * 2

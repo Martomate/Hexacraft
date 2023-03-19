@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.{FrameBuffer, TextureSingle}
+import com.martomate.hexacraft.util.OpenGL
 
 import java.nio.{ByteBuffer, FloatBuffer}
-import org.lwjgl.opengl.{GL11, GL14, GL30, GL32}
 
 object MainFrameBuffer:
   def fromSize(width: Int, height: Int): MainFrameBuffer =
@@ -13,63 +13,89 @@ object MainFrameBuffer:
     new MainFrameBuffer(colorTexture, depthTexture, frameBuffer)
 
   private object Helpers:
-    def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
-      val texID = GL11.glGenTextures()
+    def makeMainColorTexture(framebufferWidth: Int, framebufferHeight: Int): OpenGL.TextureId =
+      val texID = OpenGL.glGenTextures()
 
       TextureSingle.unbind()
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-      GL11.glTexImage2D(
-        GL11.GL_TEXTURE_2D,
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, texID)
+      OpenGL.glTexImage2D(
+        OpenGL.TextureTarget.Texture2D,
         0,
-        GL11.GL_RGBA,
+        OpenGL.TextureInternalFormat.Rgba,
         framebufferWidth,
         framebufferHeight,
         0,
-        GL11.GL_RGBA,
-        GL11.GL_UNSIGNED_BYTE,
+        OpenGL.TexelDataFormat.Rgba,
+        OpenGL.TexelDataType.UnsignedByte,
         null.asInstanceOf[ByteBuffer]
       )
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+      OpenGL.glTexParameteri(
+        OpenGL.TextureTarget.Texture2D,
+        OpenGL.TexIntParameter.MagFilter(OpenGL.TexMagFilter.Linear)
+      )
+      OpenGL.glTexParameteri(
+        OpenGL.TextureTarget.Texture2D,
+        OpenGL.TexIntParameter.MinFilter(OpenGL.TexMinFilter.Linear)
+      )
 
       texID
 
-    def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): Int =
-      val texID = GL11.glGenTextures()
+    def makeMainDepthTexture(framebufferWidth: Int, framebufferHeight: Int): OpenGL.TextureId =
+      val texID = OpenGL.glGenTextures()
 
       TextureSingle.unbind()
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
-      GL11.glTexImage2D(
-        GL11.GL_TEXTURE_2D,
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, texID)
+      OpenGL.glTexImage2D(
+        OpenGL.TextureTarget.Texture2D,
         0,
-        GL14.GL_DEPTH_COMPONENT32,
+        OpenGL.TextureInternalFormat.DepthComponent32,
         framebufferWidth,
         framebufferHeight,
         0,
-        GL11.GL_DEPTH_COMPONENT,
-        GL11.GL_FLOAT,
+        OpenGL.TexelDataFormat.DepthComponent,
+        OpenGL.TexelDataType.Float,
         null.asInstanceOf[FloatBuffer]
       )
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-      GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+      OpenGL.glTexParameteri(
+        OpenGL.TextureTarget.Texture2D,
+        OpenGL.TexIntParameter.MagFilter(OpenGL.TexMagFilter.Linear)
+      )
+      OpenGL.glTexParameteri(
+        OpenGL.TextureTarget.Texture2D,
+        OpenGL.TexIntParameter.MinFilter(OpenGL.TexMinFilter.Linear)
+      )
 
       texID
 
     def makeMainFrameBuffer(
-        colorTexture: Int,
-        depthTexture: Int,
+        colorTexture: OpenGL.TextureId,
+        depthTexture: OpenGL.TextureId,
         framebufferWidth: Int,
         framebufferHeight: Int
     ): FrameBuffer =
       val fb = new FrameBuffer(framebufferWidth, framebufferHeight)
       fb.bind()
-      GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0)
-      GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, colorTexture, 0)
-      GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthTexture, 0)
+      OpenGL.glDrawBuffer(OpenGL.FrameBufferAttachment.ColorAttachment(0))
+      OpenGL.glFramebufferTexture(
+        OpenGL.FrameBufferTarget.Regular,
+        OpenGL.FrameBufferAttachment.ColorAttachment(0),
+        colorTexture,
+        0
+      )
+      OpenGL.glFramebufferTexture(
+        OpenGL.FrameBufferTarget.Regular,
+        OpenGL.FrameBufferAttachment.DepthAttachment,
+        depthTexture,
+        0
+      )
 
       fb
 
-class MainFrameBuffer private (val colorTexture: Int, val depthTexture: Int, val frameBuffer: FrameBuffer):
+class MainFrameBuffer private (
+    val colorTexture: OpenGL.TextureId,
+    val depthTexture: OpenGL.TextureId,
+    val frameBuffer: FrameBuffer
+):
   def bind(): Unit =
     frameBuffer.bind()
 
@@ -78,5 +104,5 @@ class MainFrameBuffer private (val colorTexture: Int, val depthTexture: Int, val
 
   def unload(): Unit =
     frameBuffer.unload()
-    GL11.glDeleteTextures(colorTexture)
-    GL11.glDeleteTextures(depthTexture)
+    OpenGL.glDeleteTextures(colorTexture)
+    OpenGL.glDeleteTextures(depthTexture)
