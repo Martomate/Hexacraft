@@ -5,7 +5,6 @@ import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
 import com.martomate.hexacraft.renderer.Shader
 import com.martomate.hexacraft.util.OpenGL
 
-import org.lwjgl.opengl.{GL11, GL13}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -19,8 +18,8 @@ class FontRenderer {
   ): Unit = {
     prepare()
     for (font <- texts.keys) {
-      OpenGL.glActiveTexture(GL13.GL_TEXTURE0)
-      OpenGL.glBindTexture(GL11.GL_TEXTURE_2D, font.textureAtlas)
+      OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, font.textureAtlas)
       for (text <- texts(font)) {
         renderText(text, xoffset, yoffset)
       }
@@ -29,9 +28,9 @@ class FontRenderer {
   }
 
   private def prepare(): Unit = {
-    OpenGL.glEnable(GL11.GL_BLEND)
-    OpenGL.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-    OpenGL.glDisable(GL11.GL_DEPTH_TEST)
+    OpenGL.glEnable(OpenGL.State.Blend)
+    OpenGL.glBlendFunc(OpenGL.BlendFactor.SrcAlpha, OpenGL.BlendFactor.OneMinusSrcAlpha)
+    OpenGL.glDisable(OpenGL.State.DepthTest)
     shader.enable()
     TextureSingle.unbind()
     VAO.unbindVAO()
@@ -41,12 +40,12 @@ class FontRenderer {
     OpenGL.glBindVertexArray(text.getMesh)
     shader.setUniform3f("color", text.color)
     shader.setUniform2f("translation", text.position.x + xoffset, text.position.y + yoffset)
-    OpenGL.glDrawArrays(GL11.GL_TRIANGLES, 0, text.vertexCount)
+    OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
   }
 
   private def endRendering(): Unit = {
-    OpenGL.glDisable(GL11.GL_BLEND)
-    OpenGL.glEnable(GL11.GL_DEPTH_TEST)
+    OpenGL.glDisable(OpenGL.State.Blend)
+    OpenGL.glEnable(OpenGL.State.DepthTest)
     TextureSingle.unbind() // important
     VAO.unbindVAO() // important
   }

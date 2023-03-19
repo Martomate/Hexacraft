@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
   private val vbos: ArrayBuffer[VBO] = new ArrayBuffer(1)
-  val vaoID: Int = OpenGL.glGenVertexArrays()
+  val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
   OpenGL.glBindVertexArray(vaoID)
 
   def addVBO(vbo: VBO): VAOBuilder = {

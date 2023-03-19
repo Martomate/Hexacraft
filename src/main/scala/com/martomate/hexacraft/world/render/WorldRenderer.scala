@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, OpenGL}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
@@ -36,13 +36,14 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
   private val skyVAO: VAO = Helpers.makeSkyVAO
-  private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private val skyRenderer = new Renderer(skyVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest
 
   private val worldCombinerVAO: VAO = Helpers.makeSkyVAO
-  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, OpenGL.PrimitiveMode.TriangleStrip)
+    with NoDepthTest
 
   private val selectedBlockVAO: VAO = Helpers.makeSelectedBlockVAO
-  private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
+  private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, OpenGL.PrimitiveMode.TriangleStrip)
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
 
@@ -221,7 +222,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
             .fillFloats(0, vertexData)
         )
         .addVBO(
-          VBOBuilder(1, GL15.GL_DYNAMIC_DRAW, 1)
+          VBOBuilder(1, OpenGL.VboUsage.DynamicDraw, 1)
             .ints(1, 3)
             .floats(2, 3)
             .floats(3, 1)

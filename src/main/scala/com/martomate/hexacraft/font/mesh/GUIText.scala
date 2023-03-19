@@ -2,6 +2,7 @@ package com.martomate.hexacraft.font.mesh
 
 import com.martomate.hexacraft.font.TextMaster
 import com.martomate.hexacraft.renderer.VAO
+import com.martomate.hexacraft.util.OpenGL
 
 import org.joml.{Vector2f, Vector3f, Vector3fc}
 
@@ -88,7 +89,7 @@ class GUIText private (
     *   the ID of the text's VAO, which contains all the vertex data for the quads on which the text
     *   will be rendered.
     */
-  def getMesh: Int = textMeshVao.id
+  def getMesh: OpenGL.VertexArrayId = textMeshVao.id
 
   /** Set the VAO and vertex count for this text.
     *

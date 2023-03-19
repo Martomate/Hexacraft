@@ -1,5 +1,7 @@
 package com.martomate.hexacraft.font.mesh
 
+import com.martomate.hexacraft.util.OpenGL
+
 import java.net.URL
 
 /** Represents a font. It holds the font's texture atlas as well as having the ability to create the
@@ -8,7 +10,7 @@ import java.net.URL
   * @author
   *   Karl
   */
-class FontType(val textureAtlas: Int, val loader: TextMeshCreator) {
+class FontType(val textureAtlas: OpenGL.TextureId, val loader: TextMeshCreator) {
 
   /** Takes in an unloaded text and calculate all of the vertices for the quads on which this text
     * will be rendered. The vertex positions and texture coords and calculated based on the
@@ -31,6 +33,6 @@ object FontType {
     * @param fontFile
     *   the font file containing information about each character in the texture atlas.
     */
-  def fromUrl(textureAtlas: Int, fontFile: URL): FontType =
+  def fromUrl(textureAtlas: OpenGL.TextureId, fontFile: URL): FontType =
     new FontType(textureAtlas, new TextMeshCreator(fontFile))
 }

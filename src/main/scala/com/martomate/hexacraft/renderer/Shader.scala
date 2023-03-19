@@ -28,7 +28,7 @@ object Shader {
 
   def unload(): Unit = {
     activeShader = null
-    OpenGL.glUseProgram(0)
+    OpenGL.glUseProgram(OpenGL.ProgramId.none)
   }
 
   def cleanUp(): Unit = {
@@ -45,8 +45,8 @@ object Shader {
 }
 
 class Shader private (config: ShaderConfig) extends Resource {
-  private var shaderID: Int = _
-  private val uniformLocations = collection.mutable.Map.empty[String, Int]
+  private var shaderID: OpenGL.ProgramId = OpenGL.ProgramId.none
+  private val uniformLocations = collection.mutable.Map.empty[String, OpenGL.UniformLocation]
   private val attributeLocations = collection.mutable.Map.empty[String, Int]
 
   load()
@@ -69,7 +69,7 @@ class Shader private (config: ShaderConfig) extends Resource {
     load()
   }
 
-  def getUniformLocation(name: String): Int = uniformLocations.get(name) match {
+  def getUniformLocation(name: String): OpenGL.UniformLocation = uniformLocations.get(name) match {
     case Some(loc) => loc
     case None =>
       val loc = OpenGL.glGetUniformLocation(shaderID, name)
@@ -89,10 +89,10 @@ class Shader private (config: ShaderConfig) extends Resource {
     OpenGL.glBindAttribLocation(shaderID, loc, name)
   }
 
-  private def setUniform(name: String)(func: Int => Unit): Unit = {
+  private def setUniform(name: String)(func: OpenGL.UniformLocation => Unit): Unit = {
     enable()
     val loc = getUniformLocation(name)
-    if (loc != -1) func(loc)
+    if (loc.exists) func(loc)
   }
 
   def setUniform1i(name: String, a: Int): Unit = setUniform(name)(OpenGL.glUniform1i(_, a))
@@ -134,6 +134,6 @@ class Shader private (config: ShaderConfig) extends Resource {
   protected def unload(): Unit = {
     if (Shader.activeShader == this) Shader.unload()
     OpenGL.glDeleteProgram(shaderID)
-    shaderID = 0
+    shaderID = OpenGL.ProgramId.none
   }
 }

@@ -11,7 +11,7 @@ case class VBOChannelInt(
     index: Int,
     dims: Int,
     elementSize: Int,
-    _type: Int,
+    _type: OpenGL.VertexIntAttributeDataType,
     stride: Int,
     offset: Int,
     divisor: Int
@@ -28,7 +28,7 @@ case class VBOChannelFloat(
     index: Int,
     dims: Int,
     elementSize: Int,
-    _type: Int,
+    _type: OpenGL.VertexAttributeDataType,
     normalized: Boolean,
     stride: Int,
     offset: Int,

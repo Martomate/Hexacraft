@@ -4,7 +4,7 @@ import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.util.{OpenGL, TickableTimer}
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
@@ -28,7 +28,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   private val crosshairShader: Shader = Shader.get(Shaders.ShaderNames.Crosshair).get
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
-    new Renderer(crosshairVAO, GL11.GL_LINES) with NoDepthTest
+    new Renderer(crosshairVAO, OpenGL.PrimitiveMode.Lines) with NoDepthTest
 
   private val world = World(worldProvider)
   import world.size.impl

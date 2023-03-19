@@ -3,15 +3,15 @@ package com.martomate.hexacraft.renderer
 import com.martomate.hexacraft.util.{FileUtils, OpenGL}
 
 import java.io.IOException
-import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object ShaderBuilder {
   def start(name: String): ShaderBuilder = new ShaderBuilder(name)
 }
 
 class ShaderBuilder(name: String) {
-  private val shaders = collection.mutable.Map.empty[Int, Int]
+  private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
   private val programID = OpenGL.glCreateProgram()
   private var prefix = "shaders/"
   private var definesText = ""
@@ -26,16 +26,16 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  private def getShaderType(shaderType: String): Int = {
+  private def getShaderType(shaderType: String): Try[OpenGL.ShaderType] = {
+    import OpenGL.ShaderType
+
     shaderType match {
-      case "vs" | "vert" => GL20.GL_VERTEX_SHADER
-      case "fs" | "frag" => GL20.GL_FRAGMENT_SHADER
-      case "gs" | "geom" => GL32.GL_GEOMETRY_SHADER
-      case "tc"          => GL40.GL_TESS_CONTROL_SHADER
-      case "te"          => GL40.GL_TESS_EVALUATION_SHADER
-      case _ =>
-        System.err.println("Shadertype '" + shaderType + "' not supported.")
-        -1
+      case "vs" | "vert" => Success(ShaderType.Vertex)
+      case "fs" | "frag" => Success(ShaderType.Fragment)
+      case "gs" | "geom" => Success(ShaderType.Geometry)
+      case "tc"          => Success(ShaderType.TessControl)
+      case "te"          => Success(ShaderType.TessEvaluation)
+      case _             => Failure(new Exception("Shadertype '" + shaderType + "' not supported"))
     }
   }
 
@@ -65,26 +65,28 @@ class ShaderBuilder(name: String) {
       if (newLineIdx != -1) {
         val shaderType = part.substring(0, newLineIdx)
         val source = part.substring(newLineIdx + 1)
-        loadShader(getShaderType(shaderType), source)
+        getShaderType(shaderType) match
+          case Success(t) => loadShader(t, source)
+          case Failure(e) => System.err.println(e.getMessage)
       }
     }
     this
   }
 
-  private def loadShader(shaderType: Int, source: String): ShaderBuilder = {
+  private def loadShader(shaderType: OpenGL.ShaderType, source: String): ShaderBuilder = {
     val shaderID = OpenGL.glCreateShader(shaderType)
 
     OpenGL.glShaderSource(shaderID, header + source)
     OpenGL.glCompileShader(shaderID)
-    if (OpenGL.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-      val shaderTypeName = if (shaderType == GL20.GL_VERTEX_SHADER) {
-        "Vertexshader"
-      } else if (shaderType == GL20.GL_FRAGMENT_SHADER) {
-        "Fragmentshader"
-      } else {
-        "Shader"
-      }
-      val maxLen = math.max(OpenGL.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
+    if (!OpenGL.glGetShaderBoolProp(shaderID, OpenGL.ShaderIntProp.CompileStatus)) {
+      import OpenGL.ShaderType
+
+      val shaderTypeName = shaderType match
+        case ShaderType.Vertex   => "Vertexshader"
+        case ShaderType.Fragment => "Fragmentshader"
+        case _                   => "Shader"
+
+      val maxLen = math.max(OpenGL.glGetShaderIntProp(shaderID, OpenGL.ShaderIntProp.InfoLogLength), 256)
       System.err.println(
         s"$shaderTypeName failed to compile ($name).\nError log:\n"
           + OpenGL.glGetShaderInfoLog(shaderID, maxLen)
@@ -105,11 +107,11 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  def linkAndFinish(): Int = {
+  def linkAndFinish(): OpenGL.ProgramId = {
     OpenGL.glLinkProgram(programID)
 
-    if (OpenGL.glGetProgrami(programID, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-      val maxLen = math.max(OpenGL.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
+    if (!OpenGL.glGetProgramBoolProp(programID, OpenGL.ProgramIntProp.LinkStatus)) {
+      val maxLen = math.max(OpenGL.glGetProgramIntProp(programID, OpenGL.ProgramIntProp.InfoLogLength), 256)
       System.err.println("Link error: " + OpenGL.glGetProgramInfoLog(programID, maxLen))
     }
 
