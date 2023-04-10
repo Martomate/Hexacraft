@@ -33,7 +33,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   import world.size.impl
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world, window.framebufferSize)
-  world.addChunkAddedOrRemovedListener(worldRenderer)
+  world.trackEvents(worldRenderer.onWorldEvent _)
 
   val camera: Camera = new Camera(makeCameraProjection)
 

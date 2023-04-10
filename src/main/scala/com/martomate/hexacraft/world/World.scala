@@ -38,6 +38,10 @@ object World:
     )
     EntityRegistry.from(entityTypes)
 
+  enum Event:
+    case ChunkAdded(chunk: Chunk)
+    case ChunkRemoved(chunk: Chunk)
+
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
     extends BlockSetAndGet
     with BlocksInWorld
@@ -63,10 +67,11 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   val player: Player = makePlayer
 
-  private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] =
-    ArrayBuffer.empty
-  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
-    chunkAddedOrRemovedListeners += listener
+  private val dispatcher = new EventDispatcher[World.Event]
+  def trackEvents(tracker: Tracker[World.Event]): Unit = dispatcher.track(tracker)
+
+  trackEvents(worldPlanner.onWorldEvent _)
+  trackEvents(chunkLoader.onWorldEvent _)
 
   saveWorldData()
 
@@ -139,9 +144,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
     ch.addBlockEventListener(this)
     ch.addEventListener(this)
-    worldPlanner.onChunkAdded(ch)
-    chunkLoader.onChunkAdded(ch)
-    for l <- chunkAddedOrRemovedListeners do l.onChunkAdded(ch)
+    dispatcher.notify(World.Event.ChunkAdded(ch))
 
     ch.requestRenderUpdate()
     requestRenderUpdateForNeighborChunks(ch.coords)
@@ -165,9 +168,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
           case Some(removedChunk) =>
             removedChunk.removeBlockEventListener(this)
             removedChunk.removeEventListener(this)
-            worldPlanner.onChunkRemoved(removedChunk)
-            chunkLoader.onChunkRemoved(removedChunk)
-            for l <- chunkAddedOrRemovedListeners do l.onChunkRemoved(removedChunk)
+            dispatcher.notify(World.Event.ChunkRemoved(removedChunk))
 
             removedChunk.unload()
 
@@ -247,7 +248,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     blockUpdateTimer.active = false
     for col <- columns.values do col.unload()
     columns.clear()
-    chunkAddedOrRemovedListeners.clear()
 
   private def saveWorldData(): Unit =
     val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
