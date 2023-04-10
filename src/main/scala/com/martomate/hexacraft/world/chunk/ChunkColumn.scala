@@ -55,49 +55,45 @@ class ChunkColumn private (
   def setChunk(chunk: Chunk): Unit =
     val coords = chunk.coords.getChunkRelColumn
     chunks.put(coords.value, chunk) match
-      case Some(`chunk`) =>
-      case oldChunkOpt =>
-        handleEventsOnChunkRemoval(oldChunkOpt)
-
+      case Some(oldChunk) =>
+        if oldChunk != chunk then
+          oldChunk.removeBlockEventListener(this)
+          chunk.addBlockEventListener(this)
+          onChunkLoaded(chunk)
+      case None =>
         chunk.addBlockEventListener(this)
         onChunkLoaded(chunk)
 
   def removeChunk(coords: ChunkRelColumn): Option[Chunk] =
     val oldChunkOpt = chunks.remove(coords.value)
-    handleEventsOnChunkRemoval(oldChunkOpt)
+    oldChunkOpt match
+      case Some(oldChunk) =>
+        oldChunk.removeBlockEventListener(this)
+      case None =>
     oldChunkOpt
 
   def allChunks: Iterable[Chunk] = chunks.values
 
-  private def handleEventsOnChunkRemoval(oldChunkOpt: Option[Chunk]): Unit = oldChunkOpt match
-    case Some(oldChunk) =>
-      oldChunk.removeBlockEventListener(this)
-    case None =>
-
   def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit =
     val height = terrainHeight(coords.cx, coords.cz)
 
-    now.blockType match
-      case Blocks.Air => // a block is being removed
-        if coords.y == height then
-          // remove and find the next highest
-          var y: Int = height
-          while
-            y -= 1
-            var ch = getChunk(ChunkRelColumn.create(y >> 4))
-            ch match
-              case Some(chunk) =>
-                if chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz)).blockType != Blocks.Air
-                then ch = None
-                else y -= 1
-              case None =>
-                y = Short.MinValue
-            ch.isDefined
-          do ()
+    if now.blockType != Blocks.Air then { // a block is being added
+      if coords.y > height then heightMap(coords.cx)(coords.cz) = coords.y.toShort
+    } else { // a block is being removed
+      if coords.y == height then
+        // remove and find the next highest
 
-          heightMap(coords.cx)(coords.cz) = y.toShort
-      case _ => // a block is being added
-        if coords.y > height then heightMap(coords.cx)(coords.cz) = coords.y.toShort
+        heightMap(coords.cx)(coords.cz) = LazyList
+          .range((height - 1).toShort, Short.MinValue, -1.toShort)
+          .map(y =>
+            getChunk(ChunkRelColumn.create(y >> 4))
+              .map(chunk => (y, chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz))))
+              .orNull
+          )
+          .takeWhile(_ != null) // stop searching if the chunk is not loaded
+          .collectFirst({ case (y, block) if block.blockType != Blocks.Air => y })
+          .getOrElse(Short.MinValue)
+    }
 
   private def onChunkLoaded(chunk: Chunk): Unit =
     val yy = chunk.coords.Y * 16
