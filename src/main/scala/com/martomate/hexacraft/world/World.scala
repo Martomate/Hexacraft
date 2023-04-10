@@ -150,13 +150,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     worldPlanner.decorate(ch)
 
     for block <- ch.blocks.allBlocks do
-      ch.requestBlockUpdate(block.coords)
+      requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
 
       for side <- 0 until 8 do
         if block.coords.onChunkEdge(side) then
           val neighCoords = block.coords.neighbor(side)
           getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side))) match
-            case Some(neighbor) => neighbor.requestBlockUpdate(neighCoords)
+            case Some(neighbor) => requestBlockUpdate(BlockRelWorld.fromChunk(neighCoords, neighbor.coords))
             case None           =>
 
   def removeChunk(ch: ChunkRelWorld): Unit =
@@ -256,8 +256,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   private def onChunkEvent(event: Chunk.Event): Unit =
     event match
       case Chunk.Event.BlockReplaced(coords, _, _) => onSetBlock(coords)
-      case Chunk.Event.BlockNeedsUpdate(coords)    => blocksToUpdate.enqueue(coords)
-      case Chunk.Event.ChunkNeedsRenderUpdate(_)   =>
+      case _                                       =>
+
+  private def requestBlockUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
   private def onSetBlock(coords: BlockRelWorld): Unit =
     def affectedChunkOffset(where: Byte): Int = where match
@@ -278,7 +279,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     getChunk(cCoords) match
       case Some(c) =>
         c.requestRenderUpdate()
-        c.requestBlockUpdate(bCoords)
+        requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, c.coords))
 
         for i <- 0 until 8 do
           val off = ChunkRelWorld.neighborOffsets(i)
@@ -288,9 +289,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
             getChunk(cCoords.offset(NeighborOffsets(i))) match
               case Some(n) =>
                 n.requestRenderUpdate()
-                n.requestBlockUpdate(c2)
+                requestBlockUpdate(BlockRelWorld.fromChunk(c2, n.coords))
               case None =>
-          else c.requestBlockUpdate(c2)
+          else requestBlockUpdate(BlockRelWorld.fromChunk(c2, c.coords))
       case None =>
 
   private def makePlayer: Player =

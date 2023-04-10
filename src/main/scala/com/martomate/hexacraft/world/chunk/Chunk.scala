@@ -23,7 +23,6 @@ object Chunk:
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
 
   enum Event:
-    case BlockNeedsUpdate(coords: BlockRelWorld)
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
@@ -63,9 +62,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
     lightPropagator.removeSunlight(this, blockCoords)
     if block.blockType.lightEmitted != 0 then
       lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
-
-  def requestBlockUpdate(coords: BlockRelChunk): Unit =
-    dispatcher.notify(Chunk.Event.BlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
 
   def requestRenderUpdate(): Unit =
     dispatcher.notify(Chunk.Event.ChunkNeedsRenderUpdate(coords))
