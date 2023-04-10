@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, EventDispatcher, NBTUtil, RevokeTrackerFn, Tracker}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
@@ -22,19 +22,19 @@ object Chunk:
     val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator, new LightPropagator(world))
 
+  enum Event:
+    case BlockNeedsUpdate(coords: BlockRelWorld)
+    case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
+    case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
+
 class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator):
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
   private var needsToSave = false
 
-  private val eventListeners: ArrayBuffer[ChunkEventListener] = ArrayBuffer.empty
-  def addEventListener(listener: ChunkEventListener): Unit = eventListeners += listener
-  def removeEventListener(listener: ChunkEventListener): Unit = eventListeners -= listener
-
-  private val blockEventListeners: ArrayBuffer[ChunkBlockListener] = ArrayBuffer.empty
-  def addBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners += listener
-  def removeBlockEventListener(listener: ChunkBlockListener): Unit = blockEventListeners -= listener
+  private val dispatcher = new EventDispatcher[Chunk.Event]
+  def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
 
   val lighting: ChunkLighting = new ChunkLighting(lightPropagator)
   def entities: EntitiesInChunk = chunkData.entities
@@ -52,8 +52,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
       storage.setBlock(blockCoords, block)
       needsToSave = true
 
-      for listener <- blockEventListeners do
-        listener.onSetBlock(BlockRelWorld.fromChunk(blockCoords, coords), before, block)
+      dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
 
       handleLightingOnSetBlock(blockCoords, block)
 
@@ -66,9 +65,10 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
       lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
 
   def requestBlockUpdate(coords: BlockRelChunk): Unit =
-    for e <- eventListeners do e.onBlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords))
+    dispatcher.notify(Chunk.Event.BlockNeedsUpdate(BlockRelWorld.fromChunk(coords, this.coords)))
 
-  def requestRenderUpdate(): Unit = for e <- eventListeners do e.onChunkNeedsRenderUpdate(coords)
+  def requestRenderUpdate(): Unit =
+    dispatcher.notify(Chunk.Event.ChunkNeedsRenderUpdate(coords))
 
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
     chunkData.optimizeStorage()
@@ -85,9 +85,6 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
   def unload(): Unit =
     saveIfNeeded()
-
-    blockEventListeners.clear()
-    eventListeners.clear()
 
   private def save(): Unit =
     val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT) // Add more tags with ++

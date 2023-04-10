@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.camera.Camera
-import com.martomate.hexacraft.world.chunk.ChunkEventListener
+import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.loader.PosAndDir
@@ -11,7 +11,7 @@ object ChunkRenderUpdater:
   private val chunkRenderUpdatesPerTick = 4
   private val ticksBetweenColumnLoading = 5
 
-class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using CylinderSize) extends ChunkEventListener:
+class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using CylinderSize):
   private val origin = new PosAndDir
 
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] =
@@ -54,7 +54,7 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using C
 
     dist
 
-  override def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = () // TODO: Interface Segregation
-
-  override def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
-    chunkRenderUpdateQueue.enqueue(coords)
+  def onChunkEvent(event: Chunk.Event): Unit =
+    event match
+      case Chunk.Event.ChunkNeedsRenderUpdate(coords) => chunkRenderUpdateQueue.enqueue(coords)
+      case _                                          =>

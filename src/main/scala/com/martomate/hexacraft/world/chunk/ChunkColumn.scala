@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{NBTUtil, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.*
@@ -38,10 +38,11 @@ class ChunkColumn private (
     generatedHeightMap: IndexedSeq[IndexedSeq[Short]],
     heightMap: Array[Array[Short]]
 )(using Blocks: Blocks)
-    extends ChunkColumnTerrain
-    with ChunkBlockListener:
+    extends ChunkColumnTerrain:
 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
+
+  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   def isEmpty: Boolean = chunks.isEmpty
 
@@ -57,24 +58,29 @@ class ChunkColumn private (
     chunks.put(coords.value, chunk) match
       case Some(oldChunk) =>
         if oldChunk != chunk then
-          oldChunk.removeBlockEventListener(this)
-          chunk.addBlockEventListener(this)
+          chunkEventTrackerRevokeFns(oldChunk.coords)()
+          chunkEventTrackerRevokeFns += chunk.coords -> chunk.trackEvents(onChunkEvent _)
           onChunkLoaded(chunk)
       case None =>
-        chunk.addBlockEventListener(this)
+        chunkEventTrackerRevokeFns += chunk.coords -> chunk.trackEvents(onChunkEvent _)
         onChunkLoaded(chunk)
 
   def removeChunk(coords: ChunkRelColumn): Option[Chunk] =
     val oldChunkOpt = chunks.remove(coords.value)
     oldChunkOpt match
-      case Some(oldChunk) =>
-        oldChunk.removeBlockEventListener(this)
-      case None =>
+      case Some(oldChunk) => chunkEventTrackerRevokeFns(oldChunk.coords)()
+      case None           =>
     oldChunkOpt
 
   def allChunks: Iterable[Chunk] = chunks.values
 
-  def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit =
+  private def onChunkEvent(event: Chunk.Event): Unit =
+    event match
+      case Chunk.Event.BlockReplaced(coords, _, now) =>
+        onSetBlock(coords, now)
+      case _ =>
+
+  def onSetBlock(coords: BlockRelWorld, now: BlockState): Unit =
     val height = terrainHeight(coords.cx, coords.cz)
 
     if now.blockType != Blocks.Air then { // a block is being added

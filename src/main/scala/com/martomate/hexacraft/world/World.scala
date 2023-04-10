@@ -44,9 +44,7 @@ object World:
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
     extends BlockSetAndGet
-    with BlocksInWorld
-    with ChunkBlockListener
-    with ChunkEventListener:
+    with BlocksInWorld:
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
@@ -66,6 +64,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
   val player: Player = makePlayer
+
+  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private val dispatcher = new EventDispatcher[World.Event]
   def trackEvents(tracker: Tracker[World.Event]): Unit = dispatcher.track(tracker)
@@ -89,10 +89,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       renderDistance,
       () => World.shouldChillChunkLoader
     )
-
-  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
-
-  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ()
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = columns.get(coords.value)
 
@@ -142,8 +138,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   def setChunk(ch: Chunk): Unit =
     ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
-    ch.addBlockEventListener(this)
-    ch.addEventListener(this)
+
+    val revoke = ch.trackEvents(onChunkEvent _)
+    chunkEventTrackerRevokeFns += ch.coords -> revoke
+
     dispatcher.notify(World.Event.ChunkAdded(ch))
 
     ch.requestRenderUpdate()
@@ -166,8 +164,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       case Some(col) =>
         col.removeChunk(ch.getChunkRelColumn) match
           case Some(removedChunk) =>
-            removedChunk.removeBlockEventListener(this)
-            removedChunk.removeEventListener(this)
+            val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
+            revoke()
+
             dispatcher.notify(World.Event.ChunkRemoved(removedChunk))
 
             removedChunk.unload()
@@ -254,7 +253,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
     worldProvider.saveState(worldTag, "world.dat")
 
-  override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit =
+  private def onChunkEvent(event: Chunk.Event): Unit =
+    event match
+      case Chunk.Event.BlockReplaced(coords, _, _) => onSetBlock(coords)
+      case Chunk.Event.BlockNeedsUpdate(coords)    => blocksToUpdate.enqueue(coords)
+      case Chunk.Event.ChunkNeedsRenderUpdate(_)   =>
+
+  private def onSetBlock(coords: BlockRelWorld): Unit =
     def affectedChunkOffset(where: Byte): Int = where match
       case 0  => -1
       case 15 => 1

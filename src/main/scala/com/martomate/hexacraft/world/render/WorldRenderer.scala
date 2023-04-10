@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.{CylinderSize, OpenGL}
+import com.martomate.hexacraft.util.{CylinderSize, OpenGL, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, World}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
@@ -49,6 +49,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val entityRenderers: BlockRendererCollection = new BlockRendererCollection(s => EntityPartRenderer.forSide(s))
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(updateChunkIfPresent)
+
+  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private def updateChunkIfPresent(coords: ChunkRelWorld) =
     world.getChunk(coords) match
@@ -138,11 +140,15 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     event match
       case World.Event.ChunkAdded(chunk) =>
         chunksToRender.add(chunk.coords)
-        chunk.addEventListener(chunkRenderUpdater)
+
+        val revoke = chunk.trackEvents(chunkRenderUpdater.onChunkEvent _)
+        chunkEventTrackerRevokeFns += chunk.coords -> revoke
       case World.Event.ChunkRemoved(chunk) =>
         chunksToRender.remove(chunk.coords)
         chunkHandler.updateHandlers(chunk.coords, None)
-        chunk.removeEventListener(chunkRenderUpdater)
+
+        val revoke = chunkEventTrackerRevokeFns(chunk.coords)
+        revoke()
 
   def framebufferResized(width: Int, height: Int): Unit =
     val newFrameBuffer = MainFrameBuffer.fromSize(width, height)

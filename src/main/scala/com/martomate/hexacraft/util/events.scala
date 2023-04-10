@@ -8,6 +8,8 @@ trait Tracker[E]:
 object Tracker:
   def withStorage[E]: TrackerWithStorage[E] = new TrackerWithStorage[E]
 
+type RevokeTrackerFn = () => Unit
+
 /** This Tracker stores the incoming events in an array */
 class TrackerWithStorage[E] extends Tracker[E]:
   private val _events: ArrayBuffer[E] = ArrayBuffer.empty
@@ -17,6 +19,8 @@ class TrackerWithStorage[E] extends Tracker[E]:
 
 class EventDispatcher[E]:
   private val trackers: ArrayBuffer[Tracker[E]] = ArrayBuffer.empty
-  def track(tracker: Tracker[E]): Unit = trackers += tracker
+  def track(tracker: Tracker[E]): RevokeTrackerFn =
+    trackers += tracker
+    () => trackers -= tracker
 
   def notify(event: E): Unit = for t <- trackers do t.notify(event)
