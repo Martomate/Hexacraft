@@ -18,10 +18,7 @@ abstract class Component:
 
   def render(transformation: GUITransformation): Unit = textMaster.render(transformation.x, transformation.y)
 
-  def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = false
-  def onScrollEvent(event: Event.ScrollEvent): Boolean = false
-  def onKeyEvent(event: Event.KeyEvent): Boolean = false
-  def onCharEvent(event: Event.CharEvent): Boolean = false
+  def handleEvent(event: Event): Boolean = false
   def onReloadedResources(): Unit = ()
 
   def unload(): Unit = textMaster.unload()

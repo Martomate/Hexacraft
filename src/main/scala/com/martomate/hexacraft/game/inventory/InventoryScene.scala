@@ -53,43 +53,38 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   override def windowResized(w: Int, h: Int): Unit =
     guiBlockRenderer.setWindowAspectRatio(w.toFloat / h)
 
-  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = {
-    if event.action == Event.MouseAction.Release && location.containsPoint(event.mousePos)
-    then
-      hoverIndex match
-        case Some(hover) =>
-          val newFloatingBlock = Some(inventory(hover)).filter(_ != Blocks.Air)
-          floatingBlock match
-            case Some(block) =>
-              floatingBlock = newFloatingBlock
-              inventory(hover) = block
-            case None =>
-              floatingBlock = newFloatingBlock
-              inventory(hover) = Blocks.Air
-        case None =>
-          handleFloatingBlock()
+  override def handleEvent(event: Event): Boolean =
+    import Event.*
+    event match
+      case KeyEvent(key, _, KeyAction.Press, _) =>
+        key match
+          case GLFW.GLFW_KEY_ESCAPE | GLFW.GLFW_KEY_E =>
+            handleFloatingBlock()
+            closeScene()
+          case _ =>
+      case MouseClickEvent(_, MouseAction.Release, _, mousePos) if location.containsPoint(mousePos) =>
+        hoverIndex match
+          case Some(hover) =>
+            val newFloatingBlock = Some(inventory(hover)).filter(_ != Blocks.Air)
+            floatingBlock match
+              case Some(block) =>
+                floatingBlock = newFloatingBlock
+                inventory(hover) = block
+              case None =>
+                floatingBlock = newFloatingBlock
+                inventory(hover) = Blocks.Air
+          case None =>
+            handleFloatingBlock()
+      case _ =>
     true
-  }
 
-  override def onKeyEvent(event: Event.KeyEvent): Boolean = {
-    if event.action == Event.KeyAction.Press
-    then
-      event.key match
-        case GLFW.GLFW_KEY_ESCAPE | GLFW.GLFW_KEY_E =>
-          handleFloatingBlock()
-          closeScene()
-        case _ =>
-    true
-  }
-
-  private def handleFloatingBlock(): Unit = {
+  private def handleFloatingBlock(): Unit =
     floatingBlock match
       case Some(block) =>
         firstEmptySlot match
           case Some(slot) => inventory(slot) = block
           case None       => // TODO: drop the block because the inventory is full
       case None =>
-  }
 
   private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
 

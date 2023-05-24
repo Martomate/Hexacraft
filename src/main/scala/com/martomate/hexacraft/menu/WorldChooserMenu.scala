@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.{GameKeyboard, GameMouse}
+import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo, MenuScene}
+import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.settings.WorldSettings
@@ -12,7 +12,9 @@ import java.io.File
 class WorldChooserMenu(saveFolder: File)(using
     mouse: GameMouse,
     keyboard: GameKeyboard,
-    window: GameWindowExtended,
+    window: GameWindow,
+    extras: WindowExtras,
+    scenes: WindowScenes,
     Blocks: Blocks
 ) extends MenuScene {
   addComponent(
@@ -22,10 +24,10 @@ class WorldChooserMenu(saveFolder: File)(using
   addComponent(makeScrollPane)
 
   addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
-    window.popScene()
+    scenes.popScene()
   })
   addComponent(Button("New world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f)) {
-    window.pushScene(new NewWorldMenu(saveFolder))
+    scenes.pushScene(new NewWorldMenu(saveFolder))
   })
 
   private def makeScrollPane: ScrollPane = {
@@ -42,10 +44,10 @@ class WorldChooserMenu(saveFolder: File)(using
     val buttonLocation = LocationInfo.from16x9(0.3f, 0.75f - 0.1f * listIndex, 0.4f, 0.075f)
 
     Button(world.name, buttonLocation) {
-      window.popScenesUntil(MenuScene.isMainMenu)
+      scenes.popScenesUntil(MenuScene.isMainMenu)
 
       val worldProvider = new WorldProviderFromFile(world.saveFile, WorldSettings.none)
-      window.pushScene(new GameScene(worldProvider))
+      scenes.pushScene(new GameScene(worldProvider))
     }
   }
 

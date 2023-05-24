@@ -9,8 +9,5 @@ abstract class Scene extends Component {
 
   def isOpaque: Boolean = true
 
-  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = true
-  override def onScrollEvent(event: Event.ScrollEvent): Boolean = true
-  override def onKeyEvent(event: Event.KeyEvent): Boolean = true
-  override def onCharEvent(event: Event.CharEvent): Boolean = true
+  override def handleEvent(event: Event): Boolean = true
 }

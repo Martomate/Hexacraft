@@ -7,10 +7,10 @@ import org.joml.{Vector3f, Vector4f}
 import org.lwjgl.glfw.GLFW
 
 class TextField(
-                 location: LocationInfo,
-                 initText: String = "",
-                 centered: Boolean = true,
-                 maxFontSize: Float = 4f
+    location: LocationInfo,
+    initText: String = "",
+    centered: Boolean = true,
+    maxFontSize: Float = 4f
 ) extends Component:
   private val bgColor = new Vector4f(0.5f)
   private val textColor = new Vector3f(1.0f)
@@ -74,30 +74,26 @@ class TextField(
     Component.drawRect(location, transformation.x, transformation.y, bgColor)
     super.render(transformation)
 
-  override def onCharEvent(event: Event.CharEvent): Boolean =
-    if focused
-    then
-      setText(text + event.character.toChar)
-      true
-    else false
-
-  override def onKeyEvent(event: Event.KeyEvent): Boolean =
-    val keyReleased = event.action != Event.KeyAction.Release
-
-    if focused && keyReleased
-    then
-      if event.key == GLFW.GLFW_KEY_BACKSPACE
+  override def handleEvent(event: Event): Boolean = event match
+    case Event.CharEvent(character) =>
+      if focused
       then
-        if text.nonEmpty
-        then setText(text.substring(0, text.length - 1))
+        setText(text + character.toChar)
+        true
+      else false
+    case Event.KeyEvent(key, _, action, _) =>
+      val keyReleased = action != Event.KeyAction.Release
 
-    super.onKeyEvent(event)
+      if focused && keyReleased && key == GLFW.GLFW_KEY_BACKSPACE && text.nonEmpty
+      then setText(text.substring(0, text.length - 1))
 
-  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
-    focused = location.containsPoint(event.mousePos)
-    if !focused
-    then super.onMouseClickEvent(event)
-    else false
+      super.handleEvent(event)
+    case Event.MouseClickEvent(_, _, _, mousePos) =>
+      focused = location.containsPoint(mousePos)
+      if !focused
+      then super.handleEvent(event)
+      else false
+    case _ => super.handleEvent(event)
 
   private def makeContentText() =
     Component

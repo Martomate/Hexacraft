@@ -1,14 +1,15 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.GameMouse
-import com.martomate.hexacraft.gui.{LocationInfo, GameWindowExtended, MenuScene}
+import com.martomate.hexacraft.{GameMouse, GameWindow}
+import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowScenes}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 import com.martomate.hexacraft.menu.WorldInfo
 
 import java.io.File
 import scala.util.Random
 
-class HostWorldChooserMenu(saveFolder: File)(using mouse: GameMouse, window: GameWindowExtended) extends MenuScene {
+class HostWorldChooserMenu(saveFolder: File)(using mouse: GameMouse, window: GameWindow, scenes: WindowScenes)
+    extends MenuScene {
   addComponent(
     new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
   )
@@ -30,7 +31,7 @@ class HostWorldChooserMenu(saveFolder: File)(using mouse: GameMouse, window: Gam
   addComponent(scrollPane)
 
   addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f)) {
-    window.popScene()
+    scenes.popScene()
   })
 
   private def getWorlds: Seq[WorldInfo] = {

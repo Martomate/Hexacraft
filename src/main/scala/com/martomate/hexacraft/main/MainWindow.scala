@@ -2,7 +2,7 @@ package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
-import com.martomate.hexacraft.gui.{Event, GameWindowExtended, Scene, SceneStack}
+import com.martomate.hexacraft.gui.{Event, Scene, SceneStack, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
@@ -16,7 +16,7 @@ import org.joml.{Vector2i, Vector2ic}
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.glfw.GLFW.*
 
-class MainWindow(isDebug: Boolean) extends GameWindowExtended:
+class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with WindowExtras:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val _windowSize = new Vector2i(960, 540)
@@ -119,9 +119,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
         if key == GLFW_KEY_F11
         then setFullscreen()
 
-      scenes.reverseIterator.exists(_.onKeyEvent(Event.KeyEvent(key, scancode, keyAction, keyMods)))
+      scenes.reverseIterator.exists(_.handleEvent(Event.KeyEvent(key, scancode, keyAction, keyMods)))
     case CallbackEvent.CharTyped(_, character) =>
-      scenes.reverseIterator.exists(_.onCharEvent(Event.CharEvent(character)))
+      scenes.reverseIterator.exists(_.handleEvent(Event.CharEvent(character)))
     case CallbackEvent.MouseClicked(_, button, action, mods) =>
       val mouseButton = Event.MouseButton.fromGlfw(button)
       val mouseAction = Event.MouseAction.fromGlfw(action)
@@ -130,10 +130,10 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
       scenes.reverseIterator.exists(
-        _.onMouseClickEvent(Event.MouseClickEvent(mouseButton, mouseAction, keyMods, mousePos))
+        _.handleEvent(Event.MouseClickEvent(mouseButton, mouseAction, keyMods, mousePos))
       )
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
-      scenes.reverseIterator.exists(_.onScrollEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))
+      scenes.reverseIterator.exists(_.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then
@@ -155,7 +155,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
         _framebufferSize.set(w, h)
 
-  def handleDebugEvent(debugMessage: OpenGL.DebugMessage): Unit =
+  private def handleDebugEvent(debugMessage: OpenGL.DebugMessage): Unit =
     val OpenGL.DebugMessage(source, debugType, _, severity, message, _) = debugMessage
     val messageStr = s"[${severity.toString}] [${debugType.toString}] [${source.toString}] - $message"
     System.err.println(s"OpenGL debug: $messageStr")
@@ -181,7 +181,9 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     initGL()
 
     try
-      given GameWindowExtended = this
+      given GameWindow = this
+      given WindowExtras = this
+      given WindowScenes = this
       given GameMouse = mouse
       given GameKeyboard = keyboard
 

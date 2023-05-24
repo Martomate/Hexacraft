@@ -8,9 +8,9 @@ import org.joml.Vector4f
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(
-                  location: LocationInfo,
-                  padding: Float = 0,
-                  enableHorizontalScroll: Boolean = false
+    location: LocationInfo,
+    padding: Float = 0,
+    enableHorizontalScroll: Boolean = false
 )(using mouse: GameMouse, window: GameWindow)
     extends Component:
   private var xOffset: Float = 0
@@ -31,37 +31,30 @@ class ScrollPane(
     OpenGL.glDisable(OpenGL.State.ScissorTest)
     super.render(contentTransformation)
 
-  override def onScrollEvent(event: Event.ScrollEvent): Boolean =
-    if containsMouse
-    then
-      val boxBounds = location
-      val contentBounds = calcContentBounds()
+  override def handleEvent(event: Event): Boolean = event match
+    case event: Event.CharEvent => components.exists(_.handleEvent(event))
+    case event: Event.KeyEvent  => components.exists(_.handleEvent(event))
+    case event: Event.MouseClickEvent =>
+      if containsMouse
+      then components.exists(_.handleEvent(event.withMouseTranslation(-xOffset, -yOffset)))
+      else false
+    case Event.ScrollEvent(xOffset, yOffset) =>
+      if !containsMouse then components.exists(_.handleEvent(event))
+      else
+        val boxBounds = location
+        val contentBounds = calcContentBounds()
 
-      if enableHorizontalScroll
-      then this.xOffset += event.xOffset * 0.05f
+        if enableHorizontalScroll then this.xOffset += xOffset * 0.05f
+        this.yOffset -= yOffset * 0.05f
 
-      this.yOffset -= event.yOffset * 0.05f
+        if boxBounds.h - contentBounds.h < 2 * padding then
+          val limitTop = boxBounds.y + boxBounds.h - padding
+          val limitBottom = boxBounds.y + padding
+          val contentTop = contentBounds.y + contentBounds.h
+          val contentBottom = contentBounds.y
 
-      if boxBounds.h - contentBounds.h < 2 * padding
-      then
-        val limitTop = boxBounds.y + boxBounds.h - padding
-        val limitBottom = boxBounds.y + padding
-        val contentTop = contentBounds.y + contentBounds.h
-        val contentBottom = contentBounds.y
-
-        this.yOffset = MathUtils.clamp(yOffset, limitTop - contentTop, limitBottom - contentBottom)
-
-      true
-    else components.exists(_.onScrollEvent(event))
-
-  override def onKeyEvent(event: Event.KeyEvent): Boolean = components.exists(_.onKeyEvent(event))
-
-  override def onCharEvent(event: Event.CharEvent): Boolean = components.exists(_.onCharEvent(event))
-
-  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
-    if containsMouse
-    then components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xOffset, -yOffset)))
-    else false
+          this.yOffset = MathUtils.clamp(this.yOffset, limitTop - contentTop, limitBottom - contentBottom)
+        true
 
   private def containsMouse: Boolean =
     val mousePos = mouse.heightNormalizedPos(window.windowSize)

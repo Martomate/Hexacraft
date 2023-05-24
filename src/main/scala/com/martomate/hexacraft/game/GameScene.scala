@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.{GameKeyboard, GameMouse}
+import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
@@ -24,9 +24,11 @@ import org.lwjgl.glfw.GLFW.*
 class GameScene(worldProvider: WorldProvider)(using
     mouse: GameMouse,
     keyboard: GameKeyboard,
-    window: GameWindowExtended,
+    window: GameWindow,
+    scenes: WindowScenes,
     Blocks: Blocks
-) extends Scene
+)(using WindowExtras)
+    extends Scene
     with DebugInfoProvider:
 
   private val crosshairShader: Shader = Shader.get(Shaders.ShaderNames.Crosshair).get
@@ -80,51 +82,47 @@ class GameScene(worldProvider: WorldProvider)(using
   private def setProjMatrixForAll(): Unit =
     worldRenderer.onProjMatrixChanged(camera)
 
-  override def onKeyEvent(event: Event.KeyEvent): Boolean =
-    if event.action == Event.KeyAction.Press
-    then
-      event.key match
-        case GLFW_KEY_B =>
-          val newCoords = camera.blockCoords.offset(0, -4, 0)
+  private def handleKeyPress(key: Int): Unit = key match
+    case GLFW_KEY_B =>
+      val newCoords = camera.blockCoords.offset(0, -4, 0)
 
-          if world.getBlock(newCoords).blockType == Blocks.Air
-          then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
-        case GLFW_KEY_ESCAPE =>
-          window.pushScene(new PauseMenu(this.setPaused))
-          setPaused(true)
-        case GLFW_KEY_E =>
-          if !isPaused
-          then
-            val closeScene: () => Unit = () => {
-              window.popScenesUntil(_ == this)
-              isInPopup = false
-              setUseMouse(true)
-            }
+      if world.getBlock(newCoords).blockType == Blocks.Air
+      then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
+    case GLFW_KEY_ESCAPE =>
+      scenes.pushScene(new PauseMenu(this.setPaused))
+      setPaused(true)
+    case GLFW_KEY_E =>
+      if !isPaused
+      then
+        val closeScene: () => Unit = () => {
+          scenes.popScenesUntil(_ == this)
+          isInPopup = false
+          setUseMouse(true)
+        }
 
-            setUseMouse(false)
-            isInPopup = true
-            window.pushScene(new InventoryScene(world.player.inventory, closeScene))
-        case GLFW_KEY_M =>
-          setUseMouse(!moveWithMouse)
-        case GLFW_KEY_F =>
-          world.player.flying = !world.player.flying
-        case GLFW_KEY_F7 =>
-          setDebugScreenVisible(debugScene == null)
-        case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
-          val idx = key - GLFW_KEY_1
-          setSelectedItemSlot(idx)
-        case GLFW_KEY_P =>
-          val startPos = CylCoords(world.player.position)
+        setUseMouse(false)
+        isInPopup = true
+        scenes.pushScene(new InventoryScene(world.player.inventory, closeScene))
+    case GLFW_KEY_M =>
+      setUseMouse(!moveWithMouse)
+    case GLFW_KEY_F =>
+      world.player.flying = !world.player.flying
+    case GLFW_KEY_F7 =>
+      setDebugScreenVisible(debugScene == null)
+    case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
+      val idx = key - GLFW_KEY_1
+      setSelectedItemSlot(idx)
+    case GLFW_KEY_P =>
+      val startPos = CylCoords(world.player.position)
 
-          world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
-        case GLFW_KEY_L =>
-          val startPos = CylCoords(world.player.position)
+      world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
+    case GLFW_KEY_L =>
+      val startPos = CylCoords(world.player.position)
 
-          world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
-        case GLFW_KEY_K =>
-          world.removeAllEntities()
-        case _ =>
-    true
+      world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
+    case GLFW_KEY_K =>
+      world.removeAllEntities()
+    case _ =>
 
   private def setDebugScreenVisible(visible: Boolean): Unit =
     if visible
@@ -139,18 +137,23 @@ class GameScene(worldProvider: WorldProvider)(using
   private def setUseMouse(useMouse: Boolean): Unit =
     moveWithMouse = useMouse
     setMouseCursorInvisible(moveWithMouse)
-    window.resetMousePos()
+    summon[WindowExtras].resetMousePos()
 
-  override def onScrollEvent(event: Event.ScrollEvent): Boolean =
-    if !isPaused && !isInPopup && moveWithMouse
-    then
-      val dy = -math.signum(event.yOffset).toInt
-      if dy != 0
-      then
-        val itemSlot = (world.player.selectedItemSlot + dy + 9) % 9
-        setSelectedItemSlot(itemSlot)
-      true
-    else super.onScrollEvent(event)
+  override def handleEvent(event: Event): Boolean =
+    import Event.*
+    event match
+      case KeyEvent(key, _, action, _) =>
+        if action == KeyAction.Press then handleKeyPress(key)
+      case ScrollEvent(_, yOffset) if !isPaused && !isInPopup && moveWithMouse =>
+        val dy = -math.signum(yOffset).toInt
+        if dy != 0 then setSelectedItemSlot((world.player.selectedItemSlot + dy + 9) % 9)
+      case MouseClickEvent(button, action, _, _) =>
+        button match
+          case MouseButton.Left  => leftMouseButtonTimer.active = action != MouseAction.Release
+          case MouseButton.Right => rightMouseButtonTimer.active = action != MouseAction.Release
+          case _                 =>
+      case _ =>
+    true
 
   private def setSelectedItemSlot(itemSlot: Int): Unit =
     world.player.selectedItemSlot = itemSlot
@@ -164,14 +167,7 @@ class GameScene(worldProvider: WorldProvider)(using
       setMouseCursorInvisible(!paused && moveWithMouse)
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit =
-    window.setCursorLayout(if invisible then GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
-
-  override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean =
-    event.button match
-      case Event.MouseButton.Left  => leftMouseButtonTimer.active = event.action != Event.MouseAction.Release
-      case Event.MouseButton.Right => rightMouseButtonTimer.active = event.action != Event.MouseAction.Release
-      case _                       =>
-    true
+    summon[WindowExtras].setCursorLayout(if invisible then GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
 
   override def windowResized(width: Int, height: Int): Unit =
     camera.proj.aspect = width.toFloat / height
