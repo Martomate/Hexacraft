@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.{CylinderSize, OpenGL, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, World}

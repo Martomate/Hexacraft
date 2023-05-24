@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.martomate.hexacraft.util.{ConstantSeq, CylinderSize, NBTUtil, SmartArray}
+import com.martomate.hexacraft.util.{CylinderSize, NBTUtil, SmartArray}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
@@ -58,10 +58,8 @@ object DenseChunkStorage extends ChunkStorageFactory:
   override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): DenseChunkStorage =
     val storage = new DenseChunkStorage
 
-    val blocks =
-      NBTUtil.getByteArray(nbt, "blocks").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
-    val meta =
-      NBTUtil.getByteArray(nbt, "metadata").getOrElse(new ConstantSeq[Byte](16 * 16 * 16, 0))
+    val blocks = NBTUtil.getByteArray(nbt, "blocks").map(_.apply).getOrElse(_ => 0)
+    val meta = NBTUtil.getByteArray(nbt, "metadata").map(_.apply).getOrElse(_ => 0)
 
     for i <- storage.blockTypes.indices do
       storage.blockTypes(i) = blocks(i)

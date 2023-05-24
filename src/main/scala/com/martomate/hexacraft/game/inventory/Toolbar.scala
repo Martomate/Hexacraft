@@ -8,9 +8,7 @@ import com.martomate.hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, inventory: Inventory)(using window: GameWindow, Blocks: Blocks)
-    extends Component
-    with SubComponents {
+class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks) extends Component with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
   private val selectedBox = LocationInfo(
@@ -31,11 +29,10 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using window: GameWi
         .rotateY(3.1415f / 24)
         .translate(0, -0.25f, 0)
     )
-    renderer.onWindowAspectRatioChanged(window.aspectRatio)
     renderer
 
-  def onWindowAspectRatioChanged(aspectRatio: Float): Unit =
-    guiBlockRenderer.onWindowAspectRatioChanged(aspectRatio)
+  def setWindowAspectRatio(aspectRatio: Float): Unit =
+    guiBlockRenderer.setWindowAspectRatio(aspectRatio)
 
   private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent())
 

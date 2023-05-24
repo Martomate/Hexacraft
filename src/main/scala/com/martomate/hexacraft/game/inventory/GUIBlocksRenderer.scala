@@ -29,8 +29,8 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
   private var viewMatrix = new Matrix4f
   def setViewMatrix(matrix: Matrix4f): Unit = viewMatrix = matrix
 
-  private var cameraProjection = new CameraProjection(70f, 16f / 9f, 0.02f, 1000)
-  def onWindowAspectRatioChanged(aspectRatio: Float): Unit =
+  private val cameraProjection = new CameraProjection(70f, 16f / 9f, 0.02f, 1000)
+  def setWindowAspectRatio(aspectRatio: Float): Unit =
     cameraProjection.aspect = aspectRatio
     cameraProjection.updateProjMatrix()
 

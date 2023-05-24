@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui
 
-import com.martomate.hexacraft.GameWindow
+import org.joml.{Vector2fc, Vector2ic}
 
 /** x, y, w, h are position and size. The entire screen corresponds to `(-a, -1, 2 * a, 2)` where
   * `a` is `window.aspectRatio`.
@@ -14,22 +14,13 @@ case class LocationInfo(x: Float, y: Float, w: Float, h: Float):
 
   final def containsPoint(pos: (Float, Float)): Boolean = containsPoint(pos._1, pos._2)
 
-  def containsMouse(xOff: Float, yOff: Float)(using GameWindow): Boolean = containsMouse(
-    (xOff, yOff)
-  )
-
-  def containsMouse(offset: (Float, Float))(using window: GameWindow): Boolean =
-    val pos = window.normalizedMousePos
-    val px = pos.x * window.aspectRatio - offset._1
-    val py = pos.y - offset._2
-    containsPoint(px, py)
-
-  def inScaledScreenCoordinates(using window: GameWindow): FramebufferRectangle =
+  def inScaledScreenCoordinates(framebufferSize: Vector2ic): FramebufferRectangle =
+    val aspectRatio = framebufferSize.x.toFloat / framebufferSize.y
     FramebufferRectangle(
-      ((x + window.aspectRatio) * 0.5f * window.framebufferSize.y).round,
-      ((y + 1) * 0.5f * window.framebufferSize.y).round,
-      (w * 0.5f * window.framebufferSize.y).round,
-      (h * 0.5f * window.framebufferSize.y).round
+      ((x + aspectRatio) * 0.5f * framebufferSize.y).round,
+      ((y + 1) * 0.5f * framebufferSize.y).round,
+      (w * 0.5f * framebufferSize.y).round,
+      (h * 0.5f * framebufferSize.y).round
     )
 
   def expand(d: Float): LocationInfo = LocationInfo(x - d, y - d, w + 2 * d, h + 2 * d)

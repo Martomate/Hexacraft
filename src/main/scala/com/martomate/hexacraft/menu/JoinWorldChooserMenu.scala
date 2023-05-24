@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo, MenuScene}
+import com.martomate.hexacraft.GameMouse
+import com.martomate.hexacraft.gui.{LocationInfo, GameWindowExtended, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
 
 import java.net.InetAddress
@@ -11,7 +12,7 @@ object JoinWorldChooserMenu {
   case class OnlineWorldConnectionDetails(address: InetAddress, port: Int, time: Long)
 }
 
-class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScene {
+class JoinWorldChooserMenu(using mouse: GameMouse, window: GameWindowExtended) extends MenuScene {
   import JoinWorldChooserMenu.*
 
   addComponent(
@@ -21,7 +22,7 @@ class JoinWorldChooserMenu(implicit window: GameWindowExtended) extends MenuScen
   addComponent(scrollPane)
 
   addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f)) {
-    window.scenes.popScene()
+    window.popScene()
   })
 
   updateServerList()

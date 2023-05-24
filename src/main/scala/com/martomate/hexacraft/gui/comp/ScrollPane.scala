@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.GameWindow
+import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.util.{MathUtils, OpenGL}
 
@@ -8,10 +8,10 @@ import org.joml.Vector4f
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(
-    location: LocationInfo,
-    padding: Float = 0,
-    enableHorizontalScroll: Boolean = false
-)(using GameWindow)
+                  location: LocationInfo,
+                  padding: Float = 0,
+                  enableHorizontalScroll: Boolean = false
+)(using mouse: GameMouse, window: GameWindow)
     extends Component:
   private var xOffset: Float = 0
   private var yOffset: Float = 0
@@ -24,7 +24,7 @@ class ScrollPane(
     Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0, 0, 0, 0.4f))
 
     val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
-    val loc = location.inScaledScreenCoordinates
+    val loc = location.inScaledScreenCoordinates(window.framebufferSize)
     OpenGL.glScissor(loc.x, loc.y, loc.w, loc.h)
     OpenGL.glEnable(OpenGL.State.ScissorTest)
     components.foreach(_.render(contentTransformation))
@@ -63,7 +63,9 @@ class ScrollPane(
     then components.exists(_.onMouseClickEvent(event.withMouseTranslation(-xOffset, -yOffset)))
     else false
 
-  private def containsMouse: Boolean = location.containsMouse(0, 0)
+  private def containsMouse: Boolean =
+    val mousePos = mouse.heightNormalizedPos(window.windowSize)
+    location.containsPoint(mousePos.x, mousePos.y)
 
   override def unload(): Unit =
     components.foreach(_.unload())

@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.game
 
+import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
@@ -20,8 +21,12 @@ import org.joml.Vector2d
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, Blocks: Blocks)
-    extends Scene
+class GameScene(worldProvider: WorldProvider)(using
+    mouse: GameMouse,
+    keyboard: GameKeyboard,
+    window: GameWindowExtended,
+    Blocks: Blocks
+) extends Scene
     with DebugInfoProvider:
 
   private val crosshairShader: Shader = Shader.get(Shaders.ShaderNames.Crosshair).get
@@ -38,8 +43,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   val camera: Camera = new Camera(makeCameraProjection)
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
-  private val playerInputHandler: PlayerInputHandler =
-    new PlayerInputHandler(window.keyboard, world.player)
+  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, world.player)
   private val playerPhysicsHandler: PlayerPhysicsHandler =
     new PlayerPhysicsHandler(world.player, world.collisionDetector)
 
@@ -86,20 +90,20 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
           if world.getBlock(newCoords).blockType == Blocks.Air
           then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
         case GLFW_KEY_ESCAPE =>
-          window.scenes.pushScene(new PauseMenu(this.setPaused))
+          window.pushScene(new PauseMenu(this.setPaused))
           setPaused(true)
         case GLFW_KEY_E =>
           if !isPaused
           then
             val closeScene: () => Unit = () => {
-              window.scenes.popScenesUntil(_ == this)
+              window.popScenesUntil(_ == this)
               isInPopup = false
               setUseMouse(true)
             }
 
             setUseMouse(false)
             isInPopup = true
-            window.scenes.pushScene(new InventoryScene(world.player.inventory, closeScene))
+            window.pushScene(new InventoryScene(world.player.inventory, closeScene))
         case GLFW_KEY_M =>
           setUseMouse(!moveWithMouse)
         case GLFW_KEY_F =>
@@ -174,8 +178,8 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
     camera.updateProjMatrix()
 
     setProjMatrixForAll()
-    blockInHandRenderer.onWindowAspectRatioChanged(width.toFloat / height)
-    toolbar.onWindowAspectRatioChanged(width.toFloat / height)
+    blockInHandRenderer.setWindowAspectRatio(width.toFloat / height)
+    toolbar.setWindowAspectRatio(width.toFloat / height)
 
     if debugScene != null
     then debugScene.windowResized(width, height)
@@ -205,7 +209,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
   override def tick(): Unit =
     val maxSpeed = playerInputHandler.maxSpeed
     if !isPaused && !isInPopup then
-      playerInputHandler.tick(if moveWithMouse then window.mouse.moved else new Vector2d(), maxSpeed)
+      playerInputHandler.tick(if moveWithMouse then mouse.moved else new Vector2d(), maxSpeed)
     if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
     camera.setPositionAndRotation(world.player.position, world.player.rotation)
@@ -236,7 +240,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
       val screenCoords =
         if moveWithMouse
         then new Vector2f(0, 0)
-        else window.normalizedMousePos
+        else mouse.normalizedScreenCoords(window.windowSize)
       for
         ray <- Ray.fromScreen(camera, screenCoords)
         hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType != Blocks.Air)
@@ -295,7 +299,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
     val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
     renderer.setViewMatrix(viewMatrix)
-    renderer.onWindowAspectRatioChanged(window.aspectRatio)
+    renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
 
   private def makeCrosshairVAO: VAO = new VAOBuilder(4)
@@ -312,6 +316,7 @@ class GameScene(worldProvider: WorldProvider)(using window: GameWindowExtended, 
 
     val toolbar = new Toolbar(location, player.inventory)
     toolbar.setSelectedIndex(player.selectedItemSlot)
+    toolbar.setWindowAspectRatio(window.aspectRatio)
     toolbar
 
   private def makeCameraProjection =

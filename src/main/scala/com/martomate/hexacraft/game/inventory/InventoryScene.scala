@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.game.inventory
 
-import com.martomate.hexacraft.GameWindow
+import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.GUIBlocksRenderer
 import com.martomate.hexacraft.gui.{Event, LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
@@ -10,8 +10,11 @@ import com.martomate.hexacraft.world.player.Inventory
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.glfw.GLFW
 
-class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using window: GameWindow, Blocks: Blocks)
-    extends Scene {
+class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
+    mouse: GameMouse,
+    window: GameWindow,
+    Blocks: Blocks
+) extends Scene {
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -34,8 +37,8 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using window:
   override def isOpaque: Boolean = false
 
   override def tick(): Unit = {
-    val mousePos = window.normalizedMousePos
-    val (mx, my) = (mousePos.x * window.aspectRatio, mousePos.y)
+    val mousePos = mouse.heightNormalizedPos(window.windowSize)
+    val (mx, my) = (mousePos.x, mousePos.y)
     if location.containsPoint(mx, my)
     then
       val xi = ((mx - location.x) / 0.2f).toInt
@@ -48,7 +51,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using window:
   }
 
   override def windowResized(w: Int, h: Int): Unit =
-    guiBlockRenderer.onWindowAspectRatioChanged(w.toFloat / h)
+    guiBlockRenderer.setWindowAspectRatio(w.toFloat / h)
 
   override def onMouseClickEvent(event: Event.MouseClickEvent): Boolean = {
     if event.action == Event.MouseAction.Release && location.containsPoint(event.mousePos)
@@ -119,21 +122,21 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using window:
 
     val renderer = new GUIBlocksRenderer(9, 4, 0.2f)(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
-    renderer.onWindowAspectRatioChanged(window.aspectRatio)
+    renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
   }
 
   private def makeFloatingBlockRenderer() = {
     val blockProvider = () => floatingBlock.getOrElse(Blocks.Air)
     val rendererLocation = () =>
-      val mousePos = window.normalizedMousePos
-      (mousePos.x * window.aspectRatio, mousePos.y)
+      val mousePos = mouse.heightNormalizedPos(window.windowSize)
+      (mousePos.x, mousePos.y)
 
     val individualBlockViewMatrix = makeTiltedBlockViewMatrix
 
     val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
-    renderer.onWindowAspectRatioChanged(window.aspectRatio)
+    renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
   }
 

@@ -1,7 +1,5 @@
 package com.martomate.hexacraft.gui
 
-import com.martomate.hexacraft.GameWindow
-
 import munit.FunSuite
 
 class LocationInfoTest extends FunSuite {

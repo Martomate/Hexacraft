@@ -2,7 +2,7 @@ package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
-import com.martomate.hexacraft.gui.{Event, GameWindowExtended, SceneStack}
+import com.martomate.hexacraft.gui.{Event, GameWindowExtended, Scene, SceneStack}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
@@ -33,11 +33,13 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
 
   private val fullscreenManager = new FullscreenManager(window, glfwHelper)
 
-  override val mouse: RealGameMouse = new RealGameMouse
+  private val mouse: RealGameMouse = new RealGameMouse
+  private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(key => glfwGetKey(window, key) == GLFW_PRESS)
 
-  override val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(key => glfwGetKey(window, key) == GLFW_PRESS)
-
-  override val scenes: SceneStack = new SceneStack
+  private val scenes: SceneStack = new SceneStack
+  def popScene(): Unit = scenes.popScene()
+  def pushScene(scene: Scene): Unit = scenes.pushScene(scene)
+  def popScenesUntil(predicate: Scene => Boolean): Unit = scenes.popScenesUntil(predicate)
 
   override def setCursorLayout(cursorLayout: Int): Unit =
     glfwSetInputMode(window, GLFW_CURSOR, cursorLayout)
@@ -125,7 +127,8 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       val mouseAction = Event.MouseAction.fromGlfw(action)
       val keyMods = Event.KeyMods.fromGlfw(mods)
 
-      val mousePos = (normalizedMousePos.x * aspectRatio, normalizedMousePos.y)
+      val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
+      val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
       scenes.reverseIterator.exists(
         _.onMouseClickEvent(Event.MouseClickEvent(mouseButton, mouseAction, keyMods, mousePos))
       )
@@ -178,11 +181,14 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     initGL()
 
     try
-      implicit val windowImplicit: GameWindowExtended = this
+      given GameWindowExtended = this
+      given GameMouse = mouse
+      given GameKeyboard = keyboard
+
       Shader.init()
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given Blocks = new Blocks
-      scenes.pushScene(new MainMenu(saveFolder, tryQuit))
+      pushScene(new MainMenu(saveFolder, tryQuit))
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
@@ -278,8 +284,7 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     glfwSetWindowShouldClose(window, true)
 
   private def destroy(): Unit =
-    while scenes.nonEmpty
-    do scenes.popScene()
+    popScenesUntil(_ => false)
 
     Resource.freeAllResources()
     AsyncFileIO.unload()

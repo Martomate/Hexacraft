@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.menu
 
+import com.martomate.hexacraft.{GameKeyboard, GameMouse}
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.{GameWindowExtended, LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.*
@@ -9,7 +10,12 @@ import com.martomate.hexacraft.world.settings.WorldSettings
 import java.io.File
 import scala.util.Random
 
-class NewWorldMenu(saveFolder: File)(using window: GameWindowExtended, Blocks: Blocks) extends MenuScene {
+class NewWorldMenu(saveFolder: File)(using
+    mouse: GameMouse,
+    keyboard: GameKeyboard,
+    window: GameWindowExtended,
+    Blocks: Blocks
+) extends MenuScene {
   addComponent(
     new Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
@@ -33,7 +39,7 @@ class NewWorldMenu(saveFolder: File)(using window: GameWindowExtended, Blocks: B
   addComponent(seedTF)
 
   addComponent(Button("Cancel", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
-    window.scenes.popScene()
+    window.popScene()
   })
   addComponent(Button("Create world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
 
@@ -45,8 +51,8 @@ class NewWorldMenu(saveFolder: File)(using window: GameWindowExtended, Blocks: B
       val seed = Some(seedTF.text)
         .filter(_.nonEmpty)
         .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
-      window.scenes.popScenesUntil(MenuScene.isMainMenu)
-      window.scenes.pushScene(
+      window.popScenesUntil(MenuScene.isMainMenu)
+      window.pushScene(
         new GameScene(new WorldProviderFromFile(file, WorldSettings(Some(nameTF.text), size, seed)))
       )
     } catch {

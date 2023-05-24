@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 
@@ -8,13 +7,11 @@ import org.joml.{Vector3f, Vector4f}
 import org.lwjgl.glfw.GLFW
 
 class TextField(
-    location: LocationInfo,
-    initText: String = "",
-    centered: Boolean = true,
-    maxFontSize: Float = 4f
-)(implicit window: GameWindow)
-    extends Component:
-
+                 location: LocationInfo,
+                 initText: String = "",
+                 centered: Boolean = true,
+                 maxFontSize: Float = 4f
+) extends Component:
   private val bgColor = new Vector4f(0.5f)
   private val textColor = new Vector3f(1.0f)
 
