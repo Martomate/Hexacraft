@@ -88,7 +88,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
 
   private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
 
-  override def render(transformation: GUITransformation): Unit = {
+  override def render(transformation: GUITransformation)(using GameWindow): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor)
 
     if hoverIndex.isDefined

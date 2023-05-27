@@ -163,6 +163,8 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private def onUpdateVsync(vsync: Boolean): Unit = glfwSwapInterval(if vsync then 1 else 0)
 
   private def render(): Unit =
+    given GameWindow = this
+
     def render(idx: Int): Unit =
       if idx > 0 && !scenes(idx).isOpaque
       then render(idx - 1)

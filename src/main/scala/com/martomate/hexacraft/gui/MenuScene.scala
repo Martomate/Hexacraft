@@ -5,11 +5,11 @@ import com.martomate.hexacraft.gui.{LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.renderer.TextureSingle
 
-abstract class MenuScene(using window: GameWindow) extends Scene with SubComponents {
+abstract class MenuScene extends Scene with SubComponents {
   protected var hasDefaultBackground: Boolean = true
   def isMainMenu: Boolean = false
 
-  override def render(transformation: GUITransformation): Unit = {
+  override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
     if (hasDefaultBackground)
       Component.drawImage(
         LocationInfo(-window.aspectRatio, -1, window.aspectRatio * 2, 2),

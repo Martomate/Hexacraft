@@ -7,15 +7,15 @@ import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW
 
 object Button:
-  def apply(text: String, bounds: LocationInfo)(clickAction: => Unit)(using GameMouse, GameWindow): Button =
+  def apply(text: String, bounds: LocationInfo)(clickAction: => Unit)(using GameMouse): Button =
     new Button(text, bounds, clickAction)
 
-class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using mouse: GameMouse, window: GameWindow)
+class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using mouse: GameMouse)
     extends Component
     with Boundable:
   addText(Component.makeText(text, bounds, 4.0f).setTextAndFitSize(text, 4.0f))
 
-  override def render(transformation: GUITransformation): Unit =
+  override def render(transformation: GUITransformation)(using window: GameWindow): Unit =
     val mousePos = mouse.heightNormalizedPos(window.windowSize)
     val containsMouse = bounds.containsPoint(mousePos.x - transformation.x, mousePos.y - transformation.y)
 

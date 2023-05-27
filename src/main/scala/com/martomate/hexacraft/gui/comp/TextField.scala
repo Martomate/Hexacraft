@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 
@@ -70,30 +71,24 @@ class TextField(
         removeText(cursorText)
         cursorTextVisible = false
 
-  override def render(transformation: GUITransformation): Unit =
+  override def render(transformation: GUITransformation)(using window: GameWindow): Unit =
     Component.drawRect(location, transformation.x, transformation.y, bgColor)
     super.render(transformation)
 
-  override def handleEvent(event: Event): Boolean = event match
-    case Event.CharEvent(character) =>
-      if focused
-      then
+  override def handleEvent(event: Event): Boolean =
+    import Event.*
+    var captureEvent = false
+    event match
+      case CharEvent(character) if focused =>
         setText(text + character.toChar)
-        true
-      else false
-    case Event.KeyEvent(key, _, action, _) =>
-      val keyReleased = action != Event.KeyAction.Release
-
-      if focused && keyReleased && key == GLFW.GLFW_KEY_BACKSPACE && text.nonEmpty
-      then setText(text.substring(0, text.length - 1))
-
-      super.handleEvent(event)
-    case Event.MouseClickEvent(_, _, _, mousePos) =>
-      focused = location.containsPoint(mousePos)
-      if !focused
-      then super.handleEvent(event)
-      else false
-    case _ => super.handleEvent(event)
+        captureEvent = true
+      case KeyEvent(GLFW.GLFW_KEY_BACKSPACE, _, KeyAction.Press, _) =>
+        if focused && text.nonEmpty
+        then setText(text.substring(0, text.length - 1))
+      case MouseClickEvent(_, _, _, mousePos) =>
+        focused = location.containsPoint(mousePos)
+      case _ =>
+    captureEvent
 
   private def makeContentText() =
     Component

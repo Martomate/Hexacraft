@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
@@ -16,7 +17,8 @@ abstract class Component:
 
   def tick(): Unit = ()
 
-  def render(transformation: GUITransformation): Unit = textMaster.render(transformation.x, transformation.y)
+  def render(transformation: GUITransformation)(using GameWindow): Unit =
+    textMaster.render(transformation.x, transformation.y)
 
   def handleEvent(event: Event): Boolean = false
   def onReloadedResources(): Unit = ()

@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.Event
 
 import scala.collection.mutable.ArrayBuffer
@@ -10,7 +11,7 @@ trait SubComponents extends Component:
   override def handleEvent(event: Event): Boolean =
     comps.exists(_.handleEvent(event)) || super.handleEvent(event)
 
-  override def render(transformation: GUITransformation): Unit =
+  override def render(transformation: GUITransformation)(using GameWindow): Unit =
     super.render(transformation)
     comps.foreach(_.render(transformation))
 

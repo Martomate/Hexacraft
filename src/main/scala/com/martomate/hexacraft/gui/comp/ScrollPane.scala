@@ -20,7 +20,7 @@ class ScrollPane(
 
   def addComponent(comp: Component with Boundable): Unit = components.append(comp)
 
-  override def render(transformation: GUITransformation): Unit =
+  override def render(transformation: GUITransformation)(using GameWindow): Unit =
     Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0, 0, 0, 0.4f))
 
     val contentTransformation = transformation.offset(this.xOffset, this.yOffset)

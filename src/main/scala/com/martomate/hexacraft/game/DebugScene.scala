@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.{LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.Component
@@ -8,7 +7,7 @@ import com.martomate.hexacraft.world.DebugInfoProvider
 
 import scala.collection.mutable
 
-class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends Scene {
+class DebugScene(info: DebugInfoProvider, initialAspectRatio: Float) extends Scene {
   private val textDisplayMap = mutable.Map.empty[String, String]
   private val textValueMap = mutable.Map.empty[String, GUIText]
   private val texts = mutable.ArrayBuffer.empty[GUIText]
@@ -33,7 +32,7 @@ class DebugScene(info: DebugInfoProvider)(implicit window: GameWindow) extends S
   addLabel("Other")
   addDebugText("viewDist", "viewDistance")
 
-  alignTexts(window.aspectRatio)
+  alignTexts(initialAspectRatio)
 
   override def isOpaque: Boolean = false
 

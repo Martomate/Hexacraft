@@ -6,8 +6,7 @@ import com.martomate.hexacraft.gui.comp.Button
 
 import org.lwjgl.glfw.GLFW
 
-class PauseMenu(setPaused: Boolean => Unit)(using mouse: GameMouse, window: GameWindow, scenes: WindowScenes)
-    extends MenuScene {
+class PauseMenu(scenes: WindowScenes, setPaused: Boolean => Unit)(using mouse: GameMouse) extends MenuScene {
   addComponent(Button("Back to game", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
   addComponent(Button("Back to menu", LocationInfo.from16x9(0.4f, 0.25f, 0.2f, 0.1f))(quit()))
   hasDefaultBackground = false

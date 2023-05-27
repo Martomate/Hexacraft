@@ -89,7 +89,7 @@ class GameScene(worldProvider: WorldProvider)(using
       if world.getBlock(newCoords).blockType == Blocks.Air
       then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
     case GLFW_KEY_ESCAPE =>
-      scenes.pushScene(new PauseMenu(this.setPaused))
+      scenes.pushScene(new PauseMenu(this.scenes, this.setPaused))
       setPaused(true)
     case GLFW_KEY_E =>
       if !isPaused
@@ -128,7 +128,7 @@ class GameScene(worldProvider: WorldProvider)(using
     if visible
     then
       if debugScene == null
-      then debugScene = new DebugScene(this)
+      then debugScene = new DebugScene(this, window.aspectRatio)
     else
       if debugScene != null
       then debugScene.unload()
@@ -185,7 +185,7 @@ class GameScene(worldProvider: WorldProvider)(using
 
   override def windowTitle: String = ""
 
-  override def render(transformation: GUITransformation): Unit =
+  override def render(transformation: GUITransformation)(using GameWindow): Unit =
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()
