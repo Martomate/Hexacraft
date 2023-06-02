@@ -10,10 +10,8 @@ import com.martomate.hexacraft.world.player.Inventory
 import org.joml.{Matrix4f, Vector4f}
 import org.lwjgl.glfw.GLFW
 
-class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
-    window: GameWindow,
-    Blocks: Blocks
-) extends Scene {
+class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using window: GameWindow, Blocks: Blocks)
+    extends Scene {
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -28,8 +26,10 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   private val guiBlockRenderer = makeGuiBlockRenderer()
   private val floatingBlockRenderer = makeFloatingBlockRenderer()
 
-  inventory.addChangeListener(() => guiBlockRenderer.updateContent())
-  inventory.addChangeListener(() => floatingBlockRenderer.updateContent())
+  private val revokeInventoryTracker = inventory.trackChanges(_ => {
+    guiBlockRenderer.updateContent()
+    floatingBlockRenderer.updateContent()
+  })
 
   override def isOpaque: Boolean = false
 
@@ -106,7 +106,9 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   }
 
   override def unload(): Unit = {
+    revokeInventoryTracker()
     guiBlockRenderer.unload()
+    floatingBlockRenderer.unload()
     super.unload()
   }
 

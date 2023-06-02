@@ -1,19 +1,24 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, EventDispatcher, Tracker}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
+object ChunkLoadingEdge {
+  enum Event:
+    case ChunkOnEdge(chunk: ChunkRelWorld, onEdge: Boolean)
+    case ChunkLoadable(chunk: ChunkRelWorld, loadable: Boolean)
+}
 
 class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
   private val chunksLoaded: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksEdge: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksLoadable: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
 
-  private val listeners: ArrayBuffer[ChunkLoadingEdgeListener] = ArrayBuffer.empty
-  def addListener(listener: ChunkLoadingEdgeListener): Unit = listeners += listener
-  def removeListener(listener: ChunkLoadingEdgeListener): Unit = listeners -= listener
+  private val dispatcher = new EventDispatcher[ChunkLoadingEdge.Event]
+  def trackEvents(tracker: Tracker[ChunkLoadingEdge.Event]): Unit = dispatcher.track(tracker)
 
   def isLoaded(chunk: ChunkRelWorld): Boolean = chunksLoaded.contains(chunk)
 
@@ -77,7 +82,7 @@ class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
     if (chunksEdge.contains(chunk) != onEdge) {
       chunksEdge(chunk) = onEdge
 
-      listeners.foreach(_.onChunkOnEdge(chunk, onEdge))
+      dispatcher.notify(ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge))
     }
   }
 
@@ -85,7 +90,7 @@ class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
     if (chunksLoadable.contains(chunk) != loadable) {
       chunksLoadable(chunk) = loadable
 
-      listeners.foreach(_.onChunkLoadable(chunk, loadable))
+      dispatcher.notify(ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable))
     }
   }
 }

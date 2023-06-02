@@ -37,7 +37,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using window: GameWi
   def onWindowAspectRatioChanged(aspectRatio: Float): Unit =
     guiBlockRenderer.onWindowAspectRatioChanged(aspectRatio)
 
-  inventory.addChangeListener(() => guiBlockRenderer.updateContent())
+  private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent())
 
   override def render(transformation: GUITransformation): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor)
@@ -52,6 +52,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using window: GameWi
   }
 
   override def unload(): Unit = {
+    revokeInventoryTracker()
     guiBlockRenderer.unload()
     super.unload()
   }

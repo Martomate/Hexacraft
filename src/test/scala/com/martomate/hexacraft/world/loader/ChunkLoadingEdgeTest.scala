@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, Tracker}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import munit.FunSuite
@@ -124,39 +124,36 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
     assert(!edge.canLoad(ChunkRelWorld(1, -2, 7)))
   }
 
-  test("listeners should be called on load") {
-    val edge = new ChunkLoadingEdge
-    val listener = mock[ChunkLoadingEdgeListener]
-    edge.addListener(listener)
-
-    edge.loadChunk(ChunkRelWorld(2, 4, 3))
+  test("event trackers should be notified when a chunk is loaded") {
+    import ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
-    verify(listener).onChunkOnEdge(coords, onEdge = true)
-    for (n <- coords.neighbors)
-      verify(listener).onChunkLoadable(n, loadable = true)
-  }
-  test("listeners should be called on remove") {
     val edge = new ChunkLoadingEdge
-    edge.loadChunk(ChunkRelWorld(2, 4, 3))
 
-    val listener = mock[ChunkLoadingEdgeListener]
-    edge.addListener(listener)
+    val tracker = Tracker.withStorage[Event]
+    edge.trackEvents(tracker)
 
-    edge.unloadChunk(ChunkRelWorld(2, 4, 3))
+    edge.loadChunk(coords)
+
+    val expectedEvents = Event.ChunkOnEdge(coords, true) +: coords.neighbors.map(n => Event.ChunkLoadable(n, true))
+
+    assertEquals(tracker.events, expectedEvents)
+  }
+
+  test("event trackers should be notified when a chunk is unloaded") {
+    import ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
-    verify(listener).onChunkOnEdge(coords, onEdge = false)
-    for (n <- coords.neighbors)
-      verify(listener).onChunkLoadable(n, loadable = false)
-  }
-
-  test("removeListener should remove the listener") {
     val edge = new ChunkLoadingEdge
-    val listener = mock[ChunkLoadingEdgeListener]
-    edge.addListener(listener)
-    edge.removeListener(listener)
 
-    edge.loadChunk(ChunkRelWorld(2, 4, 3))
+    edge.loadChunk(coords)
+
+    val tracker = Tracker.withStorage[Event]
+    edge.trackEvents(tracker)
+
+    edge.unloadChunk(coords)
+
+    val expectedEvents = Event.ChunkOnEdge(coords, false) +: coords.neighbors.map(n => Event.ChunkLoadable(n, false))
+    assertEquals(tracker.events, expectedEvents)
   }
 }

@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -64,10 +65,8 @@ class ChunkLoaderDistPQ(
 
   override def unload(): Unit = prioritizer.unload()
 
-  override def onChunkAdded(chunk: Chunk): Unit = {
-    chunksLoading -= chunk.coords
-  }
-  override def onChunkRemoved(chunk: Chunk): Unit = {
-    chunksUnloading -= chunk.coords
-  }
+  def onWorldEvent(event: World.Event): Unit =
+    event match
+      case World.Event.ChunkAdded(chunk)   => chunksLoading -= chunk.coords
+      case World.Event.ChunkRemoved(chunk) => chunksUnloading -= chunk.coords
 }

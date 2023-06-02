@@ -1,26 +1,25 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{EventDispatcher, NBTUtil, RevokeTrackerFn, Tracker}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 
 import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
 import scala.collection.mutable.ArrayBuffer
 
 class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
-  private val changeListeners = ArrayBuffer.empty[() => Unit]
-  def addChangeListener(onChanged: () => Unit): Unit = changeListeners += onChanged
+  private val dispatcher = new EventDispatcher[Unit]
+  def trackChanges(tracker: Tracker[Unit]): RevokeTrackerFn = dispatcher.track(tracker)
 
   private val slots: Array[Block] = Array.fill(4 * 9)(Blocks.Air)
   for ((idx, block) <- init_slots) slots(idx) = block
 
   def apply(idx: Int): Block = slots(idx)
 
-  def update(idx: Int, block: Block): Unit = {
+  def update(idx: Int, block: Block): Unit =
     slots(idx) = block
-    for (onChanged <- changeListeners) onChanged()
-  }
+    dispatcher.notify(())
 
-  def toNBT: Seq[Tag[_]] = {
+  def toNBT: Seq[Tag[_]] =
     Seq(
       NBTUtil.makeListTag(
         "slots",
@@ -38,7 +37,6 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
           }
       )
     )
-  }
 
   override def equals(obj: Any): Boolean =
     obj match
@@ -48,7 +46,7 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
 }
 
 object Inventory {
-  def default(using Blocks: Blocks): Inventory = {
+  def default(using Blocks: Blocks): Inventory =
     new Inventory(
       Map(
         0 -> Blocks.Dirt,
@@ -63,9 +61,8 @@ object Inventory {
         9 -> Blocks.BirchLeaves
       )
     )
-  }
 
-  def fromNBT(nbt: CompoundTag)(using Blocks): Inventory = {
+  def fromNBT(nbt: CompoundTag)(using Blocks): Inventory =
     NBTUtil.getList(nbt, "slots") match
       case Some(slotTags) =>
         val slots = slotTags.flatMap {
@@ -80,5 +77,4 @@ object Inventory {
         }
         new Inventory(Map.from(slots))
       case None => new Inventory(Map.empty)
-  }
 }

@@ -11,11 +11,10 @@ class ChunkLoadingPrioritizerPQ(
     distSqFunc: (PosAndDir, ChunkRelWorld) => Double,
     maxDist: Double
 )(implicit cylSize: CylinderSize)
-    extends ChunkLoadingPrioritizer
-    with ChunkLoadingEdgeListener {
+    extends ChunkLoadingPrioritizer {
 
   private val edge = new ChunkLoadingEdge
-  edge.addListener(this)
+  edge.trackEvents(this.onChunkEdgeEvent _)
 
   private val addableChunks: mutable.PriorityQueue[ChunkRelWorld] =
     mutable.PriorityQueue.empty(Ordering.by(c => -distSqFunc(origin, c)))
@@ -74,13 +73,12 @@ class ChunkLoadingPrioritizerPQ(
 
   override def unload(): Unit = ()
 
-  override def onChunkOnEdge(chunk: ChunkRelWorld, onEdge: Boolean): Unit = {
-    if (onEdge)
-      removableChunks += chunk
-  }
-
-  override def onChunkLoadable(chunk: ChunkRelWorld, loadable: Boolean): Unit = {
-    if (loadable)
-      addableChunks += chunk
-  }
+  private def onChunkEdgeEvent(event: ChunkLoadingEdge.Event): Unit =
+    event match
+      case ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge) =>
+        if (onEdge)
+          removableChunks += chunk
+      case ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable) =>
+        if (loadable)
+          addableChunks += chunk
 }

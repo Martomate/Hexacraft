@@ -38,11 +38,13 @@ object World:
     )
     EntityRegistry.from(entityTypes)
 
+  enum Event:
+    case ChunkAdded(chunk: Chunk)
+    case ChunkRemoved(chunk: Chunk)
+
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
     extends BlockSetAndGet
-    with BlocksInWorld
-    with ChunkBlockListener
-    with ChunkEventListener:
+    with BlocksInWorld:
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
 
@@ -63,10 +65,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   val player: Player = makePlayer
 
-  private val chunkAddedOrRemovedListeners: ArrayBuffer[ChunkAddedOrRemovedListener] =
-    ArrayBuffer.empty
-  def addChunkAddedOrRemovedListener(listener: ChunkAddedOrRemovedListener): Unit =
-    chunkAddedOrRemovedListeners += listener
+  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
+
+  private val dispatcher = new EventDispatcher[World.Event]
+  def trackEvents(tracker: Tracker[World.Event]): Unit = dispatcher.track(tracker)
+
+  trackEvents(worldPlanner.onWorldEvent _)
+  trackEvents(chunkLoader.onWorldEvent _)
 
   saveWorldData()
 
@@ -84,10 +89,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       renderDistance,
       () => World.shouldChillChunkLoader
     )
-
-  def onBlockNeedsUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
-
-  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit = ()
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = columns.get(coords.value)
 
@@ -137,11 +138,11 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   def setChunk(ch: Chunk): Unit =
     ensureColumnExists(ch.coords.getColumnRelWorld).setChunk(ch)
-    ch.addBlockEventListener(this)
-    ch.addEventListener(this)
-    worldPlanner.onChunkAdded(ch)
-    chunkLoader.onChunkAdded(ch)
-    for l <- chunkAddedOrRemovedListeners do l.onChunkAdded(ch)
+
+    val revoke = ch.trackEvents(onChunkEvent _)
+    chunkEventTrackerRevokeFns += ch.coords -> revoke
+
+    dispatcher.notify(World.Event.ChunkAdded(ch))
 
     ch.requestRenderUpdate()
     requestRenderUpdateForNeighborChunks(ch.coords)
@@ -149,13 +150,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     worldPlanner.decorate(ch)
 
     for block <- ch.blocks.allBlocks do
-      ch.requestBlockUpdate(block.coords)
+      requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
 
       for side <- 0 until 8 do
         if block.coords.onChunkEdge(side) then
           val neighCoords = block.coords.neighbor(side)
           getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side))) match
-            case Some(neighbor) => neighbor.requestBlockUpdate(neighCoords)
+            case Some(neighbor) => requestBlockUpdate(BlockRelWorld.fromChunk(neighCoords, neighbor.coords))
             case None           =>
 
   def removeChunk(ch: ChunkRelWorld): Unit =
@@ -163,11 +164,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       case Some(col) =>
         col.removeChunk(ch.getChunkRelColumn) match
           case Some(removedChunk) =>
-            removedChunk.removeBlockEventListener(this)
-            removedChunk.removeEventListener(this)
-            worldPlanner.onChunkRemoved(removedChunk)
-            chunkLoader.onChunkRemoved(removedChunk)
-            for l <- chunkAddedOrRemovedListeners do l.onChunkRemoved(removedChunk)
+            val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
+            revoke()
+
+            dispatcher.notify(World.Event.ChunkRemoved(removedChunk))
 
             removedChunk.unload()
 
@@ -247,14 +247,20 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     blockUpdateTimer.active = false
     for col <- columns.values do col.unload()
     columns.clear()
-    chunkAddedOrRemovedListeners.clear()
 
   private def saveWorldData(): Unit =
     val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
 
     worldProvider.saveState(worldTag, "world.dat")
 
-  override def onSetBlock(coords: BlockRelWorld, prev: BlockState, now: BlockState): Unit =
+  private def onChunkEvent(event: Chunk.Event): Unit =
+    event match
+      case Chunk.Event.BlockReplaced(coords, _, _) => onSetBlock(coords)
+      case _                                       =>
+
+  private def requestBlockUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
+
+  private def onSetBlock(coords: BlockRelWorld): Unit =
     def affectedChunkOffset(where: Byte): Int = where match
       case 0  => -1
       case 15 => 1
@@ -273,7 +279,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     getChunk(cCoords) match
       case Some(c) =>
         c.requestRenderUpdate()
-        c.requestBlockUpdate(bCoords)
+        requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, c.coords))
 
         for i <- 0 until 8 do
           val off = ChunkRelWorld.neighborOffsets(i)
@@ -283,9 +289,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
             getChunk(cCoords.offset(NeighborOffsets(i))) match
               case Some(n) =>
                 n.requestRenderUpdate()
-                n.requestBlockUpdate(c2)
+                requestBlockUpdate(BlockRelWorld.fromChunk(c2, n.coords))
               case None =>
-          else c.requestBlockUpdate(c2)
+          else requestBlockUpdate(BlockRelWorld.fromChunk(c2, c.coords))
       case None =>
 
   private def makePlayer: Player =
