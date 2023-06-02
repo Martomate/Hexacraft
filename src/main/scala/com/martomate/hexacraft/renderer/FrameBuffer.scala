@@ -1,19 +1,19 @@
 package com.martomate.hexacraft.renderer
 
-import org.lwjgl.opengl.{GL11, GL30}
+import com.martomate.hexacraft.util.OpenGL
 
 class FrameBuffer(val width: Int, val height: Int) {
-  private val fbID = GL30.glGenFramebuffers()
+  private val fbID = OpenGL.glGenFramebuffer()
 
   def bind(): Unit = {
     TextureSingle.unbind()
-    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbID)
-    GL11.glViewport(0, 0, width, height)
+    OpenGL.glBindFramebuffer(OpenGL.FrameBufferTarget.Regular, fbID)
+    OpenGL.glViewport(0, 0, width, height)
   }
 
   def unbind(): Unit = {
-    GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0)
+    OpenGL.glBindFramebuffer(OpenGL.FrameBufferTarget.Regular, OpenGL.FrameBufferId.none)
   }
 
-  def unload(): Unit = GL30.glDeleteFramebuffers(fbID)
+  def unload(): Unit = OpenGL.glDeleteFramebuffer(fbID)
 }

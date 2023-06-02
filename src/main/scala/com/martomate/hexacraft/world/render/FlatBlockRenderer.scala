@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.*
-
-import org.lwjgl.opengl.{GL11, GL15}
+import com.martomate.hexacraft.util.OpenGL
 
 object FlatBlockRenderer:
   def forSide(side: Int): BlockRenderer =
@@ -13,7 +12,7 @@ object FlatBlockRenderer:
   private def initVAO(side: Int): VAO =
     new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
       .addVBO(
-        VBOBuilder(BlockRenderer.verticesPerInstance(side), GL15.GL_STATIC_DRAW)
+        VBOBuilder(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
           .floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
@@ -23,7 +22,7 @@ object FlatBlockRenderer:
           .fill(0, BlockRenderer.setupBlockVBO(side))
       )
       .addVBO(
-        VBOBuilder(0, GL15.GL_DYNAMIC_DRAW, 1)
+        VBOBuilder(0, OpenGL.VboUsage.DynamicDraw, 1)
           .floats(5, 2)
           .ints(6, 1)
           .floats(7, 1)
@@ -32,4 +31,5 @@ object FlatBlockRenderer:
       )
       .create()
 
-  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, GL11.GL_TRIANGLES) with NoDepthTest
+  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)
+    with NoDepthTest

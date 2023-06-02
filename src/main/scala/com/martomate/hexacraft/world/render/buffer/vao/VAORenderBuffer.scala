@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.world.render.buffer.vao
 
 import com.martomate.hexacraft.renderer.{InstancedRenderer, Renderer, VAO, VBO}
+import com.martomate.hexacraft.util.OpenGL
 import com.martomate.hexacraft.world.render.buffer.RenderBuffer
 
 import java.nio.ByteBuffer
-import org.lwjgl.opengl.GL11
 
-class VAORenderBuffer(val vao: VAO, val idxToFill: Int, renderingMode: Int) extends RenderBuffer[VAORenderBuffer] {
+class VAORenderBuffer(val vao: VAO, val idxToFill: Int, renderingMode: OpenGL.PrimitiveMode)
+    extends RenderBuffer[VAORenderBuffer] {
   private def vboToFill: VBO = vao.vbos(idxToFill)
 
   protected val renderer: Renderer = new InstancedRenderer(vao, renderingMode)

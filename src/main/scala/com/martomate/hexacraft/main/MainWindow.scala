@@ -6,7 +6,7 @@ import com.martomate.hexacraft.gui.{Event, GameWindowExtended, SceneStack}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
-import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
+import com.martomate.hexacraft.util.{AsyncFileIO, OpenGL, Resource}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
@@ -15,7 +15,6 @@ import java.io.File
 import org.joml.{Vector2i, Vector2ic}
 import org.lwjgl.glfw.{Callbacks, GLFWErrorCallback}
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.opengl.{GL, GL11, GL43}
 
 class MainWindow(isDebug: Boolean) extends GameWindowExtended:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
@@ -70,12 +69,12 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
           frames = 0
         prevTime += 1e9.toLong / 60
 
-      GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
+      OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
       render()
 
-      val error = GL11.glGetError
-      if error != GL11.GL_NO_ERROR
-      then println("OpenGL error: " + error)
+      OpenGL.glGetError() match
+        case Some(error) => println("OpenGL error: " + error)
+        case None        =>
 
       frames += 1
 
@@ -148,15 +147,15 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
       then
         if w != _framebufferSize.x || h != _framebufferSize.y
         then
-          GL11.glViewport(0, 0, w, h)
+          OpenGL.glViewport(0, 0, w, h)
           scenes.foreach(_.framebufferResized(w, h))
 
         _framebufferSize.set(w, h)
 
-    case CallbackEvent.DebugMessage(source, debugType, _, severity, message, _) =>
-      val d = new DebugMessage(source, debugType, severity)
-      val messageStr = s"[${d.severityStr}] [${d.typeStr}] [${d.sourceStr}] - $message"
-      System.err.println(s"OpenGL debug: $messageStr")
+  def handleDebugEvent(debugMessage: OpenGL.DebugMessage): Unit =
+    val OpenGL.DebugMessage(source, debugType, _, severity, message, _) = debugMessage
+    val messageStr = s"[${severity.toString}] [${debugType.toString}] [${source.toString}] - $message"
+    System.err.println(s"OpenGL debug: $messageStr")
 
   private def onUpdateVsync(vsync: Boolean): Unit = glfwSwapInterval(if vsync then 1 else 0)
 
@@ -240,12 +239,12 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE)
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
     glfwWindowHint(GLFW_SAMPLES, 1)
 
     if isDebug
-    then glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL11.GL_TRUE)
+    then glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE)
 
   private def setupCallbacks(window: Long): Unit =
     callbackHandler.addKeyCallback(window)
@@ -263,17 +262,17 @@ class MainWindow(isDebug: Boolean) extends GameWindowExtended:
     glfwSetWindowPos(window, (mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
 
   private def initGL(): Unit =
-    GL.createCapabilities()
+    OpenGL.createCapabilities()
 
-//  GL11.glEnable(GL13.GL_MULTISAMPLE)
-    GL11.glEnable(GL11.GL_DEPTH_TEST)
-    GL11.glDepthFunc(GL11.GL_LEQUAL)
-    GL11.glEnable(GL11.GL_CULL_FACE)
+//  OpenGL.glEnable(OpenGL.State.MultiSample)
+    OpenGL.glEnable(OpenGL.State.DepthTest)
+    OpenGL.glDepthFunc(OpenGL.DepthFunc.LessThanOrEqual)
+    OpenGL.glEnable(OpenGL.State.CullFace)
 
-    if isDebug && GL.getCapabilities.GL_KHR_debug
+    if isDebug && OpenGL.hasDebugExtension
     then
-      GL11.glEnable(GL43.GL_DEBUG_OUTPUT)
-      callbackHandler.addDebugMessageCallback()
+      OpenGL.glEnable(OpenGL.State.DebugOutput)
+      OpenGL.glDebugMessageCallback(handleDebugEvent, 0L)
 
   private def tryQuit(): Unit =
     glfwSetWindowShouldClose(window, true)

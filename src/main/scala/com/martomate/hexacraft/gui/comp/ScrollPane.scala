@@ -2,10 +2,9 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
-import com.martomate.hexacraft.util.MathUtils
+import com.martomate.hexacraft.util.{MathUtils, OpenGL}
 
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(
@@ -26,10 +25,10 @@ class ScrollPane(
 
     val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
     val loc = location.inScaledScreenCoordinates
-    GL11.glScissor(loc.x, loc.y, loc.w, loc.h)
-    GL11.glEnable(GL11.GL_SCISSOR_TEST)
+    OpenGL.glScissor(loc.x, loc.y, loc.w, loc.h)
+    OpenGL.glEnable(OpenGL.State.ScissorTest)
     components.foreach(_.render(contentTransformation))
-    GL11.glDisable(GL11.GL_SCISSOR_TEST)
+    OpenGL.glDisable(OpenGL.State.ScissorTest)
     super.render(contentTransformation)
 
   override def onScrollEvent(event: Event.ScrollEvent): Boolean =

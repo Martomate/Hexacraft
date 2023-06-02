@@ -1,10 +1,20 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{FileUtils, Resource}
+import com.martomate.hexacraft.util.{FileUtils, OpenGL, Resource}
+import com.martomate.hexacraft.util.OpenGL.{
+  TexelDataFormat,
+  TexelDataType,
+  TexIntParameter,
+  TexMagFilter,
+  TexMinFilter,
+  TextureId,
+  TextureInternalFormat,
+  TextureTarget,
+  TexWrap
+}
 
 import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL12}
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
@@ -13,18 +23,18 @@ object TextureSingle {
 
   def unbind(): Unit = {
     TextureSingle.boundTexture = null
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+    OpenGL.glBindTexture(TextureTarget.Texture2D, TextureId.none)
   }
 
   def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
 }
 
 class TextureSingle(val name: String) extends Resource with Texture {
-  private var texID: Int = _
+  private var texID: TextureId = _
   private var texWidth: Int = _
   private var texHeight: Int = _
 
-  def id: Int = texID
+  def id: TextureId = texID
   def width: Int = texWidth
   def height: Int = texHeight
 
@@ -47,24 +57,24 @@ class TextureSingle(val name: String) extends Resource with Texture {
         .put((pix(i) >> 0).toByte)
         .put((pix(i) >> 24).toByte)
     buf.flip
-    texID = GL11.glGenTextures()
+    texID = OpenGL.glGenTextures()
     bind()
-    GL11.glTexImage2D(
-      GL11.GL_TEXTURE_2D,
+    OpenGL.glTexImage2D(
+      TextureTarget.Texture2D,
       0,
-      GL11.GL_RGBA,
+      TextureInternalFormat.Rgba,
       width,
       height,
       0,
-      GL11.GL_RGBA,
-      GL11.GL_UNSIGNED_BYTE,
+      TexelDataFormat.Rgba,
+      TexelDataType.UnsignedByte,
       buf
     )
 
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MinFilter(TexMinFilter.Linear))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MagFilter(TexMagFilter.Nearest))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapS(TexWrap.ClampToEdge))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapT(TexWrap.ClampToEdge))
   }
 
   protected def reload(): Unit = {
@@ -75,12 +85,12 @@ class TextureSingle(val name: String) extends Resource with Texture {
   def bind(): Unit = {
     if (TextureSingle.boundTexture != this) {
       TextureSingle.boundTexture = this
-      GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID)
+      OpenGL.glBindTexture(TextureTarget.Texture2D, texID)
     }
   }
 
   def unload(): Unit = {
     if (TextureSingle.boundTexture == this) TextureSingle.unbind()
-    GL11.glDeleteTextures(texID)
+    OpenGL.glDeleteTextures(texID)
   }
 }

@@ -1,7 +1,9 @@
 package com.martomate.hexacraft.main
 
+import com.martomate.hexacraft.util.OpenGL
+import com.martomate.hexacraft.util.OpenGL.{DebugMessageSeverity, DebugMessageSource, DebugMessageType}
+
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL43
 import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
@@ -12,7 +14,6 @@ enum CallbackEvent:
   case MouseScrolled(window: Long, xOffset: Double, yOffset: Double)
   case WindowResized(window: Long, w: Int, h: Int)
   case FramebufferResized(window: Long, w: Int, h: Int)
-  case DebugMessage(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long)
 
 class CallbackHandler:
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
@@ -39,21 +40,6 @@ class CallbackHandler:
   private def onScrollCallback(window: Long, dx: Double, dy: Double): Unit =
     callbackQueue.enqueue(CallbackEvent.MouseScrolled(window, dx, dy))
 
-  private def onDebugMessageCallback(
-      source: Int,
-      debugType: Int,
-      id: Int,
-      severity: Int,
-      length: Int,
-      messageAddress: Long,
-      userParam: Long
-  ): Unit =
-    val message =
-      if length < 0
-      then MemoryUtil.memASCII(messageAddress)
-      else MemoryUtil.memASCII(messageAddress, length)
-    callbackQueue.enqueue(CallbackEvent.DebugMessage(source, debugType, id, severity, message, userParam))
-
   def addKeyCallback(window: Long): Unit = GLFW.glfwSetKeyCallback(window, onKeyCallback)
 
   def addCharCallback(window: Long): Unit = GLFW.glfwSetCharCallback(window, onCharCallback)
@@ -68,5 +54,3 @@ class CallbackHandler:
     GLFW.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
 
   def addScrollCallback(window: Long): Unit = GLFW.glfwSetScrollCallback(window, onScrollCallback)
-
-  def addDebugMessageCallback(): Unit = GL43.glDebugMessageCallback(onDebugMessageCallback, 0L)

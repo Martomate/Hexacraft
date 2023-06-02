@@ -1,20 +1,19 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.Resource
+import com.martomate.hexacraft.util.{OpenGL, Resource}
 
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl._
 
 object VBO {
   private var boundVBO: VBO = _
 
   def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
-    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, from.vboID)
-    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, to.vboID)
-    GL31.glCopyBufferSubData(
-      GL31.GL_COPY_READ_BUFFER,
-      GL31.GL_COPY_WRITE_BUFFER,
+    OpenGL.glBindBuffer(OpenGL.VertexBufferTarget.CopyReadBuffer, from.vboID)
+    OpenGL.glBindBuffer(OpenGL.VertexBufferTarget.CopyWriteBuffer, to.vboID)
+    OpenGL.glCopyBufferSubData(
+      OpenGL.VertexBufferTarget.CopyReadBuffer,
+      OpenGL.VertexBufferTarget.CopyWriteBuffer,
       fromOffset,
       toOffset,
       length
@@ -23,10 +22,10 @@ object VBO {
 }
 
 class VBO(
-    private val vboID: Int,
+    private val vboID: OpenGL.VertexBufferId,
     init_count: Int,
     val stride: Int,
-    val vboUsage: Int,
+    val vboUsage: OpenGL.VboUsage,
     channels: Seq[VBOChannel]
 ) extends Resource {
   var _count: Int = init_count
@@ -34,7 +33,7 @@ class VBO(
 
   bind()
   channels.foreach(_.setAttributes())
-  GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
+  OpenGL.glBufferData(OpenGL.VertexBufferTarget.ArrayBuffer, bufferSize, vboUsage)
 
   protected def reload(): Unit = ()
 
@@ -43,19 +42,19 @@ class VBO(
   def bind(): Unit = {
     if (VBO.boundVBO != this) {
       VBO.boundVBO = this
-      GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
+      OpenGL.glBindBuffer(OpenGL.VertexBufferTarget.ArrayBuffer, vboID)
     }
   }
 
   def resize(newCount: Int): Unit = {
     _count = newCount
     bind()
-    GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferSize, vboUsage)
+    OpenGL.glBufferData(OpenGL.VertexBufferTarget.ArrayBuffer, bufferSize, vboUsage)
   }
 
   def fill(start: Int, content: ByteBuffer): VBO = {
     bind()
-    GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, start * stride, content)
+    OpenGL.glBufferSubData(OpenGL.VertexBufferTarget.ArrayBuffer, start * stride, content)
     this
   }
 
@@ -88,6 +87,6 @@ class VBO(
   }
 
   protected def unload(): Unit = {
-    GL15.glDeleteBuffers(vboID)
+    OpenGL.glDeleteBuffers(vboID)
   }
 }

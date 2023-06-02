@@ -1,50 +1,50 @@
 package com.martomate.hexacraft.renderer
 
-import org.lwjgl.opengl.{GL11, GL31}
+import com.martomate.hexacraft.util.OpenGL
 
-class Renderer(val vao: VAO, val mode: Int) {
+class Renderer(val vao: VAO, val mode: OpenGL.PrimitiveMode) {
   def render(): Unit = render(vao.maxCount)
   def render(count: Int): Unit = {
     vao.bind()
-    GL11.glDrawArrays(mode, 0, count)
+    OpenGL.glDrawArrays(mode, 0, count)
   }
 }
 
-class InstancedRenderer(_vao: VAO, _mode: Int) extends Renderer(_vao, _mode) {
+class InstancedRenderer(_vao: VAO, _mode: OpenGL.PrimitiveMode) extends Renderer(_vao, _mode) {
   override def render(): Unit = render(vao.maxCount, vao.maxPrimCount)
 
   override def render(primCount: Int): Unit = render(vao.maxCount, primCount)
 
   def render(count: Int, primCount: Int): Unit = {
     vao.bind()
-    GL31.glDrawArraysInstanced(mode, 0, count, primCount)
+    OpenGL.glDrawArraysInstanced(mode, 0, count, primCount)
   }
 }
 
 trait NoDepthTest extends Renderer {
   override def render(): Unit = {
-    GL11.glDisable(GL11.GL_DEPTH_TEST)
+    OpenGL.glDisable(OpenGL.State.DepthTest)
     super.render()
-    GL11.glEnable(GL11.GL_DEPTH_TEST)
+    OpenGL.glEnable(OpenGL.State.DepthTest)
   }
 
   override def render(primCount: Int): Unit = {
-    GL11.glDisable(GL11.GL_DEPTH_TEST)
+    OpenGL.glDisable(OpenGL.State.DepthTest)
     super.render(primCount)
-    GL11.glEnable(GL11.GL_DEPTH_TEST)
+    OpenGL.glEnable(OpenGL.State.DepthTest)
   }
 }
 
 trait Blending extends Renderer {
   override def render(): Unit = {
-    GL11.glEnable(GL11.GL_BLEND)
+    OpenGL.glEnable(OpenGL.State.Blend)
     super.render()
-    GL11.glDisable(GL11.GL_BLEND)
+    OpenGL.glDisable(OpenGL.State.Blend)
   }
 
   override def render(primCount: Int): Unit = {
-    GL11.glEnable(GL11.GL_BLEND)
+    OpenGL.glEnable(OpenGL.State.Blend)
     super.render(primCount)
-    GL11.glDisable(GL11.GL_BLEND)
+    OpenGL.glDisable(OpenGL.State.Blend)
   }
 }

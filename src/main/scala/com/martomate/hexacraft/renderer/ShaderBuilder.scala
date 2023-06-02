@@ -1,18 +1,18 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.FileUtils
+import com.martomate.hexacraft.util.{FileUtils, OpenGL}
 
 import java.io.IOException
-import org.lwjgl.opengl.{GL11, GL20, GL32, GL40}
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object ShaderBuilder {
   def start(name: String): ShaderBuilder = new ShaderBuilder(name)
 }
 
 class ShaderBuilder(name: String) {
-  private val shaders = collection.mutable.Map.empty[Int, Int]
-  private val programID = GL20.glCreateProgram()
+  private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
+  private val programID = OpenGL.glCreateProgram()
   private var prefix = "shaders/"
   private var definesText = ""
 
@@ -26,16 +26,16 @@ class ShaderBuilder(name: String) {
     this
   }
 
-  private def getShaderType(shaderType: String): Int = {
+  private def getShaderType(shaderType: String): Try[OpenGL.ShaderType] = {
+    import OpenGL.ShaderType
+
     shaderType match {
-      case "vs" | "vert" => GL20.GL_VERTEX_SHADER
-      case "fs" | "frag" => GL20.GL_FRAGMENT_SHADER
-      case "gs" | "geom" => GL32.GL_GEOMETRY_SHADER
-      case "tc"          => GL40.GL_TESS_CONTROL_SHADER
-      case "te"          => GL40.GL_TESS_EVALUATION_SHADER
-      case _ =>
-        System.err.println("Shadertype '" + shaderType + "' not supported.")
-        -1
+      case "vs" | "vert" => Success(ShaderType.Vertex)
+      case "fs" | "frag" => Success(ShaderType.Fragment)
+      case "gs" | "geom" => Success(ShaderType.Geometry)
+      case "tc"          => Success(ShaderType.TessControl)
+      case "te"          => Success(ShaderType.TessEvaluation)
+      case _             => Failure(new Exception("Shadertype '" + shaderType + "' not supported"))
     }
   }
 
@@ -65,29 +65,31 @@ class ShaderBuilder(name: String) {
       if (newLineIdx != -1) {
         val shaderType = part.substring(0, newLineIdx)
         val source = part.substring(newLineIdx + 1)
-        loadShader(getShaderType(shaderType), source)
+        getShaderType(shaderType) match
+          case Success(t) => loadShader(t, source)
+          case Failure(e) => System.err.println(e.getMessage)
       }
     }
     this
   }
 
-  private def loadShader(shaderType: Int, source: String): ShaderBuilder = {
-    val shaderID = GL20.glCreateShader(shaderType)
+  private def loadShader(shaderType: OpenGL.ShaderType, source: String): ShaderBuilder = {
+    val shaderID = OpenGL.glCreateShader(shaderType)
 
-    GL20.glShaderSource(shaderID, header + source)
-    GL20.glCompileShader(shaderID)
-    if (GL20.glGetShaderi(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-      val shaderTypeName = if (shaderType == GL20.GL_VERTEX_SHADER) {
-        "Vertexshader"
-      } else if (shaderType == GL20.GL_FRAGMENT_SHADER) {
-        "Fragmentshader"
-      } else {
-        "Shader"
-      }
-      val maxLen = math.max(GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
+    OpenGL.glShaderSource(shaderID, header + source)
+    OpenGL.glCompileShader(shaderID)
+    if (!OpenGL.glGetShaderBoolProp(shaderID, OpenGL.ShaderIntProp.CompileStatus)) {
+      import OpenGL.ShaderType
+
+      val shaderTypeName = shaderType match
+        case ShaderType.Vertex   => "Vertexshader"
+        case ShaderType.Fragment => "Fragmentshader"
+        case _                   => "Shader"
+
+      val maxLen = math.max(OpenGL.glGetShaderIntProp(shaderID, OpenGL.ShaderIntProp.InfoLogLength), 256)
       System.err.println(
         s"$shaderTypeName failed to compile ($name).\nError log:\n"
-          + GL20.glGetShaderInfoLog(shaderID, maxLen)
+          + OpenGL.glGetShaderInfoLog(shaderID, maxLen)
       )
     }
     shaders.put(shaderType, shaderID)
@@ -96,26 +98,26 @@ class ShaderBuilder(name: String) {
 
   def bindAttribs(attribs: String*): ShaderBuilder = {
     for (i <- attribs.indices)
-      if (attribs(i) != "") GL20.glBindAttribLocation(programID, i, attribs(i))
+      if (attribs(i) != "") OpenGL.glBindAttribLocation(programID, i, attribs(i))
     this
   }
 
   def attachAll(): ShaderBuilder = {
-    for (i <- shaders.values) GL20.glAttachShader(programID, i)
+    for (i <- shaders.values) OpenGL.glAttachShader(programID, i)
     this
   }
 
-  def linkAndFinish(): Int = {
-    GL20.glLinkProgram(programID)
+  def linkAndFinish(): OpenGL.ProgramId = {
+    OpenGL.glLinkProgram(programID)
 
-    if (GL20.glGetProgrami(programID, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-      val maxLen = math.max(GL20.glGetShaderi(programID, GL20.GL_INFO_LOG_LENGTH), 256)
-      System.err.println("Link error: " + GL20.glGetProgramInfoLog(programID, maxLen))
+    if (!OpenGL.glGetProgramBoolProp(programID, OpenGL.ProgramIntProp.LinkStatus)) {
+      val maxLen = math.max(OpenGL.glGetProgramIntProp(programID, OpenGL.ProgramIntProp.InfoLogLength), 256)
+      System.err.println("Link error: " + OpenGL.glGetProgramInfoLog(programID, maxLen))
     }
 
     for (i <- shaders.values) {
-      GL20.glDetachShader(programID, i)
-      GL20.glDeleteShader(i)
+      OpenGL.glDetachShader(programID, i)
+      OpenGL.glDeleteShader(i)
     }
 
     programID

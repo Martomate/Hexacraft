@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{Resource, ResourceWrapper}
+import com.martomate.hexacraft.util.{OpenGL, Resource, ResourceWrapper}
+import com.martomate.hexacraft.util.OpenGL.{TexelDataFormat, TexelDataType, TextureInternalFormat}
 
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.{GL11, GL12, GL30}
 
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]
@@ -12,7 +12,7 @@ object TextureArray {
 
   def unbind(): Unit = {
     TextureArray.boundTextureArray = null
-    GL11.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, 0)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2DArray, OpenGL.TextureId.none)
   }
 
   def getTextureArray(name: String): TextureArray = textures(name)
@@ -33,7 +33,7 @@ class TextureArray(
     wrappedImages: ResourceWrapper[Seq[TextureToLoad]]
 ) extends Resource
     with Texture {
-  private var texID: Int = _
+  private var texID: OpenGL.TextureId = _
 
   TextureArray.textures += name -> this
 
@@ -57,30 +57,38 @@ class TextureArray(
       }
     }
     buf.flip
-    texID = GL11.glGenTextures()
+    texID = OpenGL.glGenTextures()
     bind()
-    GL12.glTexImage3D(
-      GL30.GL_TEXTURE_2D_ARRAY,
+    OpenGL.glTexImage3D(
+      OpenGL.TextureTarget.Texture2DArray,
       0,
-      GL11.GL_RGBA,
+      TextureInternalFormat.Rgba,
       texSize,
       texSize,
       width / texSize * height / texSize,
       0,
-      GL11.GL_RGBA,
-      GL11.GL_UNSIGNED_BYTE,
+      TexelDataFormat.Rgba,
+      TexelDataType.UnsignedByte,
       buf
     )
 
-    GL11.glTexParameteri(
-      GL30.GL_TEXTURE_2D_ARRAY,
-      GL11.GL_TEXTURE_MIN_FILTER,
-      GL11.GL_NEAREST_MIPMAP_LINEAR
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.MinFilter(OpenGL.TexMinFilter.NearestMipmapLinear)
     )
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-    GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
-    GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D_ARRAY)
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.MagFilter(OpenGL.TexMagFilter.Nearest)
+    )
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.TextureWrapS(OpenGL.TexWrap.ClampToEdge)
+    )
+    OpenGL.glTexParameteri(
+      OpenGL.TextureTarget.Texture2DArray,
+      OpenGL.TexIntParameter.TextureWrapT(OpenGL.TexWrap.ClampToEdge)
+    )
+    OpenGL.glGenerateMipmap(OpenGL.TextureTarget.Texture2DArray)
   }
 
   protected def reload(): Unit = {
@@ -91,12 +99,12 @@ class TextureArray(
   def bind(): Unit = {
     if (TextureArray.boundTextureArray != this) {
       TextureArray.boundTextureArray = this
-      GL11.glBindTexture(GL30.GL_TEXTURE_2D_ARRAY, texID)
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2DArray, texID)
     }
   }
 
   def unload(): Unit = {
     if (TextureArray.boundTextureArray == this) TextureArray.unbind()
-    GL11.glDeleteTextures(texID)
+    OpenGL.glDeleteTextures(texID)
   }
 }

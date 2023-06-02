@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
-
-import org.lwjgl.opengl.{GL11, GL15}
+import com.martomate.hexacraft.util.OpenGL
 
 object EntityPartRenderer:
   def forSide(side: Int): BlockRenderer =
@@ -13,7 +12,7 @@ object EntityPartRenderer:
   private def initVAO(side: Int): VAO =
     new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
       .addVBO(
-        VBOBuilder(BlockRenderer.verticesPerInstance(side), GL15.GL_STATIC_DRAW)
+        VBOBuilder(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
           .floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
@@ -23,7 +22,7 @@ object EntityPartRenderer:
           .fill(0, BlockRenderer.setupBlockVBO(side))
       )
       .addVBO(
-        VBOBuilder(0, GL15.GL_DYNAMIC_DRAW, 1)
+        VBOBuilder(0, OpenGL.VboUsage.DynamicDraw, 1)
           .floats(5, 4)
           .floats(6, 4)
           .floats(7, 4)
@@ -36,4 +35,4 @@ object EntityPartRenderer:
       )
       .create()
 
-  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, GL11.GL_TRIANGLES)
+  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)

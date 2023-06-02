@@ -55,17 +55,17 @@ class RootArchTest extends FunSuite {
       .optionalLayer("LWJGL", "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer("OpenGL", "org.lwjgl.opengl..")
       .optionalLayer("GLFW", "org.lwjgl.glfw..")
-      .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "OpenGL"))
+      .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML"))
       .whereLayer("Game", _.mayOnlyAccessLayers("root", "Font", "GUI", "Renderer", "Util", "World", "JOML", "NBT"))
-      .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "JOML", "OpenGL"))
+      .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "JOML"))
       .whereLayer(
         "Main",
-        _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Util", "World", "JOML", "LWJGL", "OpenGL", "GLFW")
+        _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Util", "World", "JOML", "LWJGL", "GLFW")
       )
       .whereLayer("Menu", _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Util", "World", "JOML", "NBT"))
-      .whereLayer("Renderer", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL", "OpenGL"))
-      .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT"))
-      .whereLayer("World", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT", "OpenGL"))
+      .whereLayer("Renderer", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL"))
+      .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT", "OpenGL", "LWJGL"))
+      .whereLayer("World", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT"))
       .check(allClasses)
   }
 }

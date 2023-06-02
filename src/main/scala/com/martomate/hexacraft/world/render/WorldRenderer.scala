@@ -2,7 +2,7 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, OpenGL}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
@@ -17,7 +17,6 @@ import java.nio.FloatBuffer
 import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,13 +35,14 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
   private val skyVAO: VAO = Helpers.makeSkyVAO
-  private val skyRenderer = new Renderer(skyVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private val skyRenderer = new Renderer(skyVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest
 
   private val worldCombinerVAO: VAO = Helpers.makeSkyVAO
-  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, GL11.GL_TRIANGLE_STRIP) with NoDepthTest
+  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, OpenGL.PrimitiveMode.TriangleStrip)
+    with NoDepthTest
 
   private val selectedBlockVAO: VAO = Helpers.makeSelectedBlockVAO
-  private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, GL11.GL_LINE_STRIP)
+  private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, OpenGL.PrimitiveMode.LineStrip)
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
 
@@ -104,7 +104,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     // Step 1: Render everything to a FrameBuffer
     mainFrameBuffer.bind()
 
-    GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT)
+    OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
     skyShader.setUniform3f("sun", sun.x, sun.y, sun.z)
@@ -121,21 +121,21 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       selectedBlockRenderer.render()
 
     mainFrameBuffer.unbind()
-    GL11.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
+    OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
 
     // Step 2: Render the FrameBuffer to the screen (one could add post processing here in the future)
-    GL13.glActiveTexture(GL13.GL_TEXTURE0)
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainFrameBuffer.colorTexture)
-    GL13.glActiveTexture(GL13.GL_TEXTURE1)
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, mainFrameBuffer.depthTexture)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
     worldCombinerRenderer.render()
 
-    GL13.glActiveTexture(GL13.GL_TEXTURE1)
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
-    GL13.glActiveTexture(GL13.GL_TEXTURE0)
-    GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
 
   override def onChunkAdded(chunk: Chunk): Unit =
     chunksToRender.add(chunk.coords)
@@ -221,7 +221,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
             .fillFloats(0, vertexData)
         )
         .addVBO(
-          VBOBuilder(1, GL15.GL_DYNAMIC_DRAW, 1)
+          VBOBuilder(1, OpenGL.VboUsage.DynamicDraw, 1)
             .ints(1, 3)
             .floats(2, 3)
             .floats(3, 1)

@@ -1,24 +1,31 @@
 package com.martomate.hexacraft.renderer
 
-import org.lwjgl.opengl.{GL11, GL15}
+import com.martomate.hexacraft.util.OpenGL
+
 import scala.collection.mutable.ArrayBuffer
 
 object VBOBuilder {
-  def apply(count: Int, vboUsage: Int = GL15.GL_STATIC_DRAW, divisor: Int = 0): VBOBuilder =
+  def apply(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw, divisor: Int = 0): VBOBuilder =
     new VBOBuilder(count, vboUsage, divisor)
 }
 
-class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
-  val vboID: Int = GL15.glGenBuffers()
-  GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID)
+class VBOBuilder(val count: Int, val vboUsage: OpenGL.VboUsage, val divisor: Int) {
+  val vboID: OpenGL.VertexBufferId = OpenGL.glGenBuffers()
+  OpenGL.glBindBuffer(OpenGL.VertexBufferTarget.ArrayBuffer, vboID)
 
   private sealed trait SomeChannel
-  private case class IntChannel(index: Int, dims: Int, elementSize: Int, _type: Int, offset: Int) extends SomeChannel
+  private case class IntChannel(
+      index: Int,
+      dims: Int,
+      elementSize: Int,
+      _type: OpenGL.VertexIntAttributeDataType,
+      offset: Int
+  ) extends SomeChannel
   private case class FloatChannel(
       index: Int,
       dims: Int,
       elementSize: Int,
-      _type: Int,
+      _type: OpenGL.VertexAttributeDataType,
       normalized: Boolean,
       offset: Int
   ) extends SomeChannel
@@ -26,7 +33,12 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
   private val channels = ArrayBuffer.empty[SomeChannel]
   private var totalStride = 0
 
-  def ints(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_INT): VBOBuilder = {
+  def ints(
+      index: Int,
+      dims: Int,
+      elementSize: Int = 4,
+      _type: OpenGL.VertexIntAttributeDataType = OpenGL.VertexIntAttributeDataType.Int
+  ): VBOBuilder = {
     channels += IntChannel(index, dims, elementSize, _type, totalStride)
     totalStride += dims * elementSize
     this
@@ -36,7 +48,7 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
       index: Int,
       dims: Int,
       elementSize: Int = 4,
-      _type: Int = GL11.GL_FLOAT,
+      _type: OpenGL.VertexAttributeDataType = OpenGL.VertexAttributeDataType.Float,
       normalized: Boolean = false
   ): VBOBuilder = {
     channels += FloatChannel(index, dims, elementSize, _type, normalized, totalStride)
@@ -44,7 +56,12 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
     this
   }
 
-  def intsArray(index: Int, dims: Int, elementSize: Int = 4, _type: Int = GL11.GL_INT)(
+  def intsArray(
+      index: Int,
+      dims: Int,
+      elementSize: Int = 4,
+      _type: OpenGL.VertexIntAttributeDataType = OpenGL.VertexIntAttributeDataType.Int
+  )(
       size: Int
   ): VBOBuilder = {
     for (i <- 0 until size) {
@@ -57,7 +74,7 @@ class VBOBuilder(val count: Int, val vboUsage: Int, val divisor: Int) {
       index: Int,
       dims: Int,
       elementSize: Int = 4,
-      _type: Int = GL11.GL_FLOAT,
+      _type: OpenGL.VertexAttributeDataType = OpenGL.VertexAttributeDataType.Float,
       normalized: Boolean = false
   )(size: Int): VBOBuilder = {
     for (i <- 0 until size) {
