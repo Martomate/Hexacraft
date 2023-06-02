@@ -78,7 +78,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
       val generator = new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry)
-      new Chunk(coords, generator, lightPropagator)
+      new Chunk(coords, generator)
 
     val chunkUnloader = (coords: ChunkRelWorld) => getChunk(coords).foreach(_.saveIfNeeded())
 
@@ -256,12 +256,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private def onChunkEvent(event: Chunk.Event): Unit =
     event match
-      case Chunk.Event.BlockReplaced(coords, _, _) => onSetBlock(coords)
-      case _                                       =>
+      case Chunk.Event.BlockReplaced(coords, _, block) => onSetBlock(coords, block)
+      case _                                           =>
 
   private def requestBlockUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
-  private def onSetBlock(coords: BlockRelWorld): Unit =
+  private def onSetBlock(coords: BlockRelWorld, block: BlockState): Unit =
     def affectedChunkOffset(where: Byte): Int = where match
       case 0  => -1
       case 15 => 1
@@ -279,6 +279,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
     getChunk(cCoords) match
       case Some(c) =>
+        handleLightingOnSetBlock(c, bCoords, block)
+
         c.requestRenderUpdate()
         requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, c.coords))
 
@@ -294,6 +296,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
               case None =>
           else requestBlockUpdate(BlockRelWorld.fromChunk(c2, c.coords))
       case None =>
+
+  private def handleLightingOnSetBlock(chunk: Chunk, blockCoords: BlockRelChunk, block: BlockState): Unit =
+    lightPropagator.removeTorchlight(chunk, blockCoords)
+    lightPropagator.removeSunlight(chunk, blockCoords)
+    if block.blockType.lightEmitted != 0 then
+      lightPropagator.addTorchlight(chunk, blockCoords, block.blockType.lightEmitted)
 
   private def makePlayer: Player =
     if worldInfo.player != null

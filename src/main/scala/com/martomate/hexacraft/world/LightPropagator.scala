@@ -4,6 +4,7 @@ import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.util.MathUtils.oppositeSide
 import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.chunk.Chunk
+import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
 
 import scala.collection.mutable
@@ -11,8 +12,15 @@ import scala.collection.mutable
 class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def initBrightnesses(chunk: Chunk, lights: Map[BlockRelChunk, BlockState]): Unit = {
+  def initBrightnesses(chunk: Chunk): Unit = {
     chunkCache.clearCache()
+
+    val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
+
+    for
+      LocalBlockState(c, b) <- chunk.blocks.allBlocks
+      if b.blockType.lightEmitted != 0
+    do lights(c) = b
 
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, Chunk)]
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, Chunk)]

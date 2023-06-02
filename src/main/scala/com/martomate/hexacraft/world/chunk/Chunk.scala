@@ -20,13 +20,13 @@ object Chunk:
   )(using CylinderSize, Blocks): Chunk =
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
-    new Chunk(coords, chunkGenerator, new LightPropagator(world))
+    new Chunk(coords, chunkGenerator)
 
   enum Event:
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagator: LightPropagator):
+class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
   private val chunkData: ChunkData = generator.loadData()
 
   private def storage: ChunkStorage = chunkData.storage
@@ -35,7 +35,12 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
 
-  val lighting: ChunkLighting = new ChunkLighting(lightPropagator)
+  val lighting: ChunkLighting = new ChunkLighting
+  def initLightingIfNeeded(lightPropagator: LightPropagator): Unit =
+    if !lighting.initialized then
+      lighting.setInitialized()
+      lightPropagator.initBrightnesses(this)
+
   def entities: EntitiesInChunk = chunkData.entities
 
   def addEntity(entity: Entity): Unit = entities += entity
@@ -53,15 +58,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator, lightPropagato
 
       dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
 
-      handleLightingOnSetBlock(blockCoords, block)
-
   def removeBlock(coords: BlockRelChunk): Unit = setBlock(coords, BlockState.Air)
-
-  private def handleLightingOnSetBlock(blockCoords: BlockRelChunk, block: BlockState): Unit =
-    lightPropagator.removeTorchlight(this, blockCoords)
-    lightPropagator.removeSunlight(this, blockCoords)
-    if block.blockType.lightEmitted != 0 then
-      lightPropagator.addTorchlight(this, blockCoords, block.blockType.lightEmitted)
 
   def requestRenderUpdate(): Unit =
     dispatcher.notify(Chunk.Event.ChunkNeedsRenderUpdate(coords))

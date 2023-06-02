@@ -1,30 +1,19 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.SmartArray
-import com.martomate.hexacraft.world.LightPropagator
 import com.martomate.hexacraft.world.block.BlockState
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 
 import scala.collection.mutable
 
-class ChunkLighting(lightPropagator: LightPropagator):
+class ChunkLighting:
   private val brightness: SmartArray[Byte] = SmartArray.withByteArray(16 * 16 * 16, 0)
   private var brightnessInitialized: Boolean = false
 
   def initialized: Boolean = brightnessInitialized
 
-  def init(blocks: Array[LocalBlockState], chunk: Chunk): Unit =
-    if !brightnessInitialized then
-      brightnessInitialized = true
-      val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
-
-      for
-        LocalBlockState(c, b) <- blocks
-        if b.blockType.lightEmitted != 0
-      do lights(c) = b
-
-      lightPropagator.initBrightnesses(chunk, lights.toMap)
+  def setInitialized(): Unit = brightnessInitialized = true
 
   def setSunlight(coords: BlockRelChunk, value: Int): Unit =
     brightness(coords.value) = (brightness(coords.value) & 0xf | value << 4).toByte

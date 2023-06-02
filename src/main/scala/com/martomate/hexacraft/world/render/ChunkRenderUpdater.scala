@@ -11,13 +11,13 @@ object ChunkRenderUpdater:
   private val chunkRenderUpdatesPerTick = 4
   private val ticksBetweenColumnLoading = 5
 
-class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using CylinderSize):
+class ChunkRenderUpdater(using CylinderSize):
   private val origin = new PosAndDir
 
   private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] =
     new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
 
-  def update(camera: Camera, renderDistance: Double): Unit =
+  def update(camera: Camera, renderDistance: Double, updateChunkIfPresent: ChunkRelWorld => Boolean): Unit =
     origin.setPosAndDirFrom(camera.view)
 
     if reprioritizeTimer.tick() then

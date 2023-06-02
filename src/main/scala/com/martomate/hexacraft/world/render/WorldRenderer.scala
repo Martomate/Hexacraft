@@ -2,13 +2,13 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.{CylinderSize, OpenGL, RevokeTrackerFn}
-import com.martomate.hexacraft.world.{BlocksInWorld, World}
+import com.martomate.hexacraft.world.{BlocksInWorld, LightPropagator, World}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk
+import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -30,6 +30,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
+  private val lightPropagator = new LightPropagator(world)
+
   private val skyVAO: VAO = Helpers.makeSkyVAO
   private val skyRenderer = new Renderer(skyVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest
 
@@ -47,20 +49,19 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val entityRenderers: BlockRendererCollection = new BlockRendererCollection(s => EntityPartRenderer.forSide(s))
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater(updateChunkIfPresent)
+  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater
 
   private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private def updateChunkIfPresent(coords: ChunkRelWorld) =
     world.getChunk(coords) match
       case Some(ch) =>
-        val chunkBlocks = ch.blocks.allBlocks
-        if !ch.lighting.initialized then ch.lighting.init(chunkBlocks, ch)
+        ch.initLightingIfNeeded(lightPropagator)
 
         val renderData: ChunkRenderData =
-          if chunkBlocks.isEmpty
+          if ch.blocks.numBlocks == 0
           then ChunkRenderData.empty
-          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, chunkBlocks, world)
+          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks.allBlocks, world)
 
         chunkHandler.setChunkRenderData(coords, renderData)
         true
@@ -68,7 +69,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         false
 
   def tick(camera: Camera, renderDistance: Double): Unit =
-    chunkRenderUpdater.update(camera, renderDistance)
+    chunkRenderUpdater.update(camera, renderDistance, updateChunkIfPresent)
 
   def onTotalSizeChanged(totalSize: Int): Unit =
     chunkHandler.onTotalSizeChanged(totalSize)
