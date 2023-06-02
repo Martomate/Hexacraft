@@ -57,12 +57,12 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         val chunkBlocks = ch.blocks.allBlocks
         if !ch.lighting.initialized then ch.lighting.init(chunkBlocks, ch)
 
-        val renderData =
+        val renderData: ChunkRenderData =
           if chunkBlocks.isEmpty
           then ChunkRenderData.empty
-          else ChunkRenderer.getChunkRenderData(ch.coords, chunkBlocks, world)
+          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, chunkBlocks, world)
 
-        chunkHandler.updateHandlers(coords, Some(renderData))
+        chunkHandler.setChunkRenderData(coords, renderData)
         true
       case None =>
         false
@@ -144,7 +144,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         chunkEventTrackerRevokeFns += chunk.coords -> revoke
       case World.Event.ChunkRemoved(chunk) =>
         chunksToRender.remove(chunk.coords)
-        chunkHandler.updateHandlers(chunk.coords, None)
+        chunkHandler.clearChunkRenderData(chunk.coords)
 
         val revoke = chunkEventTrackerRevokeFns(chunk.coords)
         revoke()
@@ -179,7 +179,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         c <- chunksToRender
         ch <- world.getChunk(c)
         if ch.entities.count > 0
-      do entityDataList ++= ChunkRenderer.getEntityRenderData(ch.entities, side, world)
+      do entityDataList ++= EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
 
       for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do
         val data = partLists.flatMap(_.parts)
@@ -218,26 +218,26 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
       new VAOBuilder(25)
         .addVBO(
-          VBOBuilder(25)
+          VBOBuilder()
             .floats(0, 3)
-            .create()
+            .create(25)
             .fillFloats(0, vertexData)
         )
         .addVBO(
-          VBOBuilder(1, OpenGL.VboUsage.DynamicDraw, 1)
+          VBOBuilder()
             .ints(1, 3)
             .floats(2, 3)
             .floats(3, 1)
-            .create()
+            .create(1, OpenGL.VboUsage.DynamicDraw, 1)
         )
         .create()
 
     def makeSkyVAO: VAO =
       new VAOBuilder(4)
         .addVBO(
-          VBOBuilder(4)
+          VBOBuilder()
             .floats(0, 2)
-            .create()
+            .create(4)
             .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
         )
         .create()

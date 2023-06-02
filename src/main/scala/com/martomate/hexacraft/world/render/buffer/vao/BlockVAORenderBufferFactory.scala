@@ -19,24 +19,23 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
 
   private def makeVAO(maxInstances: Int): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
     .addVBO(
-      VBOBuilder(verticesPerInstance, OpenGL.VboUsage.StaticDraw)
+      VBOBuilder()
         .floats(0, 3)
         .floats(1, 2)
         .floats(2, 3)
         .ints(3, 1)
         .ints(4, 1)
-        .create()
+        .create(verticesPerInstance, OpenGL.VboUsage.StaticDraw)
         .fill(0, BlockRenderer.setupBlockVBO(side))
     )
     .addVBO(
-      VBOBuilder(maxInstances, OpenGL.VboUsage.DynamicDraw, 1)
+      VBOBuilder()
         .ints(5, 3)
         .ints(6, 1)
         .floats(7, 1)
-        .floatsArray(8, 1)(
-          brightnessesPerInstance
-        ) // after this index should be 'this index' + brightnessesPerInstance
-        .create()
+        .floatsArray(8, 1)(brightnessesPerInstance)
+        // after this index should be 'this index' + brightnessesPerInstance
+        .create(maxInstances, OpenGL.VboUsage.DynamicDraw, 1)
     )
     .create()
 }

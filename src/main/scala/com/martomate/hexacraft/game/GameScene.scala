@@ -300,9 +300,9 @@ class GameScene(worldProvider: WorldProvider)(using
 
   private def makeCrosshairVAO: VAO = new VAOBuilder(4)
     .addVBO(
-      VBOBuilder(4)
+      VBOBuilder()
         .floats(0, 2)
-        .create()
+        .create(4)
         .fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))
     )
     .create()

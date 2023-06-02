@@ -56,5 +56,6 @@ class ChunkRenderUpdater(updateChunkIfPresent: ChunkRelWorld => Boolean)(using C
 
   def onChunkEvent(event: Chunk.Event): Unit =
     event match
-      case Chunk.Event.ChunkNeedsRenderUpdate(coords) => chunkRenderUpdateQueue.enqueue(coords)
-      case _                                          =>
+      case Chunk.Event.ChunkNeedsRenderUpdate(coords) =>
+        chunkRenderUpdateQueue.enqueue(coords)
+      case _ =>

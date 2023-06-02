@@ -9,10 +9,9 @@ class VAOBuilder(maxCount: Int, maxPrimCount: Int = 1) {
   val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
   OpenGL.glBindVertexArray(vaoID)
 
-  def addVBO(vbo: VBO): VAOBuilder = {
+  def addVBO(vbo: VBO): VAOBuilder =
     vbos += vbo
     this
-  }
 
   def create(): VAO = new VAO(vaoID, maxCount, maxPrimCount, vbos.toSeq)
 }

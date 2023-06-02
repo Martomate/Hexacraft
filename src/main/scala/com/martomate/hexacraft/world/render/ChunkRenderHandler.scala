@@ -16,6 +16,9 @@ class ChunkRenderHandler:
   private val blockSideShader = Shader.get(Shaders.ShaderNames.BlockSide).get
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
+  private val blockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
+  hexagonHandlers(blockTexture) = blockHexagonHandler
+
   def onTotalSizeChanged(totalSize: Int): Unit =
     blockShader.setUniform1i("totalSize", totalSize)
     blockSideShader.setUniform1i("totalSize", totalSize)
@@ -34,11 +37,12 @@ class ChunkRenderHandler:
       t.bind()
       r.render()
 
-  def updateHandlers(coords: ChunkRelWorld, data: Option[ChunkRenderData]): Unit =
-    hexagonHandlers
-      .getOrElseUpdate(blockTexture, new HexagonRenderHandler(blockShader, blockSideShader))
-      .setChunkContent(coords, data.map(_.blockSide))
+  def setChunkRenderData(coords: ChunkRelWorld, data: ChunkRenderData): Unit =
+    blockHexagonHandler.setChunkContent(coords, data.blockSide)
+
+  def clearChunkRenderData(coords: ChunkRelWorld): Unit =
+    blockHexagonHandler.clearChunkContent(coords)
 
   def unload(): Unit =
-    hexagonHandlers.values.foreach(_.unload())
+    for h <- hexagonHandlers.values do h.unload()
     hexagonHandlers.clear()

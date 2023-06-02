@@ -45,14 +45,13 @@ object TextMaster {
   def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]): VAO = {
     new VAOBuilder(vertexPositions.length, 1)
       .addVBO(
-        VBOBuilder
-          .apply(vertexPositions.length)
+        VBOBuilder()
           .floats(0, 2)
-          .create()
+          .create(vertexPositions.length)
           .fillFloats(0, vertexPositions)
       )
       .addVBO(
-        VBOBuilder.apply(textureCoords.length).floats(1, 2).create().fillFloats(0, textureCoords)
+        VBOBuilder().floats(1, 2).create(textureCoords.length).fillFloats(0, textureCoords)
       )
       .create()
   }

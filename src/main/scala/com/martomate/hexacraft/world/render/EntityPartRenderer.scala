@@ -12,17 +12,17 @@ object EntityPartRenderer:
   private def initVAO(side: Int): VAO =
     new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
       .addVBO(
-        VBOBuilder(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
+        VBOBuilder()
           .floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
           .ints(4, 1)
-          .create()
+          .create(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
           .fill(0, BlockRenderer.setupBlockVBO(side))
       )
       .addVBO(
-        VBOBuilder(0, OpenGL.VboUsage.DynamicDraw, 1)
+        VBOBuilder()
           .floats(5, 4)
           .floats(6, 4)
           .floats(7, 4)
@@ -31,7 +31,7 @@ object EntityPartRenderer:
           .ints(10, 2)
           .ints(11, 1)
           .floats(12, 1)
-          .create()
+          .create(0, OpenGL.VboUsage.DynamicDraw, 1)
       )
       .create()
 
