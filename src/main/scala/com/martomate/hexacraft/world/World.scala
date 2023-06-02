@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.util.*
-import com.martomate.hexacraft.world.block.{Blocks, BlockSetAndGet, BlockState}
+import com.martomate.hexacraft.world.block.{BlockRepository, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.*
 import com.martomate.hexacraft.world.coord.CoordUtils
@@ -43,7 +43,7 @@ object World:
     case ChunkRemoved(chunk: Chunk)
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
-    extends BlockSetAndGet
+    extends BlockRepository
     with BlocksInWorld:
   val size: CylinderSize = worldInfo.worldSize
   import size.impl
@@ -200,7 +200,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     val blocksToUpdateLen = blocksToUpdate.size
     for _ <- 0 until blocksToUpdateLen do
       val c = blocksToUpdate.dequeue()
-      getBlock(c).blockType.doUpdate(c, this)
+      val block = getBlock(c).blockType
+      block.behaviour.foreach(_.onUpdated(c, block, this))
 
   private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)
 

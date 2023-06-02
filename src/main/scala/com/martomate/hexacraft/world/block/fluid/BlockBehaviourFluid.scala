@@ -1,17 +1,17 @@
 package com.martomate.hexacraft.world.block.fluid
 
 import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.block.{Block, BlockBehaviour, Blocks, BlockSetAndGet, BlockState}
+import com.martomate.hexacraft.world.block.{Block, BlockBehaviour, BlockRepository, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
 object BlockBehaviourFluid {
   val fluidLevelMask = 0x1f
 }
 
-class BlockBehaviourFluid(block: Block) extends BlockBehaviour {
+class BlockBehaviourFluid extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask
 
-  override def onUpdated(coords: BlockRelWorld, world: BlockSetAndGet)(using
+  override def onUpdated(coords: BlockRelWorld, block: Block, world: BlockRepository)(using
       cylSize: CylinderSize,
       Blocks: Blocks
   ): Unit = {

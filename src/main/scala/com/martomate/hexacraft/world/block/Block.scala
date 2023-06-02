@@ -23,11 +23,7 @@ class Block(val id: Byte, val name: String, val displayName: String) {
 
   def blockHeight(metadata: Byte): Float = 1.0f
 
-  protected val behaviour: BlockBehaviour = new BlockBehaviourNothing
-  final def doUpdate(coords: BlockRelWorld, world: BlockSetAndGet)(using
-      CylinderSize,
-      Blocks
-  ): Unit = behaviour.onUpdated(coords, world)
+  val behaviour: Option[BlockBehaviour] = None
 
   override def equals(o: Any): Boolean = o match {
     case other: Block =>
