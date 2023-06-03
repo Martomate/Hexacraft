@@ -26,9 +26,10 @@ abstract class Component:
   def unload(): Unit = textMaster.unload()
 
 object Component:
-  private val rectVAO: VAO = new VAOBuilder(4)
-    .addVBO(VBOBuilder().floats(0, 2).create(4).fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
-    .create()
+  private val rectVAO: VAO = VAO
+    .builder()
+    .addVBO(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
+    .finish(4)
   private val rectRenderer = new Renderer(rectVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest with Blending
 
   val font: FontType = Fonts.get("Verdana").get

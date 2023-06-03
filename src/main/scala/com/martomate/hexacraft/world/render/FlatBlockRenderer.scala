@@ -10,26 +10,23 @@ object FlatBlockRenderer:
     new BlockRenderer(side, vao, renderer)
 
   private def initVAO(side: Int): VAO =
-    new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
-      .addVBO(
-        VBOBuilder()
-          .floats(0, 3)
+    VAO
+      .builder()
+      .addVBO(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
+        _.floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
-          .ints(4, 1)
-          .create(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
-          .fill(0, BlockRenderer.setupBlockVBO(side))
+          .ints(4, 1),
+        _.fill(0, BlockRenderer.setupBlockVBO(side))
       )
-      .addVBO(
-        VBOBuilder()
-          .floats(5, 2)
+      .addVBO(0, OpenGL.VboUsage.DynamicDraw, 1)(
+        _.floats(5, 2)
           .ints(6, 1)
           .floats(7, 1)
           .floats(8, 1)
-          .create(0, OpenGL.VboUsage.DynamicDraw, 1)
       )
-      .create()
+      .finish(BlockRenderer.verticesPerInstance(side), 0)
 
   private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)
     with NoDepthTest

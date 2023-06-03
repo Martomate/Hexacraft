@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.font
 
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
-import com.martomate.hexacraft.renderer.{VAO, VAOBuilder, VBOBuilder}
+import com.martomate.hexacraft.renderer.VAO
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -43,16 +43,10 @@ class TextMaster {
 
 object TextMaster {
   def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]): VAO = {
-    new VAOBuilder(vertexPositions.length, 1)
-      .addVBO(
-        VBOBuilder()
-          .floats(0, 2)
-          .create(vertexPositions.length)
-          .fillFloats(0, vertexPositions)
-      )
-      .addVBO(
-        VBOBuilder().floats(1, 2).create(textureCoords.length).fillFloats(0, textureCoords)
-      )
-      .create()
+    VAO
+      .builder()
+      .addVBO(vertexPositions.length)(_.floats(0, 2), _.fillFloats(0, vertexPositions))
+      .addVBO(textureCoords.length)(_.floats(1, 2), _.fillFloats(0, textureCoords))
+      .finish(vertexPositions.length)
   }
 }

@@ -22,11 +22,6 @@ class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
       sh.setUniform1i("side", side)
       sideHandlers(side).render()
 
-  def setChunkContent(coords: ChunkRelWorld, content: Option[IndexedSeq[ByteBuffer]]): Unit =
-    content match
-      case Some(cc) => setChunkContent(coords, cc)
-      case None     => clearChunkContent(coords)
-
   def setChunkContent(coords: ChunkRelWorld, content: IndexedSeq[ByteBuffer]): Unit =
     for s <- 0 until 8 do sideHandlers(s).setChunkContent(coords, Option(content(s)))
 

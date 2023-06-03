@@ -5,14 +5,8 @@ import scala.collection.mutable
 object Resource {
   private val resources: mutable.Set[Resource] = mutable.Set.empty
 
-  def freeAllResources(): Unit = {
-    resources.clone().foreach(_.free1())
-    resources.clear()
-  }
-
-  def reloadAllResources(): Unit = {
-    resources.foreach(_.reload())
-  }
+  def freeAllResources(): Unit = for r <- resources.clone() do r.free()
+  def reloadAllResources(): Unit = for r <- resources.clone() do r.reload()
 }
 
 abstract class Resource {
@@ -20,17 +14,11 @@ abstract class Resource {
 
   Resource.resources += this
 
-  final def free(): Unit = {
+  final def free(): Unit =
     Resource.resources -= this
-    free1()
-  }
-
-  private def free1(): Unit = {
-    if (!hasBeenFreed) {
+    if !hasBeenFreed then
       hasBeenFreed = true
       unload()
-    }
-  }
 
   protected def reload(): Unit
   protected def unload(): Unit

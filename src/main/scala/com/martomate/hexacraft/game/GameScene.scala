@@ -298,14 +298,13 @@ class GameScene(worldProvider: WorldProvider)(using
     renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
 
-  private def makeCrosshairVAO: VAO = new VAOBuilder(4)
-    .addVBO(
-      VBOBuilder()
-        .floats(0, 2)
-        .create(4)
-        .fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))
+  private def makeCrosshairVAO: VAO = VAO
+    .builder()
+    .addVBO(4)(
+      _.floats(0, 2),
+      _.fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))
     )
-    .create()
+    .finish(4)
 
   private def makeToolbar(player: Player): Toolbar =
     val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)

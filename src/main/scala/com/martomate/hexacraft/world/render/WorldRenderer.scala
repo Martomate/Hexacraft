@@ -217,28 +217,22 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
       val vertexData = Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
 
-      new VAOBuilder(25)
-        .addVBO(
-          VBOBuilder()
-            .floats(0, 3)
-            .create(25)
-            .fillFloats(0, vertexData)
+      VAO
+        .builder()
+        .addVBO(25)(
+          _.floats(0, 3),
+          _.fillFloats(0, vertexData)
         )
-        .addVBO(
-          VBOBuilder()
-            .ints(1, 3)
-            .floats(2, 3)
-            .floats(3, 1)
-            .create(1, OpenGL.VboUsage.DynamicDraw, 1)
+        .addVBO(1, OpenGL.VboUsage.DynamicDraw, 1)(
+          _.ints(1, 3).floats(2, 3).floats(3, 1)
         )
-        .create()
+        .finish(25)
 
     def makeSkyVAO: VAO =
-      new VAOBuilder(4)
-        .addVBO(
-          VBOBuilder()
-            .floats(0, 2)
-            .create(4)
-            .fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
+      VAO
+        .builder()
+        .addVBO(4)(
+          _.floats(0, 2),
+          _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
         )
-        .create()
+        .finish(4)

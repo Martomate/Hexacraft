@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO, VAOBuilder, VBOBuilder}
+import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO}
 import com.martomate.hexacraft.util.OpenGL
 
 object EntityPartRenderer:
@@ -10,20 +10,18 @@ object EntityPartRenderer:
     BlockRenderer(side, vao, renderer)
 
   private def initVAO(side: Int): VAO =
-    new VAOBuilder(BlockRenderer.verticesPerInstance(side), 0)
-      .addVBO(
-        VBOBuilder()
-          .floats(0, 3)
+    VAO
+      .builder()
+      .addVBO(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
+        _.floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
-          .ints(4, 1)
-          .create(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)
-          .fill(0, BlockRenderer.setupBlockVBO(side))
+          .ints(4, 1),
+        _.fill(0, BlockRenderer.setupBlockVBO(side))
       )
-      .addVBO(
-        VBOBuilder()
-          .floats(5, 4)
+      .addVBO(0, OpenGL.VboUsage.DynamicDraw, 1)(
+        _.floats(5, 4)
           .floats(6, 4)
           .floats(7, 4)
           .floats(8, 4)
@@ -31,8 +29,7 @@ object EntityPartRenderer:
           .ints(10, 2)
           .ints(11, 1)
           .floats(12, 1)
-          .create(0, OpenGL.VboUsage.DynamicDraw, 1)
       )
-      .create()
+      .finish(BlockRenderer.verticesPerInstance(side), 0)
 
   private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)

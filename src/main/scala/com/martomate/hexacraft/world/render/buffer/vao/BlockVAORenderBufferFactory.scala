@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render.buffer.vao
 
-import com.martomate.hexacraft.renderer.{VAO, VAOBuilder, VBOBuilder}
+import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.util.OpenGL
 import com.martomate.hexacraft.world.render.{BlockRenderer, BlockVertexData}
 import com.martomate.hexacraft.world.render.buffer.RenderBufferFactory
@@ -17,25 +17,21 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
     new VAORenderBuffer(makeVAO(maxInstances), 1, OpenGL.PrimitiveMode.Triangles)
   }
 
-  private def makeVAO(maxInstances: Int): VAO = new VAOBuilder(verticesPerInstance, maxInstances)
-    .addVBO(
-      VBOBuilder()
-        .floats(0, 3)
+  private def makeVAO(maxInstances: Int): VAO = VAO
+    .builder()
+    .addVBO(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
+      _.floats(0, 3)
         .floats(1, 2)
         .floats(2, 3)
         .ints(3, 1)
-        .ints(4, 1)
-        .create(verticesPerInstance, OpenGL.VboUsage.StaticDraw)
-        .fill(0, BlockRenderer.setupBlockVBO(side))
+        .ints(4, 1),
+      _.fill(0, BlockRenderer.setupBlockVBO(side))
     )
-    .addVBO(
-      VBOBuilder()
-        .ints(5, 3)
+    .addVBO(maxInstances, OpenGL.VboUsage.DynamicDraw, 1)(
+      _.ints(5, 3)
         .ints(6, 1)
         .floats(7, 1)
         .floatsArray(8, 1)(brightnessesPerInstance)
-        // after this index should be 'this index' + brightnessesPerInstance
-        .create(maxInstances, OpenGL.VboUsage.DynamicDraw, 1)
     )
-    .create()
+    .finish(verticesPerInstance, maxInstances)
 }
