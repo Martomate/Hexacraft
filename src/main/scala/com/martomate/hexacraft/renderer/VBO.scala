@@ -4,40 +4,9 @@ import com.martomate.hexacraft.util.{OpenGL, Resource}
 
 import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
-import scala.collection.mutable.ArrayBuffer
 
 object VBO {
   private var boundVBO: VBO = _
-
-  private val IntChannelType = VBOChannelType.IntChannel(OpenGL.VertexIntAttributeDataType.Int)
-  private val FloatChannelType = VBOChannelType.FloatChannel(OpenGL.VertexAttributeDataType.Float, false)
-
-  opaque type Builder <: Any = ArrayBuffer[(VboChannelBase, VBOChannelType)]
-  def builder(): Builder = ArrayBuffer.empty
-
-  extension (channels: Builder)
-    def ints(index: Int, dims: Int): Builder =
-      channels += VboChannelBase(index, dims, 4) -> IntChannelType
-      channels
-
-    def floats(index: Int, dims: Int): Builder =
-      channels += VboChannelBase(index, dims, 4) -> FloatChannelType
-      channels
-
-    def floatsArray(index: Int, dims: Int)(size: Int): Builder =
-      for i <- 0 until size do channels.floats(index + i, dims)
-      channels
-
-    def finish(divisor: Int): (Int, Seq[RealVboChannel]) =
-      val realChannels = ArrayBuffer.empty[RealVboChannel]
-      var offset = 0
-
-      for (base, info) <- channels
-      do
-        realChannels += RealVboChannel(base, info, offset, divisor)
-        offset += base.dims * base.elementSize
-
-      (offset, realChannels.toSeq)
 
   def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit =
     import OpenGL.VertexBufferTarget.*
@@ -45,14 +14,6 @@ object VBO {
     OpenGL.glBindBuffer(CopyReadBuffer, from.id)
     OpenGL.glBindBuffer(CopyWriteBuffer, to.id)
     OpenGL.glCopyBufferSubData(CopyReadBuffer, CopyWriteBuffer, fromOffset, toOffset, length)
-
-  def create(count: Int, stride: Int, vboUsage: OpenGL.VboUsage, channels: Seq[RealVboChannel]): VBO =
-    val vboID: OpenGL.VertexBufferId = OpenGL.glGenBuffers()
-    val vbo = new VBO(vboID, stride, vboUsage)
-
-    vbo.resize(count)
-    for ch <- channels do ch.setAttributes(stride)
-    vbo
 }
 
 class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: OpenGL.VboUsage) {

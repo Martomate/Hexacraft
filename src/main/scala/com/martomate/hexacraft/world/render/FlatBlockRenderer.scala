@@ -12,7 +12,7 @@ object FlatBlockRenderer:
   private def initVAO(side: Int): VAO =
     VAO
       .builder()
-      .addVBO(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
+      .addVertexVbo(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
         _.floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
@@ -20,7 +20,7 @@ object FlatBlockRenderer:
           .ints(4, 1),
         _.fill(0, BlockRenderer.setupBlockVBO(side))
       )
-      .addVBO(0, OpenGL.VboUsage.DynamicDraw, 1)(
+      .addInstanceVbo(0, OpenGL.VboUsage.DynamicDraw)(
         _.floats(5, 2)
           .ints(6, 1)
           .floats(7, 1)

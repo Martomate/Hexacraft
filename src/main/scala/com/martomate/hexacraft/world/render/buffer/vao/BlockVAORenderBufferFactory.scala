@@ -19,7 +19,7 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
 
   private def makeVAO(maxInstances: Int): VAO = VAO
     .builder()
-    .addVBO(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
+    .addVertexVbo(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
       _.floats(0, 3)
         .floats(1, 2)
         .floats(2, 3)
@@ -27,7 +27,7 @@ class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORend
         .ints(4, 1),
       _.fill(0, BlockRenderer.setupBlockVBO(side))
     )
-    .addVBO(maxInstances, OpenGL.VboUsage.DynamicDraw, 1)(
+    .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
       _.ints(5, 3)
         .ints(6, 1)
         .floats(7, 1)

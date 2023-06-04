@@ -219,11 +219,11 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
       VAO
         .builder()
-        .addVBO(25)(
+        .addVertexVbo(25)(
           _.floats(0, 3),
           _.fillFloats(0, vertexData)
         )
-        .addVBO(1, OpenGL.VboUsage.DynamicDraw, 1)(
+        .addInstanceVbo(1, OpenGL.VboUsage.DynamicDraw)(
           _.ints(1, 3).floats(2, 3).floats(3, 1)
         )
         .finish(25)
@@ -231,7 +231,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     def makeSkyVAO: VAO =
       VAO
         .builder()
-        .addVBO(4)(
+        .addVertexVbo(4)(
           _.floats(0, 2),
           _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
         )

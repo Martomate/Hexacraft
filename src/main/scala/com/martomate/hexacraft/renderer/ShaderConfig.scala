@@ -14,15 +14,9 @@ case class ShaderConfig(
     fileName: String,
     attribs: Seq[String],
     defines: Seq[(String, String)]
-) {
-  def withAttribs(attribs: String*): ShaderConfig =
-    copy(attribs = attribs)
+):
+  def withAttribs(attribs: String*): ShaderConfig = copy(attribs = attribs)
+  def withDefines(defines: (String, String)*): ShaderConfig = copy(defines = defines)
 
-  def withDefines(defines: (String, String)*): ShaderConfig =
-    copy(defines = defines)
-}
-
-object ShaderConfig {
-  def apply(name: String, fileName: String): ShaderConfig =
-    ShaderConfig(name, if (fileName != null) fileName else name, Seq(), Seq())
-}
+object ShaderConfig:
+  def apply(name: String, fileName: String): ShaderConfig = ShaderConfig(name, fileName, Nil, Nil)

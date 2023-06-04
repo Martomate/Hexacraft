@@ -12,9 +12,9 @@ object VAO {
 
   private case class VboTemplate(
       count: Int,
-      stride: Int,
+      divisor: Int,
       vboUsage: OpenGL.VboUsage,
-      channels: Seq[RealVboChannel],
+      layout: VboLayout,
       fillVbo: VBO => Any
   )
 
@@ -22,26 +22,40 @@ object VAO {
   def builder(): Builder = new ArrayBuffer(1)
 
   extension (vboTemplates: Builder)
-    def addVBO(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw, divisor: Int = 0)(
-        buildVbo: VBO.Builder => VBO.Builder,
+    def addVertexVbo(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw)(
+        buildLayout: VboLayout.Builder => VboLayout.Builder,
         fillVbo: VBO => Any = _ => ()
+    ): Builder = addVbo(count, vboUsage, 0)(buildLayout, fillVbo)
+
+    def addInstanceVbo(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw)(
+        buildLayout: VboLayout.Builder => VboLayout.Builder,
+        fillVbo: VBO => Any = _ => ()
+    ): Builder = addVbo(count, vboUsage, 1)(buildLayout, fillVbo)
+
+    private def addVbo(count: Int, vboUsage: OpenGL.VboUsage, divisor: Int)(
+        buildLayout: VboLayout.Builder => VboLayout.Builder,
+        fillVbo: VBO => Any
     ): Builder =
-      val builder = VBO.builder()
-      buildVbo(builder)
-      val (stride, channels) = builder.finish(divisor)
-      vboTemplates += VboTemplate(count, stride, vboUsage, channels, fillVbo)
+      val layoutBuilder = VboLayout.builder()
+      buildLayout(layoutBuilder)
+      vboTemplates += VboTemplate(count, divisor, vboUsage, layoutBuilder.build(), fillVbo)
       vboTemplates
 
     def finish(maxCount: Int, maxPrimCount: Int = 1): VAO =
       val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
       OpenGL.glBindVertexArray(vaoID)
 
-      val vbos =
-        for VboTemplate(count, stride, vboUsage, channels, fillVbo) <- vboTemplates
-        yield
-          val vbo = VBO.create(count, stride, vboUsage, channels)
-          fillVbo(vbo)
-          vbo
+      val vbos = ArrayBuffer.empty[VBO]
+
+      for VboTemplate(count, divisor, vboUsage, layout, fillVbo) <- vboTemplates do
+        val vboID: OpenGL.VertexBufferId = OpenGL.glGenBuffers()
+        val vbo = new VBO(vboID, layout.stride, vboUsage)
+
+        vbo.resize(count)
+        layout.upload(divisor)
+        fillVbo(vbo)
+
+        vbos += vbo
 
       new VAO(vaoID, maxCount, maxPrimCount, vbos.toSeq)
 }

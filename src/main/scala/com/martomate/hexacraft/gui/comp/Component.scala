@@ -28,7 +28,7 @@ abstract class Component:
 object Component:
   private val rectVAO: VAO = VAO
     .builder()
-    .addVBO(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
+    .addVertexVbo(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
     .finish(4)
   private val rectRenderer = new Renderer(rectVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest with Blending
 
