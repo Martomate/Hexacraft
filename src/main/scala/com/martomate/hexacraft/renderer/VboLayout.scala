@@ -4,7 +4,7 @@ import com.martomate.hexacraft.util.OpenGL
 
 import scala.collection.mutable.ArrayBuffer
 
-class VboLayout(val attributes: Seq[VboAttribute]) {
+case class VboLayout(attributes: Seq[VboAttribute]) {
   val stride: Int = attributes.map(_.width).sum
 
   def upload(divisor: Int): Unit =
@@ -32,5 +32,5 @@ object VboLayout {
       for i <- 0 until size do channels.floats(index + i, dims)
       channels
 
-    def build(): VboLayout = new VboLayout(channels.toSeq)
+    def build(): VboLayout = VboLayout(channels.toSeq)
 }
