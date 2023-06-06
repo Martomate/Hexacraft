@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.util.OpenGL
-import com.martomate.hexacraft.util.OpenGL.{DebugMessageSeverity, DebugMessageSource, DebugMessageType}
 
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.system.MemoryUtil

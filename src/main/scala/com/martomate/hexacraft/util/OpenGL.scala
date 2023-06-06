@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.util
 
 import com.martomate.hexacraft.util.OpenGL.VertexAttributeDataType
+import com.martomate.hexacraft.util.Result.{Err, Ok}
 
 import java.nio.{ByteBuffer, FloatBuffer}
 import org.lwjgl.opengl.*
@@ -44,21 +45,22 @@ object OpenGL {
   // Shaders
 
   opaque type ShaderId = Int
+  case class ShaderCompilationError(message: String)
 
-  def glCreateShader(shaderType: ShaderType): ShaderId = gl.glCreateShader(shaderType.toGL)
+  def loadShader(shaderType: ShaderType, shaderSource: String): Result[ShaderId, ShaderCompilationError] =
+    val shaderId = gl.glCreateShader(shaderType.toGL)
+    gl.glShaderSource(shaderId, shaderSource)
+    gl.glCompileShader(shaderId)
 
-  def glShaderSource(shader: ShaderId, string: String): Unit = gl.glShaderSource(shader, string)
+    if gl.glGetShaderi(shaderId, ShaderIntProp.CompileStatus.toGL) != GL11.GL_TRUE then
+      val maxLen = math.max(gl.glGetShaderi(shaderId, ShaderIntProp.InfoLogLength.toGL), 256)
+      val errorMessage = gl.glGetShaderInfoLog(shaderId, maxLen)
 
-  def glCompileShader(shader: ShaderId): Unit = gl.glCompileShader(shader)
+      gl.glDeleteShader(shaderId)
+      Err(ShaderCompilationError(errorMessage))
+    else Ok(shaderId)
 
-  def glGetShaderIntProp(shader: ShaderId, prop: ShaderIntProp): Int = gl.glGetShaderi(shader, prop.toGL)
-
-  def glGetShaderBoolProp(shader: ShaderId, prop: ShaderIntProp): Boolean =
-    glGetShaderIntProp(shader, prop) == GL11.GL_TRUE
-
-  def glGetShaderInfoLog(shader: ShaderId, maxLength: Int): String = gl.glGetShaderInfoLog(shader, maxLength)
-
-  def glDeleteShader(shader: ShaderId): Unit = gl.glDeleteShader(shader)
+  def unloadShader(shader: ShaderId): Unit = gl.glDeleteShader(shader)
 
   // Programs
 
@@ -85,12 +87,17 @@ object OpenGL {
 
   def glUseProgram(program: ProgramId): Unit = gl.glUseProgram(program)
 
-  def glLinkProgram(program: ProgramId): Unit = gl.glLinkProgram(program)
+  def linkProgram(programId: ProgramId): Result[Unit, String] =
+    gl.glLinkProgram(programId)
+
+    if gl.glGetProgrami(programId, ProgramIntProp.LinkStatus.toGL) != GL11.GL_TRUE then
+      val maxLen = math.max(gl.glGetProgrami(programId, ProgramIntProp.InfoLogLength.toGL), 256)
+      val errorMessage = gl.glGetProgramInfoLog(programId, maxLen)
+
+      Err(errorMessage)
+    else Ok(())
 
   def glDeleteProgram(program: ProgramId): Unit = gl.glDeleteProgram(program)
-
-  def glGetProgramInfoLog(program: ProgramId, maxLength: Int): String =
-    gl.glGetProgramInfoLog(program, maxLength)
 
   def glAttachShader(program: ProgramId, shader: ShaderId): Unit =
     gl.glAttachShader(program, shader)
@@ -106,12 +113,6 @@ object OpenGL {
 
   def glBindAttribLocation(program: ProgramId, index: Int, name: String): Unit =
     gl.glBindAttribLocation(program, index, name)
-
-  def glGetProgramIntProp(program: ProgramId, pname: ProgramIntProp): Int =
-    gl.glGetProgrami(program, pname.toGL)
-
-  def glGetProgramBoolProp(program: ProgramId, pname: ProgramIntProp): Boolean =
-    glGetProgramIntProp(program, pname) == GL11.GL_TRUE
 
   // Uniforms
 
