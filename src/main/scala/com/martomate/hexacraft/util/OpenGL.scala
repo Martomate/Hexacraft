@@ -9,10 +9,19 @@ import org.lwjgl.system.MemoryUtil
 import scala.annotation.targetName
 
 object OpenGL {
+  enum Event:
+    case ShaderLoaded(shaderId: ShaderId, shaderType: ShaderType, source: String)
+    case ShaderUnloaded(shaderId: ShaderId)
+
   private var gl: GLWrapper = RealGL
+
+  private val dispatcher = new EventDispatcher[Event]
+  def trackEvents(tracker: Tracker[Event]): Unit = dispatcher.track(tracker)
 
   def _enterTestMode(): Unit =
     gl = new StubGL
+
+  // ---- Implementation ----
 
   enum ShaderType {
     case Vertex
@@ -29,15 +38,6 @@ object OpenGL {
       case ShaderType.TessEvaluation => GL40.GL_TESS_EVALUATION_SHADER
   }
 
-  enum ShaderIntProp {
-    case CompileStatus
-    case InfoLogLength
-
-    def toGL: Int = this match
-      case CompileStatus => GL20.GL_COMPILE_STATUS
-      case InfoLogLength => GL20.GL_INFO_LOG_LENGTH
-  }
-
   def createCapabilities(): Unit = gl.createCapabilities()
 
   def hasDebugExtension: Boolean = gl.getCapabilities.GL_KHR_debug
@@ -52,30 +52,25 @@ object OpenGL {
     gl.glShaderSource(shaderId, shaderSource)
     gl.glCompileShader(shaderId)
 
-    if gl.glGetShaderi(shaderId, ShaderIntProp.CompileStatus.toGL) != GL11.GL_TRUE then
-      val maxLen = math.max(gl.glGetShaderi(shaderId, ShaderIntProp.InfoLogLength.toGL), 256)
+    if gl.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS) != GL11.GL_TRUE then
+      val maxLen = math.max(gl.glGetShaderi(shaderId, GL20.GL_INFO_LOG_LENGTH), 256)
       val errorMessage = gl.glGetShaderInfoLog(shaderId, maxLen)
 
       gl.glDeleteShader(shaderId)
       Err(ShaderCompilationError(errorMessage))
-    else Ok(shaderId)
+    else
+      dispatcher.notify(Event.ShaderLoaded(shaderId, shaderType, shaderSource))
+      Ok(shaderId)
 
-  def unloadShader(shader: ShaderId): Unit = gl.glDeleteShader(shader)
+  def unloadShader(shader: ShaderId): Unit =
+    gl.glDeleteShader(shader)
+    dispatcher.notify(Event.ShaderUnloaded(shader))
 
   // Programs
 
   opaque type ProgramId = Int
   object ProgramId {
     def none: ProgramId = 0
-  }
-
-  enum ProgramIntProp {
-    case LinkStatus
-    case InfoLogLength
-
-    def toGL: Int = this match
-      case LinkStatus    => GL20.GL_LINK_STATUS
-      case InfoLogLength => GL20.GL_INFO_LOG_LENGTH
   }
 
   opaque type UniformLocation = Int
@@ -90,8 +85,8 @@ object OpenGL {
   def linkProgram(programId: ProgramId): Result[Unit, String] =
     gl.glLinkProgram(programId)
 
-    if gl.glGetProgrami(programId, ProgramIntProp.LinkStatus.toGL) != GL11.GL_TRUE then
-      val maxLen = math.max(gl.glGetProgrami(programId, ProgramIntProp.InfoLogLength.toGL), 256)
+    if gl.glGetProgrami(programId, GL20.GL_LINK_STATUS) != GL11.GL_TRUE then
+      val maxLen = math.max(gl.glGetProgrami(programId, GL20.GL_INFO_LOG_LENGTH), 256)
       val errorMessage = gl.glGetProgramInfoLog(programId, maxLen)
 
       Err(errorMessage)
@@ -647,6 +642,8 @@ object OpenGL {
     gl.glDebugMessageCallback(glCallback, userParam)
 }
 
+// ---- Wrappers and stubs ----
+
 trait GLCapabilitiesWrapper {
   def GL_KHR_debug: Boolean
 }
@@ -681,7 +678,7 @@ trait GLWrapper {
   def glGetUniformLocation(program: Int, name: String): Int
   def glGetAttribLocation(program: Int, name: String): Int
   def glBindAttribLocation(program: Int, index: Int, name: String): Unit
-  def glGetProgrami(program: Int, pname: Int): Int
+  def glGetProgrami(program: Int, prop: Int): Int
 
   def glUniform1i(location: Int, v0: Int): Unit
   def glUniform1f(location: Int, v0: Float): Unit
@@ -779,7 +776,10 @@ class StubGL extends GLWrapper {
   def glCreateShader(shaderType: Int): Int = 8
   def glShaderSource(shader: Int, string: String): Unit = ()
   def glCompileShader(shader: Int): Unit = ()
-  def glGetShaderi(shader: Int, prop: Int): Int = 2
+  def glGetShaderi(shader: Int, prop: Int): Int = prop match
+    case GL20.GL_COMPILE_STATUS  => GL11.GL_TRUE
+    case GL20.GL_INFO_LOG_LENGTH => 1000
+    case _                       => throw new RuntimeException(s"Unknown glGetShaderi prop: $prop")
   def glGetShaderInfoLog(shader: Int, maxLength: Int): String = ""
   def glDeleteShader(shader: Int): Unit = ()
 
@@ -794,7 +794,10 @@ class StubGL extends GLWrapper {
   def glGetUniformLocation(program: Int, name: String): Int = 3
   def glGetAttribLocation(program: Int, name: String): Int = 5
   def glBindAttribLocation(program: Int, index: Int, name: String): Unit = ()
-  def glGetProgrami(program: Int, pname: Int): Int = 4
+  def glGetProgrami(program: Int, prop: Int): Int = prop match
+    case GL20.GL_LINK_STATUS     => GL11.GL_TRUE
+    case GL20.GL_INFO_LOG_LENGTH => 1000
+    case _                       => throw new RuntimeException(s"Unknown glGetProgrami prop: $prop")
 
   def glUniform1i(location: Int, v0: Int): Unit = ()
   def glUniform1f(location: Int, v0: Float): Unit = ()
