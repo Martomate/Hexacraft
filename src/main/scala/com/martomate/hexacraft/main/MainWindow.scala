@@ -155,8 +155,8 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
         _framebufferSize.set(w, h)
 
-  private def handleDebugEvent(debugMessage: OpenGL.DebugMessage): Unit =
-    val OpenGL.DebugMessage(source, debugType, _, severity, message, _) = debugMessage
+  private def handleDebugEvent(debugMessage: OpenGL.Debug.Message): Unit =
+    val OpenGL.Debug.Message(source, debugType, _, severity, message, _) = debugMessage
     val messageStr = s"[${severity.toString}] [${debugType.toString}] [${source.toString}] - $message"
     System.err.println(s"OpenGL debug: $messageStr")
 

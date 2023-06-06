@@ -1,11 +1,18 @@
 package com.martomate.hexacraft.util
 
+import com.martomate.hexacraft.util.OpenGL.VertexAttributeDataType
+
 import java.nio.{ByteBuffer, FloatBuffer}
 import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryUtil
 import scala.annotation.targetName
 
 object OpenGL {
+  private var gl: GLWrapper = RealGL
+
+  def _enterTestMode(): Unit =
+    gl = new StubGL
+
   enum ShaderType {
     case Vertex
     case Fragment
@@ -30,31 +37,28 @@ object OpenGL {
       case InfoLogLength => GL20.GL_INFO_LOG_LENGTH
   }
 
-  def createCapabilities(): GLCapabilities = GL.createCapabilities()
+  def createCapabilities(): Unit = gl.createCapabilities()
 
-  def getCapabilities: GLCapabilities = GL.getCapabilities
-
-  def hasDebugExtension: Boolean = getCapabilities.GL_KHR_debug
+  def hasDebugExtension: Boolean = gl.getCapabilities.GL_KHR_debug
 
   // Shaders
 
   opaque type ShaderId = Int
 
-  def glCreateShader(shaderType: ShaderType): ShaderId =
-    GL20.glCreateShader(shaderType.toGL)
+  def glCreateShader(shaderType: ShaderType): ShaderId = gl.glCreateShader(shaderType.toGL)
 
-  def glShaderSource(shader: ShaderId, string: String): Unit = GL20.glShaderSource(shader, string)
+  def glShaderSource(shader: ShaderId, string: String): Unit = gl.glShaderSource(shader, string)
 
-  def glCompileShader(shader: ShaderId): Unit = GL20.glCompileShader(shader)
+  def glCompileShader(shader: ShaderId): Unit = gl.glCompileShader(shader)
 
-  def glGetShaderIntProp(shader: ShaderId, prop: ShaderIntProp): Int = GL20.glGetShaderi(shader, prop.toGL)
+  def glGetShaderIntProp(shader: ShaderId, prop: ShaderIntProp): Int = gl.glGetShaderi(shader, prop.toGL)
 
   def glGetShaderBoolProp(shader: ShaderId, prop: ShaderIntProp): Boolean =
     glGetShaderIntProp(shader, prop) == GL11.GL_TRUE
 
-  def glGetShaderInfoLog(shader: ShaderId, maxLength: Int): String = GL20.glGetShaderInfoLog(shader, maxLength)
+  def glGetShaderInfoLog(shader: ShaderId, maxLength: Int): String = gl.glGetShaderInfoLog(shader, maxLength)
 
-  def glDeleteShader(shader: ShaderId): Unit = GL20.glDeleteShader(shader)
+  def glDeleteShader(shader: ShaderId): Unit = gl.glDeleteShader(shader)
 
   // Programs
 
@@ -77,48 +81,57 @@ object OpenGL {
     extension (loc: UniformLocation) def exists: Boolean = loc != -1
   }
 
-  def glCreateProgram(): ProgramId = GL20.glCreateProgram()
+  def glCreateProgram(): ProgramId = gl.glCreateProgram()
 
-  def glUseProgram(program: ProgramId): Unit = GL20.glUseProgram(program)
+  def glUseProgram(program: ProgramId): Unit = gl.glUseProgram(program)
 
-  def glLinkProgram(program: ProgramId): Unit = GL20.glLinkProgram(program)
+  def glLinkProgram(program: ProgramId): Unit = gl.glLinkProgram(program)
 
-  def glDeleteProgram(program: ProgramId): Unit = GL20.glDeleteProgram(program)
+  def glDeleteProgram(program: ProgramId): Unit = gl.glDeleteProgram(program)
 
-  def glGetProgramInfoLog(program: ProgramId, maxLength: Int): String = GL20.glGetProgramInfoLog(program, maxLength)
+  def glGetProgramInfoLog(program: ProgramId, maxLength: Int): String =
+    gl.glGetProgramInfoLog(program, maxLength)
 
-  def glAttachShader(program: ProgramId, shader: ShaderId): Unit = GL20.glAttachShader(program, shader)
+  def glAttachShader(program: ProgramId, shader: ShaderId): Unit =
+    gl.glAttachShader(program, shader)
 
-  def glDetachShader(program: ProgramId, shader: ShaderId): Unit = GL20.glDetachShader(program, shader)
+  def glDetachShader(program: ProgramId, shader: ShaderId): Unit =
+    gl.glDetachShader(program, shader)
 
-  def glGetUniformLocation(program: ProgramId, name: String): UniformLocation = GL20.glGetUniformLocation(program, name)
+  def glGetUniformLocation(program: ProgramId, name: String): UniformLocation =
+    gl.glGetUniformLocation(program, name)
 
-  def glGetAttribLocation(program: ProgramId, name: String): Int = GL20.glGetAttribLocation(program, name)
+  def glGetAttribLocation(program: ProgramId, name: String): Int =
+    gl.glGetAttribLocation(program, name)
 
   def glBindAttribLocation(program: ProgramId, index: Int, name: String): Unit =
-    GL20.glBindAttribLocation(program, index, name)
+    gl.glBindAttribLocation(program, index, name)
 
-  def glGetProgramIntProp(program: ProgramId, pname: ProgramIntProp): Int = GL20.glGetProgrami(program, pname.toGL)
+  def glGetProgramIntProp(program: ProgramId, pname: ProgramIntProp): Int =
+    gl.glGetProgrami(program, pname.toGL)
 
   def glGetProgramBoolProp(program: ProgramId, pname: ProgramIntProp): Boolean =
     glGetProgramIntProp(program, pname) == GL11.GL_TRUE
 
   // Uniforms
 
-  def glUniform1i(location: UniformLocation, v0: Int): Unit = GL20.glUniform1i(location, v0)
+  def glUniform1i(location: UniformLocation, v0: Int): Unit =
+    gl.glUniform1i(location, v0)
 
-  def glUniform1f(location: UniformLocation, v0: Float): Unit = GL20.glUniform1f(location, v0)
+  def glUniform1f(location: UniformLocation, v0: Float): Unit =
+    gl.glUniform1f(location, v0)
 
-  def glUniform2f(location: UniformLocation, v0: Float, v1: Float): Unit = GL20.glUniform2f(location, v0, v1)
+  def glUniform2f(location: UniformLocation, v0: Float, v1: Float): Unit =
+    gl.glUniform2f(location, v0, v1)
 
   def glUniform3f(location: UniformLocation, v0: Float, v1: Float, v2: Float): Unit =
-    GL20.glUniform3f(location, v0, v1, v2)
+    gl.glUniform3f(location, v0, v1, v2)
 
   def glUniform4f(location: UniformLocation, v0: Float, v1: Float, v2: Float, v3: Float): Unit =
-    GL20.glUniform4f(location, v0, v1, v2, v3)
+    gl.glUniform4f(location, v0, v1, v2, v3)
 
   def glUniformMatrix4fv(location: UniformLocation, transpose: Boolean, value: FloatBuffer): Unit =
-    GL20.glUniformMatrix4fv(location, transpose, value)
+    gl.glUniformMatrix4fv(location, transpose, value)
 
   // Frame buffers
 
@@ -143,22 +156,21 @@ object OpenGL {
       case FrameBufferAttachment.DepthAttachment        => GL30.GL_DEPTH_ATTACHMENT
   }
 
-  def glGenFramebuffer(): FrameBufferId = GL30.glGenFramebuffers()
+  def glGenFramebuffer(): FrameBufferId = gl.glGenFramebuffers()
 
   def glBindFramebuffer(target: FrameBufferTarget, framebuffer: FrameBufferId): Unit =
-    GL30.glBindFramebuffer(target.toGL, framebuffer)
+    gl.glBindFramebuffer(target.toGL, framebuffer)
 
-  def glDrawBuffer(buf: FrameBufferAttachment): Unit = GL11.glDrawBuffer(buf.toGL)
+  def glDrawBuffer(buf: FrameBufferAttachment): Unit = gl.glDrawBuffer(buf.toGL)
 
   def glFramebufferTexture(
       target: FrameBufferTarget,
       attachment: FrameBufferAttachment,
       texture: TextureId,
       level: Int
-  ): Unit =
-    GL32.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
+  ): Unit = gl.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
 
-  def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = GL30.glDeleteFramebuffers(framebuffer)
+  def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = gl.glDeleteFramebuffers(framebuffer)
 
   // Drawing
 
@@ -175,10 +187,11 @@ object OpenGL {
       case PrimitiveMode.TriangleStrip => GL11.GL_TRIANGLE_STRIP
   }
 
-  def glDrawArrays(mode: PrimitiveMode, first: Int, count: Int): Unit = GL11.glDrawArrays(mode.toGL, first, count)
+  def glDrawArrays(mode: PrimitiveMode, first: Int, count: Int): Unit =
+    gl.glDrawArrays(mode.toGL, first, count)
 
   def glDrawArraysInstanced(mode: PrimitiveMode, first: Int, count: Int, primcount: Int): Unit =
-    GL31.glDrawArraysInstanced(mode.toGL, first, count, primcount)
+    gl.glDrawArraysInstanced(mode.toGL, first, count, primcount)
 
   // Textures
 
@@ -223,9 +236,10 @@ object OpenGL {
       case TexelDataType.Float        => GL11.GL_FLOAT
   }
 
-  def glGenTextures(): TextureId = GL11.glGenTextures()
+  def glGenTextures(): TextureId = gl.glGenTextures()
 
-  def glBindTexture(target: TextureTarget, texture: TextureId): Unit = GL11.glBindTexture(target.toGL, texture)
+  def glBindTexture(target: TextureTarget, texture: TextureId): Unit =
+    gl.glBindTexture(target.toGL, texture)
 
   def glTexImage2D(
       target: TextureTarget,
@@ -238,7 +252,7 @@ object OpenGL {
       texelDataType: TexelDataType,
       pixels: ByteBuffer
   ): Unit =
-    GL11.glTexImage2D(
+    gl.glTexImage2D(
       target.toGL,
       level,
       internalFormat.toGL,
@@ -261,7 +275,7 @@ object OpenGL {
       texelDataType: TexelDataType,
       pixels: FloatBuffer
   ): Unit =
-    GL11.glTexImage2D(
+    gl.glTexImage2D(
       target.toGL,
       level,
       internalFormat.toGL,
@@ -285,7 +299,7 @@ object OpenGL {
       texelDataType: TexelDataType,
       pixels: ByteBuffer
   ): Unit =
-    GL12.glTexImage3D(
+    gl.glTexImage3D(
       target.toGL,
       level,
       internalFormat.toGL,
@@ -354,9 +368,9 @@ object OpenGL {
 
   def glTexParameteri(target: TextureTarget, p: TexIntParameter): Unit =
     val (pname, param) = p.toGL
-    GL11.glTexParameteri(target.toGL, pname, param)
+    gl.glTexParameteri(target.toGL, pname, param)
 
-  def glGenerateMipmap(target: TextureTarget): Unit = GL30.glGenerateMipmap(target.toGL)
+  def glGenerateMipmap(target: TextureTarget): Unit = gl.glGenerateMipmap(target.toGL)
 
   opaque type TextureSlot = Int
   object TextureSlot {
@@ -366,9 +380,9 @@ object OpenGL {
       GL13.GL_TEXTURE0 + slot
   }
 
-  def glActiveTexture(textureSlot: TextureSlot): Unit = GL13.glActiveTexture(textureSlot)
+  def glActiveTexture(textureSlot: TextureSlot): Unit = gl.glActiveTexture(textureSlot)
 
-  def glDeleteTextures(texture: TextureId): Unit = GL11.glDeleteTextures(texture)
+  def glDeleteTextures(texture: TextureId): Unit = gl.glDeleteTextures(texture)
 
   // Vertex arrays
 
@@ -377,11 +391,11 @@ object OpenGL {
     def none: VertexArrayId = 0
   }
 
-  def glGenVertexArrays(): VertexArrayId = GL30.glGenVertexArrays()
+  def glGenVertexArrays(): VertexArrayId = gl.glGenVertexArrays()
 
-  def glBindVertexArray(array: VertexArrayId): Unit = GL30.glBindVertexArray(array)
+  def glBindVertexArray(array: VertexArrayId): Unit = gl.glBindVertexArray(array)
 
-  def glDeleteVertexArrays(array: VertexArrayId): Unit = GL30.glDeleteVertexArrays(array)
+  def glDeleteVertexArrays(array: VertexArrayId): Unit = gl.glDeleteVertexArrays(array)
 
   // Vertex buffers
 
@@ -407,15 +421,16 @@ object OpenGL {
       case VboUsage.DynamicDraw => GL15.GL_DYNAMIC_DRAW
   }
 
-  def glGenBuffers(): VertexBufferId = GL15.glGenBuffers()
+  def glGenBuffers(): VertexBufferId = gl.glGenBuffers()
 
-  def glBindBuffer(target: VertexBufferTarget, buffer: VertexBufferId): Unit = GL15.glBindBuffer(target.toGL, buffer)
+  def glBindBuffer(target: VertexBufferTarget, buffer: VertexBufferId): Unit =
+    gl.glBindBuffer(target.toGL, buffer)
 
   def glBufferData(target: VertexBufferTarget, size: Long, usage: VboUsage): Unit =
-    GL15.glBufferData(target.toGL, size, usage.toGL)
+    gl.glBufferData(target.toGL, size, usage.toGL)
 
   def glBufferSubData(target: VertexBufferTarget, offset: Long, data: ByteBuffer): Unit =
-    GL15.glBufferSubData(target.toGL, offset, data)
+    gl.glBufferSubData(target.toGL, offset, data)
 
   def glCopyBufferSubData(
       readTarget: VertexBufferTarget,
@@ -423,14 +438,13 @@ object OpenGL {
       readOffset: Long,
       writeOffset: Long,
       size: Long
-  ): Unit =
-    GL31.glCopyBufferSubData(readTarget.toGL, writeTarget.toGL, readOffset, writeOffset, size)
+  ): Unit = gl.glCopyBufferSubData(readTarget.toGL, writeTarget.toGL, readOffset, writeOffset, size)
 
-  def glDeleteBuffers(buffer: VertexBufferId): Unit = GL15.glDeleteBuffers(buffer)
+  def glDeleteBuffers(buffer: VertexBufferId): Unit = gl.glDeleteBuffers(buffer)
 
   // Vertex attributes
 
-  def glEnableVertexAttribArray(index: Int): Unit = GL20.glEnableVertexAttribArray(index)
+  def glEnableVertexAttribArray(index: Int): Unit = gl.glEnableVertexAttribArray(index)
 
   enum VertexAttributeDataType {
     case Int
@@ -455,7 +469,7 @@ object OpenGL {
       normalized: Boolean,
       stride: Int,
       pointer: Long
-  ): Unit = GL20.glVertexAttribPointer(index, size, dataType.toGL, normalized, stride, pointer)
+  ): Unit = gl.glVertexAttribPointer(index, size, dataType.toGL, normalized, stride, pointer)
 
   def glVertexAttribIPointer(
       index: Int,
@@ -463,10 +477,9 @@ object OpenGL {
       dataType: VertexIntAttributeDataType,
       stride: Int,
       pointer: Long
-  ): Unit =
-    GL30.glVertexAttribIPointer(index, size, dataType.toGL, stride, pointer)
+  ): Unit = gl.glVertexAttribIPointer(index, size, dataType.toGL, stride, pointer)
 
-  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = GL33.glVertexAttribDivisor(index, divisor)
+  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = gl.glVertexAttribDivisor(index, divisor)
 
   // Misc
 
@@ -514,114 +527,495 @@ object OpenGL {
       def |(r: ClearMask): ClearMask = l | r
   }
 
-  def glEnable(target: State): Unit = GL11.glEnable(target.toGL)
+  def glEnable(target: State): Unit = gl.glEnable(target.toGL)
 
-  def glDisable(target: State): Unit = GL11.glDisable(target.toGL)
+  def glDisable(target: State): Unit = gl.glDisable(target.toGL)
 
-  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glViewport(x, y, width, height)
+  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = gl.glViewport(x, y, width, height)
 
-  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glScissor(x, y, width, height)
+  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = gl.glScissor(x, y, width, height)
 
-  def glBlendFunc(sfactor: BlendFactor, dfactor: BlendFactor): Unit = GL11.glBlendFunc(sfactor.toGL, dfactor.toGL)
+  def glBlendFunc(sfactor: BlendFactor, dfactor: BlendFactor): Unit =
+    gl.glBlendFunc(sfactor.toGL, dfactor.toGL)
 
-  def glDepthFunc(func: DepthFunc): Unit = GL11.glDepthFunc(func.toGL)
+  def glDepthFunc(func: DepthFunc): Unit = gl.glDepthFunc(func.toGL)
 
-  def glClear(mask: ClearMask): Unit = GL11.glClear(mask)
+  def glClear(mask: ClearMask): Unit = gl.glClear(mask)
 
   def glGetError(): Option[Int] =
-    val e = GL11.glGetError()
+    val e = gl.glGetError()
     if e == GL11.GL_NO_ERROR then None else Some(e)
 
   // Debug
 
-  enum DebugMessageSource {
-    case Api
-    case WindowSystem
-    case ShaderCompiler
-    case ThirdParty
-    case Application
-    case Other
-    case Unknown(code: Int)
-  }
-  object DebugMessageSource {
-    def fromGL(code: Int): DebugMessageSource = code match
-      case GL43.GL_DEBUG_SOURCE_API             => DebugMessageSource.Api
-      case GL43.GL_DEBUG_SOURCE_WINDOW_SYSTEM   => DebugMessageSource.WindowSystem
-      case GL43.GL_DEBUG_SOURCE_SHADER_COMPILER => DebugMessageSource.ShaderCompiler
-      case GL43.GL_DEBUG_SOURCE_THIRD_PARTY     => DebugMessageSource.ThirdParty
-      case GL43.GL_DEBUG_SOURCE_APPLICATION     => DebugMessageSource.Application
-      case GL43.GL_DEBUG_SOURCE_OTHER           => DebugMessageSource.Other
-      case _                                    => DebugMessageSource.Unknown(code)
+  object Debug {
+    enum MessageSource {
+      case Api
+      case WindowSystem
+      case ShaderCompiler
+      case ThirdParty
+      case Application
+      case Other
+      case Unknown(code: Int)
+    }
+
+    object MessageSource {
+      def fromGL(code: Int): MessageSource = code match
+        case GL43.GL_DEBUG_SOURCE_API             => MessageSource.Api
+        case GL43.GL_DEBUG_SOURCE_WINDOW_SYSTEM   => MessageSource.WindowSystem
+        case GL43.GL_DEBUG_SOURCE_SHADER_COMPILER => MessageSource.ShaderCompiler
+        case GL43.GL_DEBUG_SOURCE_THIRD_PARTY     => MessageSource.ThirdParty
+        case GL43.GL_DEBUG_SOURCE_APPLICATION     => MessageSource.Application
+        case GL43.GL_DEBUG_SOURCE_OTHER           => MessageSource.Other
+        case _                                    => MessageSource.Unknown(code)
+    }
+
+    enum MessageType {
+      case Error
+      case DeprecatedBehavior
+      case UndefinedBehavior
+      case Portability
+      case Performance
+      case Marker
+      case PushGroup
+      case PopGroup
+      case Other
+      case Unknown(code: Int)
+    }
+
+    object MessageType {
+      def fromGL(code: Int): MessageType = code match
+        case GL43.GL_DEBUG_TYPE_ERROR               => MessageType.Error
+        case GL43.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR => MessageType.DeprecatedBehavior
+        case GL43.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  => MessageType.UndefinedBehavior
+        case GL43.GL_DEBUG_TYPE_PORTABILITY         => MessageType.Portability
+        case GL43.GL_DEBUG_TYPE_PERFORMANCE         => MessageType.Performance
+        case GL43.GL_DEBUG_TYPE_MARKER              => MessageType.Marker
+        case GL43.GL_DEBUG_TYPE_PUSH_GROUP          => MessageType.PushGroup
+        case GL43.GL_DEBUG_TYPE_POP_GROUP           => MessageType.PopGroup
+        case GL43.GL_DEBUG_TYPE_OTHER               => MessageType.Other
+        case _                                      => MessageType.Unknown(code)
+    }
+
+    enum MessageSeverity {
+      case High
+      case Medium
+      case Low
+      case Notification
+      case Unknown(code: Int)
+    }
+
+    object MessageSeverity {
+      def fromGL(code: Int): MessageSeverity = code match
+        case GL43.GL_DEBUG_SEVERITY_HIGH         => MessageSeverity.High
+        case GL43.GL_DEBUG_SEVERITY_MEDIUM       => MessageSeverity.Medium
+        case GL43.GL_DEBUG_SEVERITY_LOW          => MessageSeverity.Low
+        case GL43.GL_DEBUG_SEVERITY_NOTIFICATION => MessageSeverity.Notification
+        case _                                   => MessageSeverity.Unknown(code)
+    }
+
+    case class Message(
+        source: MessageSource,
+        debugType: MessageType,
+        id: Int,
+        severity: MessageSeverity,
+        message: String,
+        userParam: Long
+    )
+
+    object Message {
+      def fromGL(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long): Message =
+        val messageSource = MessageSource.fromGL(source)
+        val messageType = MessageType.fromGL(debugType)
+        val messageSeverity = MessageSeverity.fromGL(severity)
+        Message(messageSource, messageType, id, messageSeverity, message, userParam)
+    }
   }
 
-  enum DebugMessageType {
-    case Error
-    case DeprecatedBehavior
-    case UndefinedBehavior
-    case Portability
-    case Performance
-    case Marker
-    case PushGroup
-    case PopGroup
-    case Other
-    case Unknown(code: Int)
-  }
-  object DebugMessageType {
-    def fromGL(code: Int): DebugMessageType = code match
-      case GL43.GL_DEBUG_TYPE_ERROR               => DebugMessageType.Error
-      case GL43.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR => DebugMessageType.DeprecatedBehavior
-      case GL43.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  => DebugMessageType.UndefinedBehavior
-      case GL43.GL_DEBUG_TYPE_PORTABILITY         => DebugMessageType.Portability
-      case GL43.GL_DEBUG_TYPE_PERFORMANCE         => DebugMessageType.Performance
-      case GL43.GL_DEBUG_TYPE_MARKER              => DebugMessageType.Marker
-      case GL43.GL_DEBUG_TYPE_PUSH_GROUP          => DebugMessageType.PushGroup
-      case GL43.GL_DEBUG_TYPE_POP_GROUP           => DebugMessageType.PopGroup
-      case GL43.GL_DEBUG_TYPE_OTHER               => DebugMessageType.Other
-      case _                                      => DebugMessageType.Unknown(code)
-  }
-
-  enum DebugMessageSeverity {
-    case High
-    case Medium
-    case Low
-    case Notification
-    case Unknown(code: Int)
-  }
-  object DebugMessageSeverity {
-    def fromGL(code: Int): DebugMessageSeverity = code match
-      case GL43.GL_DEBUG_SEVERITY_HIGH         => DebugMessageSeverity.High
-      case GL43.GL_DEBUG_SEVERITY_MEDIUM       => DebugMessageSeverity.Medium
-      case GL43.GL_DEBUG_SEVERITY_LOW          => DebugMessageSeverity.Low
-      case GL43.GL_DEBUG_SEVERITY_NOTIFICATION => DebugMessageSeverity.Notification
-      case _                                   => DebugMessageSeverity.Unknown(code)
-  }
-
-  case class DebugMessage(
-      source: DebugMessageSource,
-      debugType: DebugMessageType,
-      id: Int,
-      severity: DebugMessageSeverity,
-      message: String,
-      userParam: Long
-  )
-
-  def glDebugMessageCallback(callback: DebugMessage => Unit, userParam: Long): Unit =
+  def glDebugMessageCallback(callback: Debug.Message => Unit, userParam: Long): Unit =
     val glCallback: GLDebugMessageCallbackI = (source, debugType, id, severity, length, messageAddress, userParam) => {
       val message =
         if length < 0
         then MemoryUtil.memASCII(messageAddress)
         else MemoryUtil.memASCII(messageAddress, length)
 
-      val debugMessage = DebugMessage(
-        OpenGL.DebugMessageSource.fromGL(source),
-        OpenGL.DebugMessageType.fromGL(debugType),
-        id,
-        OpenGL.DebugMessageSeverity.fromGL(severity),
-        message,
-        userParam
-      )
+      val debugMessage = Debug.Message.fromGL(source, debugType, id, severity, message, userParam)
 
       callback(debugMessage)
     }
-    GL43.glDebugMessageCallback(glCallback, userParam)
+    gl.glDebugMessageCallback(glCallback, userParam)
+}
+
+trait GLCapabilitiesWrapper {
+  def GL_KHR_debug: Boolean
+}
+
+class RealGLCapabilities(cap: GLCapabilities) extends GLCapabilitiesWrapper {
+  def GL_KHR_debug: Boolean = cap.GL_KHR_debug
+}
+
+class StubGLCapabilities extends GLCapabilitiesWrapper {
+  def GL_KHR_debug = true
+}
+
+trait GLWrapper {
+  def createCapabilities(): GLCapabilitiesWrapper
+  def getCapabilities: GLCapabilitiesWrapper
+
+  def glCreateShader(shaderType: Int): Int
+  def glShaderSource(shader: Int, string: String): Unit
+  def glCompileShader(shader: Int): Unit
+  def glGetShaderi(shader: Int, prop: Int): Int
+  def glGetShaderInfoLog(shader: Int, maxLength: Int): String
+  def glDeleteShader(shader: Int): Unit
+
+  def glCreateProgram(): Int
+  def glUseProgram(program: Int): Unit
+  def glLinkProgram(program: Int): Unit
+  def glDeleteProgram(program: Int): Unit
+
+  def glGetProgramInfoLog(program: Int, maxLength: Int): String
+  def glAttachShader(program: Int, shader: Int): Unit
+  def glDetachShader(program: Int, shader: Int): Unit
+  def glGetUniformLocation(program: Int, name: String): Int
+  def glGetAttribLocation(program: Int, name: String): Int
+  def glBindAttribLocation(program: Int, index: Int, name: String): Unit
+  def glGetProgrami(program: Int, pname: Int): Int
+
+  def glUniform1i(location: Int, v0: Int): Unit
+  def glUniform1f(location: Int, v0: Float): Unit
+  def glUniform2f(location: Int, v0: Float, v1: Float): Unit
+  def glUniform3f(location: Int, v0: Float, v1: Float, v2: Float): Unit
+  def glUniform4f(location: Int, v0: Float, v1: Float, v2: Float, v3: Float): Unit
+  def glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatBuffer): Unit
+
+  def glGenFramebuffers(): Int
+  def glBindFramebuffer(target: Int, framebuffer: Int): Unit
+  def glDrawBuffer(buf: Int): Unit
+  def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit
+  def glDeleteFramebuffers(framebuffer: Int): Unit
+
+  def glDrawArrays(mode: Int, first: Int, count: Int): Unit
+  def glDrawArraysInstanced(mode: Int, first: Int, count: Int, primcount: Int): Unit
+
+  def glTexImage3D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      depth: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: FloatBuffer
+  ): Unit
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit
+
+  def glBindTexture(target: Int, texture: Int): Unit
+  def glGenTextures(): Int
+
+  def glDeleteTextures(texture: Int): Unit
+  def glActiveTexture(textureSlot: Int): Unit
+  def glGenerateMipmap(target: Int): Unit
+  def glTexParameteri(target: Int, pname: Int, param: Int): Unit
+
+  def glDeleteVertexArrays(array: Int): Unit
+  def glBindVertexArray(array: Int): Unit
+  def glGenVertexArrays(): Int
+
+  def glDeleteBuffers(buffer: Int): Unit
+  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit
+  def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit
+  def glBufferData(target: Int, size: Long, usage: Int): Unit
+  def glBindBuffer(target: Int, buffer: Int): Unit
+  def glGenBuffers(): Int
+
+  def glVertexAttribDivisor(index: Int, divisor: Int): Unit
+  def glVertexAttribIPointer(index: Int, size: Int, dataType: Int, stride: Int, pointer: Long): Unit
+  def glVertexAttribPointer(index: Int, size: Int, dataType: Int, normalized: Boolean, stride: Int, pointer: Long): Unit
+  def glEnableVertexAttribArray(index: Int): Unit
+
+  def glGetError(): Int
+  def glClear(mask: Int): Unit
+  def glDepthFunc(func: Int): Unit
+  def glBlendFunc(sfactor: Int, dfactor: Int): Unit
+  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit
+  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit
+  def glDisable(target: Int): Unit
+  def glEnable(target: Int): Unit
+
+  def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit
+}
+
+class StubGL extends GLWrapper {
+  def createCapabilities(): GLCapabilitiesWrapper = new StubGLCapabilities
+  def getCapabilities: GLCapabilitiesWrapper = new StubGLCapabilities
+
+  def glCreateShader(shaderType: Int): Int = 8
+  def glShaderSource(shader: Int, string: String): Unit = ()
+  def glCompileShader(shader: Int): Unit = ()
+  def glGetShaderi(shader: Int, prop: Int): Int = 2
+  def glGetShaderInfoLog(shader: Int, maxLength: Int): String = ""
+  def glDeleteShader(shader: Int): Unit = ()
+
+  def glCreateProgram(): Int = 6
+  def glUseProgram(program: Int): Unit = ()
+  def glLinkProgram(program: Int): Unit = ()
+  def glDeleteProgram(program: Int): Unit = ()
+
+  def glGetProgramInfoLog(program: Int, maxLength: Int): String = ""
+  def glAttachShader(program: Int, shader: Int): Unit = ()
+  def glDetachShader(program: Int, shader: Int): Unit = ()
+  def glGetUniformLocation(program: Int, name: String): Int = 3
+  def glGetAttribLocation(program: Int, name: String): Int = 5
+  def glBindAttribLocation(program: Int, index: Int, name: String): Unit = ()
+  def glGetProgrami(program: Int, pname: Int): Int = 4
+
+  def glUniform1i(location: Int, v0: Int): Unit = ()
+  def glUniform1f(location: Int, v0: Float): Unit = ()
+  def glUniform2f(location: Int, v0: Float, v1: Float): Unit = ()
+  def glUniform3f(location: Int, v0: Float, v1: Float, v2: Float): Unit = ()
+  def glUniform4f(location: Int, v0: Float, v1: Float, v2: Float, v3: Float): Unit = ()
+  def glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatBuffer): Unit = ()
+
+  def glGenFramebuffers(): Int = 9
+  def glBindFramebuffer(target: Int, framebuffer: Int): Unit = ()
+  def glDrawBuffer(buf: Int): Unit = ()
+  def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit = ()
+  def glDeleteFramebuffers(framebuffer: Int): Unit = ()
+
+  def glDrawArrays(mode: Int, first: Int, count: Int): Unit = ()
+  def glDrawArraysInstanced(mode: Int, first: Int, count: Int, primcount: Int): Unit = ()
+
+  def glTexImage3D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      depth: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit = ()
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: FloatBuffer
+  ): Unit = ()
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit = ()
+
+  def glBindTexture(target: Int, texture: Int): Unit = ()
+  def glGenTextures(): Int = 11
+
+  def glDeleteTextures(texture: Int): Unit = ()
+  def glActiveTexture(textureSlot: Int): Unit = ()
+  def glGenerateMipmap(target: Int): Unit = ()
+  def glTexParameteri(target: Int, pname: Int, param: Int): Unit = ()
+
+  def glDeleteVertexArrays(array: Int): Unit = ()
+  def glBindVertexArray(array: Int): Unit = ()
+  def glGenVertexArrays(): Int = 13
+
+  def glDeleteBuffers(buffer: Int): Unit = ()
+  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit = ()
+  def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit = ()
+  def glBufferData(target: Int, size: Long, usage: Int): Unit = ()
+  def glBindBuffer(target: Int, buffer: Int): Unit = ()
+  def glGenBuffers(): Int = 17
+
+  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = ()
+  def glVertexAttribIPointer(index: Int, size: Int, dataType: Int, stride: Int, pointer: Long): Unit = ()
+  def glVertexAttribPointer(
+      index: Int,
+      size: Int,
+      dataType: Int,
+      normalized: Boolean,
+      stride: Int,
+      pointer: Long
+  ): Unit = ()
+  def glEnableVertexAttribArray(index: Int): Unit = ()
+
+  def glGetError(): Int = 0
+  def glClear(mask: Int): Unit = ()
+  def glDepthFunc(func: Int): Unit = ()
+  def glBlendFunc(sfactor: Int, dfactor: Int): Unit = ()
+  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = ()
+  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = ()
+  def glDisable(target: Int): Unit = ()
+  def glEnable(target: Int): Unit = ()
+
+  def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit = ()
+}
+
+object RealGL extends GLWrapper {
+  def createCapabilities(): GLCapabilitiesWrapper = new RealGLCapabilities(GL.createCapabilities())
+  def getCapabilities: GLCapabilitiesWrapper = new RealGLCapabilities(GL.getCapabilities)
+
+  def glCreateShader(shaderType: Int): Int = GL20.glCreateShader(shaderType)
+  def glShaderSource(shader: Int, string: String): Unit = GL20.glShaderSource(shader, string)
+  def glCompileShader(shader: Int): Unit = GL20.glCompileShader(shader)
+  def glGetShaderi(shader: Int, pname: Int): Int = GL20.glGetShaderi(shader, pname)
+  def glGetShaderInfoLog(shader: Int, maxLength: Int): String = GL20.glGetShaderInfoLog(shader, maxLength)
+  def glDeleteShader(shader: Int): Unit = GL20.glDeleteShader(shader)
+
+  def glCreateProgram(): Int = GL20.glCreateProgram()
+  def glUseProgram(program: Int): Unit = GL20.glUseProgram(program)
+  def glLinkProgram(program: Int): Unit = GL20.glLinkProgram(program)
+  def glDeleteProgram(program: Int): Unit = GL20.glDeleteProgram(program)
+
+  def glGetProgramInfoLog(program: Int, maxLength: Int): String = GL20.glGetProgramInfoLog(program, maxLength)
+  def glAttachShader(program: Int, shader: Int): Unit = GL20.glAttachShader(program, shader)
+  def glDetachShader(program: Int, shader: Int): Unit = GL20.glDetachShader(program, shader)
+  def glGetUniformLocation(program: Int, name: String): Int = GL20.glGetUniformLocation(program, name)
+  def glGetAttribLocation(program: Int, name: String): Int = GL20.glGetAttribLocation(program, name)
+  def glBindAttribLocation(program: Int, index: Int, name: String): Unit =
+    GL20.glBindAttribLocation(program, index, name)
+  def glGetProgrami(program: Int, pname: Int): Int = GL20.glGetProgrami(program, pname)
+
+  def glUniform1i(location: Int, v0: Int): Unit = GL20.glUniform1i(location, v0)
+  def glUniform1f(location: Int, v0: Float): Unit = GL20.glUniform1f(location, v0)
+  def glUniform2f(location: Int, v0: Float, v1: Float): Unit = GL20.glUniform2f(location, v0, v1)
+  def glUniform3f(location: Int, v0: Float, v1: Float, v2: Float): Unit = GL20.glUniform3f(location, v0, v1, v2)
+  def glUniform4f(location: Int, v0: Float, v1: Float, v2: Float, v3: Float): Unit =
+    GL20.glUniform4f(location, v0, v1, v2, v3)
+  def glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatBuffer): Unit =
+    GL20.glUniformMatrix4fv(location, transpose, value)
+
+  def glGenFramebuffers(): Int = GL30.glGenFramebuffers()
+  def glBindFramebuffer(target: Int, framebuffer: Int): Unit = GL30.glBindFramebuffer(target, framebuffer)
+  def glDrawBuffer(buf: Int): Unit = GL11.glDrawBuffer(buf)
+  def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit =
+    GL32.glFramebufferTexture(target, attachment, texture, level)
+  def glDeleteFramebuffers(framebuffer: Int): Unit = GL30.glDeleteFramebuffers(framebuffer)
+
+  def glDrawArrays(mode: Int, first: Int, count: Int): Unit = GL11.glDrawArrays(mode, first, count)
+  def glDrawArraysInstanced(mode: Int, first: Int, count: Int, primcount: Int): Unit =
+    GL31.glDrawArraysInstanced(mode, first, count, primcount)
+
+  def glTexImage3D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      depth: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit =
+    GL12.glTexImage3D(target, level, internalFormat, width, height, depth, border, format, texelDataType, pixels)
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: FloatBuffer
+  ): Unit = GL11.glTexImage2D(target, level, internalFormat, width, height, border, format, texelDataType, pixels)
+
+  def glTexImage2D(
+      target: Int,
+      level: Int,
+      internalFormat: Int,
+      width: Int,
+      height: Int,
+      border: Int,
+      format: Int,
+      texelDataType: Int,
+      pixels: ByteBuffer
+  ): Unit = GL11.glTexImage2D(target, level, internalFormat, width, height, border, format, texelDataType, pixels)
+
+  def glBindTexture(target: Int, texture: Int): Unit = GL11.glBindTexture(target, texture)
+  def glGenTextures(): Int = GL11.glGenTextures()
+
+  def glDeleteTextures(texture: Int): Unit = GL11.glDeleteTextures(texture)
+  def glActiveTexture(textureSlot: Int): Unit = GL13.glActiveTexture(textureSlot)
+  def glGenerateMipmap(target: Int): Unit = GL30.glGenerateMipmap(target)
+  def glTexParameteri(target: Int, pname: Int, param: Int): Unit = GL11.glTexParameteri(target, pname, param)
+
+  def glDeleteVertexArrays(array: Int): Unit = GL30.glDeleteVertexArrays(array)
+  def glBindVertexArray(array: Int): Unit = GL30.glBindVertexArray(array)
+  def glGenVertexArrays(): Int = GL30.glGenVertexArrays()
+
+  def glDeleteBuffers(buffer: Int): Unit = GL15.glDeleteBuffers(buffer)
+  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit =
+    GL31.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size)
+  def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit = GL15.glBufferSubData(target, offset, data)
+  def glBufferData(target: Int, size: Long, usage: Int): Unit = GL15.glBufferData(target, size, usage)
+  def glBindBuffer(target: Int, buffer: Int): Unit = GL15.glBindBuffer(target, buffer)
+  def glGenBuffers(): Int = GL15.glGenBuffers()
+
+  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = GL33.glVertexAttribDivisor(index, divisor)
+  def glVertexAttribIPointer(index: Int, size: Int, dataType: Int, stride: Int, pointer: Long): Unit =
+    GL30.glVertexAttribIPointer(index, size, dataType, stride, pointer)
+  def glVertexAttribPointer(
+      index: Int,
+      size: Int,
+      dataType: Int,
+      normalized: Boolean,
+      stride: Int,
+      pointer: Long
+  ): Unit = GL20.glVertexAttribPointer(index, size, dataType, normalized, stride, pointer)
+  def glEnableVertexAttribArray(index: Int): Unit = GL20.glEnableVertexAttribArray(index)
+
+  def glGetError(): Int = GL11.glGetError()
+  def glClear(mask: Int): Unit = GL11.glClear(mask)
+  def glDepthFunc(func: Int): Unit = GL11.glDepthFunc(func)
+  def glBlendFunc(sfactor: Int, dfactor: Int): Unit = GL11.glBlendFunc(sfactor, dfactor)
+  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glScissor(x, y, width, height)
+  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glViewport(x, y, width, height)
+  def glDisable(target: Int): Unit = GL11.glDisable(target)
+  def glEnable(target: Int): Unit = GL11.glEnable(target)
+
+  def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit =
+    GL43.glDebugMessageCallback(callback, userParam)
 }
