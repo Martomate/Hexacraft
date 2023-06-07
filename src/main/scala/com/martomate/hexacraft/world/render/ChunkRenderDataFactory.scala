@@ -65,7 +65,16 @@ object ChunkRenderDataFactory:
       val brightness = sideBrightness(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
 
-      populateBuffer(chunkCoords, blocks, side, shouldRender, brightness, buf)
+      val brightnessFn = (coords: BlockRelWorld) => {
+        val cc = coords.getChunkRelWorld
+        val bc = coords.getBlockRelChunk
+
+        Option(chunkCache.getChunk(cc)) match
+          case Some(ch) => ch.lighting.getBrightness(bc)
+          case None     => 0
+      }
+
+      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf)
       buf.flip()
       buf
 
@@ -76,9 +85,9 @@ object ChunkRenderDataFactory:
       blocks: Array[LocalBlockState],
       side: Int,
       shouldRender: java.util.BitSet,
-      brightness: Array[Float],
+      brightness: BlockRelWorld => Float,
       buf: ByteBuffer
-  )(using Blocks: Blocks): Unit =
+  )(using Blocks: Blocks, cylSize: CylinderSize): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
 
     var i1 = 0
@@ -118,8 +127,9 @@ object ChunkRenderDataFactory:
                   case 2 => Seq(Offset(0, -1, 0))
                   case _ => Seq(Offset(0, -1, 0))
 
-          val brs = (offsets :+ Offset(0, 0, 0)).map(off => brightness(bCoords.offset(off).value)).filter(_ != 0)
-          buf.putFloat(if brs.isEmpty then brightness(bCoords.value) else brs.sum / brs.size)
+          val globalBCoords = bCoords.globalNeighbor(side, chunkCoords)
+          val brs = (offsets :+ Offset(0, 0, 0)).map(off => brightness(globalBCoords.offset(off))).filter(_ != 0)
+          buf.putFloat(if brs.isEmpty then brightness(globalBCoords) else brs.sum / brs.size)
           i2 += 1
 
       i1 += 1
