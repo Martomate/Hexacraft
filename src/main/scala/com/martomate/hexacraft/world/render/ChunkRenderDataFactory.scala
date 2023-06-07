@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.chunk.{Chunk, EntitiesInChunk}
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
 
 import java.nio.ByteBuffer
 import java.util
@@ -100,8 +100,26 @@ object ChunkRenderDataFactory:
 
         var i2 = 0
         while i2 < verticesPerInstance do
-          // TODO: change in the future to make lighting smoother
-          buf.putFloat(brightness(bCoords.value))
+          val offsets =
+            side match
+              case 0 | 1 =>
+                i2 match
+                  case 0 => Seq(Offset(1, 0, 0), Offset(1, 0, -1))
+                  case 1 => Seq(Offset(0, 0, 1), Offset(1, 0, 0))
+                  case 2 => Seq(Offset(-1, 0, 1), Offset(0, 0, 1))
+                  case 3 => Seq(Offset(-1, 0, 0), Offset(-1, 0, 1))
+                  case 4 => Seq(Offset(0, 0, -1), Offset(-1, 0, 0))
+                  case 5 => Seq(Offset(1, 0, -1), Offset(0, 0, -1))
+                  case _ => Seq(Offset(0, 0, 0), Offset(0, 0, 0))
+              case _ =>
+                i2 match
+                  case 0 => Seq(Offset(0, 1, 0))
+                  case 1 => Seq(Offset(0, 1, 0))
+                  case 2 => Seq(Offset(0, -1, 0))
+                  case _ => Seq(Offset(0, -1, 0))
+
+          val brs = (offsets :+ Offset(0, 0, 0)).map(off => brightness(bCoords.offset(off).value)).filter(_ != 0)
+          buf.putFloat(if brs.isEmpty then brightness(bCoords.value) else brs.sum / brs.size)
           i2 += 1
 
       i1 += 1
