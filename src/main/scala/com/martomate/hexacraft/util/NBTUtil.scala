@@ -4,10 +4,96 @@ import com.flowpowered.nbt.*
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import java.io.{File, IOException}
 import java.nio.file.Files
+import java.util
+import java.util.stream.Collectors
 import org.joml.Vector3d
-import scala.collection.immutable.ArraySeq
+import scala.collection.immutable.{ArraySeq, ListMap}
+import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
+
+enum Nbt {
+  case ByteTag(v: Byte)
+  case ShortTag(v: Short)
+  case IntTag(v: Int)
+  case LongTag(v: Long)
+  case FloatTag(v: Float)
+  case DoubleTag(v: Double)
+  case StringTag(v: String)
+
+  case ByteArrayTag(vs: ArraySeq[Byte])
+  case ShortArrayTag(vs: ArraySeq[Short])
+  case IntArrayTag(vs: ArraySeq[Int])
+
+  case ListTag[T <: Nbt](vs: Seq[T])
+  case MapTag(vs: ListMap[String, Nbt])
+}
+
+object Nbt {
+  def from(tag: CompoundTag): Nbt.MapTag =
+    var map = ListMap.empty[String, Nbt]
+    tag.getValue.values().forEach(tag => map += tag.getName -> convertTag(tag))
+    Nbt.MapTag(map)
+
+  extension (tag: Nbt.MapTag)
+    def toCompoundTag(name: String): CompoundTag =
+      val map = new CompoundMap()
+      tag.vs.foreach((n, t) => map.put(t.toRaw(n)))
+      new CompoundTag(name, map)
+
+  def convertTag(tag: Tag[_]): Nbt =
+    import com.flowpowered.nbt
+
+    tag match
+      case t: nbt.ByteTag       => Nbt.ByteTag(t.getValue)
+      case t: nbt.ShortTag      => Nbt.ShortTag(t.getValue)
+      case t: nbt.IntTag        => Nbt.IntTag(t.getValue)
+      case t: nbt.LongTag       => Nbt.LongTag(t.getValue)
+      case t: nbt.FloatTag      => Nbt.FloatTag(t.getValue)
+      case t: nbt.DoubleTag     => Nbt.DoubleTag(t.getValue)
+      case t: nbt.StringTag     => Nbt.StringTag(t.getValue)
+      case t: nbt.ByteArrayTag  => Nbt.ByteArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
+      case t: nbt.ShortArrayTag => Nbt.ShortArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
+      case t: nbt.IntArrayTag   => Nbt.IntArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
+      case t: nbt.ListTag[_] =>
+        Nbt.ListTag(
+          t.getValue
+            .stream()
+            .map(Nbt.convertTag)
+            .toArray(s => new Array[Nbt](s))
+            .toSeq
+        )
+      case t: nbt.CompoundTag => Nbt.from(t)
+
+  extension (t: Nbt)
+    def toRaw(name: String): Tag[?] =
+      import com.flowpowered.nbt
+
+      t match
+        case Nbt.ByteTag(v)        => new nbt.ByteTag(name, v)
+        case Nbt.ShortTag(v)       => new nbt.ShortTag(name, v)
+        case Nbt.IntTag(v)         => new nbt.IntTag(name, v)
+        case Nbt.LongTag(v)        => new nbt.LongTag(name, v)
+        case Nbt.FloatTag(v)       => new nbt.FloatTag(name, v)
+        case Nbt.DoubleTag(v)      => new nbt.DoubleTag(name, v)
+        case Nbt.StringTag(v)      => new nbt.StringTag(name, v)
+        case Nbt.ByteArrayTag(vs)  => new nbt.ByteArrayTag(name, vs.toArray)
+        case Nbt.ShortArrayTag(vs) => new nbt.ShortArrayTag(name, vs.toArray)
+        case Nbt.IntArrayTag(vs)   => new nbt.IntArrayTag(name, vs.toArray)
+        case Nbt.ListTag(vs) =>
+          import scala.jdk.CollectionConverters._
+          if vs.isEmpty
+          then new nbt.ListTag(name, classOf[nbt.EndTag], Nil.asJava)
+          else
+            new nbt.ListTag(
+              name,
+              vs.head.toRaw("").getClass.asInstanceOf[Class[Tag[?]]],
+              vs.map(_.toRaw("")).toList.asJava
+            )
+        case tag: Nbt.MapTag => tag.toCompoundTag(name)
+}
+
+case class NamedTag(name: String, v: Nbt)
 
 object NBTUtil {
   def getBoolean(tag: CompoundTag, key: String, default: => Boolean): Boolean = {
@@ -17,9 +103,9 @@ object NBTUtil {
   def getByte(tag: CompoundTag, key: String, default: => Byte): Byte = {
     if (tag == null) default
     else {
-      tag.getValue.get(key) match {
-        case t: ByteTag => t.getValue.byteValue()
-        case _          => default
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.ByteTag(v)) => v
+        case _                    => default
       }
     }
   }
@@ -27,9 +113,9 @@ object NBTUtil {
   def getShort(tag: CompoundTag, key: String, default: => Short): Short = {
     if (tag == null) default
     else {
-      tag.getValue.get(key) match {
-        case t: ShortTag => t.getValue.shortValue()
-        case _           => default
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.ShortTag(v)) => v
+        case _                     => default
       }
     }
   }
@@ -37,9 +123,9 @@ object NBTUtil {
   def getLong(tag: CompoundTag, key: String, default: => Long): Long = {
     if (tag == null) default
     else {
-      tag.getValue.get(key) match {
-        case t: LongTag => t.getValue.longValue()
-        case _          => default
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.LongTag(v)) => v
+        case _                    => default
       }
     }
   }
@@ -47,9 +133,9 @@ object NBTUtil {
   def getDouble(tag: CompoundTag, key: String, default: => Double): Double = {
     if (tag == null) default
     else {
-      tag.getValue.get(key) match {
-        case t: DoubleTag => t.getValue.doubleValue()
-        case _            => default
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.DoubleTag(v)) => v
+        case _                      => default
       }
     }
   }
@@ -57,9 +143,9 @@ object NBTUtil {
   def getString(tag: CompoundTag, key: String, default: => String): String = {
     if (tag == null) default
     else {
-      tag.getValue.get(key) match {
-        case t: StringTag => t.getValue
-        case _            => default
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.StringTag(v)) => v
+        case _                      => default
       }
     }
   }
@@ -67,20 +153,19 @@ object NBTUtil {
   def getString(tag: CompoundTag, key: String): Option[String] = {
     if (tag == null) None
     else {
-      tag.getValue.get(key) match {
-        case t: StringTag => Some(t.getValue)
-        case _            => None
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.StringTag(v)) => Some(v)
+        case _                      => None
       }
     }
   }
 
   def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] = {
-    import scala.jdk.CollectionConverters._
     if (tag == null) None
     else {
-      tag.getValue.get(key) match {
-        case t: ListTag[_] => Some(t.getValue.asScala.toSeq)
-        case _             => None
+      Nbt.from(tag).vs.get(key) match {
+        case Some(Nbt.ListTag(vs)) => Some(vs.map(_.toRaw("")))
+        case _                     => None
       }
     }
   }
@@ -88,9 +173,9 @@ object NBTUtil {
   def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
     if (tag == null) None
     else {
-      tag.getValue.get(name) match {
-        case t: Tag[_] => Some(t)
-        case null      => None
+      Nbt.from(tag).vs.get(name) match {
+        case Some(t) => Some(t.toRaw(name))
+        case _       => None
       }
     }
   }
@@ -98,9 +183,9 @@ object NBTUtil {
   def getCompoundTag(tag: CompoundTag, name: String): Option[CompoundTag] = {
     if (tag == null) None
     else {
-      tag.getValue.get(name) match {
-        case t: CompoundTag => Some(t)
-        case _              => None
+      Nbt.from(tag).vs.get(name) match {
+        case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs).toCompoundTag(name))
+        case _                    => None
       }
     }
   }
@@ -124,10 +209,8 @@ object NBTUtil {
     vector.set(x, y, z)
   }
 
-  def makeCompoundTag(name: String, children: Seq[Tag[_]]): CompoundTag = {
-    val map = new CompoundMap()
-    for (tag <- children) map.put(tag)
-    new CompoundTag(name, map)
+  def makeCompoundTag(name: String, children: Seq[Tag[?]]): CompoundTag = {
+    Nbt.MapTag(ListMap.from(children.map(t => t.getName -> Nbt.convertTag(t)))).toCompoundTag(name)
   }
 
   def makeListTag[T <: Tag[_]](name: String, clazz: Class[T], children: Seq[T]): ListTag[T] = {
