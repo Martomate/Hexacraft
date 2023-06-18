@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.ShortTag
 import java.io.File
@@ -14,7 +14,7 @@ object MigrationManager {
   def migrateIfNeeded(saveDir: File): Unit = {
     val saveFile = new File(saveDir, "world.dat")
     val nbtData = NBTUtil.loadTag(saveFile)
-    val version = NBTUtil.getShort(nbtData, "version", 1)
+    val version = NBTUtil.getShort(Nbt.from(nbtData), "version", 1)
 
     if (version > LatestVersion)
       throw new IllegalArgumentException(

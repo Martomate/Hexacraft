@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.{NBTUtil, RevokeTrackerFn}
+import com.martomate.hexacraft.util.{Nbt, NBTUtil, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.*
@@ -26,7 +26,7 @@ object ChunkColumn:
 
     val columnNBT = worldProvider.loadState(s"data/${coords.value}/column.dat")
 
-    val heightMap = NBTUtil.getShortArray(columnNBT, "heightMap") match
+    val heightMap = NBTUtil.getShortArray(Nbt.from(columnNBT), "heightMap") match
       case Some(heightNBT) => Array.tabulate(16, 16)((x, z) => heightNBT((x << 4) | z))
       case None            => Array.tabulate(16, 16)((x, z) => generatedHeightMap(x)(z))
 

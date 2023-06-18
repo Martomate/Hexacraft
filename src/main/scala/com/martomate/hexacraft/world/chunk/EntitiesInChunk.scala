@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
@@ -29,13 +29,13 @@ class EntitiesInChunk {
 
   def toNBT: Seq[Tag[_]] = {
     Seq(
-      NBTUtil.makeListTag(
-        "entities",
-        classOf[CompoundTag],
-        entities
-          .map(e => NBTUtil.makeCompoundTag("", e.toNBT))
-          .toList
-      )
+      Nbt
+        .ListTag(
+          entities
+            .map(e => Nbt.from(NBTUtil.makeCompoundTag("", e.toNBT)))
+            .toSeq
+        )
+        .toRaw("entities")
     )
   }
 }
@@ -46,13 +46,13 @@ object EntitiesInChunk:
   def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using CylinderSize, Blocks): EntitiesInChunk =
     val res = new EntitiesInChunk
 
-    for list <- NBTUtil.getList(nbt, "entities") do
+    for list <- NBTUtil.getList(Nbt.from(nbt), "entities") do
       for tag <- list do
-        val compTag = tag.asInstanceOf[CompoundTag]
+        val compTag = tag.asInstanceOf[Nbt.MapTag]
         val entType = NBTUtil.getString(compTag, "type", "")
         registry.get(entType) match
           case Some(factory) =>
-            res += factory.fromNBT(compTag)
+            res += factory.fromNBT(compTag.toCompoundTag(""))
           case None =>
             println(s"Entity-type '$entType' not found")
         res.needsToSave = true

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.entity.ai
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
@@ -77,7 +77,8 @@ class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
 object SimpleWalkAI:
   def create(using CylinderSize, Blocks): SimpleWalkAI = new SimpleWalkAI
 
-  def fromNBT(tag: CompoundTag)(using CylinderSize, Blocks): SimpleWalkAI = {
+  def fromNBT(tag2: CompoundTag)(using CylinderSize, Blocks): SimpleWalkAI = {
+    val tag = Nbt.from(tag2)
     val targetX = NBTUtil.getDouble(tag, "targetX", 0)
     val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
     val target = NBTUtil.getShort(tag, "timeout", 0)

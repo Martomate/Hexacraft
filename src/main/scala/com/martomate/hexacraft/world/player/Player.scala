@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{Nbt, NBTUtil}
 import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
@@ -43,10 +43,11 @@ object Player {
     player
   }
 
-  def fromNBT(tag: CompoundTag)(using Blocks): Player = {
+  def fromNBT(tag2: CompoundTag)(using Blocks): Player = {
+    val tag = Nbt.from(tag2)
     val inventory =
       NBTUtil.getCompoundTag(tag, "inventory") match
-        case Some(tag) => Inventory.fromNBT(tag)
+        case Some(tag) => Inventory.fromNBT(tag.toCompoundTag("inventory"))
         case None      => Inventory.default
 
     val player = new Player(inventory)

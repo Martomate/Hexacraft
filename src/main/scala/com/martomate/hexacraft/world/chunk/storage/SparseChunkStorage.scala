@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 
@@ -45,9 +45,9 @@ object SparseChunkStorage extends ChunkStorageFactory:
   override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): SparseChunkStorage =
     val result = new SparseChunkStorage
 
-    NBTUtil.getByteArray(nbt, "blocks") match
+    NBTUtil.getByteArray(Nbt.from(nbt), "blocks") match
       case Some(blocks) =>
-        val meta: Int => Byte = NBTUtil.getByteArray(nbt, "metadata").map(_.apply).getOrElse(_ => 0)
+        val meta: Int => Byte = NBTUtil.getByteArray(Nbt.from(nbt), "metadata").map(_.apply).getOrElse(_ => 0)
 
         for
           i <- blocks.indices

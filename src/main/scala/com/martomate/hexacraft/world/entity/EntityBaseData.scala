@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import com.flowpowered.nbt.{CompoundTag, Tag}
@@ -25,7 +25,8 @@ class EntityBaseData(
   )
 
 object EntityBaseData:
-  def fromNBT(tag: CompoundTag)(using CylinderSize): EntityBaseData =
+  def fromNBT(tag2: CompoundTag)(using CylinderSize): EntityBaseData =
+    val tag = Nbt.from(tag2)
     val position = NBTUtil
       .getCompoundTag(tag, "pos")
       .map(t => CylCoords(NBTUtil.setVector(t, new Vector3d)))

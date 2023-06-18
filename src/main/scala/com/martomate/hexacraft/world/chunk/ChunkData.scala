@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.BlocksInWorld
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
@@ -33,5 +33,5 @@ object ChunkData:
     val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(registry)
 
     val data = new ChunkData(storage, entitiesInChunk)
-    data.isDecorated = NBTUtil.getBoolean(nbt, "isDecorated", default = false)
+    data.isDecorated = NBTUtil.getBoolean(Nbt.from(nbt), "isDecorated", default = false)
     data

@@ -1,10 +1,11 @@
 package com.martomate.hexacraft.world.settings
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.MigrationManager
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import java.io.File
+import scala.collection.immutable.ListMap
 
 class WorldInfo(
     val worldName: String,
@@ -32,9 +33,10 @@ class WorldInfo(
 }
 
 object WorldInfo {
-  def fromNBT(nbtData: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
-    val generalSettings: CompoundTag =
-      NBTUtil.getCompoundTag(nbtData, "general").getOrElse(NBTUtil.makeCompoundTag("general", Seq()))
+  def fromNBT(nbt: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
+    val nbtData = Nbt.from(nbt)
+    val generalSettings: Nbt.MapTag =
+      NBTUtil.getCompoundTag(nbtData, "general").getOrElse(Nbt.emptyMap)
     val name: String =
       NBTUtil.getString(generalSettings, "name", worldSettings.name.getOrElse(saveDir.getName))
     val size: CylinderSize = CylinderSize(
@@ -42,10 +44,13 @@ object WorldInfo {
     )
     val gen: WorldGenSettings =
       WorldGenSettings.fromNBT(
-        NBTUtil.getCompoundTag(nbtData, "gen").getOrElse(NBTUtil.makeCompoundTag("gen", Seq())),
+        NBTUtil
+          .getCompoundTag(nbtData, "gen")
+          .map(_.toCompoundTag("gen"))
+          .getOrElse(NBTUtil.makeCompoundTag("gen", Seq())),
         worldSettings
       )
-    val player: CompoundTag = NBTUtil.getCompoundTag(nbtData, "player").orNull
+    val player: CompoundTag = NBTUtil.getCompoundTag(nbtData, "player").map(_.toCompoundTag("player")).orNull
 
     new WorldInfo(name, size, gen, player)
   }

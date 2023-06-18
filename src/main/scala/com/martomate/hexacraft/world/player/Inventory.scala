@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.{EventDispatcher, NBTUtil, RevokeTrackerFn, Tracker}
+import com.martomate.hexacraft.util.{EventDispatcher, Nbt, NBTUtil, RevokeTrackerFn, Tracker}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 
 import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
@@ -21,21 +21,13 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
 
   def toNBT: Seq[Tag[_]] =
     Seq(
-      NBTUtil.makeListTag(
-        "slots",
-        classOf[CompoundTag],
-        slots.toSeq.zipWithIndex
-          .filter(a => a._1.id != Blocks.Air.id)
-          .map { case (block, idx) =>
-            NBTUtil.makeCompoundTag(
-              "",
-              Seq(
-                new ByteTag("slot", idx.toByte),
-                new ByteTag("id", block.id)
-              )
-            )
-          }
-      )
+      Nbt
+        .ListTag(
+          slots.toSeq.zipWithIndex
+            .filter((block, _) => block.id != Blocks.Air.id)
+            .map((block, idx) => Nbt.makeMap("slot" -> Nbt.ByteTag(idx.toByte), "id" -> Nbt.ByteTag(block.id)))
+        )
+        .toRaw("slots")
     )
 
   override def equals(obj: Any): Boolean =
@@ -63,10 +55,10 @@ object Inventory {
     )
 
   def fromNBT(nbt: CompoundTag)(using Blocks): Inventory =
-    NBTUtil.getList(nbt, "slots") match
+    NBTUtil.getList(Nbt.from(nbt), "slots") match
       case Some(slotTags) =>
         val slots = slotTags.flatMap {
-          case s: CompoundTag =>
+          case s: Nbt.MapTag =>
             val idx = NBTUtil.getByte(s, "slot", -1)
             val id = NBTUtil.getByte(s, "id", -1)
 

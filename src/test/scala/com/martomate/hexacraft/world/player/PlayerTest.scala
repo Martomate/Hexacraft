@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.FakeBlockLoader
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
@@ -15,9 +15,10 @@ class PlayerTest extends FunSuite {
   test("saving should save all the fields as NBT") {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))
 
-    val nbt = player.toNBT
-    assertEquals(nbt.getName, "player")
+    val nbt2 = player.toNBT
+    assertEquals(nbt2.getName, "player")
 
+    val nbt = Nbt.from(nbt2)
     assert(NBTUtil.getCompoundTag(nbt, "position").isDefined)
     assert(NBTUtil.getCompoundTag(nbt, "rotation").isDefined)
     assert(NBTUtil.getCompoundTag(nbt, "velocity").isDefined)

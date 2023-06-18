@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.CompoundTag
 import com.flowpowered.nbt.stream.NBTInputStream
@@ -14,7 +14,7 @@ object WorldInfo {
     stream.close()
 
     val name = NBTUtil
-      .getCompoundTag(nbt, "general")
+      .getCompoundTag(Nbt.from(nbt), "general")
       .flatMap(general => NBTUtil.getString(general, "name"))
       .getOrElse(saveFile.getName)
     new WorldInfo(saveFile, name)

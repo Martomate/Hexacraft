@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.settings
 
-import com.martomate.hexacraft.util.NBTUtil
+import com.martomate.hexacraft.util.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import java.util.Random
@@ -28,7 +28,8 @@ class WorldGenSettings(
 }
 
 object WorldGenSettings {
-  def fromNBT(nbt: CompoundTag, defaultSettings: WorldSettings): WorldGenSettings = {
+  def fromNBT(nbt2: CompoundTag, defaultSettings: WorldSettings): WorldGenSettings = {
+    val nbt = Nbt.from(nbt2)
     new WorldGenSettings(
       NBTUtil.getLong(nbt, "seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
       NBTUtil.getDouble(nbt, "blockGenScale", 0.1),
