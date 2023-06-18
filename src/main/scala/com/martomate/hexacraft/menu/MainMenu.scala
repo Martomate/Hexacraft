@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.block.Blocks
 
 import java.io.File
 
-class MainMenu(saveFolder: File, tryQuit: () => Unit)(using scenes: WindowScenes)(using
+class MainMenu(saveFolder: File, tryQuit: () => Unit, multiplayerEnabled: Boolean)(using scenes: WindowScenes)(using
     GameMouse,
     GameKeyboard,
     GameWindow,
@@ -18,12 +18,13 @@ class MainMenu(saveFolder: File, tryQuit: () => Unit)(using scenes: WindowScenes
   addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f)) {
     scenes.pushScene(new WorldChooserMenu(saveFolder))
   })
-  /*
-  addComponent(Button("Multiplayer", LocationInfo16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
-    window.scenes.pushScene(new MultiplayerMenu)
-  })
-   */
-  addComponent(Button("Settings", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
+
+  if multiplayerEnabled then
+    addComponent(Button("Multiplayer", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f)) {
+      scenes.pushScene(new MultiplayerMenu(saveFolder))
+    })
+
+  addComponent(Button("Settings", LocationInfo.from16x9(0.4f, if multiplayerEnabled then 0.25f else 0.4f, 0.2f, 0.1f)) {
     scenes.pushScene(new SettingsMenu)
   })
   addComponent(Button("Quit", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f)) {

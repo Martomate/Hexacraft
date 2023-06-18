@@ -19,6 +19,8 @@ import org.lwjgl.glfw.GLFW.*
 class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with WindowExtras:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
+  private val multiplayerEnabled = isDebug
+
   private val _windowSize = new Vector2i(960, 540)
   def windowSize: Vector2ic = _windowSize
 
@@ -192,7 +194,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
       Shader.init()
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given Blocks = new Blocks
-      pushScene(new MainMenu(saveFolder, tryQuit))
+      pushScene(new MainMenu(saveFolder, tryQuit, multiplayerEnabled))
       resetMousePos()
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()

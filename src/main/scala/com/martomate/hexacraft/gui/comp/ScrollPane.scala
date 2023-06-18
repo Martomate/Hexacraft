@@ -39,8 +39,7 @@ class ScrollPane(
       then components.exists(_.handleEvent(event.withMouseTranslation(-xOffset, -yOffset)))
       else false
     case Event.ScrollEvent(xOffset, yOffset) =>
-      if !containsMouse then components.exists(_.handleEvent(event))
-      else
+      if containsMouse then
         val boxBounds = location
         val contentBounds = calcContentBounds()
 
@@ -55,6 +54,7 @@ class ScrollPane(
 
           this.yOffset = MathUtils.clamp(this.yOffset, limitTop - contentTop, limitBottom - contentBottom)
         true
+      else false
 
   private def containsMouse: Boolean =
     val mousePos = mouse.heightNormalizedPos(window.windowSize)
