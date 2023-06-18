@@ -96,131 +96,80 @@ object Nbt {
 case class NamedTag(name: String, v: Nbt)
 
 object NBTUtil {
-  def getBoolean(tag: CompoundTag, key: String, default: => Boolean): Boolean = {
+  def getBoolean(tag: CompoundTag, key: String, default: => Boolean): Boolean =
     getByte(tag, key, if (default) 1 else 0) == 1
-  }
 
-  def getByte(tag: CompoundTag, key: String, default: => Byte): Byte = {
-    if (tag == null) default
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.ByteTag(v)) => v
-        case _                    => default
-      }
-    }
-  }
+  def getByte(tag: CompoundTag, key: String, default: => Byte): Byte =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.ByteTag(v)) => v
+      case _                    => default
 
-  def getShort(tag: CompoundTag, key: String, default: => Short): Short = {
-    if (tag == null) default
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.ShortTag(v)) => v
-        case _                     => default
-      }
-    }
-  }
+  def getShort(tag: CompoundTag, key: String, default: => Short): Short =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.ShortTag(v)) => v
+      case _                     => default
 
-  def getLong(tag: CompoundTag, key: String, default: => Long): Long = {
-    if (tag == null) default
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.LongTag(v)) => v
-        case _                    => default
-      }
-    }
-  }
+  def getLong(tag: CompoundTag, key: String, default: => Long): Long =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.LongTag(v)) => v
+      case _                    => default
 
-  def getDouble(tag: CompoundTag, key: String, default: => Double): Double = {
-    if (tag == null) default
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.DoubleTag(v)) => v
-        case _                      => default
-      }
-    }
-  }
+  def getDouble(tag: CompoundTag, key: String, default: => Double): Double =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.DoubleTag(v)) => v
+      case _                      => default
 
-  def getString(tag: CompoundTag, key: String, default: => String): String = {
-    if (tag == null) default
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.StringTag(v)) => v
-        case _                      => default
-      }
-    }
-  }
+  def getString(tag: CompoundTag, key: String, default: => String): String =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.StringTag(v)) => v
+      case _                      => default
 
-  def getString(tag: CompoundTag, key: String): Option[String] = {
-    if (tag == null) None
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.StringTag(v)) => Some(v)
-        case _                      => None
-      }
-    }
-  }
+  def getString(tag: CompoundTag, key: String): Option[String] =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.StringTag(v)) => Some(v)
+      case _                      => None
 
-  def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] = {
-    if (tag == null) None
-    else {
-      Nbt.from(tag).vs.get(key) match {
-        case Some(Nbt.ListTag(vs)) => Some(vs.map(_.toRaw("")))
-        case _                     => None
-      }
-    }
-  }
+  def getList(tag: CompoundTag, key: String): Option[Seq[Tag[_]]] =
+    Nbt.from(tag).vs.get(key) match
+      case Some(Nbt.ListTag(vs)) => Some(vs.map(_.toRaw("")))
+      case _                     => None
 
-  def getTag(tag: CompoundTag, name: String): Option[Tag[_]] = {
-    if (tag == null) None
-    else {
-      Nbt.from(tag).vs.get(name) match {
-        case Some(t) => Some(t.toRaw(name))
-        case _       => None
-      }
-    }
-  }
+  def getTag(tag: CompoundTag, name: String): Option[Tag[_]] =
+    Nbt.from(tag).vs.get(name) match
+      case Some(t) => Some(t.toRaw(name))
+      case _       => None
 
-  def getCompoundTag(tag: CompoundTag, name: String): Option[CompoundTag] = {
-    if (tag == null) None
-    else {
-      Nbt.from(tag).vs.get(name) match {
-        case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs).toCompoundTag(name))
-        case _                    => None
-      }
-    }
-  }
+  def getCompoundTag(tag: CompoundTag, name: String): Option[CompoundTag] =
+    Nbt.from(tag).vs.get(name) match
+      case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs).toCompoundTag(name))
+      case _                    => None
 
-  def getByteArray(tag: CompoundTag, name: String): Option[ArraySeq[Byte]] = {
+  def getByteArray(tag: CompoundTag, name: String): Option[ArraySeq[Byte]] =
     NBTUtil
       .getTag(tag, name)
       .map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ByteArrayTag].getValue))
-  }
 
-  def getShortArray(tag: CompoundTag, name: String): Option[ArraySeq[Short]] = {
+  def getShortArray(tag: CompoundTag, name: String): Option[ArraySeq[Short]] =
     NBTUtil
       .getTag(tag, name)
       .map(tag => ArraySeq.unsafeWrapArray(tag.asInstanceOf[ShortArrayTag].getValue))
-  }
 
-  def setVector(tag: CompoundTag, vector: Vector3d): Vector3d = {
+  def setVector(tag: CompoundTag, vector: Vector3d): Vector3d =
     val x = NBTUtil.getDouble(tag, "x", vector.x)
     val y = NBTUtil.getDouble(tag, "y", vector.y)
     val z = NBTUtil.getDouble(tag, "z", vector.z)
     vector.set(x, y, z)
-  }
 
-  def makeCompoundTag(name: String, children: Seq[Tag[?]]): CompoundTag = {
+  def makeCompoundTag(name: String, children: Seq[Tag[?]]): CompoundTag =
     Nbt.MapTag(ListMap.from(children.map(t => t.getName -> Nbt.convertTag(t)))).toCompoundTag(name)
-  }
 
-  def makeListTag[T <: Tag[_]](name: String, clazz: Class[T], children: Seq[T]): ListTag[T] = {
+  def makeListTag[T <: Tag[_]](name: String, clazz: Class[T], children: Seq[T]): ListTag[T] =
     import scala.jdk.CollectionConverters._
     new ListTag[T](
       name,
       clazz,
       children.toList.asJava
     )
-  }
 
   def makeVectorTag(name: String, vector: Vector3d): CompoundTag = NBTUtil.makeCompoundTag(
     name,
@@ -231,43 +180,32 @@ object NBTUtil {
     )
   )
 
-  def saveTag(tag: Tag[_], nbtFile: File): Unit = {
+  def saveTag(tag: Tag[_], nbtFile: File): Unit =
     AsyncFileIO.submit(
       nbtFile,
       nbtFile => {
         nbtFile.getParentFile.mkdirs()
 
         val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
-        try {
-          nbtOut.writeTag(tag)
-        } finally {
-          nbtOut.close()
-        }
+        try nbtOut.writeTag(tag)
+        finally nbtOut.close()
       }
     )
-  }
 
-  def loadTag(file: File): CompoundTag = {
-    if (file.isFile) {
+  def loadTag(file: File): CompoundTag =
+    if file.isFile then
       val readOperation = AsyncFileIO.submit(
         file,
         file => {
           val stream = new NBTInputStream(Files.newInputStream(file.toPath))
-          try {
-            stream.readTag().asInstanceOf[CompoundTag]
-          } catch {
+          try stream.readTag().asInstanceOf[CompoundTag]
+          catch
             case e: IOException =>
               println(file.getAbsolutePath + " couldn't be read as NBT")
               throw e
-          } finally {
-            stream.close()
-          }
+          finally stream.close()
         }
       )
-
       Await.result(readOperation, Duration(5, SECONDS))
-    } else {
-      new CompoundTag("", new CompoundMap())
-    }
-  }
+    else new CompoundTag("", new CompoundMap())
 }

@@ -24,9 +24,12 @@ class NBTUtilTest extends FunSuite {
       assertEquals(method(tag, "tags", defaultValue), defaultValue)
     }
 
-    test(s"$name should return the default value if the tag or name is null") {
-      assertEquals(method(null, "tag", defaultValue), defaultValue)
+    test(s"$name should return the default value if the name is null") {
       assertEquals(method(tag, null, defaultValue), defaultValue)
+    }
+
+    test(s"$name should throw exception if the tag is null") {
+      intercept[NullPointerException](method(null, "tag", defaultValue))
     }
   }
 
@@ -44,26 +47,29 @@ class NBTUtilTest extends FunSuite {
       assertEquals(method(tag, "tags"), None)
     }
 
-    test(s"$name should return None if the tag or name is null") {
-      assertEquals(method(null, "tag"), None)
+    test(s"$name should return None if the name is null") {
       assertEquals(method(tag, null), None)
+    }
+
+    test(s"$name should throw exception if the tag is null") {
+      intercept[NullPointerException](method(null, "tag"))
     }
   }
 
-  val booleanCTag = makeCTag(new ByteTag("tag", 1.toByte))
-  val byteCTag = makeCTag(new ByteTag("tag", 42.toByte))
-  val shortCTag = makeCTag(new ShortTag("tag", 4242.toShort))
+  private val booleanCTag = makeCTag(new ByteTag("tag", 1.toByte))
+  private val byteCTag = makeCTag(new ByteTag("tag", 42.toByte))
+  private val shortCTag = makeCTag(new ShortTag("tag", 4242.toShort))
   //  intCTag
-  val longCTag = makeCTag(new LongTag("tag", 4242424242424242L))
+  private val longCTag = makeCTag(new LongTag("tag", 4242424242424242L))
   //  floatCTag
-  val doubleCTag = makeCTag(new DoubleTag("tag", 42.42424242424242d))
-  val stringCTag = makeCTag(new StringTag("tag", "42.42424242424242D"))
-  val compCTag = makeCTag(makeCTag(new ByteTag("tag", 42.toByte)))
-  val byteArr = Seq(42, 13, 42, -42).map(_.toByte).toArray
-  val byteArrCTag = makeCTag(new ByteArrayTag("tag", byteArr))
-  val shortArr = Seq(4242, 1313, 4242, -4242).map(_.toShort).toArray
-  val shortArrCTag = makeCTag(new ShortArrayTag("tag", shortArr))
-  val listCTag = makeCTag(
+  private val doubleCTag = makeCTag(new DoubleTag("tag", 42.42424242424242d))
+  private val stringCTag = makeCTag(new StringTag("tag", "42.42424242424242D"))
+  private val compCTag = makeCTag(makeCTag(new ByteTag("tag", 42.toByte)))
+  private val byteArr = Seq(42, 13, 42, -42).map(_.toByte).toArray
+  private val byteArrCTag = makeCTag(new ByteArrayTag("tag", byteArr))
+  private val shortArr = Seq(4242, 1313, 4242, -4242).map(_.toShort).toArray
+  private val shortArrCTag = makeCTag(new ShortArrayTag("tag", shortArr))
+  private val listCTag = makeCTag(
     new ListTag("tag", classOf[StringTag], java.util.Arrays.asList(new StringTag("", "a"), new StringTag("", "bcd")))
   )
 
@@ -110,7 +116,7 @@ class NBTUtilTest extends FunSuite {
     assertEquals(cTag, makeCTag(new DoubleTag("x", 1.23), new DoubleTag("y", 9.87), new DoubleTag("z", 4.32)))
   }
 
-  val bigTag = makeCTag(new ByteTag("byteTag", 13.toByte), makeCTag(new ShortTag("shortTag", 1212.toShort)))
+  private val bigTag = makeCTag(new ByteTag("byteTag", 13.toByte), makeCTag(new ShortTag("shortTag", 1212.toShort)))
   test("makeCompoundTag should return a CompoundTag with the provided tag in it") {
     assertEquals(NBTUtil.makeCompoundTag("tag", Seq(bigTag)), makeCTag(bigTag))
   }
