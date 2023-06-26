@@ -44,6 +44,7 @@ class RootArchTest extends FunSuite {
       .layer("Font", "com.martomate.hexacraft.font..")
       .layer("Game", "com.martomate.hexacraft.game..")
       .layer("GUI", "com.martomate.hexacraft.gui..")
+      .layer("Infra", "com.martomate.hexacraft.infra..")
       .layer("Main", "com.martomate.hexacraft.main..")
       .layer("Menu", "com.martomate.hexacraft.menu..")
       .layer("Renderer", "com.martomate.hexacraft.renderer..")
@@ -56,7 +57,10 @@ class RootArchTest extends FunSuite {
       .optionalLayer("OpenGL", "org.lwjgl.opengl..")
       .optionalLayer("GLFW", "org.lwjgl.glfw..")
       .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML"))
-      .whereLayer("Game", _.mayOnlyAccessLayers("root", "Font", "GUI", "Renderer", "Util", "World", "JOML", "NBT"))
+      .whereLayer(
+        "Game",
+        _.mayOnlyAccessLayers("root", "Font", "GUI", "Infra", "Renderer", "Util", "World", "JOML", "NBT")
+      )
       .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "JOML"))
       .whereLayer(
         "Main",
@@ -65,7 +69,7 @@ class RootArchTest extends FunSuite {
       .whereLayer("Menu", _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Util", "World", "JOML", "NBT"))
       .whereLayer("Renderer", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL"))
       .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT", "OpenGL", "LWJGL"))
-      .whereLayer("World", _.mayOnlyAccessLayers("Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT"))
+      .whereLayer("World", _.mayOnlyAccessLayers("Infra", "Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT"))
       .check(allClasses)
   }
 }

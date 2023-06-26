@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world
 
+import com.martomate.hexacraft.infra.{FileSystem, NbtIO}
 import com.martomate.hexacraft.util.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.ShortTag
@@ -8,24 +9,27 @@ import scala.util.{Success, Try}
 
 object MigrationManager {
   val LatestVersion: Short = 2
+}
 
+class MigrationManager(fs: FileSystem) {
   // TODO: write tests for old versions by using nullable infrastructure
 
   def migrateIfNeeded(saveDir: File): Unit = {
+    val nbtIO = new NbtIO(this.fs)
     val saveFile = new File(saveDir, "world.dat")
-    val nbtData = NBTUtil.loadTag(saveFile)
+    val nbtData = nbtIO.loadTag(saveFile)
     val version = NBTUtil.getShort(Nbt.from(nbtData), "version", 1)
 
-    if (version > LatestVersion)
+    if (version > MigrationManager.LatestVersion)
       throw new IllegalArgumentException(
         s"The world saved at ${saveDir.getAbsolutePath} was saved using a too new version. " +
-          s"The latest supported version is $LatestVersion but the version was $version."
+          s"The latest supported version is $MigrationManager.LatestVersion but the version was $version."
       )
 
-    for (v <- version.toInt until LatestVersion) {
+    for (v <- version.toInt until MigrationManager.LatestVersion) {
       migrateFrom(v, saveDir)
       nbtData.getValue.put("version", new ShortTag("version", (v + 1).toShort))
-      NBTUtil.saveTag(nbtData, saveFile)
+      nbtIO.saveTag(nbtData, saveFile)
     }
   }
 
@@ -37,6 +41,7 @@ object MigrationManager {
     case _ =>
   }
 
+  // TODO: migrate this function to use fs instead of File
   private def migrateFromV1(saveDir: File): Unit = {
     val oldChunksDir = new File(saveDir, "chunks")
     if (oldChunksDir.isDirectory) {

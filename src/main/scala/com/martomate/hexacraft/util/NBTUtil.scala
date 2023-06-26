@@ -2,7 +2,7 @@ package com.martomate.hexacraft.util
 
 import com.flowpowered.nbt.*
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
-import java.io.{File, IOException}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, IOException}
 import java.nio.file.Files
 import java.util
 import java.util.stream.Collectors
@@ -38,6 +38,23 @@ object Nbt {
   def emptyMap: Nbt.MapTag = Nbt.MapTag(ListMap.empty)
 
   def makeMap(elems: (String, Nbt)*): Nbt.MapTag = Nbt.MapTag(ListMap.from(elems))
+
+  def fromBinary(bytes: Array[Byte]): (String, Nbt) =
+    val stream = new NBTInputStream(new ByteArrayInputStream(bytes), false)
+    try
+      val tag = stream.readTag()
+      (tag.getName, convertTag(tag))
+    catch
+      case e: IOException =>
+        println(s"${bytes.toSeq} couldn't be read as NBT")
+        throw e
+    finally stream.close()
+
+  extension (tag: Nbt)
+    def toBinary(name: String = ""): Array[Byte] =
+      val bytes = new ByteArrayOutputStream()
+      new NBTOutputStream(bytes, false).writeTag(tag.toRaw(name))
+      bytes.toByteArray
 
   extension (tag: Nbt.MapTag)
     def toCompoundTag(name: String): CompoundTag =
@@ -178,33 +195,4 @@ object NBTUtil {
       new DoubleTag("z", vector.z)
     )
   )
-
-  def saveTag(tag: Tag[_], nbtFile: File): Unit =
-    AsyncFileIO.submit(
-      nbtFile,
-      nbtFile => {
-        nbtFile.getParentFile.mkdirs()
-
-        val nbtOut = new NBTOutputStream(Files.newOutputStream(nbtFile.toPath))
-        try nbtOut.writeTag(tag)
-        finally nbtOut.close()
-      }
-    )
-
-  def loadTag(file: File): CompoundTag =
-    if file.isFile then
-      val readOperation = AsyncFileIO.submit(
-        file,
-        file => {
-          val stream = new NBTInputStream(Files.newInputStream(file.toPath))
-          try stream.readTag().asInstanceOf[CompoundTag]
-          catch
-            case e: IOException =>
-              println(file.getAbsolutePath + " couldn't be read as NBT")
-              throw e
-          finally stream.close()
-        }
-      )
-      Await.result(readOperation, Duration(5, SECONDS))
-    else new CompoundTag("", new CompoundMap())
 }
