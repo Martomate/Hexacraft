@@ -34,25 +34,10 @@ class SparseChunkStorage(using Blocks: Blocks) extends ChunkStorage:
     val meta = Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
     ChunkStorage.NbtData(blocks = ids, metadata = meta)
 
-object SparseChunkStorage extends ChunkStorageFactory:
-  override def empty(using CylinderSize, Blocks): ChunkStorage = new SparseChunkStorage
+object SparseChunkStorage:
+  def empty(using CylinderSize, Blocks): ChunkStorage = new SparseChunkStorage
 
   def fromStorage(storage: ChunkStorage)(using Blocks): SparseChunkStorage =
     val result = new SparseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
-    result
-
-  override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): SparseChunkStorage =
-    val result = new SparseChunkStorage
-
-    NBTUtil.getByteArray(Nbt.from(nbt), "blocks") match
-      case Some(blocks) =>
-        val meta: Int => Byte = NBTUtil.getByteArray(Nbt.from(nbt), "metadata").map(_.apply).getOrElse(_ => 0)
-
-        for
-          i <- blocks.indices
-          if blocks(i) != 0
-        do result.setBlock(BlockRelChunk(i), new BlockState(Block.byId(blocks(i)), meta(i)))
-      case None =>
-
     result

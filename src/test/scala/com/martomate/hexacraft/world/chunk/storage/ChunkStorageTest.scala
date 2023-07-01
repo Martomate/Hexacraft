@@ -9,19 +9,19 @@ import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld
 import com.flowpowered.nbt.{ByteArrayTag, CompoundTag}
 import munit.FunSuite
 
-abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends FunSuite {
+abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends FunSuite {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
   implicit val Blocks: Blocks = new Blocks
 
   test("the storage should be correct for 0 blocks") {
-    val storage = storageFactory.empty
+    val storage = makeStorage
 
     assertEquals(storage.numBlocks, 0)
   }
 
   test("the storage should be correct for 1 block") {
-    val storage = storageFactory.empty
+    val storage = makeStorage
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
@@ -31,7 +31,7 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
   }
 
   test("the storage should be correct for many blocks") {
-    val storage = storageFactory.empty
+    val storage = makeStorage
 
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
       storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
@@ -40,7 +40,7 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
   }
 
   test("Air should not count as a block") {
-    val storage = storageFactory.empty
+    val storage = makeStorage
     val coords = coords350.getBlockRelChunk
 
     storage.setBlock(coords, new BlockState(Blocks.Dirt))
@@ -105,74 +105,6 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
       assertEquals(storage.getBlock(c), b)
   }
 
-  test("fromNBT should work with blocks and metadata") {
-    val tag = NBTUtil.makeCompoundTag(
-      "",
-      Seq(
-        new ByteArrayTag(
-          "blocks",
-          Array.tabulate(16 * 16 * 16) {
-            case 0 => Blocks.Dirt.id
-            case 1 => Blocks.Stone.id
-            case _ => 0
-          }
-        ),
-        new ByteArrayTag(
-          "metadata",
-          Array.tabulate(16 * 16 * 16) {
-            case 0 => 6
-            case 1 => 2
-            case _ => 0
-          }
-        )
-      )
-    )
-    val storage = storageFactory.fromNBT(tag)
-
-    assertEquals(storage.numBlocks, 2)
-    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
-  }
-
-  test("fromNBT should work without metadata") {
-    val tag = NBTUtil.makeCompoundTag(
-      "",
-      Seq(
-        new ByteArrayTag(
-          "blocks",
-          Array.tabulate(16 * 16 * 16) {
-            case 0 => Blocks.Dirt.id
-            case 1 => Blocks.Stone.id
-            case _ => 0
-          }
-        )
-      )
-    )
-    val storage = storageFactory.fromNBT(tag)
-
-    assertEquals(storage.numBlocks, 2)
-    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
-  }
-
-  test("fromNBT should work without blocks") {
-    val tag = NBTUtil.makeCompoundTag(
-      "",
-      Seq(
-        new ByteArrayTag(
-          "metadata",
-          Array.tabulate(16 * 16 * 16) {
-            case 0 => 6
-            case 1 => 2
-            case _ => 0
-          }
-        )
-      )
-    )
-    val storage = storageFactory.fromNBT(tag)
-
-    assertEquals(storage.numBlocks, 0)
-    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Air)
-  }
-
   test("toNBT should work") {
     val storage = makeStorage_Dirt359_Stone350
     val nbt = storage.toNBT
@@ -196,7 +128,7 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
   protected def cc0: ChunkRelWorld = ChunkRelWorld(0)
 
   protected def makeStorage_Dirt359_Stone350: ChunkStorage = {
-    val storage = storageFactory.empty
+    val storage = makeStorage
     fillStorage_Dirt359_Stone350(storage)
     storage
   }

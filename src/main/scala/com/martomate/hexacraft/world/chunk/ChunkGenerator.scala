@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, Nbt}
 import com.martomate.hexacraft.world.{BlocksInWorld, WorldProvider}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
@@ -25,7 +25,7 @@ class ChunkGenerator(
     val nbt = worldProvider.loadState(filePath)
 
     if (!nbt.getValue.isEmpty) {
-      ChunkData.fromNBT(nbt)(registry)
+      ChunkData.fromNBT(Nbt.from(nbt))(registry)
     } else {
       val storage: ChunkStorage = new DenseChunkStorage
       val column = world.provideColumn(coords.getColumnRelWorld)

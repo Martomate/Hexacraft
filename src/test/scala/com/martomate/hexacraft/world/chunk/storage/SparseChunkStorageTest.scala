@@ -7,7 +7,7 @@ import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import com.flowpowered.nbt.CompoundTag
 
-class SparseChunkStorageTest extends ChunkStorageTest(SparseChunkStorage) {
+class SparseChunkStorageTest extends ChunkStorageTest(new SparseChunkStorage) {
   test("isDense should be false") {
     val storage = new SparseChunkStorage
 

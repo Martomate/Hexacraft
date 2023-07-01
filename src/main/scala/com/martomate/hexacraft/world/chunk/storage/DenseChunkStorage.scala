@@ -44,19 +44,19 @@ class DenseChunkStorage extends ChunkStorage:
   def toNBT: ChunkStorage.NbtData =
     ChunkStorage.NbtData(blocks = blockTypes.toArray, metadata = metadata.toArray)
 
-object DenseChunkStorage extends ChunkStorageFactory:
-  override def empty(using CylinderSize, Blocks): ChunkStorage = new DenseChunkStorage
-
+object DenseChunkStorage:
   def fromStorage(storage: ChunkStorage): DenseChunkStorage =
     val result = new DenseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result
 
-  override def fromNBT(nbt: CompoundTag)(using CylinderSize, Blocks): DenseChunkStorage =
+  def fromNBT(blocks: Array[Byte], metadata: Option[Array[Byte]])(using
+      CylinderSize,
+      Blocks
+  ): DenseChunkStorage =
     val storage = new DenseChunkStorage
 
-    val blocks = NBTUtil.getByteArray(Nbt.from(nbt), "blocks").map(_.apply).getOrElse(_ => 0)
-    val meta = NBTUtil.getByteArray(Nbt.from(nbt), "metadata").map(_.apply).getOrElse(_ => 0)
+    val meta = metadata.map(_.apply).getOrElse(_ => 0)
 
     for i <- storage.blockTypes.indices do
       storage.blockTypes(i) = blocks(i)
