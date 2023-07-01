@@ -9,6 +9,7 @@ import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.entity.Entity
 
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -53,15 +54,19 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
   private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
+  private val players = ArrayBuffer.empty[Entity]
+  def addPlayer(player: Entity): Unit = players += player
+  def removePlayer(player: Entity): Unit = players -= player
+
   private def updateChunkIfPresent(coords: ChunkRelWorld) =
     world.getChunk(coords) match
       case Some(ch) =>
         ch.initLightingIfNeeded(lightPropagator)
 
         val renderData: ChunkRenderData =
-          if ch.blocks.numBlocks == 0
+          if ch.blocks.isEmpty
           then ChunkRenderData.empty
-          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks.allBlocks, world)
+          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world)
 
         chunkHandler.setChunkRenderData(coords, renderData)
         true
@@ -179,8 +184,9 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       for
         c <- chunksToRender
         ch <- world.getChunk(c)
-        if ch.entities.count > 0
       do entityDataList ++= EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
+
+      entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
       for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do
         val data = partLists.flatMap(_.parts)

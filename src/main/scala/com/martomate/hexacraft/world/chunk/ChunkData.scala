@@ -1,16 +1,25 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
+import com.martomate.hexacraft.util.Result.{Err, Ok}
 import com.martomate.hexacraft.world.BlocksInWorld
-import com.martomate.hexacraft.world.block.Blocks
-import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
-import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-import com.martomate.hexacraft.world.entity.EntityRegistry
+import com.martomate.hexacraft.world.block.{Blocks, BlockState}
+import com.martomate.hexacraft.world.chunk.storage.{
+  ChunkStorage,
+  DenseChunkStorage,
+  LocalBlockState,
+  SparseChunkStorage
+}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, Tag}
+import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 
-class ChunkData(var storage: ChunkStorage, val entities: EntitiesInChunk)(using CylinderSize, Blocks):
-  var isDecorated: Boolean = false
+class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize, Blocks):
+  private var _isDecorated: Boolean = false
+  def isDecorated: Boolean = _isDecorated
 
   def optimizeStorage(): Unit =
     if storage.isDense then {
@@ -21,17 +30,52 @@ class ChunkData(var storage: ChunkStorage, val entities: EntitiesInChunk)(using 
       then storage = DenseChunkStorage.fromStorage(storage)
     }
 
-  def toNBT: Seq[Tag[_]] =
-    storage.toNBT ++ entities.toNBT :+ new ByteTag("isDecorated", isDecorated)
+  def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
+  def setBlock(coords: BlockRelChunk, block: BlockState): Unit = storage.setBlock(coords, block)
+  def allBlocks: Array[LocalBlockState] = storage.allBlocks
+
+  def addEntity(entity: Entity): Unit = entities += entity
+  def removeEntity(entity: Entity): Unit = entities -= entity
+  def allEntities: Seq[Entity] = entities.toSeq
+
+  def setDecorated(): Unit = _isDecorated = true
+
+  def toNBT: Nbt.MapTag =
+    val storageNbt = storage.toNBT
+
+    Nbt.makeMap(
+      "blocks" -> Nbt.ByteArrayTag(storageNbt.blocks),
+      "metadata" -> Nbt.ByteArrayTag(storageNbt.metadata),
+      "entities" -> Nbt.ListTag(allEntities.map(e => e.toNBT)),
+      "isDecorated" -> Nbt.ByteTag(_isDecorated)
+    )
 
 object ChunkData:
   def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): ChunkData =
-    new ChunkData(storage, EntitiesInChunk.empty)
+    new ChunkData(storage, mutable.ArrayBuffer.empty)
 
   def fromNBT(nbt: CompoundTag)(registry: EntityRegistry)(using CylinderSize, Blocks): ChunkData =
+    val nbt2 = Nbt.from(nbt)
     val storage = DenseChunkStorage.fromNBT(nbt)
-    val entitiesInChunk = EntitiesInChunk.fromNBT(nbt)(registry)
 
-    val data = new ChunkData(storage, entitiesInChunk)
-    data.isDecorated = NBTUtil.getBoolean(Nbt.from(nbt), "isDecorated", default = false)
+    val entities =
+      NBTUtil.getList(nbt2, "entities") match
+        case Some(tags) => entitiesFromNbt(tags.map(_.asInstanceOf[Nbt.MapTag]), registry)
+        case None       => Nil
+
+    val data = new ChunkData(storage, mutable.ArrayBuffer.from(entities))
+    data._isDecorated = NBTUtil.getBoolean(nbt2, "isDecorated", default = false)
     data
+
+  private def entitiesFromNbt(list: Seq[Nbt.MapTag], registry: EntityRegistry)(using
+      CylinderSize,
+      Blocks
+  ): Iterable[Entity] =
+    val entities = mutable.ArrayBuffer.empty[Entity]
+
+    for tag <- list do
+      Entity.fromNbt(tag, registry) match
+        case Ok(entity)   => entities += entity
+        case Err(message) => println(message)
+
+    entities

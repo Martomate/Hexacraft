@@ -12,24 +12,39 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 
-enum Nbt {
-  case ByteTag(v: Byte)
-  case ShortTag(v: Short)
-  case IntTag(v: Int)
-  case LongTag(v: Long)
-  case FloatTag(v: Float)
-  case DoubleTag(v: Double)
-  case StringTag(v: String)
-
-  case ByteArrayTag(vs: ArraySeq[Byte])
-  case ShortArrayTag(vs: ArraySeq[Short])
-  case IntArrayTag(vs: ArraySeq[Int])
-
-  case ListTag[T <: Nbt](vs: Seq[T])
-  case MapTag(vs: ListMap[String, Nbt])
-}
+sealed trait Nbt
 
 object Nbt {
+  case class ByteTag(v: Byte) extends Nbt
+  object ByteTag {
+    def apply(b: Boolean): ByteTag = ByteTag(if b then 1.toByte else 0.toByte)
+  }
+
+  case class ShortTag(v: Short) extends Nbt
+
+  case class IntTag(v: Int) extends Nbt
+
+  case class LongTag(v: Long) extends Nbt
+
+  case class FloatTag(v: Float) extends Nbt
+
+  case class DoubleTag(v: Double) extends Nbt
+
+  case class StringTag(v: String) extends Nbt
+
+  case class ByteArrayTag(vs: ArraySeq[Byte]) extends Nbt
+  object ByteArrayTag {
+    def apply(arr: Array[Byte]): ByteArrayTag = ByteArrayTag(ArraySeq.unsafeWrapArray(arr))
+  }
+
+  case class ShortArrayTag(vs: ArraySeq[Short]) extends Nbt
+
+  case class IntArrayTag(vs: ArraySeq[Int]) extends Nbt
+
+  case class ListTag[T <: Nbt](vs: Seq[T]) extends Nbt
+
+  case class MapTag(vs: ListMap[String, Nbt]) extends Nbt
+
   def from(tag: CompoundTag): Nbt.MapTag =
     var map = ListMap.empty[String, Nbt]
     tag.getValue.values().forEach(tag => map += tag.getName -> convertTag(tag))
@@ -61,6 +76,9 @@ object Nbt {
       val map = new CompoundMap()
       tag.vs.foreach((n, t) => map.put(t.toRaw(n)))
       new CompoundTag(name, map)
+
+    def withField(name: String, value: Nbt): Nbt.MapTag =
+      MapTag(tag.vs + (name -> value))
 
   def convertTag(tag: Tag[_]): Nbt =
     import com.flowpowered.nbt

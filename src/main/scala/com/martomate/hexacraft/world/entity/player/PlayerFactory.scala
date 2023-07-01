@@ -3,18 +3,18 @@ package com.martomate.hexacraft.world.entity.player
 import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.entity.{EntityBaseData, EntityFactory, EntityModelLoader}
+import com.martomate.hexacraft.world.entity.{EntityBaseData, EntityFactory, EntityModel, EntityModelLoader}
 import com.martomate.hexacraft.world.entity.ai.{EntityAI, SimpleWalkAI}
 
 import com.flowpowered.nbt.CompoundTag
 
-class PlayerFactory(using EntityModelLoader) extends EntityFactory:
+class PlayerFactory(makeModel: () => EntityModel) extends EntityFactory:
   override def atStartPos(pos: CylCoords)(using CylinderSize, Blocks): PlayerEntity =
-    val model = summon[EntityModelLoader].load("player")
+    val model = makeModel()
     new PlayerEntity(model, new EntityBaseData(position = pos), SimpleWalkAI.create)
 
   override def fromNBT(tag: CompoundTag)(using CylinderSize, Blocks): PlayerEntity =
-    val model = summon[EntityModelLoader].load("player")
+    val model = makeModel()
     val baseData = EntityBaseData.fromNBT(tag)
     val ai: EntityAI =
       NBTUtil.getCompoundTag(Nbt.from(tag), "ai") match

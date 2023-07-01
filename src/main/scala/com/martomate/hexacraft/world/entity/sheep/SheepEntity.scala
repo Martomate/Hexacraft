@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.entity.sheep
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
@@ -28,6 +28,8 @@ class SheepEntity(
     model.tick()
   }
 
-  override def toNBT: Seq[Tag[_]] =
-    super.toNBT :+ new StringTag("type", "sheep") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
+  override def toNBT: Nbt.MapTag =
+    super.toNBT
+      .withField("type", Nbt.StringTag("sheep"))
+      .withField("ai", Nbt.from(NBTUtil.makeCompoundTag("ai", ai.toNBT)))
 }

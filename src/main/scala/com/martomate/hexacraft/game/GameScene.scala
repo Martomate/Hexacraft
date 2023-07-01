@@ -11,11 +11,14 @@ import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
-import com.martomate.hexacraft.world.entity.EntityModelLoader
+import com.martomate.hexacraft.world.entity.{EntityBaseData, EntityModel, EntityModelLoader}
+import com.martomate.hexacraft.world.entity.player.ControlledPlayerEntity
 import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
+import com.martomate.hexacraft.world.settings.WorldInfo
 
+import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f
@@ -36,22 +39,35 @@ class GameScene(worldProvider: WorldProvider)(using
   private val crosshairRenderer: Renderer =
     new Renderer(crosshairVAO, OpenGL.PrimitiveMode.Lines) with NoDepthTest
 
-  private val world = World(worldProvider)
+  given entityModelLoader: EntityModelLoader = new EntityModelLoader()
+  private val playerModel: EntityModel = entityModelLoader.load("player")
+  private val sheepModel: EntityModel = entityModelLoader.load("sheep")
+
+  private val worldInfo = worldProvider.getWorldInfo
+  private val world = World(worldProvider, worldInfo)
   import world.size.impl
+
+  val player: Player = makePlayer(worldInfo.player)
+
+  private val otherPlayer: ControlledPlayerEntity =
+    new ControlledPlayerEntity(playerModel, new EntityBaseData(CylCoords(player.position)))
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world, window.framebufferSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
+  // worldRenderer.addPlayer(otherPlayer)
+  otherPlayer.setPosition(otherPlayer.position.offset(-2, -2, -1))
+
   val camera: Camera = new Camera(makeCameraProjection)
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
-  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, world.player)
+  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, player)
   private val playerPhysicsHandler: PlayerPhysicsHandler =
-    new PlayerPhysicsHandler(world.player, world.collisionDetector)
+    new PlayerPhysicsHandler(player, world.collisionDetector)
 
   private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
 
-  private val toolbar: Toolbar = makeToolbar(world.player)
+  private val toolbar: Toolbar = makeToolbar(player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
@@ -65,6 +81,12 @@ class GameScene(worldProvider: WorldProvider)(using
 
   setUniforms()
   setUseMouse(true)
+
+  saveWorldInfo()
+
+  private def saveWorldInfo(): Unit =
+    val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
+    worldProvider.saveState(worldTag, "world.dat")
 
   override def onReloadedResources(): Unit =
     setUniforms()
@@ -87,7 +109,7 @@ class GameScene(worldProvider: WorldProvider)(using
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
       if world.getBlock(newCoords).blockType == Blocks.Air
-      then world.setBlock(newCoords, new BlockState(world.player.blockInHand))
+      then world.setBlock(newCoords, new BlockState(player.blockInHand))
     case GLFW_KEY_ESCAPE =>
       scenes.pushScene(new PauseMenu(this.scenes, this.setPaused))
       setPaused(true)
@@ -102,22 +124,22 @@ class GameScene(worldProvider: WorldProvider)(using
 
         setUseMouse(false)
         isInPopup = true
-        scenes.pushScene(new InventoryScene(world.player.inventory, closeScene))
+        scenes.pushScene(new InventoryScene(player.inventory, closeScene))
     case GLFW_KEY_M =>
       setUseMouse(!moveWithMouse)
     case GLFW_KEY_F =>
-      world.player.flying = !world.player.flying
+      player.flying = !player.flying
     case GLFW_KEY_F7 =>
       setDebugScreenVisible(debugScene == null)
     case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
       val idx = key - GLFW_KEY_1
       setSelectedItemSlot(idx)
     case GLFW_KEY_P =>
-      val startPos = CylCoords(world.player.position)
+      val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
     case GLFW_KEY_L =>
-      val startPos = CylCoords(world.player.position)
+      val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
     case GLFW_KEY_K =>
@@ -146,7 +168,7 @@ class GameScene(worldProvider: WorldProvider)(using
         if action == KeyAction.Press then handleKeyPress(key)
       case ScrollEvent(_, yOffset) if !isPaused && !isInPopup && moveWithMouse =>
         val dy = -math.signum(yOffset).toInt
-        if dy != 0 then setSelectedItemSlot((world.player.selectedItemSlot + dy + 9) % 9)
+        if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
       case MouseClickEvent(button, action, _, _) =>
         button match
           case MouseButton.Left  => leftMouseButtonTimer.active = action != MouseAction.Release
@@ -156,7 +178,7 @@ class GameScene(worldProvider: WorldProvider)(using
     true
 
   private def setSelectedItemSlot(itemSlot: Int): Unit =
-    world.player.selectedItemSlot = itemSlot
+    player.selectedItemSlot = itemSlot
     blockInHandRenderer.updateContent()
     toolbar.setSelectedIndex(itemSlot)
 
@@ -208,7 +230,7 @@ class GameScene(worldProvider: WorldProvider)(using
       playerInputHandler.tick(if moveWithMouse then mouse.moved else new Vector2d(), maxSpeed)
     if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
-    camera.setPositionAndRotation(world.player.position, world.player.rotation)
+    camera.setPositionAndRotation(player.position, player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
 
@@ -259,13 +281,13 @@ class GameScene(worldProvider: WorldProvider)(using
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit =
     if world.getBlock(coords).blockType == Blocks.Air
     then
-      val blockType = world.player.blockInHand
+      val blockType = player.blockInHand
       val state = new BlockState(blockType)
 
       val collides = world.collisionDetector.collides(
         blockType.bounds(state.metadata),
         BlockCoords(coords).toCylCoords,
-        world.player.bounds,
+        player.bounds,
         CylCoords(camera.position)
       )
 
@@ -274,6 +296,8 @@ class GameScene(worldProvider: WorldProvider)(using
 
   override def unload(): Unit =
     setMouseCursorInvisible(false)
+
+    saveWorldInfo()
 
     world.unload()
     worldRenderer.unload()
@@ -287,7 +311,7 @@ class GameScene(worldProvider: WorldProvider)(using
   override def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer =
-    val blockProvider = () => world.player.blockInHand
+    val blockProvider = () => player.blockInHand
     val offsetFunc = () => (1.5f, -0.9f)
     val brightnessFunc = () => world.getBrightness(camera.blockCoords)
 
@@ -328,3 +352,12 @@ class GameScene(worldProvider: WorldProvider)(using
       .rotateZ(-3.1415f / 12)
       .rotateX(3.1415f / 6)
       .translate(0, -0.25f, 0)
+
+  private def makePlayer(playerNbt: CompoundTag): Player =
+    if playerNbt != null
+    then Player.fromNBT(playerNbt)
+    else
+      val startX = (math.random() * 100 - 50).toInt
+      val startZ = (math.random() * 100 - 50).toInt
+      val startY = world.getHeight(startX, startZ) + 4
+      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)

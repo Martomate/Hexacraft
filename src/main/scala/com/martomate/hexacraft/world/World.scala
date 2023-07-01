@@ -12,7 +12,6 @@ import com.martomate.hexacraft.world.entity.player.PlayerFactory
 import com.martomate.hexacraft.world.entity.sheep.SheepFactory
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
-import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.settings.WorldInfo
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
@@ -25,16 +24,13 @@ object World:
 
   var shouldChillChunkLoader = false
 
-  def apply(provider: WorldProvider)(using Blocks): World =
-    val worldInfo = provider.getWorldInfo
-    new World(provider, worldInfo, makeEntityRegistry())
+  def apply(provider: WorldProvider, worldInfo: WorldInfo)(using Blocks, EntityModelLoader): World =
+    new World(provider, worldInfo, makeEntityRegistry)
 
-  private def makeEntityRegistry(): EntityRegistry =
-    given EntityModelLoader = new EntityModelLoader()
-
+  private def makeEntityRegistry(using modelLoader: EntityModelLoader): EntityRegistry =
     val entityTypes = Map(
-      "player" -> new PlayerFactory,
-      "sheep" -> new SheepFactory
+      "player" -> new PlayerFactory(() => modelLoader.load("player")),
+      "sheep" -> new SheepFactory(() => modelLoader.load("sheep"))
     )
     EntityRegistry.from(entityTypes)
 
@@ -63,8 +59,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
-  val player: Player = makePlayer
-
   private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private val dispatcher = new EventDispatcher[World.Event]
@@ -72,8 +66,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   trackEvents(worldPlanner.onWorldEvent _)
   trackEvents(chunkLoader.onWorldEvent _)
-
-  saveWorldData()
 
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
@@ -126,13 +118,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     for
       col <- columns.values
       ch <- col.allChunks
-      e <- ch.entities.allEntities.toSeq
+      e <- ch.entities
     do ch.removeEntity(e)
 
   private def chunkOfEntity(entity: Entity): Option[Chunk] =
     getChunk(CoordUtils.approximateChunkCoords(entity.position))
 
-  private def getHeight(x: Int, z: Int): Int =
+  def getHeight(x: Int, z: Int): Int =
     val coords = ColumnRelWorld(x >> 4, z >> 4)
     ensureColumnExists(coords).terrainHeight(x & 15, z & 15)
 
@@ -149,7 +141,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
     worldPlanner.decorate(ch)
 
-    for block <- ch.blocks.allBlocks do
+    for block <- ch.blocks do
       requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
 
       for side <- 0 until 8 do
@@ -209,7 +201,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     val entList = for
       col <- columns.values
       ch <- col.allChunks
-      ent <- ch.entities.allEntities
+      ent <- ch.entities
     yield (ch, ent, chunkOfEntity(ent))
 
     for
@@ -242,17 +234,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def onReloadedResources(): Unit = for col <- columns.values do col.onReloadedResources()
 
   def unload(): Unit =
-    saveWorldData()
-
     chunkLoader.unload()
     blockUpdateTimer.active = false
     for col <- columns.values do col.unload()
     columns.clear()
-
-  private def saveWorldData(): Unit =
-    val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
-
-    worldProvider.saveState(worldTag, "world.dat")
 
   private def onChunkEvent(event: Chunk.Event): Unit =
     event match
@@ -302,12 +287,3 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     lightPropagator.removeSunlight(chunk, blockCoords)
     if block.blockType.lightEmitted != 0 then
       lightPropagator.addTorchlight(chunk, blockCoords, block.blockType.lightEmitted)
-
-  private def makePlayer: Player =
-    if worldInfo.player != null
-    then Player.fromNBT(worldInfo.player)
-    else
-      val startX = (math.random() * 100 - 50).toInt
-      val startZ = (math.random() * 100 - 50).toInt
-      val startY = getHeight(startX, startZ) + 4
-      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)

@@ -29,10 +29,10 @@ class SparseChunkStorage(using Blocks: Blocks) extends ChunkStorage:
 
   def isDense: Boolean = false
 
-  def toNBT: Seq[Tag[_]] =
+  def toNBT: ChunkStorage.NbtData =
     val ids = Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.blockType.id).getOrElse(0))
     val meta = Array.tabulate[Byte](16 * 16 * 16)(i => blocks.get(i.toShort).map(_.metadata).getOrElse(0))
-    Seq(new ByteArrayTag("blocks", ids), new ByteArrayTag("metadata", meta))
+    ChunkStorage.NbtData(blocks = ids, metadata = meta)
 
 object SparseChunkStorage extends ChunkStorageFactory:
   override def empty(using CylinderSize, Blocks): ChunkStorage = new SparseChunkStorage

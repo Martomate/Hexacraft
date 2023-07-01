@@ -5,6 +5,10 @@ import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 
 import com.flowpowered.nbt.Tag
 
+object ChunkStorage {
+  case class NbtData(blocks: Array[Byte], metadata: Array[Byte])
+}
+
 abstract class ChunkStorage {
   def blockType(coords: BlockRelChunk): Block
 
@@ -17,7 +21,7 @@ abstract class ChunkStorage {
 
   def isDense: Boolean
 
-  def toNBT: Seq[Tag[_]]
+  def toNBT: ChunkStorage.NbtData
 }
 
 case class LocalBlockState(coords: BlockRelChunk, block: BlockState)

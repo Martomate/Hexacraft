@@ -18,7 +18,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
 
     for
-      LocalBlockState(c, b) <- chunk.blocks.allBlocks
+      LocalBlockState(c, b) <- chunk.blocks
       if b.blockType.lightEmitted != 0
     do lights(c) = b
 

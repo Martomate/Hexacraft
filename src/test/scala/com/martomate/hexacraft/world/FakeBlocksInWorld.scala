@@ -38,7 +38,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     val sb = new mutable.StringBuilder
     for (col <- cols.values) {
       for (ch <- col.allChunks) {
-        val blocksStr = ch.blocks.allBlocks.map(s => s"${s.coords} -> ${s.block.blockType.displayName}").mkString(", ")
+        val blocksStr = ch.blocks.map(s => s"${s.coords} -> ${s.block.blockType.displayName}").mkString(", ")
         sb.append(ch.coords).append(": ").append(blocksStr).append("\n")
       }
     }

@@ -2,21 +2,21 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
-import com.martomate.hexacraft.world.chunk.EntitiesInChunk
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
+import com.martomate.hexacraft.world.entity.Entity
 
 import org.joml.{Matrix4f, Vector4f}
 
 object EntityRenderDataFactory {
-  def getEntityRenderData(entities: EntitiesInChunk, side: Int, world: BlocksInWorld)(using
+  def getEntityRenderData(entities: Iterable[Entity], side: Int, world: BlocksInWorld)(using
       CylinderSize
   ): Iterable[EntityDataForShader] =
     val chunkCache = new ChunkCache(world)
 
     val tr = new Matrix4f
 
-    for ent <- entities.allEntities yield
+    for ent <- entities yield
       val baseT = ent.transform
       val model = ent.model
 

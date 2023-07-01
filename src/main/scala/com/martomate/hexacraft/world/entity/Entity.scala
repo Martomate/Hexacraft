@@ -1,12 +1,21 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil, Result}
+import com.martomate.hexacraft.util.Result.{Err, Ok}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
-import com.martomate.hexacraft.world.block.HexBox
+import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import com.flowpowered.nbt.Tag
 import org.joml.{Matrix4f, Vector3d}
+
+object Entity {
+  def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize, Blocks): Result[Entity, String] =
+    val entType = NBTUtil.getString(tag, "type", "")
+    registry.get(entType) match
+      case Some(factory) => Ok(factory.fromNBT(tag.toCompoundTag("")))
+      case None          => Err(s"Entity-type '$entType' not found")
+}
 
 class Entity(protected val data: EntityBaseData, val model: EntityModel) {
   def position: CylCoords = data.position
@@ -19,7 +28,14 @@ class Entity(protected val data: EntityBaseData, val model: EntityModel) {
 
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ()
 
-  def toNBT: Seq[Tag[_]] = data.toNBT
+  def toNBT: Nbt.MapTag =
+    val dataNbt = data.toNBT
+
+    Nbt.makeMap(
+      "pos" -> dataNbt.pos,
+      "velocity" -> dataNbt.velocity,
+      "rotation" -> dataNbt.rotation
+    )
 }
 
 // TODO: Create an Entity.Snapshot class that contains all the data needed for an entity, and make sure that an Entity

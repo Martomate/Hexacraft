@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.entity.player
 
-import com.martomate.hexacraft.util.{CylinderSize, NBTUtil}
+import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
@@ -28,6 +28,12 @@ class PlayerEntity(
     model.tick()
   }
 
-  override def toNBT: Seq[Tag[_]] =
-    super.toNBT :+ new StringTag("type", "player") :+ NBTUtil.makeCompoundTag("ai", ai.toNBT)
+  override def toNBT: Nbt.MapTag =
+    super.toNBT
+      .withField("type", Nbt.StringTag("player"))
+      .withField("ai", Nbt.from(NBTUtil.makeCompoundTag("ai", ai.toNBT)))
+}
+
+class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) extends Entity(initData, model) {
+  def setPosition(pos: CylCoords): Unit = this.data.position = pos
 }

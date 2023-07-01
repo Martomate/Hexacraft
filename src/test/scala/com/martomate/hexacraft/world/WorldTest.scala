@@ -5,10 +5,8 @@ import com.martomate.hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
-import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModel, EntityModelLoader}
-import com.martomate.hexacraft.world.entity.base.BasicEntityModel
-import com.martomate.hexacraft.world.entity.player.{PlayerEntity, PlayerEntityModel, PlayerFactory}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModelLoader}
 
 import munit.FunSuite
 
@@ -20,7 +18,7 @@ class WorldTest extends FunSuite {
 
   test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider)
+    val world = World(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     world.tick(camera)
@@ -45,7 +43,7 @@ class WorldTest extends FunSuite {
 
   test("the world should decorate new chunks") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider)
+    val world = World(provider, provider.getWorldInfo)
 
     val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
 
@@ -57,7 +55,7 @@ class WorldTest extends FunSuite {
     assert(chunk.isDecorated)
 
     // There should be a tree in the chunk
-    assert(chunk.blocks.allBlocks.exists(s => s.block.blockType == Blocks.Log))
+    assert(chunk.blocks.exists(s => s.block.blockType == Blocks.Log))
 
     // Clean up
     world.unload()
@@ -65,7 +63,7 @@ class WorldTest extends FunSuite {
 
   test("the world should load chunks close to the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider)
+    val world = World(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -88,7 +86,7 @@ class WorldTest extends FunSuite {
 
   test("the world should unload chunks far from the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider)
+    val world = World(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -119,7 +117,7 @@ class WorldTest extends FunSuite {
 
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider)
+    val world = World(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val entityPosition = CylCoords(1, 2, 3)

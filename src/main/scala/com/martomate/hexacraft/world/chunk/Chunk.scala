@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.chunk
 import com.martomate.hexacraft.util.{CylinderSize, EventDispatcher, NBTUtil, RevokeTrackerFn, Tracker}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
-import com.martomate.hexacraft.world.chunk.storage.ChunkStorage
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 import com.martomate.hexacraft.world.gen.WorldGenerator
@@ -28,9 +28,7 @@ object Chunk:
 
 class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
   private val chunkData: ChunkData = generator.loadData()
-
-  private def storage: ChunkStorage = chunkData.storage
-  private var needsToSave = false
+  private var needsToSave: Boolean = true
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -41,19 +39,24 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
       lighting.setInitialized()
       lightPropagator.initBrightnesses(this)
 
-  def entities: EntitiesInChunk = chunkData.entities
+  def entities: Seq[Entity] = chunkData.allEntities
 
-  def addEntity(entity: Entity): Unit = entities += entity
-  def removeEntity(entity: Entity): Unit = entities -= entity
+  def addEntity(entity: Entity): Unit =
+    chunkData.addEntity(entity)
+    needsToSave = true
 
-  def blocks: ChunkStorage = storage
+  def removeEntity(entity: Entity): Unit =
+    chunkData.removeEntity(entity)
+    needsToSave = true
 
-  def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
+  def blocks: Array[LocalBlockState] = chunkData.allBlocks
+
+  def getBlock(coords: BlockRelChunk): BlockState = chunkData.getBlock(coords)
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit =
     val before = getBlock(blockCoords)
     if before != block then
-      storage.setBlock(blockCoords, block)
+      chunkData.setBlock(blockCoords, block)
       needsToSave = true
 
       dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
@@ -66,7 +69,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
     chunkData.optimizeStorage()
 
-    tickEntities(entities.allEntities)
+    tickEntities(entities)
 
     @tailrec
     def tickEntities(ents: Iterable[Entity]): Unit =
@@ -74,19 +77,19 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
 
-  def saveIfNeeded(): Unit = if needsToSave || entities.needsToSave then save()
+  def saveIfNeeded(): Unit = if needsToSave then save()
 
   def unload(): Unit =
     saveIfNeeded()
 
   private def save(): Unit =
-    val chunkTag = NBTUtil.makeCompoundTag("chunk", chunkData.toNBT) // Add more tags with ++
+    val chunkTag = chunkData.toNBT.toCompoundTag("chunk")
     generator.saveData(chunkTag)
     needsToSave = false
 
   def isDecorated: Boolean = chunkData.isDecorated
   def setDecorated(): Unit =
     if !chunkData.isDecorated then
-      chunkData.isDecorated = true
+      chunkData.setDecorated()
       needsToSave = true
       save()

@@ -41,11 +41,8 @@ class DenseChunkStorage extends ChunkStorage:
   def numBlocks: Int = _numBlocks
   def isDense: Boolean = true
 
-  def toNBT: Seq[Tag[_]] =
-    Seq(
-      new ByteArrayTag("blocks", blockTypes.toArray),
-      new ByteArrayTag("metadata", metadata.toArray)
-    )
+  def toNBT: ChunkStorage.NbtData =
+    ChunkStorage.NbtData(blocks = blockTypes.toArray, metadata = metadata.toArray)
 
 object DenseChunkStorage extends ChunkStorageFactory:
   override def empty(using CylinderSize, Blocks): ChunkStorage = new DenseChunkStorage

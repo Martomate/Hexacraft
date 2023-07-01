@@ -100,7 +100,7 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
 
     val all = storage.allBlocks
 
-    assertEquals(all.size, storageSize)
+    assertEquals(all.length, storageSize)
     for (LocalBlockState(c, b) <- all)
       assertEquals(storage.getBlock(c), b)
   }
@@ -176,18 +176,11 @@ abstract class ChunkStorageTest(storageFactory: ChunkStorageFactory) extends Fun
   test("toNBT should work") {
     val storage = makeStorage_Dirt359_Stone350
     val nbt = storage.toNBT
-    assertEquals(nbt.size, 2)
 
-    val blocksTag = nbt(0)
-    assertEquals(blocksTag.getName, "blocks")
-    assert(blocksTag.isInstanceOf[ByteArrayTag])
-    val blocksArray = blocksTag.asInstanceOf[ByteArrayTag].getValue
+    val blocksArray = nbt.blocks
     assertEquals(blocksArray.length, 16 * 16 * 16)
 
-    val metadataTag = nbt(1)
-    assertEquals(metadataTag.getName, "metadata")
-    assert(metadataTag.isInstanceOf[ByteArrayTag])
-    val metadataArray = metadataTag.asInstanceOf[ByteArrayTag].getValue
+    val metadataArray = nbt.metadata
     assertEquals(metadataArray.length, 16 * 16 * 16)
 
     assertEquals(blocksArray(coords359.getBlockRelChunk.value), Blocks.Dirt.id)
