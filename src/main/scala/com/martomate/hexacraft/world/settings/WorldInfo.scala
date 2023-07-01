@@ -36,21 +36,21 @@ object WorldInfo {
   def fromNBT(nbt: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
     val nbtData = Nbt.from(nbt)
     val generalSettings: Nbt.MapTag =
-      NBTUtil.getCompoundTag(nbtData, "general").getOrElse(Nbt.emptyMap)
+      nbtData.getCompoundTag("general").getOrElse(Nbt.emptyMap)
     val name: String =
-      NBTUtil.getString(generalSettings, "name", worldSettings.name.getOrElse(saveDir.getName))
+      generalSettings.getString("name", worldSettings.name.getOrElse(saveDir.getName))
     val size: CylinderSize = CylinderSize(
-      NBTUtil.getByte(generalSettings, "worldSize", worldSettings.size.getOrElse(7))
+      generalSettings.getByte("worldSize", worldSettings.size.getOrElse(7))
     )
     val gen: WorldGenSettings =
       WorldGenSettings.fromNBT(
-        NBTUtil
-          .getCompoundTag(nbtData, "gen")
+        nbtData
+          .getCompoundTag("gen")
           .map(_.toCompoundTag("gen"))
           .getOrElse(NBTUtil.makeCompoundTag("gen", Seq())),
         worldSettings
       )
-    val player: CompoundTag = NBTUtil.getCompoundTag(nbtData, "player").map(_.toCompoundTag("player")).orNull
+    val player: CompoundTag = nbtData.getCompoundTag("player").map(_.toCompoundTag("player")).orNull
 
     new WorldInfo(name, size, gen, player)
   }

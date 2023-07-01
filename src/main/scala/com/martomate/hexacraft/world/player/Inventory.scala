@@ -54,13 +54,13 @@ object Inventory {
       )
     )
 
-  def fromNBT(nbt: CompoundTag)(using Blocks): Inventory =
-    NBTUtil.getList(Nbt.from(nbt), "slots") match
+  def fromNBT(nbt: Nbt.MapTag)(using Blocks): Inventory =
+    nbt.getList("slots") match
       case Some(slotTags) =>
         val slots = slotTags.flatMap {
           case s: Nbt.MapTag =>
-            val idx = NBTUtil.getByte(s, "slot", -1)
-            val id = NBTUtil.getByte(s, "id", -1)
+            val idx = s.getByte("slot", -1)
+            val id = s.getByte("id", -1)
 
             if idx != -1 && id != -1
             then Some(idx.toInt -> Block.byId(id))

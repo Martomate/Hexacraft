@@ -26,7 +26,7 @@ object ChunkColumn:
 
     val columnNBT = worldProvider.loadState(s"data/${coords.value}/column.dat")
 
-    val heightMap = NBTUtil.getShortArray(Nbt.from(columnNBT), "heightMap") match
+    val heightMap = Nbt.from(columnNBT).getShortArray("heightMap") match
       case Some(heightNBT) => Array.tabulate(16, 16)((x, z) => heightNBT((x << 4) | z))
       case None            => Array.tabulate(16, 16)((x, z) => generatedHeightMap(x)(z))
 

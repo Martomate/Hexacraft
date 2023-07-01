@@ -17,8 +17,8 @@ class PlayerFactory(makeModel: () => EntityModel) extends EntityFactory:
     val model = makeModel()
     val baseData = EntityBaseData.fromNBT(tag)
     val ai: EntityAI =
-      NBTUtil.getCompoundTag(Nbt.from(tag), "ai") match
-        case Some(t) => SimpleWalkAI.fromNBT(t.toCompoundTag("ai"))
+      Nbt.from(tag).getCompoundTag("ai") match
+        case Some(t) => SimpleWalkAI.fromNBT(t)
         case None    => SimpleWalkAI.create
 
     new PlayerEntity(model, baseData, ai)

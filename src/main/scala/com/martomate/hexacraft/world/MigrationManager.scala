@@ -18,7 +18,7 @@ class MigrationManager(fs: FileSystem) {
     val nbtIO = new NbtIO(this.fs)
     val saveFile = new File(saveDir, "world.dat")
     val nbtData = nbtIO.loadTag(saveFile)
-    val version = NBTUtil.getShort(Nbt.from(nbtData), "version", 1)
+    val version = Nbt.from(nbtData).getShort("version", 1)
 
     if (version > MigrationManager.LatestVersion)
       throw new IllegalArgumentException(

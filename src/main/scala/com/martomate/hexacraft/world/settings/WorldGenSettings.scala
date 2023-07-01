@@ -31,12 +31,12 @@ object WorldGenSettings {
   def fromNBT(nbt2: CompoundTag, defaultSettings: WorldSettings): WorldGenSettings = {
     val nbt = Nbt.from(nbt2)
     new WorldGenSettings(
-      NBTUtil.getLong(nbt, "seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
-      NBTUtil.getDouble(nbt, "blockGenScale", 0.1),
-      NBTUtil.getDouble(nbt, "heightMapGenScale", 0.02),
-      NBTUtil.getDouble(nbt, "blockDensityGenScale", 0.01),
-      NBTUtil.getDouble(nbt, "biomeHeightMapGenScale", 0.002),
-      NBTUtil.getDouble(nbt, "biomeHeightVariationGenScale", 0.002)
+      nbt.getLong("seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
+      nbt.getDouble("blockGenScale", 0.1),
+      nbt.getDouble("heightMapGenScale", 0.02),
+      nbt.getDouble("blockDensityGenScale", 0.01),
+      nbt.getDouble("biomeHeightMapGenScale", 0.002),
+      nbt.getDouble("biomeHeightVariationGenScale", 0.002)
     )
   }
 }

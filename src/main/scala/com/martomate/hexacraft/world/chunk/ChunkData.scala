@@ -55,20 +55,20 @@ object ChunkData:
     new ChunkData(storage, mutable.ArrayBuffer.empty)
 
   def fromNBT(nbt: Nbt.MapTag)(registry: EntityRegistry)(using CylinderSize, Blocks): ChunkData =
-    val storage = NBTUtil.getByteArray(nbt, "blocks") match
+    val storage = nbt.getByteArray("blocks") match
       case Some(blocks) =>
-        val meta = NBTUtil.getByteArray(nbt, "metadata")
+        val meta = nbt.getByteArray("metadata")
         DenseChunkStorage.fromNBT(blocks.toArray, meta.map(_.toArray))
       case None =>
         SparseChunkStorage.empty
 
     val entities =
-      NBTUtil.getList(nbt, "entities") match
+      nbt.getList("entities") match
         case Some(tags) => entitiesFromNbt(tags.map(_.asInstanceOf[Nbt.MapTag]), registry)
         case None       => Nil
 
     val data = new ChunkData(storage, mutable.ArrayBuffer.from(entities))
-    data._isDecorated = NBTUtil.getBoolean(nbt, "isDecorated", default = false)
+    data._isDecorated = nbt.getBoolean("isDecorated", default = false)
     data
 
   private def entitiesFromNbt(list: Seq[Nbt.MapTag], registry: EntityRegistry)(using

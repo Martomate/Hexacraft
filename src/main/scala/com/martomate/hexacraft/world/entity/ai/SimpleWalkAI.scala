@@ -77,11 +77,10 @@ class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
 object SimpleWalkAI:
   def create(using CylinderSize, Blocks): SimpleWalkAI = new SimpleWalkAI
 
-  def fromNBT(tag2: CompoundTag)(using CylinderSize, Blocks): SimpleWalkAI = {
-    val tag = Nbt.from(tag2)
-    val targetX = NBTUtil.getDouble(tag, "targetX", 0)
-    val targetZ = NBTUtil.getDouble(tag, "targetZ", 0)
-    val target = NBTUtil.getShort(tag, "timeout", 0)
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize, Blocks): SimpleWalkAI = {
+    val targetX = tag.getDouble("targetX", 0)
+    val targetZ = tag.getDouble("targetZ", 0)
+    val target = tag.getShort("timeout", 0)
 
     val ai = new SimpleWalkAI
     ai.target = CylCoords(targetX, 0, targetZ)

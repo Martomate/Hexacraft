@@ -46,18 +46,18 @@ object Player {
   def fromNBT(tag2: CompoundTag)(using Blocks): Player = {
     val tag = Nbt.from(tag2)
     val inventory =
-      NBTUtil.getCompoundTag(tag, "inventory") match
-        case Some(tag) => Inventory.fromNBT(tag.toCompoundTag("inventory"))
+      tag.getCompoundTag("inventory") match
+        case Some(tag) => Inventory.fromNBT(tag)
         case None      => Inventory.default
 
     val player = new Player(inventory)
 
-    NBTUtil.getCompoundTag(tag, "position").foreach(p => NBTUtil.setVector(p, player.position))
-    NBTUtil.getCompoundTag(tag, "rotation").foreach(p => NBTUtil.setVector(p, player.rotation))
-    NBTUtil.getCompoundTag(tag, "velocity").foreach(p => NBTUtil.setVector(p, player.velocity))
+    tag.getCompoundTag("position").foreach(p => p.setVector(player.position))
+    tag.getCompoundTag("rotation").foreach(p => p.setVector(player.rotation))
+    tag.getCompoundTag("velocity").foreach(p => p.setVector(player.velocity))
 
-    player.flying = NBTUtil.getByte(tag, "flying", 0) != 0
-    player.selectedItemSlot = NBTUtil.getShort(tag, "selectedItemSlot", 0)
+    player.flying = tag.getByte("flying", 0) != 0
+    player.selectedItemSlot = tag.getShort("selectedItemSlot", 0)
 
     player
   }

@@ -29,12 +29,12 @@ object EntityBaseData:
 
   def fromNBT(tag2: CompoundTag)(using CylinderSize): EntityBaseData =
     val tag = Nbt.from(tag2)
-    val position = NBTUtil
-      .getCompoundTag(tag, "pos")
-      .map(t => CylCoords(NBTUtil.setVector(t, new Vector3d)))
+    val position = tag
+      .getCompoundTag("pos")
+      .map(t => CylCoords(t.setVector(new Vector3d)))
       .getOrElse(CylCoords(0, 0, 0))
 
     val data = new EntityBaseData(position = position)
-    NBTUtil.getCompoundTag(tag, "velocity").foreach(t => NBTUtil.setVector(t, data.velocity))
-    NBTUtil.getCompoundTag(tag, "rotation").foreach(t => NBTUtil.setVector(t, data.rotation))
+    tag.getCompoundTag("velocity").foreach(t => t.setVector(data.velocity))
+    tag.getCompoundTag("rotation").foreach(t => t.setVector(data.rotation))
     data

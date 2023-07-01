@@ -11,7 +11,7 @@ import org.joml.{Matrix4f, Vector3d}
 
 object Entity {
   def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize, Blocks): Result[Entity, String] =
-    val entType = NBTUtil.getString(tag, "type", "")
+    val entType = tag.getString("type", "")
     registry.get(entType) match
       case Some(factory) => Ok(factory.fromNBT(tag.toCompoundTag("")))
       case None          => Err(s"Entity-type '$entType' not found")

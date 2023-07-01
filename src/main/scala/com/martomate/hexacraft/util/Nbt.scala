@@ -3,6 +3,7 @@ package com.martomate.hexacraft.util
 import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
+import org.joml.Vector3d
 import scala.collection.immutable.{ArraySeq, ListMap}
 
 sealed trait Nbt
@@ -36,7 +37,67 @@ object Nbt {
 
   case class ListTag[T <: Nbt](vs: Seq[T]) extends Nbt
 
-  case class MapTag(vs: ListMap[String, Nbt]) extends Nbt
+  case class MapTag(vs: ListMap[String, Nbt]) extends Nbt {
+    def getBoolean(key: String, default: => Boolean): Boolean =
+      getByte(key, if default then 1 else 0) == 1
+
+    def getByte(key: String, default: => Byte): Byte =
+      vs.get(key) match
+        case Some(Nbt.ByteTag(v)) => v
+        case _                    => default
+
+    def getShort(key: String, default: => Short): Short =
+      vs.get(key) match
+        case Some(Nbt.ShortTag(v)) => v
+        case _                     => default
+
+    def getLong(key: String, default: => Long): Long =
+      vs.get(key) match
+        case Some(Nbt.LongTag(v)) => v
+        case _                    => default
+
+    def getDouble(key: String, default: => Double): Double =
+      vs.get(key) match
+        case Some(Nbt.DoubleTag(v)) => v
+        case _                      => default
+
+    def getString(key: String, default: => String): String =
+      vs.get(key) match
+        case Some(Nbt.StringTag(v)) => v
+        case _                      => default
+
+    def getString(key: String): Option[String] =
+      vs.get(key) match
+        case Some(Nbt.StringTag(v)) => Some(v)
+        case _                      => None
+
+    def getList(key: String): Option[Seq[Nbt]] =
+      vs.get(key) match
+        case Some(Nbt.ListTag(vs)) => Some(vs)
+        case _                     => None
+
+    def getTag(name: String): Option[Nbt] =
+      vs.get(name) match
+        case Some(t) => Some(t)
+        case _       => None
+
+    def getCompoundTag(name: String): Option[Nbt.MapTag] =
+      vs.get(name) match
+        case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs))
+        case _                    => None
+
+    def getByteArray(name: String): Option[ArraySeq[Byte]] =
+      getTag(name).map(tag => tag.asInstanceOf[Nbt.ByteArrayTag].vs)
+
+    def getShortArray(name: String): Option[ArraySeq[Short]] =
+      getTag(name).map(tag => tag.asInstanceOf[Nbt.ShortArrayTag].vs)
+
+    def setVector(vector: Vector3d): Vector3d =
+      val x = getDouble("x", vector.x)
+      val y = getDouble("y", vector.y)
+      val z = getDouble("z", vector.z)
+      vector.set(x, y, z)
+  }
 
   def from(tag: CompoundTag): Nbt.MapTag =
     var map = ListMap.empty[String, Nbt]
