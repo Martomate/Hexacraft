@@ -1,9 +1,7 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.util.OpenGL
+import com.martomate.hexacraft.infra.Glfw
 
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
 enum CallbackEvent:
@@ -14,7 +12,7 @@ enum CallbackEvent:
   case WindowResized(window: Long, w: Int, h: Int)
   case FramebufferResized(window: Long, w: Int, h: Int)
 
-class CallbackHandler:
+class CallbackHandler(glfw: Glfw):
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
 
   def handle(handler: CallbackEvent => Unit): Unit =
@@ -39,17 +37,17 @@ class CallbackHandler:
   private def onScrollCallback(window: Long, dx: Double, dy: Double): Unit =
     callbackQueue.enqueue(CallbackEvent.MouseScrolled(window, dx, dy))
 
-  def addKeyCallback(window: Long): Unit = GLFW.glfwSetKeyCallback(window, onKeyCallback)
+  def addKeyCallback(window: Long): Unit = glfw.glfwSetKeyCallback(window, onKeyCallback)
 
-  def addCharCallback(window: Long): Unit = GLFW.glfwSetCharCallback(window, onCharCallback)
+  def addCharCallback(window: Long): Unit = glfw.glfwSetCharCallback(window, onCharCallback)
 
   def addMouseButtonCallback(window: Long): Unit =
-    GLFW.glfwSetMouseButtonCallback(window, onMouseButtonCallback)
+    glfw.glfwSetMouseButtonCallback(window, onMouseButtonCallback)
 
   def addWindowSizeCallback(window: Long): Unit =
-    GLFW.glfwSetWindowSizeCallback(window, onWindowSizeCallback)
+    glfw.glfwSetWindowSizeCallback(window, onWindowSizeCallback)
 
   def addFramebufferSizeCallback(window: Long): Unit =
-    GLFW.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
+    glfw.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
 
-  def addScrollCallback(window: Long): Unit = GLFW.glfwSetScrollCallback(window, onScrollCallback)
+  def addScrollCallback(window: Long): Unit = glfw.glfwSetScrollCallback(window, onScrollCallback)

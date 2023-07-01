@@ -36,40 +36,53 @@ class RootArchTest extends FunSuite {
 
   // TODO: reduce package dependencies and update this test accordingly
   test("packages should not depend on too many other packages") {
+    val root = "root"
+    val Font = "Font"
+    val Game = "Game"
+    val GUI = "GUI"
+    val Infra = "Infra"
+    val Main = "Main"
+    val Menu = "Menu"
+    val Renderer = "Renderer"
+    val Util = "Util"
+    val World = "World"
+
+    val JOML = "JOML"
+    val JSON = "JSON"
+    val NBT = "NBT"
+    val LWJGL = "LWJGL"
+    val OpenGL = "OpenGL"
+    val GLFW = "GLFW"
+
     layeredArchitecture()
       .consideringAllDependencies()
       .ignoreDependencyToJava()
       .ignoreDependencyToScala()
-      .layer("root", "com.martomate.hexacraft")
-      .layer("Font", "com.martomate.hexacraft.font..")
-      .layer("Game", "com.martomate.hexacraft.game..")
-      .layer("GUI", "com.martomate.hexacraft.gui..")
-      .layer("Infra", "com.martomate.hexacraft.infra..")
-      .layer("Main", "com.martomate.hexacraft.main..")
-      .layer("Menu", "com.martomate.hexacraft.menu..")
-      .layer("Renderer", "com.martomate.hexacraft.renderer..")
-      .layer("Util", "com.martomate.hexacraft.util..")
-      .layer("World", "com.martomate.hexacraft.world..")
-      .optionalLayer("JOML", "org.joml..")
-      .optionalLayer("JSON", "com.eclipsesource.json..")
-      .optionalLayer("NBT", "com.flowpowered.nbt..")
-      .optionalLayer("LWJGL", "org.lwjgl", "org.lwjgl.system..")
-      .optionalLayer("OpenGL", "org.lwjgl.opengl..")
-      .optionalLayer("GLFW", "org.lwjgl.glfw..")
-      .whereLayer("Font", _.mayOnlyAccessLayers("Renderer", "Util", "JOML"))
-      .whereLayer(
-        "Game",
-        _.mayOnlyAccessLayers("root", "Font", "GUI", "Infra", "Renderer", "Util", "World", "JOML", "NBT")
-      )
-      .whereLayer("GUI", _.mayOnlyAccessLayers("root", "Font", "Renderer", "Util", "JOML"))
-      .whereLayer(
-        "Main",
-        _.mayOnlyAccessLayers("root", "GUI", "Menu", "Renderer", "Util", "World", "JOML", "LWJGL", "GLFW")
-      )
-      .whereLayer("Menu", _.mayOnlyAccessLayers("root", "Font", "Game", "GUI", "Util", "World", "JOML", "NBT"))
-      .whereLayer("Renderer", _.mayOnlyAccessLayers("Util", "JOML", "LWJGL"))
-      .whereLayer("Util", _.mayOnlyAccessLayers("JOML", "NBT", "OpenGL", "LWJGL"))
-      .whereLayer("World", _.mayOnlyAccessLayers("Infra", "Renderer", "Util", "JOML", "JSON", "LWJGL", "NBT"))
+      .layer(root, "com.martomate.hexacraft")
+      .layer(Font, "com.martomate.hexacraft.font..")
+      .layer(Game, "com.martomate.hexacraft.game..")
+      .layer(GUI, "com.martomate.hexacraft.gui..")
+      .layer(Infra, "com.martomate.hexacraft.infra..")
+      .layer(Main, "com.martomate.hexacraft.main..")
+      .layer(Menu, "com.martomate.hexacraft.menu..")
+      .layer(Renderer, "com.martomate.hexacraft.renderer..")
+      .layer(Util, "com.martomate.hexacraft.util..")
+      .layer(World, "com.martomate.hexacraft.world..")
+      .optionalLayer(JOML, "org.joml..")
+      .optionalLayer(JSON, "com.eclipsesource.json..")
+      .optionalLayer(NBT, "com.flowpowered.nbt..")
+      .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
+      .optionalLayer(OpenGL, "org.lwjgl.opengl..")
+      .optionalLayer(GLFW, "org.lwjgl.glfw..")
+      .whereLayer(Font, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML))
+      .whereLayer(Game, _.mayOnlyAccessLayers(root, Font, GUI, Infra, Renderer, Util, World, JOML, NBT))
+      .whereLayer(GUI, _.mayOnlyAccessLayers(root, Infra, Font, Renderer, Util, JOML))
+      .whereLayer(Infra, _.mayOnlyAccessLayers(OpenGL, GLFW, LWJGL, Util, NBT))
+      .whereLayer(Main, _.mayOnlyAccessLayers(root, Infra, GUI, Menu, Renderer, Util, World, JOML, LWJGL, GLFW))
+      .whereLayer(Menu, _.mayOnlyAccessLayers(root, Font, Game, GUI, Util, World, JOML, NBT))
+      .whereLayer(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
+      .whereLayer(Util, _.mayOnlyAccessLayers(JOML, NBT))
+      .whereLayer(World, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML, JSON, LWJGL, NBT))
       .check(allClasses)
   }
 }

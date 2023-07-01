@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{OpenGL, Resource, ResourceWrapper}
-import com.martomate.hexacraft.util.OpenGL.{TexelDataFormat, TexelDataType, TextureInternalFormat}
+import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.util.{Resource, ResourceWrapper}
+import com.martomate.hexacraft.infra.OpenGL.{TexelDataFormat, TexelDataType, TextureInternalFormat}
 
 import org.lwjgl.BufferUtils
 

@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{OpenGL, Tracker}
+import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.util.Tracker
 
 import munit.FunSuite
 

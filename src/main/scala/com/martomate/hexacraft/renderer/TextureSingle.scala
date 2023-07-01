@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{FileUtils, OpenGL, Resource}
-import com.martomate.hexacraft.util.OpenGL.{
+import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.util.{FileUtils, Resource}
+import com.martomate.hexacraft.infra.OpenGL.{
   TexelDataFormat,
   TexelDataType,
   TexIntParameter,

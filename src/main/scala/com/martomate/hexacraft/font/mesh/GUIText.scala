@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.font.mesh
 
 import com.martomate.hexacraft.font.TextMaster
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.VAO
-import com.martomate.hexacraft.util.OpenGL
 
 import org.joml.{Vector2f, Vector3f, Vector3fc}
 

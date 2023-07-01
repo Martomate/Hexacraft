@@ -1,26 +1,25 @@
 package com.martomate.hexacraft.main
 
+import com.martomate.hexacraft.infra.Glfw
 import com.martomate.hexacraft.util.PointerWrapper
 
-import org.lwjgl.glfw.GLFW
-
-class GlfwHelper:
+class GlfwHelper(glfw: Glfw = Glfw.create()):
   private val pointerWrapper = new PointerWrapper()
 
   def getWindowPos(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => GLFW.glfwGetWindowPos(window, px, py))
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(window, px, py))
 
   def getWindowSize(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => GLFW.glfwGetWindowSize(window, px, py))
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowSize(window, px, py))
 
   def getFramebufferSize(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => GLFW.glfwGetFramebufferSize(window, px, py))
+    pointerWrapper.ints((px, py) => glfw.glfwGetFramebufferSize(window, px, py))
 
   def getMonitorPos(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => GLFW.glfwGetMonitorPos(window, px, py))
+    pointerWrapper.ints((px, py) => glfw.glfwGetMonitorPos(window, px, py))
 
   def getCursorPos(window: Long): (Double, Double) =
-    pointerWrapper.doubles((px, py) => GLFW.glfwGetCursorPos(window, px, py))
+    pointerWrapper.doubles((px, py) => glfw.glfwGetCursorPos(window, px, py))
 
   /** Determines the current monitor that the specified window is being displayed on. If the monitor
     * could not be determined, the primary monitor will be returned.
@@ -40,14 +39,14 @@ class GlfwHelper:
     var bestOverlap = 0
     var bestMonitor = 0L
 
-    val monitors = GLFW.glfwGetMonitors()
+    val monitors = glfw.glfwGetMonitors()
     while monitors.hasRemaining
     do
       val monitor = monitors.get
 
       val (monitorPosX, monitorPosY) = getMonitorPos(monitor)
 
-      val mode = GLFW.glfwGetVideoMode(monitor)
+      val mode = glfw.glfwGetVideoMode(monitor)
       val monitorWidth = mode.width
       val monitorHeight = mode.height
 
@@ -67,4 +66,4 @@ class GlfwHelper:
 
     if bestMonitor != 0L
     then bestMonitor
-    else GLFW.glfwGetPrimaryMonitor()
+    else glfw.glfwGetPrimaryMonitor()

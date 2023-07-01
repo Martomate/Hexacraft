@@ -4,7 +4,6 @@ import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 
 import org.joml.Vector4f
-import org.lwjgl.glfw.GLFW
 
 object Button:
   def apply(text: String, bounds: LocationInfo)(clickAction: => Unit)(using GameMouse): Button =

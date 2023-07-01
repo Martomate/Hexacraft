@@ -1,12 +1,16 @@
 package com.martomate.hexacraft.main
 
+import com.martomate.hexacraft.infra.Glfw
+
 import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
 
-class FullscreenManager(window: Long, glfwHelper: GlfwHelper):
+class FullscreenManager(window: Long, glfw: Glfw):
   private var fullscreen = false
   private val prevWindowPos = new Vector2i()
   private val prevWindowSize = new Vector2i()
+
+  private val glfwHelper = new GlfwHelper(glfw)
 
   def isFullscreen: Boolean = fullscreen
 
@@ -21,7 +25,7 @@ class FullscreenManager(window: Long, glfwHelper: GlfwHelper):
     val (wx, wy) = (prevWindowPos.x, prevWindowPos.y)
     val (ww, wh) = (prevWindowSize.x, prevWindowSize.y)
 
-    GLFW.glfwSetWindowMonitor(window, 0, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
+    glfw.glfwSetWindowMonitor(window, 0, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
 
   private def setFullscreen(): Unit =
     val (wx, wy) = glfwHelper.getWindowPos(window)
@@ -31,9 +35,9 @@ class FullscreenManager(window: Long, glfwHelper: GlfwHelper):
     prevWindowSize.set(ww, wh)
 
     val monitor = glfwHelper.getCurrentMonitor(wx, wy, ww, wh)
-    val mode = GLFW.glfwGetVideoMode(monitor)
+    val mode = glfw.glfwGetVideoMode(monitor)
 
-    GLFW.glfwSetWindowMonitor(
+    glfw.glfwSetWindowMonitor(
       window,
       monitor,
       0,

@@ -1,11 +1,12 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.infra
 
-import com.martomate.hexacraft.util.OpenGL.VertexAttributeDataType
+import com.martomate.hexacraft.infra.OpenGL.VertexAttributeDataType
 import com.martomate.hexacraft.util.Result.{Err, Ok}
-
-import java.nio.{ByteBuffer, FloatBuffer}
+import com.martomate.hexacraft.util.*
 import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryUtil
+
+import java.nio.{ByteBuffer, FloatBuffer}
 import scala.annotation.targetName
 
 object OpenGL {

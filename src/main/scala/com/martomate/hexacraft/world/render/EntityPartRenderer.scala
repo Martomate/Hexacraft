@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO}
-import com.martomate.hexacraft.util.OpenGL
 
 object EntityPartRenderer:
   def forSide(side: Int): BlockRenderer =

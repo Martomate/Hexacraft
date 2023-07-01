@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.render.buffer.vao
 
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.{InstancedRenderer, Renderer, VAO, VBO}
-import com.martomate.hexacraft.util.OpenGL
 import com.martomate.hexacraft.world.render.buffer.RenderBuffer
 
 import java.nio.ByteBuffer

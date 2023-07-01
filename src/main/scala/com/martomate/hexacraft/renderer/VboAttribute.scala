@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.OpenGL
+import com.martomate.hexacraft.infra.OpenGL
 
 case class VboAttribute(index: Int, dims: Int, elementSize: Int, format: VboAttribute.Format):
   def width: Int = dims * elementSize

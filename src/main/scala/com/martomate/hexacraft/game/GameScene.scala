@@ -4,8 +4,9 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.{OpenGL, TickableTimer}
+import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
@@ -22,7 +23,7 @@ import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW
 
 class GameScene(worldProvider: WorldProvider)(using
     mouse: GameMouse,
@@ -105,15 +106,15 @@ class GameScene(worldProvider: WorldProvider)(using
     worldRenderer.onProjMatrixChanged(camera)
 
   private def handleKeyPress(key: Int): Unit = key match
-    case GLFW_KEY_B =>
+    case GLFW.GLFW_KEY_B =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
       if world.getBlock(newCoords).blockType == Blocks.Air
       then world.setBlock(newCoords, new BlockState(player.blockInHand))
-    case GLFW_KEY_ESCAPE =>
+    case GLFW.GLFW_KEY_ESCAPE =>
       scenes.pushScene(new PauseMenu(this.scenes, this.setPaused))
       setPaused(true)
-    case GLFW_KEY_E =>
+    case GLFW.GLFW_KEY_E =>
       if !isPaused
       then
         val closeScene: () => Unit = () => {
@@ -125,24 +126,24 @@ class GameScene(worldProvider: WorldProvider)(using
         setUseMouse(false)
         isInPopup = true
         scenes.pushScene(new InventoryScene(player.inventory, closeScene))
-    case GLFW_KEY_M =>
+    case GLFW.GLFW_KEY_M =>
       setUseMouse(!moveWithMouse)
-    case GLFW_KEY_F =>
+    case GLFW.GLFW_KEY_F =>
       player.flying = !player.flying
-    case GLFW_KEY_F7 =>
+    case GLFW.GLFW_KEY_F7 =>
       setDebugScreenVisible(debugScene == null)
-    case key if key >= GLFW_KEY_1 && key <= GLFW_KEY_9 =>
-      val idx = key - GLFW_KEY_1
+    case key if key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_9 =>
+      val idx = key - GLFW.GLFW_KEY_1
       setSelectedItemSlot(idx)
-    case GLFW_KEY_P =>
+    case GLFW.GLFW_KEY_P =>
       val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
-    case GLFW_KEY_L =>
+    case GLFW.GLFW_KEY_L =>
       val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
-    case GLFW_KEY_K =>
+    case GLFW.GLFW_KEY_K =>
       world.removeAllEntities()
     case _ =>
 
@@ -189,7 +190,7 @@ class GameScene(worldProvider: WorldProvider)(using
       setMouseCursorInvisible(!paused && moveWithMouse)
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit =
-    summon[WindowExtras].setCursorLayout(if invisible then GLFW_CURSOR_DISABLED else GLFW_CURSOR_NORMAL)
+    summon[WindowExtras].setCursorLayout(if invisible then GLFW.GLFW_CURSOR_DISABLED else GLFW.GLFW_CURSOR_NORMAL)
 
   override def windowResized(width: Int, height: Int): Unit =
     camera.proj.aspect = width.toFloat / height

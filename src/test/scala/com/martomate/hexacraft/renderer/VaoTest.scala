@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.OpenGL
+import com.martomate.hexacraft.infra.OpenGL
 
 import munit.FunSuite
-import org.lwjgl.glfw.GLFW
 
 class VaoTest extends FunSuite {
   test("the builder does not crash") {

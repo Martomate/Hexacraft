@@ -10,7 +10,6 @@ import com.martomate.hexacraft.world.player.Player
 
 import munit.FunSuite
 import org.joml.Vector2d
-import org.lwjgl.glfw.GLFW
 import scala.collection.mutable
 
 class PlayerInputHandlerTest extends FunSuite {

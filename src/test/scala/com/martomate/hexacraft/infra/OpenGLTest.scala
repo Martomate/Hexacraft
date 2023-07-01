@@ -1,11 +1,12 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.infra
 
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.util.Result.{Err, Ok}
-
+import com.martomate.hexacraft.util.Tracker
 import munit.FunSuite
 
 class OpenGLTest extends FunSuite {
-  import OpenGL.Event.*
+  import com.martomate.hexacraft.infra.OpenGL.Event.*
 
   test("loadShader works by default") {
     OpenGL._enterTestMode()

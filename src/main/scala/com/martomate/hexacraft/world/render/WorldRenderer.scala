@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.render
 
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.*
-import com.martomate.hexacraft.util.{CylinderSize, OpenGL, RevokeTrackerFn}
+import com.martomate.hexacraft.util.{CylinderSize, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, LightPropagator, World}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera

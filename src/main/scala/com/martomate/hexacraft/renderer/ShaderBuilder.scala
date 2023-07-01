@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.{FileUtils, OpenGL, Result}
+import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.util.{FileUtils, Result}
 import com.martomate.hexacraft.util.Result.{Err, Ok}
 
 import java.io.IOException

@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.util.OpenGL
-
+import com.martomate.hexacraft.infra.OpenGL
 import scala.collection.mutable.ArrayBuffer
 
 case class VboLayout(attributes: Seq[VboAttribute]) {
