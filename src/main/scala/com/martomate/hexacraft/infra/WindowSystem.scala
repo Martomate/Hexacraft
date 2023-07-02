@@ -8,6 +8,23 @@ import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
+opaque type WindowId <: AnyVal = Long
+
+object WindowId {
+  def apply(id: Long): WindowId = id
+
+  extension (id: WindowId) def toLong: Long = id
+}
+
+opaque type MonitorId <: AnyVal = Long
+
+object MonitorId {
+  def apply(id: Long): MonitorId = id
+  def none: MonitorId = 0
+
+  extension (id: MonitorId) def toLong: Long = id
+}
+
 object WindowSystem {
   def create(): WindowSystem = new WindowSystem(RealGlfw)
   def createNull(): WindowSystem = new WindowSystem(new NullGlfw)
@@ -16,61 +33,66 @@ object WindowSystem {
 class WindowSystem(glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
 
-  def getWindowPos(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(window, px, py))
+  def getWindowPos(window: WindowId): (Int, Int) =
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(window.toLong, px, py))
 
-  def getWindowSize(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => glfw.glfwGetWindowSize(window, px, py))
+  def getWindowSize(window: WindowId): (Int, Int) =
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowSize(window.toLong, px, py))
 
-  def getFramebufferSize(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => glfw.glfwGetFramebufferSize(window, px, py))
+  def getFramebufferSize(window: WindowId): (Int, Int) =
+    pointerWrapper.ints((px, py) => glfw.glfwGetFramebufferSize(window.toLong, px, py))
 
-  def getMonitorPos(window: Long): (Int, Int) =
-    pointerWrapper.ints((px, py) => glfw.glfwGetMonitorPos(window, px, py))
+  def getMonitorPos(monitor: MonitorId): (Int, Int) =
+    pointerWrapper.ints((px, py) => glfw.glfwGetMonitorPos(monitor.toLong, px, py))
 
-  def getCursorPos(window: Long): (Double, Double) =
-    pointerWrapper.doubles((px, py) => glfw.glfwGetCursorPos(window, px, py))
+  def getCursorPos(window: WindowId): (Double, Double) =
+    pointerWrapper.doubles((px, py) => glfw.glfwGetCursorPos(window.toLong, px, py))
 
-  def monitors: Seq[Long] =
-    val res = mutable.ArrayBuffer.empty[Long]
+  def monitors: Seq[MonitorId] =
+    val res = mutable.ArrayBuffer.empty[MonitorId]
 
     val monitors = glfw.glfwGetMonitors()
     while monitors.hasRemaining
-    do res += monitors.get
+    do res += MonitorId(monitors.get)
 
     res.toSeq
 
-  def primaryMonitor: Long = glfw.glfwGetPrimaryMonitor()
+  def primaryMonitor: MonitorId = MonitorId(glfw.glfwGetPrimaryMonitor())
 
-  def getVideoMode(monitor: Long): VideoMode = glfw.glfwGetVideoMode(monitor)
+  def getVideoMode(monitor: MonitorId): VideoMode = glfw.glfwGetVideoMode(monitor.toLong)
 
   def glfwSetWindowMonitor(
-      window: Long,
-      monitor: Long,
+      window: WindowId,
+      monitor: MonitorId,
       xpos: Int,
       ypos: Int,
       width: Int,
       height: Int,
       refreshRate: Int
-  ): Unit = glfw.glfwSetWindowMonitor(window, monitor, xpos, ypos, width, height, refreshRate)
+  ): Unit = glfw.glfwSetWindowMonitor(window.toLong, monitor.toLong, xpos, ypos, width, height, refreshRate)
 
-  def setKeyCallback(window: Long, callback: CallbackEvent.KeyPressed => Unit): Unit =
+  def setKeyCallback(window: WindowId, callback: CallbackEvent.KeyPressed => Unit): Unit =
     glfw.glfwSetKeyCallback(
-      window,
+      window.toLong,
       (window, key, scancode, action, mods) =>
-        callback(CallbackEvent.KeyPressed(window, key, scancode, KeyAction.fromGlfw(action), KeyMods.fromGlfw(mods)))
+        callback(
+          CallbackEvent.KeyPressed(WindowId(window), key, scancode, KeyAction.fromGlfw(action), KeyMods.fromGlfw(mods))
+        )
     )
 
-  def setCharCallback(window: Long, callback: CallbackEvent.CharTyped => Unit): Unit =
-    glfw.glfwSetCharCallback(window, (window, character) => callback(CallbackEvent.CharTyped(window, character)))
+  def setCharCallback(window: WindowId, callback: CallbackEvent.CharTyped => Unit): Unit =
+    glfw.glfwSetCharCallback(
+      window.toLong,
+      (window, character) => callback(CallbackEvent.CharTyped(WindowId(window), character))
+    )
 
-  def setMouseButtonCallback(window: Long, callback: CallbackEvent.MouseClicked => Unit): Unit =
+  def setMouseButtonCallback(window: WindowId, callback: CallbackEvent.MouseClicked => Unit): Unit =
     glfw.glfwSetMouseButtonCallback(
-      window,
+      window.toLong,
       (window, button, action, mods) =>
         callback(
           CallbackEvent.MouseClicked(
-            window,
+            WindowId(window),
             MouseButton.fromGlfw(button),
             MouseAction.fromGlfw(action),
             KeyMods.fromGlfw(mods)
@@ -78,20 +100,23 @@ class WindowSystem(glfw: GlfwWrapper) {
         )
     )
 
-  def setWindowSizeCallback(window: Long, callback: CallbackEvent.WindowResized => Unit): Unit =
+  def setWindowSizeCallback(window: WindowId, callback: CallbackEvent.WindowResized => Unit): Unit =
     glfw.glfwSetWindowSizeCallback(
-      window,
-      (window, width, height) => callback(CallbackEvent.WindowResized(window, width, height))
+      window.toLong,
+      (window, width, height) => callback(CallbackEvent.WindowResized(WindowId(window), width, height))
     )
 
-  def setFramebufferSizeCallback(window: Long, callback: CallbackEvent.FramebufferResized => Unit): Unit =
+  def setFramebufferSizeCallback(window: WindowId, callback: CallbackEvent.FramebufferResized => Unit): Unit =
     glfw.glfwSetFramebufferSizeCallback(
-      window,
-      (window, width, height) => callback(CallbackEvent.FramebufferResized(window, width, height))
+      window.toLong,
+      (window, width, height) => callback(CallbackEvent.FramebufferResized(WindowId(window), width, height))
     )
 
-  def setScrollCallback(window: Long, callback: CallbackEvent.MouseScrolled => Unit): Unit =
-    glfw.glfwSetScrollCallback(window, (window, dx, dy) => callback(CallbackEvent.MouseScrolled(window, dx, dy)))
+  def setScrollCallback(window: WindowId, callback: CallbackEvent.MouseScrolled => Unit): Unit =
+    glfw.glfwSetScrollCallback(
+      window.toLong,
+      (window, dx, dy) => callback(CallbackEvent.MouseScrolled(WindowId(window), dx, dy))
+    )
 
   def setErrorCallback(callback: ErrorEvent => Unit): GLFWErrorCallback =
     glfw.glfwSetErrorCallback((error, descriptionPointer) => {
@@ -100,39 +125,41 @@ class WindowSystem(glfw: GlfwWrapper) {
       callback(ErrorEvent(reason, description))
     })
 
-  def isKeyPressed(window: Long, key: Int): Boolean = glfw.glfwGetKey(window, key) == GLFW.GLFW_PRESS
+  def isKeyPressed(window: WindowId, key: Int): Boolean = glfw.glfwGetKey(window.toLong, key) == GLFW.GLFW_PRESS
 
-  def glfwSetInputMode(window: Long, mode: Int, value: Int): Unit =
-    glfw.glfwSetInputMode(window, mode, value)
+  def glfwSetInputMode(window: WindowId, mode: Int, value: Int): Unit =
+    glfw.glfwSetInputMode(window.toLong, mode, value)
 
-  def glfwWindowShouldClose(window: Long): Boolean = glfw.glfwWindowShouldClose(window)
+  def glfwWindowShouldClose(window: WindowId): Boolean = glfw.glfwWindowShouldClose(window.toLong)
 
-  def swapBuffers(window: Long): Unit = glfw.glfwSwapBuffers(window)
+  def swapBuffers(window: WindowId): Unit = glfw.glfwSwapBuffers(window.toLong)
 
-  def setWindowTitle(window: Long, title: String): Unit =
-    glfw.glfwSetWindowTitle(window, title)
+  def setWindowTitle(window: WindowId, title: String): Unit =
+    glfw.glfwSetWindowTitle(window.toLong, title)
 
   def glfwPollEvents(): Unit = glfw.glfwPollEvents()
 
   def glfwSwapInterval(interval: Int): Unit = glfw.glfwSwapInterval(interval)
 
-  def glfwDestroyWindow(window: Long): Unit = glfw.glfwDestroyWindow(window)
+  def glfwDestroyWindow(window: WindowId): Unit = glfw.glfwDestroyWindow(window.toLong)
 
   def glfwTerminate(): Unit = glfw.glfwTerminate()
 
   def glfwInit(): Boolean = glfw.glfwInit()
 
-  def glfwMakeContextCurrent(window: Long): Unit = glfw.glfwMakeContextCurrent(window)
+  def glfwMakeContextCurrent(window: WindowId): Unit = glfw.glfwMakeContextCurrent(window.toLong)
 
-  def glfwShowWindow(window: Long): Unit = glfw.glfwShowWindow(window)
+  def glfwShowWindow(window: WindowId): Unit = glfw.glfwShowWindow(window.toLong)
 
   def glfwCreateWindow(
       width: Int,
       height: Int,
       title: String,
-      monitor: Long,
+      monitor: MonitorId,
       share: Long
-  ): Long = glfw.glfwCreateWindow(width, height, title, monitor, share)
+  ): Option[WindowId] =
+    val id = glfw.glfwCreateWindow(width, height, title, monitor.toLong, share)
+    if id != 0 then Some(WindowId(id)) else None
 
   def glfwDefaultWindowHints(): Unit =
     glfw.glfwDefaultWindowHints()
@@ -140,13 +167,13 @@ class WindowSystem(glfw: GlfwWrapper) {
   def glfwWindowHint(hint: Int, value: Int): Unit =
     glfw.glfwWindowHint(hint, value)
 
-  def glfwSetWindowShouldClose(window: Long, value: Boolean): Unit =
-    glfw.glfwSetWindowShouldClose(window, value)
+  def glfwSetWindowShouldClose(window: WindowId, value: Boolean): Unit =
+    glfw.glfwSetWindowShouldClose(window.toLong, value)
 
-  def setWindowPos(window: Long, xpos: Int, ypos: Int): Unit =
-    glfw.glfwSetWindowPos(window, xpos, ypos)
+  def setWindowPos(window: WindowId, xpos: Int, ypos: Int): Unit =
+    glfw.glfwSetWindowPos(window.toLong, xpos, ypos)
 
-  def glfwFreeCallbacks(window: Long): Unit = glfw.glfwFreeCallbacks(window)
+  def glfwFreeCallbacks(window: WindowId): Unit = glfw.glfwFreeCallbacks(window.toLong)
 }
 
 enum KeyAction:
@@ -196,12 +223,12 @@ object MouseAction:
       case GLFW.GLFW_RELEASE => MouseAction.Release
 
 enum CallbackEvent:
-  case KeyPressed(window: Long, key: Int, scancode: Int, action: KeyAction, mods: KeyMods)
-  case CharTyped(window: Long, character: Int)
-  case MouseClicked(window: Long, button: MouseButton, action: MouseAction, mods: KeyMods)
-  case MouseScrolled(window: Long, xOffset: Double, yOffset: Double)
-  case WindowResized(window: Long, w: Int, h: Int)
-  case FramebufferResized(window: Long, w: Int, h: Int)
+  case KeyPressed(window: WindowId, key: Int, scancode: Int, action: KeyAction, mods: KeyMods)
+  case CharTyped(window: WindowId, character: Int)
+  case MouseClicked(window: WindowId, button: MouseButton, action: MouseAction, mods: KeyMods)
+  case MouseScrolled(window: WindowId, xOffset: Double, yOffset: Double)
+  case WindowResized(window: WindowId, w: Int, h: Int)
+  case FramebufferResized(window: WindowId, w: Int, h: Int)
 
 enum WindowErrorReason:
   case NotInitialized
@@ -247,7 +274,7 @@ trait GlfwWrapper {
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
-  def glfwGetMonitorPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
+  def glfwGetMonitorPos(monitor: Long, xpos: Array[Int], ypos: Array[Int]): Unit
   def glfwGetCursorPos(window: Long, xpos: Array[Double], ypos: Array[Double]): Unit
   def glfwGetMonitors(): PointerBuffer
   def glfwGetPrimaryMonitor(): Long
@@ -298,8 +325,8 @@ object RealGlfw extends GlfwWrapper {
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit =
     GLFW.glfwGetFramebufferSize(window, xpos, ypos)
 
-  def glfwGetMonitorPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit =
-    GLFW.glfwGetMonitorPos(window, xpos, ypos)
+  def glfwGetMonitorPos(monitor: Long, xpos: Array[Int], ypos: Array[Int]): Unit =
+    GLFW.glfwGetMonitorPos(monitor, xpos, ypos)
 
   def glfwGetCursorPos(window: Long, xpos: Array[Double], ypos: Array[Double]): Unit =
     GLFW.glfwGetCursorPos(window, xpos, ypos)
@@ -396,7 +423,7 @@ class NullGlfw extends GlfwWrapper {
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
-  def glfwGetMonitorPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
+  def glfwGetMonitorPos(monitor: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetCursorPos(window: Long, xpos: Array[Double], ypos: Array[Double]): Unit = ()
   def glfwGetMonitors(): PointerBuffer = PointerBuffer.allocateDirect(0)
   def glfwGetPrimaryMonitor(): Long = 123

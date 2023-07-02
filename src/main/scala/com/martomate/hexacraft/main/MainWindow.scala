@@ -4,10 +4,10 @@ import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.gui.{Event, Scene, SceneStack, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.{CallbackEvent, KeyAction, OpenGL, WindowSystem}
+import com.martomate.hexacraft.infra.{CallbackEvent, KeyAction, MonitorId, OpenGL, WindowId, WindowSystem}
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
-import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
+import com.martomate.hexacraft.util.{AsyncFileIO, Resource, Result}
 import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
@@ -32,7 +32,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private val callbackHandler = new CallbackHandler(windowSystem)
 
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
-  private val window: Long = initWindow()
+  private val window: WindowId = initWindow()
 
   private val fullscreenManager = new FullscreenManager(window, windowSystem)
 
@@ -212,7 +212,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     fullscreenManager.toggleFullscreen()
     mouse.skipNextMouseMovedUpdate()
 
-  private def initWindow(): Long =
+  private def initWindow(): WindowId =
     windowSystem.setErrorCallback(e => System.err.println(s"[LWJGL] ${e.reason} error: ${e.description}"))
 
     // Initialize GLFW. Most GLFW functions will not work before doing this.
@@ -221,9 +221,10 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
     configureGlfw()
 
-    val window = windowSystem.glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", 0, 0)
-    if window == 0
-    then throw new RuntimeException("Failed to create the GLFW window")
+    val window = Result
+      .fromOption(windowSystem.glfwCreateWindow(_windowSize.x, _windowSize.y, "Hexacraft", MonitorId.none, 0))
+      .mapErr(_ => throw new RuntimeException("Failed to create the GLFW window"))
+      .unwrap()
 
     val (fw, fh) = windowSystem.getFramebufferSize(window)
     _framebufferSize.set(fw, fh)
@@ -255,7 +256,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     if isDebug
     then windowSystem.glfwWindowHint(GLFW.GLFW_OPENGL_DEBUG_CONTEXT, GLFW.GLFW_TRUE)
 
-  private def setupCallbacks(window: Long): Unit =
+  private def setupCallbacks(window: WindowId): Unit =
     callbackHandler.addKeyCallback(window)
     callbackHandler.addCharCallback(window)
     callbackHandler.addMouseButtonCallback(window)
@@ -263,7 +264,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     callbackHandler.addScrollCallback(window)
     callbackHandler.addFramebufferSizeCallback(window)
 
-  private def centerWindow(window: Long): Unit =
+  private def centerWindow(window: WindowId): Unit =
     val (windowWidth, windowHeight) = windowSystem.getWindowSize(window)
 
     val mode = windowSystem.getVideoMode(windowSystem.primaryMonitor)

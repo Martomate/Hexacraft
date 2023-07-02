@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.WindowSystem
+import com.martomate.hexacraft.infra.{MonitorId, WindowId, WindowSystem}
 
 import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
 
-class FullscreenManager(window: Long, windowSystem: WindowSystem):
+class FullscreenManager(window: WindowId, windowSystem: WindowSystem):
   private var fullscreen = false
   private val prevWindowPos = new Vector2i()
   private val prevWindowSize = new Vector2i()
@@ -23,7 +23,7 @@ class FullscreenManager(window: Long, windowSystem: WindowSystem):
     val (wx, wy) = (prevWindowPos.x, prevWindowPos.y)
     val (ww, wh) = (prevWindowSize.x, prevWindowSize.y)
 
-    windowSystem.glfwSetWindowMonitor(window, 0, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
+    windowSystem.glfwSetWindowMonitor(window, MonitorId.none, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
 
   private def setFullscreen(): Unit =
     val (wx, wy) = windowSystem.getWindowPos(window)
@@ -42,9 +42,9 @@ class FullscreenManager(window: Long, windowSystem: WindowSystem):
       windowPosY: Int,
       windowWidth: Int,
       windowHeight: Int
-  ): Long =
+  ): MonitorId =
     var bestOverlap = 0
-    var bestMonitor = 0L
+    var bestMonitor = MonitorId.none
 
     for monitor <- windowSystem.monitors do
       val (monitorPosX, monitorPosY) = windowSystem.getMonitorPos(monitor)
@@ -67,6 +67,6 @@ class FullscreenManager(window: Long, windowSystem: WindowSystem):
         bestOverlap = overlap
         bestMonitor = monitor
 
-    if bestMonitor != 0L
+    if bestMonitor != MonitorId.none
     then bestMonitor
     else windowSystem.primaryMonitor

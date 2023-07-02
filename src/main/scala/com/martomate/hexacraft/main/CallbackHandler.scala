@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.{CallbackEvent, WindowSystem}
+import com.martomate.hexacraft.infra.{CallbackEvent, WindowId, WindowSystem}
 
 import scala.collection.mutable
 
@@ -11,20 +11,20 @@ class CallbackHandler(windowSystem: WindowSystem):
     while callbackQueue.nonEmpty
     do handler(callbackQueue.dequeue())
 
-  def addKeyCallback(window: Long): Unit =
+  def addKeyCallback(window: WindowId): Unit =
     windowSystem.setKeyCallback(window, callbackQueue.enqueue)
 
-  def addCharCallback(window: Long): Unit =
+  def addCharCallback(window: WindowId): Unit =
     windowSystem.setCharCallback(window, callbackQueue.enqueue)
 
-  def addMouseButtonCallback(window: Long): Unit =
+  def addMouseButtonCallback(window: WindowId): Unit =
     windowSystem.setMouseButtonCallback(window, callbackQueue.enqueue)
 
-  def addWindowSizeCallback(window: Long): Unit =
+  def addWindowSizeCallback(window: WindowId): Unit =
     windowSystem.setWindowSizeCallback(window, callbackQueue.enqueue)
 
-  def addFramebufferSizeCallback(window: Long): Unit =
+  def addFramebufferSizeCallback(window: WindowId): Unit =
     windowSystem.setFramebufferSizeCallback(window, callbackQueue.enqueue)
 
-  def addScrollCallback(window: Long): Unit =
+  def addScrollCallback(window: WindowId): Unit =
     windowSystem.setScrollCallback(window, callbackQueue.enqueue)
