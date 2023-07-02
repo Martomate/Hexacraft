@@ -20,12 +20,12 @@ import org.lwjgl.glfw.{
 import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 
-object Glfw {
-  def create(): Glfw = new Glfw(RealGlfw)
-  def createNull(): Glfw = new Glfw(new NullGlfw)
+object WindowSystem {
+  def create(): WindowSystem = new WindowSystem(RealGlfw)
+  def createNull(): WindowSystem = new WindowSystem(new NullGlfw)
 }
 
-class Glfw(glfw: GlfwWrapper) {
+class WindowSystem(glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
 
   def getWindowPos(window: Long): (Int, Int) =

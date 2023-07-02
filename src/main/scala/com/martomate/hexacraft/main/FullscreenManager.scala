@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.Glfw
+import com.martomate.hexacraft.infra.WindowSystem
 
 import org.joml.Vector2i
 import org.lwjgl.glfw.GLFW
 
-class FullscreenManager(window: Long, glfw: Glfw):
+class FullscreenManager(window: Long, windowSystem: WindowSystem):
   private var fullscreen = false
   private val prevWindowPos = new Vector2i()
   private val prevWindowSize = new Vector2i()
@@ -23,19 +23,19 @@ class FullscreenManager(window: Long, glfw: Glfw):
     val (wx, wy) = (prevWindowPos.x, prevWindowPos.y)
     val (ww, wh) = (prevWindowSize.x, prevWindowSize.y)
 
-    glfw.glfwSetWindowMonitor(window, 0, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
+    windowSystem.glfwSetWindowMonitor(window, 0, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
 
   private def setFullscreen(): Unit =
-    val (wx, wy) = glfw.getWindowPos(window)
-    val (ww, wh) = glfw.getWindowSize(window)
+    val (wx, wy) = windowSystem.getWindowPos(window)
+    val (ww, wh) = windowSystem.getWindowSize(window)
 
     prevWindowPos.set(wx, wy)
     prevWindowSize.set(ww, wh)
 
     val monitor = getCurrentMonitor(wx, wy, ww, wh)
-    val mode = glfw.getVideoMode(monitor)
+    val mode = windowSystem.getVideoMode(monitor)
 
-    glfw.glfwSetWindowMonitor(window, monitor, 0, 0, mode.width, mode.height, mode.refreshRate)
+    windowSystem.glfwSetWindowMonitor(window, monitor, 0, 0, mode.width, mode.height, mode.refreshRate)
 
   private def getCurrentMonitor(
       windowPosX: Int,
@@ -46,10 +46,10 @@ class FullscreenManager(window: Long, glfw: Glfw):
     var bestOverlap = 0
     var bestMonitor = 0L
 
-    for monitor <- glfw.monitors do
-      val (monitorPosX, monitorPosY) = glfw.getMonitorPos(monitor)
+    for monitor <- windowSystem.monitors do
+      val (monitorPosX, monitorPosY) = windowSystem.getMonitorPos(monitor)
 
-      val mode = glfw.getVideoMode(monitor)
+      val mode = windowSystem.getVideoMode(monitor)
       val monitorWidth = mode.width
       val monitorHeight = mode.height
 
@@ -69,4 +69,4 @@ class FullscreenManager(window: Long, glfw: Glfw):
 
     if bestMonitor != 0L
     then bestMonitor
-    else glfw.primaryMonitor
+    else windowSystem.primaryMonitor
