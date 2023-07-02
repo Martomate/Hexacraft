@@ -4,7 +4,7 @@ import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.gui.{Event, Scene, SceneStack, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.{Glfw, OpenGL}
+import com.martomate.hexacraft.infra.{CallbackEvent, KeyAction, OpenGL, Glfw}
 import com.martomate.hexacraft.menu.MainMenu
 import com.martomate.hexacraft.renderer.{Shader, VAO}
 import com.martomate.hexacraft.util.{AsyncFileIO, Resource}
@@ -29,7 +29,6 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   def framebufferSize: Vector2ic = _framebufferSize
 
   private val glfw = Glfw.create()
-  private val glfwHelper = new GlfwHelper(glfw)
   private val callbackHandler = new CallbackHandler(glfw)
 
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
@@ -38,9 +37,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private val fullscreenManager = new FullscreenManager(window, glfw)
 
   private val mouse: RealGameMouse = new RealGameMouse
-  private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(key =>
-    glfw.glfwGetKey(window, key) == GLFW.GLFW_PRESS
-  )
+  private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(key => glfw.isKeyPressed(window, key))
 
   private val scenes: SceneStack = new SceneStack
   def popScene(): Unit = scenes.popScene()
@@ -51,7 +48,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     glfw.glfwSetInputMode(window, GLFW.GLFW_CURSOR, cursorLayout)
 
   def resetMousePos(): Unit =
-    val (cx, cy) = glfwHelper.getCursorPos(window)
+    val (cx, cy) = glfw.getCursorPos(window)
     mouse.skipNextMouseMovedUpdate()
     mouse.moveTo(cx, _windowSize.y - cy)
 
@@ -89,7 +86,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
       val realDeltaTime = System.nanoTime - realPrevTime
       val msTime = (realDeltaTime * 1e-6).toInt
 
-      glfw.glfwSwapBuffers(window)
+      glfw.swapBuffers(window)
 
       if titleTicker > 10
       then
@@ -100,7 +97,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
           "Hexacraft" +: scenes.map(_.windowTitle) :+ s"$fps fps   ms: $msString" :+ vsyncStr
         val windowTitle = titleParts.filter(_.nonEmpty).mkString("   |   ")
 
-        glfw.glfwSetWindowTitle(window, windowTitle)
+        glfw.setWindowTitle(window, windowTitle)
 
       // Poll for window events. The callbacks will (on most systems) only be invoked during this call.
       glfw.glfwPollEvents()
@@ -109,14 +106,11 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
   private def processCallbackEvent(event: CallbackEvent): Unit = event match
     case CallbackEvent.KeyPressed(window, key, scancode, action, mods) =>
-      val keyAction = Event.KeyAction.fromGlfw(action)
-      val keyMods = Event.KeyMods.fromGlfw(mods)
-
-      val keyIsPressed = keyAction == Event.KeyAction.Press
+      val keyIsPressed = action == KeyAction.Press
 
       if keyIsPressed
       then
-        if key == GLFW.GLFW_KEY_R && glfw.glfwGetKey(window, GLFW.GLFW_KEY_F3) == GLFW.GLFW_PRESS
+        if key == GLFW.GLFW_KEY_R && glfw.isKeyPressed(window, GLFW.GLFW_KEY_F3)
         then
           Resource.reloadAllResources()
           scenes.foreach(_.onReloadedResources())
@@ -125,21 +119,21 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         if key == GLFW.GLFW_KEY_F11
         then setFullscreen()
 
-      scenes.reverseIterator.exists(_.handleEvent(Event.KeyEvent(key, scancode, keyAction, keyMods)))
+      scenes.reverseIterator.exists(_.handleEvent(Event.KeyEvent(key, scancode, action, mods)))
+
     case CallbackEvent.CharTyped(_, character) =>
       scenes.reverseIterator.exists(_.handleEvent(Event.CharEvent(character)))
-    case CallbackEvent.MouseClicked(_, button, action, mods) =>
-      val mouseButton = Event.MouseButton.fromGlfw(button)
-      val mouseAction = Event.MouseAction.fromGlfw(action)
-      val keyMods = Event.KeyMods.fromGlfw(mods)
 
+    case CallbackEvent.MouseClicked(_, button, action, mods) =>
       val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
       scenes.reverseIterator.exists(
-        _.handleEvent(Event.MouseClickEvent(mouseButton, mouseAction, keyMods, mousePos))
+        _.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
       )
+
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
       scenes.reverseIterator.exists(_.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))
+
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then
@@ -151,6 +145,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         mouse.skipNextMouseMovedUpdate()
 
       Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
+
     case CallbackEvent.FramebufferResized(_, w, h) =>
       if w > 0 && h > 0
       then
@@ -180,7 +175,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     VAO.unbindVAO()
 
   private def tick(): Unit =
-    val (cx, cy) = glfwHelper.getCursorPos(window)
+    val (cx, cy) = glfw.getCursorPos(window)
     mouse.moveTo(cx, _windowSize.y - cy)
 
     scenes.foreach(_.tick()) // TODO: should maybe be reversed
@@ -211,16 +206,14 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
       // Terminate GLFW and free the error callback
       glfw.glfwTerminate()
-      glfw.glfwSetErrorCallback(null).free()
+      glfw.setErrorCallback(null).free()
 
   private def setFullscreen(): Unit =
     fullscreenManager.toggleFullscreen()
     mouse.skipNextMouseMovedUpdate()
 
   private def initWindow(): Long =
-    // Setup an error callback. The default implementation
-    // will print the error message in System.err.
-    glfw.glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err))
+    glfw.setErrorCallback(e => System.err.println(s"[LWJGL] ${e.reason} error: ${e.description}"))
 
     // Initialize GLFW. Most GLFW functions will not work before doing this.
     if !glfw.glfwInit()
@@ -232,7 +225,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     if window == 0
     then throw new RuntimeException("Failed to create the GLFW window")
 
-    val (fw, fh) = glfwHelper.getFramebufferSize(window)
+    val (fw, fh) = glfw.getFramebufferSize(window)
     _framebufferSize.set(fw, fh)
 
     setupCallbacks(window)
@@ -271,11 +264,11 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
     callbackHandler.addFramebufferSizeCallback(window)
 
   private def centerWindow(window: Long): Unit =
-    val (windowWidth, windowHeight) = glfwHelper.getWindowSize(window)
+    val (windowWidth, windowHeight) = glfw.getWindowSize(window)
 
-    val mode = glfw.glfwGetVideoMode(glfw.glfwGetPrimaryMonitor())
+    val mode = glfw.getVideoMode(glfw.primaryMonitor)
 
-    glfw.glfwSetWindowPos(window, (mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
+    glfw.setWindowPos(window, (mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
 
   private def initGL(): Unit =
     OpenGL.createCapabilities()

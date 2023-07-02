@@ -1,16 +1,8 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.Glfw
+import com.martomate.hexacraft.infra.{CallbackEvent, Glfw}
 
 import scala.collection.mutable
-
-enum CallbackEvent:
-  case KeyPressed(window: Long, key: Int, scancode: Int, action: Int, mods: Int)
-  case CharTyped(window: Long, character: Int)
-  case MouseClicked(window: Long, button: Int, action: Int, mods: Int)
-  case MouseScrolled(window: Long, xOffset: Double, yOffset: Double)
-  case WindowResized(window: Long, w: Int, h: Int)
-  case FramebufferResized(window: Long, w: Int, h: Int)
 
 class CallbackHandler(glfw: Glfw):
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
@@ -19,35 +11,20 @@ class CallbackHandler(glfw: Glfw):
     while callbackQueue.nonEmpty
     do handler(callbackQueue.dequeue())
 
-  private def onKeyCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int): Unit =
-    callbackQueue.enqueue(CallbackEvent.KeyPressed(window, key, scancode, action, mods))
+  def addKeyCallback(window: Long): Unit =
+    glfw.setKeyCallback(window, callbackQueue.enqueue)
 
-  private def onCharCallback(window: Long, character: Int): Unit =
-    callbackQueue.enqueue(CallbackEvent.CharTyped(window, character))
-
-  private def onMouseButtonCallback(window: Long, button: Int, action: Int, mods: Int): Unit =
-    callbackQueue.enqueue(CallbackEvent.MouseClicked(window, button, action, mods))
-
-  private def onWindowSizeCallback(window: Long, width: Int, height: Int): Unit =
-    callbackQueue.enqueue(CallbackEvent.WindowResized(window, width, height))
-
-  private def onFramebufferSizeCallback(window: Long, width: Int, height: Int): Unit =
-    callbackQueue.enqueue(CallbackEvent.FramebufferResized(window, width, height))
-
-  private def onScrollCallback(window: Long, dx: Double, dy: Double): Unit =
-    callbackQueue.enqueue(CallbackEvent.MouseScrolled(window, dx, dy))
-
-  def addKeyCallback(window: Long): Unit = glfw.glfwSetKeyCallback(window, onKeyCallback)
-
-  def addCharCallback(window: Long): Unit = glfw.glfwSetCharCallback(window, onCharCallback)
+  def addCharCallback(window: Long): Unit =
+    glfw.setCharCallback(window, callbackQueue.enqueue)
 
   def addMouseButtonCallback(window: Long): Unit =
-    glfw.glfwSetMouseButtonCallback(window, onMouseButtonCallback)
+    glfw.setMouseButtonCallback(window, callbackQueue.enqueue)
 
   def addWindowSizeCallback(window: Long): Unit =
-    glfw.glfwSetWindowSizeCallback(window, onWindowSizeCallback)
+    glfw.setWindowSizeCallback(window, callbackQueue.enqueue)
 
   def addFramebufferSizeCallback(window: Long): Unit =
-    glfw.glfwSetFramebufferSizeCallback(window, onFramebufferSizeCallback)
+    glfw.setFramebufferSizeCallback(window, callbackQueue.enqueue)
 
-  def addScrollCallback(window: Long): Unit = glfw.glfwSetScrollCallback(window, onScrollCallback)
+  def addScrollCallback(window: Long): Unit =
+    glfw.setScrollCallback(window, callbackQueue.enqueue)

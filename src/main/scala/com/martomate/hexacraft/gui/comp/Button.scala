@@ -2,6 +2,7 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
+import com.martomate.hexacraft.infra.MouseAction
 
 import org.joml.Vector4f
 
@@ -28,7 +29,7 @@ class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using
 
   override def handleEvent(event: Event): Boolean = event match
     case Event.MouseClickEvent(_, action, _, mousePos) =>
-      val mouseReleased = action == Event.MouseAction.Release
+      val mouseReleased = action == MouseAction.Release
       val containsMouse = bounds.containsPoint(mousePos)
 
       if mouseReleased && containsMouse

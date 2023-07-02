@@ -3,6 +3,7 @@ package com.martomate.hexacraft.game
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo, MenuScene, WindowScenes}
 import com.martomate.hexacraft.gui.comp.Button
+import com.martomate.hexacraft.infra.KeyAction
 
 import org.lwjgl.glfw.GLFW
 
@@ -22,7 +23,7 @@ class PauseMenu(scenes: WindowScenes, setPaused: Boolean => Unit)(using mouse: G
     System.gc()
 
   override def handleEvent(event: Event): Boolean = event match
-    case Event.KeyEvent(GLFW.GLFW_KEY_ESCAPE, _, Event.KeyAction.Press, _) =>
+    case Event.KeyEvent(GLFW.GLFW_KEY_ESCAPE, _, KeyAction.Press, _) =>
       unpause()
       true
     case _ => super.handleEvent(event)
