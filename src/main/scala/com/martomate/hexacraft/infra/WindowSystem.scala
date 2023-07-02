@@ -4,19 +4,7 @@ import com.martomate.hexacraft.util.PointerWrapper
 
 import java.nio.ByteBuffer
 import org.lwjgl.PointerBuffer
-import org.lwjgl.glfw.{
-  Callbacks,
-  GLFW,
-  GLFWCharCallbackI,
-  GLFWErrorCallback,
-  GLFWErrorCallbackI,
-  GLFWFramebufferSizeCallbackI,
-  GLFWKeyCallbackI,
-  GLFWMouseButtonCallbackI,
-  GLFWScrollCallbackI,
-  GLFWVidMode,
-  GLFWWindowSizeCallbackI
-}
+import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
 import scala.collection.mutable
 

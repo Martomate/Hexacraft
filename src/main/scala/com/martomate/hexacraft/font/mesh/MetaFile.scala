@@ -22,8 +22,7 @@ object MetaFile {
 
   /** Opens a font file in preparation for reading.
     *
-    * @param file
-    *   the font file.
+    * @param file the font file.
     */
   def fromUrl(file: URL): MetaFile = {
     val metaFile = new MetaFile()
@@ -55,8 +54,7 @@ class MetaFile private () {
 
   /** Read in the next line and store the variable values.
     *
-    * @return
-    *   {@code true} if the end of the file hasn't been reached.
+    * @return `true` if the end of the file hasn't been reached.
     */
   private def processNextLine: Boolean = {
     values.clear()
@@ -74,21 +72,17 @@ class MetaFile private () {
     true
   }
 
-  /** Gets the {@code int} value of the variable with a certain name on the current line.
+  /** Gets the `int` value of the variable with a certain name on the current line.
     *
-    * @param variable
-    *   - the name of the variable.
-    * @return
-    *   The value of the variable.
+    * @param variable the name of the variable.
+    * @return The value of the variable.
     */
   private def getValueOfVariable(variable: String): Int = values.getOrElse(variable, null).toInt
 
   /** Gets the array of ints associated with a variable on the current line.
     *
-    * @param variable
-    *   - the name of the variable.
-    * @return
-    *   The int array of values associated with the variable.
+    * @param variable the name of the variable.
+    * @return The int array of values associated with the variable.
     */
   private def getValuesOfVariable(variable: String): Seq[Int] = {
     values.getOrElse(variable, null).split(MetaFile.NUMBER_SEPARATOR).toSeq.map(_.toInt)
@@ -106,8 +100,7 @@ class MetaFile private () {
 
   /** Opens the font file, ready for reading.
     *
-    * @param file
-    *   - the font file.
+    * @param file the font file.
     */
   private def openFile(file: URL): Unit = {
     try reader = FileUtils.getBufferedReader(file)
@@ -137,10 +130,9 @@ class MetaFile private () {
     horizontalPerPixelSize = verticalPerPixelSize
   }
 
-  /** Loads in data about each character and stores the data in the {@link Character} class.
+  /** Loads in data about each character and stores the data in the [[Character]] class.
     *
-    * @param imageWidth
-    *   - the width of the texture atlas in pixels.
+    * @param imageWidth the width of the texture atlas in pixels.
     */
   private def loadCharacterData(imageWidth: Int): Unit = {
     processNextLine
@@ -156,10 +148,8 @@ class MetaFile private () {
   /** Loads all the data about one character in the texture atlas and converts it all from 'pixels'
     * to 'screen-space' before storing. The effects of padding are also removed from the data.
     *
-    * @param imageSize
-    *   - the size of the texture atlas in pixels.
-    * @return
-    *   The data about the character.
+    * @param imageSize the size of the texture atlas in pixels.
+    * @return The data about the character.
     */
   private def loadCharacter(imageSize: Int): Character = {
     def getInt(variable: String): Int = getValueOfVariable(variable)

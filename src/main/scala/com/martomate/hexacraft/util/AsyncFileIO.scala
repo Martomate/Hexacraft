@@ -15,7 +15,7 @@ object AsyncFileIO:
     val realPath = file.getCanonicalPath
 
     lockedFiles.synchronized {
-      while (lockedFiles.contains(realPath))
+      while lockedFiles.contains(realPath)
       do lockedFiles.wait()
 
       lockedFiles += realPath

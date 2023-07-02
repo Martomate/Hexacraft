@@ -59,7 +59,7 @@ object TextMeshCreator {
 }
 
 class TextMeshCreator(val metaFile: URL) {
-  private var metaData: MetaFile = MetaFile.fromUrl(metaFile)
+  private val metaData: MetaFile = MetaFile.fromUrl(metaFile)
 
   def createTextMesh(text: GUIText): TextMeshData = {
     val lines = createStructure(text)

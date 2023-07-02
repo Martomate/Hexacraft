@@ -25,8 +25,7 @@ class Line(val spaceWidth: Double, val fontSize: Double, val maxLength: Double) 
     *
     * @param word
     *   the word to try to add.
-    * @return
-    *   {@code true} if the word has successfully been added to the line.
+    * @return `true` if the word has successfully been added to the line.
     */
   def attemptToAddWord(word: Word): Boolean = {
     var additionalLength: Double = word.getWordWidth

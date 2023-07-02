@@ -2,14 +2,14 @@ import scala.util.Properties.isMac
 
 lazy val root = Project("hexacraft", file("."))
   .enablePlugins(LauncherJarPlugin)
-  .settings(Defaults.coreDefaultSettings: _*)
-  .settings(mainSettings: _*)
+  .settings(Defaults.coreDefaultSettings*)
+  .settings(mainSettings*)
 
 def mainSettings: Seq[Def.SettingsDefinition] = Seq(
   name := "Hexacraft",
   organization := "com.martomate",
   version := "0.10",
-  scalaVersion := "3.2.0",
+  scalaVersion := "3.3.0",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
   javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None),
   publishArtifact := false,
@@ -44,14 +44,14 @@ def lwjglDependencies = {
 }
 
 def otherDependencies = Seq(
-  "org.joml" % "joml" % "1.10.4",
+  "org.joml" % "joml" % "1.10.5",
   "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
 
 def testDependencies = Seq(
   "org.scalameta" %% "munit" % "0.7.29" % "test",
-  "org.scalatestplus" %% "mockito-4-5" % "3.2.12.0" % "test",
-  "com.tngtech.archunit" % "archunit" % "1.0.0-rc1" % "test",
-  "org.slf4j" % "slf4j-nop" % "2.0.1" % "test" // Needed for ArchUnit
+  "org.scalatestplus" %% "mockito-4-11" % "3.2.16.0" % "test",
+  "com.tngtech.archunit" % "archunit" % "1.0.1" % "test",
+  "org.slf4j" % "slf4j-nop" % "2.0.5" % "test" // Needed for ArchUnit
 )
