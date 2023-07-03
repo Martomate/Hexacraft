@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.{Monitor, MonitorId, Window, WindowId, WindowSystem}
+import com.martomate.hexacraft.infra.window.{Monitor, Window, WindowSystem}
 
 import org.joml.Vector2i
 

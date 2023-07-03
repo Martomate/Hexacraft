@@ -4,7 +4,7 @@ import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.GUIBlocksRenderer
 import com.martomate.hexacraft.gui.{Event, LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
-import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey, MouseAction}
+import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.player.Inventory
 

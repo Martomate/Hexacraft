@@ -1,6 +1,6 @@
 package com.martomate.hexacraft
 
-import com.martomate.hexacraft.infra.{KeyboardKey, Window}
+import com.martomate.hexacraft.infra.window.{KeyboardKey, Window}
 
 trait GameKeyboard:
   def keyIsPressed(key: GameKeyboard.Key): Boolean

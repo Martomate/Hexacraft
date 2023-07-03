@@ -3,7 +3,7 @@ package com.martomate.hexacraft.gui.comp
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
-import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey}
+import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey}
 
 import org.joml.{Vector3f, Vector4f}
 

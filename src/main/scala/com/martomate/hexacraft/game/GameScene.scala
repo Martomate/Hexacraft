@@ -4,7 +4,7 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton, OpenGL}
+import com.martomate.hexacraft.infra.OpenGL
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
@@ -20,6 +20,7 @@ import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldInfo
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f

@@ -3,7 +3,7 @@ package com.martomate.hexacraft.game
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo, MenuScene, WindowScenes}
 import com.martomate.hexacraft.gui.comp.Button
-import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey}
+import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey}
 
 class PauseMenu(scenes: WindowScenes, setPaused: Boolean => Unit)(using mouse: GameMouse) extends MenuScene {
   addComponent(Button("Back to game", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(unpause()))
