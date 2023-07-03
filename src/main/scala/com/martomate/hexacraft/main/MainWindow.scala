@@ -4,7 +4,7 @@ import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.gui.{Event, Scene, SceneStack, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{
   CallbackEvent,
   CursorMode,

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{InstancedRenderer, VAO}
 
 object EntityPartRenderer:

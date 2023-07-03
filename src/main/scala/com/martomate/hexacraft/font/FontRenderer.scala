@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.font
 
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
 import com.martomate.hexacraft.renderer.Shader
 

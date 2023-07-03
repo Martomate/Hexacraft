@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 
 class FrameBuffer(val width: Int, val height: Int) {
   private val fbID = OpenGL.glGenFramebuffer()

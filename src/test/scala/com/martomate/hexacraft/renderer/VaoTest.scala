@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.infra.OpenGL
-
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import munit.FunSuite
 
 class VaoTest extends FunSuite {

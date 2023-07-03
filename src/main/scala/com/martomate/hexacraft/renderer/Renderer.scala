@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.renderer
 
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 
 class Renderer(val vao: VAO, val mode: OpenGL.PrimitiveMode) {
   def render(): Unit = render(vao.maxCount)

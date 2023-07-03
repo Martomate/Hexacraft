@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font.mesh
 
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import java.net.URL
 
 /** Represents a font. It holds the font's texture atlas as well as having the ability to create the

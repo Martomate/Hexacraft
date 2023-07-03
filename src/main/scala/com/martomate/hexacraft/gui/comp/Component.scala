@@ -4,7 +4,7 @@ import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.*
 
 import org.joml.{Matrix4f, Vector2f, Vector4f}

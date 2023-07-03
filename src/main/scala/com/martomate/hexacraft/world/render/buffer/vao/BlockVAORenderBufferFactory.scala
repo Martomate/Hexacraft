@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.render.buffer.vao
 
-import com.martomate.hexacraft.infra.OpenGL
+import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.world.render.{BlockRenderer, BlockVertexData}
 import com.martomate.hexacraft.world.render.buffer.RenderBufferFactory
