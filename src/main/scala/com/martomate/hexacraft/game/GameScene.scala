@@ -4,7 +4,7 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.{KeyAction, MouseAction, MouseButton, OpenGL}
+import com.martomate.hexacraft.infra.{CursorMode, KeyAction, MouseAction, MouseButton, OpenGL}
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
@@ -190,7 +190,7 @@ class GameScene(worldProvider: WorldProvider)(using
       setMouseCursorInvisible(!paused && moveWithMouse)
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit =
-    summon[WindowExtras].setCursorLayout(if invisible then GLFW.GLFW_CURSOR_DISABLED else GLFW.GLFW_CURSOR_NORMAL)
+    summon[WindowExtras].setCursorMode(if invisible then CursorMode.Disabled else CursorMode.Normal)
 
   override def windowResized(width: Int, height: Int): Unit =
     camera.proj.aspect = width.toFloat / height

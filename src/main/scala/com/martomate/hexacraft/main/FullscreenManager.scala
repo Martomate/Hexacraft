@@ -1,11 +1,10 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.infra.{MonitorId, WindowId, WindowSystem}
+import com.martomate.hexacraft.infra.{Monitor, MonitorId, Window, WindowId, WindowSystem}
 
 import org.joml.Vector2i
-import org.lwjgl.glfw.GLFW
 
-class FullscreenManager(window: WindowId, windowSystem: WindowSystem):
+class FullscreenManager(window: Window, windowSystem: WindowSystem):
   private var fullscreen = false
   private val prevWindowPos = new Vector2i()
   private val prevWindowSize = new Vector2i()
@@ -23,33 +22,31 @@ class FullscreenManager(window: WindowId, windowSystem: WindowSystem):
     val (wx, wy) = (prevWindowPos.x, prevWindowPos.y)
     val (ww, wh) = (prevWindowSize.x, prevWindowSize.y)
 
-    windowSystem.glfwSetWindowMonitor(window, MonitorId.none, wx, wy, ww, wh, GLFW.GLFW_DONT_CARE)
+    window.enterWindowedMode(wx, wy, ww, wh)
 
   private def setFullscreen(): Unit =
-    val (wx, wy) = windowSystem.getWindowPos(window)
-    val (ww, wh) = windowSystem.getWindowSize(window)
+    val (wx, wy) = window.position
+    val (ww, wh) = window.size
 
     prevWindowPos.set(wx, wy)
     prevWindowSize.set(ww, wh)
 
     val monitor = getCurrentMonitor(wx, wy, ww, wh)
-    val mode = windowSystem.getVideoMode(monitor)
-
-    windowSystem.glfwSetWindowMonitor(window, monitor, 0, 0, mode.width, mode.height, mode.refreshRate)
+    window.enterFullscreenMode(monitor)
 
   private def getCurrentMonitor(
       windowPosX: Int,
       windowPosY: Int,
       windowWidth: Int,
       windowHeight: Int
-  ): MonitorId =
+  ): Monitor =
     var bestOverlap = 0
-    var bestMonitor = MonitorId.none
+    var bestMonitor: Option[Monitor] = None
 
     for monitor <- windowSystem.monitors do
-      val (monitorPosX, monitorPosY) = windowSystem.getMonitorPos(monitor)
+      val (monitorPosX, monitorPosY) = monitor.position
 
-      val mode = windowSystem.getVideoMode(monitor)
+      val mode = monitor.videoMode
       val monitorWidth = mode.width
       val monitorHeight = mode.height
 
@@ -65,8 +62,6 @@ class FullscreenManager(window: WindowId, windowSystem: WindowSystem):
       if bestOverlap < overlap
       then
         bestOverlap = overlap
-        bestMonitor = monitor
+        bestMonitor = Some(monitor)
 
-    if bestMonitor != MonitorId.none
-    then bestMonitor
-    else windowSystem.primaryMonitor
+    bestMonitor.getOrElse(windowSystem.primaryMonitor)

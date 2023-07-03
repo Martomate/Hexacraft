@@ -1,6 +1,8 @@
 package com.martomate.hexacraft.gui
 
+import com.martomate.hexacraft.infra.CursorMode
+
 trait WindowExtras {
   def resetMousePos(): Unit
-  def setCursorLayout(cursorLayout: Int): Unit
+  def setCursorMode(cursorMode: CursorMode): Unit
 }

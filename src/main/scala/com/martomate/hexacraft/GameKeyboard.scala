@@ -1,5 +1,7 @@
 package com.martomate.hexacraft
 
+import com.martomate.hexacraft.infra.Window
+
 import org.lwjgl.glfw.GLFW
 
 trait GameKeyboard:
@@ -28,23 +30,23 @@ object GameKeyboard:
 
     case ResetRotation
 
-  class GlfwKeyboard(glfwKeyIsPressed: Int => Boolean) extends GameKeyboard:
+  class GlfwKeyboard(window: Window) extends GameKeyboard:
     def keyIsPressed(key: GameKeyboard.Key): Boolean =
       import GameKeyboard.Key.*
       key match
-        case MoveForward   => glfwKeyIsPressed(GLFW.GLFW_KEY_W)
-        case MoveBackward  => glfwKeyIsPressed(GLFW.GLFW_KEY_S)
-        case MoveRight     => glfwKeyIsPressed(GLFW.GLFW_KEY_D)
-        case MoveLeft      => glfwKeyIsPressed(GLFW.GLFW_KEY_A)
-        case Jump          => glfwKeyIsPressed(GLFW.GLFW_KEY_SPACE)
-        case Sneak         => glfwKeyIsPressed(GLFW.GLFW_KEY_LEFT_SHIFT)
-        case LookUp        => glfwKeyIsPressed(GLFW.GLFW_KEY_UP)
-        case LookDown      => glfwKeyIsPressed(GLFW.GLFW_KEY_DOWN)
-        case LookLeft      => glfwKeyIsPressed(GLFW.GLFW_KEY_LEFT)
-        case LookRight     => glfwKeyIsPressed(GLFW.GLFW_KEY_RIGHT)
-        case TurnHeadLeft  => glfwKeyIsPressed(GLFW.GLFW_KEY_PAGE_UP)
-        case TurnHeadRight => glfwKeyIsPressed(GLFW.GLFW_KEY_PAGE_DOWN)
-        case MoveSlowly    => glfwKeyIsPressed(GLFW.GLFW_KEY_LEFT_CONTROL)
-        case MoveFast      => glfwKeyIsPressed(GLFW.GLFW_KEY_LEFT_ALT)
-        case MoveSuperFast => glfwKeyIsPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
-        case ResetRotation => glfwKeyIsPressed(GLFW.GLFW_KEY_DELETE) && glfwKeyIsPressed(GLFW.GLFW_KEY_R)
+        case MoveForward   => window.isKeyPressed(GLFW.GLFW_KEY_W)
+        case MoveBackward  => window.isKeyPressed(GLFW.GLFW_KEY_S)
+        case MoveRight     => window.isKeyPressed(GLFW.GLFW_KEY_D)
+        case MoveLeft      => window.isKeyPressed(GLFW.GLFW_KEY_A)
+        case Jump          => window.isKeyPressed(GLFW.GLFW_KEY_SPACE)
+        case Sneak         => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)
+        case LookUp        => window.isKeyPressed(GLFW.GLFW_KEY_UP)
+        case LookDown      => window.isKeyPressed(GLFW.GLFW_KEY_DOWN)
+        case LookLeft      => window.isKeyPressed(GLFW.GLFW_KEY_LEFT)
+        case LookRight     => window.isKeyPressed(GLFW.GLFW_KEY_RIGHT)
+        case TurnHeadLeft  => window.isKeyPressed(GLFW.GLFW_KEY_PAGE_UP)
+        case TurnHeadRight => window.isKeyPressed(GLFW.GLFW_KEY_PAGE_DOWN)
+        case MoveSlowly    => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)
+        case MoveFast      => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT)
+        case MoveSuperFast => window.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
+        case ResetRotation => window.isKeyPressed(GLFW.GLFW_KEY_DELETE) && window.isKeyPressed(GLFW.GLFW_KEY_R)
