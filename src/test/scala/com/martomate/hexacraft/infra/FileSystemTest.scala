@@ -1,11 +1,13 @@
 package com.martomate.hexacraft.infra
 
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.util.Result.Err
 import com.martomate.hexacraft.util.Tracker
 
 import java.io.File
 import java.nio.file.{Files, Path}
 import munit.FunSuite
+
 import scala.collection.immutable.ArraySeq
 
 class FileSystemTest extends FunSuite {

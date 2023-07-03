@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.util
 
-import com.martomate.hexacraft.infra.{FileSystem, NbtIO}
-
 import com.flowpowered.nbt.*
+import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
 import java.io.{BufferedInputStream, BufferedOutputStream, ByteArrayInputStream, ByteArrayOutputStream, File}
 import java.nio.file.{Files, Path}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}

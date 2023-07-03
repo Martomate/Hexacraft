@@ -1,9 +1,9 @@
-package com.martomate.hexacraft.infra
+package com.martomate.hexacraft.infra.fs
 
 import com.martomate.hexacraft.util.{EventDispatcher, Result, Tracker, TrackerWithStorage}
 import com.martomate.hexacraft.util.Result.{Err, Ok}
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, InputStream, OutputStream}
+import java.io.*
 import java.nio.file.{Files, NoSuchFileException, Path}
 import scala.collection.immutable.ArraySeq
 

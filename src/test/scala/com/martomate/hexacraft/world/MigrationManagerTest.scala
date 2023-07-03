@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.infra.FileSystem
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.util.{GzipAlgorithm, Nbt, NBTUtil}
 
 import java.io.File

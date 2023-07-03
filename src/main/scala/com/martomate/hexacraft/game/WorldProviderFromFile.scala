@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.game
 
-import com.martomate.hexacraft.infra.{FileSystem, NbtIO}
 import com.martomate.hexacraft.util.NBTUtil
 import com.martomate.hexacraft.world.{MigrationManager, WorldProvider}
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
 import java.io.File
 
 class WorldProviderFromFile(saveDir: File, worldSettings: WorldSettings) extends WorldProvider {
