@@ -8,6 +8,7 @@ import com.martomate.hexacraft.infra.{
   CallbackEvent,
   CursorMode,
   KeyAction,
+  KeyboardKey,
   MonitorId,
   OpenGL,
   Window,
@@ -24,7 +25,6 @@ import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 
 import java.io.File
 import org.joml.{Vector2i, Vector2ic}
-import org.lwjgl.glfw.GLFW
 import scala.collection.mutable
 
 class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with WindowExtras:
@@ -122,13 +122,13 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
       if keyIsPressed
       then
-        if key == GLFW.GLFW_KEY_R && window.isKeyPressed(GLFW.GLFW_KEY_F3)
+        if key == KeyboardKey.Letter('R') && window.isKeyPressed(KeyboardKey.Function(3))
         then
           Resource.reloadAllResources()
           scenes.foreach(_.onReloadedResources())
           println("Reloaded resources")
 
-        if key == GLFW.GLFW_KEY_F11
+        if key == KeyboardKey.Function(11)
         then setFullscreen()
 
       scenes.reverseIterator.exists(_.handleEvent(Event.KeyEvent(key, scancode, action, mods)))

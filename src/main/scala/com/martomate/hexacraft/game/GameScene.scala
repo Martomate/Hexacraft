@@ -4,7 +4,7 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.infra.{CursorMode, KeyAction, MouseAction, MouseButton, OpenGL}
+import com.martomate.hexacraft.infra.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton, OpenGL}
 import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
@@ -23,7 +23,6 @@ import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW
 
 class GameScene(worldProvider: WorldProvider)(using
     mouse: GameMouse,
@@ -105,16 +104,16 @@ class GameScene(worldProvider: WorldProvider)(using
   private def setProjMatrixForAll(): Unit =
     worldRenderer.onProjMatrixChanged(camera)
 
-  private def handleKeyPress(key: Int): Unit = key match
-    case GLFW.GLFW_KEY_B =>
+  private def handleKeyPress(key: KeyboardKey): Unit = key match
+    case KeyboardKey.Letter('B') =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
       if world.getBlock(newCoords).blockType == Blocks.Air
       then world.setBlock(newCoords, new BlockState(player.blockInHand))
-    case GLFW.GLFW_KEY_ESCAPE =>
+    case KeyboardKey.Escape =>
       scenes.pushScene(new PauseMenu(this.scenes, this.setPaused))
       setPaused(true)
-    case GLFW.GLFW_KEY_E =>
+    case KeyboardKey.Letter('E') =>
       if !isPaused
       then
         val closeScene: () => Unit = () => {
@@ -126,24 +125,23 @@ class GameScene(worldProvider: WorldProvider)(using
         setUseMouse(false)
         isInPopup = true
         scenes.pushScene(new InventoryScene(player.inventory, closeScene))
-    case GLFW.GLFW_KEY_M =>
+    case KeyboardKey.Letter('M') =>
       setUseMouse(!moveWithMouse)
-    case GLFW.GLFW_KEY_F =>
+    case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
-    case GLFW.GLFW_KEY_F7 =>
+    case KeyboardKey.Function(7) =>
       setDebugScreenVisible(debugScene == null)
-    case key if key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_9 =>
-      val idx = key - GLFW.GLFW_KEY_1
-      setSelectedItemSlot(idx)
-    case GLFW.GLFW_KEY_P =>
+    case KeyboardKey.Digit(digit) =>
+      setSelectedItemSlot(digit)
+    case KeyboardKey.Letter('P') =>
       val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
-    case GLFW.GLFW_KEY_L =>
+    case KeyboardKey.Letter('L') =>
       val startPos = CylCoords(player.position)
 
       world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
-    case GLFW.GLFW_KEY_K =>
+    case KeyboardKey.Letter('K') =>
       world.removeAllEntities()
     case _ =>
 

@@ -1,8 +1,6 @@
 package com.martomate.hexacraft
 
-import com.martomate.hexacraft.infra.Window
-
-import org.lwjgl.glfw.GLFW
+import com.martomate.hexacraft.infra.{KeyboardKey, Window}
 
 trait GameKeyboard:
   def keyIsPressed(key: GameKeyboard.Key): Boolean
@@ -34,19 +32,19 @@ object GameKeyboard:
     def keyIsPressed(key: GameKeyboard.Key): Boolean =
       import GameKeyboard.Key.*
       key match
-        case MoveForward   => window.isKeyPressed(GLFW.GLFW_KEY_W)
-        case MoveBackward  => window.isKeyPressed(GLFW.GLFW_KEY_S)
-        case MoveRight     => window.isKeyPressed(GLFW.GLFW_KEY_D)
-        case MoveLeft      => window.isKeyPressed(GLFW.GLFW_KEY_A)
-        case Jump          => window.isKeyPressed(GLFW.GLFW_KEY_SPACE)
-        case Sneak         => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)
-        case LookUp        => window.isKeyPressed(GLFW.GLFW_KEY_UP)
-        case LookDown      => window.isKeyPressed(GLFW.GLFW_KEY_DOWN)
-        case LookLeft      => window.isKeyPressed(GLFW.GLFW_KEY_LEFT)
-        case LookRight     => window.isKeyPressed(GLFW.GLFW_KEY_RIGHT)
-        case TurnHeadLeft  => window.isKeyPressed(GLFW.GLFW_KEY_PAGE_UP)
-        case TurnHeadRight => window.isKeyPressed(GLFW.GLFW_KEY_PAGE_DOWN)
-        case MoveSlowly    => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)
-        case MoveFast      => window.isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT)
-        case MoveSuperFast => window.isKeyPressed(GLFW.GLFW_KEY_RIGHT_CONTROL)
-        case ResetRotation => window.isKeyPressed(GLFW.GLFW_KEY_DELETE) && window.isKeyPressed(GLFW.GLFW_KEY_R)
+        case MoveForward   => window.isKeyPressed(KeyboardKey.Letter('W'))
+        case MoveBackward  => window.isKeyPressed(KeyboardKey.Letter('S'))
+        case MoveRight     => window.isKeyPressed(KeyboardKey.Letter('D'))
+        case MoveLeft      => window.isKeyPressed(KeyboardKey.Letter('A'))
+        case Jump          => window.isKeyPressed(KeyboardKey.Space)
+        case Sneak         => window.isKeyPressed(KeyboardKey.LeftShift)
+        case LookUp        => window.isKeyPressed(KeyboardKey.Up)
+        case LookDown      => window.isKeyPressed(KeyboardKey.Down)
+        case LookLeft      => window.isKeyPressed(KeyboardKey.Left)
+        case LookRight     => window.isKeyPressed(KeyboardKey.Right)
+        case TurnHeadLeft  => window.isKeyPressed(KeyboardKey.PageUp)
+        case TurnHeadRight => window.isKeyPressed(KeyboardKey.PageDown)
+        case MoveSlowly    => window.isKeyPressed(KeyboardKey.LeftControl)
+        case MoveFast      => window.isKeyPressed(KeyboardKey.LeftAlt)
+        case MoveSuperFast => window.isKeyPressed(KeyboardKey.RightControl)
+        case ResetRotation => window.isKeyPressed(KeyboardKey.Delete) && window.isKeyPressed(KeyboardKey.Letter('R'))

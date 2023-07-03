@@ -4,12 +4,11 @@ import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.GUIBlocksRenderer
 import com.martomate.hexacraft.gui.{Event, LocationInfo, Scene}
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
-import com.martomate.hexacraft.infra.{KeyAction, MouseAction}
+import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey, MouseAction}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
-import org.lwjgl.glfw.GLFW
 
 class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     mouse: GameMouse,
@@ -59,7 +58,7 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     event match
       case KeyEvent(key, _, KeyAction.Press, _) =>
         key match
-          case GLFW.GLFW_KEY_ESCAPE | GLFW.GLFW_KEY_E =>
+          case KeyboardKey.Escape | KeyboardKey.Letter('E') =>
             handleFloatingBlock()
             closeScene()
           case _ =>

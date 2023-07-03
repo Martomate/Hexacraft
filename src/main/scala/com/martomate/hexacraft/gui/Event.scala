@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.gui
 
-import com.martomate.hexacraft.infra.{KeyAction, KeyMods, MouseAction, MouseButton}
+import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
 
 enum Event:
-  case KeyEvent(key: Int, scancode: Int, action: KeyAction, mods: KeyMods)
+  case KeyEvent(key: KeyboardKey, scancode: Int, action: KeyAction, mods: KeyMods)
   case CharEvent(character: Int)
   case MouseClickEvent(button: MouseButton, action: MouseAction, mods: KeyMods, mousePos: (Float, Float))
   case ScrollEvent(xOffset: Float, yOffset: Float)

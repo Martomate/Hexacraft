@@ -3,10 +3,9 @@ package com.martomate.hexacraft.gui.comp
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
-import com.martomate.hexacraft.infra.KeyAction
+import com.martomate.hexacraft.infra.{KeyAction, KeyboardKey}
 
 import org.joml.{Vector3f, Vector4f}
-import org.lwjgl.glfw.GLFW
 
 class TextField(
     location: LocationInfo,
@@ -83,7 +82,7 @@ class TextField(
       case CharEvent(character) if focused =>
         setText(text + character.toChar)
         captureEvent = true
-      case KeyEvent(GLFW.GLFW_KEY_BACKSPACE, _, KeyAction.Press, _) =>
+      case KeyEvent(KeyboardKey.Backspace, _, KeyAction.Press, _) =>
         if focused && text.nonEmpty
         then setText(text.substring(0, text.length - 1))
       case MouseClickEvent(_, _, _, mousePos) =>

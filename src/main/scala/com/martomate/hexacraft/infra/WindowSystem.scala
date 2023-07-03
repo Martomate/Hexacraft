@@ -115,7 +115,7 @@ class Window(val id: WindowId, glfw: GlfwWrapper) {
 
   def setTitle(title: String): Unit = glfw.glfwSetWindowTitle(id.toLong, title)
 
-  def isKeyPressed(key: Int): Boolean = glfw.glfwGetKey(id.toLong, key) == GLFW.GLFW_PRESS
+  def isKeyPressed(key: KeyboardKey): Boolean = glfw.glfwGetKey(id.toLong, key.toGlfw) == GLFW.GLFW_PRESS
 
   def setCursorMode(mode: CursorMode): Unit =
     glfw.glfwSetInputMode(id.toLong, GLFW.GLFW_CURSOR, mode.toGlfw)
@@ -134,7 +134,13 @@ class Window(val id: WindowId, glfw: GlfwWrapper) {
       id.toLong,
       (_, key, scancode, action, mods) =>
         callback(
-          CallbackEvent.KeyPressed(this, key, scancode, KeyAction.fromGlfw(action), KeyMods.fromGlfw(mods))
+          CallbackEvent.KeyPressed(
+            this,
+            KeyboardKey.fromGlfw(key),
+            scancode,
+            KeyAction.fromGlfw(action),
+            KeyMods.fromGlfw(mods)
+          )
         )
     )
 
@@ -177,6 +183,64 @@ class Window(val id: WindowId, glfw: GlfwWrapper) {
     )
 }
 
+opaque type KeyboardKey <: AnyVal = Int
+object KeyboardKey {
+  private[infra] def fromGlfw(key: Int): KeyboardKey = key
+  extension (key: KeyboardKey)
+    private[infra] def toGlfw: Int = key
+    def isDigit: Boolean = key >= GLFW.GLFW_KEY_0 && key <= GLFW.GLFW_KEY_9
+
+  object Letter {
+    def apply(char: Char): KeyboardKey =
+      require(char >= 'A' && char <= 'Z', s"Invalid Letter: $char")
+      GLFW.GLFW_KEY_A + (char.toInt - 'A'.toInt)
+
+    def unapply(key: KeyboardKey): Option[Char] =
+      if key >= GLFW.GLFW_KEY_A && key <= GLFW.GLFW_KEY_Z
+      then Some(((key - GLFW.GLFW_KEY_A) + 'A'.toInt).toChar)
+      else None
+  }
+
+  object Digit {
+    def apply(digit: Byte): KeyboardKey =
+      require(digit >= 0 && digit <= 9, s"Invalid Digit: $digit")
+      GLFW.GLFW_KEY_0 + digit
+
+    def unapply(key: KeyboardKey): Option[Byte] =
+      if key >= GLFW.GLFW_KEY_0 && key <= GLFW.GLFW_KEY_9
+      then Some((key - GLFW.GLFW_KEY_0).toByte)
+      else None
+  }
+
+  object Function {
+    def apply(number: Byte): KeyboardKey =
+      require(number >= 1 && number <= 25, s"Invalid Function key: F$number")
+      GLFW.GLFW_KEY_F1 + (number - 1)
+
+    def unapply(key: KeyboardKey): Option[Byte] =
+      if key >= GLFW.GLFW_KEY_F1 && key <= GLFW.GLFW_KEY_F25
+      then Some(((key - GLFW.GLFW_KEY_F1) + 1).toByte)
+      else None
+  }
+
+  val Space: KeyboardKey = GLFW.GLFW_KEY_SPACE
+  val LeftShift: KeyboardKey = GLFW.GLFW_KEY_LEFT_SHIFT
+  val RightShift: KeyboardKey = GLFW.GLFW_KEY_RIGHT_SHIFT
+  val LeftAlt: KeyboardKey = GLFW.GLFW_KEY_LEFT_ALT
+  val RightAlt: KeyboardKey = GLFW.GLFW_KEY_RIGHT_ALT
+  val LeftControl: KeyboardKey = GLFW.GLFW_KEY_LEFT_CONTROL
+  val RightControl: KeyboardKey = GLFW.GLFW_KEY_RIGHT_CONTROL
+  val PageUp: KeyboardKey = GLFW.GLFW_KEY_PAGE_UP
+  val PageDown: KeyboardKey = GLFW.GLFW_KEY_PAGE_DOWN
+  val Delete: KeyboardKey = GLFW.GLFW_KEY_DELETE
+  val Up: KeyboardKey = GLFW.GLFW_KEY_UP
+  val Down: KeyboardKey = GLFW.GLFW_KEY_DOWN
+  val Left: KeyboardKey = GLFW.GLFW_KEY_LEFT
+  val Right: KeyboardKey = GLFW.GLFW_KEY_RIGHT
+  val Escape: KeyboardKey = GLFW.GLFW_KEY_ESCAPE
+  val Backspace: KeyboardKey = GLFW.GLFW_KEY_BACKSPACE
+}
+
 enum CursorMode:
   case Normal
   case Hidden
@@ -217,13 +281,14 @@ object KeyAction:
 
 opaque type KeyMods = Int
 
-object KeyMods:
+object KeyMods {
   def fromGlfw(mods: Int): KeyMods = mods
 
-extension (mods: KeyMods)
-  def shiftDown: Boolean = (mods & GLFW.GLFW_MOD_SHIFT) != 0
-  def ctrlDown: Boolean = (mods & GLFW.GLFW_MOD_CONTROL) != 0
-  def altDown: Boolean = (mods & GLFW.GLFW_MOD_ALT) != 0
+  extension (mods: KeyMods)
+    def shiftDown: Boolean = (mods & GLFW.GLFW_MOD_SHIFT) != 0
+    def ctrlDown: Boolean = (mods & GLFW.GLFW_MOD_CONTROL) != 0
+    def altDown: Boolean = (mods & GLFW.GLFW_MOD_ALT) != 0
+}
 
 enum MouseButton:
   case Left
@@ -250,7 +315,7 @@ object MouseAction:
       case GLFW.GLFW_RELEASE => MouseAction.Release
 
 enum CallbackEvent:
-  case KeyPressed(window: Window, key: Int, scancode: Int, action: KeyAction, mods: KeyMods)
+  case KeyPressed(window: Window, key: KeyboardKey, scancode: Int, action: KeyAction, mods: KeyMods)
   case CharTyped(window: Window, character: Int)
   case MouseClicked(window: Window, button: MouseButton, action: MouseAction, mods: KeyMods)
   case MouseScrolled(window: Window, xOffset: Double, yOffset: Double)
