@@ -1,15 +1,80 @@
 package com.martomate.hexacraft.world.loader
 
+import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
-trait ChunkLoadingPrioritizer {
-  def +=(chunk: ChunkRelWorld): Unit
-  def -=(chunk: ChunkRelWorld): Unit
+import scala.collection.mutable
 
-  def tick(): Unit
+class ChunkLoadingPrioritizer(origin: PosAndDir, distSqFunc: (PosAndDir, ChunkRelWorld) => Double, maxDist: Double)(
+    using CylinderSize
+) {
+  private val edge = new ChunkLoadingEdge
+  edge.trackEvents(this.onChunkEdgeEvent _)
 
-  def nextAddableChunk: Option[ChunkRelWorld]
-  def nextRemovableChunk: Option[ChunkRelWorld]
+  private val addableChunks: mutable.PriorityQueue[ChunkRelWorld] =
+    mutable.PriorityQueue.empty(Ordering.by(c => -distSqFunc(origin, c)))
+  private val removableChunks: mutable.PriorityQueue[ChunkRelWorld] =
+    mutable.PriorityQueue.empty(Ordering.by(c => distSqFunc(origin, c)))
 
-  def unload(): Unit
+  private val maxDistSqInBlocks: Double = (maxDist * 16) * (maxDist * 16)
+
+  private val reorderPQsTimerLength = 60
+  private var reorderPQsTimer = reorderPQsTimerLength
+
+  def +=(chunk: ChunkRelWorld): Unit = {
+    edge.loadChunk(chunk)
+  }
+
+  def -=(chunk: ChunkRelWorld): Unit = {
+    edge.unloadChunk(chunk)
+  }
+
+  def tick(): Unit = {
+    reorderPQsTimer -= 1
+    if (reorderPQsTimer == 0) {
+      reorderPQsTimer = reorderPQsTimerLength
+      reorderPQs()
+    }
+  }
+
+  def reorderPQs(): Unit = {
+    val addSeq = addableChunks.toSeq
+    addableChunks.clear()
+    addableChunks.enqueue(addSeq: _*)
+    val remSeq = removableChunks.toSeq
+    removableChunks.clear()
+    removableChunks.enqueue(remSeq: _*)
+  }
+
+  def nextAddableChunk: Option[ChunkRelWorld] = {
+    while (addableChunks.nonEmpty && !edge.canLoad(addableChunks.head)) addableChunks.dequeue()
+
+    if (addableChunks.isEmpty) {
+      val coords = CoordUtils.approximateChunkCoords(origin.pos)
+      if (!edge.isLoaded(coords)) Some(coords) else None
+    } else {
+      Some(addableChunks.head).filter(distSqFunc(origin, _) <= maxDistSqInBlocks)
+    }
+  }
+
+  def nextRemovableChunk: Option[ChunkRelWorld] = {
+    while (removableChunks.nonEmpty && !edge.onEdge(removableChunks.head)) removableChunks.dequeue()
+
+    if (removableChunks.nonEmpty)
+      Some(removableChunks.head).filter(distSqFunc(origin, _) > maxDistSqInBlocks)
+    else
+      None
+  }
+
+  def unload(): Unit = ()
+
+  private def onChunkEdgeEvent(event: ChunkLoadingEdge.Event): Unit =
+    event match
+      case ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge) =>
+        if (onEdge)
+          removableChunks += chunk
+      case ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable) =>
+        if (loadable)
+          addableChunks += chunk
 }

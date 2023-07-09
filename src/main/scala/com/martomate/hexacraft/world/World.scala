@@ -11,7 +11,7 @@ import com.martomate.hexacraft.world.entity.{Entity, EntityModelLoader, EntityRe
 import com.martomate.hexacraft.world.entity.player.PlayerFactory
 import com.martomate.hexacraft.world.entity.sheep.SheepFactory
 import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
-import com.martomate.hexacraft.world.loader.{ChunkLoader, ChunkLoaderDistPQ, PosAndDir}
+import com.martomate.hexacraft.world.loader.{ChunkLoader, PosAndDir}
 import com.martomate.hexacraft.world.settings.WorldInfo
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
@@ -74,7 +74,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
     val chunkUnloader = (coords: ChunkRelWorld) => getChunk(coords).foreach(_.saveIfNeeded())
 
-    new ChunkLoaderDistPQ(
+    new ChunkLoader(
       chunkLoadingOrigin,
       chunkFactory,
       chunkUnloader,
