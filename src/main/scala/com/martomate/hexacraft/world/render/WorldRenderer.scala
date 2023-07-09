@@ -60,19 +60,19 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   def removePlayer(player: Entity): Unit = players -= player
 
   private def updateChunkIfPresent(coords: ChunkRelWorld) =
-    world.getChunk(coords) match
-      case Some(ch) =>
-        ch.initLightingIfNeeded(lightPropagator)
+    val chunkOpt = world.getChunk(coords)
+    for chunk <- chunkOpt do updateChunkData(chunk)
+    chunkOpt.isDefined
 
-        val renderData: ChunkRenderData =
-          if ch.blocks.isEmpty
-          then ChunkRenderData.empty
-          else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world)
+  private def updateChunkData(ch: Chunk): Unit =
+    ch.initLightingIfNeeded(lightPropagator)
 
-        chunkHandler.setChunkRenderData(coords, renderData)
-        true
-      case None =>
-        false
+    val renderData: ChunkRenderData =
+      if ch.blocks.isEmpty
+      then ChunkRenderData.empty
+      else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world)
+
+    chunkHandler.setChunkRenderData(ch.coords, renderData)
 
   def tick(camera: Camera, renderDistance: Double): Unit =
     chunkRenderUpdater.update(camera, renderDistance, updateChunkIfPresent)
@@ -149,11 +149,11 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
         val revoke = chunk.trackEvents(chunkRenderUpdater.onChunkEvent _)
         chunkEventTrackerRevokeFns += chunk.coords -> revoke
-      case World.Event.ChunkRemoved(chunk) =>
-        chunksToRender.remove(chunk.coords)
-        chunkHandler.clearChunkRenderData(chunk.coords)
+      case World.Event.ChunkRemoved(coords) =>
+        chunksToRender.remove(coords)
+        chunkHandler.clearChunkRenderData(coords)
 
-        val revoke = chunkEventTrackerRevokeFns(chunk.coords)
+        val revoke = chunkEventTrackerRevokeFns(coords)
         revoke()
 
   def framebufferResized(width: Int, height: Int): Unit =

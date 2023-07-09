@@ -71,8 +71,8 @@ class GameScene(worldProvider: WorldProvider)(using
   private val toolbar: Toolbar = makeToolbar(player)
   private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
 
-  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
-  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initActive = false)
+  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
+  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
 
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
@@ -171,8 +171,8 @@ class GameScene(worldProvider: WorldProvider)(using
         if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
       case MouseClickEvent(button, action, _, _) =>
         button match
-          case MouseButton.Left  => leftMouseButtonTimer.active = action != MouseAction.Release
-          case MouseButton.Right => rightMouseButtonTimer.active = action != MouseAction.Release
+          case MouseButton.Left  => leftMouseButtonTimer.enabled = action != MouseAction.Release
+          case MouseButton.Right => rightMouseButtonTimer.enabled = action != MouseAction.Release
           case _                 =>
       case _ =>
     true

@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
 import com.martomate.hexacraft.util.{CylinderSize, SeqUtils}
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
@@ -10,14 +10,8 @@ import scala.collection.mutable
 class ChunkLoadingPrioritizerTest extends FunSuite {
   implicit val cylSize: CylinderSize = CylinderSize(4)
 
-  def make(
-      origin: PosAndDir = new PosAndDir(),
-      distSqFunc: (PosAndDir, ChunkRelWorld) => Double = distSqFuncDefault,
-      maxDist: Double = 4
-  ): ChunkLoadingPrioritizer = new ChunkLoadingPrioritizer(origin, distSqFunc, maxDist)
-
-  private def distSqFuncDefault(p: PosAndDir, c: ChunkRelWorld): Double =
-    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
+  def make(origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0)), maxDist: Double = 4): ChunkLoadingPrioritizer =
+    new ChunkLoadingPrioritizer(origin, maxDist)
 
   private def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
 
@@ -164,7 +158,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     prio += prio.nextAddableChunk.get
     var prevDistSq: Double = 0
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
-      val distSq = distSqFuncDefault(origin, chunk)
+      val distSq = ChunkLoadingPrioritizer.distSq(origin, chunk)
       assert(distSq >= prevDistSq)
       prevDistSq = distSq
       prio += chunk
@@ -180,7 +174,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
       mutable.HashSet(
         ChunkRelWorld(0, 0, 0)
           .extendedNeighbors(4)
-          .filter(c => distSqFuncDefault(origin, c) <= maxDistSqInBlocks): _*
+          .filter(c => ChunkLoadingPrioritizer.distSq(origin, c) <= maxDistSqInBlocks): _*
       )
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
       prio += chunk
@@ -191,7 +185,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
 
   test("nextAddableChunk should retain order when origin is moved") {
     val origin = makePos(0, 0, 0)
-    val prio = make(origin).asInstanceOf[ChunkLoadingPrioritizer]
+    val prio = make(origin)
     prio += prio.nextAddableChunk.get
 
     assertEquals(nextAddableChunkWPos(32, 8, 8), Some(ChunkRelWorld(1, 0, 0)))
@@ -217,7 +211,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
 
     var prevDistSq: Double = Double.MaxValue
     SeqUtils.whileSome(100, prio.nextRemovableChunk) { chunk =>
-      val distSq = distSqFuncDefault(origin, chunk)
+      val distSq = ChunkLoadingPrioritizer.distSq(origin, chunk)
       assert(distSq <= prevDistSq)
       prevDistSq = distSq
       prio -= chunk
@@ -228,7 +222,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
 
   test("nextRemovableChunk should retain order when origin is moved") {
     val origin = makePos(0, 0, 0)
-    val prio = make(origin, maxDist = 1).asInstanceOf[ChunkLoadingPrioritizer]
+    val prio = make(origin, maxDist = 1)
     prio += ChunkRelWorld(0, 0, 0)
     prio += ChunkRelWorld(1, 0, 0)
     prio += ChunkRelWorld(0, 1, 0)

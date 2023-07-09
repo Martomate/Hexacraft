@@ -36,7 +36,7 @@ object World:
 
   enum Event:
     case ChunkAdded(chunk: Chunk)
-    case ChunkRemoved(chunk: Chunk)
+    case ChunkRemoved(coords: ChunkRelWorld)
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
     extends BlockRepository
@@ -54,7 +54,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private val columns = mutable.LongMap.empty[ChunkColumn]
 
-  private val chunkLoadingOrigin = new PosAndDir
+  private val chunkLoadingOrigin = PosAndDir(CylCoords(0, 0, 0))
   private val chunkLoader: ChunkLoader = makeChunkLoader()
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
@@ -145,34 +145,25 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
 
       for side <- 0 until 8 do
-        if block.coords.onChunkEdge(side) then
+        if block.coords.isOnChunkEdge(side) then
           val neighCoords = block.coords.neighbor(side)
-          getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side))) match
-            case Some(neighbor) => requestBlockUpdate(BlockRelWorld.fromChunk(neighCoords, neighbor.coords))
-            case None           =>
+          for neighbor <- getChunk(ch.coords.offset(ChunkRelWorld.neighborOffsets(side))) do
+            requestBlockUpdate(BlockRelWorld.fromChunk(neighCoords, neighbor.coords))
 
   def removeChunk(ch: ChunkRelWorld): Unit =
-    columns.get(ch.getColumnRelWorld.value) match
-      case Some(col) =>
-        col.removeChunk(ch.getChunkRelColumn) match
-          case Some(removedChunk) =>
-            val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
-            revoke()
+    for col <- columns.get(ch.getColumnRelWorld.value) do
+      for removedChunk <- col.removeChunk(ch.getChunkRelColumn) do
+        val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
+        revoke()
 
-            dispatcher.notify(World.Event.ChunkRemoved(removedChunk))
+        dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
-            removedChunk.unload()
+        removedChunk.unload()
+        requestRenderUpdateForNeighborChunks(ch)
 
-            requestRenderUpdateForNeighborChunks(ch)
-
-          case None =>
-
-        if col.isEmpty then
-          columns.remove(col.coords.value) match
-            case Some(removedColumn) => // should be the same as `col`
-              removedColumn.unload()
-            case None =>
-      case None =>
+      if col.isEmpty then
+        columns.remove(col.coords.value)
+        col.unload()
 
   def tick(camera: Camera): Unit =
     chunkLoadingOrigin.setPosAndDirFrom(camera.view)
@@ -213,10 +204,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       newChunk.addEntity(ent)
 
   private def requestRenderUpdateForNeighborChunks(coords: ChunkRelWorld): Unit =
-    for side <- 0 until 8 do
-      getChunk(coords.offset(NeighborOffsets(side))) match
-        case Some(ch) => ch.requestRenderUpdate()
-        case None     =>
+    for
+      side <- 0 until 8
+      ch <- getChunk(coords.offset(NeighborOffsets(side)))
+    do ch.requestRenderUpdate()
 
   private def ensureColumnExists(here: ColumnRelWorld): ChunkColumn =
     columns.get(here.value) match
@@ -234,8 +225,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def onReloadedResources(): Unit = for col <- columns.values do col.onReloadedResources()
 
   def unload(): Unit =
-    chunkLoader.unload()
-    blockUpdateTimer.active = false
+    blockUpdateTimer.enabled = false
     for col <- columns.values do col.unload()
     columns.clear()
 
@@ -262,25 +252,21 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     val cCoords = coords.getChunkRelWorld
     val bCoords = coords.getBlockRelChunk
 
-    getChunk(cCoords) match
-      case Some(c) =>
-        handleLightingOnSetBlock(c, bCoords, block)
+    for c <- getChunk(cCoords) do
+      handleLightingOnSetBlock(c, bCoords, block)
 
-        c.requestRenderUpdate()
-        requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, c.coords))
+      c.requestRenderUpdate()
+      requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, c.coords))
 
-        for i <- 0 until 8 do
-          val off = ChunkRelWorld.neighborOffsets(i)
-          val c2 = bCoords.offset(off)
+      for i <- 0 until 8 do
+        val off = ChunkRelWorld.neighborOffsets(i)
+        val c2 = bCoords.offset(off)
 
-          if isInNeighborChunk(off) then
-            getChunk(cCoords.offset(NeighborOffsets(i))) match
-              case Some(n) =>
-                n.requestRenderUpdate()
-                requestBlockUpdate(BlockRelWorld.fromChunk(c2, n.coords))
-              case None =>
-          else requestBlockUpdate(BlockRelWorld.fromChunk(c2, c.coords))
-      case None =>
+        if isInNeighborChunk(off) then
+          for n <- getChunk(cCoords.offset(NeighborOffsets(i))) do
+            n.requestRenderUpdate()
+            requestBlockUpdate(BlockRelWorld.fromChunk(c2, n.coords))
+        else requestBlockUpdate(BlockRelWorld.fromChunk(c2, c.coords))
 
   private def handleLightingOnSetBlock(chunk: Chunk, blockCoords: BlockRelChunk, block: BlockState): Unit =
     lightPropagator.removeTorchlight(chunk, blockCoords)

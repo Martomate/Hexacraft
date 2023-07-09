@@ -16,7 +16,7 @@ case class BlockRelChunk(value: Int) extends AnyVal { // xyz
   def offset(off: Offset): BlockRelChunk = offset(off.dx, off.dy, off.dz)
   def offset(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk(cx + x, cy + y, cz + z)
 
-  def onChunkEdge(side: Int): Boolean = {
+  def isOnChunkEdge(side: Int): Boolean = {
     val off = NeighborOffsets(side)
     val xx = cx + off.dx
     val yy = cy + off.dy

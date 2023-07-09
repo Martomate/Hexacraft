@@ -26,71 +26,36 @@ class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
 
   def canLoad(chunk: ChunkRelWorld): Boolean = chunksLoadable.contains(chunk)
 
-  def loadChunk(chunk: ChunkRelWorld): Unit = {
-    setLoaded(chunk, loaded = true)
-    setOnEdge(chunk, onEdge = true)
-    setLoadable(chunk, loadable = false)
-    removeNonEdgeNeighbors(chunk)
-    addLoadableNeighbors(chunk)
-  }
+  def loadChunk(chunk: ChunkRelWorld): Unit =
+    setLoaded(chunk, true)
+    setOnEdge(chunk, true)
+    setLoadable(chunk, false)
 
-  def unloadChunk(chunk: ChunkRelWorld): Unit = {
-    setLoaded(chunk, loaded = false)
-    setOnEdge(chunk, onEdge = false)
-    setLoadable(chunk, !shouldNotBeLoadable(chunk))
-    addNewEdgeNeighbors(chunk)
-    removeNonLoadableNeighbors(chunk)
-  }
+    for n <- chunk.neighbors
+    do
+      if n.neighbors.forall(isLoaded) then setOnEdge(n, false)
+      if !isLoaded(n) then setLoadable(n, true)
 
-  private def addLoadableNeighbors(chunk: ChunkRelWorld): Unit = {
-    for (n <- chunk.neighbors) {
-      if (!isLoaded(n)) setLoadable(n, loadable = true)
-    }
-  }
+  def unloadChunk(chunk: ChunkRelWorld): Unit =
+    setLoaded(chunk, false)
+    setOnEdge(chunk, false)
+    setLoadable(chunk, chunk.neighbors.exists(isLoaded))
 
-  private def removeNonLoadableNeighbors(chunk: ChunkRelWorld): Unit = {
-    chunk.neighbors.foreach(removeIfNotLoadable)
-  }
+    for n <- chunk.neighbors
+    do
+      if !n.neighbors.exists(isLoaded) then setLoadable(n, false)
+      if isLoaded(n) then setOnEdge(n, onEdge = true)
 
-  private def removeIfNotLoadable(chunk: ChunkRelWorld): Unit = {
-    if (shouldNotBeLoadable(chunk)) setLoadable(chunk, loadable = false)
-  }
+  private def setLoaded(chunk: ChunkRelWorld, loaded: Boolean): Unit =
+    if chunksLoaded.contains(chunk) != loaded then chunksLoaded(chunk) = loaded
 
-  private def shouldNotBeLoadable(chunk: ChunkRelWorld) = {
-    chunk.neighbors.forall(n => !isLoaded(n))
-  }
-
-  private def removeNonEdgeNeighbors(chunk: ChunkRelWorld): Unit = {
-    chunk.neighbors.foreach(neigh => removeIfNotEdge(neigh))
-  }
-
-  private def removeIfNotEdge(chunk: ChunkRelWorld): Unit = {
-    if (chunk.neighbors.forall(neigh => isLoaded(neigh))) setOnEdge(chunk, onEdge = false)
-  }
-
-  private def addNewEdgeNeighbors(chunk: ChunkRelWorld): Unit = {
-    chunk.neighbors.foreach(n => if (isLoaded(n)) setOnEdge(n, onEdge = true))
-  }
-
-  private def setLoaded(chunk: ChunkRelWorld, loaded: Boolean): Unit = {
-    if (chunksLoaded.contains(chunk) != loaded) {
-      chunksLoaded(chunk) = loaded
-    }
-  }
-
-  private def setOnEdge(chunk: ChunkRelWorld, onEdge: Boolean): Unit = {
-    if (chunksEdge.contains(chunk) != onEdge) {
+  private def setOnEdge(chunk: ChunkRelWorld, onEdge: Boolean): Unit =
+    if chunksEdge.contains(chunk) != onEdge then
       chunksEdge(chunk) = onEdge
-
       dispatcher.notify(ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge))
-    }
-  }
 
-  private def setLoadable(chunk: ChunkRelWorld, loadable: Boolean): Unit = {
-    if (chunksLoadable.contains(chunk) != loadable) {
+  private def setLoadable(chunk: ChunkRelWorld, loadable: Boolean): Unit =
+    if chunksLoadable.contains(chunk) != loadable then
       chunksLoadable(chunk) = loadable
-
       dispatcher.notify(ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable))
-    }
-  }
 }

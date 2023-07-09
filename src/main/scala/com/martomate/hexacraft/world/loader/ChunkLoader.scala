@@ -14,7 +14,7 @@ class ChunkLoader(
     chunkFactory: ChunkRelWorld => Chunk,
     chunkUnloader: ChunkRelWorld => Unit,
     maxDist: Double,
-    chillSwitch: () => Boolean
+    shouldLoadSlowly: () => Boolean
 )(using CylinderSize) {
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -23,8 +23,7 @@ class ChunkLoader(
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
 
-  private val prioritizer: ChunkLoadingPrioritizer =
-    new ChunkLoadingPrioritizer(origin, distSqFunc, maxDist)
+  private val prioritizer = new ChunkLoadingPrioritizer(origin, maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -32,29 +31,21 @@ class ChunkLoader(
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
 
-  def tick(): Unit = {
+  def tick(): Unit =
     prioritizer.tick()
-    val (maxLoad, maxUnload) = if (chillSwitch()) (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
-    for (_ <- 1 to LoadsPerTick) {
-      if (chunksLoading.size < maxLoad) {
-        prioritizer.nextAddableChunk.foreach { coords =>
+    val (maxLoad, maxUnload) = if shouldLoadSlowly() then (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
+
+    for _ <- 1 to LoadsPerTick do
+      if chunksLoading.size < maxLoad then
+        prioritizer.popChunkToLoad.foreach: coords =>
           chunksLoading(coords) = Future(chunkFactory(coords))
-          prioritizer += coords
-        }
-      }
-    }
-    for (_ <- 1 to UnloadsPerTick) {
-      if (chunksUnloading.size < maxUnload) {
-        prioritizer.nextRemovableChunk.foreach { coords =>
-          chunksUnloading(coords) = Future {
+
+    for _ <- 1 to UnloadsPerTick do
+      if chunksUnloading.size < maxUnload then
+        prioritizer.popChunkToRemove.foreach: coords =>
+          chunksUnloading(coords) = Future:
             chunkUnloader(coords)
             coords
-          }
-          prioritizer -= coords
-        }
-      }
-    }
-  }
 
   def chunksToAdd(): Iterable[Chunk] =
     chunksLoading.values.flatMap(_.value).flatMap(_.toOption)
@@ -62,10 +53,8 @@ class ChunkLoader(
   def chunksToRemove(): Iterable[ChunkRelWorld] =
     chunksUnloading.values.flatMap(_.value).flatMap(_.toOption)
 
-  def unload(): Unit = prioritizer.unload()
-
   def onWorldEvent(event: World.Event): Unit =
     event match
-      case World.Event.ChunkAdded(chunk)   => chunksLoading -= chunk.coords
-      case World.Event.ChunkRemoved(chunk) => chunksUnloading -= chunk.coords
+      case World.Event.ChunkAdded(chunk)    => chunksLoading -= chunk.coords
+      case World.Event.ChunkRemoved(coords) => chunksUnloading -= coords
 }

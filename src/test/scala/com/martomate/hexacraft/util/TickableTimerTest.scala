@@ -38,25 +38,25 @@ class TickableTimerTest extends FunSuite {
     }
   }
 
-  test("active should be true by default") {
-    assert(TickableTimer(1).active)
+  test("enabled should be true by default") {
+    assert(TickableTimer(1).enabled)
   }
 
-  test("active should disable the timer when false") {
+  test("when enabled is false the timer should be disable") {
     val timer = TickableTimer(2, 0, false)
-    assert(!timer.active)
+    assert(!timer.enabled)
 
     for (_ <- 0 until 10) assert(!timer.tick())
   }
 
-  test("active should return true and reset the timer if 'period' ticks have passed when it turns on") {
+  test("enabled should return true and reset the timer if 'period' ticks have passed when it turns on") {
     val timer = TickableTimer(3, 0, false)
-    assert(!timer.active)
+    assert(!timer.enabled)
 
     // it's important for the test that 10 % 3 != 0, to test the reset
     for (_ <- 0 until 10) assert(!timer.tick())
 
-    timer.active = true
+    timer.enabled = true
 
     for (i <- 0 until 10) {
       assertEquals(timer.tick(), i % 3 == 0)

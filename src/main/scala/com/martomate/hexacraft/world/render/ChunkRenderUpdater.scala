@@ -3,7 +3,7 @@ package com.martomate.hexacraft.world.render
 import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.loader.PosAndDir
 
@@ -12,15 +12,16 @@ object ChunkRenderUpdater:
   private val ticksBetweenColumnLoading = 5
 
 class ChunkRenderUpdater(using CylinderSize):
-  private val origin = new PosAndDir
+  private val origin = PosAndDir(CylCoords(0, 0, 0))
 
-  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] =
-    new UniquePQ(makeChunkToLoadPriority, Ordering.by(-_))
+  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToUpdatePriority, Ordering.by(-_))
+
+  private val reorderingTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading)
 
   def update(camera: Camera, renderDistance: Double, updateChunkIfPresent: ChunkRelWorld => Boolean): Unit =
     origin.setPosAndDirFrom(camera.view)
 
-    if reprioritizeTimer.tick() then
+    if reorderingTimer.tick() then
       val rDistSq = (renderDistance * 16) * (renderDistance * 16)
       chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
 
@@ -30,14 +31,9 @@ class ChunkRenderUpdater(using CylinderSize):
       else 1
 
     for _ <- 1 to numUpdatesToPerform do
-      if !chunkRenderUpdateQueue.isEmpty then
-        while (!updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) && !chunkRenderUpdateQueue.isEmpty) {}
+      while !chunkRenderUpdateQueue.isEmpty && !updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) do ()
 
-  private val reprioritizeTimer: TickableTimer = TickableTimer(
-    ChunkRenderUpdater.ticksBetweenColumnLoading
-  )
-
-  private def makeChunkToLoadPriority(coords: ChunkRelWorld): Double =
+  private def makeChunkToUpdatePriority(coords: ChunkRelWorld): Double =
     def distTo(x: Int, y: Int, z: Int): Double =
       val cyl = BlockCoords(BlockRelWorld(x, y, z, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()

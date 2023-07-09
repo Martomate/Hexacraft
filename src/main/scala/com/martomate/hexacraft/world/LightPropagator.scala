@@ -247,7 +247,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       if (nextLevel > 0) {
         var s = 0
         while (s < 8) { // done as an optimization
-          if (here.onChunkEdge(s)) {
+          if (here.isOnChunkEdge(s)) {
             val c2w = here.globalNeighbor(s, chunk.coords)
             val crw = c2w.getChunkRelWorld
             val c2 = c2w.getBlockRelChunk
