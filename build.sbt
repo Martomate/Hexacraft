@@ -19,7 +19,7 @@ def mainSettings: Seq[Def.SettingsDefinition] = Seq(
 )
 
 def lwjglDependencies = {
-  val lwjglVersion = "3.3.1"
+  val lwjglVersion = "3.3.2"
 
   val platforms = Seq(
     "natives-windows",
