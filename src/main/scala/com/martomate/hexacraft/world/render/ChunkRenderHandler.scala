@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{Shaders, Texture, TextureArray}
-import com.martomate.hexacraft.renderer.Shader
+import com.martomate.hexacraft.renderer.{Texture, TextureArray}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
@@ -12,26 +11,29 @@ import scala.collection.mutable
 class ChunkRenderHandler:
   private val hexagonHandlers: mutable.Map[Texture, HexagonRenderHandler] = mutable.Map.empty
 
-  private val blockShader = Shader.get(Shaders.ShaderNames.Block).get
-  private val blockSideShader = Shader.get(Shaders.ShaderNames.BlockSide).get
+  private val blockShader = new BlockShader(isSide = false)
+  private val blockSideShader = new BlockShader(isSide = true)
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
   private val blockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
   hexagonHandlers(blockTexture) = blockHexagonHandler
 
   def onTotalSizeChanged(totalSize: Int): Unit =
-    blockShader.setUniform1i("totalSize", totalSize)
-    blockSideShader.setUniform1i("totalSize", totalSize)
+    blockShader.setTotalSize(totalSize)
+    blockSideShader.setTotalSize(totalSize)
 
   def onProjMatrixChanged(camera: Camera): Unit =
-    camera.setProjMatrix(blockShader)
-    camera.setProjMatrix(blockSideShader)
+    blockShader.setProjectionMatrix(camera.proj.matrix)
+    blockSideShader.setProjectionMatrix(camera.proj.matrix)
 
   def render(camera: Camera, sun: Vector3f): Unit =
-    camera.updateUniforms(blockShader)
-    camera.updateUniforms(blockSideShader)
-    blockShader.setUniform3f("sun", sun.x, sun.y, sun.z)
-    blockSideShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+    blockShader.setViewMatrix(camera.view.matrix)
+    blockShader.setCameraPosition(camera.position)
+    blockShader.setSunPosition(sun)
+
+    blockSideShader.setViewMatrix(camera.view.matrix)
+    blockSideShader.setCameraPosition(camera.position)
+    blockSideShader.setSunPosition(sun)
 
     for (t, r) <- hexagonHandlers do
       t.bind()

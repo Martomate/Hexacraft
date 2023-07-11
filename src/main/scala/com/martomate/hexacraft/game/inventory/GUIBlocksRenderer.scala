@@ -22,8 +22,8 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 )(using Blocks: Blocks):
   private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
-  private val guiBlockShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlock).get
-  private val guiBlockSideShader: Shader = Shader.get(Shaders.ShaderNames.GuiBlockSide).get
+  private val guiBlockShader = new GuiBlockShader(isSide = false)
+  private val guiBlockSideShader = new GuiBlockShader(isSide = true)
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")
 
   private var viewMatrix = new Matrix4f
@@ -37,18 +37,18 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
   updateContent()
 
   def render(transformation: GUITransformation): Unit =
-    guiBlockShader.setUniformMat4("viewMatrix", viewMatrix)
-    guiBlockSideShader.setUniformMat4("viewMatrix", viewMatrix)
+    guiBlockShader.setViewMatrix(viewMatrix)
+    guiBlockSideShader.setViewMatrix(viewMatrix)
 
-    guiBlockShader.setUniformMat4("projMatrix", cameraProjection.matrix)
-    guiBlockSideShader.setUniformMat4("projMatrix", cameraProjection.matrix)
+    guiBlockShader.setProjectionMatrix(cameraProjection.matrix)
+    guiBlockSideShader.setProjectionMatrix(cameraProjection.matrix)
 
     blockTexture.bind()
 
     for (side <- 0 until 8)
       val sh = if side < 2 then guiBlockShader else guiBlockSideShader
       sh.enable()
-      sh.setUniform1i("side", side)
+      sh.setSide(side)
       guiBlockRenderer.renderBlockSide(side)
 
   def updateContent(): Unit =

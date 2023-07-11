@@ -19,12 +19,6 @@ class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
   updateViewMatrix()
   updateProjMatrix()
 
-  def updateUniforms(s: Shader): Unit = {
-    s.setUniformMat4("viewMatrix", view.matrix)
-    s.setUniform3f("cam", position.x.toFloat, position.y.toFloat, position.z.toFloat)
-  }
-  def setProjMatrix(s: Shader): Unit = s.setUniformMat4("projMatrix", proj.matrix)
-
   def setPosition(vec: Vector3d): Unit = setPosition(vec.x, vec.y, vec.z)
 
   def setPosition(x: Double, y: Double, z: Double): Unit = {

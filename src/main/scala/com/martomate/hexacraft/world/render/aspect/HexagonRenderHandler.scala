@@ -2,12 +2,13 @@ package com.martomate.hexacraft.world.render.aspect
 
 import com.martomate.hexacraft.renderer.Shader
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
+import com.martomate.hexacraft.world.render.BlockShader
 import com.martomate.hexacraft.world.render.buffer.BufferHandler
 import com.martomate.hexacraft.world.render.buffer.vao.BlockVAORenderBufferFactory
 
 import java.nio.ByteBuffer
 
-class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
+class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader) {
 
   private def bufferHandlerMaker(s: Int): BufferHandler[_] =
     new BufferHandler(1000000, new BlockVAORenderBufferFactory(s))
@@ -19,7 +20,7 @@ class HexagonRenderHandler(topShader: Shader, sideShader: Shader) {
     for side <- 0 until 8 do
       val sh = if side < 2 then topShader else sideShader
       sh.enable()
-      sh.setUniform1i("side", side)
+      sh.setSide(side)
       sideHandlers(side).render()
 
   def setChunkContent(coords: ChunkRelWorld, content: IndexedSeq[ByteBuffer]): Unit =

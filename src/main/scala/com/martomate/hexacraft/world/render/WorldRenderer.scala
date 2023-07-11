@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import com.martomate.hexacraft.renderer.*
+import com.martomate.hexacraft.renderer.{InstancedRenderer, NoDepthTest, Renderer, VAO}
 import com.martomate.hexacraft.util.{CylinderSize, RevokeTrackerFn}
 import com.martomate.hexacraft.world.{BlocksInWorld, LightPropagator, World}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
@@ -21,14 +21,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize, Blocks):
-  private val skyShader = Shader.get(Shaders.ShaderNames.Sky).get
-  private val entityShader = Shader.get(Shaders.ShaderNames.Entity).get
-  private val entitySideShader = Shader.get(Shaders.ShaderNames.EntitySide).get
-  private val selectedBlockShader = Shader.get(Shaders.ShaderNames.SelectedBlock).get
-  private val worldCombinerShader = Shader.get(Shaders.ShaderNames.WorldCombiner).get
-
-  worldCombinerShader.setUniform1i("worldColorTexture", 0)
-  worldCombinerShader.setUniform1i("worldDepthTexture", 1)
+  private val skyShader = new SkyShader()
+  private val entityShader = new EntityShader(isSide = false)
+  private val entitySideShader = new EntityShader(isSide = true)
+  private val selectedBlockShader = new SelectedBlockShader()
+  private val worldCombinerShader = new WorldCombinerShader()
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
@@ -80,21 +77,20 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   def onTotalSizeChanged(totalSize: Int): Unit =
     chunkHandler.onTotalSizeChanged(totalSize)
 
-    entityShader.setUniform1i("totalSize", totalSize)
-    entitySideShader.setUniform1i("totalSize", totalSize)
-    selectedBlockShader.setUniform1i("totalSize", totalSize)
+    entityShader.setTotalSize(totalSize)
+    entitySideShader.setTotalSize(totalSize)
+    selectedBlockShader.setTotalSize(totalSize)
 
   def onProjMatrixChanged(camera: Camera): Unit =
     chunkHandler.onProjMatrixChanged(camera)
 
-    camera.setProjMatrix(entityShader)
-    camera.setProjMatrix(entitySideShader)
-    camera.setProjMatrix(selectedBlockShader)
+    entityShader.setProjectionMatrix(camera.proj.matrix)
+    entitySideShader.setProjectionMatrix(camera.proj.matrix)
+    selectedBlockShader.setProjectionMatrix(camera.proj.matrix)
 
-    skyShader.setUniformMat4("invProjMatr", camera.proj.invMatrix)
+    skyShader.setInverseProjectionMatrix(camera.proj.invMatrix)
 
-    worldCombinerShader.setUniform1f("nearPlane", camera.proj.near)
-    worldCombinerShader.setUniform1f("farPlane", camera.proj.far)
+    worldCombinerShader.setClipPlanes(camera.proj.near, camera.proj.far)
 
   def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit =
     // Update the 'selectedBlockVAO' if needed
@@ -111,8 +107,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
-    skyShader.setUniformMat4("invViewMatr", camera.view.invMatrix)
-    skyShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+    skyShader.setInverseViewMatrix(camera.view.invMatrix)
+    skyShader.setSunPosition(sun)
     skyShader.enable()
     skyRenderer.render()
 
@@ -121,7 +117,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     renderEntities(camera, sun)
 
     if selectedBlockAndSide.flatMap(_._2).isDefined then
-      camera.updateUniforms(selectedBlockShader)
+      selectedBlockShader.setViewMatrix(camera.view.matrix)
+      selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()
       selectedBlockRenderer.render()
 
@@ -129,9 +126,9 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
 
     // Step 2: Render the FrameBuffer to the screen (one could add post processing here in the future)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
+    OpenGL.glActiveTexture(worldCombinerShader.colorTextureSlot)
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
+    OpenGL.glActiveTexture(worldCombinerShader.depthTextureSlot)
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
@@ -171,15 +168,18 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     mainFrameBuffer.unload()
 
   private def renderEntities(camera: Camera, sun: Vector3f): Unit =
-    camera.updateUniforms(entityShader)
-    camera.updateUniforms(entitySideShader)
-    entityShader.setUniform3f("sun", sun.x, sun.y, sun.z)
-    entitySideShader.setUniform3f("sun", sun.x, sun.y, sun.z)
+    entityShader.setViewMatrix(camera.view.matrix)
+    entityShader.setCameraPosition(camera.position)
+    entityShader.setSunPosition(sun)
+
+    entitySideShader.setViewMatrix(camera.view.matrix)
+    entitySideShader.setCameraPosition(camera.position)
+    entitySideShader.setSunPosition(sun)
 
     for side <- 0 until 8 do
       val sh = if side < 2 then entityShader else entitySideShader
       sh.enable()
-      sh.setUniform1i("side", side)
+      sh.setSide(side)
 
       val entityDataList: mutable.ArrayBuffer[EntityDataForShader] = ArrayBuffer.empty
       for
@@ -196,7 +196,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
           data.foreach(_.fill(buf))
         }
         texture.bind()
-        sh.setUniform1i("texSize", texture.width)
+        sh.setTextureSize(texture.width)
         entityRenderers.renderBlockSide(side)
 
   private def updateSelectedBlockVAO(coords: BlockRelWorld) =

@@ -15,7 +15,6 @@ object Shaders {
     val Color: String = "color"
     val Font: String = "font"
     val WorldCombiner: String = "world_combiner"
-    val WaterDepth: String = "water_depth"
   }
 
   def registerAll(): Unit = {
@@ -129,9 +128,6 @@ object Shaders {
     Shader.register(ShaderConfig(ShaderNames.Font, "font").withAttribs("position", "textureCoords"))
     Shader.register(
       ShaderConfig(ShaderNames.WorldCombiner, "world_combiner").withAttribs("position")
-    )
-    Shader.register(
-      ShaderConfig(ShaderNames.WaterDepth, "water_depth").withAttribs("the same stuff as block..?")
     )
   }
 }

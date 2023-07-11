@@ -6,7 +6,7 @@ import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
-import com.martomate.hexacraft.renderer.*
+import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, VAO}
 import com.martomate.hexacraft.util.TickableTimer
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
@@ -35,7 +35,7 @@ class GameScene(worldProvider: WorldProvider)(using
     extends Scene
     with DebugInfoProvider:
 
-  private val crosshairShader: Shader = Shader.get(Shaders.ShaderNames.Crosshair).get
+  private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
     new Renderer(crosshairVAO, OpenGL.PrimitiveMode.Lines) with NoDepthTest

@@ -2,14 +2,13 @@ package com.martomate.hexacraft.font
 
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import com.martomate.hexacraft.renderer.{Shaders, TextureSingle, VAO}
-import com.martomate.hexacraft.renderer.Shader
+import com.martomate.hexacraft.renderer.{TextureSingle, VAO}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class FontRenderer {
-  private val shader = Shader.get(Shaders.ShaderNames.Font).get
+  private val shader = new FontShader()
 
   def render(
       texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],
@@ -38,8 +37,8 @@ class FontRenderer {
 
   private def renderText(text: GUIText, xoffset: Float, yoffset: Float): Unit = {
     OpenGL.glBindVertexArray(text.getMesh)
-    shader.setUniform3f("color", text.color)
-    shader.setUniform2f("translation", text.position.x + xoffset, text.position.y + yoffset)
+    shader.setColor(text.color)
+    shader.setTranslation(text.position.x + xoffset, text.position.y + yoffset)
     OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
   }
 

@@ -5,7 +5,7 @@ import com.martomate.hexacraft.font.{Fonts, TextMaster}
 import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import com.martomate.hexacraft.renderer.*
+import com.martomate.hexacraft.renderer.{Blending, NoDepthTest, Renderer, TextureSingle, VAO}
 
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
@@ -34,8 +34,8 @@ object Component:
 
   val font: FontType = Fonts.get("Verdana").get
 
-  private val imageShader: Shader = Shader.get(Shaders.ShaderNames.Image).get
-  private val colorShader: Shader = Shader.get(Shaders.ShaderNames.Color).get
+  private val imageShader = new ImageShader()
+  private val colorShader = new ColorShader()
 
   def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit =
     imageShader.enable()
@@ -43,8 +43,8 @@ object Component:
     val mat = new Matrix4f()
       .translate(location.x + xoffset, location.y + yoffset, 0)
       .scale(location.w, location.h, 1)
-    imageShader.setUniformMat4("transformationMatrix", mat)
-    imageShader.setUniform2f("imageSize", image.width.toFloat, image.height.toFloat)
+    imageShader.setTransformationMatrix(mat)
+    imageShader.setImageSize(image.width, image.height)
     Component.rectRenderer.render()
 
   def drawRect(location: LocationInfo, xoffset: Float, yoffset: Float, color: Vector4f): Unit =
@@ -53,8 +53,8 @@ object Component:
     val mat = new Matrix4f()
       .translate(location.x + xoffset, location.y + yoffset, 0)
       .scale(location.w, location.h, 1)
-    colorShader.setUniformMat4("transformationMatrix", mat)
-    colorShader.setUniform4f("col", color)
+    colorShader.setTransformationMatrix(mat)
+    colorShader.setColor(color)
     Component.rectRenderer.render()
 
   def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): GUIText =
