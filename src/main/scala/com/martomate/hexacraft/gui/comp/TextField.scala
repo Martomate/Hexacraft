@@ -72,7 +72,7 @@ class TextField(
         cursorTextVisible = false
 
   override def render(transformation: GUITransformation)(using window: GameWindow): Unit =
-    Component.drawRect(location, transformation.x, transformation.y, bgColor)
+    Component.drawRect(location, transformation.x, transformation.y, bgColor, window.aspectRatio)
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean =

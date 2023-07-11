@@ -14,6 +14,9 @@ object FontRenderer {
 class FontRenderer {
   private val shader = FontRenderer.shader
 
+  def setWindowAspectRatio(aspectRatio: Float): Unit =
+    shader.setWindowAspectRatio(aspectRatio)
+
   def render(
       texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],
       xoffset: Float,

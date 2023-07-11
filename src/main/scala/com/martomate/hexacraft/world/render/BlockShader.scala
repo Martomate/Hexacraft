@@ -1,11 +1,25 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{Shader, Shaders}
+import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 class BlockShader(isSide: Boolean) {
-  private val shader = Shader.get(if isSide then Shaders.ShaderNames.BlockSide else Shaders.ShaderNames.Block).get
+  private val config = ShaderConfig("block")
+    .withAttribs(
+      "position",
+      "texCoords",
+      "normal",
+      "vertexIndex",
+      "faceIndex",
+      "blockPos",
+      "blockTex",
+      "blockHeight",
+      "brightness"
+    )
+    .withDefines("isSide" -> (if isSide then "1" else "0"))
+
+  private val shader = Shader.from(config)
 
   def setTotalSize(totalSize: Int): Unit =
     shader.setUniform1i("totalSize", totalSize)

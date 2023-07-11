@@ -8,11 +8,7 @@ import java.io.IOException
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-object ShaderBuilder {
-  def start(name: String): ShaderBuilder = new ShaderBuilder(name)
-}
-
-class ShaderBuilder(name: String) {
+class ShaderBuilder {
   private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
   private val programID = OpenGL.glCreateProgram()
   private var prefix = "shaders/"
@@ -62,9 +58,12 @@ class ShaderBuilder(name: String) {
       System.err.println(s"Shader file $path contained an invalid shader stage: $stageError")
 
     for (shaderType, source) <- validStages do
-      tryLoadShader(shaderType, source) match
+      OpenGL.loadShader(shaderType, header + source) match
         case Ok(shaderId) => shaders.put(shaderType, shaderId)
-        case Err(message) => System.err.println(message)
+        case Err(e) =>
+          val errorMessage =
+            s"${nameOfShaderType(shaderType)} failed to compile (file: $path).\nError log:\n${e.message}"
+          System.err.println(errorMessage)
 
     this
 
@@ -77,11 +76,6 @@ class ShaderBuilder(name: String) {
       getShaderType(shaderTypeName) match
         case Some(shaderType) => Ok(shaderType, source)
         case None             => Err("Shader type '" + shaderTypeName + "' not supported")
-
-  private def tryLoadShader(t: OpenGL.ShaderType, source: String) =
-    OpenGL
-      .loadShader(t, header + source)
-      .mapErr(e => s"${nameOfShaderType(t)} failed to compile ($name).\nError log:\n${e.message}")
 
   private def nameOfShaderType(shaderType: OpenGL.ShaderType) =
     import OpenGL.ShaderType.*

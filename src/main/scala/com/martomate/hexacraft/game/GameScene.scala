@@ -95,12 +95,8 @@ class GameScene(worldProvider: WorldProvider)(using
 
   private def setUniforms(): Unit =
     setProjMatrixForAll()
-
     worldRenderer.onTotalSizeChanged(world.size.totalSize)
-
-    Shader.foreach(
-      _.setUniform2f("windowSize", window.windowSize.x.toFloat, window.windowSize.y.toFloat)
-    )
+    crosshairShader.setWindowAspectRatio(window.aspectRatio)
 
   private def setProjMatrixForAll(): Unit =
     worldRenderer.onProjMatrixChanged(camera)
@@ -192,15 +188,18 @@ class GameScene(worldProvider: WorldProvider)(using
     summon[WindowExtras].setCursorMode(if invisible then CursorMode.Disabled else CursorMode.Normal)
 
   override def windowResized(width: Int, height: Int): Unit =
-    camera.proj.aspect = width.toFloat / height
+    val aspectRatio = width.toFloat / height
+    camera.proj.aspect = aspectRatio
     camera.updateProjMatrix()
 
     setProjMatrixForAll()
-    blockInHandRenderer.setWindowAspectRatio(width.toFloat / height)
-    toolbar.setWindowAspectRatio(width.toFloat / height)
+    blockInHandRenderer.setWindowAspectRatio(aspectRatio)
+    toolbar.setWindowAspectRatio(aspectRatio)
 
     if debugScene != null
     then debugScene.windowResized(width, height)
+
+    crosshairShader.setWindowAspectRatio(aspectRatio)
 
   override def framebufferResized(width: Int, height: Int): Unit =
     worldRenderer.framebufferResized(width, height)
@@ -326,7 +325,7 @@ class GameScene(worldProvider: WorldProvider)(using
     .builder()
     .addVertexVbo(4)(
       _.floats(0, 2),
-      _.fillFloats(0, Seq(0, 0.02f, 0, -0.02f, -0.02f, 0, 0.02f, 0))
+      _.fillFloats(0, Seq(0, 0.03f, 0, -0.03f, -0.03f, 0, 0.03f, 0))
     )
     .finish(4)
 

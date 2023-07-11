@@ -4,8 +4,8 @@ import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
 
 class WorldCombinerShader {
-  private val config = ShaderConfig("world_combiner", "world_combiner").withAttribs("position")
-  private val shader = Shader.register(config)
+  private val config = ShaderConfig("world_combiner").withAttribs("position")
+  private val shader = Shader.from(config)
 
   shader.setUniform1i("worldColorTexture", 0)
   shader.setUniform1i("worldDepthTexture", 1)

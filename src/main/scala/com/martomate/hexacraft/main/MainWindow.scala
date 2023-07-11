@@ -124,6 +124,10 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         then
           Resource.reloadAllResources()
           scenes.foreach(_.onReloadedResources())
+
+          // This step is needed to set some uniforms after the reload
+          scenes.foreach(_.windowResized(_windowSize.x, _windowSize.y))
+
           println("Reloaded resources")
 
         if key == KeyboardKey.Function(11)
@@ -153,8 +157,6 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         _windowSize.set(w, h)
         resetMousePos()
         mouse.skipNextMouseMovedUpdate()
-
-      Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
 
     case CallbackEvent.FramebufferResized(_, w, h) =>
       if w > 0 && h > 0
@@ -199,13 +201,10 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
       given WindowScenes = this
       given GameMouse = mouse
       given GameKeyboard = keyboard
-
-      Shader.init()
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given Blocks = new Blocks
       pushScene(new MainMenu(saveFolder, tryQuit, multiplayerEnabled))
       resetMousePos()
-      Shader.foreach(_.setUniform2f("windowSize", _windowSize.x.toFloat, _windowSize.y.toFloat))
       loop()
     finally
       destroy()

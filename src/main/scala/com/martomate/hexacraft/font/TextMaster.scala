@@ -10,6 +10,9 @@ class TextMaster {
   private val texts = mutable.HashMap.empty[FontType, ArrayBuffer[GUIText]]
   private val renderer = new FontRenderer()
 
+  def setWindowAspectRatio(aspectRatio: Float): Unit =
+    renderer.setWindowAspectRatio(aspectRatio)
+
   def render(xoffset: Float, yoffset: Float): Unit = {
     renderer.render(texts, xoffset, yoffset)
   }

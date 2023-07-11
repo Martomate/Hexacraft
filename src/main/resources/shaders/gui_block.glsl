@@ -31,10 +31,10 @@ out FragIn fragIn;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix = mat4(1);
-uniform vec2 windowSize;
+uniform float windowAspectRatio;
 
 void main() {
-	float aspect = windowSize.x / windowSize.y;
+	float aspect = windowAspectRatio;
 	mat4 matrix = projMatrix * viewMatrix;
 
 	vec3 pos = vec3(position.x, position.y * blockHeight, position.z) / 2;

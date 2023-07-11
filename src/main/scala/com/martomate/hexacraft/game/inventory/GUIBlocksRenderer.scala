@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.gui.comp.GUITransformation
-import com.martomate.hexacraft.renderer.{Shader, Shaders, TextureArray}
+import com.martomate.hexacraft.renderer.{Shader, TextureArray}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.camera.CameraProjection
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
@@ -16,23 +16,29 @@ object GUIBlocksRenderer:
   )(using Blocks: Blocks): GUIBlocksRenderer =
     new GUIBlocksRenderer(1, 1)(_ => blockProvider(), rendererLocation, (_, _) => brightnessFunc())
 
+  private val guiBlockShader = new GuiBlockShader(isSide = false)
+  private val guiBlockSideShader = new GuiBlockShader(isSide = true)
+
 class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     blockProvider: Int => Block,
     rendererLocation: () => (Float, Float) = () => (0, 0),
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 )(using Blocks: Blocks):
   private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
-  private val guiBlockShader = new GuiBlockShader(isSide = false)
-  private val guiBlockSideShader = new GuiBlockShader(isSide = true)
+  private val guiBlockShader = GUIBlocksRenderer.guiBlockShader
+  private val guiBlockSideShader = GUIBlocksRenderer.guiBlockSideShader
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")
 
   private var viewMatrix = new Matrix4f
   def setViewMatrix(matrix: Matrix4f): Unit = viewMatrix = matrix
 
   private val cameraProjection = new CameraProjection(70f, 16f / 9f, 0.02f, 1000)
+
   def setWindowAspectRatio(aspectRatio: Float): Unit =
     cameraProjection.aspect = aspectRatio
     cameraProjection.updateProjMatrix()
+    guiBlockShader.setWindowAspectRatio(aspectRatio)
+    guiBlockSideShader.setWindowAspectRatio(aspectRatio)
 
   updateContent()
 

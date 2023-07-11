@@ -88,14 +88,14 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
 
   private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
 
-  override def render(transformation: GUITransformation)(using GameWindow): Unit = {
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor)
+  override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
+    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
 
     if hoverIndex.isDefined
     then
       val xOffset = transformation.x + (hoverIndex.get % 9) * 0.2f
       val yOffset = transformation.y + (hoverIndex.get / 9) * 0.2f
-      Component.drawRect(selectedBox, xOffset, yOffset, selectedColor)
+      Component.drawRect(selectedBox, xOffset, yOffset, selectedColor, window.aspectRatio)
 
     guiBlockRenderer.render(transformation)
 

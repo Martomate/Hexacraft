@@ -5,6 +5,7 @@ import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.player.Inventory
+
 import org.joml.{Matrix4f, Vector4f}
 
 class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks) extends Component with SubComponents {
@@ -35,13 +36,14 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
 
   private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent())
 
-  override def render(transformation: GUITransformation)(using GameWindow): Unit = {
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor)
+  override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
+    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
     Component.drawRect(
       selectedBox,
       transformation.x + selectedIndex * location.w / 9,
       transformation.y,
-      selectedColor
+      selectedColor,
+      window.aspectRatio
     )
 
     guiBlockRenderer.render(transformation)

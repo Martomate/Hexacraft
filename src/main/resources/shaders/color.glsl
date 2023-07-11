@@ -3,13 +3,11 @@
 in vec2 position;
 
 uniform mat4 transformationMatrix;
-uniform vec2 windowSize;
-
-float aspectRatio = windowSize.x / windowSize.y;
+uniform float windowAspectRatio;
 
 void main() {
 	gl_Position = transformationMatrix * vec4(position, 0.0, 1.0);
-	gl_Position.xy *= vec2(1 / aspectRatio, 1);
+	gl_Position.xy *= vec2(1 / windowAspectRatio, 1);
 }
 
 #pragma shader frag

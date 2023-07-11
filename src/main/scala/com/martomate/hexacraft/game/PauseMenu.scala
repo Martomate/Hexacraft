@@ -25,6 +25,4 @@ class PauseMenu(scenes: WindowScenes, setPaused: Boolean => Unit)(using mouse: G
       unpause()
       true
     case _ => super.handleEvent(event)
-
-  override def onReloadedResources(): Unit = ()
 }

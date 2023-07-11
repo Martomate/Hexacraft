@@ -15,7 +15,8 @@ abstract class MenuScene extends Scene with SubComponents {
         LocationInfo(-window.aspectRatio, -1, window.aspectRatio * 2, 2),
         transformation.x,
         transformation.y,
-        TextureSingle.getTexture("textures/gui/menu/background")
+        TextureSingle.getTexture("textures/gui/menu/background"),
+        window.aspectRatio
       )
     super.render(transformation)
   }

@@ -11,6 +11,4 @@ class SettingsMenu(using mouse: GameMouse, window: GameWindow, scenes: WindowSce
   addComponent(Button("Back to menu", LocationInfo.from16x9(0.4f, 0.25f, 0.2f, 0.1f)) {
     scenes.popScene()
   })
-
-  override def onReloadedResources(): Unit = ()
 }

@@ -1,11 +1,29 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{Shader, Shaders}
+import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 class EntityShader(isSide: Boolean) {
-  private val shader = Shader.get(if isSide then Shaders.ShaderNames.EntitySide else Shaders.ShaderNames.Entity).get
+  private val config = ShaderConfig("entity_part")
+    .withAttribs(
+      "position",
+      "texCoords",
+      "normal",
+      "vertexIndex",
+      "faceIndex",
+      "modelMatrix",
+      "",
+      "",
+      "",
+      "texOffset",
+      "texDim",
+      "blockTex",
+      "brightness"
+    )
+    .withDefines("isSide" -> (if isSide then "1" else "0"))
+
+  private val shader = Shader.from(config)
 
   def setTotalSize(totalSize: Int): Unit =
     shader.setUniform1i("totalSize", totalSize)

@@ -9,33 +9,13 @@ import org.lwjgl.BufferUtils
 object Shader {
   private var activeShader: Shader = _
 
-  private val shaders = collection.mutable.Map.empty[String, Shader]
   private val matrixBuffer = BufferUtils.createFloatBuffer(16)
-
-  def get(name: String): Option[Shader] = shaders.get(name)
-
-  def init(): Unit =
-    cleanup()
-    Shaders.registerAll()
-
-  def foreach(action: Shader => Unit): Unit =
-    for s <- shaders.values do
-      s.enable()
-      action(s)
 
   def unload(): Unit =
     activeShader = null
     OpenGL.glUseProgram(OpenGL.ProgramId.none)
 
-  private def cleanup(): Unit =
-    unload()
-    for s <- shaders.values do s.unload()
-    shaders.clear()
-
-  def register(config: ShaderConfig): Shader =
-    val shader = new Shader(config)
-    Shader.shaders += config.name -> shader
-    shader
+  def from(config: ShaderConfig): Shader = new Shader(config)
 }
 
 class Shader private (config: ShaderConfig) extends Resource {
@@ -46,8 +26,7 @@ class Shader private (config: ShaderConfig) extends Resource {
   load()
 
   protected def load(): Unit = {
-    shaderID = ShaderBuilder
-      .start(config.name)
+    shaderID = new ShaderBuilder()
       .setDefines(config.defines)
       .loadAll(config.fileName + ".glsl")
       .bindAttribs(config.attribs: _*)

@@ -17,7 +17,8 @@ abstract class Component:
 
   def tick(): Unit = ()
 
-  def render(transformation: GUITransformation)(using GameWindow): Unit =
+  def render(transformation: GUITransformation)(using window: GameWindow): Unit =
+    textMaster.setWindowAspectRatio(window.aspectRatio)
     textMaster.render(transformation.x, transformation.y)
 
   def handleEvent(event: Event): Boolean = false
@@ -37,24 +38,42 @@ object Component:
   private val imageShader = new ImageShader()
   private val colorShader = new ColorShader()
 
-  def drawImage(location: LocationInfo, xoffset: Float, yoffset: Float, image: TextureSingle): Unit =
+  def drawImage(
+      location: LocationInfo,
+      xoffset: Float,
+      yoffset: Float,
+      image: TextureSingle,
+      windowAspectRatio: Float
+  ): Unit =
     imageShader.enable()
     image.bind()
-    val mat = new Matrix4f()
-      .translate(location.x + xoffset, location.y + yoffset, 0)
-      .scale(location.w, location.h, 1)
-    imageShader.setTransformationMatrix(mat)
-    imageShader.setImageSize(image.width, image.height)
+
+    imageShader.setTransformationMatrix(
+      new Matrix4f()
+        .translate(location.x + xoffset, location.y + yoffset, 0)
+        .scale(location.w, location.h, 1)
+    )
+
+    imageShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render()
 
-  def drawRect(location: LocationInfo, xoffset: Float, yoffset: Float, color: Vector4f): Unit =
+  def drawRect(
+      location: LocationInfo,
+      xoffset: Float,
+      yoffset: Float,
+      color: Vector4f,
+      windowAspectRatio: Float
+  ): Unit =
     colorShader.enable()
 
-    val mat = new Matrix4f()
-      .translate(location.x + xoffset, location.y + yoffset, 0)
-      .scale(location.w, location.h, 1)
-    colorShader.setTransformationMatrix(mat)
+    colorShader.setTransformationMatrix(
+      new Matrix4f()
+        .translate(location.x + xoffset, location.y + yoffset, 0)
+        .scale(location.w, location.h, 1)
+    )
     colorShader.setColor(color)
+
+    colorShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render()
 
   def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): GUIText =

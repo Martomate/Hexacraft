@@ -24,7 +24,7 @@ class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using
       then new Vector4f(0.7f, 0.7f, 0.7f, 0.75f)
       else new Vector4f(0.6f, 0.6f, 0.6f, 0.75f)
 
-    Component.drawRect(bounds, transformation.x, transformation.y, color)
+    Component.drawRect(bounds, transformation.x, transformation.y, color, window.aspectRatio)
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean = event match
