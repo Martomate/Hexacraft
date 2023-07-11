@@ -8,13 +8,6 @@ object Shaders {
     val EntitySide: String = "entitySide"
     val GuiBlock: String = "gui_block"
     val GuiBlockSide: String = "gui_blockSide"
-    val SelectedBlock: String = "selected_block"
-    val Sky: String = "sky"
-    val Crosshair: String = "crosshair"
-    val Image: String = "image"
-    val Color: String = "color"
-    val Font: String = "font"
-    val WorldCombiner: String = "world_combiner"
   }
 
   def registerAll(): Unit = {
@@ -117,17 +110,5 @@ object Shaders {
         .withDefines("isSide" -> "1")
     )
 
-    Shader.register(
-      ShaderConfig(ShaderNames.SelectedBlock, "selected_block")
-        .withAttribs("position", "blockPos", "color", "blockHeight")
-    )
-    Shader.register(ShaderConfig(ShaderNames.Sky, "sky").withAttribs("position"))
-    Shader.register(ShaderConfig(ShaderNames.Crosshair, "crosshair").withAttribs("position"))
-    Shader.register(ShaderConfig(ShaderNames.Image, "image").withAttribs("position"))
-    Shader.register(ShaderConfig(ShaderNames.Color, "color").withAttribs("position"))
-    Shader.register(ShaderConfig(ShaderNames.Font, "font").withAttribs("position", "textureCoords"))
-    Shader.register(
-      ShaderConfig(ShaderNames.WorldCombiner, "world_combiner").withAttribs("position")
-    )
   }
 }

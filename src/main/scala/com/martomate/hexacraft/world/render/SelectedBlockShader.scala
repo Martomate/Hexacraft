@@ -1,11 +1,14 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{Shader, Shaders}
+import com.martomate.hexacraft.renderer.{Shader, ShaderConfig, Shaders}
 
 import org.joml.{Matrix4f, Vector3d}
 
 class SelectedBlockShader {
-  private val shader = Shader.get(Shaders.ShaderNames.SelectedBlock).get
+  private val config = ShaderConfig("selected_block", "selected_block")
+    .withAttribs("position", "blockPos", "color", "blockHeight")
+
+  private val shader = Shader.register(config)
 
   def setTotalSize(totalSize: Int): Unit =
     shader.setUniform1i("totalSize", totalSize)

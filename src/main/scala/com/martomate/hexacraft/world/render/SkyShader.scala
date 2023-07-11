@@ -1,11 +1,12 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer.{Shader, Shaders}
+import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3f}
 
 class SkyShader {
-  private val shader = Shader.get(Shaders.ShaderNames.Sky).get
+  private val config = ShaderConfig("sky", "sky").withAttribs("position")
+  private val shader = Shader.register(config)
 
   def setInverseProjectionMatrix(matrix: Matrix4f): Unit =
     shader.setUniformMat4("invProjMatr", matrix)

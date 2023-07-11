@@ -7,8 +7,12 @@ import com.martomate.hexacraft.renderer.{TextureSingle, VAO}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class FontRenderer {
+object FontRenderer {
   private val shader = new FontShader()
+}
+
+class FontRenderer {
+  private val shader = FontRenderer.shader
 
   def render(
       texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],

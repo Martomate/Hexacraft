@@ -14,35 +14,28 @@ object Shader {
 
   def get(name: String): Option[Shader] = shaders.get(name)
 
-  def init(): Unit = {
-    cleanUp()
-
+  def init(): Unit =
+    cleanup()
     Shaders.registerAll()
-  }
 
-  def foreach(action: Shader => Unit): Unit = {
-    shaders.values.foreach(s => {
+  def foreach(action: Shader => Unit): Unit =
+    for s <- shaders.values do
       s.enable()
       action(s)
-    })
-  }
 
-  def unload(): Unit = {
+  def unload(): Unit =
     activeShader = null
     OpenGL.glUseProgram(OpenGL.ProgramId.none)
-  }
 
-  def cleanUp(): Unit = {
+  private def cleanup(): Unit =
     unload()
-    shaders.values.foreach(_.unload())
+    for s <- shaders.values do s.unload()
     shaders.clear()
-  }
 
-  def register(config: ShaderConfig): Shader = {
+  def register(config: ShaderConfig): Shader =
     val shader = new Shader(config)
     Shader.shaders += config.name -> shader
     shader
-  }
 }
 
 class Shader private (config: ShaderConfig) extends Resource {
