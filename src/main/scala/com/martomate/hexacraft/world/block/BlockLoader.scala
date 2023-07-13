@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.block
 
-import com.martomate.hexacraft.renderer.{TextureArray, TextureToLoad}
+import com.martomate.hexacraft.renderer.TextureToLoad
 import com.martomate.hexacraft.util.{FileUtils, ResourceWrapper}
 
 import com.eclipsesource.json.{Json, JsonObject, JsonValue}
@@ -9,24 +9,18 @@ import javax.imageio.ImageIO
 import scala.collection.mutable
 
 trait BlockLoader:
+  def reloadAllBlockTextures(): Seq[TextureToLoad]
 
   /** @return `(offsets << 12 | texture_array_index)` for each side */
   def loadBlockType(spec: BlockSpec): IndexedSeq[Int]
 
 object BlockLoader:
-  lazy val instance: BlockLoader =
-    val _instance = new BlockLoaderImpl()
-    TextureArray.registerTextureArray(
-      "blocks",
-      32,
-      new ResourceWrapper(_instance.loadAllBlockTextures())
-    )
-    _instance
+  lazy val instance: BlockLoader = new BlockLoaderImpl()
 
   private class BlockLoaderImpl extends BlockLoader:
     private var texIdxMap: Map[String, Int] = _
 
-    def loadAllBlockTextures(): Seq[TextureToLoad] =
+    def reloadAllBlockTextures(): Seq[TextureToLoad] =
       val nameToIdx = mutable.Map.empty[String, Int]
       val images = mutable.ArrayBuffer.empty[TextureToLoad]
 

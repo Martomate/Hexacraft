@@ -3,7 +3,7 @@ package com.martomate.hexacraft.menu
 import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.{Button, Label}
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 
 import java.io.File
 
@@ -12,6 +12,7 @@ class MainMenu(saveFolder: File, tryQuit: () => Unit, multiplayerEnabled: Boolea
     GameKeyboard,
     GameWindow,
     WindowExtras,
+    BlockLoader,
     Blocks
 ) extends MenuScene {
   addComponent(new Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))

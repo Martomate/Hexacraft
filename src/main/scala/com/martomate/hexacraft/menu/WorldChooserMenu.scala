@@ -4,7 +4,7 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
@@ -15,6 +15,7 @@ class WorldChooserMenu(saveFolder: File)(using
     window: GameWindow,
     extras: WindowExtras,
     scenes: WindowScenes,
+    blockLoader: BlockLoader,
     Blocks: Blocks
 ) extends MenuScene {
   addComponent(

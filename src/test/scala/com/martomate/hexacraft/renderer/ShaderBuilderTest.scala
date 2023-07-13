@@ -17,8 +17,10 @@ class ShaderBuilderTest extends FunSuite {
 
     new ShaderBuilder().loadAll("block.glsl")
 
-    val events = tracker.events.map(_.asInstanceOf[ShaderLoaded])
-    assertEquals(events.map(_.shaderType), Seq(Vertex, Fragment))
+    val shaderTypes = tracker.events.collect:
+      case ShaderLoaded(_, shaderType, _) => shaderType
+
+    assertEquals(shaderTypes, Seq(Vertex, Fragment))
   }
 
   test("loadAll includes header when loading shaders") {
@@ -29,11 +31,10 @@ class ShaderBuilderTest extends FunSuite {
 
     new ShaderBuilder().loadAll("block.glsl")
 
-    val events = tracker.events.map(_.asInstanceOf[ShaderLoaded])
-    assertEquals(
-      events.map(_.source.takeWhile(_ != '\n')),
-      Seq.fill(2)("#version 330 core")
-    )
+    val shaderSources = tracker.events.collect:
+      case ShaderLoaded(_, _, source) => source.takeWhile(_ != '\n')
+
+    assertEquals(shaderSources, Seq.fill(2)("#version 330 core"))
   }
 
   test("linkAndFinish unloads shaders after linking the program") {
@@ -44,12 +45,15 @@ class ShaderBuilderTest extends FunSuite {
 
     OpenGL.trackEvents(loadTracker)
     val builder = new ShaderBuilder().loadAll("block.glsl")
-    val shaderIds = loadTracker.events.map(_.asInstanceOf[ShaderLoaded].shaderId)
+    val loadedShaderIds = loadTracker.events.collect:
+      case ShaderLoaded(shaderId, _, _) => shaderId
 
     OpenGL.trackEvents(unloadTracker)
     builder.linkAndFinish()
 
-    val events = unloadTracker.events.map(_.asInstanceOf[ShaderUnloaded])
-    assertEquals(events.map(_.shaderId), shaderIds)
+    val unloadedShaderIds = unloadTracker.events.collect:
+      case ShaderUnloaded(shaderId) => shaderId
+
+    assertEquals(unloadedShaderIds.sorted, loadedShaderIds.sorted)
   }
 }

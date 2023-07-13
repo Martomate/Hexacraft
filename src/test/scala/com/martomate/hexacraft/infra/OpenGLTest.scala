@@ -3,6 +3,7 @@ package com.martomate.hexacraft.infra
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.util.Result.{Err, Ok}
 import com.martomate.hexacraft.util.Tracker
+
 import munit.FunSuite
 
 class OpenGLTest extends FunSuite {
@@ -45,5 +46,31 @@ class OpenGLTest extends FunSuite {
     val events = tracker.events
     assertEquals(events.size, 1)
     assertEquals(events, Seq(ShaderUnloaded(shaderId)))
+  }
+
+  test("createProgram emits a tracking event") {
+    OpenGL._enterTestMode()
+
+    val tracker = Tracker.withStorage[OpenGL.Event]
+    OpenGL.trackEvents(tracker)
+
+    val programId = OpenGL.createProgram()
+
+    val events = tracker.events
+    assertEquals(events, Seq(ProgramCreated(programId)))
+  }
+
+  test("deleteProgram emits a tracking event") {
+    OpenGL._enterTestMode()
+
+    val programId = OpenGL.createProgram()
+
+    val tracker = Tracker.withStorage[OpenGL.Event]
+    OpenGL.trackEvents(tracker)
+
+    OpenGL.deleteProgram(programId)
+
+    val events = tracker.events
+    assertEquals(events, Seq(ProgramDeleted(programId)))
   }
 }

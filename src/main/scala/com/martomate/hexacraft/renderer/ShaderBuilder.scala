@@ -10,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 
 class ShaderBuilder {
   private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
-  private val programID = OpenGL.glCreateProgram()
+  private val programID = OpenGL.createProgram()
   private var prefix = "shaders/"
   private var definesText = ""
 

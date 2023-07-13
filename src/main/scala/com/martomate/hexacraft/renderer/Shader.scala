@@ -106,7 +106,7 @@ class Shader private (config: ShaderConfig) extends Resource {
 
   protected def unload(): Unit = {
     if (Shader.activeShader == this) Shader.unload()
-    OpenGL.glDeleteProgram(shaderID)
+    OpenGL.deleteProgram(shaderID)
     shaderID = OpenGL.ProgramId.none
   }
 }

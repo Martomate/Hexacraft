@@ -1,19 +1,21 @@
 package com.martomate.hexacraft.infra.gpu
 
-import com.martomate.hexacraft.infra.gpu.OpenGL.VertexAttributeDataType
 import com.martomate.hexacraft.infra.*
+import com.martomate.hexacraft.infra.gpu.OpenGL.VertexAttributeDataType
 import com.martomate.hexacraft.util.*
 import com.martomate.hexacraft.util.Result.{Err, Ok}
-import org.lwjgl.opengl.*
-import org.lwjgl.system.MemoryUtil
 
 import java.nio.{ByteBuffer, FloatBuffer}
+import org.lwjgl.opengl.*
+import org.lwjgl.system.MemoryUtil
 import scala.annotation.targetName
 
 object OpenGL {
   enum Event:
     case ShaderLoaded(shaderId: ShaderId, shaderType: ShaderType, source: String)
     case ShaderUnloaded(shaderId: ShaderId)
+    case ProgramCreated(programId: ProgramId)
+    case ProgramDeleted(programId: ProgramId)
 
   private var gl: GLWrapper = RealGL
 
@@ -47,6 +49,9 @@ object OpenGL {
   // Shaders
 
   opaque type ShaderId = Int
+  object ShaderId {
+    given Ordering[ShaderId] = Ordering.Int
+  }
   case class ShaderCompilationError(message: String)
 
   def loadShader(shaderType: ShaderType, shaderSource: String): Result[ShaderId, ShaderCompilationError] =
@@ -73,6 +78,8 @@ object OpenGL {
   opaque type ProgramId = Int
   object ProgramId {
     def none: ProgramId = 0
+
+    given Ordering[ProgramId] = Ordering.Int
   }
 
   opaque type UniformLocation = Int
@@ -80,7 +87,10 @@ object OpenGL {
     extension (loc: UniformLocation) def exists: Boolean = loc != -1
   }
 
-  def glCreateProgram(): ProgramId = gl.glCreateProgram()
+  def createProgram(): ProgramId =
+    val id = gl.glCreateProgram()
+    dispatcher.notify(Event.ProgramCreated(id))
+    id
 
   def glUseProgram(program: ProgramId): Unit = gl.glUseProgram(program)
 
@@ -94,7 +104,9 @@ object OpenGL {
       Err(errorMessage)
     else Ok(())
 
-  def glDeleteProgram(program: ProgramId): Unit = gl.glDeleteProgram(program)
+  def deleteProgram(id: ProgramId): Unit =
+    gl.glDeleteProgram(id)
+    dispatcher.notify(Event.ProgramDeleted(id))
 
   def glAttachShader(program: ProgramId, shader: ShaderId): Unit =
     gl.glAttachShader(program, shader)
@@ -775,7 +787,11 @@ class StubGL extends GLWrapper {
   def createCapabilities(): GLCapabilitiesWrapper = new StubGLCapabilities
   def getCapabilities: GLCapabilitiesWrapper = new StubGLCapabilities
 
-  def glCreateShader(shaderType: Int): Int = 8
+  private var lastShaderId = 8
+  def glCreateShader(shaderType: Int): Int =
+    lastShaderId += 1
+    lastShaderId
+
   def glShaderSource(shader: Int, string: String): Unit = ()
   def glCompileShader(shader: Int): Unit = ()
   def glGetShaderi(shader: Int, prop: Int): Int = prop match
@@ -785,7 +801,11 @@ class StubGL extends GLWrapper {
   def glGetShaderInfoLog(shader: Int, maxLength: Int): String = ""
   def glDeleteShader(shader: Int): Unit = ()
 
-  def glCreateProgram(): Int = 6
+  private var lastProgramId = 6
+  def glCreateProgram(): Int =
+    lastProgramId += 1
+    lastProgramId
+
   def glUseProgram(program: Int): Unit = ()
   def glLinkProgram(program: Int): Unit = ()
   def glDeleteProgram(program: Int): Unit = ()

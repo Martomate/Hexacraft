@@ -5,7 +5,7 @@ import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.world.WorldProvider
-import com.martomate.hexacraft.world.block.Blocks
+import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
@@ -16,6 +16,7 @@ class MultiplayerMenu(saveFolder: File)(using
     window: GameWindow,
     Blocks: Blocks,
     windowExtras: WindowExtras,
+    blockLoader: BlockLoader,
     scenes: WindowScenes
 ) extends MenuScene {
   addComponent(new Label("Multiplayer", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))

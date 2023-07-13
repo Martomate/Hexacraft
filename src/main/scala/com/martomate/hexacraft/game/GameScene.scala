@@ -6,10 +6,10 @@ import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
-import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, VAO}
-import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, TextureArray, VAO}
+import com.martomate.hexacraft.util.{ResourceWrapper, TickableTimer}
 import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
-import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
+import com.martomate.hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
@@ -30,10 +30,13 @@ class GameScene(worldProvider: WorldProvider)(using
     keyboard: GameKeyboard,
     window: GameWindow,
     scenes: WindowScenes,
+    blockLoader: BlockLoader,
     Blocks: Blocks
 )(using WindowExtras)
     extends Scene
     with DebugInfoProvider:
+
+  TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(blockLoader.reloadAllBlockTextures()))
 
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
