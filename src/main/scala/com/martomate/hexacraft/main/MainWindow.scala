@@ -2,7 +2,8 @@ package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
-import com.martomate.hexacraft.gui.{Event, Scene, SceneStack, WindowExtras, WindowScenes}
+import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
+import com.martomate.hexacraft.gui.{Event, MenuScene, Scene, SceneStack, WindowExtras, WindowScenes}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{
@@ -14,12 +15,21 @@ import com.martomate.hexacraft.infra.window.{
   WindowSettings,
   WindowSystem
 }
-import com.martomate.hexacraft.menu.MainMenu
+import com.martomate.hexacraft.menu.{
+  HostWorldChooserMenu,
+  JoinWorldChooserMenu,
+  MainMenu,
+  MultiplayerMenu,
+  NewWorldMenu,
+  SettingsMenu,
+  WorldChooserMenu
+}
 import com.martomate.hexacraft.renderer.{Shader, VAO}
 import com.martomate.hexacraft.util.{AsyncFileIO, Resource, Result}
 import com.martomate.hexacraft.util.os.OSUtils
-import com.martomate.hexacraft.world.World
+import com.martomate.hexacraft.world.{World, WorldProvider}
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
+import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
 import org.joml.{Vector2i, Vector2ic}
@@ -192,18 +202,86 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
 
     scenes.foreach(_.tick()) // TODO: should maybe be reversed
 
+  private def pushMainMenu(): Unit =
+    given GameWindow = this
+    given GameMouse = mouse
+
+    def makeMainMenu =
+      import MainMenu.Event.*
+
+      MainMenu(multiplayerEnabled):
+        case Play        => scenes.pushScene(makeWorldChooserMenu)
+        case Multiplayer => scenes.pushScene(makeMultiplayerMenu)
+        case Settings    => scenes.pushScene(makeSettingsMenu)
+        case Quit        => tryQuit()
+
+    def makeWorldChooserMenu =
+      import WorldChooserMenu.Event.*
+
+      WorldChooserMenu(saveFolder) {
+        case StartGame(saveFile, settings) =>
+          scenes.popScenesUntil(MenuScene.isMainMenu)
+          scenes.pushScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
+        case CreateNewWorld => scenes.pushScene(makeNewWorldMenu)
+        case GoBack         => scenes.popScene()
+      }
+
+    def makeNewWorldMenu =
+      import NewWorldMenu.Event.*
+
+      NewWorldMenu(saveFolder):
+        case StartGame(saveFile, settings) =>
+          scenes.popScenesUntil(MenuScene.isMainMenu)
+          scenes.pushScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
+        case GoBack => scenes.popScene()
+
+    def makeMultiplayerMenu =
+      import MultiplayerMenu.Event.*
+
+      MultiplayerMenu:
+        case Join   => scenes.pushScene(makeJoinWorldChooserMenu)
+        case Host   => scenes.pushScene(makeHostWorldChooserMenu)
+        case GoBack => scenes.popScene()
+
+    def makeJoinWorldChooserMenu =
+      import JoinWorldChooserMenu.Event.*
+
+      JoinWorldChooserMenu:
+        case Join(address, port) =>
+          println(s"Will connect to: $address at port $port")
+          scenes.popScenesUntil(MenuScene.isMainMenu)
+        case GoBack => scenes.popScene()
+
+    def makeHostWorldChooserMenu =
+      import HostWorldChooserMenu.Event.*
+
+      HostWorldChooserMenu(saveFolder):
+        case Host(f) =>
+          println(s"Hosting world from ${f.saveFile.getName}")
+          scenes.popScenesUntil(MenuScene.isMainMenu)
+          scenes.pushScene(makeGameScene(new WorldProviderFromFile(f.saveFile, WorldSettings.none)))
+        case GoBack => scenes.popScene()
+
+    def makeSettingsMenu =
+      new SettingsMenu(() => scenes.popScene())
+
+    def makeGameScene(worldProvider: WorldProvider) =
+      given GameKeyboard = keyboard
+      given WindowScenes = this
+      given WindowExtras = this
+      given BlockLoader = BlockLoader.instance // this loads it to memory
+      given Blocks = new Blocks
+
+      new GameScene(worldProvider)
+
+    pushScene(makeMainMenu)
+
   def run(): Unit =
     initGL()
 
     try
-      given GameWindow = this
-      given WindowExtras = this
-      given WindowScenes = this
-      given GameMouse = mouse
-      given GameKeyboard = keyboard
-      given BlockLoader = BlockLoader.instance // this loads it to memory
-      given Blocks = new Blocks
-      pushScene(new MainMenu(saveFolder, tryQuit, multiplayerEnabled))
+      pushMainMenu()
+
       resetMousePos()
       loop()
     finally

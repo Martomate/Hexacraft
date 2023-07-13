@@ -1,17 +1,21 @@
 package com.martomate.hexacraft.menu
 
 import com.martomate.hexacraft.{GameMouse, GameWindow}
-import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowScenes}
+import com.martomate.hexacraft.gui.{LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
+import com.martomate.hexacraft.menu.HostWorldChooserMenu.Event
 import com.martomate.hexacraft.menu.WorldInfo
 
 import java.io.File
 
-class HostWorldChooserMenu(saveFolder: File, onWorldChosen: WorldInfo => Unit)(using
-    GameMouse,
-    GameWindow,
-    WindowScenes
-) extends MenuScene {
+object HostWorldChooserMenu {
+  enum Event:
+    case Host(worldInfo: WorldInfo)
+    case GoBack
+}
+
+class HostWorldChooserMenu(saveFolder: File)(onEvent: HostWorldChooserMenu.Event => Unit)(using GameMouse, GameWindow)
+    extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
 
   private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
@@ -20,7 +24,7 @@ class HostWorldChooserMenu(saveFolder: File, onWorldChosen: WorldInfo => Unit)(u
   do
     scrollPane.addComponent(
       Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
-        onWorldChosen(f)
+        onEvent(Event.Host(f))
         // TODO: the network manager should repeatedly connect to the server registry.
         //  This will be blocking until a client wants to connect or after a timeout
         //  If this is not done in a certain time period the server will be deregistered from the server registry
@@ -28,10 +32,7 @@ class HostWorldChooserMenu(saveFolder: File, onWorldChosen: WorldInfo => Unit)(u
     )
   addComponent(scrollPane)
 
-  addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f)) {
-    val scenes = summon[WindowScenes]
-    scenes.popScene()
-  })
+  addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent(Event.GoBack)))
 
   private def getWorlds: Seq[WorldInfo] =
     val baseFolder = new File(saveFolder, "saves")

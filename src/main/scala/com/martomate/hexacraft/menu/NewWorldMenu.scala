@@ -1,24 +1,21 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
-import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
-import com.martomate.hexacraft.gui.comp.*
-import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
+import com.martomate.hexacraft.GameMouse
+import com.martomate.hexacraft.gui.{LocationInfo, MenuScene}
+import com.martomate.hexacraft.gui.comp.{Button, Label, TextField}
+import com.martomate.hexacraft.menu.NewWorldMenu.Event
 import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
 import scala.util.Random
 
-class NewWorldMenu(saveFolder: File)(using
-    mouse: GameMouse,
-    keyboard: GameKeyboard,
-    window: GameWindow,
-    extras: WindowExtras,
-    scenes: WindowScenes,
-    blockLoader: BlockLoader,
-    Blocks: Blocks
-) extends MenuScene {
+object NewWorldMenu {
+  enum Event:
+    case StartGame(saveFile: File, settings: WorldSettings)
+    case GoBack
+}
+
+class NewWorldMenu(saveFolder: File)(onEvent: NewWorldMenu.Event => Unit)(using GameMouse) extends MenuScene {
   addComponent(
     new Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)
@@ -42,7 +39,7 @@ class NewWorldMenu(saveFolder: File)(using
   addComponent(seedTF)
 
   addComponent(Button("Cancel", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
-    scenes.popScene()
+    onEvent(Event.GoBack)
   })
   addComponent(Button("Create world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
 
@@ -54,10 +51,8 @@ class NewWorldMenu(saveFolder: File)(using
       val seed = Some(seedTF.text)
         .filter(_.nonEmpty)
         .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
-      scenes.popScenesUntil(MenuScene.isMainMenu)
-      scenes.pushScene(
-        new GameScene(new WorldProviderFromFile(file, WorldSettings(Some(nameTF.text), size, seed)))
-      )
+
+      onEvent(Event.StartGame(file, WorldSettings(Some(nameTF.text), size, seed)))
     } catch {
       case _: Exception =>
       // TODO: complain about the input

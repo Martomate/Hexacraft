@@ -111,7 +111,17 @@ class GameScene(worldProvider: WorldProvider)(using
       if world.getBlock(newCoords).blockType == Blocks.Air
       then world.setBlock(newCoords, new BlockState(player.blockInHand))
     case KeyboardKey.Escape =>
-      scenes.pushScene(new PauseMenu(this.scenes, this.setPaused))
+      import PauseMenu.Event.*
+
+      val pauseMenu = PauseMenu:
+        case Unpause =>
+          scenes.popScene()
+          setPaused(false)
+        case QuitGame =>
+          scenes.popScenesUntil(MenuScene.isMainMenu)
+          System.gc()
+
+      scenes.pushScene(pauseMenu)
       setPaused(true)
     case KeyboardKey.Letter('E') =>
       if !isPaused
@@ -181,7 +191,7 @@ class GameScene(worldProvider: WorldProvider)(using
     blockInHandRenderer.updateContent()
     toolbar.setSelectedIndex(itemSlot)
 
-  def setPaused(paused: Boolean): Unit =
+  private def setPaused(paused: Boolean): Unit =
     if isPaused != paused
     then
       isPaused = paused
