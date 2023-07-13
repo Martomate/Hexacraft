@@ -15,7 +15,10 @@ trait BlockLoader:
   def loadBlockType(spec: BlockSpec): IndexedSeq[Int]
 
 object BlockLoader:
-  lazy val instance: BlockLoader = new BlockLoaderImpl()
+  lazy val instance: BlockLoader =
+    val loader = new BlockLoaderImpl()
+    loader.reloadAllBlockTextures()
+    loader
 
   private class BlockLoaderImpl extends BlockLoader:
     private var texIdxMap: Map[String, Int] = _
