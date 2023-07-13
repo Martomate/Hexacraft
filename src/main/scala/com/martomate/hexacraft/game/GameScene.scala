@@ -301,6 +301,7 @@ class GameScene(worldProvider: WorldProvider)(using
     world.unload()
     worldRenderer.unload()
     crosshairVAO.free()
+    crosshairShader.free()
     toolbar.unload()
     blockInHandRenderer.unload()
 

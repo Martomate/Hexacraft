@@ -22,5 +22,7 @@ class SelectedBlockShader {
   def setViewMatrix(matrix: Matrix4f): Unit =
     shader.setUniformMat4("viewMatrix", matrix)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
 }

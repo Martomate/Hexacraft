@@ -161,7 +161,12 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   def unload(): Unit =
     skyVAO.free()
     selectedBlockVAO.free()
+    selectedBlockShader.free()
     worldCombinerVAO.free()
+    worldCombinerShader.free()
+    skyShader.free()
+    entityShader.free()
+    entitySideShader.free()
 
     entityRenderers.unload()
     chunkHandler.unload()

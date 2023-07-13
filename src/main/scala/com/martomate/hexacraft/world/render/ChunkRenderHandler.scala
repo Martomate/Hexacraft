@@ -48,3 +48,5 @@ class ChunkRenderHandler:
   def unload(): Unit =
     for h <- hexagonHandlers.values do h.unload()
     hexagonHandlers.clear()
+    blockShader.free()
+    blockSideShader.free()

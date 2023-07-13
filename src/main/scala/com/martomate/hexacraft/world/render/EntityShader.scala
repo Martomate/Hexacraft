@@ -46,5 +46,7 @@ class EntityShader(isSide: Boolean) {
   def setTextureSize(texSize: Int): Unit =
     shader.setUniform1i("texSize", texSize)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
 }

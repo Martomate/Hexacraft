@@ -17,5 +17,5 @@ class ColorShader {
   def setColor(color: Vector4f): Unit =
     shader.setUniform4f("col", color)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
 }

@@ -33,5 +33,5 @@ class GuiBlockShader(isSide: Boolean) {
   def setSide(side: Int): Unit =
     shader.setUniform1i("side", side)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
 }

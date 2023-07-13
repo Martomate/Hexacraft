@@ -63,7 +63,7 @@ class Shader private (config: ShaderConfig) extends Resource {
   }
 
   private def setUniform(name: String)(func: OpenGL.UniformLocation => Unit): Unit = {
-    enable()
+    activate()
     val loc = getUniformLocation(name)
     if (loc.exists) func(loc)
   }
@@ -97,7 +97,7 @@ class Shader private (config: ShaderConfig) extends Resource {
     })
   }
 
-  def enable(): Unit = {
+  def activate(): Unit = {
     if (Shader.activeShader != this) {
       Shader.activeShader = this
       OpenGL.glUseProgram(shaderID)

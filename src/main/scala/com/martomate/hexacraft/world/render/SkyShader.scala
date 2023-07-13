@@ -17,5 +17,7 @@ class SkyShader {
   def setSunPosition(sun: Vector3f): Unit =
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
 }

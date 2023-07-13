@@ -17,5 +17,5 @@ class FontShader {
   def setTranslation(x: Float, y: Float): Unit =
     shader.setUniform2f("translation", x, y)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
 }

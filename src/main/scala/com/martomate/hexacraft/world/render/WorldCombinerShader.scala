@@ -17,5 +17,7 @@ class WorldCombinerShader {
     shader.setUniform1f("nearPlane", nearPlane)
     shader.setUniform1f("farPlane", farPlane)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
 }

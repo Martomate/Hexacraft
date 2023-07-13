@@ -14,5 +14,5 @@ class ImageShader {
   def setWindowAspectRatio(aspectRatio: Float): Unit =
     shader.setUniform1f("windowAspectRatio", aspectRatio)
 
-  def enable(): Unit = shader.enable()
+  def enable(): Unit = shader.activate()
 }
