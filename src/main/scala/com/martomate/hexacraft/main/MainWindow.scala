@@ -195,80 +195,74 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
     if scene != null then scene.unload()
     scene = newScene
 
-  private def makeStartScene(): Scene =
-    given GameWindow = this
-    given GameMouse = mouse
+  private def makeSceneRouter(): SceneRoute => Unit =
+    def route(sceneRoute: SceneRoute): Unit = setScene(createScene(sceneRoute)(using this, mouse))
 
-    def makeMainMenu: MainMenu =
-      import MainMenu.Event.*
+    def createScene(sceneRoute: SceneRoute)(using GameWindow, GameMouse): Scene = sceneRoute match
+      case SceneRoute.Main =>
+        import MainMenu.Event.*
 
-      MainMenu(multiplayerEnabled):
-        case Play        => setScene(makeWorldChooserMenu)
-        case Multiplayer => setScene(makeMultiplayerMenu)
-        case Settings    => setScene(makeSettingsMenu)
-        case Quit        => tryQuit()
+        MainMenu(multiplayerEnabled):
+          case Play        => route(SceneRoute.WorldChooser)
+          case Multiplayer => route(SceneRoute.Multiplayer)
+          case Settings    => route(SceneRoute.Settings)
+          case Quit        => tryQuit()
+      case SceneRoute.WorldChooser =>
+        import WorldChooserMenu.Event.*
 
-    def makeWorldChooserMenu: WorldChooserMenu =
-      import WorldChooserMenu.Event.*
+        WorldChooserMenu(saveFolder):
+          case StartGame(saveFile, settings) => route(SceneRoute.Game(saveFile, settings))
+          case CreateNewWorld                => route(SceneRoute.NewWorld)
+          case GoBack                        => route(SceneRoute.Main)
+      case SceneRoute.NewWorld =>
+        import NewWorldMenu.Event.*
 
-      WorldChooserMenu(saveFolder):
-        case StartGame(saveFile, settings) => setScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
-        case CreateNewWorld                => setScene(makeNewWorldMenu)
-        case GoBack                        => setScene(makeMainMenu)
+        NewWorldMenu(saveFolder):
+          case StartGame(saveFile, settings) => route(SceneRoute.Game(saveFile, settings))
+          case GoBack                        => route(SceneRoute.WorldChooser)
+      case SceneRoute.Multiplayer =>
+        import MultiplayerMenu.Event.*
 
-    def makeNewWorldMenu: NewWorldMenu =
-      import NewWorldMenu.Event.*
+        MultiplayerMenu:
+          case Join   => route(SceneRoute.JoinWorld)
+          case Host   => route(SceneRoute.HostWorld)
+          case GoBack => route(SceneRoute.Main)
+      case SceneRoute.JoinWorld =>
+        import JoinWorldChooserMenu.Event.*
 
-      NewWorldMenu(saveFolder):
-        case StartGame(saveFile, settings) => setScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
-        case GoBack                        => setScene(makeWorldChooserMenu)
+        JoinWorldChooserMenu:
+          case Join(address, port) =>
+            println(s"Will connect to: $address at port $port")
+          case GoBack => route(SceneRoute.Multiplayer)
+      case SceneRoute.HostWorld =>
+        import HostWorldChooserMenu.Event.*
 
-    def makeMultiplayerMenu: MultiplayerMenu =
-      import MultiplayerMenu.Event.*
+        HostWorldChooserMenu(saveFolder):
+          case Host(f) =>
+            println(s"Hosting world from ${f.saveFile.getName}")
+            route(SceneRoute.Game(f.saveFile, WorldSettings.none))
+          case GoBack => route(SceneRoute.Multiplayer)
+      case SceneRoute.Settings =>
+        new SettingsMenu(() => route(SceneRoute.Main))
+      case SceneRoute.Game(saveFile, settings) =>
+        given GameKeyboard = keyboard
+        given WindowExtras = this
+        given BlockLoader = BlockLoader.instance // this loads it to memory
+        given Blocks = new Blocks
 
-      MultiplayerMenu:
-        case Join   => setScene(makeJoinWorldChooserMenu)
-        case Host   => setScene(makeHostWorldChooserMenu)
-        case GoBack => setScene(makeMainMenu)
+        GameScene(new WorldProviderFromFile(saveFile, settings)):
+          case GameScene.Event.QuitGame =>
+            route(SceneRoute.Main)
+            System.gc()
 
-    def makeJoinWorldChooserMenu: JoinWorldChooserMenu =
-      import JoinWorldChooserMenu.Event.*
-
-      JoinWorldChooserMenu:
-        case Join(address, port) =>
-          println(s"Will connect to: $address at port $port")
-        case GoBack => setScene(makeMultiplayerMenu)
-
-    def makeHostWorldChooserMenu: HostWorldChooserMenu =
-      import HostWorldChooserMenu.Event.*
-
-      HostWorldChooserMenu(saveFolder):
-        case Host(f) =>
-          println(s"Hosting world from ${f.saveFile.getName}")
-          setScene(makeGameScene(new WorldProviderFromFile(f.saveFile, WorldSettings.none)))
-        case GoBack => setScene(makeMultiplayerMenu)
-
-    def makeSettingsMenu: SettingsMenu =
-      new SettingsMenu(() => setScene(makeMainMenu))
-
-    def makeGameScene(worldProvider: WorldProvider): GameScene =
-      given GameKeyboard = keyboard
-      given WindowExtras = this
-      given BlockLoader = BlockLoader.instance // this loads it to memory
-      given Blocks = new Blocks
-
-      GameScene(worldProvider):
-        case GameScene.Event.QuitGame =>
-          setScene(makeMainMenu)
-          System.gc()
-
-    makeMainMenu
+    route
 
   def run(): Unit =
     initGL()
 
     try
-      scene = makeStartScene()
+      val router = makeSceneRouter()
+      router.apply(SceneRoute.Main)
 
       resetMousePos()
       loop()
