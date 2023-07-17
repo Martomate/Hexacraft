@@ -1,15 +1,9 @@
 package com.martomate.hexacraft.menu
 
-import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
-import com.martomate.hexacraft.gui.{LocationInfo, MenuScene, WindowExtras, WindowScenes}
+import com.martomate.hexacraft.GameMouse
+import com.martomate.hexacraft.gui.{LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label}
 import com.martomate.hexacraft.menu.MultiplayerMenu.Event
-import com.martomate.hexacraft.world.WorldProvider
-import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
-import com.martomate.hexacraft.world.settings.WorldSettings
-
-import java.io.File
 
 object MultiplayerMenu {
   enum Event:

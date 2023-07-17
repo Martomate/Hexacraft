@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui
 
-import com.martomate.hexacraft.infra.window.{KeyAction, KeyMods, KeyboardKey, MouseAction, MouseButton}
+import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
 
 enum Event:
   case KeyEvent(key: KeyboardKey, scancode: Int, action: KeyAction, mods: KeyMods)
@@ -11,4 +11,5 @@ enum Event:
 object Event:
   extension (e: Event.MouseClickEvent)
     def withMouseTranslation(dx: Float, dy: Float): MouseClickEvent =
-      e.copy(mousePos = (e.mousePos._1 + dx, e.mousePos._2 + dy))
+      val (mx, my) = e.mousePos
+      e.copy(mousePos = (mx + dx, my + dy))

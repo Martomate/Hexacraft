@@ -3,7 +3,7 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.*
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
-import com.martomate.hexacraft.gui.{Event, MenuScene, Scene, SceneStack, WindowExtras, WindowScenes}
+import com.martomate.hexacraft.gui.{Event, MenuScene, Scene, WindowExtras}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{
@@ -35,7 +35,7 @@ import java.io.File
 import org.joml.{Vector2i, Vector2ic}
 import scala.collection.mutable
 
-class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with WindowExtras:
+class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val multiplayerEnabled = isDebug
@@ -57,10 +57,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private val mouse: RealGameMouse = new RealGameMouse
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
-  private val scenes: SceneStack = new SceneStack
-  def popScene(): Unit = scenes.popScene()
-  def pushScene(scene: Scene): Unit = scenes.pushScene(scene)
-  def popScenesUntil(predicate: Scene => Boolean): Unit = scenes.popScenesUntil(predicate)
+  private var scene: Scene = _
 
   override def setCursorMode(cursorMode: CursorMode): Unit =
     window.setCursorMode(cursorMode)
@@ -111,8 +108,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         titleTicker = 0
         val msString = (if msTime < 10 then "0" else "") + msTime
         val vsyncStr = if vsyncManager.isVsync then "vsync" else ""
-        val titleParts =
-          "Hexacraft" +: scenes.map(_.windowTitle) :+ s"$fps fps   ms: $msString" :+ vsyncStr
+        val titleParts = Seq("Hexacraft", s"$fps fps   ms: $msString", vsyncStr)
         val windowTitle = titleParts.filter(_.nonEmpty).mkString("   |   ")
 
         window.setTitle(windowTitle)
@@ -133,36 +129,34 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         if key == KeyboardKey.Letter('R') && window.isKeyPressed(KeyboardKey.Function(3))
         then
           Resource.reloadAllResources()
-          scenes.foreach(_.onReloadedResources())
+          scene.onReloadedResources()
 
           // This step is needed to set some uniforms after the reload
-          scenes.foreach(_.windowResized(_windowSize.x, _windowSize.y))
+          scene.windowResized(_windowSize.x, _windowSize.y)
 
           println("Reloaded resources")
 
         if key == KeyboardKey.Function(11)
         then setFullscreen()
 
-      scenes.reverseIterator.exists(_.handleEvent(Event.KeyEvent(key, scancode, action, mods)))
+      scene.handleEvent(Event.KeyEvent(key, scancode, action, mods))
 
     case CallbackEvent.CharTyped(_, character) =>
-      scenes.reverseIterator.exists(_.handleEvent(Event.CharEvent(character)))
+      scene.handleEvent(Event.CharEvent(character))
 
     case CallbackEvent.MouseClicked(_, button, action, mods) =>
       val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
-      scenes.reverseIterator.exists(
-        _.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
-      )
+      scene.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
 
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
-      scenes.reverseIterator.exists(_.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat)))
+      scene.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat))
 
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then
         if w != _windowSize.x || h != _windowSize.y
-        then scenes.foreach(_.windowResized(w, h))
+        then scene.windowResized(w, h)
 
         _windowSize.set(w, h)
         resetMousePos()
@@ -174,7 +168,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
         if w != _framebufferSize.x || h != _framebufferSize.y
         then
           OpenGL.glViewport(0, 0, w, h)
-          scenes.foreach(_.framebufferResized(w, h))
+          scene.framebufferResized(w, h)
 
         _framebufferSize.set(w, h)
 
@@ -188,99 +182,93 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private def render(): Unit =
     given GameWindow = this
 
-    def render(idx: Int): Unit =
-      if idx > 0 && !scenes(idx).isOpaque
-      then render(idx - 1)
-      scenes(idx).render(GUITransformation(0, 0))
-
-    render(scenes.size - 1)
+    scene.render(GUITransformation(0, 0))
     VAO.unbindVAO()
 
   private def tick(): Unit =
     val (cx, cy) = window.cursorPosition
     mouse.moveTo(cx, _windowSize.y - cy)
 
-    scenes.foreach(_.tick()) // TODO: should maybe be reversed
+    scene.tick()
 
-  private def pushMainMenu(): Unit =
+  private def setScene(newScene: Scene): Unit =
+    if scene != null then scene.unload()
+    scene = newScene
+
+  private def makeStartScene(): Scene =
     given GameWindow = this
     given GameMouse = mouse
 
-    def makeMainMenu =
+    def makeMainMenu: MainMenu =
       import MainMenu.Event.*
 
       MainMenu(multiplayerEnabled):
-        case Play        => scenes.pushScene(makeWorldChooserMenu)
-        case Multiplayer => scenes.pushScene(makeMultiplayerMenu)
-        case Settings    => scenes.pushScene(makeSettingsMenu)
+        case Play        => setScene(makeWorldChooserMenu)
+        case Multiplayer => setScene(makeMultiplayerMenu)
+        case Settings    => setScene(makeSettingsMenu)
         case Quit        => tryQuit()
 
-    def makeWorldChooserMenu =
+    def makeWorldChooserMenu: WorldChooserMenu =
       import WorldChooserMenu.Event.*
 
-      WorldChooserMenu(saveFolder) {
-        case StartGame(saveFile, settings) =>
-          scenes.popScenesUntil(MenuScene.isMainMenu)
-          scenes.pushScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
-        case CreateNewWorld => scenes.pushScene(makeNewWorldMenu)
-        case GoBack         => scenes.popScene()
-      }
+      WorldChooserMenu(saveFolder):
+        case StartGame(saveFile, settings) => setScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
+        case CreateNewWorld                => setScene(makeNewWorldMenu)
+        case GoBack                        => setScene(makeMainMenu)
 
-    def makeNewWorldMenu =
+    def makeNewWorldMenu: NewWorldMenu =
       import NewWorldMenu.Event.*
 
       NewWorldMenu(saveFolder):
-        case StartGame(saveFile, settings) =>
-          scenes.popScenesUntil(MenuScene.isMainMenu)
-          scenes.pushScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
-        case GoBack => scenes.popScene()
+        case StartGame(saveFile, settings) => setScene(makeGameScene(new WorldProviderFromFile(saveFile, settings)))
+        case GoBack                        => setScene(makeWorldChooserMenu)
 
-    def makeMultiplayerMenu =
+    def makeMultiplayerMenu: MultiplayerMenu =
       import MultiplayerMenu.Event.*
 
       MultiplayerMenu:
-        case Join   => scenes.pushScene(makeJoinWorldChooserMenu)
-        case Host   => scenes.pushScene(makeHostWorldChooserMenu)
-        case GoBack => scenes.popScene()
+        case Join   => setScene(makeJoinWorldChooserMenu)
+        case Host   => setScene(makeHostWorldChooserMenu)
+        case GoBack => setScene(makeMainMenu)
 
-    def makeJoinWorldChooserMenu =
+    def makeJoinWorldChooserMenu: JoinWorldChooserMenu =
       import JoinWorldChooserMenu.Event.*
 
       JoinWorldChooserMenu:
         case Join(address, port) =>
           println(s"Will connect to: $address at port $port")
-          scenes.popScenesUntil(MenuScene.isMainMenu)
-        case GoBack => scenes.popScene()
+        case GoBack => setScene(makeMultiplayerMenu)
 
-    def makeHostWorldChooserMenu =
+    def makeHostWorldChooserMenu: HostWorldChooserMenu =
       import HostWorldChooserMenu.Event.*
 
       HostWorldChooserMenu(saveFolder):
         case Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
-          scenes.popScenesUntil(MenuScene.isMainMenu)
-          scenes.pushScene(makeGameScene(new WorldProviderFromFile(f.saveFile, WorldSettings.none)))
-        case GoBack => scenes.popScene()
+          setScene(makeGameScene(new WorldProviderFromFile(f.saveFile, WorldSettings.none)))
+        case GoBack => setScene(makeMultiplayerMenu)
 
-    def makeSettingsMenu =
-      new SettingsMenu(() => scenes.popScene())
+    def makeSettingsMenu: SettingsMenu =
+      new SettingsMenu(() => setScene(makeMainMenu))
 
-    def makeGameScene(worldProvider: WorldProvider) =
+    def makeGameScene(worldProvider: WorldProvider): GameScene =
       given GameKeyboard = keyboard
-      given WindowScenes = this
       given WindowExtras = this
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given Blocks = new Blocks
 
-      new GameScene(worldProvider)
+      GameScene(worldProvider):
+        case GameScene.Event.QuitGame =>
+          setScene(makeMainMenu)
+          System.gc()
 
-    pushScene(makeMainMenu)
+    makeMainMenu
 
   def run(): Unit =
     initGL()
 
     try
-      pushMainMenu()
+      scene = makeStartScene()
 
       resetMousePos()
       loop()
@@ -347,7 +335,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowScenes with Win
   private def tryQuit(): Unit = window.requestClose()
 
   private def destroy(): Unit =
-    popScenesUntil(_ => false)
+    scene.unload()
 
     Resource.freeAllResources()
     AsyncFileIO.unload()

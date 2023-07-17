@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryScene, Toolbar}
+import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryBox, Toolbar}
 import com.martomate.hexacraft.gui.*
-import com.martomate.hexacraft.gui.comp.GUITransformation
+import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, TextureArray, VAO}
-import com.martomate.hexacraft.util.{ResourceWrapper, TickableTimer}
+import com.martomate.hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import com.martomate.hexacraft.world.{World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
@@ -24,12 +24,18 @@ import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2f}
 import org.joml.Vector2d
 import org.joml.Vector3f
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
-class GameScene(worldProvider: WorldProvider)(using
+object GameScene {
+  enum Event:
+    case QuitGame
+}
+
+class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Event])(using
     mouse: GameMouse,
     keyboard: GameKeyboard,
     window: GameWindow,
-    scenes: WindowScenes,
     blockLoader: BlockLoader,
     Blocks: Blocks
 )(using WindowExtras)
@@ -51,6 +57,8 @@ class GameScene(worldProvider: WorldProvider)(using
   import world.size.impl
 
   val player: Player = makePlayer(worldInfo.player)
+
+  private val overlays = mutable.ArrayBuffer.empty[Component]
 
   private val otherPlayer: ControlledPlayerEntity =
     new ControlledPlayerEntity(playerModel, new EntityBaseData(CylCoords(player.position)))
@@ -81,6 +89,8 @@ class GameScene(worldProvider: WorldProvider)(using
   private var isInPopup: Boolean = false
 
   private var debugOverlay: DebugOverlay = _
+  private var pauseMenu: PauseMenu = _
+  private var inventoryScene: InventoryBox = _
 
   setUniforms()
   setUseMouse(true)
@@ -92,6 +102,7 @@ class GameScene(worldProvider: WorldProvider)(using
     worldProvider.saveState(worldTag, "world.dat")
 
   override def onReloadedResources(): Unit =
+    for s <- overlays do s.onReloadedResources()
     setUniforms()
     world.onReloadedResources()
 
@@ -112,28 +123,30 @@ class GameScene(worldProvider: WorldProvider)(using
     case KeyboardKey.Escape =>
       import PauseMenu.Event.*
 
-      val pauseMenu = PauseMenu:
+      pauseMenu = PauseMenu:
         case Unpause =>
-          scenes.popScene()
+          overlays -= pauseMenu
+          pauseMenu.unload()
+          pauseMenu = null
           setPaused(false)
-        case QuitGame =>
-          scenes.popScenesUntil(MenuScene.isMainMenu)
-          System.gc()
+        case QuitGame => eventHandler.notify(GameScene.Event.QuitGame)
 
-      scenes.pushScene(pauseMenu)
+      overlays += pauseMenu
       setPaused(true)
     case KeyboardKey.Letter('E') =>
       if !isPaused
       then
-        val closeScene: () => Unit = () => {
-          scenes.popScenesUntil(_ == this)
-          isInPopup = false
-          setUseMouse(true)
-        }
-
         setUseMouse(false)
         isInPopup = true
-        scenes.pushScene(new InventoryScene(player.inventory, closeScene))
+        inventoryScene = InventoryBox(player.inventory)(() => {
+          overlays -= inventoryScene
+          inventoryScene.unload()
+          inventoryScene = null
+          isInPopup = false
+          setUseMouse(true)
+        })
+
+        overlays += inventoryScene
     case KeyboardKey.Letter('M') =>
       setUseMouse(!moveWithMouse)
     case KeyboardKey.Letter('F') =>
@@ -170,20 +183,23 @@ class GameScene(worldProvider: WorldProvider)(using
     summon[WindowExtras].resetMousePos()
 
   override def handleEvent(event: Event): Boolean =
-    import Event.*
-    event match
-      case KeyEvent(key, _, action, _) =>
-        if action == KeyAction.Press then handleKeyPress(key)
-      case ScrollEvent(_, yOffset) if !isPaused && !isInPopup && moveWithMouse =>
-        val dy = -math.signum(yOffset).toInt
-        if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
-      case MouseClickEvent(button, action, _, _) =>
-        button match
-          case MouseButton.Left  => leftMouseButtonTimer.enabled = action != MouseAction.Release
-          case MouseButton.Right => rightMouseButtonTimer.enabled = action != MouseAction.Release
-          case _                 =>
-      case _ =>
-    true
+    if overlays.reverseIterator.exists(_.handleEvent(event))
+    then true
+    else
+      import Event.*
+      event match
+        case KeyEvent(key, _, action, _) =>
+          if action == KeyAction.Press then handleKeyPress(key)
+        case ScrollEvent(_, yOffset) if !isPaused && !isInPopup && moveWithMouse =>
+          val dy = -math.signum(yOffset).toInt
+          if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
+        case MouseClickEvent(button, action, _, _) =>
+          button match
+            case MouseButton.Left  => leftMouseButtonTimer.enabled = action != MouseAction.Release
+            case MouseButton.Right => rightMouseButtonTimer.enabled = action != MouseAction.Release
+            case _                 =>
+        case _ =>
+      true
 
   private def setSelectedItemSlot(itemSlot: Int): Unit =
     player.selectedItemSlot = itemSlot
@@ -216,8 +232,6 @@ class GameScene(worldProvider: WorldProvider)(using
   override def framebufferResized(width: Int, height: Int): Unit =
     worldRenderer.framebufferResized(width, height)
 
-  override def windowTitle: String = ""
-
   override def render(transformation: GUITransformation)(using GameWindow): Unit =
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
@@ -228,6 +242,8 @@ class GameScene(worldProvider: WorldProvider)(using
 
     if debugOverlay != null
     then debugOverlay.render(transformation)
+
+    for s <- overlays do s.render(transformation)
 
   private def renderCrosshair(): Unit =
     if !isPaused && !isInPopup && moveWithMouse
@@ -261,6 +277,8 @@ class GameScene(worldProvider: WorldProvider)(using
 
     if debugOverlay != null
     then debugOverlay.updateContent(DebugOverlay.Content.fromCamera(camera, viewDistance))
+
+    for s <- overlays do s.tick()
 
   private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] =
     if isPaused || isInPopup
@@ -309,6 +327,8 @@ class GameScene(worldProvider: WorldProvider)(using
     setMouseCursorInvisible(false)
 
     saveWorldInfo()
+
+    for s <- overlays do s.unload()
 
     world.unload()
     worldRenderer.unload()

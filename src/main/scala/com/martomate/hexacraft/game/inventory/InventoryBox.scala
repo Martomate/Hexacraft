@@ -10,11 +10,11 @@ import com.martomate.hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
+class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
     mouse: GameMouse,
     window: GameWindow,
     Blocks: Blocks
-) extends Scene {
+) extends Component {
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -34,8 +34,6 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     floatingBlockRenderer.updateContent()
   })
 
-  override def isOpaque: Boolean = false
-
   override def tick(): Unit = {
     val mousePos = mouse.heightNormalizedPos(window.windowSize)
     val (mx, my) = (mousePos.x, mousePos.y)
@@ -49,9 +47,6 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
     if floatingBlock.isDefined
     then floatingBlockRenderer.updateContent()
   }
-
-  override def windowResized(w: Int, h: Int): Unit =
-    guiBlockRenderer.setWindowAspectRatio(w.toFloat / h)
 
   override def handleEvent(event: Event): Boolean =
     import Event.*
@@ -89,6 +84,9 @@ class InventoryScene(inventory: Inventory, closeScene: () => Unit)(using
   private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
 
   override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
+    guiBlockRenderer.setWindowAspectRatio(window.aspectRatio)
+    floatingBlockRenderer.setWindowAspectRatio(window.aspectRatio)
+
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
 
     if hoverIndex.isDefined
