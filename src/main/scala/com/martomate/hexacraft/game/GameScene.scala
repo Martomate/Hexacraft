@@ -8,7 +8,7 @@ import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
 import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, TextureArray, VAO}
 import com.martomate.hexacraft.util.{ResourceWrapper, TickableTimer}
-import com.martomate.hexacraft.world.{DebugInfoProvider, World, WorldProvider}
+import com.martomate.hexacraft.world.{World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -33,8 +33,7 @@ class GameScene(worldProvider: WorldProvider)(using
     blockLoader: BlockLoader,
     Blocks: Blocks
 )(using WindowExtras)
-    extends Scene
-    with DebugInfoProvider:
+    extends Scene:
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(blockLoader.reloadAllBlockTextures()))
 
@@ -81,7 +80,7 @@ class GameScene(worldProvider: WorldProvider)(using
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
 
-  private var debugScene: DebugScene = _
+  private var debugOverlay: DebugOverlay = _
 
   setUniforms()
   setUseMouse(true)
@@ -140,7 +139,7 @@ class GameScene(worldProvider: WorldProvider)(using
     case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
     case KeyboardKey.Function(7) =>
-      setDebugScreenVisible(debugScene == null)
+      setDebugScreenVisible(debugOverlay == null)
     case KeyboardKey.Digit(digit) =>
       setSelectedItemSlot(digit)
     case KeyboardKey.Letter('P') =>
@@ -158,12 +157,12 @@ class GameScene(worldProvider: WorldProvider)(using
   private def setDebugScreenVisible(visible: Boolean): Unit =
     if visible
     then
-      if debugScene == null
-      then debugScene = new DebugScene(this, window.aspectRatio)
+      if debugOverlay == null
+      then debugOverlay = new DebugOverlay(window.aspectRatio)
     else
-      if debugScene != null
-      then debugScene.unload()
-      debugScene = null
+      if debugOverlay != null
+      then debugOverlay.unload()
+      debugOverlay = null
 
   private def setUseMouse(useMouse: Boolean): Unit =
     moveWithMouse = useMouse
@@ -209,8 +208,8 @@ class GameScene(worldProvider: WorldProvider)(using
     blockInHandRenderer.setWindowAspectRatio(aspectRatio)
     toolbar.setWindowAspectRatio(aspectRatio)
 
-    if debugScene != null
-    then debugScene.windowResized(width, height)
+    if debugOverlay != null
+    then debugOverlay.windowResized(width, height)
 
     crosshairShader.setWindowAspectRatio(aspectRatio)
 
@@ -227,8 +226,8 @@ class GameScene(worldProvider: WorldProvider)(using
     blockInHandRenderer.render(transformation)
     toolbar.render(transformation)
 
-    if debugScene != null
-    then debugScene.render(transformation)
+    if debugOverlay != null
+    then debugOverlay.render(transformation)
 
   private def renderCrosshair(): Unit =
     if !isPaused && !isInPopup && moveWithMouse
@@ -260,8 +259,8 @@ class GameScene(worldProvider: WorldProvider)(using
     world.tick(camera)
     worldRenderer.tick(camera, world.renderDistance)
 
-    if debugScene != null
-    then debugScene.tick()
+    if debugOverlay != null
+    then debugOverlay.updateContent(DebugOverlay.Content.fromCamera(camera, viewDistance))
 
   private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] =
     if isPaused || isInPopup
@@ -318,10 +317,10 @@ class GameScene(worldProvider: WorldProvider)(using
     toolbar.unload()
     blockInHandRenderer.unload()
 
-    if debugScene != null
-    then debugScene.unload()
+    if debugOverlay != null
+    then debugOverlay.unload()
 
-  override def viewDistance: Double = world.renderDistance
+  private def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer =
     val blockProvider = () => player.blockInHand
