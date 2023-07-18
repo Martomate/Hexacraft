@@ -12,5 +12,5 @@ enum SceneRoute {
   case JoinWorld
   case HostWorld
   case Settings
-  case Game(saveFile: File, settings: WorldSettings)
+  case Game(saveDir: File, settings: WorldSettings)
 }

@@ -3,6 +3,7 @@ package com.martomate.hexacraft.menu
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.menu.HostWorldChooserMenu.Event
 import com.martomate.hexacraft.menu.WorldInfo
 
@@ -14,8 +15,10 @@ object HostWorldChooserMenu {
     case GoBack
 }
 
-class HostWorldChooserMenu(saveFolder: File)(onEvent: HostWorldChooserMenu.Event => Unit)(using GameMouse, GameWindow)
-    extends MenuScene {
+class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: HostWorldChooserMenu.Event => Unit)(using
+    GameMouse,
+    GameWindow
+) extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
 
   private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
@@ -40,7 +43,7 @@ class HostWorldChooserMenu(saveFolder: File)(onEvent: HostWorldChooserMenu.Event
       baseFolder
         .listFiles()
         .filter(f => new File(f, "world.dat").exists())
-        .map(saveFile => WorldInfo.fromFile(saveFile))
+        .map(saveFile => WorldInfo.fromFile(saveFile, fs))
         .toSeq
     else Seq.empty[WorldInfo]
 

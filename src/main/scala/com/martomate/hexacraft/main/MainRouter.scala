@@ -3,6 +3,7 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.{Scene, WindowExtras}
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.menu.{
   HostWorldChooserMenu,
   JoinWorldChooserMenu,
@@ -24,12 +25,10 @@ object MainRouter {
     case QuitRequested
 }
 
-class MainRouter(saveFolder: File, multiplayerEnabled: Boolean)(eventListener: Tracker[MainRouter.Event])(using
-    GameWindow,
-    GameMouse,
-    GameKeyboard,
-    WindowExtras
-) {
+class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
+    eventListener: Tracker[MainRouter.Event]
+)(using GameWindow, GameMouse, GameKeyboard, WindowExtras) {
+
   def route(sceneRoute: SceneRoute): Unit = eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
 
   private def createScene(sceneRoute: SceneRoute)(using GameWindow, GameMouse): Scene = sceneRoute match
@@ -41,19 +40,22 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean)(eventListener: T
         case Multiplayer => route(SceneRoute.Multiplayer)
         case Settings    => route(SceneRoute.Settings)
         case Quit        => eventListener.notify(MainRouter.Event.QuitRequested)
+
     case SceneRoute.WorldChooser =>
       import WorldChooserMenu.Event.*
 
-      WorldChooserMenu(saveFolder):
-        case StartGame(saveFile, settings) => route(SceneRoute.Game(saveFile, settings))
-        case CreateNewWorld                => route(SceneRoute.NewWorld)
-        case GoBack                        => route(SceneRoute.Main)
+      WorldChooserMenu(saveFolder, fs):
+        case StartGame(saveDir, settings) => route(SceneRoute.Game(saveDir, settings))
+        case CreateNewWorld               => route(SceneRoute.NewWorld)
+        case GoBack                       => route(SceneRoute.Main)
+
     case SceneRoute.NewWorld =>
       import NewWorldMenu.Event.*
 
       NewWorldMenu(saveFolder):
-        case StartGame(saveFile, settings) => route(SceneRoute.Game(saveFile, settings))
-        case GoBack                        => route(SceneRoute.WorldChooser)
+        case StartGame(saveDir, settings) => route(SceneRoute.Game(saveDir, settings))
+        case GoBack                       => route(SceneRoute.WorldChooser)
+
     case SceneRoute.Multiplayer =>
       import MultiplayerMenu.Event.*
 
@@ -61,6 +63,7 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean)(eventListener: T
         case Join   => route(SceneRoute.JoinWorld)
         case Host   => route(SceneRoute.HostWorld)
         case GoBack => route(SceneRoute.Main)
+
     case SceneRoute.JoinWorld =>
       import JoinWorldChooserMenu.Event.*
 
@@ -68,21 +71,24 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean)(eventListener: T
         case Join(address, port) =>
           println(s"Will connect to: $address at port $port")
         case GoBack => route(SceneRoute.Multiplayer)
+
     case SceneRoute.HostWorld =>
       import HostWorldChooserMenu.Event.*
 
-      HostWorldChooserMenu(saveFolder):
+      HostWorldChooserMenu(saveFolder, fs):
         case Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
           route(SceneRoute.Game(f.saveFile, WorldSettings.none))
         case GoBack => route(SceneRoute.Multiplayer)
+
     case SceneRoute.Settings =>
       new SettingsMenu(() => route(SceneRoute.Main))
-    case SceneRoute.Game(saveFile, settings) =>
+
+    case SceneRoute.Game(saveDir, settings) =>
       given BlockLoader = BlockLoader.instance // this loads it to memory
       given Blocks = new Blocks
 
-      GameScene(new WorldProviderFromFile(saveFile, settings)):
+      GameScene(new WorldProviderFromFile(saveDir, settings, fs)):
         case GameScene.Event.QuitGame =>
           route(SceneRoute.Main)
           System.gc()

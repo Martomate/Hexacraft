@@ -190,7 +190,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
       event match
         case KeyEvent(key, _, action, _) =>
           if action == KeyAction.Press then handleKeyPress(key)
-        case ScrollEvent(_, yOffset) if !isPaused && !isInPopup && moveWithMouse =>
+        case ScrollEvent(_, yOffset, _) if !isPaused && !isInPopup && moveWithMouse =>
           val dy = -math.signum(yOffset).toInt
           if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
         case MouseClickEvent(button, action, _, _) =>

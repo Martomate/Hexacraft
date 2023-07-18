@@ -11,7 +11,7 @@ import scala.util.Random
 
 object NewWorldMenu {
   enum Event:
-    case StartGame(saveFile: File, settings: WorldSettings)
+    case StartGame(saveDir: File, settings: WorldSettings)
     case GoBack
 }
 

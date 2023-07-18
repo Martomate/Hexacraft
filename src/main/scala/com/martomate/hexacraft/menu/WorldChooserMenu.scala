@@ -3,20 +3,24 @@ package com.martomate.hexacraft.menu
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{LocationInfo, MenuScene}
 import com.martomate.hexacraft.gui.comp.{Button, Label, ScrollPane}
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.menu.WorldChooserMenu.Event
 import com.martomate.hexacraft.world.settings.WorldSettings
 
 import java.io.File
+import java.nio.file.Path
 
 object WorldChooserMenu {
   enum Event:
-    case StartGame(saveFile: File, settings: WorldSettings)
+    case StartGame(saveDir: File, settings: WorldSettings)
     case CreateNewWorld
     case GoBack
 }
 
-class WorldChooserMenu(saveFolder: File)(onEvent: WorldChooserMenu.Event => Unit)(using GameMouse, GameWindow)
-    extends MenuScene {
+class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: WorldChooserMenu.Event => Unit)(using
+    GameMouse,
+    GameWindow
+) extends MenuScene {
 
   addComponent(
     new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
@@ -51,23 +55,21 @@ class WorldChooserMenu(saveFolder: File)(onEvent: WorldChooserMenu.Event => Unit
 
   private def getWorlds: Seq[WorldInfo] = {
     val baseFolder = new File(saveFolder, "saves")
-    if (baseFolder.exists()) {
-      for (saveFile <- saveFoldersSortedBy(baseFolder, -_.lastModified))
-        yield WorldInfo.fromFile(saveFile)
+    if (fs.exists(baseFolder.toPath)) {
+      for (saveFile <- saveFoldersSortedBy(baseFolder, p => -fs.lastModified(p).toEpochMilli))
+        yield WorldInfo.fromFile(saveFile.toFile, fs)
     } else {
       Seq.empty[WorldInfo]
     }
   }
 
-  private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: File => S)(using
+  private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: Path => S)(using
       Ordering[S]
-  ): Seq[File] = {
-    baseFolder
-      .listFiles()
-      .map(worldFolder => (worldFolder, new File(worldFolder, "world.dat")))
-      .filter(t => t._2.exists())
+  ): Seq[Path] = {
+    fs.listFiles(baseFolder.toPath)
+      .map(worldFolder => (worldFolder, worldFolder.resolve("world.dat")))
+      .filter(t => fs.exists(t._2))
       .sortBy(t => sortFunc(t._2))
       .map(_._1)
-      .toSeq
   }
 }

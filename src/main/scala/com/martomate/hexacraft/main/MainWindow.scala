@@ -3,6 +3,7 @@ package com.martomate.hexacraft.main
 import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, Scene, WindowExtras}
 import com.martomate.hexacraft.gui.comp.GUITransformation
+import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{
   CallbackEvent,
@@ -24,6 +25,8 @@ import scala.collection.mutable
 
 class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
+
+  private val fs = FileSystem.create()
 
   private val multiplayerEnabled = isDebug
 
@@ -137,7 +140,9 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
       scene.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
 
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
-      scene.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat))
+      val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
+      val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
+      scene.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat, mousePos))
 
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
@@ -188,7 +193,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
     given GameKeyboard = keyboard
     given WindowExtras = this
 
-    MainRouter(saveFolder, multiplayerEnabled):
+    MainRouter(saveFolder, multiplayerEnabled, fs):
       case MainRouter.Event.SceneChanged(newScene) => setScene(newScene)
       case MainRouter.Event.QuitRequested          => tryQuit()
 

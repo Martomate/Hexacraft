@@ -6,7 +6,7 @@ enum Event:
   case KeyEvent(key: KeyboardKey, scancode: Int, action: KeyAction, mods: KeyMods)
   case CharEvent(character: Int)
   case MouseClickEvent(button: MouseButton, action: MouseAction, mods: KeyMods, mousePos: (Float, Float))
-  case ScrollEvent(xOffset: Float, yOffset: Float)
+  case ScrollEvent(xOffset: Float, yOffset: Float, mousePos: (Float, Float))
 
 object Event:
   extension (e: Event.MouseClickEvent)

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
-import com.martomate.hexacraft.{GameMouse, GameWindow}
+import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.util.MathUtils
@@ -12,7 +12,7 @@ class ScrollPane(
     location: LocationInfo,
     padding: Float = 0,
     enableHorizontalScroll: Boolean = false
-)(using mouse: GameMouse, window: GameWindow)
+)(using window: GameWindow)
     extends Component:
   private var xOffset: Float = 0
   private var yOffset: Float = 0
@@ -36,11 +36,11 @@ class ScrollPane(
     case event: Event.CharEvent => components.exists(_.handleEvent(event))
     case event: Event.KeyEvent  => components.exists(_.handleEvent(event))
     case event: Event.MouseClickEvent =>
-      if containsMouse
+      if containsMouse(event.mousePos)
       then components.exists(_.handleEvent(event.withMouseTranslation(-xOffset, -yOffset)))
       else false
-    case Event.ScrollEvent(xOffset, yOffset) =>
-      if containsMouse then
+    case Event.ScrollEvent(xOffset, yOffset, mousePos) =>
+      if containsMouse(mousePos) then
         val boxBounds = location
         val contentBounds = calcContentBounds()
 
@@ -57,9 +57,8 @@ class ScrollPane(
         true
       else false
 
-  private def containsMouse: Boolean =
-    val mousePos = mouse.heightNormalizedPos(window.windowSize)
-    location.containsPoint(mousePos.x, mousePos.y)
+  private def containsMouse(mousePos: (Float, Float)): Boolean =
+    location.containsPoint(mousePos._1, mousePos._2)
 
   override def unload(): Unit =
     components.foreach(_.unload())
