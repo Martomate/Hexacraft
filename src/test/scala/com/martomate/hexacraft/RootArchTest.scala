@@ -15,23 +15,23 @@ class RootArchTest extends FunSuite {
     .ignoreMTests()
 
   test("world should not depend on gui") {
-    noClasses()
-      .that()
-      .resideInAPackage("com.martomate.hexacraft.world..")
-      .should()
-      .dependOnClassesThat()
-      .resideInAPackage("com.martomate.hexacraft.gui..")
-      .check(allClasses)
+    Packages("com.martomate.hexacraft.gui..").assertNotUsedIn("com.martomate.hexacraft.world..")
   }
 
   test("util should not depend on world") {
-    noClasses()
-      .that()
-      .resideInAPackage("com.martomate.hexacraft.util..")
-      .should()
-      .dependOnClassesThat()
-      .resideInAPackage("com.martomate.hexacraft.world..")
-      .check(allClasses)
+    Packages("com.martomate.hexacraft.world..").assertNotUsedIn("com.martomate.hexacraft.util..")
+  }
+
+  test("Nbt library should only be used in Nbt wrapper".ignore) {
+    Packages("com.flowpowered.nbt..").assertOnlyUsedIn("com.martomate.hexacraft.nbt")
+  }
+
+  test("Glfw library should only be used in Glfw wrapper") {
+    Packages("org.lwjgl.glfw..").assertOnlyUsedIn("com.martomate.hexacraft.infra.window")
+  }
+
+  test("OpenGL library should only be used in OpenGL wrapper") {
+    Packages("org.lwjgl.opengl..").assertOnlyUsedIn("com.martomate.hexacraft.infra.gpu")
   }
 
   // TODO: reduce package dependencies and update this test accordingly
@@ -43,13 +43,14 @@ class RootArchTest extends FunSuite {
     val Infra = "Infra"
     val Main = "Main"
     val Menu = "Menu"
+    val Nbt = "Nbt"
     val Renderer = "Renderer"
     val Util = "Util"
     val World = "World"
 
     val JOML = "JOML"
     val JSON = "JSON"
-    val NBT = "NBT"
+    val NbtLib = "NbtLib"
     val LWJGL = "LWJGL"
     val OpenGL = "OpenGL"
     val GLFW = "GLFW"
@@ -65,24 +66,47 @@ class RootArchTest extends FunSuite {
       .layer(Infra, "com.martomate.hexacraft.infra..")
       .layer(Main, "com.martomate.hexacraft.main..")
       .layer(Menu, "com.martomate.hexacraft.menu..")
+      .layer(Nbt, "com.martomate.hexacraft.nbt..")
       .layer(Renderer, "com.martomate.hexacraft.renderer..")
       .layer(Util, "com.martomate.hexacraft.util..")
       .layer(World, "com.martomate.hexacraft.world..")
       .optionalLayer(JOML, "org.joml..")
       .optionalLayer(JSON, "com.eclipsesource.json..")
-      .optionalLayer(NBT, "com.flowpowered.nbt..")
+      .optionalLayer(NbtLib, "com.flowpowered.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
-      .whereLayer(Font, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML))
-      .whereLayer(Game, _.mayOnlyAccessLayers(root, Font, GUI, Infra, Renderer, Util, World, JOML, NBT))
-      .whereLayer(GUI, _.mayOnlyAccessLayers(root, Infra, Font, Renderer, Util, JOML))
-      .whereLayer(Infra, _.mayOnlyAccessLayers(OpenGL, GLFW, LWJGL, Util, NBT))
-      .whereLayer(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
-      .whereLayer(Menu, _.mayOnlyAccessLayers(root, Infra, Font, Game, GUI, Util, World, JOML, NBT))
-      .whereLayer(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
-      .whereLayer(Util, _.mayOnlyAccessLayers(JOML, NBT))
-      .whereLayer(World, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML, JSON, LWJGL, NBT))
+      .where(Font, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
+      .where(Game, _.mayOnlyAccessLayers(root, Font, GUI, Infra, Renderer, Util, World, JOML, Nbt, NbtLib))
+      .where(GUI, _.mayOnlyAccessLayers(root, Infra, Font, Renderer, Util, JOML))
+      .where(Infra, _.mayOnlyAccessLayers(Util, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
+      .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
+      .where(Menu, _.mayOnlyAccessLayers(root, Infra, Font, Game, GUI, World, JOML, Nbt))
+      .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
+      .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
+      .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
+      .where(World, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML, JSON, LWJGL, Nbt, NbtLib))
       .check(allClasses)
+  }
+
+  case class Packages(packageNames: String*) {
+    def assertOnlyUsedIn(packages: String*): Unit = {
+      noClasses()
+        .that()
+        .resideOutsideOfPackages(packages*)
+        .should()
+        .dependOnClassesThat()
+        .resideInAnyPackage(this.packageNames*)
+        .check(allClasses)
+    }
+
+    def assertNotUsedIn(packages: String*): Unit =
+      noClasses()
+        .that()
+        .resideInAnyPackage(packages*)
+        .should()
+        .dependOnClassesThat()
+        .resideInAnyPackage(this.packageNames*)
+        .check(allClasses)
   }
 }

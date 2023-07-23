@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.settings
 
-import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.MigrationManager
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}

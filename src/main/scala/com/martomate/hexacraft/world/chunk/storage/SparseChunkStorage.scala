@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 

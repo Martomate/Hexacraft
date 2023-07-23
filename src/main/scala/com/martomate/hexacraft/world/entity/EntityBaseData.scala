@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.util.{CylinderSize, Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import com.flowpowered.nbt.{CompoundTag, Tag}

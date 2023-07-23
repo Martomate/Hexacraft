@@ -30,7 +30,7 @@ object ArchUnitHelpers:
     def optionalLayer(name: String, packageIdentifiers: String*): LayeredArchitecture =
       arch.optionalLayer(name).definedBy(packageIdentifiers: _*)
 
-    def whereLayer(name: String, check: LayerDependencyCheck): LayeredArchitecture =
+    def where(name: String, check: LayerDependencyCheck): LayeredArchitecture =
       check(arch.whereLayer(name))
 
   extension (cs: JavaClasses)

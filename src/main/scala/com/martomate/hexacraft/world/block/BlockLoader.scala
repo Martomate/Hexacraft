@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.block
 
+import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.renderer.TextureToLoad
-import com.martomate.hexacraft.util.{FileUtils, ResourceWrapper}
+import com.martomate.hexacraft.util.ResourceWrapper
 
 import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 import java.net.URL

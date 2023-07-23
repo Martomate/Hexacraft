@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.{Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.world.block.{Block, Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 

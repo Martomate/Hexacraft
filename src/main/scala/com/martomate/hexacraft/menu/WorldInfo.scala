@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.menu
 
 import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
-import com.martomate.hexacraft.util.{Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.CompoundTag
 import com.flowpowered.nbt.stream.NBTInputStream

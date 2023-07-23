@@ -15,7 +15,8 @@ import com.martomate.hexacraft.menu.{
   SettingsMenu,
   WorldChooserMenu
 }
-import com.martomate.hexacraft.util.{GzipAlgorithm, Nbt, Tracker}
+import com.martomate.hexacraft.nbt.Nbt
+import com.martomate.hexacraft.util.{GzipAlgorithm, Tracker}
 import com.martomate.hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import java.io.File

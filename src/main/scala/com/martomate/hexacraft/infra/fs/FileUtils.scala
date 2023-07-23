@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.infra.fs
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.URL

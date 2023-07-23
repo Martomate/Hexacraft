@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.player
 
-import com.martomate.hexacraft.util.{EventDispatcher, Nbt, NBTUtil, RevokeTrackerFn, Tracker}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 
 import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}

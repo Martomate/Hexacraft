@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.util.{CylinderSize, FileUtils}
+import com.martomate.hexacraft.infra.fs.FileUtils
+import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel

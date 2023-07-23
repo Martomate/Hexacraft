@@ -1,16 +1,8 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.nbt
 
-import com.flowpowered.nbt.*
-import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, IOException}
-import java.nio.file.Files
-import java.util
-import java.util.stream.Collectors
+import com.flowpowered.nbt.{CompoundTag, DoubleTag, Tag}
 import org.joml.Vector3d
-import scala.collection.immutable.{ArraySeq, ListMap}
-import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS}
+import scala.collection.immutable.ListMap
 
 object NBTUtil {
   def makeCompoundTag(name: String, children: Seq[Tag[?]]): CompoundTag =

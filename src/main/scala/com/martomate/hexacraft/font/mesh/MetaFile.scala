@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font.mesh
 
-import com.martomate.hexacraft.util.FileUtils
+import com.martomate.hexacraft.infra.fs.FileUtils
 
 import java.io.{BufferedReader, IOException}
 import java.net.URL

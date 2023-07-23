@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.renderer
 
+import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.gpu.OpenGL.{
   TexelDataFormat,
@@ -12,7 +13,7 @@ import com.martomate.hexacraft.infra.gpu.OpenGL.{
   TextureTarget,
   TexWrap
 }
-import com.martomate.hexacraft.util.{FileUtils, Resource}
+import com.martomate.hexacraft.util.Resource
 
 import javax.imageio.ImageIO
 import org.lwjgl.BufferUtils

@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.settings
 
-import com.martomate.hexacraft.util.{Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
 import java.util.Random

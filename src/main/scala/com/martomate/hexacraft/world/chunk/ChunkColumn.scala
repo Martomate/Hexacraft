@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.{Nbt, NBTUtil, RevokeTrackerFn}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.util.RevokeTrackerFn
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.*
