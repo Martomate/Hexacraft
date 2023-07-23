@@ -38,7 +38,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
 
     for (_ <- 0 until 100) {
       prio.nextAddableChunk.foreach { newChunk =>
-        assertEquals((newChunk, newChunk.neighbors.exists(chunks.contains)), ((newChunk, true)))
+        assertEquals((newChunk, newChunk.neighbors.exists(chunks.contains)), (newChunk, true))
 
         prio += newChunk
         chunks += newChunk
