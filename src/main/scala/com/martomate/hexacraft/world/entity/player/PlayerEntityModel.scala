@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.world.entity.player
 
 import com.martomate.hexacraft.renderer.TextureSingle
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.entity.{EntityModel, EntityPart}
 import com.martomate.hexacraft.world.entity.base.BasicEntityPart
 
 import com.eclipsesource.json.JsonObject
+import com.martomate.hexacraft.world.CylinderSize
 import org.joml.Vector3f
 
 class PlayerEntityModel(

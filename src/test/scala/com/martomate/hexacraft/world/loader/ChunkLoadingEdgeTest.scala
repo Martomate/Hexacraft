@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.{CylinderSize, Tracker}
+import com.martomate.hexacraft.util.Tracker
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import munit.FunSuite

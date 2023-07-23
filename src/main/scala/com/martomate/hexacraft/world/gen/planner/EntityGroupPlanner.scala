@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.gen.planner
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.BlockCoords

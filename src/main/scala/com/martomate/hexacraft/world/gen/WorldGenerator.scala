@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world.gen
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import com.martomate.hexacraft.world.gen.noise.{
@@ -12,6 +11,7 @@ import com.martomate.hexacraft.world.gen.noise.{
 import com.martomate.hexacraft.world.settings.WorldGenSettings
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.world.CylinderSize
 import java.util.Random
 
 class WorldGenerator(worldGenSettings: WorldGenSettings)(implicit worldSize: CylinderSize) {

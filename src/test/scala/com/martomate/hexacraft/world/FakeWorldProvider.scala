@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world
 
 import com.martomate.hexacraft.nbt.NBTUtil
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.settings.{WorldGenSettings, WorldInfo}
 
 import com.flowpowered.nbt.CompoundTag

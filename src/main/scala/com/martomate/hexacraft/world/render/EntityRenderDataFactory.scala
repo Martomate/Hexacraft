@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.Entity

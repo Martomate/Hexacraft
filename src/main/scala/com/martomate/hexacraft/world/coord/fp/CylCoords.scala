@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.fp
 
-import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
+import com.martomate.hexacraft.util.MathUtils
+import com.martomate.hexacraft.world.CylinderSize
 
 import org.joml.Vector3d
 

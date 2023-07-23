@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.util.Result.{Err, Ok}
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{
   ChunkStorage,

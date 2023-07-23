@@ -1,14 +1,15 @@
-package com.martomate.hexacraft.util
-
-import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
-import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+package com.martomate.hexacraft.nbt
 
 import com.flowpowered.nbt.*
-import java.io.{BufferedInputStream, BufferedOutputStream, ByteArrayInputStream, ByteArrayOutputStream, File}
-import java.nio.file.{Files, Path}
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
+import com.martomate.hexacraft.nbt.{NBTUtil, Nbt}
+import com.martomate.hexacraft.util.GzipAlgorithm
 import munit.FunSuite
 import org.joml.Vector3d
+
+import java.io.*
+import java.nio.file.{Files, Path}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
 

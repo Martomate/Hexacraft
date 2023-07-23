@@ -5,6 +5,7 @@ import com.martomate.hexacraft.gui.{Event, Scene, WindowExtras}
 import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.infra.gpu.OpenGL
+import com.martomate.hexacraft.infra.os.OSUtils
 import com.martomate.hexacraft.infra.window.{
   CallbackEvent,
   CursorMode,
@@ -16,7 +17,6 @@ import com.martomate.hexacraft.infra.window.{
 }
 import com.martomate.hexacraft.renderer.{Shader, VAO}
 import com.martomate.hexacraft.util.{AsyncFileIO, Resource, Result}
-import com.martomate.hexacraft.util.os.OSUtils
 import com.martomate.hexacraft.world.World
 
 import java.io.File

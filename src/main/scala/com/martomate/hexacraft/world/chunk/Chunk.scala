@@ -1,8 +1,8 @@
 package com.martomate.hexacraft.world.chunk
 
 import com.martomate.hexacraft.nbt.NBTUtil
-import com.martomate.hexacraft.util.{CylinderSize, EventDispatcher, RevokeTrackerFn, Tracker}
-import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, LightPropagator, WorldProvider}
+import com.martomate.hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
+import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, LightPropagator, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}

@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world.entity
 
 import com.martomate.hexacraft.nbt.NBTUtil
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 

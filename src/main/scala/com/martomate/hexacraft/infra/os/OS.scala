@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.util.os
+package com.martomate.hexacraft.infra.os
 
 sealed trait OS:
   def name: String

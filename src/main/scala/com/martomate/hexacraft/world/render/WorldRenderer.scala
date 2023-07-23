@@ -2,8 +2,8 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{InstancedRenderer, NoDepthTest, Renderer, VAO}
-import com.martomate.hexacraft.util.{CylinderSize, RevokeTrackerFn}
-import com.martomate.hexacraft.world.{BlocksInWorld, LightPropagator, World}
+import com.martomate.hexacraft.util.RevokeTrackerFn
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk

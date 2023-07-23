@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.{CollisionDetector, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import com.martomate.hexacraft.world.block.*
 import com.martomate.hexacraft.world.chunk.Chunk

@@ -1,5 +1,6 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.world
 
+import com.martomate.hexacraft.world.CylinderSize
 import munit.FunSuite
 
 class CylinderSizeTest extends FunSuite {

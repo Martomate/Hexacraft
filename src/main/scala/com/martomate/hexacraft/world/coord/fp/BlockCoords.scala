@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.fp
 
-import com.martomate.hexacraft.util.{CylinderSize, MathUtils}
+import com.martomate.hexacraft.util.MathUtils
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
 
 class BlockCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[BlockCoords](_x, _y, _z) {

@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.{CylinderSize, SeqUtils}
+import com.martomate.hexacraft.util.SeqUtils
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 

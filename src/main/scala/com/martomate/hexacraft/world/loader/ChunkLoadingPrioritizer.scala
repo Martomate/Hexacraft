@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.{CylinderSize, TickableTimer}
+import com.martomate.hexacraft.util.TickableTimer
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.BlockCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}

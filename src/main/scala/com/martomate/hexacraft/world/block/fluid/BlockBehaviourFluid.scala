@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.block.fluid
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.block.{Block, BlockBehaviour, BlockRepository, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 

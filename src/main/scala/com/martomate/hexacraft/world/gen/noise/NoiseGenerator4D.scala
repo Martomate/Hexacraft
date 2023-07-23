@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.gen.noise
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 
 import java.util.Random

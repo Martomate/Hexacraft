@@ -5,7 +5,7 @@ import com.martomate.hexacraft.font.TextMaster
 import com.martomate.hexacraft.font.mesh.GUIText
 import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld

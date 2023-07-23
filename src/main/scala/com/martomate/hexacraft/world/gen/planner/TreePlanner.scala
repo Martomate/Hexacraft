@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.gen.planner
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.chunk.{Chunk, ChunkColumn, ChunkColumnTerrain}
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState

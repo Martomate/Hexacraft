@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.ray
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}

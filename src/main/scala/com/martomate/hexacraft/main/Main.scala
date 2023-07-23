@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.main
 
-import com.martomate.hexacraft.util.os.OSUtils
+import com.martomate.hexacraft.infra.os.OSUtils
 
 import java.io.{File, FileOutputStream, PrintStream}
 import java.time.OffsetDateTime

@@ -2,8 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.main.RealGameMouse
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.FakeBlockLoader
+import com.martomate.hexacraft.world.{CylinderSize, FakeBlockLoader}
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.player.Player

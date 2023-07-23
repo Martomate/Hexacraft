@@ -1,8 +1,7 @@
 package com.martomate.hexacraft.world.ray
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.util.MathUtils.oppositeSide
-import com.martomate.hexacraft.world.BlocksInWorld
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState, HexBox}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}

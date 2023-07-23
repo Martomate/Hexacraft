@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
+import com.martomate.hexacraft.world.{CylinderSize, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.entity.EntityModelLoader

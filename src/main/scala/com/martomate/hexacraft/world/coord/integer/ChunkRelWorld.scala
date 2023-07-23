@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 
 object ChunkRelWorld {
   def apply(X: Long, Y: Int, Z: Int)(implicit cylSize: CylinderSize): ChunkRelWorld =

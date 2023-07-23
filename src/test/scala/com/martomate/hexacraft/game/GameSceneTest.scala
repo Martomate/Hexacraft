@@ -5,8 +5,8 @@ import com.martomate.hexacraft.gui.{Event, Scene, WindowExtras}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
 import com.martomate.hexacraft.main.RealGameMouse
-import com.martomate.hexacraft.util.{CylinderSize, Tracker}
-import com.martomate.hexacraft.world.{FakeBlockLoader, FakeWorldProvider}
+import com.martomate.hexacraft.util.Tracker
+import com.martomate.hexacraft.world.{CylinderSize, FakeBlockLoader, FakeWorldProvider}
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 
 import munit.FunSuite

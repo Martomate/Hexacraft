@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.ray
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{BlocksInWorld, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
+import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.{Camera, CameraProjection}
 import com.martomate.hexacraft.world.coord.fp.BlockCoords

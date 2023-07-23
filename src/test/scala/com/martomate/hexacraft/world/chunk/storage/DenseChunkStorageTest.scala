@@ -1,11 +1,11 @@
 package com.martomate.hexacraft.world.chunk.storage
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import com.flowpowered.nbt.CompoundTag
+import com.martomate.hexacraft.world.CylinderSize
 
 class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
   test("isDense should be true") {

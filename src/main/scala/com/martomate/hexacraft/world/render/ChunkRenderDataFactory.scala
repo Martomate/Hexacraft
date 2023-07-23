@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache}
+import com.martomate.hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.chunk.storage.LocalBlockState

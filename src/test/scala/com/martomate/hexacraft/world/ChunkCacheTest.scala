@@ -1,6 +1,5 @@
 package com.martomate.hexacraft.world
 
-import com.martomate.hexacraft.util.CylinderSize
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}

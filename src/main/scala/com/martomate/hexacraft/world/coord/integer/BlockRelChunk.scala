@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.util.CylinderSize
+import com.martomate.hexacraft.world.CylinderSize
 
 object BlockRelChunk {
   def apply(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk(

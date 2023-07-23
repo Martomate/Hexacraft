@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.loader
 
-import com.martomate.hexacraft.util.{CylinderSize, EventDispatcher, Tracker}
+import com.martomate.hexacraft.util.{EventDispatcher, Tracker}
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable

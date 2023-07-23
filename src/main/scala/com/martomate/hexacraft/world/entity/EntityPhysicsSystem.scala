@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.entity
 
-import com.martomate.hexacraft.util.CylinderSize
-import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector}
+import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData, EntityModel}

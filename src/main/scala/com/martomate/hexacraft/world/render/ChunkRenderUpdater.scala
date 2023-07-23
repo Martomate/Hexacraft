@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.util.{CylinderSize, TickableTimer, UniquePQ}
+import com.martomate.hexacraft.util.{TickableTimer, UniquePQ}
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}

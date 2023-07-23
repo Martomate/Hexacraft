@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.util
+package com.martomate.hexacraft.world
 
 /** The real cylinder size (the number of chunks around the cylinder) is:<br> <code>ringSize =
   * 2&#94;sizeExponent</code>

@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.coord.integer
 
-import com.martomate.hexacraft.util.CylinderSize
-
+import com.martomate.hexacraft.world.CylinderSize
 import org.joml.Vector2d
 
 object ColumnRelWorld {
