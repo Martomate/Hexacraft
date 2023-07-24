@@ -5,6 +5,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.jar.JarFile
+import scala.collection.mutable
 
 object FileUtils:
   def getResourceFile(path: String): Option[URL] =
@@ -30,4 +31,13 @@ object FileUtils:
         .map[String](_.substring(query.length))
         .filter(n => n.nonEmpty && n.indexOf('/') == -1)
 
-  def getBufferedReader(url: URL) = new BufferedReader(new InputStreamReader(url.openStream()))
+  def getBufferedReader(url: URL): BufferedReader = new BufferedReader(new InputStreamReader(url.openStream()))
+
+  def readLinesFromUrl(url: URL): Seq[String] =
+    val lines = mutable.ArrayBuffer.empty[String]
+
+    val reader = getBufferedReader(url)
+    reader.lines().forEach(lines += _)
+    reader.close()
+
+    lines.toSeq

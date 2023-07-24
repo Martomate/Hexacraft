@@ -1,10 +1,5 @@
 package com.martomate.hexacraft.font.mesh
 
-import com.martomate.hexacraft.infra.fs.FileUtils
-
-import java.io.{BufferedReader, IOException}
-import java.net.URL
-import java.util.stream.Collectors
 import scala.collection.mutable
 
 class MetaFile(private val metaData: Map[Int, Character]) {
@@ -22,24 +17,7 @@ object MetaFile {
   private val SPLITTER: String = " "
   private val NUMBER_SEPARATOR: String = ","
 
-  def fromUrl(file: URL): MetaFile =
-    MetaFile.fromFileContents(MetaFileContents.fromLines(readMetaFile(file)))
-
-  private def readMetaFile(file: URL) =
-    val reader = FileUtils.getBufferedReader(file)
-
-    val lines = reader
-      .lines()
-      .collect(Collectors.toList)
-      .toArray(n => new Array[String](n))
-      .toSeq
-
-    try reader.close()
-    catch
-      case e: IOException =>
-        e.printStackTrace()
-
-    lines
+  def fromLines(lines: Seq[String]): MetaFile = MetaFile.fromFileContents(MetaFileContents.fromLines(lines))
 
   case class MetaFileContents(
       info: MetaFileInfoLine,
@@ -76,13 +54,25 @@ object MetaFile {
       )
   }
 
-  case class MetaFileInfoLine(padding: Seq[Int])
+  case class CharacterPadding(top: Int, left: Int, bottom: Int, right: Int) {
+    def vertical: Int = top + bottom
+    def horizontal: Int = left + right
+  }
+
+  case class MetaFileInfoLine(padding: CharacterPadding)
 
   object MetaFileInfoLine {
-    def fromStrings(values: Map[String, String]): MetaFileInfoLine =
+    def fromStrings(values: Map[String, String]): MetaFileInfoLine = {
+      val ints = values("padding").split(MetaFile.NUMBER_SEPARATOR).toSeq.map(_.toInt)
       MetaFileInfoLine(
-        padding = values("padding").split(MetaFile.NUMBER_SEPARATOR).toSeq.map(_.toInt)
+        padding = CharacterPadding(
+          ints(MetaFile.PAD_TOP),
+          ints(MetaFile.PAD_LEFT),
+          ints(MetaFile.PAD_BOTTOM),
+          ints(MetaFile.PAD_RIGHT)
+        )
       )
+    }
   }
 
   case class MetaFileCommonLine(lineHeight: Int, scaleW: Int)
@@ -104,7 +94,39 @@ object MetaFile {
       xOffset: Int,
       yOffset: Int,
       xAdvance: Int
-  )
+  ) {
+
+    /** Converts the character from 'pixel-space' to 'screen-space */
+    def toCharacter(
+        desiredPadding: Int,
+        desiredLineHeight: Double,
+        padding: CharacterPadding,
+        fontLineHeight: Int,
+        imageSize: Int
+    ): Character =
+      val extraLeftPadding = padding.left - desiredPadding
+      val extraTopPadding = padding.top - desiredPadding
+
+      val lineHeightPixels: Int = fontLineHeight - padding.vertical
+      val verticalPerPixelSize: Double = desiredLineHeight / lineHeightPixels.toDouble
+      val horizontalPerPixelSize: Double = verticalPerPixelSize
+
+      val width: Int = this.width - (padding.horizontal - 2 * desiredPadding)
+      val height: Int = this.height - (padding.vertical - 2 * desiredPadding)
+
+      Character(
+        this.id,
+        xTextureCoord = (this.x.toDouble + extraLeftPadding) / imageSize,
+        yTextureCoord = (this.y.toDouble + extraTopPadding) / imageSize,
+        xTexSize = width.toDouble / imageSize,
+        yTexSize = height.toDouble / imageSize,
+        xOffset = (this.xOffset + extraLeftPadding) * horizontalPerPixelSize,
+        yOffset = (this.yOffset + extraTopPadding) * verticalPerPixelSize,
+        sizeX = width * horizontalPerPixelSize,
+        sizeY = height * verticalPerPixelSize,
+        xAdvance = (this.xAdvance - padding.horizontal) * horizontalPerPixelSize
+      )
+  }
 
   object MetaFileCharLine {
     def fromStrings(values: Map[String, String]): MetaFileCharLine =
@@ -120,48 +142,18 @@ object MetaFile {
       )
   }
 
-  def fromFileContents(contents: MetaFileContents): MetaFile = {
-    val padding: Seq[Int] = contents.info.padding
-    val paddingWidth: Int = padding(MetaFile.PAD_LEFT) + padding(MetaFile.PAD_RIGHT)
-    val paddingHeight: Int = padding(MetaFile.PAD_TOP) + padding(MetaFile.PAD_BOTTOM)
-
-    val leftPadding = padding(MetaFile.PAD_LEFT)
-    val topPadding = padding(MetaFile.PAD_TOP)
-    val extraLeftPadding = leftPadding - MetaFile.DESIRED_PADDING
-    val extraTopPadding = topPadding - MetaFile.DESIRED_PADDING
-
-    val lineHeightPixels: Int = contents.common.lineHeight - paddingHeight
-    val verticalPerPixelSize: Double = TextMeshCreator.LINE_HEIGHT / lineHeightPixels.toDouble
-    val horizontalPerPixelSize: Double = verticalPerPixelSize
-
+  def fromFileContents(contents: MetaFileContents): MetaFile =
+    val desiredPadding = MetaFile.DESIRED_PADDING
+    val desiredLineHeight = TextMeshCreator.LINE_HEIGHT
+    val padding = contents.info.padding
+    val fontLineHeight = contents.common.lineHeight
     val imageSize = contents.common.scaleW
-
-    /** Loads all the data about one character in the texture atlas and converts it all from 'pixels'
-      * to 'screen-space' before storing. The effects of padding are also removed from the data.
-      */
-    def loadCharacter(ch: MetaFileCharLine): Character =
-      val width: Int = ch.width - (paddingWidth - 2 * MetaFile.DESIRED_PADDING)
-      val height: Int = ch.height - (paddingHeight - 2 * MetaFile.DESIRED_PADDING)
-
-      Character(
-        ch.id,
-        xTextureCoord = (ch.x.toDouble + extraLeftPadding) / imageSize,
-        yTextureCoord = (ch.y.toDouble + extraTopPadding) / imageSize,
-        xTexSize = width.toDouble / imageSize,
-        yTexSize = height.toDouble / imageSize,
-        xOffset = (ch.xOffset + extraLeftPadding) * horizontalPerPixelSize,
-        yOffset = (ch.yOffset + extraTopPadding) * verticalPerPixelSize,
-        sizeX = width * horizontalPerPixelSize,
-        sizeY = height * verticalPerPixelSize,
-        xAdvance = (ch.xAdvance - paddingWidth) * horizontalPerPixelSize
-      )
 
     val metaData: mutable.Map[Int, Character] = mutable.HashMap.empty
 
     for ch <- contents.charLines do
-      val c: Character = loadCharacter(ch)
-      if (c != null) metaData.put(c.id, c)
+      val c = ch.toCharacter(desiredPadding, desiredLineHeight, padding, fontLineHeight, imageSize)
+      if c != null then metaData.put(c.id, c)
 
     new MetaFile(metaData.toMap)
-  }
 }

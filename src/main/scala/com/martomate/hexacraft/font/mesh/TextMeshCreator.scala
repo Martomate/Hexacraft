@@ -1,10 +1,9 @@
 package com.martomate.hexacraft.font.mesh
 
-import java.net.URL
 import scala.collection.mutable
 
 object TextMeshCreator {
-  val LINE_HEIGHT: Double = 0.03f
+  val LINE_HEIGHT: Double = 0.03
   val SPACE_ASCII: Int = 32
 
   private def addVertices(
@@ -58,9 +57,7 @@ object TextMeshCreator {
   }
 }
 
-class TextMeshCreator(val metaFile: URL) {
-  private val metaData: MetaFile = MetaFile.fromUrl(metaFile)
-
+class TextMeshCreator(val metaData: MetaFile) {
   def createTextMesh(text: GUIText): TextMeshData = {
     val lines = createStructure(text)
     createQuadVertices(text, lines)

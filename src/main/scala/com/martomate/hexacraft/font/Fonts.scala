@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.font.mesh.FontType
+import com.martomate.hexacraft.font.mesh.{FontType, MetaFile}
 import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.renderer.TextureSingle
 
@@ -14,10 +14,13 @@ object Fonts {
   def loadFont(name: String, path: String): FontType = {
     if (fonts contains name) fonts(name)
     else {
-      val f = FontType.fromUrl(
-        TextureSingle.getTexture(path).id,
-        FileUtils.getResourceFile(path + ".fnt").get
-      )
+      val atlas = TextureSingle.getTexture(path).id
+
+      val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
+      val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
+      val metaData = MetaFile.fromLines(metaDataLines)
+
+      val f = FontType.fromAtlas(atlas, metaData)
       fonts(name) = f
       f
     }

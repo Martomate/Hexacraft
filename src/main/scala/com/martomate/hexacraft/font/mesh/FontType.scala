@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.font.mesh
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import java.net.URL
 
 /** Represents a font. It holds the font's texture atlas as well as having the ability to create the
   * quad vertices for any text using this font.
@@ -29,9 +28,9 @@ object FontType {
     *
     * @param textureAtlas
     *   the ID of the font atlas texture.
-    * @param fontFile
-    *   the font file containing information about each character in the texture atlas.
+    * @param metaData
+    *   the information about each character in the texture atlas.
     */
-  def fromUrl(textureAtlas: OpenGL.TextureId, fontFile: URL): FontType =
-    new FontType(textureAtlas, new TextMeshCreator(fontFile))
+  def fromAtlas(textureAtlas: OpenGL.TextureId, metaData: MetaFile): FontType =
+    new FontType(textureAtlas, new TextMeshCreator(metaData))
 }
