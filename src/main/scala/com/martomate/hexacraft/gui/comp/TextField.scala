@@ -1,7 +1,7 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.font.mesh.GUIText
+import com.martomate.hexacraft.font.mesh.Text
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey}
 
@@ -16,8 +16,8 @@ class TextField(
   private val bgColor = new Vector4f(0.5f)
   private val textColor = new Vector3f(1.0f)
 
-  private val contentText: GUIText = makeContentText()
-  private val cursorText: GUIText = makeCursorText()
+  private val contentText: Text = makeContentText()
+  private val cursorText: Text = makeCursorText()
 
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
@@ -49,7 +49,7 @@ class TextField(
 
     if (cursorTextVisible) addText(cursorText)
 
-  def text: String = contentText.textString
+  def text: String = contentText.text
 
   override def tick(): Unit =
     if focused

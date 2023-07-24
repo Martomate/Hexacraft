@@ -1,13 +1,13 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
+import com.martomate.hexacraft.font.mesh.{Font, Text}
 import com.martomate.hexacraft.renderer.VAO
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class TextMaster {
-  private val texts = mutable.HashMap.empty[FontType, ArrayBuffer[GUIText]]
+  private val texts = mutable.HashMap.empty[Font, ArrayBuffer[Text]]
   private val renderer = new FontRenderer()
 
   def setWindowAspectRatio(aspectRatio: Float): Unit =
@@ -17,14 +17,14 @@ class TextMaster {
     renderer.render(texts, xoffset, yoffset)
   }
 
-  def loadText(text: GUIText): Unit = {
+  def loadText(text: Text): Unit = {
     val font = text.font
 
-    val textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[GUIText])
+    val textBatch = texts.getOrElseUpdate(font, new ArrayBuffer[Text])
     textBatch += text
   }
 
-  def removeText(text: GUIText): Unit = {
+  def removeText(text: Text): Unit = {
     val textBatch = texts(text.font)
     textBatch -= text
     if (textBatch.isEmpty) {

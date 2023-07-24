@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
+import com.martomate.hexacraft.font.mesh.{Font, Text}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{TextureSingle, VAO}
 
@@ -18,7 +18,7 @@ class FontRenderer {
     shader.setWindowAspectRatio(aspectRatio)
 
   def render(
-      texts: mutable.HashMap[FontType, ArrayBuffer[GUIText]],
+      texts: mutable.HashMap[Font, ArrayBuffer[Text]],
       xoffset: Float,
       yoffset: Float
   ): Unit = {
@@ -42,7 +42,7 @@ class FontRenderer {
     VAO.unbindVAO()
   }
 
-  private def renderText(text: GUIText, xoffset: Float, yoffset: Float): Unit = {
+  private def renderText(text: Text, xoffset: Float, yoffset: Float): Unit = {
     OpenGL.glBindVertexArray(text.getMesh)
     shader.setColor(text.color)
     shader.setTranslation(text.position.x + xoffset, text.position.y + yoffset)

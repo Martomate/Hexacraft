@@ -2,7 +2,7 @@ package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.TextMaster
-import com.martomate.hexacraft.font.mesh.GUIText
+import com.martomate.hexacraft.font.mesh.Text
 import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
 import com.martomate.hexacraft.world.CylinderSize
@@ -29,8 +29,8 @@ object DebugOverlay {
 
 class DebugOverlay(initialAspectRatio: Float) {
   private val textDisplayMap = mutable.Map.empty[String, String]
-  private val textValueMap = mutable.Map.empty[String, GUIText]
-  private val texts = mutable.ArrayBuffer.empty[GUIText]
+  private val textValueMap = mutable.Map.empty[String, Text]
+  private val texts = mutable.ArrayBuffer.empty[Text]
 
   private val textMaster = new TextMaster()
 

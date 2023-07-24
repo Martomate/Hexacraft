@@ -2,7 +2,7 @@ package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.font.{Fonts, TextMaster}
-import com.martomate.hexacraft.font.mesh.{FontType, GUIText}
+import com.martomate.hexacraft.font.mesh.{Font, Text}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{Blending, NoDepthTest, Renderer, TextureSingle, VAO}
@@ -12,8 +12,8 @@ import org.joml.{Matrix4f, Vector2f, Vector4f}
 abstract class Component:
   private val textMaster = new TextMaster()
 
-  protected def addText(text: GUIText): Unit = textMaster.loadText(text)
-  protected def removeText(text: GUIText): Unit = textMaster.removeText(text)
+  protected def addText(text: Text): Unit = textMaster.loadText(text)
+  protected def removeText(text: Text): Unit = textMaster.removeText(text)
 
   def tick(): Unit = ()
 
@@ -33,7 +33,7 @@ object Component:
     .finish(4)
   private val rectRenderer = new Renderer(rectVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest with Blending
 
-  val font: FontType = Fonts.get("Verdana").get
+  val font: Font = Fonts.get("Verdana").get
 
   private val imageShader = new ImageShader()
   private val colorShader = new ColorShader()
@@ -76,8 +76,8 @@ object Component:
     colorShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render()
 
-  def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): GUIText =
+  def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): Text =
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
-    val guiText = GUIText(text, textSize, Component.font, position, location.w, centered)
+    val guiText = Text(text, textSize, Component.font, position, location.w, centered)
     guiText.setColor(0.9f, 0.9f, 0.9f)
     guiText

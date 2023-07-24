@@ -135,7 +135,7 @@ object FontMetaData {
 
   def fromFileContents(contents: FileContents): FontMetaData =
     val desiredPadding = FontMetaData.DesiredPadding
-    val desiredLineHeight = TextMeshBuilder.BaseLineHeight
+    val desiredLineHeight = TextMesh.BaseLineHeight
     val padding = contents.info.padding
     val fontLineHeight = contents.common.lineHeight
     val imageSize = contents.common.scaleW
