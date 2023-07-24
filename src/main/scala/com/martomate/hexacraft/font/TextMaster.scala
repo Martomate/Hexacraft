@@ -45,7 +45,7 @@ class TextMaster {
 }
 
 object TextMaster {
-  def loadVAO(vertexPositions: Array[Float], textureCoords: Array[Float]): VAO = {
+  def loadVAO(vertexPositions: Seq[Float], textureCoords: Seq[Float]): VAO = {
     VAO
       .builder()
       .addVertexVbo(vertexPositions.length)(_.floats(0, 2), _.fillFloats(0, vertexPositions))

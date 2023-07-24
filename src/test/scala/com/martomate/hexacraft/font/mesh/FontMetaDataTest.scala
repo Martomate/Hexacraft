@@ -1,16 +1,10 @@
 package com.martomate.hexacraft.font.mesh
 
-import com.martomate.hexacraft.font.mesh.MetaFile.{
-  CharacterPadding,
-  MetaFileCharLine,
-  MetaFileCommonLine,
-  MetaFileContents,
-  MetaFileInfoLine
-}
+import com.martomate.hexacraft.font.mesh.FontMetaData.{CharacterPadding, CharLine, CommonLine, FileContents, InfoLine}
 
 import munit.FunSuite
 
-class MetaFileTest extends FunSuite {
+class FontMetaDataTest extends FunSuite {
   private val delta = 1e-6
 
   private val desiredPadding = 3
@@ -28,13 +22,13 @@ class MetaFileTest extends FunSuite {
 
   test("basic file can be parsed") {
     assertEquals(
-      MetaFileContents.fromLines(basicFontMetaFileContents.split('\n').toSeq),
-      MetaFileContents(
-        MetaFileInfoLine(padding = CharacterPadding(top = 4, left = 14, bottom = 24, right = 34)),
-        MetaFileCommonLine(lineHeight = 95, scaleW = 512),
+      FileContents.fromLines(basicFontMetaFileContents.split('\n').toSeq),
+      FileContents(
+        InfoLine(padding = CharacterPadding(top = 4, left = 14, bottom = 24, right = 34)),
+        CommonLine(lineHeight = 95, scaleW = 512),
         Seq(
-          MetaFileCharLine(id = 32, x = 0, y = 0, width = 0, height = 0, xOffset = -3, yOffset = 69, xAdvance = 31),
-          MetaFileCharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
+          CharLine(id = 32, x = 0, y = 0, width = 0, height = 0, xOffset = -3, yOffset = 69, xAdvance = 31),
+          CharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
         )
       )
     )
@@ -47,23 +41,23 @@ class MetaFileTest extends FunSuite {
       "char    id=67  x=439  y=145  width=60  height=70  xoffset=6   yoffset=15  xadvance=78"
     )
 
-    val info = MetaFileInfoLine(padding = CharacterPadding(4, 14, 24, 34))
-    val common = MetaFileCommonLine(lineHeight = 95, scaleW = 512)
+    val info = InfoLine(padding = CharacterPadding(4, 14, 24, 34))
+    val common = CommonLine(lineHeight = 95, scaleW = 512)
     val chars = Seq(
-      MetaFileCharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
+      CharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
     )
 
-    assertEquals(MetaFileContents.fromLines(lines), MetaFileContents(info, common, chars))
+    assertEquals(FileContents.fromLines(lines), FileContents(info, common, chars))
   }
 
   test("fromFileContents can extract space width") {
-    val contents = MetaFileContents(
-      MetaFileInfoLine(padding = CharacterPadding(10, 11, 12, 13)),
-      MetaFileCommonLine(lineHeight = 95, scaleW = 512),
-      Seq(MetaFileCharLine(32, 1, 2, 3, 4, 5, 6, xAdvance = 31))
+    val contents = FileContents(
+      InfoLine(padding = CharacterPadding(10, 11, 12, 13)),
+      CommonLine(lineHeight = 95, scaleW = 512),
+      Seq(CharLine(32, 1, 2, 3, 4, 5, 6, xAdvance = 31))
     )
 
-    val metaFile = MetaFile.fromFileContents(contents)
+    val metaFile = FontMetaData.fromFileContents(contents)
 
     val paddingWidth = 11 + 13
     val paddingHeight = 10 + 12
@@ -77,10 +71,10 @@ class MetaFileTest extends FunSuite {
     val lineHeight = 95
     val scaleW = 512
     val line =
-      MetaFileCharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
+      CharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
 
-    val contents = MetaFileContents(MetaFileInfoLine(padding), MetaFileCommonLine(lineHeight, scaleW), Seq(line))
-    val metaFile = MetaFile.fromFileContents(contents)
+    val contents = FileContents(InfoLine(padding), CommonLine(lineHeight, scaleW), Seq(line))
+    val metaFile = FontMetaData.fromFileContents(contents)
 
     assertEquals(
       metaFile.getCharacter(67),
@@ -91,7 +85,7 @@ class MetaFileTest extends FunSuite {
   test("characters can be transformed from pixel space to screen space") {
     val padding = CharacterPadding(10, 11, 12, 13)
     val ch =
-      MetaFileCharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
+      CharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
         .toCharacter(desiredPadding, desiredLineHeight, padding, 95, 512)
 
     val extraLeftPadding = 11 - desiredPadding
@@ -106,10 +100,10 @@ class MetaFileTest extends FunSuite {
     val pixelScale = desiredLineHeight / (95 - paddingHeight).toDouble
 
     assertEquals(ch.id, 67)
-    assertEqualsDouble(ch.xTextureCoord, (439 + extraLeftPadding) / 512d, delta)
-    assertEqualsDouble(ch.yTextureCoord, (145 + extraTopPadding) / 512d, delta)
-    assertEqualsDouble(ch.xTexSize, width / 512d, delta)
-    assertEqualsDouble(ch.yTexSize, height / 512d, delta)
+    assertEqualsDouble(ch.textureBounds.x, (439 + extraLeftPadding) / 512d, delta)
+    assertEqualsDouble(ch.textureBounds.y, (145 + extraTopPadding) / 512d, delta)
+    assertEqualsDouble(ch.textureBounds.w, width / 512d, delta)
+    assertEqualsDouble(ch.textureBounds.h, height / 512d, delta)
     assertEqualsDouble(ch.xOffset, (6 + extraLeftPadding) * pixelScale, delta)
     assertEqualsDouble(ch.yOffset, (15 + extraTopPadding) * pixelScale, delta)
     assertEqualsDouble(ch.sizeX, width * pixelScale, delta)
@@ -120,8 +114,8 @@ class MetaFileTest extends FunSuite {
   test("fromLines parses and converts file contents into a MetaFile") {
     val lines = basicFontMetaFileContents.split('\n').toSeq
 
-    val metaFile = MetaFile.fromLines(lines)
-    val expectedMetaFile = MetaFile.fromFileContents(MetaFileContents.fromLines(lines))
+    val metaFile = FontMetaData.fromLines(lines)
+    val expectedMetaFile = FontMetaData.fromFileContents(FileContents.fromLines(lines))
 
     assertEquals(metaFile.getSpaceWidth, expectedMetaFile.getSpaceWidth)
     assertEquals(metaFile.getCharacter(32), expectedMetaFile.getCharacter(32))

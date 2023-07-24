@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.font
 
-import com.martomate.hexacraft.font.mesh.{FontType, MetaFile}
+import com.martomate.hexacraft.font.mesh.{FontType, FontMetaData}
 import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.renderer.TextureSingle
 
@@ -18,7 +18,7 @@ object Fonts {
 
       val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
       val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
-      val metaData = MetaFile.fromLines(metaDataLines)
+      val metaData = FontMetaData.fromLines(metaDataLines)
 
       val f = FontType.fromAtlas(atlas, metaData)
       fonts(name) = f

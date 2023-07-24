@@ -8,7 +8,7 @@ import com.martomate.hexacraft.infra.gpu.OpenGL
   * @author
   *   Karl
   */
-class FontType(val textureAtlas: OpenGL.TextureId, val loader: TextMeshCreator) {
+class FontType(val textureAtlas: OpenGL.TextureId, val loader: TextMeshBuilder) {
 
   /** Takes in an unloaded text and calculate all of the vertices for the quads on which this text
     * will be rendered. The vertex positions and texture coords and calculated based on the
@@ -31,6 +31,6 @@ object FontType {
     * @param metaData
     *   the information about each character in the texture atlas.
     */
-  def fromAtlas(textureAtlas: OpenGL.TextureId, metaData: MetaFile): FontType =
-    new FontType(textureAtlas, new TextMeshCreator(metaData))
+  def fromAtlas(textureAtlas: OpenGL.TextureId, metaData: FontMetaData): FontType =
+    new FontType(textureAtlas, new TextMeshBuilder(metaData))
 }

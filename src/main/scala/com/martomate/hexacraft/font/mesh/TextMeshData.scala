@@ -5,6 +5,6 @@ package com.martomate.hexacraft.font.mesh
   * @author
   *   Karl
   */
-class TextMeshData(val vertexPositions: Array[Float], val textureCoords: Array[Float]) {
+class TextMeshData(val vertexPositions: Seq[Float], val textureCoords: Seq[Float]) {
   def getVertexCount: Int = vertexPositions.length / 2
 }
