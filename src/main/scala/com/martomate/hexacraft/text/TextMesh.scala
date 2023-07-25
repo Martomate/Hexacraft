@@ -1,4 +1,7 @@
-package com.martomate.hexacraft.font.mesh
+package com.martomate.hexacraft.text
+
+import com.martomate.hexacraft.text.font.{Character, FontMetaData}
+import com.martomate.hexacraft.text.layout.Line
 
 import scala.collection.mutable
 

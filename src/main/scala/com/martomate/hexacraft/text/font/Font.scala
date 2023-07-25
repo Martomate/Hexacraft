@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.font.mesh
+package com.martomate.hexacraft.text.font
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
 

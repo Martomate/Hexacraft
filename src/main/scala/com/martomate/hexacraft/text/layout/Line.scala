@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.font.mesh
+package com.martomate.hexacraft.text.layout
 
 import scala.collection.mutable
 

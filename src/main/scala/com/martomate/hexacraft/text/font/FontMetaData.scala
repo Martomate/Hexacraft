@@ -1,7 +1,6 @@
-package com.martomate.hexacraft.font.mesh
+package com.martomate.hexacraft.text.font
 
-import com.martomate.hexacraft.font.FntFile
-import com.martomate.hexacraft.font.FntFile.{CharacterPadding, CharLine}
+import com.martomate.hexacraft.text.font.FntFile.{CharacterPadding, CharLine}
 
 import scala.collection.mutable
 

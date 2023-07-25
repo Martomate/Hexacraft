@@ -1,4 +1,4 @@
-package com.martomate.hexacraft.font
+package com.martomate.hexacraft.text
 
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
 

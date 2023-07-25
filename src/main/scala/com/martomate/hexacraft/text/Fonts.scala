@@ -1,8 +1,8 @@
-package com.martomate.hexacraft.font
+package com.martomate.hexacraft.text
 
-import com.martomate.hexacraft.font.mesh.{Font, FontMetaData}
 import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.renderer.TextureSingle
+import com.martomate.hexacraft.text.font.{FntFile, Font, FontMetaData}
 
 import scala.collection.mutable
 

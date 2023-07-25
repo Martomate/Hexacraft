@@ -37,7 +37,7 @@ class RootArchTest extends FunSuite {
   // TODO: reduce package dependencies and update this test accordingly
   test("packages should not depend on too many other packages") {
     val root = "root"
-    val Font = "Font"
+    val Text = "Text"
     val Game = "Game"
     val GUI = "GUI"
     val Infra = "Infra"
@@ -60,7 +60,6 @@ class RootArchTest extends FunSuite {
       .ignoreDependencyToJava()
       .ignoreDependencyToScala()
       .layer(root, "com.martomate.hexacraft")
-      .layer(Font, "com.martomate.hexacraft.font..")
       .layer(Game, "com.martomate.hexacraft.game..")
       .layer(GUI, "com.martomate.hexacraft.gui..")
       .layer(Infra, "com.martomate.hexacraft.infra..")
@@ -68,6 +67,7 @@ class RootArchTest extends FunSuite {
       .layer(Menu, "com.martomate.hexacraft.menu..")
       .layer(Nbt, "com.martomate.hexacraft.nbt..")
       .layer(Renderer, "com.martomate.hexacraft.renderer..")
+      .layer(Text, "com.martomate.hexacraft.text..")
       .layer(Util, "com.martomate.hexacraft.util..")
       .layer(World, "com.martomate.hexacraft.world..")
       .optionalLayer(JOML, "org.joml..")
@@ -76,13 +76,13 @@ class RootArchTest extends FunSuite {
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
-      .where(Font, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
-      .where(Game, _.mayOnlyAccessLayers(root, Font, GUI, Infra, Renderer, Util, World, JOML, Nbt, NbtLib))
-      .where(GUI, _.mayOnlyAccessLayers(root, Infra, Font, Renderer, Util, JOML))
+      .where(Game, _.mayOnlyAccessLayers(root, Text, GUI, Infra, Renderer, Util, World, JOML, Nbt, NbtLib))
+      .where(GUI, _.mayOnlyAccessLayers(root, Infra, Text, Renderer, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Util, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
-      .where(Menu, _.mayOnlyAccessLayers(root, Infra, Font, Game, GUI, World, JOML, Nbt))
+      .where(Menu, _.mayOnlyAccessLayers(root, Infra, Text, Game, GUI, World, JOML, Nbt))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
+      .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
       .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
       .where(World, _.mayOnlyAccessLayers(Infra, Renderer, Util, JOML, JSON, LWJGL, Nbt, NbtLib))

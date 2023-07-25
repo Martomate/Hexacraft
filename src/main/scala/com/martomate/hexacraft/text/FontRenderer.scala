@@ -1,8 +1,8 @@
-package com.martomate.hexacraft.font
+package com.martomate.hexacraft.text
 
-import com.martomate.hexacraft.font.mesh.{Font, Text}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.{TextureSingle, VAO}
+import com.martomate.hexacraft.text.font.Font
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
