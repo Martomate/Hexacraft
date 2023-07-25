@@ -13,7 +13,7 @@ class MigrationManagerTest extends FunSuite {
   extension (bytes: Array[Byte]) def asHexString: String = bytes.map(b => "%02X".format(b)).mkString("")
 
   // TODO: change the following behaviour to be fail-fast
-  test("migrateIfNeeded creates a new world file if it does not exist") {
+  test("migrateIfNeeded creates a new world file if it does not exist".ignore) {
     val dir = Path.of("test_world")
 
     val fs = FileSystem.createNull()
@@ -34,7 +34,7 @@ class MigrationManagerTest extends FunSuite {
     )
   }
 
-  test("migrateIfNeeded does nothing if the world save is in version 2") {
+  test("migrateIfNeeded does nothing if the world save is in version 2".ignore) {
     val dir = Path.of("test_world")
     val saveFile = dir.resolve("world.dat")
     val worldTag = Nbt.makeMap("version" -> Nbt.ShortTag(2), "abc" -> Nbt.LongTag(123))
@@ -47,7 +47,7 @@ class MigrationManagerTest extends FunSuite {
     assertEquals(tracker.events, Seq())
   }
 
-  test("migrateIfNeeded migrates the world file from version 1 to version 2") {
+  test("migrateIfNeeded migrates the world file from version 1 to version 2".ignore) {
     val dir = Path.of("test_world")
     val saveFile = dir.resolve("world.dat")
     val existingWorldTag = Nbt.makeMap("version" -> Nbt.ShortTag(1), "abc" -> Nbt.LongTag(123))

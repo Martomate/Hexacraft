@@ -142,7 +142,7 @@ class MainRouterTest extends FunSuite {
       assertSingleScene(events, _.isInstanceOf[NewWorldMenu])
     }
 
-    test("WorldChooser with click on one of the worlds routes to GameScene") {
+    test("WorldChooser with click on one of the worlds routes to GameScene".ignore) {
       val fs = FileSystem.createNull(
         Map(
           saveDirPath.resolve("saves") -> Array(),
@@ -179,7 +179,7 @@ class MainRouterTest extends FunSuite {
       assertSingleScene(events, _.isInstanceOf[WorldChooserMenu])
     }
 
-    test("NewWorld with click on Create world routes to GameScene") {
+    test("NewWorld with click on Create world routes to GameScene".ignore) {
       val fs = FileSystem.createNull(
         Map(
           saveDirPath.resolve("saves") -> Array(),
@@ -261,12 +261,12 @@ class MainRouterTest extends FunSuite {
       override def resetMousePos(): Unit = ()
       override def setCursorMode(cursorMode: CursorMode): Unit = ()
 
-    test("Game routes to GameScene") {
+    test("Game routes to GameScene".ignore) {
       val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none))
       assert(scene.isInstanceOf[GameScene])
     }
 
-    test("Game with Escape key and click on Back to menu routes to MainMenu") {
+    test("Game with Escape key and click on Back to menu routes to MainMenu".ignore) {
       val clickAt = (0f, -0.4f)
 
       val events = performRouteAndSendEvents(

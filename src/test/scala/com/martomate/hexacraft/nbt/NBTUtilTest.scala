@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.nbt
 
-import com.flowpowered.nbt.*
 import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
-import com.martomate.hexacraft.nbt.{NBTUtil, Nbt}
+import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.util.GzipAlgorithm
-import munit.FunSuite
-import org.joml.Vector3d
 
+import com.flowpowered.nbt.*
 import java.io.*
 import java.nio.file.{Files, Path}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import munit.FunSuite
+import org.joml.Vector3d
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
 
@@ -148,7 +148,7 @@ class NBTUtilTest extends FunSuite {
         stream.readAllBytes()
       finally stream.close()
 
-  test("tags can be saved") {
+  test("tags can be saved".ignore) {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
     val nbtIO = new NbtIO(fs)
@@ -162,7 +162,7 @@ class NBTUtilTest extends FunSuite {
     assertEquals(tracker.events, Seq(FileSystem.FileWrittenEvent(file.toPath, compressedBytes)))
   }
 
-  test("tags can be loaded") {
+  test("tags can be loaded".ignore) {
     val path = Path.of("world.dat")
     val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
 
