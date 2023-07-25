@@ -6,17 +6,7 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
-
-_global_script_classes=[ {
-"base": "Reference",
-"class": "GameVersion",
-"language": "GDScript",
-"path": "res://GameVersion.gd"
-} ]
-_global_script_class_icons={
-"GameVersion": ""
-}
+config_version=5
 
 [application]
 
@@ -24,17 +14,17 @@ config/name="Hexacraft Launcher"
 run/main_scene="res://Window.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Hexacraft"
+config/features=PackedStringArray("4.1")
 boot_splash/image="res://Bakgrundsbild i launchern2.0.png"
 config/icon="res://icon.png"
 
 [display]
 
-window/size/width=720
-window/size/height=540
+window/size/viewport_width=720
+window/size/viewport_height=540
 
 [rendering]
 
+environment/defaults/default_environment="res://default_env.tres"
 quality/driver/driver_name="GLES2"
 vram_compression/import_etc=true
-vram_compression/import_etc2=false
-environment/default_environment="res://default_env.tres"
