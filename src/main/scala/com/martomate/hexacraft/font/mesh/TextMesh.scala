@@ -7,10 +7,12 @@ class TextMesh(val vertexPositions: Seq[Float], val textureCoords: Seq[Float]) {
 }
 
 object TextMesh {
-  val BaseLineHeight: Double = 0.03
 
   /** Calculates all the vertices for the quads on which the given lines of text will be rendered. */
-  def fromLines(lines: Seq[Line], fontSize: Float, centered: Boolean, metaData: FontMetaData): TextMesh =
+  def fromLines(lines: Seq[Line], centered: Boolean, font: FontMetaData): TextMesh =
+    val spaceWidth = font.spaceWidth
+    val lineHeight = font.lineHeight
+
     var cursorX: Double = 0f
     var cursorY: Double = 0f
 
@@ -18,28 +20,16 @@ object TextMesh {
     val textureCoords: mutable.ArrayBuffer[Float] = new mutable.ArrayBuffer[Float]
 
     for line <- lines do
-      if centered then cursorX = (line.maxLength - line.currentLineLength) / 2
+      if centered then cursorX = (line.maxWidth - line.width) / 2
 
-      for word <- line.getWords do
-        for letter <- word.getCharacters do
-          addQuad(
-            vertices,
-            cursorX + letter.xOffset * fontSize,
-            -cursorY - letter.yOffset * fontSize,
-            letter.sizeX * fontSize,
-            -letter.sizeY * fontSize
-          )
-          addQuad(
-            textureCoords,
-            letter.textureBounds.x,
-            letter.textureBounds.y,
-            letter.textureBounds.w,
-            letter.textureBounds.h
-          )
-          cursorX += letter.xAdvance * fontSize
-        cursorX += metaData.getSpaceWidth * fontSize
+      for word <- line.words do
+        for Character(_, tex, bounds) <- word.getCharacters do
+          addQuad(vertices, cursorX + bounds.x, -cursorY - bounds.y, bounds.w, -bounds.h)
+          addQuad(textureCoords, tex.x, tex.y, tex.w, tex.h)
+          cursorX += bounds.xAdvance
+        cursorX += spaceWidth
       cursorX = 0
-      cursorY += BaseLineHeight * fontSize
+      cursorY += lineHeight
 
     new TextMesh(vertices.toSeq, textureCoords.toSeq)
 

@@ -2,4 +2,11 @@ package com.martomate.hexacraft.font.mesh
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
 
-class Font(val textureAtlas: OpenGL.TextureId, val metaData: FontMetaData)
+import scala.collection.mutable
+
+class Font(val textureAtlas: OpenGL.TextureId, baseMetaData: FontMetaData) {
+  private val metaDataCache = mutable.Map.empty[Double, FontMetaData]
+
+  def getMetaData(lineHeight: Double): FontMetaData =
+    metaDataCache.getOrElseUpdate(lineHeight, baseMetaData.atLineHeight(lineHeight))
+}

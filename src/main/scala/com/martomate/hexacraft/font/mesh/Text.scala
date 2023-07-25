@@ -6,6 +6,10 @@ import com.martomate.hexacraft.renderer.VAO
 
 import org.joml.{Vector2f, Vector3f, Vector3fc}
 
+object Text {
+  private val BaseLineHeight: Double = 0.03
+}
+
 class Text(
     var text: String,
     var fontSize: Float,
@@ -45,12 +49,14 @@ class Text(
     this
 
   private def update(): Unit =
-    val lines = WordWrapper(font.metaData, fontSize, maxLineLength).wrap(text)
+    val metaData = font.getMetaData(Text.BaseLineHeight * fontSize)
+
+    val lines = LineBreaker(maxLineLength).layout(text, metaData)
 
     this.numberOfLines = lines.size
-    this.lineWidths = lines.map(_.currentLineLength)
+    this.lineWidths = lines.map(_.width)
 
-    val data: TextMesh = TextMesh.fromLines(lines, fontSize, centered, font.metaData)
+    val data: TextMesh = TextMesh.fromLines(lines, centered, metaData)
 
     val vao: VAO = TextMaster.loadVAO(data.vertexPositions, data.textureCoords)
     setMeshInfo(vao, data.getVertexCount)

@@ -2,10 +2,14 @@ package com.martomate.hexacraft.font.mesh
 
 import scala.collection.mutable
 
-class FontMetaData(private val metaData: Map[Int, Character]) {
-  def getSpaceWidth: Double = metaData.get(' '.toInt).map(_.xAdvance).getOrElse(0)
+class FontMetaData(private val characters: Map[Int, Character], val lineHeight: Double) {
+  def spaceWidth: Double = characters.get(' '.toInt).map(_.screenBounds.xAdvance).getOrElse(0)
 
-  def getCharacter(ascii: Int): Character = metaData.getOrElse(ascii, null)
+  def getCharacter(ascii: Int): Character = characters.getOrElse(ascii, null)
+
+  def atLineHeight(lineHeight: Double): FontMetaData =
+    val scaledChars = characters.view.mapValues(_.withScaledScreenBounds(lineHeight / this.lineHeight)).toMap
+    new FontMetaData(scaledChars, lineHeight)
 }
 
 object FontMetaData {
@@ -74,48 +78,33 @@ object FontMetaData {
       )
   }
 
-  case class CharLine(
-      id: Int,
-      x: Int,
-      y: Int,
-      width: Int,
-      height: Int,
-      xOffset: Int,
-      yOffset: Int,
-      xAdvance: Int
-  ) {
+  case class CharLine(id: Int, x: Int, y: Int, width: Int, height: Int, xOffset: Int, yOffset: Int, xAdvance: Int) {
 
-    /** Converts the character from 'pixel-space' to 'screen-space */
-    def toCharacter(
-        desiredPadding: Int,
-        desiredLineHeight: Double,
-        padding: CharacterPadding,
-        fontLineHeight: Int,
-        imageSize: Int
-    ): Character =
+    /** Converts the character from 'pixel-space' to 'screen-space' (with a line height of 1) */
+    def toCharacter(desiredPadding: Int, padding: CharacterPadding, lineHeightInImage: Int, imageSize: Int): Character =
       val extraLeftPadding = padding.left - desiredPadding
       val extraTopPadding = padding.top - desiredPadding
 
-      val lineHeightPixels: Int = fontLineHeight - padding.vertical
-      val verticalPerPixelSize: Double = desiredLineHeight / lineHeightPixels.toDouble
-      val horizontalPerPixelSize: Double = verticalPerPixelSize
+      val pixelsPerLine: Double = (lineHeightInImage - padding.vertical).toDouble
 
-      val width: Int = this.width - (padding.horizontal - 2 * desiredPadding)
-      val height: Int = this.height - (padding.vertical - 2 * desiredPadding)
+      val adjustedWidth: Int = width - (padding.horizontal - 2 * desiredPadding)
+      val adjustedHeight: Int = height - (padding.vertical - 2 * desiredPadding)
 
       Character(
-        this.id,
+        id,
         Character.TextureBounds(
-          (this.x.toDouble + extraLeftPadding) / imageSize,
-          (this.y.toDouble + extraTopPadding) / imageSize,
-          width.toDouble / imageSize,
-          height.toDouble / imageSize
+          (x + extraLeftPadding).toDouble / imageSize,
+          (y + extraTopPadding).toDouble / imageSize,
+          adjustedWidth.toDouble / imageSize,
+          adjustedHeight.toDouble / imageSize
         ),
-        xOffset = (this.xOffset + extraLeftPadding) * horizontalPerPixelSize,
-        yOffset = (this.yOffset + extraTopPadding) * verticalPerPixelSize,
-        sizeX = width * horizontalPerPixelSize,
-        sizeY = height * verticalPerPixelSize,
-        xAdvance = (this.xAdvance - padding.horizontal) * horizontalPerPixelSize
+        Character.ScreenBounds(
+          (xOffset + extraLeftPadding) / pixelsPerLine,
+          (yOffset + extraTopPadding) / pixelsPerLine,
+          adjustedWidth / pixelsPerLine,
+          adjustedHeight / pixelsPerLine,
+          (xAdvance - padding.horizontal) / pixelsPerLine
+        )
       )
   }
 
@@ -135,16 +124,15 @@ object FontMetaData {
 
   def fromFileContents(contents: FileContents): FontMetaData =
     val desiredPadding = FontMetaData.DesiredPadding
-    val desiredLineHeight = TextMesh.BaseLineHeight
     val padding = contents.info.padding
     val fontLineHeight = contents.common.lineHeight
     val imageSize = contents.common.scaleW
 
-    val metaData: mutable.Map[Int, Character] = mutable.HashMap.empty
+    val characters: mutable.Map[Int, Character] = mutable.HashMap.empty
 
     for ch <- contents.charLines do
-      val c = ch.toCharacter(desiredPadding, desiredLineHeight, padding, fontLineHeight, imageSize)
-      if c != null then metaData.put(c.id, c)
+      val c = ch.toCharacter(desiredPadding, padding, fontLineHeight, imageSize)
+      if c != null then characters.put(c.id, c)
 
-    new FontMetaData(metaData.toMap)
+    new FontMetaData(characters.toMap, lineHeight = 1)
 }

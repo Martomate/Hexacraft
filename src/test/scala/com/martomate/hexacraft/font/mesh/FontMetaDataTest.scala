@@ -8,7 +8,6 @@ class FontMetaDataTest extends FunSuite {
   private val delta = 1e-6
 
   private val desiredPadding = 3
-  private val desiredLineHeight = 0.03
 
   private val basicFontMetaFileContents =
     """
@@ -61,9 +60,9 @@ class FontMetaDataTest extends FunSuite {
 
     val paddingWidth = 11 + 13
     val paddingHeight = 10 + 12
-    val pixelScale = desiredLineHeight / (95 - paddingHeight)
+    val pixelScale = 1.0 / (95 - paddingHeight)
 
-    assertEqualsDouble(metaFile.getSpaceWidth, (31 - paddingWidth) * pixelScale, delta)
+    assertEqualsDouble(metaFile.spaceWidth, (31 - paddingWidth) * pixelScale, delta)
   }
 
   test("fromFileContents can extract characters") {
@@ -78,7 +77,7 @@ class FontMetaDataTest extends FunSuite {
 
     assertEquals(
       metaFile.getCharacter(67),
-      line.toCharacter(desiredPadding, desiredLineHeight, padding, lineHeight, scaleW)
+      line.toCharacter(desiredPadding, padding, lineHeight, scaleW)
     )
   }
 
@@ -86,7 +85,7 @@ class FontMetaDataTest extends FunSuite {
     val padding = CharacterPadding(10, 11, 12, 13)
     val ch =
       CharLine(id = 67, x = 439, y = 145, width = 60, height = 70, xOffset = 6, yOffset = 15, xAdvance = 78)
-        .toCharacter(desiredPadding, desiredLineHeight, padding, 95, 512)
+        .toCharacter(desiredPadding, padding, 95, 512)
 
     val extraLeftPadding = 11 - desiredPadding
     val extraTopPadding = 10 - desiredPadding
@@ -97,18 +96,18 @@ class FontMetaDataTest extends FunSuite {
     val width = 60 - (paddingWidth - 2 * desiredPadding)
     val height = 70 - (paddingHeight - 2 * desiredPadding)
 
-    val pixelScale = desiredLineHeight / (95 - paddingHeight).toDouble
+    val pixelScale = 1.0 / (95 - paddingHeight)
 
     assertEquals(ch.id, 67)
     assertEqualsDouble(ch.textureBounds.x, (439 + extraLeftPadding) / 512d, delta)
     assertEqualsDouble(ch.textureBounds.y, (145 + extraTopPadding) / 512d, delta)
     assertEqualsDouble(ch.textureBounds.w, width / 512d, delta)
     assertEqualsDouble(ch.textureBounds.h, height / 512d, delta)
-    assertEqualsDouble(ch.xOffset, (6 + extraLeftPadding) * pixelScale, delta)
-    assertEqualsDouble(ch.yOffset, (15 + extraTopPadding) * pixelScale, delta)
-    assertEqualsDouble(ch.sizeX, width * pixelScale, delta)
-    assertEqualsDouble(ch.sizeY, height * pixelScale, delta)
-    assertEqualsDouble(ch.xAdvance, (78 - paddingWidth) * pixelScale, delta)
+    assertEqualsDouble(ch.screenBounds.x, (6 + extraLeftPadding) * pixelScale, delta)
+    assertEqualsDouble(ch.screenBounds.y, (15 + extraTopPadding) * pixelScale, delta)
+    assertEqualsDouble(ch.screenBounds.w, width * pixelScale, delta)
+    assertEqualsDouble(ch.screenBounds.h, height * pixelScale, delta)
+    assertEqualsDouble(ch.screenBounds.xAdvance, (78 - paddingWidth) * pixelScale, delta)
   }
 
   test("fromLines parses and converts file contents into a MetaFile") {
@@ -117,7 +116,7 @@ class FontMetaDataTest extends FunSuite {
     val metaFile = FontMetaData.fromLines(lines)
     val expectedMetaFile = FontMetaData.fromFileContents(FileContents.fromLines(lines))
 
-    assertEquals(metaFile.getSpaceWidth, expectedMetaFile.getSpaceWidth)
+    assertEquals(metaFile.spaceWidth, expectedMetaFile.spaceWidth)
     assertEquals(metaFile.getCharacter(32), expectedMetaFile.getCharacter(32))
     assertEquals(metaFile.getCharacter(67), expectedMetaFile.getCharacter(67))
     assertEquals(metaFile.getCharacter(68), null)
