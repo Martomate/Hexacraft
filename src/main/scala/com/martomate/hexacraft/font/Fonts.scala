@@ -18,7 +18,7 @@ object Fonts {
 
       val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
       val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
-      val metaData = FontMetaData.fromLines(metaDataLines)
+      val metaData = FontMetaData.fromFntFile(FntFile.fromLines(metaDataLines))
 
       val f = Font(atlas, metaData)
       fonts(name) = f

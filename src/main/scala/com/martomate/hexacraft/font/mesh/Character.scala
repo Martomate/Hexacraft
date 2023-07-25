@@ -1,5 +1,7 @@
 package com.martomate.hexacraft.font.mesh
 
+import com.martomate.hexacraft.font.FntFile
+
 /** A glyph in the font texture atlas.
   *
   * @param id
