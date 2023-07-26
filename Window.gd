@@ -65,8 +65,17 @@ func startGame(versionID):
 		var version = versions[versionID]
 		var dir = str(OS.get_user_data_dir(), "/versions/", version.name)
 		
+		var javaArgs = ["-jar", libFilePath, "execute", dir]
+		
+		if OS.get_name() == "macOS":
+			javaArgs.append_array([javaCommand, "-XstartOnFirstThread"])
+		else:
+			javaArgs.append_array([javaCommand])
+		
+		javaArgs.append_array(["-jar", version.file_to_run])
+		
 		var output = []
-		OS.execute(javaCommand, ["-jar", libFilePath, "execute", dir, javaCommand, "-jar", version.file_to_run], output, true, false)
+		OS.execute(javaCommand, javaArgs, output, true, false)
 		OS.delay_msec(1000)
 		if !output.is_empty() && output[0] != "":
 			print("Failed to run game. Error: ", output)
