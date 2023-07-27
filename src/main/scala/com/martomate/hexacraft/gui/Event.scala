@@ -1,6 +1,6 @@
 package com.martomate.hexacraft.gui
 
-import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
+import com.martomate.hexacraft.infra.window.*
 
 enum Event:
   case KeyEvent(key: KeyboardKey, scancode: Int, action: KeyAction, mods: KeyMods)

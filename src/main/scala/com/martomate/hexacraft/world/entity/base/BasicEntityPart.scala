@@ -1,10 +1,9 @@
 package com.martomate.hexacraft.world.entity.base
 
+import com.eclipsesource.json.JsonObject
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityPart
-
-import com.eclipsesource.json.JsonObject
 import org.joml.{Matrix4f, Vector3f}
 
 class BasicEntityPart(

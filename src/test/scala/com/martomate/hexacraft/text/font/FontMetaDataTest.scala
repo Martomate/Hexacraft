@@ -1,8 +1,7 @@
-package com.martomate.hexacraft.text.mesh
+package com.martomate.hexacraft.text.font
 
-import com.martomate.hexacraft.text.font.FontMetaData.toCharacter
-import com.martomate.hexacraft.text.font.{FntFile, FontMetaData}
 import com.martomate.hexacraft.text.font.FntFile.{CharacterPadding, CharLine, CommonLine, InfoLine}
+import com.martomate.hexacraft.text.font.FontMetaData.toCharacter
 
 import munit.FunSuite
 

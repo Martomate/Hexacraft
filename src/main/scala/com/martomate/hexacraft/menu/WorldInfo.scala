@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.menu
 
+import com.flowpowered.nbt.CompoundTag
+import com.flowpowered.nbt.stream.NBTInputStream
 import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 
-import com.flowpowered.nbt.CompoundTag
-import com.flowpowered.nbt.stream.NBTInputStream
 import java.io.{File, FileInputStream}
 import java.nio.file.Path
 

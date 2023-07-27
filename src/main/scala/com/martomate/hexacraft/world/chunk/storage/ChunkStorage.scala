@@ -1,9 +1,8 @@
 package com.martomate.hexacraft.world.chunk.storage
 
+import com.flowpowered.nbt.Tag
 import com.martomate.hexacraft.world.block.{Block, BlockState}
 import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
-
-import com.flowpowered.nbt.Tag
 
 object ChunkStorage {
   case class NbtData(blocks: Array[Byte], metadata: Array[Byte])

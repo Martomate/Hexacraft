@@ -4,7 +4,6 @@ import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.world.render.{BlockRenderer, BlockVertexData}
 import com.martomate.hexacraft.world.render.buffer.RenderBufferFactory
-
 import org.joml.{Vector2f, Vector3f}
 
 class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORenderBuffer] {

@@ -1,6 +1,5 @@
-package com.martomate.hexacraft.text
+package com.martomate.hexacraft.text.font
 
-import com.martomate.hexacraft.text.font.FntFile
 import com.martomate.hexacraft.text.font.FntFile.{CharacterPadding, CharLine, CommonLine, InfoLine}
 
 import munit.FunSuite

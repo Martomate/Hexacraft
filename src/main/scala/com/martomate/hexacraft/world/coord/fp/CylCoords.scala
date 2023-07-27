@@ -2,7 +2,6 @@ package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.util.MathUtils
 import com.martomate.hexacraft.world.CylinderSize
-
 import org.joml.Vector3d
 
 class CylCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[CylCoords](_x, _y, _z) {

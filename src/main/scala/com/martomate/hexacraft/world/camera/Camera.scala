@@ -1,12 +1,10 @@
 package com.martomate.hexacraft.world.camera
 
-import com.martomate.hexacraft.renderer.Shader
 import com.martomate.hexacraft.util.MathUtils
 import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-
 import org.joml.{Vector3d, Vector3f}
 
 class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {

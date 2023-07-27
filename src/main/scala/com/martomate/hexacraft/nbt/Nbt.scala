@@ -2,8 +2,9 @@ package com.martomate.hexacraft.nbt
 
 import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
 import org.joml.Vector3d
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
 import scala.collection.immutable.{ArraySeq, ListMap}
 
 sealed trait Nbt

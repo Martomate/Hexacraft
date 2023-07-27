@@ -1,12 +1,13 @@
 package com.martomate.hexacraft.game
 
+import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.inventory.{GUIBlocksRenderer, InventoryBox, Toolbar}
 import com.martomate.hexacraft.gui.*
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import com.martomate.hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, MouseAction, MouseButton}
-import com.martomate.hexacraft.renderer.{NoDepthTest, Renderer, Shader, TextureArray, VAO}
+import com.martomate.hexacraft.infra.window.*
+import com.martomate.hexacraft.renderer.*
 import com.martomate.hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import com.martomate.hexacraft.world.{World, WorldProvider}
 import com.martomate.hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState}
@@ -19,11 +20,8 @@ import com.martomate.hexacraft.world.player.Player
 import com.martomate.hexacraft.world.ray.{Ray, RayTracer}
 import com.martomate.hexacraft.world.render.WorldRenderer
 import com.martomate.hexacraft.world.settings.WorldInfo
+import org.joml.{Matrix4f, Vector2d, Vector2f, Vector3f}
 
-import com.flowpowered.nbt.CompoundTag
-import org.joml.{Matrix4f, Vector2f}
-import org.joml.Vector2d
-import org.joml.Vector3f
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

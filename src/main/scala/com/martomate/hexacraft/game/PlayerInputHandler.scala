@@ -3,7 +3,6 @@ package com.martomate.hexacraft.game
 import com.martomate.hexacraft.GameKeyboard
 import com.martomate.hexacraft.world.CollisionDetector
 import com.martomate.hexacraft.world.player.Player
-
 import org.joml.Vector2dc
 
 class PlayerInputHandler(keyboard: GameKeyboard, player: Player):

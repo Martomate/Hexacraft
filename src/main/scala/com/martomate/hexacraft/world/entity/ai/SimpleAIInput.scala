@@ -5,7 +5,6 @@ import com.martomate.hexacraft.world.block.Block
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.BlockRelWorld
-
 import org.joml.Vector3d
 
 class SimpleAIInput(using CylinderSize):

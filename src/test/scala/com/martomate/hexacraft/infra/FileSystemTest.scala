@@ -7,7 +7,6 @@ import com.martomate.hexacraft.util.Tracker
 import java.io.File
 import java.nio.file.{Files, Path}
 import munit.FunSuite
-
 import scala.collection.immutable.ArraySeq
 
 class FileSystemTest extends FunSuite {

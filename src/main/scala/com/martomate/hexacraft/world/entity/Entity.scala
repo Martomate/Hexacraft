@@ -1,13 +1,12 @@
 package com.martomate.hexacraft.world.entity
 
+import com.flowpowered.nbt.Tag
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.util.Result
 import com.martomate.hexacraft.util.Result.{Err, Ok}
 import com.martomate.hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-
-import com.flowpowered.nbt.Tag
 import org.joml.{Matrix4f, Vector3d}
 
 object Entity {

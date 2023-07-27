@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
-import com.martomate.hexacraft.renderer._
-
+import com.martomate.hexacraft.renderer.*
 import org.joml.{Vector2f, Vector3f}
 
 class BlockRenderer(val side: Int, val vao: VAO, val renderer: Renderer):

@@ -1,7 +1,8 @@
 package com.martomate.hexacraft.world.render
 
-import java.nio.ByteBuffer
 import org.lwjgl.BufferUtils
+
+import java.nio.ByteBuffer
 
 class BlockRendererCollection(rendererFactory: Int => BlockRenderer):
   private val blockRenderers: IndexedSeq[BlockRenderer] = IndexedSeq.tabulate(2)(s => rendererFactory(s))

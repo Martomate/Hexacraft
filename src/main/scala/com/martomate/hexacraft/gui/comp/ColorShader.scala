@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
-
 import org.joml.{Matrix4f, Vector4f}
 
 class ColorShader {

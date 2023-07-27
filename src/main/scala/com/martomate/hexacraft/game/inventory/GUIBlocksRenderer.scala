@@ -5,7 +5,6 @@ import com.martomate.hexacraft.renderer.{Shader, TextureArray}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.camera.CameraProjection
 import com.martomate.hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
-
 import org.joml.{Matrix4f, Vector3f}
 
 object GUIBlocksRenderer:

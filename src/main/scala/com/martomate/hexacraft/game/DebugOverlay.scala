@@ -1,15 +1,15 @@
 package com.martomate.hexacraft.game
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.text.{Text, TextMaster}
 import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
+import com.martomate.hexacraft.text.{Text, TextMaster}
 import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
-
 import org.joml.{Vector3d, Vector3f}
+
 import scala.collection.mutable
 
 object DebugOverlay {

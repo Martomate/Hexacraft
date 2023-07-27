@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.fp
 
 import com.martomate.hexacraft.world.CylinderSize
+
 import munit.FunSuite
 
 class CylCoordsTest extends FunSuite {

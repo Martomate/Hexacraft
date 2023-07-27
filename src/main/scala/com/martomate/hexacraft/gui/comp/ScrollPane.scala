@@ -4,8 +4,8 @@ import com.martomate.hexacraft.GameWindow
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.util.MathUtils
-
 import org.joml.Vector4f
+
 import scala.collection.mutable.ArrayBuffer
 
 class ScrollPane(

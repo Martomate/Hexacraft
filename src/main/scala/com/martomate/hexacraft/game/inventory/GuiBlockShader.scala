@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.game.inventory
 
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
-
 import org.joml.{Matrix4f, Vector2i}
 
 class GuiBlockShader(isSide: Boolean) {

@@ -5,7 +5,6 @@ import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.text.TextMaster
 import com.martomate.hexacraft.text.font.Font
 import com.martomate.hexacraft.text.layout.LineBreaker
-
 import org.joml.{Vector2f, Vector3f, Vector3fc}
 
 object Text {

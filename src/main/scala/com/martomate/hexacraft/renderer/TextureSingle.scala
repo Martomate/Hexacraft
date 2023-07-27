@@ -2,21 +2,11 @@ package com.martomate.hexacraft.renderer
 
 import com.martomate.hexacraft.infra.fs.FileUtils
 import com.martomate.hexacraft.infra.gpu.OpenGL
-import com.martomate.hexacraft.infra.gpu.OpenGL.{
-  TexelDataFormat,
-  TexelDataType,
-  TexIntParameter,
-  TexMagFilter,
-  TexMinFilter,
-  TextureId,
-  TextureInternalFormat,
-  TextureTarget,
-  TexWrap
-}
+import com.martomate.hexacraft.infra.gpu.OpenGL.*
 import com.martomate.hexacraft.util.Resource
+import org.lwjgl.BufferUtils
 
 import javax.imageio.ImageIO
-import org.lwjgl.BufferUtils
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]

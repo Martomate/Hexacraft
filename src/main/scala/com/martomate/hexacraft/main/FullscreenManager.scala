@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.infra.window.{Monitor, Window, WindowSystem}
-
 import org.joml.Vector2i
 
 class FullscreenManager(window: Window, windowSystem: WindowSystem):

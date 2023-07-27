@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.world.coord.integer
 
 import com.martomate.hexacraft.world.CylinderSize
+
 import munit.FunSuite
 
 class BlockRelWorldTest extends FunSuite {

@@ -1,10 +1,9 @@
 package com.martomate.hexacraft.gui.comp
 
 import com.martomate.hexacraft.GameWindow
-import com.martomate.hexacraft.text.Text
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey}
-
+import com.martomate.hexacraft.text.Text
 import org.joml.{Vector3f, Vector4f}
 
 class TextField(

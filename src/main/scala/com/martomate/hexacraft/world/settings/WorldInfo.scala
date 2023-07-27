@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world.settings
 
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.world.{CylinderSize, MigrationManager}
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import java.io.File
 import scala.collection.immutable.ListMap
 

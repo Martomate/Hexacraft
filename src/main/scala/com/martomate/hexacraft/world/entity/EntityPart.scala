@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.entity
 
 import com.martomate.hexacraft.world.block.HexBox
-
 import org.joml.Matrix4f
 
 trait EntityPart {

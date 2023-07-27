@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.infra.fs
 
+import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.nbt.Nbt
 import com.martomate.hexacraft.util.{AsyncFileIO, GzipAlgorithm}
 
-import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import java.io.File
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}

@@ -6,21 +6,13 @@ import com.martomate.hexacraft.gui.comp.GUITransformation
 import com.martomate.hexacraft.infra.fs.FileSystem
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.infra.os.OSUtils
-import com.martomate.hexacraft.infra.window.{
-  CallbackEvent,
-  CursorMode,
-  KeyAction,
-  KeyboardKey,
-  Window,
-  WindowSettings,
-  WindowSystem
-}
-import com.martomate.hexacraft.renderer.{Shader, VAO}
+import com.martomate.hexacraft.infra.window.*
+import com.martomate.hexacraft.renderer.VAO
 import com.martomate.hexacraft.util.{AsyncFileIO, Resource, Result}
 import com.martomate.hexacraft.world.World
+import org.joml.{Vector2i, Vector2ic}
 
 import java.io.File
-import org.joml.{Vector2i, Vector2ic}
 import scala.collection.mutable
 
 class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:

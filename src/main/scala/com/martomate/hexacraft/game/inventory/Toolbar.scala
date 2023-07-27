@@ -5,7 +5,6 @@ import com.martomate.hexacraft.gui.LocationInfo
 import com.martomate.hexacraft.gui.comp.*
 import com.martomate.hexacraft.world.block.Blocks
 import com.martomate.hexacraft.world.player.Inventory
-
 import org.joml.{Matrix4f, Vector4f}
 
 class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks) extends Component with SubComponents {

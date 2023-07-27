@@ -1,12 +1,11 @@
 package com.martomate.hexacraft.world.entity.ai
 
+import com.flowpowered.nbt.*
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
 import com.martomate.hexacraft.world.block.{Blocks, HexBox}
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.{Entity, EntityBaseData}
-
-import com.flowpowered.nbt.*
 import org.joml.{Vector3d, Vector3dc}
 
 class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {

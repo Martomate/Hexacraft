@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world
 
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import com.martomate.hexacraft.util.*
 import com.martomate.hexacraft.world.block.{BlockRepository, Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
@@ -14,7 +15,6 @@ import com.martomate.hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import com.martomate.hexacraft.world.loader.{ChunkLoader, PosAndDir}
 import com.martomate.hexacraft.world.settings.WorldInfo
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

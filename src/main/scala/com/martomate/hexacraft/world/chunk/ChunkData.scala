@@ -1,19 +1,13 @@
 package com.martomate.hexacraft.world.chunk
 
-import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.hexacraft.nbt.Nbt
 import com.martomate.hexacraft.util.Result.{Err, Ok}
-import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize}
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
-import com.martomate.hexacraft.world.chunk.storage.{
-  ChunkStorage,
-  DenseChunkStorage,
-  LocalBlockState,
-  SparseChunkStorage
-}
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
+import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, LocalBlockState, SparseChunkStorage}
+import com.martomate.hexacraft.world.coord.integer.BlockRelChunk
 import com.martomate.hexacraft.world.entity.{Entity, EntityRegistry}
 
-import com.flowpowered.nbt.{ByteArrayTag, ByteTag, CompoundTag, ListTag, Tag}
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 

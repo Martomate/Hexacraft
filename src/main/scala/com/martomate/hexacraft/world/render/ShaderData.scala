@@ -2,9 +2,9 @@ package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.VertexData
 import com.martomate.hexacraft.world.entity.EntityModel
+import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import java.nio.ByteBuffer
-import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 case class EntityDataForShader(model: EntityModel, parts: Seq[EntityPartDataForShader])
 

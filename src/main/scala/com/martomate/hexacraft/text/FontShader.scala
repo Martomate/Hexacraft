@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.text
 
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
-
 import org.joml.{Vector2f, Vector3f}
 
 class FontShader {

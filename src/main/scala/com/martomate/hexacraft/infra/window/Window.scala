@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.infra.window
 
 import com.martomate.hexacraft.util.PointerWrapper
-
 import org.lwjgl.glfw.GLFW
 
 object Window {

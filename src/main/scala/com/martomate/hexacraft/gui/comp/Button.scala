@@ -3,7 +3,6 @@ package com.martomate.hexacraft.gui.comp
 import com.martomate.hexacraft.{GameMouse, GameWindow}
 import com.martomate.hexacraft.gui.{Event, LocationInfo}
 import com.martomate.hexacraft.infra.window.MouseAction
-
 import org.joml.Vector4f
 
 object Button:

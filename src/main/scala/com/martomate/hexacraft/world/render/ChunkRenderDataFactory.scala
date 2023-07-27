@@ -7,11 +7,11 @@ import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.CoordUtils
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
+import org.joml.{Matrix4f, Vector4f}
+import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 import java.util
-import org.joml.{Matrix4f, Vector4f}
-import org.lwjgl.BufferUtils
 import scala.collection.mutable.ArrayBuffer
 
 object ChunkRenderDataFactory:

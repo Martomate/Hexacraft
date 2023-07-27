@@ -7,7 +7,6 @@ import com.martomate.hexacraft.gui.comp.{Component, GUITransformation}
 import com.martomate.hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import com.martomate.hexacraft.world.block.{Block, Blocks}
 import com.martomate.hexacraft.world.player.Inventory
-
 import org.joml.{Matrix4f, Vector4f}
 
 class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using

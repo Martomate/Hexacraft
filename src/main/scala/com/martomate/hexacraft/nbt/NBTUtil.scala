@@ -2,6 +2,7 @@ package com.martomate.hexacraft.nbt
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, Tag}
 import org.joml.Vector3d
+
 import scala.collection.immutable.ListMap
 
 object NBTUtil {

@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.infra.window
 
 import com.martomate.hexacraft.infra.window.CursorMode.{Disabled, Hidden, Normal}
-
 import org.lwjgl.glfw.GLFW
 
 object CursorMode {

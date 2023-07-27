@@ -7,15 +7,11 @@ import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagat
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.chunk.Chunk
-import com.martomate.hexacraft.world.chunk.storage.LocalBlockState
 import com.martomate.hexacraft.world.coord.fp.CylCoords
-import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import com.martomate.hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.Entity
 
-import java.nio.ByteBuffer
-import java.nio.FloatBuffer
-import org.joml.Vector2ic
-import org.joml.Vector3f
+import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

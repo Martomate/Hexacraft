@@ -1,15 +1,14 @@
 package com.martomate.hexacraft.world.entity
 
+import com.eclipsesource.json.{Json, JsonObject}
 import com.martomate.hexacraft.infra.fs.FileUtils
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.block.HexBox
 import com.martomate.hexacraft.world.coord.fp.CylCoords
 import com.martomate.hexacraft.world.entity.EntityModel
 import com.martomate.hexacraft.world.entity.base.BasicEntityModel
 import com.martomate.hexacraft.world.entity.player.PlayerEntityModel
 import com.martomate.hexacraft.world.entity.sheep.SheepEntityModel
-
-import com.eclipsesource.json.{Json, JsonObject}
-import com.martomate.hexacraft.world.CylinderSize
 
 class EntityModelLoader(basePath: String = "spec/entities") {
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {

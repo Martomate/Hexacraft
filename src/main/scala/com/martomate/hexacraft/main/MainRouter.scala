@@ -4,15 +4,7 @@ import com.martomate.hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import com.martomate.hexacraft.game.{GameScene, WorldProviderFromFile}
 import com.martomate.hexacraft.gui.{Scene, WindowExtras}
 import com.martomate.hexacraft.infra.fs.FileSystem
-import com.martomate.hexacraft.menu.{
-  HostWorldChooserMenu,
-  JoinWorldChooserMenu,
-  MainMenu,
-  MultiplayerMenu,
-  NewWorldMenu,
-  SettingsMenu,
-  WorldChooserMenu
-}
+import com.martomate.hexacraft.menu.*
 import com.martomate.hexacraft.util.Tracker
 import com.martomate.hexacraft.world.block.{BlockLoader, Blocks}
 import com.martomate.hexacraft.world.settings.WorldSettings

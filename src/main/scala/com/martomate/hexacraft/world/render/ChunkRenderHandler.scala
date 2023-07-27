@@ -4,8 +4,8 @@ import com.martomate.hexacraft.renderer.{Texture, TextureArray}
 import com.martomate.hexacraft.world.camera.Camera
 import com.martomate.hexacraft.world.coord.integer.ChunkRelWorld
 import com.martomate.hexacraft.world.render.aspect.HexagonRenderHandler
-
 import org.joml.Vector3f
+
 import scala.collection.mutable
 
 class ChunkRenderHandler:

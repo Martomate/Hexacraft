@@ -1,6 +1,7 @@
 package com.martomate.hexacraft.infra.os
 
 import com.martomate.hexacraft.infra.os.{Linux, Mac, OSUtils, Windows}
+
 import munit.FunSuite
 
 class OSUtilsTest extends FunSuite {

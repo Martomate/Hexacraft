@@ -1,9 +1,9 @@
 package com.martomate.hexacraft.world
 
+import com.flowpowered.nbt.ShortTag
 import com.martomate.hexacraft.infra.fs.{FileSystem, NbtIO}
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 
-import com.flowpowered.nbt.ShortTag
 import java.io.File
 import scala.util.{Success, Try}
 

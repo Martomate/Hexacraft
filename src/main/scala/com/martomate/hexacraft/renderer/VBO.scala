@@ -2,9 +2,9 @@ package com.martomate.hexacraft.renderer
 
 import com.martomate.hexacraft.infra.gpu.OpenGL
 import com.martomate.hexacraft.util.Resource
+import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
-import org.lwjgl.BufferUtils
 
 object VBO {
   private var boundVBO: VBO = _

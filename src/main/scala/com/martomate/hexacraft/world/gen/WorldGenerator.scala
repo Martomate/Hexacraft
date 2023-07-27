@@ -1,17 +1,12 @@
 package com.martomate.hexacraft.world.gen
 
-import com.martomate.hexacraft.world.coord.fp.BlockCoords
-import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
-import com.martomate.hexacraft.world.gen.noise.{
-  NoiseGenerator3D,
-  NoiseGenerator4D,
-  NoiseInterpolator2D,
-  NoiseInterpolator3D
-}
-import com.martomate.hexacraft.world.settings.WorldGenSettings
-
 import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.world.CylinderSize
+import com.martomate.hexacraft.world.coord.fp.BlockCoords
+import com.martomate.hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import com.martomate.hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
+import com.martomate.hexacraft.world.settings.WorldGenSettings
+
 import java.util.Random
 
 class WorldGenerator(worldGenSettings: WorldGenSettings)(implicit worldSize: CylinderSize) {

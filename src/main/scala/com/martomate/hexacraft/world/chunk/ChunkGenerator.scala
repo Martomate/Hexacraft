@@ -1,5 +1,6 @@
 package com.martomate.hexacraft.world.chunk
 
+import com.flowpowered.nbt.CompoundTag
 import com.martomate.hexacraft.nbt.Nbt
 import com.martomate.hexacraft.world.{BlocksInWorld, CylinderSize, WorldProvider}
 import com.martomate.hexacraft.world.block.{Blocks, BlockState}
@@ -7,8 +8,6 @@ import com.martomate.hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStor
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import com.martomate.hexacraft.world.entity.EntityRegistry
 import com.martomate.hexacraft.world.gen.WorldGenerator
-
-import com.flowpowered.nbt.CompoundTag
 
 class ChunkGenerator(
     coords: ChunkRelWorld,

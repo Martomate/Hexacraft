@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.main
 
 import com.martomate.hexacraft.GameMouse
-
 import org.joml.{Vector2d, Vector2dc}
 
 class RealGameMouse extends GameMouse:

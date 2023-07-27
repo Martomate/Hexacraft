@@ -1,12 +1,11 @@
 package com.martomate.hexacraft.world.chunk.storage
 
+import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
 import com.martomate.hexacraft.nbt.{Nbt, NBTUtil}
 import com.martomate.hexacraft.util.SmartArray
+import com.martomate.hexacraft.world.CylinderSize
 import com.martomate.hexacraft.world.block.{Block, Blocks, BlockState}
 import com.martomate.hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-
-import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
-import com.martomate.hexacraft.world.CylinderSize
 
 class DenseChunkStorage extends ChunkStorage:
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)

@@ -1,10 +1,10 @@
 package com.martomate.hexacraft.infra.window
 
 import com.martomate.hexacraft.util.PointerWrapper
-
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
+
 import scala.collection.mutable
 
 object WindowSystem {

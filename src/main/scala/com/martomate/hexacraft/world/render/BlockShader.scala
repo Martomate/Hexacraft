@@ -1,7 +1,6 @@
 package com.martomate.hexacraft.world.render
 
 import com.martomate.hexacraft.renderer.{Shader, ShaderConfig}
-
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 class BlockShader(isSide: Boolean) {
