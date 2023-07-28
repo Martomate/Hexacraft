@@ -1,5 +1,6 @@
 package hexacraft.world.chunk
 
+import hexacraft.math.Int12
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
@@ -10,7 +11,6 @@ import hexacraft.world.gen.WorldGenerator
 import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 trait ChunkColumnTerrain:
   def originalTerrainHeight(cx: Int, cz: Int): Short
@@ -53,11 +53,10 @@ class ChunkColumn private (
   def originalTerrainHeight(cx: Int, cz: Int): Short = generatedHeightMap(cx)(cz)
   def terrainHeight(cx: Int, cz: Int): Short = heightMap(cx)(cz)
 
-  def getChunk(coords: ChunkRelColumn): Option[Chunk] = chunks.get(coords.value)
+  def getChunk(Y: Int12): Option[Chunk] = chunks.get(Y.repr.toInt)
 
   def setChunk(chunk: Chunk): Unit =
-    val coords = chunk.coords.getChunkRelColumn
-    chunks.put(coords.value, chunk) match
+    chunks.put(chunk.coords.Y.repr.toInt, chunk) match
       case Some(oldChunk) =>
         if oldChunk != chunk then
           chunkEventTrackerRevokeFns(oldChunk.coords)()
@@ -67,8 +66,8 @@ class ChunkColumn private (
         chunkEventTrackerRevokeFns += chunk.coords -> chunk.trackEvents(onChunkEvent _)
         onChunkLoaded(chunk)
 
-  def removeChunk(coords: ChunkRelColumn): Option[Chunk] =
-    val oldChunkOpt = chunks.remove(coords.value)
+  def removeChunk(Y: Int12): Option[Chunk] =
+    val oldChunkOpt = chunks.remove(Y.repr.toInt)
     oldChunkOpt match
       case Some(oldChunk) => chunkEventTrackerRevokeFns(oldChunk.coords)()
       case None           =>
@@ -94,7 +93,7 @@ class ChunkColumn private (
         heightMap(coords.cx)(coords.cz) = LazyList
           .range((height - 1).toShort, Short.MinValue, -1.toShort)
           .map(y =>
-            getChunk(ChunkRelColumn.create(y >> 4))
+            getChunk(Int12.truncate(y >> 4))
               .map(chunk => (y, chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz))))
               .orNull
           )
@@ -104,7 +103,7 @@ class ChunkColumn private (
     }
 
   private def onChunkLoaded(chunk: Chunk): Unit =
-    val yy = chunk.coords.Y * 16
+    val yy = chunk.coords.Y.toInt * 16
     for x <- 0 until 16 do
       for z <- 0 until 16 do
         val height = heightMap(x)(z)

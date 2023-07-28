@@ -1,5 +1,7 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.math.Int12
+
 import munit.FunSuite
 
 class BlockRelColumnTest extends FunSuite {
@@ -18,11 +20,11 @@ class BlockRelColumnTest extends FunSuite {
   }
 
   test("Y should be correct in entire range") {
-    assertEquals(BlockRelColumn(-14, 3, 7, 5).Y, -14)
-    assertEquals(BlockRelColumn(0x7ff, 3, 7, 5).Y, 0x7ff)
-    assertEquals(BlockRelColumn(0x800, 3, 7, 5).Y, -0x800)
-    assertEquals(BlockRelColumn(0xfff, 3, 7, 5).Y, -1)
-    assertEquals(BlockRelColumn(0x1000, 3, 7, 5).Y, 0)
+    assertEquals(BlockRelColumn(-14, 3, 7, 5).Y, Int12(-14))
+    assertEquals(BlockRelColumn(0x7ff, 3, 7, 5).Y, Int12(0x7ff))
+    assertEquals(BlockRelColumn(0x800, 3, 7, 5).Y, Int12(-0x800))
+    assertEquals(BlockRelColumn(0xfff, 3, 7, 5).Y, Int12(-1))
+    assertEquals(BlockRelColumn(0x1000, 3, 7, 5).Y, Int12(0))
   }
 
   test("value should be in YYYxyz-format and correct") {

@@ -83,7 +83,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = columns.get(coords.value)
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] =
-    columns.get(coords.getColumnRelWorld.value).flatMap(_.getChunk(coords.getChunkRelColumn))
+    columns.get(coords.getColumnRelWorld.value).flatMap(_.getChunk(coords.Y))
 
   def getBlock(coords: BlockRelWorld): BlockState =
     getChunk(coords.getChunkRelWorld) match
@@ -150,7 +150,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   def removeChunk(ch: ChunkRelWorld): Unit =
     for col <- columns.get(ch.getColumnRelWorld.value) do
-      for removedChunk <- col.removeChunk(ch.getChunkRelColumn) do
+      for removedChunk <- col.removeChunk(ch.Y) do
         val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
         revoke()
 

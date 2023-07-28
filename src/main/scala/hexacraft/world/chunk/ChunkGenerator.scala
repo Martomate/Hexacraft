@@ -18,8 +18,7 @@ class ChunkGenerator(
     registry: EntityRegistry
 )(using cylSize: CylinderSize, Blocks: Blocks) {
 
-  private def filePath: String =
-    "data/" + coords.getColumnRelWorld.value + "/" + coords.getChunkRelColumn.value + ".dat"
+  private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat"
 
   def loadData(): ChunkData = {
     val nbt = worldProvider.loadState(filePath)
@@ -33,7 +32,7 @@ class ChunkGenerator(
 
       for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
         val noise = blockNoise(i, j, k)
-        val yToGo = coords.Y * 16 + j - column.originalTerrainHeight(i, k)
+        val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight(i, k)
         val limit = limitForBlockNoise(yToGo)
         if (noise > limit)
           storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))

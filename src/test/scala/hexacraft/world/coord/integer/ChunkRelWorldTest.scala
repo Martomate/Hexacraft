@@ -1,5 +1,6 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.math.{Int12, Int20}
 import hexacraft.world.CylinderSize
 
 import munit.FunSuite
@@ -9,33 +10,33 @@ class ChunkRelWorldTest extends FunSuite {
   import cylSize.impl
 
   test("Y should be correct in entire range") {
-    assertEquals(ChunkRelWorld(532, -14, 17).Y, -14)
-    assertEquals(ChunkRelWorld(532, 0x7ff, 17).Y, 0x7ff)
-    assertEquals(ChunkRelWorld(532, 0x800, 17).Y, -0x800)
-    assertEquals(ChunkRelWorld(532, 0xfff, 17).Y, -1)
-    assertEquals(ChunkRelWorld(532, 0x1000, 17).Y, 0)
+    assertEquals(ChunkRelWorld(532, -14, 17).Y, Int12(-14))
+    assertEquals(ChunkRelWorld(532, 0x7ff, 17).Y, Int12(0x7ff))
+    assertEquals(ChunkRelWorld(532, 0x800, 17).Y, Int12(-0x800))
+    assertEquals(ChunkRelWorld(532, 0xfff, 17).Y, Int12(-1))
+    assertEquals(ChunkRelWorld(532, 0x1000, 17).Y, Int12(0))
   }
 
   test("X should be correct in entire range") {
-    assertEquals(ChunkRelWorld(-14, -14, 17).X, -14)
-    assertEquals(ChunkRelWorld(0x7ffff, -14, 17).X, 0x7ffff)
-    assertEquals(ChunkRelWorld(0x80000, -14, 17).X, -0x80000)
-    assertEquals(ChunkRelWorld(0xfffff, -14, 17).X, -1)
-    assertEquals(ChunkRelWorld(0x100000, -14, 17).X, 0)
+    assertEquals(ChunkRelWorld(-14, -14, 17).X, Int20(-14))
+    assertEquals(ChunkRelWorld(0x7ffff, -14, 17).X, Int20(0x7ffff))
+    assertEquals(ChunkRelWorld(0x80000, -14, 17).X, Int20(-0x80000))
+    assertEquals(ChunkRelWorld(0xfffff, -14, 17).X, Int20(-1))
+    assertEquals(ChunkRelWorld(0x100000, -14, 17).X, Int20(0))
   }
 
   test("Z should be correct in entire range") {
-    assertEquals(ChunkRelWorld(532, -14, 1).Z, 1)
-    assertEquals(ChunkRelWorld(532, -14, -1).Z, 15)
-    assertEquals(ChunkRelWorld(532, -14, 16).Z, 0)
-    assertEquals(ChunkRelWorld(532, -14, 16 * 25235).Z, 0)
+    assertEquals(ChunkRelWorld(532, -14, 1).Z, Int20(1))
+    assertEquals(ChunkRelWorld(532, -14, -1).Z, Int20(15))
+    assertEquals(ChunkRelWorld(532, -14, 16).Z, Int20(0))
+    assertEquals(ChunkRelWorld(532, -14, 16 * 25235).Z, Int20(0))
   }
 
   test("offset should give the correct result") {
     val c = ChunkRelWorld(532, -14, 17).offset(-4, 71, -12345)
-    assertEquals(c.X, 532 - 4)
-    assertEquals(c.Y, -14 + 71)
-    assertEquals(c.Z, 8)
+    assertEquals(c.X, Int20(532 - 4))
+    assertEquals(c.Y, Int12(-14 + 71))
+    assertEquals(c.Z, Int20(8))
   }
 
   test("value should be in XXXXXZZZZZYYY-format and correct") {

@@ -1,5 +1,6 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.math.Int20
 import hexacraft.world.CylinderSize
 
 import munit.FunSuite
@@ -9,18 +10,18 @@ class ColumnRelWorldTest extends FunSuite {
   import cylSize.impl
 
   test("X should be correct in entire range") {
-    assertEquals(ColumnRelWorld(-14, 17).X, -14)
-    assertEquals(ColumnRelWorld(0x7ffff, 17).X, 0x7ffff)
-    assertEquals(ColumnRelWorld(0x80000, 17).X, -0x80000)
-    assertEquals(ColumnRelWorld(0xfffff, 17).X, -1)
-    assertEquals(ColumnRelWorld(0x100000, 17).X, 0)
+    assertEquals(ColumnRelWorld(-14, 17).X, Int20(-14))
+    assertEquals(ColumnRelWorld(0x7ffff, 17).X, Int20(0x7ffff))
+    assertEquals(ColumnRelWorld(0x80000, 17).X, Int20(-0x80000))
+    assertEquals(ColumnRelWorld(0xfffff, 17).X, Int20(-1))
+    assertEquals(ColumnRelWorld(0x100000, 17).X, Int20(0))
   }
 
   test("Z should be correct in entire range") {
-    assertEquals(ColumnRelWorld(532, 1).Z, 1)
-    assertEquals(ColumnRelWorld(532, -1).Z, 15)
-    assertEquals(ColumnRelWorld(532, 16).Z, 0)
-    assertEquals(ColumnRelWorld(532, 16 * 25235).Z, 0)
+    assertEquals(ColumnRelWorld(532, 1).Z, Int20(1))
+    assertEquals(ColumnRelWorld(532, -1).Z, Int20(15))
+    assertEquals(ColumnRelWorld(532, 16).Z, Int20(0))
+    assertEquals(ColumnRelWorld(532, 16 * 25235).Z, Int20(0))
   }
 
   test("value should be in XXXXXZZZZZYYY-format and correct") {

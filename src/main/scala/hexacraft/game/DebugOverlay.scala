@@ -85,9 +85,9 @@ class DebugOverlay(initialAspectRatio: Float) {
     setValue("p.y", info.cameraPosition.y.toFloat)
     setValue("p.z", info.cameraPosition.z.toFloat)
 
-    setValue("c.x", info.cameraChunkCoords.X)
-    setValue("c.y", info.cameraChunkCoords.Y)
-    setValue("c.z", info.cameraChunkCoords.Z)
+    setValue("c.x", info.cameraChunkCoords.X.toInt)
+    setValue("c.y", info.cameraChunkCoords.Y.toInt)
+    setValue("c.z", info.cameraChunkCoords.Z.toInt)
 
     setValue("r.x", info.cameraRotation.x)
     setValue("r.y", info.cameraRotation.y)

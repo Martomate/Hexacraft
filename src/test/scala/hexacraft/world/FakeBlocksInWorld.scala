@@ -16,8 +16,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     cols.get(coords)
 
   override def getChunk(coords: ChunkRelWorld): Option[Chunk] =
-    getColumn(coords.getColumnRelWorld)
-      .flatMap(_.getChunk(coords.getChunkRelColumn))
+    getColumn(coords.getColumnRelWorld).flatMap(_.getChunk(coords.Y))
 
   override def getBlock(coords: BlockRelWorld): BlockState =
     getChunk(coords.getChunkRelWorld)
@@ -57,7 +56,7 @@ object FakeBlocksInWorld {
     val world = new FakeBlocksInWorld(provider)
     for (coords -> block <- blocks) {
       val col = world.provideColumn(coords.getColumnRelWorld)
-      val chunk = col.getChunk(coords.getChunkRelColumn) match {
+      val chunk = col.getChunk(coords.Y) match {
         case Some(c) => c
         case None =>
           val c = Chunk(coords.getChunkRelWorld, world, provider)

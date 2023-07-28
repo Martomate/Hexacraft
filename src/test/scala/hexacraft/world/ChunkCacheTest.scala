@@ -28,7 +28,7 @@ class ChunkCacheTest extends FunSuite {
     assertEquals(cache.getChunk(coords), chunk)
 
     // Remove the chunk (and clear the cache)
-    column.removeChunk(coords.getChunkRelColumn)
+    column.removeChunk(coords.Y)
     cache.clearCache()
 
     // It should return null
@@ -54,7 +54,7 @@ class ChunkCacheTest extends FunSuite {
     assertEquals(cache.getChunk(coords), chunk)
 
     // Remove the chunk (and clear the cache)
-    column.removeChunk(coords.getChunkRelColumn)
+    column.removeChunk(coords.Y)
     cache.clearCache()
 
     // The cache should return null

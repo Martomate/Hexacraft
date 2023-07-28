@@ -40,7 +40,7 @@ class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mai
       val cx = rand.nextInt(16)
       val cz = rand.nextInt(16)
       val y = column.terrainHeight(cx, cz)
-      if y >= coords.Y * 16 && y < (coords.Y + 1) * 16 then
+      if y >= coords.Y.toInt * 16 && y < (coords.Y.toInt + 1) * 16 then
         val groundCoords = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
         val entityStartPos = groundCoords.offset(0, 0.001f, 0)
         val entity = entityFactory.atStartPos(entityStartPos)

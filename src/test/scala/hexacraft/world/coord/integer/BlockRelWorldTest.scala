@@ -1,5 +1,6 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.math.{Int12, Int20}
 import hexacraft.world.CylinderSize
 
 import munit.FunSuite
@@ -23,26 +24,26 @@ class BlockRelWorldTest extends FunSuite {
   }
 
   test("Y should be correct in entire range") {
-    assertEquals(BlockRelWorld(532, -14, 17, 3, 7, 5).Y, -14)
-    assertEquals(BlockRelWorld(532, 0x7ff, 17, 3, 7, 5).Y, 0x7ff)
-    assertEquals(BlockRelWorld(532, 0x800, 17, 3, 7, 5).Y, -0x800)
-    assertEquals(BlockRelWorld(532, 0xfff, 17, 3, 7, 5).Y, -1)
-    assertEquals(BlockRelWorld(532, 0x1000, 17, 3, 7, 5).Y, 0)
+    assertEquals(BlockRelWorld(532, -14, 17, 3, 7, 5).Y, Int12(-14))
+    assertEquals(BlockRelWorld(532, 0x7ff, 17, 3, 7, 5).Y, Int12(0x7ff))
+    assertEquals(BlockRelWorld(532, 0x800, 17, 3, 7, 5).Y, Int12(-0x800))
+    assertEquals(BlockRelWorld(532, 0xfff, 17, 3, 7, 5).Y, Int12(-1))
+    assertEquals(BlockRelWorld(532, 0x1000, 17, 3, 7, 5).Y, Int12(0))
   }
 
   test("X should be correct in entire range") {
-    assertEquals(BlockRelWorld(-14, -14, 17, 3, 7, 5).X, -14)
-    assertEquals(BlockRelWorld(0x7ffff, -14, 17, 3, 7, 5).X, 0x7ffff)
-    assertEquals(BlockRelWorld(0x80000, -14, 17, 3, 7, 5).X, -0x80000)
-    assertEquals(BlockRelWorld(0xfffff, -14, 17, 3, 7, 5).X, -1)
-    assertEquals(BlockRelWorld(0x100000, -14, 17, 3, 7, 5).X, 0)
+    assertEquals(BlockRelWorld(-14, -14, 17, 3, 7, 5).X, Int20(-14))
+    assertEquals(BlockRelWorld(0x7ffff, -14, 17, 3, 7, 5).X, Int20(0x7ffff))
+    assertEquals(BlockRelWorld(0x80000, -14, 17, 3, 7, 5).X, Int20(-0x80000))
+    assertEquals(BlockRelWorld(0xfffff, -14, 17, 3, 7, 5).X, Int20(-1))
+    assertEquals(BlockRelWorld(0x100000, -14, 17, 3, 7, 5).X, Int20(0))
   }
 
   test("Z should be correct in entire range") {
-    assertEquals(BlockRelWorld(532, -14, 1, 3, 7, 5).Z, 1)
-    assertEquals(BlockRelWorld(532, -14, -1, 3, 7, 5).Z, 15)
-    assertEquals(BlockRelWorld(532, -14, 16, 3, 7, 5).Z, 0)
-    assertEquals(BlockRelWorld(532, -14, 16 * 25235, 3, 7, 5).Z, 0)
+    assertEquals(BlockRelWorld(532, -14, 1, 3, 7, 5).Z, Int20(1))
+    assertEquals(BlockRelWorld(532, -14, -1, 3, 7, 5).Z, Int20(15))
+    assertEquals(BlockRelWorld(532, -14, 16, 3, 7, 5).Z, Int20(0))
+    assertEquals(BlockRelWorld(532, -14, 16 * 25235, 3, 7, 5).Z, Int20(0))
   }
 
   test("xyz should be correct in normal range") {

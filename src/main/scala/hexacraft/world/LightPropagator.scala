@@ -33,7 +33,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
     def shouldEnqueueSunlight(coords: BlockRelChunk, neigh: Chunk) = {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neigh.coords.getColumnRelWorld).get
-      if neigh.coords.Y * 16 + coords.cy > neighCol.terrainHeight(coords.cx, coords.cz)
+      if neigh.coords.Y.toInt * 16 + coords.cy > neighCol.terrainHeight(coords.cx, coords.cz)
       then
         val transparentTop = block.blockType.isTransparent(block.metadata, 0)
         val transparentBottom = block.blockType.isTransparent(block.metadata, 1)

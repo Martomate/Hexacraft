@@ -28,7 +28,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(implicit worldSize: Cyl
       4,
       4,
       (i, j) => {
-        val c = BlockCoords(coords.X * 16 + i * 4, 0, coords.Z * 16 + j * 4).toCylCoords
+        val c = BlockCoords(coords.X.toInt * 16 + i * 4, 0, coords.Z.toInt * 16 + j * 4).toCylCoords
         val height = biomeHeightGenerator.genNoiseFromCylXZ(c)
         val heightVariation = biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
         heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
@@ -41,7 +41,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(implicit worldSize: Cyl
     4,
     (i, j, k) => {
       val c =
-        BlockCoords(coords.X * 16 + i * 4, coords.Y * 16 + j * 4, coords.Z * 16 + k * 4).toCylCoords
+        BlockCoords(coords.X.toInt * 16 + i * 4, coords.Y.toInt * 16 + j * 4, coords.Z.toInt * 16 + k * 4).toCylCoords
       blockGenerator.genNoiseFromCyl(c) + blockDensityGenerator.genNoiseFromCyl(c) * 0.4
     }
   )

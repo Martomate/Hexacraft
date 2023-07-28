@@ -48,7 +48,7 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
       allowBig: Boolean
   ): Unit =
     val yy = column.originalTerrainHeight(cx, cz)
-    if yy >= coords.Y * 16 && yy < (coords.Y + 1) * 16 then generateTree(coords, cx, cz, yy, allowBig)
+    if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then generateTree(coords, cx, cz, yy, allowBig)
 
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit =
     val rand = new Random(mainSeed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
@@ -66,7 +66,7 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
       then new TallTreeGenStrategy(16, rand)(logBlock, leavesBlock)
       else new ShortTreeGenStrategy(logBlock, leavesBlock)
 
-    val groundCoords = BlockRelWorld(coords.X * 16 + cx, yy, coords.Z * 16 + cz)
+    val groundCoords = BlockRelWorld(coords.X.toInt * 16 + cx, yy, coords.Z.toInt * 16 + cz)
     val tree = PlannedWorldChange.from(
       for (c, b) <- treeGenStrategy.blocks
       yield (groundCoords.offset(c), new BlockState(b))

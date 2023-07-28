@@ -1,5 +1,6 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.math.{Int12, Int20}
 import hexacraft.world.CylinderSize
 
 object BlockRelWorld {
@@ -21,13 +22,11 @@ object BlockRelWorld {
   def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld)(implicit
       cylSize: CylinderSize
   ): BlockRelWorld =
-    BlockRelWorld(chunk.X * 16 + i, chunk.Y * 16 + j, chunk.Z * 16 + k)
+    BlockRelWorld(chunk.X.toInt * 16 + i, chunk.Y.toInt * 16 + j, chunk.Z.toInt * 16 + k)
 }
 
 case class BlockRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYYxyz
   def getBlockRelChunk: BlockRelChunk = BlockRelChunk((value & 0xfff).toInt)
-  def getBlockRelColumn: BlockRelColumn = BlockRelColumn((value & 0xffffff).toInt)
-  def getChunkRelColumn: ChunkRelColumn = ChunkRelColumn((value >>> 12 & 0xfff).toInt)
   def getChunkRelWorld: ChunkRelWorld = ChunkRelWorld(value >>> 12)
   def getColumnRelWorld: ColumnRelWorld = ColumnRelWorld(value >>> 24)
 
@@ -35,15 +34,15 @@ case class BlockRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYYxyz
   def offset(xx: Int, yy: Int, zz: Int)(implicit cylSize: CylinderSize): BlockRelWorld =
     BlockRelWorld(x + xx, y + yy, z + zz)
 
-  def X: Int = (value >> 32).toInt >> 12
-  def Z: Int = (value >> 12).toInt >> 12
-  def Y: Int = (value << 8).toInt >> 20
+  def X: Int20 = Int20.truncate(value >> 44)
+  def Z: Int20 = Int20.truncate(value >> 24)
+  def Y: Int12 = Int12.truncate(value >>> 12)
   def cx: Byte = (value >> 8 & 0xf).toByte
   def cy: Byte = (value >> 4 & 0xf).toByte
   def cz: Byte = (value >> 0 & 0xf).toByte
-  def x: Int = X << 4 | cx
-  def y: Int = Y << 4 | cy
-  def z: Int = Z << 4 | cz
+  def x: Int = X.toInt << 4 | cx
+  def y: Int = Y.toInt << 4 | cy
+  def z: Int = Z.toInt << 4 | cz
 
   override def toString = s"($x, $y, $z)"
 }
