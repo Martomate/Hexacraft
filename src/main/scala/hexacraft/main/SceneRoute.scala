@@ -1,0 +1,16 @@
+package hexacraft.main
+
+import hexacraft.world.settings.WorldSettings
+
+import java.io.File
+
+enum SceneRoute {
+  case Main
+  case WorldChooser
+  case NewWorld
+  case Multiplayer
+  case JoinWorld
+  case HostWorld
+  case Settings
+  case Game(saveDir: File, settings: WorldSettings)
+}
