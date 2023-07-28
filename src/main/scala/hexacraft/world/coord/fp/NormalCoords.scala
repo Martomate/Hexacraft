@@ -1,6 +1,7 @@
 package hexacraft.world.coord.fp
 
 import hexacraft.world.CylinderSize
+
 import org.joml.Vector3d
 
 class NormalCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[NormalCoords](_x, _y, _z) {

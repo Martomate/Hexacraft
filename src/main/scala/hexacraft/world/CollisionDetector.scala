@@ -5,6 +5,7 @@ import hexacraft.world.block.{Blocks, HexBox}
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, Offset}
+
 import org.joml.Vector3d
 
 class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords.Offset)

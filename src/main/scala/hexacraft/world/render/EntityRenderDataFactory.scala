@@ -4,6 +4,7 @@ import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.Entity
+
 import org.joml.{Matrix4f, Vector4f}
 
 object EntityRenderDataFactory {

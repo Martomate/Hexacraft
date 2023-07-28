@@ -1,6 +1,7 @@
 package hexacraft.infra.window
 
 import hexacraft.util.PointerWrapper
+
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil

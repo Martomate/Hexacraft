@@ -3,6 +3,7 @@ package hexacraft.gui.comp
 import hexacraft.{GameMouse, GameWindow}
 import hexacraft.gui.{Event, LocationInfo}
 import hexacraft.infra.window.MouseAction
+
 import org.joml.Vector4f
 
 object Button:

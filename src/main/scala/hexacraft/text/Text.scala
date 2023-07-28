@@ -2,10 +2,10 @@ package hexacraft.text
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.VAO
-import hexacraft.text.TextMaster
 import hexacraft.text.font.Font
 import hexacraft.text.layout.LineBreaker
-import org.joml.{Vector2f, Vector3f, Vector3fc}
+
+import org.joml.{Vector2f, Vector3f}
 
 object Text {
   private val BaseLineHeight: Double = 0.03

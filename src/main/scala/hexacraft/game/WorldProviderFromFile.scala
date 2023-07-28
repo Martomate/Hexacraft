@@ -1,10 +1,11 @@
 package hexacraft.game
 
-import com.flowpowered.nbt.CompoundTag
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.nbt.NBTUtil
 import hexacraft.world.{MigrationManager, WorldProvider}
 import hexacraft.world.settings.{WorldInfo, WorldSettings}
+
+import com.flowpowered.nbt.CompoundTag
 
 import java.io.File
 

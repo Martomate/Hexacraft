@@ -3,6 +3,7 @@ package hexacraft.renderer
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.{TexelDataFormat, TexelDataType, TextureInternalFormat}
 import hexacraft.util.{Resource, ResourceWrapper}
+
 import org.lwjgl.BufferUtils
 
 object TextureArray {

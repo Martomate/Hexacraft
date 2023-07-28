@@ -1,7 +1,8 @@
 package hexacraft.text
 
 import hexacraft.renderer.{Shader, ShaderConfig}
-import org.joml.{Vector2f, Vector3f}
+
+import org.joml.Vector3f
 
 class FontShader {
   private val config = ShaderConfig("font").withAttribs("position", "textureCoords")

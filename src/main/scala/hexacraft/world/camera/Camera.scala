@@ -5,6 +5,7 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.BlockRelWorld
+
 import org.joml.{Vector3d, Vector3f}
 
 class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {

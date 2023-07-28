@@ -4,6 +4,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.VAO
 import hexacraft.world.render.{BlockRenderer, BlockVertexData}
 import hexacraft.world.render.buffer.RenderBufferFactory
+
 import org.joml.{Vector2f, Vector3f}
 
 class BlockVAORenderBufferFactory(side: Int) extends RenderBufferFactory[VAORenderBuffer] {

@@ -1,6 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.{Shader, ShaderConfig}
+
 import org.joml.{Matrix4f, Vector3d}
 
 class SelectedBlockShader {

@@ -5,6 +5,7 @@ import hexacraft.renderer.{Shader, TextureArray}
 import hexacraft.world.block.{Block, Blocks}
 import hexacraft.world.camera.CameraProjection
 import hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
+
 import org.joml.{Matrix4f, Vector3f}
 
 object GUIBlocksRenderer:

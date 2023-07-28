@@ -19,10 +19,11 @@ import hexacraft.nbt.Nbt
 import hexacraft.util.{GzipAlgorithm, Tracker}
 import hexacraft.world.settings.{WorldInfo, WorldSettings}
 
-import java.io.File
-import java.nio.file.Path
 import munit.FunSuite
 import org.joml.{Vector2i, Vector2ic}
+
+import java.io.File
+import java.nio.file.Path
 
 class MainRouterTest extends FunSuite {
   override def beforeEach(context: BeforeEach): Unit = OpenGL._enterTestMode()

@@ -1,9 +1,10 @@
 package hexacraft.menu
 
-import com.flowpowered.nbt.CompoundTag
-import com.flowpowered.nbt.stream.NBTInputStream
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.nbt.{Nbt, NBTUtil}
+
+import com.flowpowered.nbt.CompoundTag
+import com.flowpowered.nbt.stream.NBTInputStream
 
 import java.io.{File, FileInputStream}
 import java.nio.file.Path

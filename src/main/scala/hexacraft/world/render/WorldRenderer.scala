@@ -13,6 +13,7 @@ import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

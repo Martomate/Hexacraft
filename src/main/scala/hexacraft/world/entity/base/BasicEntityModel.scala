@@ -4,6 +4,7 @@ import hexacraft.renderer.TextureSingle
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.{EntityModel, EntityPart}
+
 import org.joml.Vector3f
 
 object BasicEntityModel:

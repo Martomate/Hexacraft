@@ -1,7 +1,8 @@
 package hexacraft.world
 
-import com.flowpowered.nbt.CompoundTag
 import hexacraft.world.settings.WorldInfo
+
+import com.flowpowered.nbt.CompoundTag
 
 trait WorldProvider {
   def getWorldInfo: WorldInfo

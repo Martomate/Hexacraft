@@ -6,6 +6,7 @@ import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
+
 import scala.collection.mutable
 
 class ChunkLoadingPrioritizerTest extends FunSuite {

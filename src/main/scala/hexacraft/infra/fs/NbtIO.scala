@@ -1,9 +1,10 @@
 package hexacraft.infra.fs
 
-import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.nbt.Nbt
 import hexacraft.util.{AsyncFileIO, GzipAlgorithm}
+
+import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 
 import java.io.File
 import scala.concurrent.Await

@@ -1,12 +1,11 @@
 package hexacraft.world
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, Blocks, BlockState}
 import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
+import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.*
 import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
 import hexacraft.world.entity.player.PlayerFactory
@@ -16,7 +15,6 @@ import hexacraft.world.loader.{ChunkLoader, PosAndDir}
 import hexacraft.world.settings.WorldInfo
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object World:
   private val ticksBetweenBlockUpdates = 5

@@ -8,6 +8,7 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.camera.Camera
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.ChunkRelWorld
+
 import org.joml.{Vector3d, Vector3f}
 
 import scala.collection.mutable

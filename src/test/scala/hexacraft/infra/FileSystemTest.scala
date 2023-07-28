@@ -4,9 +4,10 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.util.Result.Err
 import hexacraft.util.Tracker
 
+import munit.FunSuite
+
 import java.io.File
 import java.nio.file.{Files, Path}
-import munit.FunSuite
 import scala.collection.immutable.ArraySeq
 
 class FileSystemTest extends FunSuite {

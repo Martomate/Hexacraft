@@ -1,6 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.*
+
 import org.joml.{Vector2f, Vector3f}
 
 class BlockRenderer(val side: Int, val vao: VAO, val renderer: Renderer):

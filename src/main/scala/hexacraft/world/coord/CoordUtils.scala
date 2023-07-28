@@ -3,6 +3,7 @@ package hexacraft.world.coord
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
+
 import org.joml.Vector3d
 
 import scala.annotation.tailrec

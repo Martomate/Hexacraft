@@ -9,6 +9,7 @@ import hexacraft.world.player.Player
 
 import munit.FunSuite
 import org.joml.Vector2d
+
 import scala.collection.mutable
 
 class PlayerInputHandlerTest extends FunSuite {

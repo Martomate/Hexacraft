@@ -1,6 +1,7 @@
 package hexacraft.main
 
 import hexacraft.GameMouse
+
 import org.joml.{Vector2d, Vector2dc}
 
 class RealGameMouse extends GameMouse:

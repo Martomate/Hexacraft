@@ -1,6 +1,7 @@
 package hexacraft.main
 
 import hexacraft.infra.os.OSUtils
+
 import org.lwjgl.system.Configuration
 
 import java.io.{File, FileOutputStream, PrintStream}

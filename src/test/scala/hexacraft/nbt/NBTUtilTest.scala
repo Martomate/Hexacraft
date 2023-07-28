@@ -5,11 +5,12 @@ import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.GzipAlgorithm
 
 import com.flowpowered.nbt.*
+import munit.FunSuite
+import org.joml.Vector3d
+
 import java.io.*
 import java.nio.file.{Files, Path}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
-import munit.FunSuite
-import org.joml.Vector3d
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
 

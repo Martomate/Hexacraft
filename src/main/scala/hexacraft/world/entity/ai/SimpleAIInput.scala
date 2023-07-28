@@ -5,6 +5,7 @@ import hexacraft.world.block.Block
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.BlockRelWorld
+
 import org.joml.Vector3d
 
 class SimpleAIInput(using CylinderSize):

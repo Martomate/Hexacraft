@@ -1,6 +1,5 @@
 package hexacraft.world.entity
 
-import com.eclipsesource.json.{Json, JsonObject}
 import hexacraft.infra.fs.FileUtils
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.HexBox
@@ -9,6 +8,8 @@ import hexacraft.world.entity.EntityModel
 import hexacraft.world.entity.base.BasicEntityModel
 import hexacraft.world.entity.player.PlayerEntityModel
 import hexacraft.world.entity.sheep.SheepEntityModel
+
+import com.eclipsesource.json.{Json, JsonObject}
 
 class EntityModelLoader(basePath: String = "spec/entities") {
   private def makeEntity(name: String, setup: JsonObject): EntityModel = name match {

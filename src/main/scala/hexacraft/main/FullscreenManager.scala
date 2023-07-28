@@ -1,6 +1,7 @@
 package hexacraft.main
 
 import hexacraft.infra.window.{Monitor, Window, WindowSystem}
+
 import org.joml.Vector2i
 
 class FullscreenManager(window: Window, windowSystem: WindowSystem):

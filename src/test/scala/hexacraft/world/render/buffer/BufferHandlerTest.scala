@@ -3,8 +3,9 @@ package hexacraft.world.render.buffer
 import hexacraft.world.render.buffer.{BufferHandler, RenderBuffer, RenderBufferFactory}
 import hexacraft.world.render.segment.Segment
 
-import java.nio.ByteBuffer
 import munit.FunSuite
+
+import java.nio.ByteBuffer
 
 class BufferHandlerTest extends FunSuite {
   private val BytesPerInstance: Int = 3

@@ -2,6 +2,7 @@ package hexacraft.world.coord.fp
 
 import hexacraft.util.MathUtils
 import hexacraft.world.CylinderSize
+
 import org.joml.Vector3d
 
 class CylCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[CylCoords](_x, _y, _z) {

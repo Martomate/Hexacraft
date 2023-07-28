@@ -3,8 +3,9 @@ package hexacraft.world.gen.noise
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
 
-import java.util.Random
 import munit.FunSuite
+
+import java.util.Random
 
 class NoiseGenerator3DTest extends FunSuite {
   test("the noise should be the same for the same input") {

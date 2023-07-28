@@ -1,11 +1,12 @@
 package hexacraft.world.gen
 
-import com.flowpowered.nbt.CompoundTag
 import hexacraft.world.{BlocksInWorld, CylinderSize, World}
 import hexacraft.world.block.Blocks
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.EntityRegistry
 import hexacraft.world.gen.planner.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
+
+import com.flowpowered.nbt.CompoundTag
 
 class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize, Blocks):
   private val planners: Seq[WorldFeaturePlanner] = Seq(

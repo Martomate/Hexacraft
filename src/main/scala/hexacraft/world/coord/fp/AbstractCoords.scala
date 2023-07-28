@@ -1,6 +1,7 @@
 package hexacraft.world.coord.fp
 
 import hexacraft.world.CylinderSize
+
 import org.joml.{Vector3d, Vector3f}
 
 private[fp] abstract class AbstractCoords[T <: AbstractCoords[T]](

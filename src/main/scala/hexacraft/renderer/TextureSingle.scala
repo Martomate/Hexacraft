@@ -4,6 +4,7 @@ import hexacraft.infra.fs.FileUtils
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.*
 import hexacraft.util.Resource
+
 import org.lwjgl.BufferUtils
 
 import javax.imageio.ImageIO

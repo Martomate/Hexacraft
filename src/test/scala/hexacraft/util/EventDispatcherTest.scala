@@ -1,6 +1,7 @@
 package hexacraft.util
 
 import munit.FunSuite
+
 import scala.collection.mutable
 
 class EventDispatcherTest extends FunSuite {

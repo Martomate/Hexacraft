@@ -3,8 +3,9 @@ package hexacraft
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import com.tngtech.archunit.library.Architectures.*
-import java.nio.file.Paths
 import munit.FunSuite
+
+import java.nio.file.Paths
 
 class RootArchTest extends FunSuite {
   import ArchUnitHelpers.*

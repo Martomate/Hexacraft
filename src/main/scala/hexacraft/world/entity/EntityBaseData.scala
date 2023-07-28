@@ -1,9 +1,10 @@
 package hexacraft.world.entity
 
-import com.flowpowered.nbt.{CompoundTag, Tag}
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
+
+import com.flowpowered.nbt.{CompoundTag, Tag}
 import org.joml.{Matrix4f, Vector3d}
 
 class EntityBaseData(

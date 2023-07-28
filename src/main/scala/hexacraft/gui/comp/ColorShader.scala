@@ -1,6 +1,7 @@
 package hexacraft.gui.comp
 
 import hexacraft.renderer.{Shader, ShaderConfig}
+
 import org.joml.{Matrix4f, Vector4f}
 
 class ColorShader {

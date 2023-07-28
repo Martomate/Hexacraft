@@ -1,6 +1,7 @@
 package hexacraft.world.entity
 
 import hexacraft.world.block.HexBox
+
 import org.joml.Matrix4f
 
 trait EntityPart {

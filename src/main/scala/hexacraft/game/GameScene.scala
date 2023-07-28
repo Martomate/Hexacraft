@@ -1,6 +1,5 @@
 package hexacraft.game
 
-import com.flowpowered.nbt.CompoundTag
 import hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import hexacraft.game.inventory.{GUIBlocksRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
@@ -20,6 +19,8 @@ import hexacraft.world.player.Player
 import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.settings.WorldInfo
+
+import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2d, Vector2f, Vector3f}
 
 import scala.collection.mutable

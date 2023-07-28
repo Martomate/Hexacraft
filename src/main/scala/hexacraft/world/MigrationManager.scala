@@ -1,8 +1,9 @@
 package hexacraft.world
 
-import com.flowpowered.nbt.ShortTag
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.nbt.{Nbt, NBTUtil}
+
+import com.flowpowered.nbt.ShortTag
 
 import java.io.File
 import scala.util.{Success, Try}

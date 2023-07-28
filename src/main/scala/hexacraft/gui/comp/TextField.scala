@@ -4,6 +4,7 @@ import hexacraft.GameWindow
 import hexacraft.gui.{Event, LocationInfo}
 import hexacraft.infra.window.{KeyAction, KeyboardKey}
 import hexacraft.text.Text
+
 import org.joml.{Vector3f, Vector4f}
 
 class TextField(

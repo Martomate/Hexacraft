@@ -1,9 +1,10 @@
 package hexacraft.world.block
 
-import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 import hexacraft.infra.fs.FileUtils
 import hexacraft.renderer.TextureToLoad
 import hexacraft.util.ResourceWrapper
+
+import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 
 import java.net.URL
 import javax.imageio.ImageIO

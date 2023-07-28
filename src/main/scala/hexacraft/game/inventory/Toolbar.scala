@@ -5,6 +5,7 @@ import hexacraft.gui.LocationInfo
 import hexacraft.gui.comp.*
 import hexacraft.world.block.Blocks
 import hexacraft.world.player.Inventory
+
 import org.joml.{Matrix4f, Vector4f}
 
 class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks) extends Component with SubComponents {

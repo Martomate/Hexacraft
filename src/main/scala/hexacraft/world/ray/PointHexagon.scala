@@ -5,6 +5,7 @@ import hexacraft.world.block.HexBox
 import hexacraft.world.camera.Camera
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import hexacraft.world.coord.integer.BlockRelWorld
+
 import org.joml.Vector3d
 
 object PointHexagon:

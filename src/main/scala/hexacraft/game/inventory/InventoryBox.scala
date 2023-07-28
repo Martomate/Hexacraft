@@ -7,6 +7,7 @@ import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import hexacraft.world.block.{Block, Blocks}
 import hexacraft.world.player.Inventory
+
 import org.joml.{Matrix4f, Vector4f}
 
 class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using

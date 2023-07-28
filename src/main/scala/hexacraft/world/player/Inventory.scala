@@ -1,9 +1,10 @@
 package hexacraft.world.player
 
-import com.flowpowered.nbt.*
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.block.{Block, Blocks}
+
+import com.flowpowered.nbt.*
 
 import scala.collection.mutable.ArrayBuffer
 

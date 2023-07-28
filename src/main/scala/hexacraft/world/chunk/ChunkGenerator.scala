@@ -1,6 +1,5 @@
 package hexacraft.world.chunk
 
-import com.flowpowered.nbt.CompoundTag
 import hexacraft.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CylinderSize, WorldProvider}
 import hexacraft.world.block.{Blocks, BlockState}
@@ -8,6 +7,8 @@ import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import hexacraft.world.entity.EntityRegistry
 import hexacraft.world.gen.WorldGenerator
+
+import com.flowpowered.nbt.CompoundTag
 
 class ChunkGenerator(
     coords: ChunkRelWorld,

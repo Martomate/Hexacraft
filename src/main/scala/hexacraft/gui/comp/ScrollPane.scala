@@ -4,6 +4,7 @@ import hexacraft.GameWindow
 import hexacraft.gui.{Event, LocationInfo}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.util.MathUtils
+
 import org.joml.Vector4f
 
 import scala.collection.mutable.ArrayBuffer

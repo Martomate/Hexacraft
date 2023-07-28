@@ -1,6 +1,7 @@
 package hexacraft.infra.window
 
 import hexacraft.infra.window.CursorMode.{Disabled, Hidden, Normal}
+
 import org.lwjgl.glfw.GLFW
 
 object CursorMode {

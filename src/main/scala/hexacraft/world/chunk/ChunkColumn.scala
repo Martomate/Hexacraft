@@ -1,12 +1,13 @@
 package hexacraft.world.chunk
 
-import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import hexacraft.world.block.{Blocks, BlockState}
 import hexacraft.world.coord.integer.*
 import hexacraft.world.gen.WorldGenerator
+
+import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

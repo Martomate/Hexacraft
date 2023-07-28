@@ -1,12 +1,13 @@
 package hexacraft.world.entity.sheep
 
-import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.{Blocks, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.*
 import hexacraft.world.entity.ai.{EntityAI, SimpleAIInput, SimpleWalkAI}
+
+import com.flowpowered.nbt.{CompoundTag, StringTag, Tag}
 
 class SheepEntity(
     model: EntityModel,

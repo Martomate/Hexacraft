@@ -1,12 +1,13 @@
 package hexacraft.world.entity.player
 
-import com.eclipsesource.json.JsonObject
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.entity.{EntityModel, EntityPart}
 import hexacraft.world.entity.base.BasicEntityPart
+
+import com.eclipsesource.json.JsonObject
 import org.joml.Vector3f
 
 class PlayerEntityModel(

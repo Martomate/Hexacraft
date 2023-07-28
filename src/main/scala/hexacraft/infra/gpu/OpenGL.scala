@@ -4,6 +4,7 @@ import hexacraft.infra.*
 import hexacraft.infra.gpu.OpenGL.VertexAttributeDataType
 import hexacraft.util.*
 import hexacraft.util.Result.{Err, Ok}
+
 import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryUtil
 

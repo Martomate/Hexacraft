@@ -1,12 +1,6 @@
 package hexacraft.world.ray
 
-import hexacraft.world.{
-  BlocksInWorld,
-  CylinderSize,
-  FakeBlockLoader,
-  FakeBlocksInWorld,
-  FakeWorldProvider
-}
+import hexacraft.world.{BlocksInWorld, CylinderSize, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
 import hexacraft.world.block.{BlockLoader, Blocks, BlockState}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.fp.BlockCoords

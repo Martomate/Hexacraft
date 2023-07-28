@@ -11,6 +11,7 @@ import hexacraft.world.block.{BlockLoader, Blocks}
 
 import munit.FunSuite
 import org.joml.{Vector2i, Vector2ic}
+
 import scala.collection.mutable.ArrayBuffer
 
 class GameSceneTest extends FunSuite {

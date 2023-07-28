@@ -1,7 +1,7 @@
 package hexacraft.renderer
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.util.Resource
+
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer

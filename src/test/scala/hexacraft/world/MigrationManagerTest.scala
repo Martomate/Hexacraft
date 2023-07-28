@@ -4,9 +4,10 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.GzipAlgorithm
 
+import munit.FunSuite
+
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
-import munit.FunSuite
 import scala.collection.immutable.ArraySeq
 
 class MigrationManagerTest extends FunSuite {

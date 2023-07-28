@@ -2,6 +2,7 @@ package hexacraft.world.render
 
 import hexacraft.renderer.VertexData
 import hexacraft.world.entity.EntityModel
+
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import java.nio.ByteBuffer

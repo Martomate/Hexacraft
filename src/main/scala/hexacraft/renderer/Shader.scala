@@ -2,6 +2,7 @@ package hexacraft.renderer
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.util.Resource
+
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 

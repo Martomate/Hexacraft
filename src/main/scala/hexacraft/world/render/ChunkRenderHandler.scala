@@ -4,6 +4,7 @@ import hexacraft.renderer.{Texture, TextureArray}
 import hexacraft.world.camera.Camera
 import hexacraft.world.coord.integer.ChunkRelWorld
 import hexacraft.world.render.aspect.HexagonRenderHandler
+
 import org.joml.Vector3f
 
 import scala.collection.mutable

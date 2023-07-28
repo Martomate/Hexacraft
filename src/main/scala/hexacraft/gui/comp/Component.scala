@@ -6,6 +6,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.text.{Fonts, Text, TextMaster}
 import hexacraft.text.font.Font
+
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
 abstract class Component:

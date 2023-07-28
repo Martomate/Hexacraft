@@ -1,6 +1,7 @@
 package hexacraft.world.ray
 
 import hexacraft.world.camera.Camera
+
 import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 class Ray(val v: Vector3d):

@@ -1,9 +1,10 @@
 package hexacraft.world.player
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.block.{Block, Blocks, HexBox}
 import hexacraft.world.coord.fp.CylCoords
+
+import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import org.joml.Vector3d
 
 class Player(val inventory: Inventory) {

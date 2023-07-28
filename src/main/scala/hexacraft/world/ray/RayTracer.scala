@@ -6,6 +6,7 @@ import hexacraft.world.block.{Blocks, BlockState, HexBox}
 import hexacraft.world.camera.Camera
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
+
 import org.joml.{Vector2fc, Vector3d, Vector3dc, Vector4f}
 
 import scala.annotation.tailrec
