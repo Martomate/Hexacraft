@@ -1,6 +1,6 @@
-package hexacraft
+package hexacraft.game
 
-import org.joml.{Vector2f, Vector2fc, Vector2i, Vector2ic}
+import org.joml.Vector2ic
 
 trait GameWindow:
   def windowSize: Vector2ic

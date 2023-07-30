@@ -1,6 +1,5 @@
 package hexacraft.menu
 
-import hexacraft.GameMouse
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label}
 import hexacraft.menu.MainMenu.Event
@@ -13,7 +12,7 @@ object MainMenu {
     case Quit
 }
 
-class MainMenu(multiplayerEnabled: Boolean)(onEvent: MainMenu.Event => Unit)(using GameMouse) extends MenuScene {
+class MainMenu(multiplayerEnabled: Boolean)(onEvent: MainMenu.Event => Unit) extends MenuScene {
   addComponent(new Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
   addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent(Event.Play)))
 

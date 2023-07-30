@@ -1,6 +1,5 @@
 package hexacraft.menu
 
-import hexacraft.{GameMouse, GameWindow}
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, ScrollPane}
 
@@ -16,7 +15,7 @@ object JoinWorldChooserMenu {
   private case class OnlineWorldConnectionDetails(address: InetAddress, port: Int, time: Long)
 }
 
-class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit)(using GameMouse, GameWindow) extends MenuScene {
+class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit) extends MenuScene {
   import JoinWorldChooserMenu.*
 
   addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))

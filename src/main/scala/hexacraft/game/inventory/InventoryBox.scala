@@ -1,8 +1,7 @@
 package hexacraft.game.inventory
 
-import hexacraft.{GameMouse, GameWindow}
-import hexacraft.game.inventory.GUIBlocksRenderer
-import hexacraft.gui.{Event, LocationInfo, Scene}
+import hexacraft.game.{GameMouse, GameWindow}
+import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import hexacraft.world.block.{Block, Blocks}
@@ -83,9 +82,9 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
 
   private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
 
-  override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
-    guiBlockRenderer.setWindowAspectRatio(window.aspectRatio)
-    floatingBlockRenderer.setWindowAspectRatio(window.aspectRatio)
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+    guiBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
+    floatingBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
 
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
 

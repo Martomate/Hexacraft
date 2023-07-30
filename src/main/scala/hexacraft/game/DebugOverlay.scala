@@ -1,7 +1,6 @@
 package hexacraft.game
 
-import hexacraft.GameWindow
-import hexacraft.gui.LocationInfo
+import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.text.{Text, TextMaster}
 import hexacraft.world.CylinderSize
@@ -9,7 +8,7 @@ import hexacraft.world.camera.Camera
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.ChunkRelWorld
 
-import org.joml.{Vector3d, Vector3f}
+import org.joml.Vector3f
 
 import scala.collection.mutable
 
@@ -95,8 +94,8 @@ class DebugOverlay(initialAspectRatio: Float) {
 
     setValue("viewDist", f"${info.viewDistance}%.2f")
 
-  def render(transformation: GUITransformation)(using window: GameWindow): Unit =
-    textMaster.setWindowAspectRatio(window.aspectRatio)
+  def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
 
   def windowResized(w: Int, h: Int): Unit =

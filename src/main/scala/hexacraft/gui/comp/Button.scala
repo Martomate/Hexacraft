@@ -1,22 +1,19 @@
 package hexacraft.gui.comp
 
-import hexacraft.{GameMouse, GameWindow}
-import hexacraft.gui.{Event, LocationInfo}
+import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.infra.window.MouseAction
 
 import org.joml.Vector4f
 
 object Button:
-  def apply(text: String, bounds: LocationInfo)(clickAction: => Unit)(using GameMouse): Button =
+  def apply(text: String, bounds: LocationInfo)(clickAction: => Unit): Button =
     new Button(text, bounds, clickAction)
 
-class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using mouse: GameMouse)
-    extends Component
-    with Boundable:
+class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) extends Component with Boundable:
   addText(Component.makeText(text, bounds, 4.0f).setTextAndFitSize(text, 4.0f))
 
-  override def render(transformation: GUITransformation)(using window: GameWindow): Unit =
-    val mousePos = mouse.heightNormalizedPos(window.windowSize)
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    val mousePos = context.heightNormalizedMousePos // mouse.heightNormalizedPos(context.windowSize)
     val containsMouse = bounds.containsPoint(mousePos.x - transformation.x, mousePos.y - transformation.y)
 
     val color =
@@ -24,7 +21,7 @@ class Button(text: String, val bounds: LocationInfo, clickAction: => Unit)(using
       then new Vector4f(0.7f, 0.7f, 0.7f, 0.75f)
       else new Vector4f(0.6f, 0.6f, 0.6f, 0.75f)
 
-    Component.drawRect(bounds, transformation.x, transformation.y, color, window.aspectRatio)
+    Component.drawRect(bounds, transformation.x, transformation.y, color, context.windowAspectRatio)
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean = event match

@@ -1,6 +1,5 @@
 package hexacraft.game
 
-import hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import hexacraft.gui.{Event, Scene, WindowExtras}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}

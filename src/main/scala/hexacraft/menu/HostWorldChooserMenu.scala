@@ -1,11 +1,9 @@
 package hexacraft.menu
 
-import hexacraft.{GameMouse, GameWindow}
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, ScrollPane}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.menu.HostWorldChooserMenu.Event
-import hexacraft.menu.WorldInfo
 
 import java.io.File
 
@@ -15,10 +13,8 @@ object HostWorldChooserMenu {
     case GoBack
 }
 
-class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: HostWorldChooserMenu.Event => Unit)(using
-    GameMouse,
-    GameWindow
-) extends MenuScene {
+class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: HostWorldChooserMenu.Event => Unit)
+    extends MenuScene {
   addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
 
   private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)

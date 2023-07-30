@@ -1,7 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.GameWindow
-import hexacraft.gui.{Event, LocationInfo}
+import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.infra.window.{KeyAction, KeyboardKey}
 import hexacraft.text.Text
 
@@ -71,8 +70,8 @@ class TextField(
         removeText(cursorText)
         cursorTextVisible = false
 
-  override def render(transformation: GUITransformation)(using window: GameWindow): Unit =
-    Component.drawRect(location, transformation.x, transformation.y, bgColor, window.aspectRatio)
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    Component.drawRect(location, transformation.x, transformation.y, bgColor, context.windowAspectRatio)
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean =

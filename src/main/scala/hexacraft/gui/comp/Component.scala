@@ -1,7 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.GameWindow
-import hexacraft.gui.{Event, LocationInfo}
+import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.text.{Fonts, Text, TextMaster}
@@ -17,8 +16,8 @@ abstract class Component:
 
   def tick(): Unit = ()
 
-  def render(transformation: GUITransformation)(using window: GameWindow): Unit =
-    textMaster.setWindowAspectRatio(window.aspectRatio)
+  def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
 
   def handleEvent(event: Event): Boolean = false

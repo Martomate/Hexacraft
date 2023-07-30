@@ -1,7 +1,6 @@
 package hexacraft.main
 
-import hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import hexacraft.game.GameScene
+import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow}
 import hexacraft.gui.{Event, Scene, WindowExtras}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL

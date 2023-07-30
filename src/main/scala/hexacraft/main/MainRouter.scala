@@ -1,7 +1,6 @@
 package hexacraft.main
 
-import hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import hexacraft.game.{GameScene, WorldProviderFromFile}
+import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow, WorldProviderFromFile}
 import hexacraft.gui.{Scene, WindowExtras}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.menu.*

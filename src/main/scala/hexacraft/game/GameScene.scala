@@ -1,6 +1,5 @@
 package hexacraft.game
 
-import hexacraft.{GameKeyboard, GameMouse, GameWindow}
 import hexacraft.game.inventory.{GUIBlocksRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
@@ -231,7 +230,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   override def framebufferResized(width: Int, height: Int): Unit =
     worldRenderer.framebufferResized(width, height)
 
-  override def render(transformation: GUITransformation)(using GameWindow): Unit =
+  override def render(transformation: GUITransformation)(using RenderContext): Unit =
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()

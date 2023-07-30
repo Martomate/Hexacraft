@@ -1,7 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.GameWindow
-import hexacraft.gui.{Event, LocationInfo}
+import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.util.MathUtils
 
@@ -13,8 +12,7 @@ class ScrollPane(
     location: LocationInfo,
     padding: Float = 0,
     enableHorizontalScroll: Boolean = false
-)(using window: GameWindow)
-    extends Component:
+) extends Component:
   private var xOffset: Float = 0
   private var yOffset: Float = 0
 
@@ -22,11 +20,17 @@ class ScrollPane(
 
   def addComponent(comp: Component with Boundable): Unit = components.append(comp)
 
-  override def render(transformation: GUITransformation)(using GameWindow): Unit =
-    Component.drawRect(location, transformation.x, transformation.y, new Vector4f(0, 0, 0, 0.4f), window.aspectRatio)
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    Component.drawRect(
+      location,
+      transformation.x,
+      transformation.y,
+      new Vector4f(0, 0, 0, 0.4f),
+      context.windowAspectRatio
+    )
 
     val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
-    val loc = location.inScaledScreenCoordinates(window.framebufferSize)
+    val loc = location.inScaledScreenCoordinates(context.framebufferSize)
     OpenGL.glScissor(loc.x, loc.y, loc.w, loc.h)
     OpenGL.glEnable(OpenGL.State.ScissorTest)
     components.foreach(_.render(contentTransformation))

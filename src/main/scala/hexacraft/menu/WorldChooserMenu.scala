@@ -1,6 +1,5 @@
 package hexacraft.menu
 
-import hexacraft.{GameMouse, GameWindow}
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, ScrollPane}
 import hexacraft.infra.fs.FileSystem
@@ -17,10 +16,7 @@ object WorldChooserMenu {
     case GoBack
 }
 
-class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: WorldChooserMenu.Event => Unit)(using
-    GameMouse,
-    GameWindow
-) extends MenuScene {
+class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: WorldChooserMenu.Event => Unit) extends MenuScene {
 
   addComponent(
     new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)

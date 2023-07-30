@@ -1,7 +1,7 @@
 package hexacraft.main
 
-import hexacraft.{GameKeyboard, GameMouse, GameWindow}
-import hexacraft.gui.{Event, Scene, WindowExtras}
+import hexacraft.game.{GameKeyboard, GameMouse, GameWindow}
+import hexacraft.gui.{Event, RenderContext, Scene, WindowExtras}
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
@@ -167,7 +167,9 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
   private def render(): Unit =
     given GameWindow = this
 
-    scene.render(GUITransformation(0, 0))
+    scene.render(GUITransformation(0, 0))(using
+      RenderContext(this.aspectRatio, this.framebufferSize, mouse.heightNormalizedPos(this.windowSize))
+    )
     VAO.unbindVAO()
 
   private def tick(): Unit =

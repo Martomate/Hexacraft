@@ -1,6 +1,5 @@
 package hexacraft.game
 
-import hexacraft.GameKeyboard
 import hexacraft.main.RealGameMouse
 import hexacraft.world.{CylinderSize, FakeBlockLoader}
 import hexacraft.world.block.{BlockLoader, Blocks}

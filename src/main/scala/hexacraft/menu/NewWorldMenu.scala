@@ -1,6 +1,5 @@
 package hexacraft.menu
 
-import hexacraft.GameMouse
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, TextField}
 import hexacraft.menu.NewWorldMenu.Event
@@ -15,7 +14,7 @@ object NewWorldMenu {
     case GoBack
 }
 
-class NewWorldMenu(saveFolder: File)(onEvent: NewWorldMenu.Event => Unit)(using GameMouse) extends MenuScene {
+class NewWorldMenu(saveFolder: File)(onEvent: NewWorldMenu.Event => Unit) extends MenuScene {
   addComponent(
     new Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
       .withColor(1, 1, 1)

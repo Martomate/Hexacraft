@@ -1,7 +1,6 @@
 package hexacraft.game.inventory
 
-import hexacraft.GameWindow
-import hexacraft.gui.LocationInfo
+import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.*
 import hexacraft.world.block.Blocks
 import hexacraft.world.player.Inventory
@@ -36,14 +35,14 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
 
   private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent())
 
-  override def render(transformation: GUITransformation)(using window: GameWindow): Unit = {
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
     Component.drawRect(
       selectedBox,
       transformation.x + selectedIndex * location.w / 9,
       transformation.y,
       selectedColor,
-      window.aspectRatio
+      context.windowAspectRatio
     )
 
     guiBlockRenderer.render(transformation)

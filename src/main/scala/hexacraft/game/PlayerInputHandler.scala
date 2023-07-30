@@ -1,7 +1,5 @@
 package hexacraft.game
 
-import hexacraft.GameKeyboard
-import hexacraft.world.CollisionDetector
 import hexacraft.world.player.Player
 
 import org.joml.Vector2dc

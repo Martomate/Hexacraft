@@ -1,7 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.GameWindow
-import hexacraft.gui.Event
+import hexacraft.gui.{Event, RenderContext}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -11,7 +10,7 @@ trait SubComponents extends Component:
   override def handleEvent(event: Event): Boolean =
     comps.exists(_.handleEvent(event)) || super.handleEvent(event)
 
-  override def render(transformation: GUITransformation)(using GameWindow): Unit =
+  override def render(transformation: GUITransformation)(using RenderContext): Unit =
     super.render(transformation)
     comps.foreach(_.render(transformation))
 

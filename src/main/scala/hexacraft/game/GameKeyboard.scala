@@ -1,4 +1,4 @@
-package hexacraft
+package hexacraft.game
 
 import hexacraft.infra.window.{KeyboardKey, Window}
 

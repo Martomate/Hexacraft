@@ -1,4 +1,4 @@
-package hexacraft
+package hexacraft.game
 
 import org.joml.{Vector2dc, Vector2f, Vector2fc, Vector2ic}
 
