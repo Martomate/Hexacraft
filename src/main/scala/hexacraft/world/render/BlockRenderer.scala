@@ -4,7 +4,7 @@ import hexacraft.renderer.*
 
 import org.joml.{Vector2f, Vector3f}
 
-class BlockRenderer(val side: Int, val vao: VAO, val renderer: Renderer):
+class BlockRenderer(val side: Int, val vao: VAO, val renderer: InstancedRenderer):
   private var _maxInstances = 0
   def maxInstances: Int = _maxInstances
 

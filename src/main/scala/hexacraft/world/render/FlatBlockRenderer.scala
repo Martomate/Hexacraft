@@ -6,7 +6,7 @@ import hexacraft.renderer.*
 object FlatBlockRenderer:
   def forSide(side: Int): BlockRenderer =
     val vao = initVAO(side)
-    val renderer = makeRenderer(vao)
+    val renderer = makeRenderer()
     new BlockRenderer(side, vao, renderer)
 
   private def initVAO(side: Int): VAO =
@@ -28,5 +28,5 @@ object FlatBlockRenderer:
       )
       .finish(BlockRenderer.verticesPerInstance(side), 0)
 
-  private def makeRenderer(vao: VAO): Renderer = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)
-    with NoDepthTest
+  private def makeRenderer() =
+    new InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.withDisabled(OpenGL.State.DepthTest))

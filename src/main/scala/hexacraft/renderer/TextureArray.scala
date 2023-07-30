@@ -21,7 +21,7 @@ object TextureArray {
   def registerTextureArray(
       name: String,
       texSize: Int,
-      images: ResourceWrapper[Seq[TextureToLoad]]
+      images: ResourceWrapper[Seq[PixelArray]]
   ): TextureArray = {
     if (!textures.contains(name)) new TextureArray(name, texSize, images)
     else textures(name)
@@ -31,9 +31,8 @@ object TextureArray {
 class TextureArray(
     val name: String,
     val texSize: Int,
-    wrappedImages: ResourceWrapper[Seq[TextureToLoad]]
-) extends Resource
-    with Texture {
+    wrappedImages: ResourceWrapper[Seq[PixelArray]]
+) extends Resource {
   private var texID: OpenGL.TextureId = _
 
   TextureArray.textures += name -> this

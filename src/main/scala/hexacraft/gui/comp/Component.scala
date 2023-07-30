@@ -31,7 +31,10 @@ object Component:
     .builder()
     .addVertexVbo(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
     .finish(4)
-  private val rectRenderer = new Renderer(rectVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest with Blending
+  private val rectRenderer = new Renderer(
+    OpenGL.PrimitiveMode.TriangleStrip,
+    GpuState.withEnabled(OpenGL.State.Blend).withDisabled(OpenGL.State.DepthTest)
+  )
 
   val font: Font = Fonts.get("Verdana").get
 
@@ -55,7 +58,7 @@ object Component:
     )
 
     imageShader.setWindowAspectRatio(windowAspectRatio)
-    Component.rectRenderer.render()
+    Component.rectRenderer.render(rectVAO)
 
   def drawRect(
       location: LocationInfo,
@@ -74,7 +77,7 @@ object Component:
     colorShader.setColor(color)
 
     colorShader.setWindowAspectRatio(windowAspectRatio)
-    Component.rectRenderer.render()
+    Component.rectRenderer.render(rectVAO)
 
   def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): Text =
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)

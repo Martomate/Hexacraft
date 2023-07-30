@@ -7,7 +7,6 @@ import hexacraft.util.Result.{Err, Ok}
 
 import java.io.IOException
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 
 class ShaderBuilder {
   private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]

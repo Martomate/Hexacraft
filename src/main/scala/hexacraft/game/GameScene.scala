@@ -45,7 +45,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
-    new Renderer(crosshairVAO, OpenGL.PrimitiveMode.Lines) with NoDepthTest
+    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.withDisabled(OpenGL.State.DepthTest))
 
   given entityModelLoader: EntityModelLoader = new EntityModelLoader()
   private val playerModel: EntityModel = entityModelLoader.load("player")
@@ -248,7 +248,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     if !isPaused && !isInPopup && moveWithMouse
     then
       crosshairShader.enable()
-      crosshairRenderer.render()
+      crosshairRenderer.render(crosshairVAO)
 
   override def tick(): Unit =
     val maxSpeed = playerInputHandler.maxSpeed

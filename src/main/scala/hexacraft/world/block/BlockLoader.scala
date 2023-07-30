@@ -1,7 +1,7 @@
 package hexacraft.world.block
 
 import hexacraft.infra.fs.FileUtils
-import hexacraft.renderer.TextureToLoad
+import hexacraft.renderer.PixelArray
 import hexacraft.util.ResourceWrapper
 
 import com.eclipsesource.json.{Json, JsonObject, JsonValue}
@@ -11,7 +11,7 @@ import javax.imageio.ImageIO
 import scala.collection.mutable
 
 trait BlockLoader:
-  def reloadAllBlockTextures(): Seq[TextureToLoad]
+  def reloadAllBlockTextures(): Seq[PixelArray]
 
   /** @return `(offsets << 12 | texture_array_index)` for each side */
   def loadBlockType(spec: BlockSpec): IndexedSeq[Int]
@@ -25,16 +25,16 @@ object BlockLoader:
   private class BlockLoaderImpl extends BlockLoader:
     private var texIdxMap: Map[String, Int] = _
 
-    def reloadAllBlockTextures(): Seq[TextureToLoad] =
+    def reloadAllBlockTextures(): Seq[PixelArray] =
       val nameToIdx = mutable.Map.empty[String, Int]
-      val images = mutable.ArrayBuffer.empty[TextureToLoad]
+      val images = mutable.ArrayBuffer.empty[PixelArray]
 
-      def loadImages(file: URL): Seq[TextureToLoad] =
+      def loadImages(file: URL): Seq[PixelArray] =
         val image = ImageIO.read(file)
         val w = image.getWidth
         val h = image.getHeight
         val numImages = w / h
-        for i <- 0 until numImages yield TextureToLoad(image.getRGB(i * h, 0, h, h, null, 0, h))
+        for i <- 0 until numImages yield PixelArray(image.getRGB(i * h, 0, h, h, null, 0, h))
 
       val dir = FileUtils.getResourceFile("textures/blocks/").get
       val files = FileUtils.listFilesInResource(dir).toArray[String](len => new Array(len))

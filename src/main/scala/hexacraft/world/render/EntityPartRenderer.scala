@@ -1,12 +1,12 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{InstancedRenderer, VAO}
+import hexacraft.renderer.{InstancedRenderer, Renderer, VAO}
 
 object EntityPartRenderer:
   def forSide(side: Int): BlockRenderer =
     val vao = initVAO(side)
-    val renderer = makeRenderer(vao)
+    val renderer = makeRenderer()
     BlockRenderer(side, vao, renderer)
 
   private def initVAO(side: Int): VAO =
@@ -29,4 +29,4 @@ object EntityPartRenderer:
       )
       .finish(BlockRenderer.verticesPerInstance(side), 0)
 
-  private def makeRenderer(vao: VAO) = new InstancedRenderer(vao, OpenGL.PrimitiveMode.Triangles)
+  private def makeRenderer() = new InstancedRenderer(OpenGL.PrimitiveMode.Triangles)

@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{InstancedRenderer, NoDepthTest, Renderer, VAO}
+import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
 import hexacraft.world.block.{Blocks, BlockState}
@@ -29,14 +29,15 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private val lightPropagator = new LightPropagator(world)
 
   private val skyVAO: VAO = Helpers.makeSkyVAO
-  private val skyRenderer = new Renderer(skyVAO, OpenGL.PrimitiveMode.TriangleStrip) with NoDepthTest
+  private val skyRenderer =
+    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.withDisabled(OpenGL.State.DepthTest))
 
   private val worldCombinerVAO: VAO = Helpers.makeSkyVAO
-  private val worldCombinerRenderer = new Renderer(worldCombinerVAO, OpenGL.PrimitiveMode.TriangleStrip)
-    with NoDepthTest
+  private val worldCombinerRenderer =
+    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.withDisabled(OpenGL.State.DepthTest))
 
   private val selectedBlockVAO: VAO = Helpers.makeSelectedBlockVAO
-  private val selectedBlockRenderer = new InstancedRenderer(selectedBlockVAO, OpenGL.PrimitiveMode.LineStrip)
+  private val selectedBlockRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
 
@@ -107,7 +108,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     skyShader.setInverseViewMatrix(camera.view.invMatrix)
     skyShader.setSunPosition(sun)
     skyShader.enable()
-    skyRenderer.render()
+    skyRenderer.render(skyVAO)
 
     // World content
     chunkHandler.render(camera, sun)
@@ -117,7 +118,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       selectedBlockShader.setViewMatrix(camera.view.matrix)
       selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()
-      selectedBlockRenderer.render()
+      selectedBlockRenderer.render(selectedBlockVAO, 1)
 
     mainFrameBuffer.unbind()
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
@@ -129,7 +130,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
-    worldCombinerRenderer.render()
+    worldCombinerRenderer.render(worldCombinerVAO)
 
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)

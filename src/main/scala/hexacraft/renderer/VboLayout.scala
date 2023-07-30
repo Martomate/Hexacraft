@@ -1,7 +1,5 @@
 package hexacraft.renderer
 
-import hexacraft.infra.gpu.OpenGL
-
 import scala.collection.mutable.ArrayBuffer
 
 case class VboLayout(attributes: Seq[VboAttribute]) {
