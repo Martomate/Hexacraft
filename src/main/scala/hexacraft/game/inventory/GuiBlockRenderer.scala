@@ -1,32 +1,37 @@
 package hexacraft.game.inventory
 
 import hexacraft.gui.comp.GUITransformation
-import hexacraft.renderer.{Shader, TextureArray}
+import hexacraft.infra.gpu.OpenGL
+import hexacraft.renderer.{GpuState, InstancedRenderer, TextureArray}
 import hexacraft.world.block.{Block, Blocks}
 import hexacraft.world.camera.CameraProjection
-import hexacraft.world.render.{BlockRendererCollection, FlatBlockRenderer}
+import hexacraft.world.render.{BlockRenderer, BlockRendererCollection}
 
-import org.joml.{Matrix4f, Vector3f}
+import org.joml.Matrix4f
 
-object GUIBlocksRenderer:
+object GuiBlockRenderer:
   def withSingleSlot(
       blockProvider: () => Block,
       rendererLocation: () => (Float, Float) = () => (0, 0),
       brightnessFunc: () => Float = () => 1.0f
-  )(using Blocks: Blocks): GUIBlocksRenderer =
-    new GUIBlocksRenderer(1, 1)(_ => blockProvider(), rendererLocation, (_, _) => brightnessFunc())
+  )(using Blocks: Blocks): GuiBlockRenderer =
+    new GuiBlockRenderer(1, 1)(_ => blockProvider(), rendererLocation, (_, _) => brightnessFunc())
 
   private val guiBlockShader = new GuiBlockShader(isSide = false)
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
-class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
+class GuiBlockRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     blockProvider: Int => Block,
     rendererLocation: () => (Float, Float) = () => (0, 0),
     brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
 )(using Blocks: Blocks):
-  private val guiBlockRenderer = new BlockRendererCollection(s => FlatBlockRenderer.forSide(s))
-  private val guiBlockShader = GUIBlocksRenderer.guiBlockShader
-  private val guiBlockSideShader = GUIBlocksRenderer.guiBlockSideShader
+  private val guiBlockRenderer = BlockRendererCollection: s =>
+    val vao = GuiBlockVao.forSide(s)
+    val renderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.withDisabled(OpenGL.State.DepthTest))
+    BlockRenderer(s, vao, renderer)
+
+  private val guiBlockShader = GuiBlockRenderer.guiBlockShader
+  private val guiBlockSideShader = GuiBlockRenderer.guiBlockSideShader
   private val blockTexture: TextureArray = TextureArray.getTextureArray("blocks")
 
   private var viewMatrix = new Matrix4f
@@ -40,7 +45,8 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     guiBlockShader.setWindowAspectRatio(aspectRatio)
     guiBlockSideShader.setWindowAspectRatio(aspectRatio)
 
-  updateContent()
+  val (xOffInit, yOffInit) = rendererLocation()
+  updateContent(xOffInit, yOffInit)
 
   def render(transformation: GUITransformation): Unit =
     guiBlockShader.setViewMatrix(viewMatrix)
@@ -57,9 +63,7 @@ class GUIBlocksRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
       sh.setSide(side)
       guiBlockRenderer.renderBlockSide(side)
 
-  def updateContent(): Unit =
-    val (xOff, yOff) = rendererLocation()
-
+  def updateContent(xOff: Float, yOff: Float): Unit =
     for (side <- 0 until 8)
       guiBlockRenderer.updateContent(side, 9 * 9) { buf =>
         for (y <- 0 until h)

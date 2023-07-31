@@ -1,4 +1,4 @@
-package hexacraft.world.render.buffer.vao
+package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.VAO

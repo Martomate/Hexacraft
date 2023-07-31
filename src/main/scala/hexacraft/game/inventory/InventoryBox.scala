@@ -29,8 +29,9 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
   private val floatingBlockRenderer = makeFloatingBlockRenderer()
 
   private val revokeInventoryTracker = inventory.trackChanges(_ => {
-    guiBlockRenderer.updateContent()
-    floatingBlockRenderer.updateContent()
+    guiBlockRenderer.updateContent(-4 * 0.2f, -2 * 0.2f)
+    val mousePos = mouse.heightNormalizedPos(window.windowSize)
+    floatingBlockRenderer.updateContent(mousePos.x, mousePos.y)
   })
 
   override def tick(): Unit = {
@@ -44,7 +45,9 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
     else hoverIndex = None
 
     if floatingBlock.isDefined
-    then floatingBlockRenderer.updateContent()
+    then
+      val mousePos = mouse.heightNormalizedPos(window.windowSize)
+      floatingBlockRenderer.updateContent(mousePos.x, mousePos.y)
   }
 
   override def handleEvent(event: Event): Boolean =
@@ -112,7 +115,7 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
     val rendererLocation = () => (-4 * 0.2f, -2 * 0.2f)
     val individualBlockViewMatrix = makeTiltedBlockViewMatrix
 
-    val renderer = new GUIBlocksRenderer(9, 4, 0.2f)(blockProvider, rendererLocation)
+    val renderer = new GuiBlockRenderer(9, 4, 0.2f)(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
     renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
@@ -126,7 +129,7 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
 
     val individualBlockViewMatrix = makeTiltedBlockViewMatrix
 
-    val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, rendererLocation)
+    val renderer = GuiBlockRenderer.withSingleSlot(blockProvider, rendererLocation)
     renderer.setViewMatrix(individualBlockViewMatrix)
     renderer.setWindowAspectRatio(window.aspectRatio)
     renderer

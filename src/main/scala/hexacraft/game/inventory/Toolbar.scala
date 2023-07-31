@@ -20,7 +20,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
   private val guiBlockRenderer =
-    val renderer = new GUIBlocksRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
+    val renderer = new GuiBlockRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
     renderer.setViewMatrix(
       new Matrix4f()
         .translate(0, 0, -14f)
@@ -33,7 +33,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
   def setWindowAspectRatio(aspectRatio: Float): Unit =
     guiBlockRenderer.setWindowAspectRatio(aspectRatio)
 
-  private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent())
+  private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f))
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)

@@ -1,6 +1,6 @@
 package hexacraft.game
 
-import hexacraft.game.inventory.{GUIBlocksRenderer, InventoryBox, Toolbar}
+import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.gpu.OpenGL
@@ -77,7 +77,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
 
   private val toolbar: Toolbar = makeToolbar(player)
-  private val blockInHandRenderer: GUIBlocksRenderer = makeBlockInHandRenderer(world, camera)
+  private val blockInHandRenderer: GuiBlockRenderer = makeBlockInHandRenderer(world, camera)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -201,7 +201,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private def setSelectedItemSlot(itemSlot: Int): Unit =
     player.selectedItemSlot = itemSlot
-    blockInHandRenderer.updateContent()
+    blockInHandRenderer.updateContent(1.5f, -0.9f)
     toolbar.setSelectedIndex(itemSlot)
 
   private def setPaused(paused: Boolean): Unit =
@@ -259,7 +259,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     camera.updateCoords()
     camera.updateViewMatrix()
 
-    blockInHandRenderer.updateContent()
+    blockInHandRenderer.updateContent(1.5f, -0.9f)
 
     selectedBlockAndSide = updatedMousePicker()
 
@@ -340,14 +340,14 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private def viewDistance: Double = world.renderDistance
 
-  private def makeBlockInHandRenderer(world: World, camera: Camera): GUIBlocksRenderer =
+  private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
     val blockProvider = () => player.blockInHand
     val offsetFunc = () => (1.5f, -0.9f)
     val brightnessFunc = () => world.getBrightness(camera.blockCoords)
 
     val viewMatrix = makeBlockInHandViewMatrix
 
-    val renderer = GUIBlocksRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
+    val renderer = GuiBlockRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
     renderer.setViewMatrix(viewMatrix)
     renderer.setWindowAspectRatio(window.aspectRatio)
     renderer

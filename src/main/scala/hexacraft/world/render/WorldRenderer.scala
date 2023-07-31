@@ -4,15 +4,13 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.Blocks
 import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2ic, Vector3f}
-import org.lwjgl.BufferUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -28,15 +26,15 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
   private val lightPropagator = new LightPropagator(world)
 
-  private val skyVAO: VAO = Helpers.makeSkyVAO
+  private val skyVao: VAO = SkyVao.create
   private val skyRenderer =
     new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.withDisabled(OpenGL.State.DepthTest))
 
-  private val worldCombinerVAO: VAO = Helpers.makeSkyVAO
+  private val worldCombinerVao: VAO = WorldCombinerVao.create
   private val worldCombinerRenderer =
     new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.withDisabled(OpenGL.State.DepthTest))
 
-  private val selectedBlockVAO: VAO = Helpers.makeSelectedBlockVAO
+  private val selectedBlockVao = SelectedBlockVao.create
   private val selectedBlockRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
@@ -44,7 +42,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private var currentlySelectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
 
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
-  private val entityRenderers: BlockRendererCollection = new BlockRendererCollection(s => EntityPartRenderer.forSide(s))
+  private val entityRenderers: BlockRendererCollection = BlockRendererCollection: s =>
+    BlockRenderer(s, EntityPartVao.forSide(s), InstancedRenderer(OpenGL.PrimitiveMode.Triangles))
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater
 
@@ -96,9 +95,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     then
       currentlySelectedBlockAndSide = selectedBlockAndSide
       selectedBlockAndSide match
-        case Some((coords, Some(_))) =>
-          updateSelectedBlockVAO(coords)
-        case _ =>
+        case Some((coords, Some(_))) => selectedBlockVao.setSelectedBlock(coords, world.getBlock(coords))
+        case _                       =>
 
     // Step 1: Render everything to a FrameBuffer
     mainFrameBuffer.bind()
@@ -108,7 +106,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     skyShader.setInverseViewMatrix(camera.view.invMatrix)
     skyShader.setSunPosition(sun)
     skyShader.enable()
-    skyRenderer.render(skyVAO)
+    skyRenderer.render(skyVao)
 
     // World content
     chunkHandler.render(camera, sun)
@@ -118,7 +116,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       selectedBlockShader.setViewMatrix(camera.view.matrix)
       selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()
-      selectedBlockRenderer.render(selectedBlockVAO, 1)
+      selectedBlockRenderer.render(selectedBlockVao.vao, 1)
 
     mainFrameBuffer.unbind()
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
@@ -130,7 +128,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
-    worldCombinerRenderer.render(worldCombinerVAO)
+    worldCombinerRenderer.render(worldCombinerVao)
 
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
@@ -157,12 +155,12 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     mainFrameBuffer = newFrameBuffer
 
   def unload(): Unit =
-    skyVAO.free()
-    selectedBlockVAO.free()
-    selectedBlockShader.free()
-    worldCombinerVAO.free()
-    worldCombinerShader.free()
+    skyVao.free()
     skyShader.free()
+    selectedBlockVao.free()
+    selectedBlockShader.free()
+    worldCombinerVao.free()
+    worldCombinerShader.free()
     entityShader.free()
     entitySideShader.free()
 
@@ -201,48 +199,3 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
         texture.bind()
         sh.setTextureSize(texture.width)
         entityRenderers.renderBlockSide(side)
-
-  private def updateSelectedBlockVAO(coords: BlockRelWorld) =
-    val blockState = world.getBlock(coords)
-
-    val buf = BufferUtils
-      .createByteBuffer(7 * 4)
-      .putInt(coords.x)
-      .putInt(coords.y)
-      .putInt(coords.z)
-      .putFloat(0)
-      .putFloat(0)
-      .putFloat(0)
-      .putFloat(blockState.blockType.blockHeight(blockState.metadata))
-
-    buf.flip()
-    selectedBlockVAO.vbos(1).fill(0, buf)
-
-  private object Helpers:
-    def makeSelectedBlockVAO: VAO =
-      def expandFn(v: CylCoords.Offset): Seq[Float] =
-        Seq(v.x * 1.0025, (v.y - 0.25) * 1.0025 + 0.25, v.z * 1.0025).map(_.toFloat)
-
-      def fn(s: Int): Seq[Float] = BlockState.getVertices(s + 2).flatMap(expandFn)
-
-      val vertexData = Seq(0, 2, 4).flatMap(fn) ++ expandFn(BlockState.vertices.head) ++ Seq(1, 3, 5).flatMap(fn)
-
-      VAO
-        .builder()
-        .addVertexVbo(25)(
-          _.floats(0, 3),
-          _.fillFloats(0, vertexData)
-        )
-        .addInstanceVbo(1, OpenGL.VboUsage.DynamicDraw)(
-          _.ints(1, 3).floats(2, 3).floats(3, 1)
-        )
-        .finish(25)
-
-    def makeSkyVAO: VAO =
-      VAO
-        .builder()
-        .addVertexVbo(4)(
-          _.floats(0, 2),
-          _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
-        )
-        .finish(4)
