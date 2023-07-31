@@ -7,72 +7,64 @@ import scala.collection.mutable.ArrayBuffer
 
 class BufferHandler[T <: RenderBuffer[T]](
     instancesPerBuffer: Int,
-    bufferFactory: RenderBufferFactory[T]
+    bytesPerInstance: Int,
+    bufferAllocator: RenderBuffer.Allocator[T]
 ) {
-  protected val BufSize: Int = bufferFactory.bytesPerInstance * instancesPerBuffer
+  private val bufSize: Int = bytesPerInstance * instancesPerBuffer
 
-  protected val buffers: ArrayBuffer[T] = ArrayBuffer.empty
+  private val buffers: ArrayBuffer[T] = ArrayBuffer.empty
 
-  def set(seg: Segment, data: ByteBuffer): Unit = {
+  def set(seg: Segment, data: ByteBuffer): Unit =
     require(seg.length <= data.remaining())
-    val startBuf = seg.start / BufSize
-    val endBuf = (seg.start + seg.length - 1) / BufSize
+    val startBuf = seg.start / bufSize
+    val endBuf = (seg.start + seg.length - 1) / bufSize
     var left = seg.length
     var pos = seg.start
-    for (i <- startBuf to endBuf) {
-      val start = pos % BufSize
-      val amt = math.min(left, BufSize - start)
+    for i <- startBuf to endBuf do
+      val start = pos % bufSize
+      val amt = math.min(left, bufSize - start)
 
       pos += amt
       left -= amt
 
-      if (i >= buffers.length)
-        buffers += bufferFactory.makeBuffer(instancesPerBuffer)
+      if i >= buffers.length then
+        val buf = bufferAllocator.allocate(instancesPerBuffer)
+        buffers += buf
 
-      buffers(i).set(start, amt, data)
-    }
-  }
+      val lim = data.limit()
+      data.limit(data.position() + amt)
+      buffers(i).set(start, data)
+      data.position(data.limit())
+      data.limit(lim)
 
-  /** This probably only works if to <= from */
-  def copy(from: Int, to: Int, len: Int): Unit = {
-    var fromBuffer: Int = from / BufSize
-    var fromIdx: Int = from % BufSize
-    var toBuffer: Int = to / BufSize
-    var toIdx: Int = to % BufSize
+  /** This probably only works if to &lt;= from */
+  def copy(from: Int, to: Int, len: Int): Unit =
+    var fromBuffer: Int = from / bufSize
+    var fromIdx: Int = from % bufSize
+    var toBuffer: Int = to / bufSize
+    var toIdx: Int = to % bufSize
     var left: Int = len
 
-    while (left > 0) {
-      val leftF = BufSize - fromIdx
-      val leftT = BufSize - toIdx
+    while left > 0 do
+      val leftF = bufSize - fromIdx
+      val leftT = bufSize - toIdx
       val len = math.min(math.min(leftF, leftT), left)
 
-      copyInternal(fromBuffer, fromIdx, toBuffer, toIdx, len)
+      bufferAllocator.copy(buffers(fromBuffer), buffers(toBuffer), fromIdx, toIdx, len)
 
-      fromIdx = (fromIdx + len) % BufSize
-      toIdx = (toIdx + len) % BufSize
+      fromIdx = (fromIdx + len) % bufSize
+      toIdx = (toIdx + len) % bufSize
 
-      if (leftF == len) fromBuffer += 1
-      if (leftT == len) toBuffer += 1
+      if leftF == len then fromBuffer += 1
+      if leftT == len then toBuffer += 1
 
       left -= len
-    }
-  }
 
-  protected def copyInternal(
-      fromBuffer: Int,
-      fromIdx: Int,
-      toBuffer: Int,
-      toIdx: Int,
-      len: Int
-  ): Unit = buffers(fromBuffer).copyTo(buffers(toBuffer), fromIdx, toIdx, len)
+  def render(length: Int): Unit =
+    if length > 0 then
+      for i <- 0 to (length - 1) / bufSize do
+        val len = math.min(length - i * bufSize, bufSize)
+        buffers(i).render(len)
 
-  def render(length: Int): Unit = {
-    if (length > 0) {
-      for (i <- 0 to (length - 1) / BufSize) {
-        buffers(i).render(math.min(length - i * BufSize, BufSize))
-      }
-    }
-  }
-
-  def unload(): Unit = ()
+  def unload(): Unit = buffers.foreach(_.unload())
 }

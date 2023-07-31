@@ -1,17 +1,17 @@
 package hexacraft.world.render.aspect
 
-import hexacraft.renderer.Shader
+import hexacraft.infra.gpu.OpenGL
 import hexacraft.world.coord.integer.ChunkRelWorld
 import hexacraft.world.render.BlockShader
 import hexacraft.world.render.buffer.BufferHandler
-import hexacraft.world.render.buffer.vao.BlockVAORenderBufferFactory
+import hexacraft.world.render.buffer.vao.{BlockVao, VAORenderBuffer}
 
 import java.nio.ByteBuffer
 
 class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader) {
 
   private def bufferHandlerMaker(s: Int): BufferHandler[_] =
-    new BufferHandler(1000000, new BlockVAORenderBufferFactory(s))
+    new BufferHandler(1000000, BlockVao.bytesPerInstance(s), VAORenderBuffer.Allocator(s))
 
   private val sideHandlers: IndexedSeq[RenderAspectHandler] =
     IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))

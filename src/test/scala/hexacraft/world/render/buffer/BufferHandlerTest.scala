@@ -1,28 +1,44 @@
 package hexacraft.world.render.buffer
 
-import hexacraft.world.render.buffer.{BufferHandler, RenderBuffer, RenderBufferFactory}
 import hexacraft.world.render.segment.Segment
 
 import munit.FunSuite
 
 import java.nio.ByteBuffer
+import scala.collection.mutable.ArrayBuffer
 
 class BufferHandlerTest extends FunSuite {
   private val BytesPerInstance: Int = 3
   private val InstancesPerBuffer: Int = 4
   private val BufferSize: Int = BytesPerInstance * InstancesPerBuffer
 
+  test("set should request a new buffer with correct size if needed") {
+    val allocator = new LocalRenderBuffer.Allocator
+    val handler = new BufferHandler(4, BytesPerInstance, allocator)
+
+    handler.set(Segment(0, 3), rampBuffer(0, 3))
+
+    assertEquals(allocator.instancesRequested.toSeq, Seq(InstancesPerBuffer))
+  }
+
   test("set should complain if the data has smaller length than the segment") {
-    val handler = make(_ => null)
+    val allocator = new LocalRenderBuffer.Allocator
+    val handler = new BufferHandler[LocalRenderBuffer](4, BytesPerInstance, allocator)
+
     intercept[IllegalArgumentException](handler.set(Segment(1, 3), simpleBuffer(3, 2)))
     intercept[IllegalArgumentException](handler.set(Segment(1, 300), simpleBuffer(3, 293)))
   }
+
   test("set should transfer the data into the correct buffer assuming no border is crossed") {
     val dest = new LocalRenderBuffer(BufferSize)
-    val handler = make(maxInstances => dest ensuring (maxInstances == InstancesPerBuffer))
-    handler.set(Segment(1, 3), rampFilledBuffer(1, 13))
+    val allocator = new LocalRenderBuffer.Allocator(_ => dest)
+    val handler = new BufferHandler(4, BytesPerInstance, allocator)
+
+    handler.set(Segment(1, 3), rampBuffer(1, 13))
+
     assertEquals(dest.localBuffer.array().toSeq.take(6), Seq(0, 1, 2, 3, 0, 0).map(_.toByte))
   }
+
   test("set should transfer the data into the correct buffers even if a border is crossed".ignore) {}
   test("set should transfer the data into the correct buffers even if several borders are crossed".ignore) {}
 
@@ -37,52 +53,53 @@ class BufferHandlerTest extends FunSuite {
   test("render should render the correct amount if a border is crossed".ignore) {}
   test("render should render the correct amount if several borders are crossed".ignore) {}
 
-  test("unload should unload all buffers".ignore) {}
+  test("unload should unload all buffers") {
+    val dest = new LocalRenderBuffer(BufferSize)
+    val allocator = new LocalRenderBuffer.Allocator(_ => dest)
+    val handler = new BufferHandler(4, BytesPerInstance, allocator)
+    handler.set(Segment(0, 3), rampBuffer(0, 3))
 
-  def simpleBuffer(start: Int, len: Int): ByteBuffer = {
+    handler.unload()
+
+    assertEquals(dest.unloadCount, 1)
+  }
+
+  def simpleBuffer(start: Int, len: Int): ByteBuffer =
     val bf = ByteBuffer.allocate(start + len + 2)
     bf.position(start).limit(start + len)
     bf
-  }
 
-  def filledBuffer(start: Int, len: Int)(filler: Int => Byte): ByteBuffer = {
+  def filledBuffer(start: Int, len: Int)(filler: Int => Byte): ByteBuffer =
     val buf = simpleBuffer(start, len)
-    for (i <- start until start + len)
-      buf.put(filler(i))
+    for (i <- start until start + len) do buf.put(filler(i))
     buf.position(start)
     buf
-  }
 
-  def rampFilledBuffer(start: Int, len: Int): ByteBuffer = filledBuffer(start, len)(_.toByte)
+  def rampBuffer(start: Int, len: Int): ByteBuffer = filledBuffer(start, len)(_.toByte)
 
-  def make[T <: RenderBuffer[T]](mkBuffer: Int => T) =
-    new BufferHandler(4, new LocalFactory(mkBuffer))
+  private object LocalRenderBuffer {
+    class Allocator(
+        mkBuffer: Int => LocalRenderBuffer = _ => new LocalRenderBuffer(BufferSize)
+    ) extends RenderBuffer.Allocator[LocalRenderBuffer] {
+      val instancesRequested: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
 
-  private class LocalFactory[T <: RenderBuffer[T]](mkBuffer: Int => T) extends RenderBufferFactory[T] {
-    override def bytesPerInstance: Int = BytesPerInstance
-    override def makeBuffer(maxInstances: Int): T = mkBuffer(maxInstances)
+      override def allocate(instances: Int): LocalRenderBuffer =
+        instancesRequested += instances
+        mkBuffer(instances)
+
+      override def copy(from: LocalRenderBuffer, to: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit =
+        from.localBuffer.position(fromIdx).limit(fromIdx + len)
+        to.localBuffer.position(toIdx)
+        to.localBuffer.put(from.localBuffer)
+    }
   }
 
   private class LocalRenderBuffer(size: Int) extends RenderBuffer[LocalRenderBuffer] {
     val localBuffer: ByteBuffer = ByteBuffer.allocate(size)
+    var unloadCount = 0
 
-    override def set(start: Int, length: Int, buf: ByteBuffer): Unit = {
-      val lim = buf.limit()
-      buf.limit(buf.position() + length)
-      localBuffer.position(start).limit(start + length)
-      localBuffer.put(buf)
-      buf.position(buf.limit())
-      buf.limit(lim)
-    }
-
-    override def copyTo(buffer: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {
-      localBuffer.position(fromIdx).limit(fromIdx + len)
-      buffer.localBuffer.position(toIdx)
-      buffer.localBuffer.put(localBuffer)
-    }
-
+    override def set(start: Int, buf: ByteBuffer): Unit = localBuffer.position(start).put(buf)
     override def render(length: Int): Unit = ???
-
-    override def unload(): Unit = ???
+    override def unload(): Unit = unloadCount += 1
   }
 }
