@@ -10,24 +10,13 @@ import hexacraft.world.render.{BlockRenderer, BlockRendererCollection}
 import org.joml.Matrix4f
 
 object GuiBlockRenderer:
-  def withSingleSlot(
-      blockProvider: () => Block,
-      rendererLocation: () => (Float, Float) = () => (0, 0),
-      brightnessFunc: () => Float = () => 1.0f
-  )(using Blocks: Blocks): GuiBlockRenderer =
-    new GuiBlockRenderer(1, 1)(_ => blockProvider(), rendererLocation, (_, _) => brightnessFunc())
-
   private val guiBlockShader = new GuiBlockShader(isSide = false)
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
-class GuiBlockRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
-    blockProvider: Int => Block,
-    rendererLocation: () => (Float, Float) = () => (0, 0),
-    brightnessFunc: (Int, Int) => Float = (_, _) => 1.0f
-)(using Blocks: Blocks):
+class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using Blocks: Blocks):
   private val guiBlockRenderer = BlockRendererCollection: s =>
     val vao = GuiBlockVao.forSide(s)
-    val renderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.withDisabled(OpenGL.State.DepthTest))
+    val renderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.of(OpenGL.State.DepthTest -> false))
     BlockRenderer(s, vao, renderer)
 
   private val guiBlockShader = GuiBlockRenderer.guiBlockShader
@@ -45,9 +34,6 @@ class GuiBlockRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
     guiBlockShader.setWindowAspectRatio(aspectRatio)
     guiBlockSideShader.setWindowAspectRatio(aspectRatio)
 
-  val (xOffInit, yOffInit) = rendererLocation()
-  updateContent(xOffInit, yOffInit)
-
   def render(transformation: GUITransformation): Unit =
     guiBlockShader.setViewMatrix(viewMatrix)
     guiBlockSideShader.setViewMatrix(viewMatrix)
@@ -63,22 +49,19 @@ class GuiBlockRenderer(w: Int, h: Int = 1, separation: Float = 0.2f)(
       sh.setSide(side)
       guiBlockRenderer.renderBlockSide(side)
 
-  def updateContent(xOff: Float, yOff: Float): Unit =
-    for (side <- 0 until 8)
-      guiBlockRenderer.updateContent(side, 9 * 9) { buf =>
-        for (y <- 0 until h)
-          for (x <- 0 until w)
-            val blockToDraw = blockProvider(x + y * w)
+  def updateContent(xOff: Float, yOff: Float, blocks: Seq[Block]): Unit =
+    for side <- 0 until 8 do
+      guiBlockRenderer.updateContent(side, 9 * 9): buf =>
+        for y <- 0 until h do
+          for x <- 0 until w do
+            val blockToDraw = blocks(x + y * w)
             if blockToDraw.canBeRendered
             then
               buf.putFloat(x * separation + xOff)
               buf.putFloat(y * separation + yOff)
               buf.putInt(Blocks.textures(blockToDraw.name)(side))
-              buf.putFloat(
-                1.0f
-              ) // blockInHand.blockHeight(new BlockState(BlockRelWorld(0, 0, 0, world), blockInHand)))
-              buf.putFloat(1) // brightnessFunc(x, y))
-      }
+              buf.putFloat(1)
+              buf.putFloat(1)
 
   def unload(): Unit =
     guiBlockRenderer.unload()

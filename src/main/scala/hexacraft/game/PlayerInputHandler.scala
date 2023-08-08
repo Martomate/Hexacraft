@@ -2,7 +2,7 @@ package hexacraft.game
 
 import hexacraft.world.player.Player
 
-import org.joml.Vector2dc
+import org.joml.Vector2fc
 
 class PlayerInputHandler(keyboard: GameKeyboard, player: Player):
   def maxSpeed: Double =
@@ -17,7 +17,7 @@ class PlayerInputHandler(keyboard: GameKeyboard, player: Player):
     else 4.3
 
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
-  def tick(mouseMovement: Vector2dc, maxSpeed: Double): Unit =
+  def tick(mouseMovement: Vector2fc, maxSpeed: Double): Unit =
     import GameKeyboard.Key.*
 
     val rSpeed = 0.05

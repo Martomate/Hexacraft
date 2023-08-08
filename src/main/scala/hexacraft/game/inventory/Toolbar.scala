@@ -1,7 +1,7 @@
 package hexacraft.game.inventory
 
 import hexacraft.gui.{LocationInfo, RenderContext}
-import hexacraft.gui.comp.*
+import hexacraft.gui.comp.{Component, GUITransformation, SubComponents}
 import hexacraft.world.block.Blocks
 import hexacraft.world.player.Inventory
 
@@ -20,7 +20,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
   private val guiBlockRenderer =
-    val renderer = new GuiBlockRenderer(9, 1, 0.2f)(x => inventory(x), () => (-4 * 0.2f, -0.83f))
+    val renderer = new GuiBlockRenderer(9, 1)
     renderer.setViewMatrix(
       new Matrix4f()
         .translate(0, 0, -14f)
@@ -30,10 +30,15 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks
     )
     renderer
 
+  updateRendererContent()
+
   def setWindowAspectRatio(aspectRatio: Float): Unit =
     guiBlockRenderer.setWindowAspectRatio(aspectRatio)
 
-  private val revokeInventoryTracker = inventory.trackChanges(_ => guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f))
+  private val revokeInventoryTracker = inventory.trackChanges(_ => updateRendererContent())
+
+  private def updateRendererContent(): Unit =
+    guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f, (0 until 9).map(i => inventory(i)))
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)

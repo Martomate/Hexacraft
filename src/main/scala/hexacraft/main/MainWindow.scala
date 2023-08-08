@@ -89,12 +89,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
       if titleTicker > 10
       then
         titleTicker = 0
-        val msString = (if msTime < 10 then "0" else "") + msTime
-        val vsyncStr = if vsyncManager.isVsync then "vsync" else ""
-        val titleParts = Seq("Hexacraft", s"$fps fps   ms: $msString", vsyncStr)
-        val windowTitle = titleParts.filter(_.nonEmpty).mkString("   |   ")
-
-        window.setTitle(windowTitle)
+        window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format)
 
       // Put occurred events into event queue
       windowSystem.runEventCallbacks()
@@ -110,14 +105,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
       if keyIsPressed
       then
         if key == KeyboardKey.Letter('R') && window.isKeyPressed(KeyboardKey.Function(3))
-        then
-          Resource.reloadAllResources()
-          scene.onReloadedResources()
-
-          // This step is needed to set some uniforms after the reload
-          scene.windowResized(_windowSize.x, _windowSize.y)
-
-          println("Reloaded resources")
+        then reloadResources()
 
         if key == KeyboardKey.Function(11)
         then setFullscreen()
@@ -145,7 +133,6 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
 
         _windowSize.set(w, h)
         resetMousePos()
-        mouse.skipNextMouseMovedUpdate()
 
     case CallbackEvent.FramebufferResized(_, w, h) =>
       if w > 0 && h > 0
@@ -156,6 +143,15 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
           scene.framebufferResized(w, h)
 
         _framebufferSize.set(w, h)
+
+  private def reloadResources(): Unit =
+    Resource.reloadAllResources()
+    scene.onReloadedResources()
+
+    // This step is needed to set some uniforms after the reload
+    scene.windowResized(_windowSize.x, _windowSize.y)
+
+    println("Reloaded resources")
 
   private def handleDebugEvent(debugMessage: OpenGL.Debug.Message): Unit =
     val OpenGL.Debug.Message(source, debugType, _, severity, message, _) = debugMessage

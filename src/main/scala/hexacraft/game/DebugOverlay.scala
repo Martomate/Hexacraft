@@ -26,7 +26,7 @@ object DebugOverlay {
   }
 }
 
-class DebugOverlay(initialAspectRatio: Float) {
+class DebugOverlay {
   private val textDisplayMap = mutable.Map.empty[String, String]
   private val textValueMap = mutable.Map.empty[String, Text]
   private val texts = mutable.ArrayBuffer.empty[Text]
@@ -52,8 +52,6 @@ class DebugOverlay(initialAspectRatio: Float) {
 
   addLabel("Other")
   addDebugText("viewDist", "viewDistance")
-
-  alignTexts(initialAspectRatio)
 
   private def addLabel(text: String): Unit =
     yOff += 0.02f
@@ -95,14 +93,9 @@ class DebugOverlay(initialAspectRatio: Float) {
     setValue("viewDist", f"${info.viewDistance}%.2f")
 
   def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+    texts.foreach(t => t.setPosition(-context.windowAspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
-
-  def windowResized(w: Int, h: Int): Unit =
-    alignTexts(w.toFloat / h)
-
-  private def alignTexts(aspectRatio: Float): Unit =
-    texts.foreach(t => t.setPosition(-aspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
 
   def unload(): Unit = textMaster.unload()
 }

@@ -3,14 +3,14 @@ package hexacraft.renderer
 import hexacraft.infra.gpu.OpenGL
 
 object GpuState {
-  def withEnabled(state: OpenGL.State*): GpuState = GpuState().withEnabled(state*)
-  def withDisabled(state: OpenGL.State*): GpuState = GpuState().withDisabled(state*)
+  def of(states: (OpenGL.State, Boolean)*): GpuState =
+    GpuState(
+      enabled = states.filter(_._2).map(_._1),
+      disabled = states.filter(!_._2).map(_._1)
+    )
 }
 
 case class GpuState(enabled: Seq[OpenGL.State] = Nil, disabled: Seq[OpenGL.State] = Nil) {
-  def withEnabled(state: OpenGL.State*): GpuState = GpuState(enabled ++ state, disabled)
-  def withDisabled(state: OpenGL.State*): GpuState = GpuState(enabled, disabled ++ state)
-
   def set(): Unit =
     for s <- enabled do OpenGL.glEnable(s)
     for s <- disabled do OpenGL.glDisable(s)

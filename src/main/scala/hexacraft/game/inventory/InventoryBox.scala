@@ -1,6 +1,5 @@
 package hexacraft.game.inventory
 
-import hexacraft.game.{GameMouse, GameWindow}
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
@@ -9,11 +8,7 @@ import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
-    mouse: GameMouse,
-    window: GameWindow,
-    Blocks: Blocks
-) extends Component {
+class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using Blocks: Blocks) extends Component {
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -27,28 +22,21 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
 
   private val guiBlockRenderer = makeGuiBlockRenderer()
   private val floatingBlockRenderer = makeFloatingBlockRenderer()
+  updateRendererContent()
 
-  private val revokeInventoryTracker = inventory.trackChanges(_ => {
-    guiBlockRenderer.updateContent(-4 * 0.2f, -2 * 0.2f)
-    val mousePos = mouse.heightNormalizedPos(window.windowSize)
-    floatingBlockRenderer.updateContent(mousePos.x, mousePos.y)
-  })
+  private val revokeInventoryTracker = inventory.trackChanges(_ => updateRendererContent())
 
-  override def tick(): Unit = {
-    val mousePos = mouse.heightNormalizedPos(window.windowSize)
-    val (mx, my) = (mousePos.x, mousePos.y)
+  private def updateRendererContent(): Unit =
+    guiBlockRenderer.updateContent(-4 * 0.2f, -2 * 0.2f, (0 until 9 * 4).map(i => inventory(i)))
+    if floatingBlock.isEmpty then floatingBlockRenderer.updateContent(0, 0, Seq(Blocks.Air))
+
+  private def calculateHoverIndex(mx: Float, my: Float) =
     if location.containsPoint(mx, my)
     then
       val xi = ((mx - location.x) / 0.2f).toInt
       val yi = ((my - location.y) / 0.2f).toInt
-      hoverIndex = Some(xi + yi * 9)
-    else hoverIndex = None
-
-    if floatingBlock.isDefined
-    then
-      val mousePos = mouse.heightNormalizedPos(window.windowSize)
-      floatingBlockRenderer.updateContent(mousePos.x, mousePos.y)
-  }
+      Some(xi + yi * 9)
+    else None
 
   override def handleEvent(event: Event): Boolean =
     import Event.*
@@ -63,13 +51,8 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
         hoverIndex match
           case Some(hover) =>
             val newFloatingBlock = Some(inventory(hover)).filter(_ != Blocks.Air)
-            floatingBlock match
-              case Some(block) =>
-                floatingBlock = newFloatingBlock
-                inventory(hover) = block
-              case None =>
-                floatingBlock = newFloatingBlock
-                inventory(hover) = Blocks.Air
+            inventory(hover) = floatingBlock.getOrElse(Blocks.Air)
+            floatingBlock = newFloatingBlock
           case None =>
             handleFloatingBlock()
       case _ =>
@@ -78,68 +61,54 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using
   private def handleFloatingBlock(): Unit =
     floatingBlock match
       case Some(block) =>
-        firstEmptySlot match
+        inventory.firstEmptySlot match
           case Some(slot) => inventory(slot) = block
           case None       => // TODO: drop the block because the inventory is full
       case None =>
 
-  private def firstEmptySlot = (0 until 4 * 9).find(i => inventory(i) == Blocks.Air)
-
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
     guiBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
     floatingBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
 
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, window.aspectRatio)
+    val mousePos = context.heightNormalizedMousePos
+    hoverIndex = calculateHoverIndex(mousePos.x, mousePos.y)
+
+    if floatingBlock.isDefined
+    then floatingBlockRenderer.updateContent(mousePos.x, mousePos.y, Seq(floatingBlock.get))
+
+    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
 
     if hoverIndex.isDefined
     then
       val xOffset = transformation.x + (hoverIndex.get % 9) * 0.2f
       val yOffset = transformation.y + (hoverIndex.get / 9) * 0.2f
-      Component.drawRect(selectedBox, xOffset, yOffset, selectedColor, window.aspectRatio)
+      Component.drawRect(selectedBox, xOffset, yOffset, selectedColor, context.windowAspectRatio)
 
     guiBlockRenderer.render(transformation)
 
     if floatingBlock.isDefined
     then floatingBlockRenderer.render(transformation)
-  }
 
-  override def unload(): Unit = {
-    revokeInventoryTracker()
-    guiBlockRenderer.unload()
-    floatingBlockRenderer.unload()
-    super.unload()
-  }
-
-  private def makeGuiBlockRenderer() = {
-    val blockProvider = (i: Int) => inventory(i)
-    val rendererLocation = () => (-4 * 0.2f, -2 * 0.2f)
-    val individualBlockViewMatrix = makeTiltedBlockViewMatrix
-
-    val renderer = new GuiBlockRenderer(9, 4, 0.2f)(blockProvider, rendererLocation)
-    renderer.setViewMatrix(individualBlockViewMatrix)
-    renderer.setWindowAspectRatio(window.aspectRatio)
+  private def makeGuiBlockRenderer() =
+    val renderer = new GuiBlockRenderer(9, 4)
+    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
     renderer
-  }
 
-  private def makeFloatingBlockRenderer() = {
-    val blockProvider = () => floatingBlock.getOrElse(Blocks.Air)
-    val rendererLocation = () =>
-      val mousePos = mouse.heightNormalizedPos(window.windowSize)
-      (mousePos.x, mousePos.y)
-
-    val individualBlockViewMatrix = makeTiltedBlockViewMatrix
-
-    val renderer = GuiBlockRenderer.withSingleSlot(blockProvider, rendererLocation)
-    renderer.setViewMatrix(individualBlockViewMatrix)
-    renderer.setWindowAspectRatio(window.aspectRatio)
+  private def makeFloatingBlockRenderer() =
+    val renderer = GuiBlockRenderer(1, 1)
+    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
     renderer
-  }
 
-  private def makeTiltedBlockViewMatrix = {
+  private def makeTiltedBlockViewMatrix =
     new Matrix4f()
       .translate(0, 0, -14f)
       .rotateX(3.1415f / 6)
       .rotateY(3.1415f / 24)
       .translate(0, -0.25f, 0)
-  }
+
+  override def unload(): Unit =
+    revokeInventoryTracker()
+    guiBlockRenderer.unload()
+    floatingBlockRenderer.unload()
+    super.unload()
 }

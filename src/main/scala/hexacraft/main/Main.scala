@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 
 object Main:
   def main(args: Array[String]): Unit =
-    setNatviesFolder()
+    setNativesFolder()
 
     val isDebugStr = System.getProperty("hexacraft.debug")
     val isDebug = isDebugStr != null && isDebugStr == "true"
@@ -32,7 +32,7 @@ object Main:
       s"The program has crashed. The crash report can be found in: ${logFile.getAbsolutePath}"
     )
 
-  private def setNatviesFolder(): Unit =
+  private def setNativesFolder(): Unit =
     var file = new File("lib/natives")
 
     if !file.exists

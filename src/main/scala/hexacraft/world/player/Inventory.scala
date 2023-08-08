@@ -17,6 +17,8 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
 
   def apply(idx: Int): Block = slots(idx)
 
+  def firstEmptySlot: Option[Int] = (0 until 4 * 9).find(i => this(i) == Blocks.Air)
+
   def update(idx: Int, block: Block): Unit =
     slots(idx) = block
     dispatcher.notify(())

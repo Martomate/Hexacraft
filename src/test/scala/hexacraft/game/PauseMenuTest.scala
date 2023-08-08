@@ -3,7 +3,6 @@ package hexacraft.game
 import hexacraft.gui.Event
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.{KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
-import hexacraft.main.RealGameMouse
 import hexacraft.util.Tracker
 
 import munit.FunSuite
@@ -12,7 +11,6 @@ class PauseMenuTest extends FunSuite {
   test("Emits Unpause event when Escape key is pressed") {
     OpenGL._enterTestMode()
 
-    given GameMouse = new RealGameMouse
     val tracker = Tracker.withStorage[PauseMenu.Event]
     val menu = new PauseMenu(tracker)
 
@@ -23,8 +21,6 @@ class PauseMenuTest extends FunSuite {
 
   test("Emits Unpause event when Back to Game button is pressed") {
     OpenGL._enterTestMode()
-
-    given GameMouse = new RealGameMouse
 
     val tracker = Tracker.withStorage[PauseMenu.Event]
     val menu = new PauseMenu(tracker)
@@ -37,8 +33,6 @@ class PauseMenuTest extends FunSuite {
 
   test("Emits QuitGame event when Back to Menu button is pressed") {
     OpenGL._enterTestMode()
-
-    given GameMouse = new RealGameMouse
 
     val tracker = Tracker.withStorage[PauseMenu.Event]
     val menu = new PauseMenu(tracker)

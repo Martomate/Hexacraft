@@ -20,8 +20,6 @@ class VsyncManager(lo: Int, hi: Int, onUpdate: Boolean => Unit):
       onUpdate(vsync)
 
   private def shouldUseVsync(fps: Int): Boolean =
-    if fps > hi
-    then true
-    else if fps < lo
-    then false
+    if fps > hi then true
+    else if fps < lo then false
     else vsync

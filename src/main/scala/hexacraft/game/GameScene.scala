@@ -20,7 +20,7 @@ import hexacraft.world.render.WorldRenderer
 import hexacraft.world.settings.WorldInfo
 
 import com.flowpowered.nbt.CompoundTag
-import org.joml.{Matrix4f, Vector2d, Vector2f, Vector3f}
+import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -44,7 +44,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
-    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.withDisabled(OpenGL.State.DepthTest))
+    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.of(OpenGL.State.DepthTest -> false))
 
   given entityModelLoader: EntityModelLoader = new EntityModelLoader()
   private val playerModel: EntityModel = entityModelLoader.load("player")
@@ -78,6 +78,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private val toolbar: Toolbar = makeToolbar(player)
   private val blockInHandRenderer: GuiBlockRenderer = makeBlockInHandRenderer(world, camera)
+  updateBlockInHandRendererContent()
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -169,7 +170,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     if visible
     then
       if debugOverlay == null
-      then debugOverlay = new DebugOverlay(window.aspectRatio)
+      then debugOverlay = new DebugOverlay
     else
       if debugOverlay != null
       then debugOverlay.unload()
@@ -201,8 +202,11 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private def setSelectedItemSlot(itemSlot: Int): Unit =
     player.selectedItemSlot = itemSlot
-    blockInHandRenderer.updateContent(1.5f, -0.9f)
+    updateBlockInHandRendererContent()
     toolbar.setSelectedIndex(itemSlot)
+
+  private def updateBlockInHandRendererContent(): Unit =
+    blockInHandRenderer.updateContent(1.5f, -0.9f, Seq(player.blockInHand))
 
   private def setPaused(paused: Boolean): Unit =
     if isPaused != paused
@@ -221,9 +225,6 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     setProjMatrixForAll()
     blockInHandRenderer.setWindowAspectRatio(aspectRatio)
     toolbar.setWindowAspectRatio(aspectRatio)
-
-    if debugOverlay != null
-    then debugOverlay.windowResized(width, height)
 
     crosshairShader.setWindowAspectRatio(aspectRatio)
 
@@ -252,14 +253,14 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   override def tick(): Unit =
     val maxSpeed = playerInputHandler.maxSpeed
     if !isPaused && !isInPopup then
-      playerInputHandler.tick(if moveWithMouse then mouse.moved else new Vector2d(), maxSpeed)
+      playerInputHandler.tick(if moveWithMouse then mouse.moved else new Vector2f, maxSpeed)
     if !isPaused then playerPhysicsHandler.tick(maxSpeed)
 
     camera.setPositionAndRotation(player.position, player.rotation)
     camera.updateCoords()
     camera.updateViewMatrix()
 
-    blockInHandRenderer.updateContent(1.5f, -0.9f)
+    updateBlockInHandRendererContent()
 
     selectedBlockAndSide = updatedMousePicker()
 
@@ -341,14 +342,8 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
-    val blockProvider = () => player.blockInHand
-    val offsetFunc = () => (1.5f, -0.9f)
-    val brightnessFunc = () => world.getBrightness(camera.blockCoords)
-
-    val viewMatrix = makeBlockInHandViewMatrix
-
-    val renderer = GuiBlockRenderer.withSingleSlot(blockProvider, offsetFunc, brightnessFunc)
-    renderer.setViewMatrix(viewMatrix)
+    val renderer = GuiBlockRenderer(1, 1)
+    renderer.setViewMatrix(makeBlockInHandViewMatrix)
     renderer.setWindowAspectRatio(window.aspectRatio)
     renderer
 

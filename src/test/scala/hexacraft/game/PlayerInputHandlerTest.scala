@@ -7,7 +7,7 @@ import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.player.Player
 
 import munit.FunSuite
-import org.joml.Vector2d
+import org.joml.{Vector2d, Vector2f}
 
 import scala.collection.mutable
 
@@ -25,7 +25,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler(keyboard, player)
 
-    handler.tick(new Vector2d(), 1.0)
+    handler.tick(new Vector2f, 1.0)
 
     assert(keyboardCalls.toSet.contains(Key.MoveForward))
   }
@@ -36,7 +36,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler(keyboard, player)
 
     player.rotation.set(0.1, 0.2, 0.3)
-    handler.tick(new Vector2d(), 1.0)
+    handler.tick(new Vector2f, 1.0)
 
     assertEqualsDouble(player.rotation.x, 0.1, 1e-6)
     assertEqualsDouble(player.rotation.y, 0.2, 1e-6)
@@ -49,7 +49,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler(keyboard, player)
 
     player.rotation.set(0.1, 0.2, 0.3)
-    handler.tick(new Vector2d(1, 2), 1.0)
+    handler.tick(new Vector2f(1, 2), 1.0)
 
     assertEqualsDouble(player.rotation.x, 0.095, 1e-6)
     assertEqualsDouble(player.rotation.y, 0.2025, 1e-6)
