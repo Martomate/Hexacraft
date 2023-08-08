@@ -2,7 +2,7 @@ package hexacraft.world.gen.planner
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Blocks, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumn, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.gen.PlannedWorldChange

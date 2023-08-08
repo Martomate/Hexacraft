@@ -5,7 +5,6 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.coord.integer.ChunkRelWorld
 
 import munit.FunSuite
-import org.mockito.Mockito.verify
 import org.scalatestplus.mockito.MockitoSugar
 
 class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {

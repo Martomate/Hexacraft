@@ -2,7 +2,6 @@ package hexacraft.world.render.segment
 
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.integer.ChunkRelWorld
-import hexacraft.world.render.segment.{ChunkSegmentHandler, Segment}
 
 import munit.FunSuite
 

@@ -1,6 +1,6 @@
 package hexacraft.world.block.fluid
 
-import hexacraft.world.block.{Block, BlockBehaviour, BlockLoader, Blocks}
+import hexacraft.world.block.{Block, BlockBehaviour}
 
 class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
   override val behaviour: Option[BlockBehaviour] = Some(new BlockBehaviourFluid)

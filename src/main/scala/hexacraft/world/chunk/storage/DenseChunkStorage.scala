@@ -1,12 +1,9 @@
 package hexacraft.world.chunk.storage
 
-import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.SmartArray
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.{Block, Blocks, BlockState}
-import hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-
-import com.flowpowered.nbt.{ByteArrayTag, CompoundTag, Tag}
+import hexacraft.world.coord.integer.BlockRelChunk
 
 class DenseChunkStorage extends ChunkStorage:
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)

@@ -2,9 +2,9 @@ package hexacraft.world.entity.ai
 
 import hexacraft.world.BlocksInWorld
 import hexacraft.world.block.HexBox
-import hexacraft.world.entity.{Entity, EntityBaseData}
+import hexacraft.world.entity.EntityBaseData
 
-import com.flowpowered.nbt.{CompoundTag, Tag}
+import com.flowpowered.nbt.Tag
 import org.joml.Vector3dc
 
 trait EntityAI {

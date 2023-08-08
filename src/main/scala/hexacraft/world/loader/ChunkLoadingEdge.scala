@@ -5,7 +5,6 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.coord.integer.ChunkRelWorld
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object ChunkLoadingEdge {
   enum Event:

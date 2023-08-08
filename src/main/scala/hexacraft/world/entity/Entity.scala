@@ -1,13 +1,12 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.{Blocks, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 
-import com.flowpowered.nbt.Tag
 import org.joml.{Matrix4f, Vector3d}
 
 object Entity {

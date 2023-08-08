@@ -1,7 +1,5 @@
 package hexacraft.world
 
-import hexacraft.world.CylinderSize
-
 import munit.FunSuite
 
 class CylinderSizeTest extends FunSuite {

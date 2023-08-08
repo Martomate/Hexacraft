@@ -1,12 +1,10 @@
 package hexacraft.world.player
 
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.nbt.Nbt
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.block.{Block, Blocks}
 
 import com.flowpowered.nbt.*
-
-import scala.collection.mutable.ArrayBuffer
 
 class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
   private val dispatcher = new EventDispatcher[Unit]

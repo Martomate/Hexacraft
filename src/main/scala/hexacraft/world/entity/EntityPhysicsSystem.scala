@@ -3,7 +3,6 @@ package hexacraft.world.entity
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.entity.{Entity, EntityBaseData, EntityModel}
 
 class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using CylinderSize):
   def update(data: EntityBaseData, boundingBox: HexBox): Unit =

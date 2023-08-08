@@ -6,7 +6,6 @@ import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityFactory}
-import hexacraft.world.entity.sheep.SheepEntity
 
 import scala.collection.mutable
 import scala.util.Random

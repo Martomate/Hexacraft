@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.{Chunk, ChunkColumn, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
 import hexacraft.world.coord.integer.*
 
 trait BlocksInWorld {

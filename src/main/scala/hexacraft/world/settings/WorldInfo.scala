@@ -6,7 +6,6 @@ import hexacraft.world.{CylinderSize, MigrationManager}
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
 
 import java.io.File
-import scala.collection.immutable.ListMap
 
 class WorldInfo(
     val worldName: String,

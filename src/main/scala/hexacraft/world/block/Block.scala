@@ -1,8 +1,5 @@
 package hexacraft.world.block
 
-import hexacraft.world.CylinderSize
-import hexacraft.world.coord.integer.BlockRelWorld
-
 object Block {
   private val maxBlocks = 256
 

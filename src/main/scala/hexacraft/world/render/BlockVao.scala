@@ -2,7 +2,6 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.VAO
-import hexacraft.world.render.BlockRenderer
 
 object BlockVao {
   private def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2

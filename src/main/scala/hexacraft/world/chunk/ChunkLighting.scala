@@ -1,11 +1,7 @@
 package hexacraft.world.chunk
 
 import hexacraft.util.SmartArray
-import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.BlockRelChunk
-
-import scala.collection.mutable
 
 class ChunkLighting:
   private val brightness: SmartArray[Byte] = SmartArray.withByteArray(16 * 16 * 16, 0)

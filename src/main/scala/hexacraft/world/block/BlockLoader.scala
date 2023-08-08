@@ -2,9 +2,6 @@ package hexacraft.world.block
 
 import hexacraft.infra.fs.FileUtils
 import hexacraft.renderer.PixelArray
-import hexacraft.util.ResourceWrapper
-
-import com.eclipsesource.json.{Json, JsonObject, JsonValue}
 
 import java.net.URL
 import javax.imageio.ImageIO

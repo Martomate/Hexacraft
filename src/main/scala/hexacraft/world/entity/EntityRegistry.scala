@@ -1,7 +1,5 @@
 package hexacraft.world.entity
 
-import hexacraft.world.entity.EntityFactory
-
 trait EntityRegistry {
   def get(name: String): Option[EntityFactory]
 }

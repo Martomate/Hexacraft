@@ -1,11 +1,6 @@
 package hexacraft.world.chunk.storage
 
-import hexacraft.world.CylinderSize
-import hexacraft.world.block.{BlockLoader, Blocks}
-import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, SparseChunkStorage}
-import hexacraft.world.coord.integer.ChunkRelWorld
-
-import com.flowpowered.nbt.CompoundTag
+import hexacraft.world.block.Blocks
 
 class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
   test("isDense should be true") {

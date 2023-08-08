@@ -1,12 +1,9 @@
 package hexacraft.world.chunk.storage
 
-import hexacraft.nbt.NBTUtil
 import hexacraft.world.{CylinderSize, FakeBlockLoader}
 import hexacraft.world.block.{BlockLoader, Blocks, BlockState}
-import hexacraft.world.chunk.storage.{ChunkStorage, LocalBlockState}
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
-import com.flowpowered.nbt.{ByteArrayTag, CompoundTag}
 import munit.FunSuite
 
 abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends FunSuite {

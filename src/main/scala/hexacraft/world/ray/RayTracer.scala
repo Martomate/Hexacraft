@@ -2,12 +2,11 @@ package hexacraft.world.ray
 
 import hexacraft.util.MathUtils.oppositeSide
 import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.{Blocks, BlockState, HexBox}
+import hexacraft.world.block.{Blocks, BlockState}
 import hexacraft.world.camera.Camera
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
-import org.joml.{Vector2fc, Vector3d, Vector3dc, Vector4f}
+import org.joml.Vector3d
 
 import scala.annotation.tailrec
 

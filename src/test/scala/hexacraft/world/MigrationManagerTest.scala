@@ -1,13 +1,12 @@
 package hexacraft.world
 
 import hexacraft.infra.fs.FileSystem
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.nbt.Nbt
 import hexacraft.util.GzipAlgorithm
 
 import munit.FunSuite
 
-import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Path
 import scala.collection.immutable.ArraySeq
 
 class MigrationManagerTest extends FunSuite {
@@ -29,7 +28,7 @@ class MigrationManagerTest extends FunSuite {
       Seq(
         FileSystem.FileWrittenEvent(
           dir.resolve("world.dat"),
-          ArraySeq.unsafeWrapArray(GzipAlgorithm.compress(expectedWorldTag.toBinary("")))
+          ArraySeq.unsafeWrapArray(GzipAlgorithm.compress(expectedWorldTag.toBinary()))
         )
       )
     )

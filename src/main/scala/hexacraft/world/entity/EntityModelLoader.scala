@@ -1,10 +1,8 @@
 package hexacraft.world.entity
 
 import hexacraft.infra.fs.FileUtils
-import hexacraft.world.CylinderSize
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.entity.EntityModel
 import hexacraft.world.entity.base.BasicEntityModel
 import hexacraft.world.entity.player.PlayerEntityModel
 import hexacraft.world.entity.sheep.SheepEntityModel

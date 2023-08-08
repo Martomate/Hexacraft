@@ -1,10 +1,10 @@
 package hexacraft.world.entity.sheep
 
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.nbt.Nbt
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.Blocks
 import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.entity.{EntityBaseData, EntityFactory, EntityModel, EntityModelLoader}
+import hexacraft.world.entity.{EntityBaseData, EntityFactory, EntityModel}
 import hexacraft.world.entity.ai.{EntityAI, SimpleWalkAI}
 
 import com.flowpowered.nbt.CompoundTag

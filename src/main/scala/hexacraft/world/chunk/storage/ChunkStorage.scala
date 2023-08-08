@@ -3,8 +3,6 @@ package hexacraft.world.chunk.storage
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.BlockRelChunk
 
-import com.flowpowered.nbt.Tag
-
 object ChunkStorage {
   case class NbtData(blocks: Array[Byte], metadata: Array[Byte])
 }
