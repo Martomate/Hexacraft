@@ -1,6 +1,6 @@
 package hexacraft.world.coord.integer
 
-import hexacraft.math.Int12
+import hexacraft.math.bits.Int12
 
 object BlockRelColumn {
   def apply(Y: Int, x: Int, y: Int, z: Int): BlockRelColumn =

@@ -1,6 +1,6 @@
 package hexacraft.world.coord.integer
 
-import hexacraft.math.Int20
+import hexacraft.math.bits.Int20
 import hexacraft.world.CylinderSize
 
 import org.joml.Vector2d

@@ -1,6 +1,6 @@
 package hexacraft.world.coord.integer
 
-import hexacraft.math.{Int12, Int20}
+import hexacraft.math.bits.{Int12, Int20}
 import hexacraft.world.CylinderSize
 
 object BlockRelWorld {

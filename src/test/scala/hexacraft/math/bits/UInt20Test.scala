@@ -1,4 +1,6 @@
-package hexacraft.math
+package hexacraft.math.bits
+
+import hexacraft.math.bits.UInt20
 
 import munit.FunSuite
 

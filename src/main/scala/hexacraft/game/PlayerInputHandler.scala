@@ -17,15 +17,15 @@ class PlayerInputHandler(keyboard: GameKeyboard, player: Player):
     else 4.3
 
   // TODO: make Map[key: Int, state: Int] so that the game only receives key presses when it's not overlayed, or make this method not always be called
-  def tick(mouseMovement: Vector2fc, maxSpeed: Double): Unit =
+  def tick(mouseMovement: Vector2fc, maxSpeed: Double, isInFluid: Boolean): Unit =
     import GameKeyboard.Key.*
 
     val rSpeed = 0.05
     if player.flying
     then player.velocity.y = 0
 
-    val cosMove = Math.cos(player.rotation.y) * maxSpeed
-    val sinMove = Math.sin(player.rotation.y) * maxSpeed
+    val cosMove = Math.cos(player.rotation.y) * maxSpeed * 0.5
+    val sinMove = Math.sin(player.rotation.y) * maxSpeed * 0.5
 
     if keyboard.keyIsPressed(MoveForward)
     then
@@ -49,15 +49,15 @@ class PlayerInputHandler(keyboard: GameKeyboard, player: Player):
 
     if keyboard.keyIsPressed(Jump)
     then
-      if player.flying
-      then player.velocity.y = maxSpeed
-      else if player.velocity.y == 0
-      then player.velocity.y = 5
+      if player.flying then player.velocity.y = maxSpeed
+      else if player.velocity.y == 0 then player.velocity.y = 5
+      else if isInFluid then player.velocity.y += maxSpeed * 0.04
 
     if keyboard.keyIsPressed(Sneak)
     then
       if player.flying
       then player.velocity.y = -maxSpeed
+      else if isInFluid then player.velocity.y -= maxSpeed * 0.04
 
     if keyboard.keyIsPressed(LookUp)
     then player.rotation.x -= rSpeed

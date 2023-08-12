@@ -4,7 +4,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
-import hexacraft.world.block.Blocks
+import hexacraft.world.block.{Blocks, BlockState}
 import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -39,7 +39,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
 
-  private var currentlySelectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
+  private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val entityRenderers: BlockRendererCollection = BlockRendererCollection: s =>
@@ -89,14 +89,18 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
 
     worldCombinerShader.setClipPlanes(camera.proj.near, camera.proj.far)
 
-  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])]): Unit =
+  def render(
+      camera: Camera,
+      sun: Vector3f,
+      selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])]
+  ): Unit =
     // Update the 'selectedBlockVAO' if needed
     if currentlySelectedBlockAndSide != selectedBlockAndSide
     then
       currentlySelectedBlockAndSide = selectedBlockAndSide
       selectedBlockAndSide match
-        case Some((coords, Some(_))) => selectedBlockVao.setSelectedBlock(coords, world.getBlock(coords))
-        case _                       =>
+        case Some((state, coords, Some(_))) => selectedBlockVao.setSelectedBlock(coords, state)
+        case _                              =>
 
     // Step 1: Render everything to a FrameBuffer
     mainFrameBuffer.bind()
@@ -112,7 +116,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     chunkHandler.render(camera, sun)
     renderEntities(camera, sun)
 
-    if selectedBlockAndSide.flatMap(_._2).isDefined then
+    if selectedBlockAndSide.flatMap(_._3).isDefined then
       selectedBlockShader.setViewMatrix(camera.view.matrix)
       selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()

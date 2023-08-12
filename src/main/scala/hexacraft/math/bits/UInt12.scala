@@ -1,4 +1,4 @@
-package hexacraft.math
+package hexacraft.math.bits
 
 opaque type UInt12 <: AnyVal = Int
 

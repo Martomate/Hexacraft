@@ -1,7 +1,6 @@
 package hexacraft.world.coord.integer
 
-import hexacraft.math.Int12
-
+import hexacraft.math.bits.Int12
 import munit.FunSuite
 
 class BlockRelColumnTest extends FunSuite {

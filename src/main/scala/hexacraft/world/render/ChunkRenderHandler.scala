@@ -35,7 +35,7 @@ class ChunkRenderHandler:
     blockHexagonHandler.render()
 
   def setChunkRenderData(coords: ChunkRelWorld, data: ChunkRenderData): Unit =
-    blockHexagonHandler.setChunkContent(coords, data.blockSide)
+    blockHexagonHandler.setChunkContent(coords, data.opaqueBlockDataPerSide)
 
   def clearChunkRenderData(coords: ChunkRelWorld): Unit =
     blockHexagonHandler.clearChunkContent(coords)

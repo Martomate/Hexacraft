@@ -1,6 +1,5 @@
 package hexacraft.world.chunk
 
-import hexacraft.math.Int12
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
@@ -9,6 +8,7 @@ import hexacraft.world.coord.integer.*
 import hexacraft.world.gen.WorldGenerator
 
 import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
+import hexacraft.math.bits.Int12
 
 import scala.collection.mutable
 

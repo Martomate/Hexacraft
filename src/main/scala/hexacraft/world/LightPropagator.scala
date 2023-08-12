@@ -35,8 +35,8 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
       val neighCol = world.getColumn(neigh.coords.getColumnRelWorld).get
       if neigh.coords.Y.toInt * 16 + coords.cy > neighCol.terrainHeight(coords.cx, coords.cz)
       then
-        val transparentTop = block.blockType.isTransparent(block.metadata, 0)
-        val transparentBottom = block.blockType.isTransparent(block.metadata, 1)
+        val transparentTop = !block.blockType.isCovering(block.metadata, 0) || block.blockType.isTransmissive
+        val transparentBottom = !block.blockType.isCovering(block.metadata, 1) || block.blockType.isTransmissive
         transparentTop && transparentBottom
       else false
     }
@@ -189,7 +189,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
           val neigh = chunkCache.getChunk(c2w.getChunkRelWorld)
           if (neigh != null) {
             val block = neigh.getBlock(c2)
-            if (block.blockType.isTransparent(block.metadata, oppositeSide(s))) {
+            if (!block.blockType.isCovering(block.metadata, oppositeSide(s))) {
               val thisTLevel = neigh.lighting.getTorchlight(c2)
               if (thisTLevel < nextLevel) {
                 neigh.lighting.setTorchlight(c2, nextLevel)
@@ -255,7 +255,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
               val otherSide = oppositeSide(s)
 
               val bl = neigh.getBlock(c2)
-              if (bl.blockType.isTransparent(bl.metadata, otherSide)) {
+              if (!bl.blockType.isCovering(bl.metadata, otherSide)) {
                 val thisSLevel = neigh.lighting.getSunlight(c2)
                 val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
 
@@ -272,7 +272,7 @@ class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
             val otherSide = oppositeSide(s)
 
             val bl = chunk.getBlock(c2)
-            if (bl.blockType.isTransparent(bl.metadata, otherSide)) {
+            if (!bl.blockType.isCovering(bl.metadata, otherSide)) {
               val thisSLevel = chunk.lighting.getSunlight(c2)
               val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
               if (thisSLevel < nextS) {

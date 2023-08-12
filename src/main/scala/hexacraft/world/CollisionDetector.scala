@@ -106,7 +106,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Block
     else
       val blockState = chunk.getBlock(targetBlock.getBlockRelChunk)
 
-      if blockState.blockType == Blocks.Air
+      if !blockState.blockType.isSolid
       then None
       else
         val targetBounds = blockState.blockType.bounds(blockState.metadata)

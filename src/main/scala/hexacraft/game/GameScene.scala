@@ -8,8 +8,9 @@ import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{World, WorldProvider}
-import hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState, HexBox}
 import hexacraft.world.camera.{Camera, CameraProjection}
+import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 import hexacraft.world.entity.{EntityBaseData, EntityModel, EntityModelLoader}
@@ -72,9 +73,9 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, player)
   private val playerPhysicsHandler: PlayerPhysicsHandler =
-    new PlayerPhysicsHandler(player, world.collisionDetector)
+    new PlayerPhysicsHandler(player, world, world.collisionDetector)
 
-  private var selectedBlockAndSide: Option[(BlockRelWorld, Option[Int])] = None
+  private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
   private val toolbar: Toolbar = makeToolbar(player)
   private val blockInHandRenderer: GuiBlockRenderer = makeBlockInHandRenderer(world, camera)
@@ -250,11 +251,49 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
       crosshairShader.enable()
       crosshairRenderer.render(crosshairVAO)
 
+  private def playerEffectiveViscosity: Double =
+    player.bounds
+      .cover(CylCoords(player.position))
+      .map(c => c -> world.getBlock(c))
+      .filter(!_._2.blockType.isSolid)
+      .map((c, b) =>
+        HexBox.approximateVolumeOfIntersection(
+          BlockCoords(c).toCylCoords,
+          b.blockType.bounds(b.metadata),
+          CylCoords(player.position),
+          player.bounds
+        ) * b.blockType.viscosity.toSI
+      )
+      .sum
+
+  private def playerVolumeSubmergedInWater: Double =
+    val solidBounds = player.bounds.scaledRadially(0.7)
+    solidBounds
+      .cover(CylCoords(player.position))
+      .map(c => c -> world.getBlock(c))
+      .filter((c, b) => b.blockType == Blocks.Water)
+      .map((c, b) =>
+        HexBox.approximateVolumeOfIntersection(
+          BlockCoords(c).toCylCoords,
+          b.blockType.bounds(b.metadata),
+          CylCoords(player.position),
+          solidBounds
+        )
+      )
+      .sum
+
   override def tick(): Unit =
-    val maxSpeed = playerInputHandler.maxSpeed
-    if !isPaused && !isInPopup then
-      playerInputHandler.tick(if moveWithMouse then mouse.moved else new Vector2f, maxSpeed)
-    if !isPaused then playerPhysicsHandler.tick(maxSpeed)
+    val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
+    if world.getChunk(playerCoords.getChunkRelWorld).isDefined
+    then
+      val maxSpeed = playerInputHandler.maxSpeed
+      if !isPaused && !isInPopup then
+        playerInputHandler.tick(
+          if moveWithMouse then mouse.moved else new Vector2f,
+          maxSpeed,
+          playerEffectiveViscosity > Blocks.Air.viscosity.toSI * 2
+        )
+      if !isPaused then playerPhysicsHandler.tick(maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
 
     camera.setPositionAndRotation(player.position, player.rotation)
     camera.updateCoords()
@@ -279,7 +318,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
     for s <- overlays do s.tick()
 
-  private def updatedMousePicker(): Option[(BlockRelWorld, Option[Int])] =
+  private def updatedMousePicker(): Option[(BlockState, BlockRelWorld, Option[Int])] =
     if isPaused || isInPopup
     then None
     else
@@ -287,27 +326,29 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
         if moveWithMouse
         then new Vector2f(0, 0)
         else mouse.normalizedScreenCoords(window.windowSize)
+
+      // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
       for
         ray <- Ray.fromScreen(camera, screenCoords)
-        hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType != Blocks.Air)
-      yield hit
+        hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType.isSolid)
+      yield (world.getBlock(hit._1), hit._1, hit._2)
 
   private def performLeftMouseClick(): Unit =
     selectedBlockAndSide match
-      case Some((coords, _)) =>
-        if world.getBlock(coords).blockType != Blocks.Air
+      case Some((state, coords, _)) =>
+        if state.blockType != Blocks.Air
         then world.removeBlock(coords)
       case _ =>
 
   private def performRightMouseClick(): Unit =
     selectedBlockAndSide match
-      case Some((coords, Some(side))) =>
+      case Some((_, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
         tryPlacingBlockAt(coordsInFront)
       case _ =>
 
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit =
-    if world.getBlock(coords).blockType == Blocks.Air
+    if !world.getBlock(coords).blockType.isSolid
     then
       val blockType = player.blockInHand
       val state = new BlockState(blockType)

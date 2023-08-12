@@ -54,9 +54,9 @@ class CylCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoo
   * axes and also exponential
   */
 object CylCoords {
-  def apply(vec: Vector3d)(implicit cylSize: CylinderSize): CylCoords =
+  def apply(vec: Vector3d)(using cylSize: CylinderSize): CylCoords =
     new CylCoords(vec.x, vec.y, MathUtils.fitZ(vec.z, cylSize.circumference))
-  def apply(_x: Double, _y: Double, _z: Double)(implicit cylSize: CylinderSize): CylCoords =
+  def apply(_x: Double, _y: Double, _z: Double)(using cylSize: CylinderSize): CylCoords =
     new CylCoords(_x, _y, MathUtils.fitZ(_z, cylSize.circumference))
 
   case class Offset(_x: Double, _y: Double, _z: Double) extends AbstractCoords.Offset[CylCoords.Offset](_x, _y, _z) {

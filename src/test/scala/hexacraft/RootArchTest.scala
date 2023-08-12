@@ -44,6 +44,7 @@ class RootArchTest extends FunSuite {
     val Math = "Math"
     val Menu = "Menu"
     val Nbt = "Nbt"
+    val Physics = "Physics"
     val Renderer = "Renderer"
     val Util = "Util"
     val World = "World"
@@ -67,6 +68,7 @@ class RootArchTest extends FunSuite {
       .layer(Math, "hexacraft.math..")
       .layer(Menu, "hexacraft.menu..")
       .layer(Nbt, "hexacraft.nbt..")
+      .layer(Physics, "hexacraft.physics..")
       .layer(Renderer, "hexacraft.renderer..")
       .layer(Text, "hexacraft.text..")
       .layer(Util, "hexacraft.util..")
@@ -77,7 +79,10 @@ class RootArchTest extends FunSuite {
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
-      .where(Game, _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Util, World, JOML, Nbt, NbtLib))
+      .where(
+        Game,
+        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt, NbtLib)
+      )
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Text, Renderer, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Util, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
@@ -86,7 +91,7 @@ class RootArchTest extends FunSuite {
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
       .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
-      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Util, JOML, JSON, LWJGL, Nbt, NbtLib))
+      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, JSON, LWJGL, Nbt, NbtLib))
       .check(allClasses)
   }
 

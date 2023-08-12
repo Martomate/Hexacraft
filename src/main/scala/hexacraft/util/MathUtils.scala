@@ -21,11 +21,21 @@ object MathUtils:
 
   /** @return `value` unless it is lower than `lo` or higher than `hi` */
   def clamp(value: Float, lo: Float, hi: Float): Float =
-    if value < lo
-    then lo
-    else if value > hi
-    then hi
+    if value < lo then lo
+    else if value > hi then hi
+    else value
+
+  /** @return `value` unless it is lower than `lo` or higher than `hi` */
+  def clamp(value: Double, lo: Double, hi: Double): Double =
+    if value < lo then lo
+    else if value > hi then hi
     else value
 
   def oppositeSide(s: Int): Int =
     if (s < 2) 1 - s else (s - 2 + 3) % 6 + 2
+
+  def smoothstep(x: Float): Float = smoothstep(x.toDouble).toFloat
+
+  def smoothstep(x: Double): Double =
+    val t = clamp(x, 0, 1)
+    clamp((3 - 2 * t) * t * t, 0, 1)
