@@ -12,7 +12,8 @@ class ChunkRenderHandler:
   private val blockSideShader = new BlockShader(isSide = true)
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
-  private val blockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
+  private val regularBlockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
+  private val transmissiveBlockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
 
   def onTotalSizeChanged(totalSize: Int): Unit =
     blockShader.setTotalSize(totalSize)
@@ -32,15 +33,23 @@ class ChunkRenderHandler:
     blockSideShader.setSunPosition(sun)
 
     blockTexture.bind()
-    blockHexagonHandler.render()
+    regularBlockHexagonHandler.render()
+    transmissiveBlockHexagonHandler.render()
 
-  def setChunkRenderData(coords: ChunkRelWorld, data: ChunkRenderData): Unit =
-    blockHexagonHandler.setChunkContent(coords, data.opaqueBlockDataPerSide)
+  def setChunkRenderData(
+      coords: ChunkRelWorld,
+      opaqueBlocks: ChunkRenderData,
+      transmissiveBlocks: ChunkRenderData
+  ): Unit =
+    regularBlockHexagonHandler.setChunkContent(coords, opaqueBlocks.blockDataPerSide)
+    transmissiveBlockHexagonHandler.setChunkContent(coords, transmissiveBlocks.blockDataPerSide)
 
   def clearChunkRenderData(coords: ChunkRelWorld): Unit =
-    blockHexagonHandler.clearChunkContent(coords)
+    regularBlockHexagonHandler.clearChunkContent(coords)
+    transmissiveBlockHexagonHandler.clearChunkContent(coords)
 
   def unload(): Unit =
-    blockHexagonHandler.unload()
+    regularBlockHexagonHandler.unload()
+    transmissiveBlockHexagonHandler.unload()
     blockShader.free()
     blockSideShader.free()

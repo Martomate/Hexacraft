@@ -39,18 +39,16 @@ object CoordUtils {
     (BlockRelWorld(xInt, yInt, zInt), BlockCoords.Offset(xx, y - yInt, zz))
   }
 
-  def approximateIntCoords(coords: BlockCoords)(using CylinderSize): BlockRelWorld = {
+  def approximateIntCoords(coords: BlockCoords)(using CylinderSize): BlockRelWorld =
     val X = math.round(coords.x).toInt
     val Y = math.round(coords.y).toInt
     val Z = math.round(coords.z).toInt
     BlockRelWorld(X, Y, Z)
-  }
 
   def approximateChunkCoords(coords: CylCoords)(using CylinderSize): ChunkRelWorld =
     approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
 
-  def vectorToOffset(vec: Vector3d): Offset = {
+  def vectorToOffset(vec: Vector3d): Offset =
     val blockCoords = CylCoords.Offset(vec).toBlockCoordsOffset
     Offset(blockCoords.x.round.toInt, blockCoords.y.round.toInt, blockCoords.z.round.toInt)
-  }
 }

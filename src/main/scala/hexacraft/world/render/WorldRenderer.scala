@@ -61,12 +61,16 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private def updateChunkData(ch: Chunk): Unit =
     ch.initLightingIfNeeded(lightPropagator)
 
-    val renderData: ChunkRenderData =
+    val (opaqueBlocks, transmissiveBlocks) =
       if ch.blocks.isEmpty
-      then ChunkRenderData.empty
-      else ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world)
+      then (ChunkRenderData.empty, ChunkRenderData.empty)
+      else
+        (
+          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, false),
+          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, true)
+        )
 
-    chunkHandler.setChunkRenderData(ch.coords, renderData)
+    chunkHandler.setChunkRenderData(ch.coords, opaqueBlocks, transmissiveBlocks)
 
   def tick(camera: Camera, renderDistance: Double): Unit =
     chunkRenderUpdater.update(camera, renderDistance, updateChunkIfPresent)

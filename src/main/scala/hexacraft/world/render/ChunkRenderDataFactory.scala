@@ -15,7 +15,8 @@ object ChunkRenderDataFactory:
   def makeChunkRenderData(
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
-      world: BlocksInWorld
+      world: BlocksInWorld,
+      transmissiveBlocks: Boolean
   )(using CylinderSize)(using Blocks: Blocks): ChunkRenderData =
     val chunkCache = new ChunkCache(world)
 
@@ -36,24 +37,38 @@ object ChunkRenderDataFactory:
         val c = state.coords
         val b = state.block
 
-        if b.blockType.canBeRendered && !b.blockType.isTransmissive then
-          val c2w = c.globalNeighbor(s, chunkCoords)
-          val c2 = c2w.getBlockRelChunk
-          val crw = c2w.getChunkRelWorld
-          val neigh = chunkCache.getChunk(crw)
+        if b.blockType.canBeRendered then
+          if !transmissiveBlocks && !b.blockType.isTransmissive then
+            val c2w = c.globalNeighbor(s, chunkCoords)
+            val c2 = c2w.getBlockRelChunk
+            val crw = c2w.getChunkRelWorld
+            val neigh = chunkCache.getChunk(crw)
 
-          if neigh != null then
-            val bs = neigh.getBlock(c2)
+            if neigh != null then
+              val bs = neigh.getBlock(c2)
 
-            if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then
-              brightness(c.value) = neigh.lighting.getBrightness(c2)
-              shouldRender.set(c.value)
-              sidesCount(s) += 1
+              if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then
+                brightness(c.value) = neigh.lighting.getBrightness(c2)
+                shouldRender.set(c.value)
+                sidesCount(s) += 1
 
-              // render the top side
-              if s > 1 && !b.blockType.isCovering(b.metadata, s) then
-                shouldRenderTop.set(c.value)
-                sidesCount(0) += 1
+                // render the top side
+                if s > 1 && !b.blockType.isCovering(b.metadata, s) then
+                  shouldRenderTop.set(c.value)
+                  sidesCount(0) += 1
+          else if transmissiveBlocks && b.blockType.isTransmissive then
+            val c2w = c.globalNeighbor(s, chunkCoords)
+            val c2 = c2w.getBlockRelChunk
+            val crw = c2w.getChunkRelWorld
+            val neigh = chunkCache.getChunk(crw)
+
+            if neigh != null then
+              val bs = neigh.getBlock(c2)
+
+              if b != bs then
+                brightness(c.value) = neigh.lighting.getBrightness(c2)
+                shouldRender.set(c.value)
+                sidesCount(s) += 1
 
         i1 += 1
 
@@ -75,14 +90,7 @@ object ChunkRenderDataFactory:
       buf.flip()
       buf
 
-    val translucentBlocksBuffers = for (side <- 0 until 8) yield
-      val shouldRender = sidesToRender(side)
-      val brightness = sideBrightness(side)
-      val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
-      buf.flip()
-      buf
-
-    ChunkRenderData(opaqueBlocksBuffers, translucentBlocksBuffers)
+    ChunkRenderData(opaqueBlocksBuffers)
 
   private def populateBuffer(
       chunkCoords: ChunkRelWorld,

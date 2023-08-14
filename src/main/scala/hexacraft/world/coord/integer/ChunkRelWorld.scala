@@ -32,11 +32,12 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
   def neighbors(using CylinderSize): Seq[ChunkRelWorld] =
     ChunkRelWorld.neighborOffsets.map(offset)
 
-  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] = for {
-    y <- -radius to radius
-    z <- -radius to radius
-    x <- -radius to radius
-  } yield offset(x, y, z)
+  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] =
+    for
+      y <- -radius to radius
+      z <- -radius to radius
+      x <- -radius to radius
+    yield offset(x, y, z)
 
   def offset(t: Offset)(using CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
   def offset(dx: Int, dy: Int, dz: Int)(using CylinderSize): ChunkRelWorld =
