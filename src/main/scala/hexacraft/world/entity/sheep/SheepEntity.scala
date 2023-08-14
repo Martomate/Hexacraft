@@ -2,7 +2,7 @@ package hexacraft.world.entity.sheep
 
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
-import hexacraft.world.block.HexBox
+import hexacraft.world.block.{Blocks, HexBox}
 import hexacraft.world.entity.*
 import hexacraft.world.entity.ai.EntityAI
 
@@ -10,7 +10,7 @@ class SheepEntity(
     model: EntityModel,
     initData: EntityBaseData,
     private val ai: EntityAI
-)(using CylinderSize)
+)(using CylinderSize, Blocks)
     extends Entity(initData, model) {
   override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
 
