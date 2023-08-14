@@ -2,9 +2,9 @@ package hexacraft.nbt
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.nbt.{Nbt, NBTUtil}
-import hexacraft.util.GzipAlgorithm
 
 import com.flowpowered.nbt.*
+import hexacraft.math.GzipAlgorithm
 import munit.FunSuite
 import org.joml.Vector3d
 

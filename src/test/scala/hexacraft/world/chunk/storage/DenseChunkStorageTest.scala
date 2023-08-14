@@ -1,6 +1,6 @@
 package hexacraft.world.chunk.storage
 
-import hexacraft.world.block.Blocks
+import hexacraft.world.block.Block
 
 class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
   test("isDense should be true") {
@@ -30,8 +30,8 @@ class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
   test("fromNBT should work with blocks and metadata") {
     val storage = DenseChunkStorage.fromNBT(
       Array.tabulate(16 * 16 * 16) {
-        case 0 => Blocks.Dirt.id
-        case 1 => Blocks.Stone.id
+        case 0 => Block.Dirt.id
+        case 1 => Block.Stone.id
         case _ => 0
       },
       Some(Array.tabulate(16 * 16 * 16) {
@@ -42,20 +42,20 @@ class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
     )
 
     assertEquals(storage.numBlocks, 2)
-    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
+    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Block.Stone)
   }
 
   test("fromNBT should work without metadata") {
     val storage = DenseChunkStorage.fromNBT(
       Array.tabulate(16 * 16 * 16) {
-        case 0 => Blocks.Dirt.id
-        case 1 => Blocks.Stone.id
+        case 0 => Block.Dirt.id
+        case 1 => Block.Stone.id
         case _ => 0
       },
       None
     )
 
     assertEquals(storage.numBlocks, 2)
-    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Blocks.Stone)
+    assertEquals(storage.blockType(coordsAt(0, 0, 1).getBlockRelChunk), Block.Stone)
   }
 }

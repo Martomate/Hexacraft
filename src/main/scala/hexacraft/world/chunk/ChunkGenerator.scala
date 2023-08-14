@@ -2,7 +2,7 @@ package hexacraft.world.chunk
 
 import hexacraft.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CylinderSize, WorldProvider}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
 import hexacraft.world.entity.EntityRegistry
@@ -16,7 +16,7 @@ class ChunkGenerator(
     worldProvider: WorldProvider,
     worldGenerator: WorldGenerator,
     registry: EntityRegistry
-)(using cylSize: CylinderSize, Blocks: Blocks) {
+)(using cylSize: CylinderSize) {
 
   private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat"
 
@@ -47,9 +47,9 @@ class ChunkGenerator(
   }
 
   private def getBlockAtDepth(yToGo: Int) = {
-    if (yToGo < -5) Blocks.Stone
-    else if (yToGo < -1) Blocks.Dirt
-    else Blocks.Grass
+    if (yToGo < -5) Block.Stone
+    else if (yToGo < -1) Block.Dirt
+    else Block.Grass
   }
 
   private def limitForBlockNoise(yToGo: Int): Double = {

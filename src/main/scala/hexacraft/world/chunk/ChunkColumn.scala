@@ -1,14 +1,14 @@
 package hexacraft.world.chunk
 
+import hexacraft.math.bits.Int12
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.*
 import hexacraft.world.gen.WorldGenerator
 
 import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
-import hexacraft.math.bits.Int12
 
 import scala.collection.mutable
 
@@ -17,9 +17,7 @@ trait ChunkColumnTerrain:
   def terrainHeight(cx: Int, cz: Int): Short
 
 object ChunkColumn:
-  def create(coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider)(using
-      Blocks
-  ): ChunkColumn =
+  def create(coords: ColumnRelWorld, worldGenerator: WorldGenerator, worldProvider: WorldProvider): ChunkColumn =
     val generatedHeightMap =
       val gen = worldGenerator.getHeightmapInterpolator(coords)
       for x <- 0 until 16
@@ -39,8 +37,7 @@ class ChunkColumn private (
     worldProvider: WorldProvider,
     generatedHeightMap: IndexedSeq[IndexedSeq[Short]],
     heightMap: Array[Array[Short]]
-)(using Blocks: Blocks)
-    extends ChunkColumnTerrain:
+) extends ChunkColumnTerrain:
 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
@@ -84,7 +81,7 @@ class ChunkColumn private (
   def onSetBlock(coords: BlockRelWorld, now: BlockState): Unit =
     val height = terrainHeight(coords.cx, coords.cz)
 
-    if now.blockType != Blocks.Air then { // a block is being added
+    if now.blockType != Block.Air then { // a block is being added
       if coords.y > height then heightMap(coords.cx)(coords.cz) = coords.y.toShort
     } else { // a block is being removed
       if coords.y == height then
@@ -98,7 +95,7 @@ class ChunkColumn private (
               .orNull
           )
           .takeWhile(_ != null) // stop searching if the chunk is not loaded
-          .collectFirst({ case (y, block) if block.blockType != Blocks.Air => y })
+          .collectFirst({ case (y, block) if block.blockType != Block.Air => y })
           .getOrElse(Short.MinValue)
     }
 
@@ -110,7 +107,7 @@ class ChunkColumn private (
 
         val highestBlockY = (yy + 15 to yy by -1)
           .filter(_ > height)
-          .find(y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Blocks.Air)
+          .find(y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Block.Air)
 
         highestBlockY match
           case Some(h) => heightMap(x)(z) = h.toShort

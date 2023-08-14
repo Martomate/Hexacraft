@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.world.block.{BlockLoader, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockLoader, BlockState}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -12,7 +12,6 @@ import munit.FunSuite
 class WorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
   test("the world should not crash") {
@@ -33,8 +32,8 @@ class WorldTest extends FunSuite {
     // Set a block in the chunk
     val bCoords = BlockRelWorld(5, 1, 3, cCoords)
     assertEquals(world.getBlock(bCoords), BlockState.Air)
-    world.setBlock(bCoords, BlockState(Blocks.Stone, 2))
-    assertEquals(world.getBlock(bCoords), BlockState(Blocks.Stone, 2))
+    world.setBlock(bCoords, BlockState(Block.Stone, 2))
+    assertEquals(world.getBlock(bCoords), BlockState(Block.Stone, 2))
 
     // Clean up
     world.unload()
@@ -54,7 +53,7 @@ class WorldTest extends FunSuite {
     assert(chunk.isDecorated)
 
     // There should be a tree in the chunk
-    assert(chunk.blocks.exists(s => s.block.blockType == Blocks.Log))
+    assert(chunk.blocks.exists(s => s.block.blockType == Block.Log))
 
     // Clean up
     world.unload()

@@ -2,7 +2,7 @@ package hexacraft.game
 
 import hexacraft.main.RealGameMouse
 import hexacraft.world.{CylinderSize, FakeBlockLoader}
-import hexacraft.world.block.{BlockLoader, Blocks}
+import hexacraft.world.block.BlockLoader
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.player.Player
 
@@ -14,7 +14,6 @@ import scala.collection.mutable
 class PlayerInputHandlerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given Blocks: Blocks = new Blocks
 
   test("tick should ask the keyboard for pressed keys") {
     import GameKeyboard.Key

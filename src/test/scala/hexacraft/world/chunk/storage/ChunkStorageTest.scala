@@ -1,15 +1,14 @@
 package hexacraft.world.chunk.storage
 
 import hexacraft.world.{CylinderSize, FakeBlockLoader}
-import hexacraft.world.block.{BlockLoader, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockLoader, BlockState}
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
 
-abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends FunSuite {
+abstract class ChunkStorageTest(makeStorage: => ChunkStorage) extends FunSuite {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
   given BlockLoader = new FakeBlockLoader
-  implicit val Blocks: Blocks = new Blocks
 
   test("the storage should be correct for 0 blocks") {
     val storage = makeStorage
@@ -21,8 +20,8 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val storage = makeStorage
     val coords = coords350.getBlockRelChunk
 
-    storage.setBlock(coords, new BlockState(Blocks.Dirt))
-    storage.setBlock(coords, new BlockState(Blocks.Dirt))
+    storage.setBlock(coords, new BlockState(Block.Dirt))
+    storage.setBlock(coords, new BlockState(Block.Dirt))
 
     assertEquals(storage.numBlocks, 1)
   }
@@ -31,7 +30,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val storage = makeStorage
 
     for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16)
-      storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Blocks.Dirt))
+      storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Block.Dirt))
 
     assertEquals(storage.numBlocks, 16 * 16 * 16)
   }
@@ -40,8 +39,8 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val storage = makeStorage
     val coords = coords350.getBlockRelChunk
 
-    storage.setBlock(coords, new BlockState(Blocks.Dirt))
-    storage.setBlock(coords, new BlockState(Blocks.Air))
+    storage.setBlock(coords, new BlockState(Block.Dirt))
+    storage.setBlock(coords, new BlockState(Block.Air))
 
     assertEquals(storage.numBlocks, 0)
   }
@@ -49,13 +48,13 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
   test("blockType should be correct for existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Stone)
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Block.Stone)
   }
 
   test("blockType should be Air for non-existing block") {
     val storage: ChunkStorage = makeStorage_Dirt359_Stone350
 
-    assertEquals(storage.blockType(coords351.getBlockRelChunk), Blocks.Air)
+    assertEquals(storage.blockType(coords351.getBlockRelChunk), Block.Air)
   }
 
   test("removeBlock should work for existing blocks") {
@@ -63,7 +62,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
 
     storage.removeBlock(coords350.getBlockRelChunk)
 
-    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Air)
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Block.Air)
     assertEquals(storage.numBlocks, 1)
   }
 
@@ -72,7 +71,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
 
     storage.removeBlock(coords351.getBlockRelChunk)
 
-    assertEquals(storage.blockType(coords350.getBlockRelChunk), Blocks.Stone)
+    assertEquals(storage.blockType(coords350.getBlockRelChunk), Block.Stone)
     assertEquals(storage.numBlocks, 2)
   }
 
@@ -80,7 +79,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords350.getBlockRelChunk)
 
-    assertEquals(block.blockType, Blocks.Stone)
+    assertEquals(block.blockType, Block.Stone)
     assertEquals(block.metadata, 2.toByte)
   }
 
@@ -88,7 +87,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val storage = makeStorage_Dirt359_Stone350
     val block = storage.getBlock(coords351.getBlockRelChunk)
 
-    assertEquals(block.blockType, Blocks.Air)
+    assertEquals(block.blockType, Block.Air)
   }
 
   test("allBlocks should return all blocks") {
@@ -112,8 +111,8 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
     val metadataArray = nbt.metadata
     assertEquals(metadataArray.length, 16 * 16 * 16)
 
-    assertEquals(blocksArray(coords359.getBlockRelChunk.value), Blocks.Dirt.id)
-    assertEquals(blocksArray(coords350.getBlockRelChunk.value), Blocks.Stone.id)
+    assertEquals(blocksArray(coords359.getBlockRelChunk.value), Block.Dirt.id)
+    assertEquals(blocksArray(coords350.getBlockRelChunk.value), Block.Stone.id)
     assertEquals(metadataArray(coords359.getBlockRelChunk.value), 6.toByte)
     assertEquals(metadataArray(coords350.getBlockRelChunk.value), 2.toByte)
   }
@@ -131,7 +130,7 @@ abstract class ChunkStorageTest(makeStorage: Blocks ?=> ChunkStorage) extends Fu
   }
 
   protected def fillStorage_Dirt359_Stone350(storage: ChunkStorage): Unit = {
-    storage.setBlock(coords359.getBlockRelChunk, new BlockState(Blocks.Dirt, 6))
-    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Blocks.Stone, 2))
+    storage.setBlock(coords359.getBlockRelChunk, new BlockState(Block.Dirt, 6))
+    storage.setBlock(coords350.getBlockRelChunk, new BlockState(Block.Stone, 2))
   }
 }

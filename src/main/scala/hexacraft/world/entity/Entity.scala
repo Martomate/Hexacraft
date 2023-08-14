@@ -4,13 +4,13 @@ import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
-import hexacraft.world.block.{Blocks, HexBox}
+import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
 
 import org.joml.{Matrix4f, Vector3d}
 
 object Entity {
-  def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize, Blocks): Result[Entity, String] =
+  def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize): Result[Entity, String] =
     val entType = tag.getString("type", "")
     registry.get(entType) match
       case Some(factory) => Ok(factory.fromNBT(tag.toCompoundTag("")))

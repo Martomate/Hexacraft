@@ -3,7 +3,7 @@ package hexacraft.game.inventory
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, TextureArray}
-import hexacraft.world.block.{Block, Blocks}
+import hexacraft.world.block.{Block, BlockSpecRegistry}
 import hexacraft.world.camera.CameraProjection
 import hexacraft.world.render.{BlockRenderer, BlockRendererCollection}
 
@@ -13,7 +13,7 @@ object GuiBlockRenderer:
   private val guiBlockShader = new GuiBlockShader(isSide = false)
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
-class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using Blocks: Blocks):
+class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpecs: BlockSpecRegistry):
   private val guiBlockRenderer = BlockRendererCollection: s =>
     val vao = GuiBlockVao.forSide(s)
     val renderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.of(OpenGL.State.DepthTest -> false))
@@ -59,7 +59,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using Blocks: B
             then
               buf.putFloat(x * separation + xOff)
               buf.putFloat(y * separation + yOff)
-              buf.putInt(Blocks.textures(blockToDraw.name)(side))
+              buf.putInt(blockSpecs.textures(blockToDraw.name)(side))
               buf.putFloat(1)
               buf.putFloat(1)
 

@@ -1,7 +1,7 @@
 package hexacraft.world.ray
 
 import hexacraft.world.*
-import hexacraft.world.block.{BlockLoader, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockLoader, BlockState}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.BlockRelWorld
@@ -13,7 +13,6 @@ import org.joml.Vector2f
 class RayTracerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
   private def makeCameraProjection = new CameraProjection(70, 1.6f, 0.01f, 1000f)
@@ -35,7 +34,7 @@ class RayTracerTest extends FunSuite {
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
       provider,
       Map(
-        location -> new BlockState(Blocks.Dirt)
+        location -> new BlockState(Block.Dirt)
       )
     )
 
@@ -59,7 +58,7 @@ class RayTracerTest extends FunSuite {
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
       provider,
       Map(
-        location -> new BlockState(Blocks.Dirt)
+        location -> new BlockState(Block.Dirt)
       )
     )
 
@@ -82,8 +81,8 @@ class RayTracerTest extends FunSuite {
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
       provider,
       Map(
-        BlockRelWorld(0, 0, 0) -> new BlockState(Blocks.Air),
-        BlockRelWorld(0, 0, 1) -> new BlockState(Blocks.Dirt)
+        BlockRelWorld(0, 0, 0) -> new BlockState(Block.Air),
+        BlockRelWorld(0, 0, 1) -> new BlockState(Block.Dirt)
       )
     )
 

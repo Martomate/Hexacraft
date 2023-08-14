@@ -6,7 +6,7 @@ import hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, Mous
 import hexacraft.main.RealGameMouse
 import hexacraft.util.Tracker
 import hexacraft.world.{CylinderSize, FakeBlockLoader, FakeWorldProvider}
-import hexacraft.world.block.{BlockLoader, Blocks}
+import hexacraft.world.block.{BlockLoader, BlockSpecRegistry}
 
 import munit.FunSuite
 import org.joml.{Vector2i, Vector2ic}
@@ -16,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
 class GameSceneTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given Blocks: Blocks = new Blocks
+  given BlockSpecRegistry = BlockSpecRegistry.load(summon[BlockLoader])
 
   given GameMouse = new RealGameMouse
   given GameKeyboard = _ => false

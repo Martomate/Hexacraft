@@ -2,12 +2,12 @@ package hexacraft.world.entity
 
 import hexacraft.physics.Density
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
-import hexacraft.world.block.{Blocks, HexBox}
+import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 
 import org.joml.{Vector3d, Vector3f}
 
-class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using Blocks: Blocks)(using
+class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using
     CylinderSize
 ) {
   def update(data: EntityBaseData, boundingBox: HexBox): Unit =
@@ -29,7 +29,7 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
     solidBounds
       .cover(position)
       .map(c => c -> world.getBlock(c))
-      .filter((c, b) => b.blockType == Blocks.Water)
+      .filter((c, b) => b.blockType == Block.Water)
       .map((c, b) =>
         HexBox.approximateVolumeOfIntersection(
           BlockCoords(c).toCylCoords,

@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.util.MathUtils.oppositeSide
+import hexacraft.math.MathUtils.oppositeSide
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.chunk.storage.LocalBlockState

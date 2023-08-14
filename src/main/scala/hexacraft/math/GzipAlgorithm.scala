@@ -1,4 +1,4 @@
-package hexacraft.util
+package hexacraft.math
 
 import java.io.{BufferedInputStream, BufferedOutputStream, ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}

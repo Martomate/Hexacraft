@@ -1,7 +1,7 @@
 package hexacraft.world
 
-import hexacraft.util.MathUtils
-import hexacraft.world.block.{Blocks, HexBox}
+import hexacraft.math.MathUtils
+import hexacraft.world.block.HexBox
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, Offset}
@@ -10,7 +10,7 @@ import org.joml.Vector3d
 
 class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords.Offset)
 
-class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize, Blocks: Blocks):
+class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
   private val reflectionDirs = Array(
     Offset(0, -1, 0),
     Offset(0, 1, 0),

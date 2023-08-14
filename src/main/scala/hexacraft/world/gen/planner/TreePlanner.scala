@@ -1,7 +1,7 @@
 package hexacraft.world.gen.planner
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -11,8 +11,7 @@ import hexacraft.world.gen.feature.tree.{HugeTreeGenStrategy, ShortTreeGenStrate
 import scala.collection.mutable
 import scala.util.Random
 
-class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize, Blocks: Blocks)
-    extends WorldFeaturePlanner:
+class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize) extends WorldFeaturePlanner:
   private val plannedChanges: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -55,8 +54,8 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
 
     // short and tall trees can be birches, but the huge ones cannot
     val isBirchTree = rand.nextDouble() < 0.1
-    val logBlock = if isBirchTree then Blocks.BirchLog else Blocks.Log
-    val leavesBlock = if isBirchTree then Blocks.BirchLeaves else Blocks.Leaves
+    val logBlock = if isBirchTree then Block.BirchLog else Block.Log
+    val leavesBlock = if isBirchTree then Block.BirchLeaves else Block.Leaves
 
     val choice = rand.nextDouble()
     val treeGenStrategy =

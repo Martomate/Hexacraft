@@ -1,12 +1,12 @@
 package hexacraft.world.gen.feature.tree
 
-import hexacraft.world.block.{Block, Blocks}
+import hexacraft.world.block.Block
 import hexacraft.world.coord.integer.{NeighborOffsets, Offset}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random)(using Blocks: Blocks) extends TreeGenStrategy {
+class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenStrategy {
   override def blocks: Seq[(Offset, Block)] = {
     val builder = new Builder
 
@@ -42,12 +42,12 @@ class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random)(using Blocks: Blo
       val neighborHeights =
         randomlyDivideInterval(crossSectionBottom - crossSectionTop + 1, 0.1f, length).map(_.round)
 
-      logs ++= PillarGenerator(length).generate(start, Blocks.Log)
+      logs ++= PillarGenerator(length).generate(start, Block.Log)
       for (i <- 0 until crossSectionTop - 1)
-        logs ++= PillarGenerator(length).generate(reorderedNeighbors(i), Blocks.Log)
+        logs ++= PillarGenerator(length).generate(reorderedNeighbors(i), Block.Log)
 
       for ((r, h) <- neighborRoots.zip(neighborHeights))
-        logs ++= PillarGenerator(h).generate(r, Blocks.Log)
+        logs ++= PillarGenerator(h).generate(r, Block.Log)
     }
 
     private def randomlyDivideInterval(parts: Int, randomness: Float, length: Int): Seq[Float] = {
@@ -66,7 +66,7 @@ class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random)(using Blocks: Blo
     ): Unit = {
       val blobGen =
         BlobGenerator(rand, (size * 40 + 1).toInt, irregularity, flatnessBottom, flatnessTop)
-      leaves ++= blobGen.generate(center, Blocks.Leaves)
+      leaves ++= blobGen.generate(center, Block.Leaves)
     }
 
     def blocks: Seq[BlockSpec] = (leaves ++ logs).toSeq

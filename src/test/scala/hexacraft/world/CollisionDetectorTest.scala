@@ -12,7 +12,6 @@ import org.joml.Vector3d
 class CollisionDetectorTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  given Blocks: Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
   private val box1 = new HexBox(0.4f, 0.1f, 0.3f)
@@ -263,7 +262,7 @@ class CollisionDetectorTest extends FunSuite {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Place a block
-    chunk.setBlock(coords.getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.getBlockRelChunk, BlockState(Block.Dirt))
 
     // Check for collision (it should not move)
     val position = BlockCoords(coords).toSkewCylCoords
@@ -323,10 +322,10 @@ class CollisionDetectorTest extends FunSuite {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(3, 0, 0)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(3, 0, 0)).getBlockRelChunk, BlockState(Block.Dirt))
     for (off <- Seq(0, 1, 2).map(dx => Offset(dx, 0, 0)))
       chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(-1, 0, 0)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(-1, 0, 0)).getBlockRelChunk, BlockState(Block.Dirt))
 
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
@@ -369,10 +368,10 @@ class CollisionDetectorTest extends FunSuite {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(0, 3, 0)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(0, 3, 0)).getBlockRelChunk, BlockState(Block.Dirt))
     for (off <- Seq(0, 1, 2).map(dy => Offset(0, dy, 0)))
       chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(0, -1, 0)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(0, -1, 0)).getBlockRelChunk, BlockState(Block.Dirt))
 
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
@@ -417,10 +416,10 @@ class CollisionDetectorTest extends FunSuite {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(0, 0, 3)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(0, 0, 3)).getBlockRelChunk, BlockState(Block.Dirt))
     for (off <- Seq(0, 1, 2).map(dz => Offset(0, 0, dz)))
       chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(0, 0, -1)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(0, 0, -1)).getBlockRelChunk, BlockState(Block.Dirt))
 
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
@@ -463,10 +462,10 @@ class CollisionDetectorTest extends FunSuite {
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(3, 0, -3)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(3, 0, -3)).getBlockRelChunk, BlockState(Block.Dirt))
     for (off <- Seq(0, 1, 2).map(dw => Offset(dw, 0, -dw)))
       chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(-1, 0, 1)).getBlockRelChunk, BlockState(Blocks.Dirt))
+    chunk.setBlock(coords.offset(Offset(-1, 0, 1)).getBlockRelChunk, BlockState(Block.Dirt))
 
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 

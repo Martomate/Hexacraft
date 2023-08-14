@@ -2,7 +2,7 @@ package hexacraft.world.entity.player
 
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
-import hexacraft.world.block.{Blocks, HexBox}
+import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.*
 import hexacraft.world.entity.ai.EntityAI
@@ -11,7 +11,7 @@ class PlayerEntity(
     model: EntityModel,
     initData: EntityBaseData,
     private val ai: EntityAI
-)(using CylinderSize, Blocks)
+)(using CylinderSize)
     extends Entity(initData, model) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
 

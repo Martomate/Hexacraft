@@ -1,7 +1,6 @@
 package hexacraft.world.gen.planner
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.Blocks
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -11,8 +10,7 @@ import scala.collection.mutable
 import scala.util.Random
 
 class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mainSeed: Long)(using
-    CylinderSize,
-    Blocks
+    CylinderSize
 ) extends WorldFeaturePlanner:
   private val plannedEntities: mutable.Map[ChunkRelWorld, Seq[Entity]] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty

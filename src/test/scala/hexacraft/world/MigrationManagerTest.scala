@@ -1,8 +1,8 @@
 package hexacraft.world
 
 import hexacraft.infra.fs.FileSystem
+import hexacraft.math.GzipAlgorithm
 import hexacraft.nbt.Nbt
-import hexacraft.util.GzipAlgorithm
 
 import munit.FunSuite
 

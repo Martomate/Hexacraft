@@ -4,7 +4,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.{BlockSpecRegistry, BlockState}
 import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
@@ -15,7 +15,7 @@ import org.joml.{Vector2ic, Vector3f}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize, Blocks):
+class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize, BlockSpecRegistry):
   private val skyShader = new SkyShader()
   private val entityShader = new EntityShader(isSide = false)
   private val entitySideShader = new EntityShader(isSide = true)

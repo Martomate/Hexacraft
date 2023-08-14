@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
-import hexacraft.world.block.Blocks
+import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
@@ -17,7 +17,7 @@ object ChunkRenderDataFactory:
       blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       transmissiveBlocks: Boolean
-  )(using CylinderSize)(using Blocks: Blocks): ChunkRenderData =
+  )(using CylinderSize, BlockSpecRegistry): ChunkRenderData =
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
@@ -72,7 +72,7 @@ object ChunkRenderDataFactory:
 
         i1 += 1
 
-    val opaqueBlocksBuffers = for (side <- 0 until 8) yield
+    val blocksBuffers = for (side <- 0 until 8) yield
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
@@ -90,7 +90,7 @@ object ChunkRenderDataFactory:
       buf.flip()
       buf
 
-    ChunkRenderData(opaqueBlocksBuffers)
+    ChunkRenderData(blocksBuffers)
 
   private def populateBuffer(
       chunkCoords: ChunkRelWorld,
@@ -99,7 +99,7 @@ object ChunkRenderDataFactory:
       shouldRender: java.util.BitSet,
       brightness: BlockRelWorld => Float,
       buf: ByteBuffer
-  )(using Blocks: Blocks, cylSize: CylinderSize): Unit =
+  )(using blockSpecs: BlockSpecRegistry, cylSize: CylinderSize): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
 
     var i1 = 0
@@ -116,7 +116,7 @@ object ChunkRenderDataFactory:
         buf.putInt(coords.z)
 
         val blockType = block.blockType
-        buf.putInt(Blocks.textures(blockType.name)(side))
+        buf.putInt(blockSpecs.textures(blockType.name)(side))
         buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0

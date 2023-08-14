@@ -1,7 +1,6 @@
 package hexacraft.world.entity.horse
 
 import hexacraft.renderer.TextureSingle
-import hexacraft.util.MathUtils
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.BlockCoords
@@ -9,6 +8,7 @@ import hexacraft.world.entity.{EntityModel, EntityPart}
 import hexacraft.world.entity.base.BasicEntityPart
 
 import com.eclipsesource.json.JsonObject
+import hexacraft.math.MathUtils
 import org.joml.Vector3f
 
 class HorseEntityModel(

@@ -3,7 +3,7 @@ package hexacraft.world.block
 import hexacraft.world.coord.fp.CylCoords
 
 object BlockState {
-  val Air: BlockState = new BlockState(Blocks.instance.Air)
+  val Air: BlockState = new BlockState(Block.Air)
 
   val boundingBox: HexBox = new HexBox(0.5f, 0, 0.5f)
   val vertices: Seq[CylCoords.Offset] = boundingBox.vertices

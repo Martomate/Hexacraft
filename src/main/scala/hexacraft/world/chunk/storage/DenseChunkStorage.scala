@@ -2,7 +2,7 @@ package hexacraft.world.chunk.storage
 
 import hexacraft.util.SmartArray
 import hexacraft.world.CylinderSize
-import hexacraft.world.block.{Block, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.BlockRelChunk
 
 class DenseChunkStorage extends ChunkStorage:
@@ -50,8 +50,7 @@ object DenseChunkStorage:
     result
 
   def fromNBT(blocks: Array[Byte], metadata: Option[Array[Byte]])(using
-      CylinderSize,
-      Blocks
+      CylinderSize
   ): DenseChunkStorage =
     val storage = new DenseChunkStorage
 

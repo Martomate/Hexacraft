@@ -1,4 +1,4 @@
-package hexacraft.util
+package hexacraft.math
 
 object MathUtils:
   def fitZ(z: Double, circumference: Double): Double =

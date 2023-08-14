@@ -1,12 +1,11 @@
 package hexacraft.world.gen
 
 import hexacraft.world.{BlocksInWorld, CylinderSize, World}
-import hexacraft.world.block.Blocks
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.EntityRegistry
 import hexacraft.world.gen.planner.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
-class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize, Blocks):
+class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize):
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
     new EntityGroupPlanner(world, registry.get("sheep").get, mainSeed)
@@ -27,5 +26,5 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
       case World.Event.ChunkRemoved(_) =>
 
 object WorldPlanner:
-  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize, Blocks): WorldPlanner =
+  def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize): WorldPlanner =
     new WorldPlanner(world, registry, mainSeed)

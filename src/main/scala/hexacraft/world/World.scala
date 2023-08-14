@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.util.*
-import hexacraft.world.block.{BlockRepository, Blocks, BlockState}
+import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.CoordUtils
@@ -22,7 +22,7 @@ object World:
 
   var shouldChillChunkLoader = false
 
-  def apply(provider: WorldProvider, worldInfo: WorldInfo)(using Blocks, EntityModelLoader): World =
+  def apply(provider: WorldProvider, worldInfo: WorldInfo)(using EntityModelLoader): World =
     new World(provider, worldInfo, makeEntityRegistry)
 
   private def makeEntityRegistry(using modelLoader: EntityModelLoader): EntityRegistry =
@@ -36,7 +36,7 @@ object World:
     case ChunkAdded(chunk: Chunk)
     case ChunkRemoved(coords: ChunkRelWorld)
 
-class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)(using Blocks)
+class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)
     extends BlockRepository
     with BlocksInWorld:
   val size: CylinderSize = worldInfo.worldSize

@@ -9,16 +9,14 @@ import hexacraft.world.coord.integer.BlockRelWorld
 import org.joml.Vector3d
 
 object PointHexagon:
-  def fromHexBox(hexBox: HexBox, location: BlockRelWorld, camera: Camera)(implicit
-      cylSize: CylinderSize
-  ): PointHexagon =
+  def fromHexBox(hexBox: HexBox, location: BlockRelWorld, camera: Camera)(using CylinderSize): PointHexagon =
     val points =
       for v <- hexBox.vertices
       yield asNormalCoords(location, v, camera).toVector3d
     new PointHexagon(points)
 
-  private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords.Offset, camera: Camera)(implicit
-      cylSize: CylinderSize
+  private def asNormalCoords(blockPos: BlockRelWorld, offset: CylCoords.Offset, camera: Camera)(using
+      CylinderSize
   ): NormalCoords =
     val blockCoords = BlockCoords(blockPos).toCylCoords.offset(offset)
     blockCoords.toNormalCoords(CylCoords(camera.view.position))

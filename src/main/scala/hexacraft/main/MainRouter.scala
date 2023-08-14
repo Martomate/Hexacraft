@@ -5,7 +5,7 @@ import hexacraft.gui.{Scene, WindowExtras}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.menu.*
 import hexacraft.util.Tracker
-import hexacraft.world.block.{BlockLoader, Blocks}
+import hexacraft.world.block.{BlockLoader, BlockSpecRegistry}
 import hexacraft.world.settings.WorldSettings
 
 import java.io.File
@@ -77,7 +77,7 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
 
     case SceneRoute.Game(saveDir, settings) =>
       given BlockLoader = BlockLoader.instance // this loads it to memory
-      given Blocks = new Blocks
+      given BlockSpecRegistry = BlockSpecRegistry.load(summon[BlockLoader])
 
       GameScene(new WorldProviderFromFile(saveDir, settings, fs)):
         case GameScene.Event.QuitGame =>

@@ -12,14 +12,13 @@ class BlockBehaviourFluid extends BlockBehaviour {
   private val fluidLevelMask = BlockBehaviourFluid.fluidLevelMask
 
   override def onUpdated(coords: BlockRelWorld, block: Block, world: BlockRepository)(using
-      cylSize: CylinderSize,
-      Blocks: Blocks
+      cylSize: CylinderSize
   ): Unit = {
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
     val bottomCoords = coords.offset(0, -1, 0)
     val bottomBS = world.getBlock(bottomCoords)
-    if (bottomBS.blockType == Blocks.Air) {
+    if (bottomBS.blockType == Block.Air) {
       world.setBlock(bottomCoords, new BlockState(block, depth.toByte))
       depth = fluidLevelMask + 1
     } else if (bottomBS.blockType == block && bottomBS.metadata != 0) {
@@ -40,11 +39,11 @@ class BlockBehaviourFluid extends BlockBehaviour {
         val nCoords = coords.offset(off)
         val ns = world.getBlock(nCoords)
 
-        if (ns.blockType == Blocks.Air) {
+        if (ns.blockType == Block.Air) {
           val belowNeighborBlock = world.getBlock(nCoords.offset(0, -1, 0))
           val belowNeighbor = belowNeighborBlock.blockType
           if (
-            depth < 0x1f || (depth == 0x1f && (belowNeighbor == Blocks.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))
+            depth < 0x1f || (depth == 0x1f && (belowNeighbor == Block.Air || (belowNeighbor == block && belowNeighborBlock.metadata != 0)))
           ) {
             world.setBlock(nCoords, new BlockState(block, 0x1f.toByte))
             depth += 1

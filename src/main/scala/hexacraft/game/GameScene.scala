@@ -8,7 +8,7 @@ import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{World, WorldProvider}
-import hexacraft.world.block.{Block, BlockLoader, Blocks, BlockState, HexBox}
+import hexacraft.world.block.{Block, BlockLoader, BlockSpecRegistry, BlockState, HexBox}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -35,9 +35,8 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     mouse: GameMouse,
     keyboard: GameKeyboard,
     window: GameWindow,
-    blockLoader: BlockLoader,
-    Blocks: Blocks
-)(using WindowExtras)
+    blockLoader: BlockLoader
+)(using WindowExtras, BlockSpecRegistry)
     extends Scene:
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(blockLoader.reloadAllBlockTextures()))
@@ -118,7 +117,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     case KeyboardKey.Letter('B') =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
-      if world.getBlock(newCoords).blockType == Blocks.Air
+      if world.getBlock(newCoords).blockType == Block.Air
       then world.setBlock(newCoords, new BlockState(player.blockInHand))
     case KeyboardKey.Escape =>
       import PauseMenu.Event.*
@@ -271,7 +270,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     solidBounds
       .cover(CylCoords(player.position))
       .map(c => c -> world.getBlock(c))
-      .filter((c, b) => b.blockType == Blocks.Water)
+      .filter((c, b) => b.blockType == Block.Water)
       .map((c, b) =>
         HexBox.approximateVolumeOfIntersection(
           BlockCoords(c).toCylCoords,
@@ -291,7 +290,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
         playerInputHandler.tick(
           if moveWithMouse then mouse.moved else new Vector2f,
           maxSpeed,
-          playerEffectiveViscosity > Blocks.Air.viscosity.toSI * 2
+          playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
         )
       if !isPaused then playerPhysicsHandler.tick(maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
 
@@ -336,7 +335,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private def performLeftMouseClick(): Unit =
     selectedBlockAndSide match
       case Some((state, coords, _)) =>
-        if state.blockType != Blocks.Air
+        if state.blockType != Block.Air
         then world.removeBlock(coords)
       case _ =>
 

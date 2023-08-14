@@ -5,6 +5,7 @@ import hexacraft.gui.{Event, Scene, WindowExtras}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
+import hexacraft.math.GzipAlgorithm
 import hexacraft.menu.{
   HostWorldChooserMenu,
   JoinWorldChooserMenu,
@@ -15,7 +16,7 @@ import hexacraft.menu.{
   WorldChooserMenu
 }
 import hexacraft.nbt.Nbt
-import hexacraft.util.{GzipAlgorithm, Tracker}
+import hexacraft.util.Tracker
 import hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import munit.FunSuite

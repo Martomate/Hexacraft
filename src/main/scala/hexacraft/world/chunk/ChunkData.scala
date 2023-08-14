@@ -3,7 +3,7 @@ package hexacraft.world.chunk
 import hexacraft.nbt.Nbt
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.CylinderSize
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, LocalBlockState, SparseChunkStorage}
 import hexacraft.world.coord.integer.BlockRelChunk
 import hexacraft.world.entity.{Entity, EntityRegistry}
@@ -11,7 +11,7 @@ import hexacraft.world.entity.{Entity, EntityRegistry}
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
-class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize, Blocks):
+class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize):
   private var _isDecorated: Boolean = false
   def isDecorated: Boolean = _isDecorated
 
@@ -45,10 +45,10 @@ class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer
     )
 
 object ChunkData:
-  def fromStorage(storage: ChunkStorage)(using CylinderSize, Blocks): ChunkData =
+  def fromStorage(storage: ChunkStorage)(using CylinderSize): ChunkData =
     new ChunkData(storage, mutable.ArrayBuffer.empty)
 
-  def fromNBT(nbt: Nbt.MapTag)(registry: EntityRegistry)(using CylinderSize, Blocks): ChunkData =
+  def fromNBT(nbt: Nbt.MapTag)(registry: EntityRegistry)(using CylinderSize): ChunkData =
     val storage = nbt.getByteArray("blocks") match
       case Some(blocks) =>
         val meta = nbt.getByteArray("metadata")
@@ -66,8 +66,7 @@ object ChunkData:
     data
 
   private def entitiesFromNbt(list: Seq[Nbt.MapTag], registry: EntityRegistry)(using
-      CylinderSize,
-      Blocks
+      CylinderSize
   ): Iterable[Entity] =
     val entities = mutable.ArrayBuffer.empty[Entity]
 

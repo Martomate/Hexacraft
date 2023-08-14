@@ -2,7 +2,7 @@ package hexacraft.world.player
 
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{CylinderSize, FakeBlockLoader}
-import hexacraft.world.block.{BlockLoader, Blocks}
+import hexacraft.world.block.{Block, BlockLoader}
 import hexacraft.world.coord.fp.CylCoords
 
 import munit.FunSuite
@@ -10,7 +10,6 @@ import munit.FunSuite
 class PlayerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given BlockLoader = new FakeBlockLoader
-  implicit val Blocks: Blocks = new Blocks
 
   test("saving should save all the fields as NBT") {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))
@@ -35,7 +34,7 @@ class PlayerTest extends FunSuite {
     playerBefore.rotation.set(0.1, 0.2, -0.3)
     playerBefore.flying = true
     playerBefore.selectedItemSlot = 7
-    playerBefore.inventory(3) = Blocks.Stone
+    playerBefore.inventory(3) = Block.Stone
 
     val playerAfter = Player.fromNBT(playerBefore.toNBT)
 

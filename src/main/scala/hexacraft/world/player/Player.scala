@@ -1,7 +1,7 @@
 package hexacraft.world.player
 
 import hexacraft.nbt.{Nbt, NBTUtil}
-import hexacraft.world.block.{Block, Blocks, HexBox}
+import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 
 import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
@@ -33,7 +33,7 @@ class Player(val inventory: Inventory) {
 }
 
 object Player {
-  def atStartPos(initialFootCoords: CylCoords)(using Blocks): Player = {
+  def atStartPos(initialFootCoords: CylCoords): Player = {
     val player = new Player(Inventory.default)
     player.position.set(
       initialFootCoords.x,
@@ -43,7 +43,7 @@ object Player {
     player
   }
 
-  def fromNBT(tag2: CompoundTag)(using Blocks): Player = {
+  def fromNBT(tag2: CompoundTag): Player = {
     val tag = Nbt.from(tag2)
     val inventory =
       tag.getCompoundTag("inventory") match

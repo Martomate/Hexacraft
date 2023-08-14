@@ -2,7 +2,7 @@ package hexacraft.world.chunk
 
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.*
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityRegistry}
@@ -16,7 +16,7 @@ object Chunk:
       world: BlocksInWorld,
       worldProvider: WorldProvider,
       entityRegistry: EntityRegistry = EntityRegistry.empty
-  )(using CylinderSize, Blocks): Chunk =
+  )(using CylinderSize): Chunk =
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
     val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
     new Chunk(coords, chunkGenerator)

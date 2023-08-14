@@ -1,12 +1,25 @@
 package hexacraft.world.block
 
 import hexacraft.physics.Viscosity
+import hexacraft.world.block.fluid.BlockFluid
 
 object Block {
   private val maxBlocks = 256
 
   private val blocks = new Array[Block](maxBlocks)
   def byId(id: Byte): Block = blocks(id)
+
+  val Air = new BlockAir
+  val Stone = new Block(1, "stone", "Stone")
+  val Grass = new Block(2, "grass", "Grass")
+  val Dirt = new Block(3, "dirt", "Dirt")
+  val Sand = new Block(4, "sand", "Sand") with EmittingLight
+  val Water = new BlockFluid(5, "water", "Water")
+  val Log = new Block(6, "log", "Log")
+  val Leaves = new Block(7, "leaves", "Leaves")
+  val Planks = new Block(8, "planks", "Planks")
+  val BirchLog = new Block(9, "log_birch", "Birch log")
+  val BirchLeaves = new Block(10, "leaves_birch", "Birch leaves")
 }
 
 class Block(val id: Byte, val name: String, val displayName: String) {

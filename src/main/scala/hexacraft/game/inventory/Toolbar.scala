@@ -2,12 +2,14 @@ package hexacraft.game.inventory
 
 import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation, SubComponents}
-import hexacraft.world.block.Blocks
+import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, inventory: Inventory)(using Blocks: Blocks) extends Component with SubComponents {
+class Toolbar(location: LocationInfo, inventory: Inventory)(using BlockSpecRegistry)
+    extends Component
+    with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
   private val selectedBox = LocationInfo(

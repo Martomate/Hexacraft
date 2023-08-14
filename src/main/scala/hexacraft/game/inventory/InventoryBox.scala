@@ -3,12 +3,12 @@ package hexacraft.game.inventory
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
-import hexacraft.world.block.{Block, Blocks}
+import hexacraft.world.block.{Block, BlockSpecRegistry}
 import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using Blocks: Blocks) extends Component {
+class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using BlockSpecRegistry) extends Component {
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -28,7 +28,7 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using Blocks: B
 
   private def updateRendererContent(): Unit =
     guiBlockRenderer.updateContent(-4 * 0.2f, -2 * 0.2f, (0 until 9 * 4).map(i => inventory(i)))
-    if floatingBlock.isEmpty then floatingBlockRenderer.updateContent(0, 0, Seq(Blocks.Air))
+    if floatingBlock.isEmpty then floatingBlockRenderer.updateContent(0, 0, Seq(Block.Air))
 
   private def calculateHoverIndex(mx: Float, my: Float) =
     if location.containsPoint(mx, my)
@@ -50,8 +50,8 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using Blocks: B
       case MouseClickEvent(_, MouseAction.Release, _, mousePos) if location.containsPoint(mousePos) =>
         hoverIndex match
           case Some(hover) =>
-            val newFloatingBlock = Some(inventory(hover)).filter(_ != Blocks.Air)
-            inventory(hover) = floatingBlock.getOrElse(Blocks.Air)
+            val newFloatingBlock = Some(inventory(hover)).filter(_ != Block.Air)
+            inventory(hover) = floatingBlock.getOrElse(Block.Air)
             floatingBlock = newFloatingBlock
           case None =>
             handleFloatingBlock()

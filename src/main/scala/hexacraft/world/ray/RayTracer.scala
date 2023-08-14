@@ -1,8 +1,8 @@
 package hexacraft.world.ray
 
-import hexacraft.util.MathUtils.oppositeSide
+import hexacraft.math.MathUtils.oppositeSide
 import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.{Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.camera.Camera
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
@@ -11,8 +11,7 @@ import org.joml.Vector3d
 import scala.annotation.tailrec
 
 class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
-    cylSize: CylinderSize,
-    Blocks: Blocks
+    cylSize: CylinderSize
 ):
   def trace(
       ray: Ray,
@@ -89,7 +88,7 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
 
   private def blockTouched(ray: Ray, hitBlockCoords: BlockRelWorld): Boolean =
     world.getBlock(hitBlockCoords) match
-      case block if block.blockType != Blocks.Air =>
+      case block if block.blockType != Block.Air =>
         (0 until 8).exists(side => {
           val boundingBox = block.blockType.bounds(block.metadata)
           val points = PointHexagon.fromHexBox(boundingBox, hitBlockCoords, camera)

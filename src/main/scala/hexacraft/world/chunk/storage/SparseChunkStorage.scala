@@ -1,12 +1,12 @@
 package hexacraft.world.chunk.storage
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.block.{Block, Blocks, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.BlockRelChunk
 
 import scala.collection.mutable
 
-class SparseChunkStorage(using Blocks: Blocks) extends ChunkStorage:
+class SparseChunkStorage extends ChunkStorage:
   private val blocks = mutable.LongMap.withDefault[BlockState](_ => BlockState.Air)
 
   def blockType(coords: BlockRelChunk): Block = blocks(coords.value.toShort).blockType
@@ -14,7 +14,7 @@ class SparseChunkStorage(using Blocks: Blocks) extends ChunkStorage:
   def getBlock(coords: BlockRelChunk): BlockState = blocks(coords.value.toShort)
 
   def setBlock(coords: BlockRelChunk, block: BlockState): Unit =
-    if block.blockType != Blocks.Air
+    if block.blockType != Block.Air
     then blocks(coords.value) = block
     else removeBlock(coords)
 
@@ -34,9 +34,9 @@ class SparseChunkStorage(using Blocks: Blocks) extends ChunkStorage:
     ChunkStorage.NbtData(blocks = ids, metadata = meta)
 
 object SparseChunkStorage:
-  def empty(using CylinderSize, Blocks): ChunkStorage = new SparseChunkStorage
+  def empty(using CylinderSize): ChunkStorage = new SparseChunkStorage
 
-  def fromStorage(storage: ChunkStorage)(using Blocks): SparseChunkStorage =
+  def fromStorage(storage: ChunkStorage): SparseChunkStorage =
     val result = new SparseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result

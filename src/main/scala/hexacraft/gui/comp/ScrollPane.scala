@@ -2,7 +2,7 @@ package hexacraft.gui.comp
 
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.util.MathUtils
+import hexacraft.math.MathUtils
 
 import org.joml.Vector4f
 

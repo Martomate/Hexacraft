@@ -2,20 +2,20 @@ package hexacraft.world.player
 
 import hexacraft.nbt.Nbt
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
-import hexacraft.world.block.{Block, Blocks}
+import hexacraft.world.block.Block
 
 import com.flowpowered.nbt.*
 
-class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
+class Inventory(init_slots: Map[Int, Block]) {
   private val dispatcher = new EventDispatcher[Unit]
   def trackChanges(tracker: Tracker[Unit]): RevokeTrackerFn = dispatcher.track(tracker)
 
-  private val slots: Array[Block] = Array.fill(4 * 9)(Blocks.Air)
+  private val slots: Array[Block] = Array.fill(4 * 9)(Block.Air)
   for ((idx, block) <- init_slots) slots(idx) = block
 
   def apply(idx: Int): Block = slots(idx)
 
-  def firstEmptySlot: Option[Int] = (0 until 4 * 9).find(i => this(i) == Blocks.Air)
+  def firstEmptySlot: Option[Int] = (0 until 4 * 9).find(i => this(i) == Block.Air)
 
   def update(idx: Int, block: Block): Unit =
     slots(idx) = block
@@ -26,7 +26,7 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
       Nbt
         .ListTag(
           slots.toSeq.zipWithIndex
-            .filter((block, _) => block.id != Blocks.Air.id)
+            .filter((block, _) => block.id != Block.Air.id)
             .map((block, idx) => Nbt.makeMap("slot" -> Nbt.ByteTag(idx.toByte), "id" -> Nbt.ByteTag(block.id)))
         )
         .toRaw("slots")
@@ -40,23 +40,23 @@ class Inventory(init_slots: Map[Int, Block])(using Blocks: Blocks) {
 }
 
 object Inventory {
-  def default(using Blocks: Blocks): Inventory =
+  def default: Inventory =
     new Inventory(
       Map(
-        0 -> Blocks.Dirt,
-        1 -> Blocks.Grass,
-        2 -> Blocks.Sand,
-        3 -> Blocks.Stone,
-        4 -> Blocks.Water,
-        5 -> Blocks.Log,
-        6 -> Blocks.Leaves,
-        7 -> Blocks.Planks,
-        8 -> Blocks.BirchLog,
-        9 -> Blocks.BirchLeaves
+        0 -> Block.Dirt,
+        1 -> Block.Grass,
+        2 -> Block.Sand,
+        3 -> Block.Stone,
+        4 -> Block.Water,
+        5 -> Block.Log,
+        6 -> Block.Leaves,
+        7 -> Block.Planks,
+        8 -> Block.BirchLog,
+        9 -> Block.BirchLeaves
       )
     )
 
-  def fromNBT(nbt: Nbt.MapTag)(using Blocks): Inventory =
+  def fromNBT(nbt: Nbt.MapTag): Inventory =
     nbt.getList("slots") match
       case Some(slotTags) =>
         val slots = slotTags.flatMap {

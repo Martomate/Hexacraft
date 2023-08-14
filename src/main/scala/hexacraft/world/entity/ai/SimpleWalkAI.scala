@@ -2,14 +2,14 @@ package hexacraft.world.entity.ai
 
 import hexacraft.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.{Blocks, HexBox}
+import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.EntityBaseData
 
 import com.flowpowered.nbt.*
 import org.joml.{Vector3d, Vector3dc}
 
-class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
+class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private val movingForce = new Vector3d
   private var target: CylCoords = CylCoords(0, 0, 0)
 
@@ -44,7 +44,7 @@ class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
           entityBoundingBox.radius + speed * 4
         )
 
-      if (blockInFront != Blocks.Air && entityBaseData.velocity.y == 0) {
+      if (blockInFront != Block.Air && entityBaseData.velocity.y == 0) {
         movingForce.y = 3.5
       }
       val angle = entityBaseData.position.angleXZ(target)
@@ -75,9 +75,9 @@ class SimpleWalkAI(using CylinderSize)(using Blocks: Blocks) extends EntityAI {
 }
 
 object SimpleWalkAI:
-  def create(using CylinderSize, Blocks): SimpleWalkAI = new SimpleWalkAI
+  def create(using CylinderSize): SimpleWalkAI = new SimpleWalkAI
 
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize, Blocks): SimpleWalkAI = {
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SimpleWalkAI = {
     val targetX = tag.getDouble("targetX", 0)
     val targetZ = tag.getDouble("targetZ", 0)
     val target = tag.getShort("timeout", 0)

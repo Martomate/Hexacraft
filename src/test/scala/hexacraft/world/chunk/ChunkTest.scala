@@ -1,7 +1,7 @@
 package hexacraft.world.chunk
 
 import hexacraft.world.{CylinderSize, FakeBlockLoader, FakeBlocksInWorld, FakeWorldProvider}
-import hexacraft.world.block.{BlockLoader, Blocks}
+import hexacraft.world.block.BlockLoader
 import hexacraft.world.coord.integer.ChunkRelWorld
 import hexacraft.world.entity.EntityModelLoader
 
@@ -10,7 +10,6 @@ import munit.FunSuite
 class ChunkTest extends FunSuite {
   given CylinderSize = CylinderSize(6)
   given BlockLoader = new FakeBlockLoader
-  given Blocks = new Blocks
   given EntityModelLoader = new EntityModelLoader
 
   test("the chunk should not crash") {
