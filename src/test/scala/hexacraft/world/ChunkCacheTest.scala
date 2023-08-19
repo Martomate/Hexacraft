@@ -1,16 +1,12 @@
 package hexacraft.world
 
-import hexacraft.world.block.BlockLoader
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
-import hexacraft.world.entity.EntityModelLoader
 
 import munit.FunSuite
 
 class ChunkCacheTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given BlockLoader = new FakeBlockLoader
-  given EntityModelLoader = new EntityModelLoader
 
   test("the cache should return chunks from the world") {
     val provider = new FakeWorldProvider(1289)

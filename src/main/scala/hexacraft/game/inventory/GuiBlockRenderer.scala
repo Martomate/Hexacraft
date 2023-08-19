@@ -59,7 +59,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpec
             then
               buf.putFloat(x * separation + xOff)
               buf.putFloat(y * separation + yOff)
-              buf.putInt(blockSpecs.textures(blockToDraw.name)(side))
+              buf.putInt(blockSpecs.textureIndex(blockToDraw.name, side))
               buf.putFloat(1)
               buf.putFloat(1)
 

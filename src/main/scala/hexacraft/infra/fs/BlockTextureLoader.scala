@@ -1,28 +1,27 @@
-package hexacraft.world.block
+package hexacraft.infra.fs
 
-import hexacraft.infra.fs.FileUtils
 import hexacraft.renderer.PixelArray
+import hexacraft.world.block.BlockSpec
 
 import java.net.URL
 import javax.imageio.ImageIO
 import scala.collection.mutable
 
-trait BlockLoader:
-  def reloadAllBlockTextures(): Seq[PixelArray]
+trait BlockTextureLoader:
+  def reload(): BlockTextureMapping
+  def textureMapping: BlockTextureMapping
 
-  /** @return `(offsets << 12 | texture_array_index)` for each side */
-  def loadBlockType(spec: BlockSpec): IndexedSeq[Int]
-
-object BlockLoader:
-  lazy val instance: BlockLoader =
-    val loader = new BlockLoaderImpl()
-    loader.reloadAllBlockTextures()
+object BlockTextureLoader:
+  lazy val instance: BlockTextureLoader =
+    val loader = new BlockTextureLoaderImpl()
+    loader.reload()
     loader
 
-  private class BlockLoaderImpl extends BlockLoader:
+  private class BlockTextureLoaderImpl extends BlockTextureLoader:
     private var texIdxMap: Map[String, Int] = _
+    private var _latestMapping: BlockTextureMapping = _
 
-    def reloadAllBlockTextures(): Seq[PixelArray] =
+    def reload(): BlockTextureMapping =
       val nameToIdx = mutable.Map.empty[String, Int]
       val images = mutable.ArrayBuffer.empty[PixelArray]
 
@@ -42,12 +41,16 @@ object BlockLoader:
         images ++= loadImages(new URL(dir, fileName))
 
       texIdxMap = nameToIdx.toMap
-      images.toSeq
+      _latestMapping = BlockTextureMapping(images.toSeq, texIdxMap)
+      _latestMapping
 
-    def loadBlockType(spec: BlockSpec): IndexedSeq[Int] = {
-      val specOpt =
-        for texIdxMap <- Option(texIdxMap)
-        yield spec.textures.indices(texIdxMap)
+    override def textureMapping: BlockTextureMapping = _latestMapping
 
-      specOpt.getOrElse(IndexedSeq.fill(8)(0))
-    }
+class BlockTextureMapping(val images: Seq[PixelArray], texIdxMap: Map[String, Int]) {
+  def textureArrayIndices(spec: BlockSpec): IndexedSeq[Int] =
+    val specOpt =
+      for texIdxMap <- Option(texIdxMap)
+      yield spec.textures.indices(texIdxMap)
+
+    specOpt.getOrElse(IndexedSeq.fill(8)(0))
+}

@@ -1,22 +1,19 @@
 package hexacraft.game
 
-import hexacraft.gui.{Event, Scene, WindowExtras}
+import hexacraft.gui.{Event, WindowExtras}
+import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
+import hexacraft.infra.window.*
 import hexacraft.main.RealGameMouse
 import hexacraft.util.Tracker
-import hexacraft.world.{CylinderSize, FakeBlockLoader, FakeWorldProvider}
-import hexacraft.world.block.{BlockLoader, BlockSpecRegistry}
+import hexacraft.world.{CylinderSize, FakeBlockTextureLoader, FakeWorldProvider}
 
 import munit.FunSuite
 import org.joml.{Vector2i, Vector2ic}
 
-import scala.collection.mutable.ArrayBuffer
-
 class GameSceneTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given BlockLoader = new FakeBlockLoader
-  given BlockSpecRegistry = BlockSpecRegistry.load(summon[BlockLoader])
+  given blockLoader: BlockTextureLoader = new FakeBlockTextureLoader
 
   given GameMouse = new RealGameMouse
   given GameKeyboard = _ => false

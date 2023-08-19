@@ -3,12 +3,13 @@ package hexacraft.game
 import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
+import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{World, WorldProvider}
-import hexacraft.world.block.{Block, BlockLoader, BlockSpecRegistry, BlockState, HexBox}
+import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState, HexBox}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -35,11 +36,13 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     mouse: GameMouse,
     keyboard: GameKeyboard,
     window: GameWindow,
-    blockLoader: BlockLoader
-)(using WindowExtras, BlockSpecRegistry)
+    blockLoader: BlockTextureLoader
+)(using WindowExtras)
     extends Scene:
 
-  TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(blockLoader.reloadAllBlockTextures()))
+  TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
+
+  given BlockSpecRegistry = BlockSpecRegistry.load(blockLoader.textureMapping)
 
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO

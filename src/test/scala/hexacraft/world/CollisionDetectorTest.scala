@@ -4,15 +4,12 @@ import hexacraft.world.block.*
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, Offset}
-import hexacraft.world.entity.EntityModelLoader
 
 import munit.FunSuite
 import org.joml.Vector3d
 
 class CollisionDetectorTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given BlockLoader = new FakeBlockLoader
-  given EntityModelLoader = new EntityModelLoader
 
   private val box1 = new HexBox(0.4f, 0.1f, 0.3f)
   private val box2 = new HexBox(0.5f, 0.15f, 0.45f)

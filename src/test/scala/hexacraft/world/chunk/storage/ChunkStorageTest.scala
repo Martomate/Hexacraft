@@ -1,14 +1,13 @@
 package hexacraft.world.chunk.storage
 
-import hexacraft.world.{CylinderSize, FakeBlockLoader}
-import hexacraft.world.block.{Block, BlockLoader, BlockState}
+import hexacraft.world.CylinderSize
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
 
 abstract class ChunkStorageTest(makeStorage: => ChunkStorage) extends FunSuite {
   protected implicit val cylSize: CylinderSize = CylinderSize(4)
-  given BlockLoader = new FakeBlockLoader
 
   test("the storage should be correct for 0 blocks") {
     val storage = makeStorage

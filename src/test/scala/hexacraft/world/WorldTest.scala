@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.world.block.{Block, BlockLoader, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
@@ -11,7 +11,6 @@ import munit.FunSuite
 
 class WorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given BlockLoader = new FakeBlockLoader
   given EntityModelLoader = new EntityModelLoader
 
   test("the world should not crash") {

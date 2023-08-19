@@ -2,10 +2,10 @@ package hexacraft.main
 
 import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow, WorldProviderFromFile}
 import hexacraft.gui.{Scene, WindowExtras}
-import hexacraft.infra.fs.FileSystem
+import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.menu.*
 import hexacraft.util.Tracker
-import hexacraft.world.block.{BlockLoader, BlockSpecRegistry}
+import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.settings.WorldSettings
 
 import java.io.File
@@ -76,8 +76,7 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
       new SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings) =>
-      given BlockLoader = BlockLoader.instance // this loads it to memory
-      given BlockSpecRegistry = BlockSpecRegistry.load(summon[BlockLoader])
+      given blockLoader: BlockTextureLoader = BlockTextureLoader.instance // this loads it to memory
 
       GameScene(new WorldProviderFromFile(saveDir, settings, fs)):
         case GameScene.Event.QuitGame =>

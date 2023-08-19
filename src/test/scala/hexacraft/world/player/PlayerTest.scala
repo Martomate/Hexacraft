@@ -1,15 +1,14 @@
 package hexacraft.world.player
 
 import hexacraft.nbt.{Nbt, NBTUtil}
-import hexacraft.world.{CylinderSize, FakeBlockLoader}
-import hexacraft.world.block.{Block, BlockLoader}
+import hexacraft.world.CylinderSize
+import hexacraft.world.block.Block
 import hexacraft.world.coord.fp.CylCoords
 
 import munit.FunSuite
 
 class PlayerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given BlockLoader = new FakeBlockLoader
 
   test("saving should save all the fields as NBT") {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))

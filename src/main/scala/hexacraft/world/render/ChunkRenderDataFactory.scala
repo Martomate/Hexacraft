@@ -116,7 +116,7 @@ object ChunkRenderDataFactory:
         buf.putInt(coords.z)
 
         val blockType = block.blockType
-        buf.putInt(blockSpecs.textures(blockType.name)(side))
+        buf.putInt(blockSpecs.textureIndex(blockType.name, side))
         buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0

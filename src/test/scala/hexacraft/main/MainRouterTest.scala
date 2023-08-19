@@ -4,25 +4,16 @@ import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow}
 import hexacraft.gui.{Event, Scene, WindowExtras}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.window.{CursorMode, KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
+import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
-import hexacraft.menu.{
-  HostWorldChooserMenu,
-  JoinWorldChooserMenu,
-  MainMenu,
-  MultiplayerMenu,
-  NewWorldMenu,
-  SettingsMenu,
-  WorldChooserMenu
-}
+import hexacraft.menu.*
 import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
-import hexacraft.world.settings.{WorldInfo, WorldSettings}
+import hexacraft.world.settings.WorldSettings
 
 import munit.FunSuite
 import org.joml.{Vector2i, Vector2ic}
 
-import java.io.File
 import java.nio.file.Path
 
 class MainRouterTest extends FunSuite {

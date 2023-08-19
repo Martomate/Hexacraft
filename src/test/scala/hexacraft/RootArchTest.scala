@@ -84,7 +84,7 @@ class RootArchTest extends FunSuite {
         _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt, NbtLib)
       )
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Util, JOML))
-      .where(Infra, _.mayOnlyAccessLayers(Math, Util, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
+      .where(Infra, _.mayOnlyAccessLayers(Math, Renderer, Util, World, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
       .where(Menu, _.mayOnlyAccessLayers(root, Infra, Text, Game, GUI, World, JOML, Nbt))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
