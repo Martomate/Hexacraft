@@ -42,8 +42,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
-  private val entityRenderers: BlockRendererCollection = BlockRendererCollection: s =>
-    BlockRenderer(s, EntityPartVao.forSide(s), InstancedRenderer(OpenGL.PrimitiveMode.Triangles))
+  private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityPartVao.forSide(s), GpuState())
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater
 
@@ -172,7 +171,7 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
     entityShader.free()
     entitySideShader.free()
 
-    entityRenderers.unload()
+    for r <- entityRenderers do r.unload()
     chunkHandler.unload()
     mainFrameBuffer.unload()
 
@@ -201,9 +200,9 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do
         val data = partLists.flatMap(_.parts)
 
-        entityRenderers.updateContent(side, data.size) { buf =>
+        entityRenderers(side).setInstanceData(data.size): buf =>
           data.foreach(_.fill(buf))
-        }
+
         texture.bind()
         sh.setTextureSize(texture.width)
-        entityRenderers.renderBlockSide(side)
+        entityRenderers(side).render()

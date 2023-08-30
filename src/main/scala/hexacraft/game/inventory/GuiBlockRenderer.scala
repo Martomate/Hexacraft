@@ -2,10 +2,10 @@ package hexacraft.game.inventory
 
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, InstancedRenderer, TextureArray}
+import hexacraft.renderer.{GpuState, TextureArray}
 import hexacraft.world.block.{Block, BlockSpecRegistry}
 import hexacraft.world.camera.CameraProjection
-import hexacraft.world.render.{BlockRenderer, BlockRendererCollection}
+import hexacraft.world.render.BlockRenderer
 
 import org.joml.Matrix4f
 
@@ -14,10 +14,8 @@ object GuiBlockRenderer:
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
 class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpecs: BlockSpecRegistry):
-  private val guiBlockRenderer = BlockRendererCollection: s =>
-    val vao = GuiBlockVao.forSide(s)
-    val renderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, GpuState.of(OpenGL.State.DepthTest -> false))
-    BlockRenderer(s, vao, renderer)
+  private val guiBlockRenderers =
+    for s <- 0 until 8 yield BlockRenderer(GuiBlockVao.forSide(s), GpuState.of(OpenGL.State.DepthTest -> false))
 
   private val guiBlockShader = GuiBlockRenderer.guiBlockShader
   private val guiBlockSideShader = GuiBlockRenderer.guiBlockSideShader
@@ -47,11 +45,11 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpec
       val sh = if side < 2 then guiBlockShader else guiBlockSideShader
       sh.enable()
       sh.setSide(side)
-      guiBlockRenderer.renderBlockSide(side)
+      guiBlockRenderers(side).render()
 
   def updateContent(xOff: Float, yOff: Float, blocks: Seq[Block]): Unit =
     for side <- 0 until 8 do
-      guiBlockRenderer.updateContent(side, 9 * 9): buf =>
+      guiBlockRenderers(side).setInstanceData(9 * 9): buf =>
         for y <- 0 until h do
           for x <- 0 until w do
             val blockToDraw = blocks(x + y * w)
@@ -64,4 +62,4 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpec
               buf.putFloat(1)
 
   def unload(): Unit =
-    guiBlockRenderer.unload()
+    for r <- guiBlockRenderers do r.unload()

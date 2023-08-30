@@ -1,18 +1,35 @@
 package hexacraft.world.render
 
-import hexacraft.renderer.*
+import hexacraft.infra.gpu.OpenGL
+import hexacraft.renderer.{GpuState, InstancedRenderer, VAO}
 
 import org.joml.{Vector2f, Vector3f}
+import org.lwjgl.BufferUtils
 
-class BlockRenderer(val side: Int, val vao: VAO, val renderer: InstancedRenderer):
-  private var _maxInstances = 0
-  def maxInstances: Int = _maxInstances
+import java.nio.ByteBuffer
 
-  var instances = 0
+class BlockRenderer(vao: VAO, gpuState: GpuState):
+  private var usedInstances: Int = 0
 
-  def resize(newMaxInstances: Int): Unit =
-    _maxInstances = newMaxInstances
-    vao.vbos(1).resize(newMaxInstances)
+  private val instanceVbo = vao.vbos(1)
+  private val renderer: InstancedRenderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, gpuState)
+
+  def render(): Unit = renderer.render(vao, usedInstances)
+
+  def setInstanceData(maxInstances: Int)(dataFiller: ByteBuffer => Unit): Unit =
+    val buf = BufferUtils.createByteBuffer(maxInstances * instanceVbo.stride)
+    dataFiller(buf)
+
+    val instances = buf.position() / instanceVbo.stride
+    ensureCapacity(instances)
+    usedInstances = instances
+
+    buf.flip()
+    instanceVbo.fill(0, buf)
+
+  private def ensureCapacity(instances: Int): Unit =
+    if instances > instanceVbo.capacity
+    then instanceVbo.resize((instances * 1.1f).toInt)
 
   def unload(): Unit = vao.free()
 

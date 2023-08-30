@@ -20,6 +20,8 @@ object VBO {
 class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: OpenGL.VboUsage) {
   private var count: Int = 0
 
+  def capacity: Int = count
+
   def bind(): Unit =
     if VBO.boundVBO != this then
       VBO.boundVBO = this
