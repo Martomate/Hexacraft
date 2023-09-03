@@ -1,5 +1,6 @@
 package hexacraft.world.gen.noise
 
+import hexacraft.math.noise.NoiseInterpolator2D
 import munit.FunSuite
 
 class NoiseInterpolator2DTest extends FunSuite {

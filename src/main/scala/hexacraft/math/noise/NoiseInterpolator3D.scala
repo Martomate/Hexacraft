@@ -1,4 +1,4 @@
-package hexacraft.world.gen.noise
+package hexacraft.math.noise
 
 class NoiseInterpolator3D(xSize: Int, ySize: Int, zSize: Int, sampler: (Int, Int, Int) => Double) {
   private val noiseSamples: Array[Double] =

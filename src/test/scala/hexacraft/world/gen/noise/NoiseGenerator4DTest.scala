@@ -1,8 +1,8 @@
 package hexacraft.world.gen.noise
 
+import hexacraft.math.noise.NoiseGenerator4D
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
-
 import munit.FunSuite
 
 import java.util.Random

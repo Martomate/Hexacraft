@@ -3,10 +3,10 @@ package hexacraft.world.gen
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
-import hexacraft.world.gen.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
 import hexacraft.world.settings.WorldGenSettings
 
 import com.flowpowered.nbt.CompoundTag
+import hexacraft.math.noise.{NoiseGenerator3D, NoiseGenerator4D, NoiseInterpolator2D, NoiseInterpolator3D}
 
 import java.util.Random
 

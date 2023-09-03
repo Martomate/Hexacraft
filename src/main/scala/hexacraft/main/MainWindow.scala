@@ -8,9 +8,8 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.os.OSUtils
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
-import hexacraft.util.{AsyncFileIO, Resource, Result}
+import hexacraft.util.{Resource, Result}
 import hexacraft.world.World
-
 import org.joml.{Vector2i, Vector2ic}
 
 import java.io.File
