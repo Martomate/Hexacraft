@@ -9,22 +9,25 @@ object Block {
   private val blocks = new Array[Block](maxBlocks)
   def byId(id: Byte): Block = blocks(id)
 
-  val Air = new BlockAir
-  val Stone = new Block(1, "stone", "Stone")
-  val Grass = new Block(2, "grass", "Grass")
-  val Dirt = new Block(3, "dirt", "Dirt")
-  val Sand = new Block(4, "sand", "Sand") with EmittingLight
-  val Water = new BlockFluid(5, "water", "Water")
-  val Log = new Block(6, "log", "Log")
-  val Leaves = new Block(7, "leaves", "Leaves")
-  val Planks = new Block(8, "planks", "Planks")
-  val BirchLog = new Block(9, "log_birch", "Birch log")
-  val BirchLeaves = new Block(10, "leaves_birch", "Birch leaves")
+  def register[B <: Block](block: B): B =
+    require(blocks(block.id) == null)
+    blocks(block.id) = block
+    block
+
+  val Air = register(new BlockAir)
+  val Stone = register(new Block(1, "stone", "Stone"))
+  val Grass = register(new Block(2, "grass", "Grass"))
+  val Dirt = register(new Block(3, "dirt", "Dirt"))
+  val Sand = register(new Block(4, "sand", "Sand") with EmittingLight)
+  val Water = register(new BlockFluid(5, "water", "Water"))
+  val Log = register(new Block(6, "log", "Log"))
+  val Leaves = register(new Block(7, "leaves", "Leaves"))
+  val Planks = register(new Block(8, "planks", "Planks"))
+  val BirchLog = register(new Block(9, "log_birch", "Birch log"))
+  val BirchLeaves = register(new Block(10, "leaves_birch", "Birch leaves"))
 }
 
 class Block(val id: Byte, val name: String, val displayName: String) {
-  Block.blocks(id) = this
-
   def bounds(metadata: Byte) = new HexBox(0.5f, 0, 0.5f * blockHeight(metadata))
 
   def canBeRendered: Boolean = true

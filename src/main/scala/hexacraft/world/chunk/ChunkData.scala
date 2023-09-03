@@ -8,8 +8,8 @@ import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage, LocalBloc
 import hexacraft.world.coord.integer.BlockRelChunk
 import hexacraft.world.entity.{Entity, EntityRegistry}
 
+import scala.collection.{mutable, SeqView}
 import scala.collection.immutable.ArraySeq
-import scala.collection.mutable
 
 class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize):
   private var _isDecorated: Boolean = false
@@ -30,7 +30,7 @@ class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer
 
   def addEntity(entity: Entity): Unit = entities += entity
   def removeEntity(entity: Entity): Unit = entities -= entity
-  def allEntities: Seq[Entity] = entities.toSeq
+  def allEntities: collection.Seq[Entity] = entities
 
   def setDecorated(): Unit = _isDecorated = true
 
@@ -40,7 +40,7 @@ class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer
     Nbt.makeMap(
       "blocks" -> Nbt.ByteArrayTag(storageNbt.blocks),
       "metadata" -> Nbt.ByteArrayTag(storageNbt.metadata),
-      "entities" -> Nbt.ListTag(allEntities.map(e => e.toNBT)),
+      "entities" -> Nbt.ListTag(allEntities.map(e => e.toNBT).toSeq),
       "isDecorated" -> Nbt.ByteTag(_isDecorated)
     )
 

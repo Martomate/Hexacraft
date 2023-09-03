@@ -193,7 +193,11 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       for
         c <- chunksToRender
         ch <- world.getChunk(c)
-      do entityDataList ++= EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
+      do
+        val entities = ch.entities
+        if entities.nonEmpty then
+          val data = EntityRenderDataFactory.getEntityRenderData(entities, side, world)
+          entityDataList ++= data
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 

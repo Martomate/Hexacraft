@@ -10,6 +10,7 @@ import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 import java.util
+import scala.collection.mutable.ArrayBuffer
 
 object ChunkRenderDataFactory:
   def makeChunkRenderData(
@@ -106,14 +107,14 @@ object ChunkRenderDataFactory:
     val i1Lim = blocks.length
     while i1 < i1Lim do
       val lbs = blocks(i1)
-      val bCoords = lbs.coords
+      val localCoords = lbs.coords
       val block = lbs.block
 
-      if shouldRender.get(bCoords.value) then
-        val coords = BlockRelWorld.fromChunk(bCoords, chunkCoords)
-        buf.putInt(coords.x)
-        buf.putInt(coords.y)
-        buf.putInt(coords.z)
+      if shouldRender.get(localCoords.value) then
+        val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
+        buf.putInt(worldCoords.x)
+        buf.putInt(worldCoords.y)
+        buf.putInt(worldCoords.z)
 
         val blockType = block.blockType
         buf.putInt(blockSpecs.textureIndex(blockType.name, side))
@@ -121,27 +122,41 @@ object ChunkRenderDataFactory:
 
         var i2 = 0
         while i2 < verticesPerInstance do
-          val offsets =
-            side match
-              case 0 | 1 =>
-                i2 match
-                  case 0 => Seq(Offset(1, 0, 0), Offset(1, 0, -1))
-                  case 1 => Seq(Offset(0, 0, 1), Offset(1, 0, 0))
-                  case 2 => Seq(Offset(-1, 0, 1), Offset(0, 0, 1))
-                  case 3 => Seq(Offset(-1, 0, 0), Offset(-1, 0, 1))
-                  case 4 => Seq(Offset(0, 0, -1), Offset(-1, 0, 0))
-                  case 5 => Seq(Offset(1, 0, -1), Offset(0, 0, -1))
-                  case _ => Seq(Offset(0, 0, 0), Offset(0, 0, 0))
-              case _ =>
-                i2 match
-                  case 0 => Seq(Offset(0, 1, 0))
-                  case 1 => Seq(Offset(0, 1, 0))
-                  case 2 => Seq(Offset(0, -1, 0))
-                  case _ => Seq(Offset(0, -1, 0))
+          // all the blocks adjacent to this vertex (on the given side)
+          val b = new ArrayBuffer[Offset](3)
+          b += Offset(0, 0, 0)
 
-          val globalBCoords = bCoords.globalNeighbor(side, chunkCoords)
-          val brs = (offsets :+ Offset(0, 0, 0)).map(off => brightness(globalBCoords.offset(off))).filter(_ != 0)
-          buf.putFloat(if brs.isEmpty then brightness(globalBCoords) else brs.sum / brs.size)
+          side match
+            case 0 | 1 =>
+              i2 match
+                case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+                case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+                case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+                case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+                case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+                case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+                case _ => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+            case _ =>
+              i2 match
+                case 0 => b += Offset(0, 1, 0)
+                case 1 => b += Offset(0, 1, 0)
+                case 2 => b += Offset(0, -1, 0)
+                case _ => b += Offset(0, -1, 0)
+
+          val globalBCoords = localCoords.globalNeighbor(side, chunkCoords)
+
+          var brSum = 0f
+          var brCount = 0
+          var bIdx = 0
+          val bLen = b.length
+          while bIdx < bLen do
+            val br = brightness(globalBCoords.offset(b(bIdx)))
+            if br != 0 then
+              brSum += br
+              brCount += 1
+            bIdx += 1
+
+          buf.putFloat(if brCount == 0 then brightness(globalBCoords) else brSum / brCount)
           i2 += 1
 
       i1 += 1

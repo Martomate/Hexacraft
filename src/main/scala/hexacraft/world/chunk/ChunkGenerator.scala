@@ -1,50 +1,27 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.Nbt
-import hexacraft.world.{BlocksInWorld, CylinderSize, WorldProvider}
+import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-import hexacraft.world.entity.EntityRegistry
 import hexacraft.world.gen.WorldGenerator
 
-import com.flowpowered.nbt.CompoundTag
+class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldGenerator: WorldGenerator)(using CylinderSize) {
+  def generate(): ChunkData =
+    val storage: ChunkStorage = new DenseChunkStorage
+    val column = world.provideColumn(coords.getColumnRelWorld)
+    val blockNoise = worldGenerator.getBlockInterpolator(coords)
 
-class ChunkGenerator(
-    coords: ChunkRelWorld,
-    world: BlocksInWorld,
-    worldProvider: WorldProvider,
-    worldGenerator: WorldGenerator,
-    registry: EntityRegistry
-)(using cylSize: CylinderSize) {
-
-  private def filePath: String = "data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat"
-
-  def loadData(): ChunkData = {
-    val nbt = worldProvider.loadState(filePath)
-
-    if (!nbt.getValue.isEmpty) {
-      ChunkData.fromNBT(Nbt.from(nbt))(registry)
-    } else {
-      val storage: ChunkStorage = new DenseChunkStorage
-      val column = world.provideColumn(coords.getColumnRelWorld)
-      val blockNoise = worldGenerator.getBlockInterpolator(coords)
-
-      for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
-        val noise = blockNoise(i, j, k)
-        val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight(i, k)
-        val limit = limitForBlockNoise(yToGo)
-        if (noise > limit)
-          storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
-      }
-
-      ChunkData.fromStorage(storage)
+    for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
+      val noise = blockNoise(i, j, k)
+      val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight(i, k)
+      val limit = limitForBlockNoise(yToGo)
+      if (noise > limit)
+        storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
     }
-  }
 
-  def saveData(data: CompoundTag): Unit = {
-    worldProvider.saveState(data, filePath)
-  }
+    val data = ChunkData.fromStorage(storage)
+    data
 
   private def getBlockAtDepth(yToGo: Int) = {
     if (yToGo < -5) Block.Stone

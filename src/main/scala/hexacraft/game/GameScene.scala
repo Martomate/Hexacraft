@@ -101,7 +101,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private def saveWorldInfo(): Unit =
     val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
-    worldProvider.saveState(worldTag, "world.dat")
+    worldProvider.saveWorldData(worldTag)
 
   override def onReloadedResources(): Unit =
     for s <- overlays do s.onReloadedResources()

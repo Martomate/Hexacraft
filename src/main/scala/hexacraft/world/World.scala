@@ -67,10 +67,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
-      val generator = new ChunkGenerator(coords, this, worldProvider, worldGenerator, entityRegistry)
-      new Chunk(coords, generator)
+      val generator = new ChunkGenerator(coords, this, worldGenerator)
+      new Chunk(coords, generator, worldProvider, entityRegistry)
 
-    val chunkUnloader = (coords: ChunkRelWorld) => getChunk(coords).foreach(_.saveIfNeeded())
+    val chunkUnloader = (coords: ChunkRelWorld) =>
+      getChunk(coords).foreach(chunk =>
+        chunk.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, chunk.coords))
+      )
 
     new ChunkLoader(
       chunkLoadingOrigin,
@@ -116,7 +119,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     for
       col <- columns.values
       ch <- col.allChunks
-      e <- ch.entities
+      e <- ch.entities.toSeq
     do ch.removeEntity(e)
 
   private def chunkOfEntity(entity: Entity): Option[Chunk] =
@@ -138,6 +141,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     requestRenderUpdateForNeighborChunks(ch.coords)
 
     worldPlanner.decorate(ch)
+    ch.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, ch.coords))
 
     for block <- ch.blocks do
       requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))

@@ -263,4 +263,3 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
     scene.unload()
 
     Resource.freeAllResources()
-    AsyncFileIO.unload()

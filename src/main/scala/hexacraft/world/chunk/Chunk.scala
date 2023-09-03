@@ -1,5 +1,6 @@
 package hexacraft.world.chunk
 
+import hexacraft.nbt.Nbt
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
@@ -7,6 +8,8 @@ import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityRegistry}
 import hexacraft.world.gen.WorldGenerator
+
+import com.flowpowered.nbt.CompoundTag
 
 import scala.annotation.tailrec
 
@@ -18,16 +21,24 @@ object Chunk:
       entityRegistry: EntityRegistry = EntityRegistry.empty
   )(using CylinderSize): Chunk =
     val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
-    val chunkGenerator = new ChunkGenerator(coords, world, worldProvider, worldGenerator, entityRegistry)
-    new Chunk(coords, chunkGenerator)
+    val chunkGenerator = new ChunkGenerator(coords, world, worldGenerator)
+    new Chunk(coords, chunkGenerator, worldProvider, entityRegistry)
 
   enum Event:
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
-class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
-  private val chunkData: ChunkData = generator.loadData()
-  private var needsToSave: Boolean = true
+class Chunk(
+    val coords: ChunkRelWorld,
+    generator: ChunkGenerator,
+    worldProvider: WorldProvider,
+    registry: EntityRegistry
+)(using CylinderSize):
+  private val loadedTag: CompoundTag = worldProvider.loadChunkData(coords)
+  private val chunkData: ChunkData =
+    if !loadedTag.getValue.isEmpty then ChunkData.fromNBT(Nbt.from(loadedTag))(registry)
+    else generator.generate()
+  private var needsToSave: Boolean = loadedTag.getValue.isEmpty
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -38,7 +49,7 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
       lighting.setInitialized()
       lightPropagator.initBrightnesses(this)
 
-  def entities: Seq[Entity] = chunkData.allEntities
+  def entities: collection.Seq[Entity] = chunkData.allEntities
 
   def addEntity(entity: Entity): Unit =
     chunkData.addEntity(entity)
@@ -76,19 +87,18 @@ class Chunk(val coords: ChunkRelWorld, generator: ChunkGenerator):
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
 
-  def saveIfNeeded(): Unit = if needsToSave then save()
+  def saveIfNeeded(): Option[CompoundTag] = if needsToSave then Some(save()) else None
 
   def unload(): Unit =
-    saveIfNeeded()
+    saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, coords))
 
-  private def save(): Unit =
+  private def save(): CompoundTag =
     val chunkTag = chunkData.toNBT.toCompoundTag("chunk")
-    generator.saveData(chunkTag)
     needsToSave = false
+    chunkTag
 
   def isDecorated: Boolean = chunkData.isDecorated
   def setDecorated(): Unit =
     if !chunkData.isDecorated then
       chunkData.setDecorated()
       needsToSave = true
-      save()

@@ -24,7 +24,7 @@ object ChunkColumn:
       yield for z <- 0 until 16
       yield gen(x, z).toShort
 
-    val columnNBT = worldProvider.loadState(s"data/${coords.value}/column.dat")
+    val columnNBT = worldProvider.loadColumnData(coords)
 
     val heightMap = Nbt.from(columnNBT).getShortArray("heightMap") match
       case Some(heightNBT) => Array.tabulate(16, 16)((x, z) => heightNBT((x << 4) | z))
@@ -130,4 +130,4 @@ class ChunkColumn private (
   def unload(): Unit =
     chunks.foreachValue(_.unload())
 
-    worldProvider.saveState(this.toNBT, saveFilePath)
+    worldProvider.saveColumnData(this.toNBT, coords)

@@ -10,7 +10,7 @@ import com.flowpowered.nbt.CompoundTag
 
 import java.util.Random
 
-class WorldGenerator(worldGenSettings: WorldGenSettings)(implicit worldSize: CylinderSize) {
+class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
   private val randomGenSeed = worldGenSettings.seed
   private val random = new Random(randomGenSeed)
   private val blockGenerator = new NoiseGenerator4D(random, 8, worldGenSettings.blockGenScale)
