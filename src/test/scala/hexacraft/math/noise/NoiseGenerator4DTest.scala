@@ -1,4 +1,4 @@
-package hexacraft.world.gen.noise
+package hexacraft.math.noise
 
 import hexacraft.math.noise.NoiseGenerator4D
 import hexacraft.world.CylinderSize
