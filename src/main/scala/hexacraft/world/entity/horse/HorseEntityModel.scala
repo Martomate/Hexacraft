@@ -50,7 +50,7 @@ class HorseAnimation(model: HorseEntityModel):
 
     val neckSin = MathUtils.clamp(math.sin(phase / 2).toFloat * 2, -1, 1)
     model.neck.rotation.z = -pi / 2 + neckSin * pi / 4
-    model.head.rotation.x = MathUtils.remap(neckSin, -1, 1, pi / 4, pi / 2)
+    model.head.rotation.x = MathUtils.remap(-1, 1, pi / 4, pi / 2, neckSin)
 
 object HorseEntityModel:
   def fromJson(setup: JsonObject): HorseEntityModel =

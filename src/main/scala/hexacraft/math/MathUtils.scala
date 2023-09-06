@@ -12,12 +12,12 @@ object MathUtils:
     fitZ(x + circumference / 2, circumference) - circumference / 2
 
   /** Linear interpolation with `t` ranging from 0 to 1 */
-  def lerp(t: Float, start: Float, end: Float): Float =
+  def lerp(start: Float, end: Float, t: Float): Float =
     start + (end - start) * t
 
   /** Remaps the range [`loIn`, `hiIn`] to [`loOut`, `hiOut`] sampled at `t` */
-  def remap(t: Float, loIn: Float, hiIn: Float, loOut: Float, hiOut: Float): Float =
-    lerp((t - loIn) / (hiIn - loIn), loOut, hiOut)
+  def remap(loIn: Float, hiIn: Float, loOut: Float, hiOut: Float, t: Float): Float =
+    lerp(loOut, hiOut, (t - loIn) / (hiIn - loIn))
 
   /** @return `value` unless it is lower than `lo` or higher than `hi` */
   def clamp(value: Float, lo: Float, hi: Float): Float =

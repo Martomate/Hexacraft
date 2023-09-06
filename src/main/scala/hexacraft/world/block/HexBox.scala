@@ -68,7 +68,7 @@ object HexBox {
       val d = math.hypot(pos1.x - pos2.x, pos1.z - pos2.z)
       val a2 = box2.baseArea
 
-      val baseArea = MathUtils.smoothstep(MathUtils.remap(d.toFloat, r1 - r2, r1 + r2, 1, 0)) * a2
+      val baseArea = MathUtils.smoothstep(MathUtils.remap(r1 - r2, r1 + r2, 1, 0, d.toFloat)) * a2
 
       val t1 = pos1.y + box1.top
       val b1 = pos1.y + box1.bottom
