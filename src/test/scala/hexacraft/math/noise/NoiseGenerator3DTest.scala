@@ -1,13 +1,25 @@
 package hexacraft.math.noise
 
-import hexacraft.math.noise.NoiseGenerator3D
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
+
 import munit.FunSuite
 
 import java.util.Random
 
 class NoiseGenerator3DTest extends FunSuite {
+  test("the noise should be fixed for the same input") {
+    val seed = 123456789L
+    val gen = makeGen(seed)
+    val gen2 = makeGen(seed)
+
+    // These assertions act as regression tests
+    assertEqualsDouble(gen.genNoise(0.1, 0.2, 0.3), -0.008011387068078604, 1e-15)
+    assertEqualsDouble(gen.genNoise(-0.1, 0.2, 0.3), -0.012011955862618138, 1e-15)
+    assertEqualsDouble(gen.genNoise(0.1234, -0.2, 0.3), 4.6908453063207456E-4, 1e-15)
+    assertEqualsDouble(gen.genNoise(0.2345, 0.2, -0.3), 0.006672026046915622, 1e-15)
+  }
+
   test("the noise should be the same for the same input") {
     val rand = new Random
     val seed = rand.nextLong
