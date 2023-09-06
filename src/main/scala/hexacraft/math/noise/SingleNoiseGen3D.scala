@@ -1,5 +1,7 @@
 package hexacraft.math.noise
 
+import org.joml.Math.triLerp
+
 import java.util.Random
 
 // Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
@@ -21,8 +23,6 @@ class SingleNoiseGen3D(random: Random) { // Apparently SimplexNoise exists in jo
     (intPart & 255, rest, fade(rest))
   }
 
-  private def lerp(t: Double, a: Double, b: Double): Double = a + t * (b - a)
-
   private def grad(hash: Int, x: Double, y: Double, z: Double): Double = {
     val h = hash & 15
     val u = if (h < 8) x else y
@@ -33,29 +33,39 @@ class SingleNoiseGen3D(random: Random) { // Apparently SimplexNoise exists in jo
   private def fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)
 
   def noise(xx: Double, yy: Double, zz: Double): Double = {
-    val (ix, x, u) = intComps(xx)
-    val (iy, y, v) = intComps(yy)
-    val (iz, z, w) = intComps(zz)
+    val (ix, x, tx) = intComps(xx)
+    val (iy, y, ty) = intComps(yy)
+    val (iz, z, tz) = intComps(zz)
 
-    val a = perm(ix)
-    val b = perm(ix + 1)
-    val aa = perm(a + iy) + iz
-    val ab = perm(a + iy + 1) + iz
-    val ba = perm(b + iy) + iz
-    val bb = perm(b + iy + 1) + iz
+    val q0 = perm(ix)
+    val q1 = perm(ix + 1)
 
-    lerp(
-      w,
-      lerp(
-        v,
-        lerp(u, grad(perm(aa), x, y, z), grad(perm(ba), x - 1, y, z)),
-        lerp(u, grad(perm(ab), x, y - 1, z), grad(perm(bb), x - 1, y - 1, z))
-      ),
-      lerp(
-        v,
-        lerp(u, grad(perm(aa + 1), x, y, z - 1), grad(perm(ba + 1), x - 1, y, z - 1)),
-        lerp(u, grad(perm(ab + 1), x, y - 1, z - 1), grad(perm(bb + 1), x - 1, y - 1, z - 1))
-      )
+    val q00 = perm(q0 + iy)
+    val q01 = perm(q0 + iy + 1)
+    val q10 = perm(q1 + iy)
+    val q11 = perm(q1 + iy + 1)
+
+    val q000 = perm(q00 + iz)
+    val q001 = perm(q10 + iz)
+    val q010 = perm(q01 + iz)
+    val q011 = perm(q11 + iz)
+    val q100 = perm(q00 + iz + 1)
+    val q101 = perm(q10 + iz + 1)
+    val q110 = perm(q01 + iz + 1)
+    val q111 = perm(q11 + iz + 1)
+
+    triLerp(
+      grad(q000, x - 0, y - 0, z - 0),
+      grad(q001, x - 1, y - 0, z - 0),
+      grad(q010, x - 0, y - 1, z - 0),
+      grad(q011, x - 1, y - 1, z - 0),
+      grad(q100, x - 0, y - 0, z - 1),
+      grad(q101, x - 1, y - 0, z - 1),
+      grad(q110, x - 0, y - 1, z - 1),
+      grad(q111, x - 1, y - 1, z - 1),
+      tx,
+      ty,
+      tz
     )
   }
 }
