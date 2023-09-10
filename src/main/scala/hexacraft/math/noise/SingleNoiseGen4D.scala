@@ -1,24 +1,29 @@
 package hexacraft.math.noise
 
+import hexacraft.util.SeqUtils.shuffleArray
+
 import org.joml.Math.{lerp, triLerp}
 
 import java.util.Random
 
 // Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
 class SingleNoiseGen4D(random: Random) { // Apparently SimplexNoise exists in joml
-  private val grad4 = Array(0, 1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, -1, 0, -1, 1, 1, 0, -1, 1, -1, 0, -1, -1, 1,
-    0, -1, -1, -1, 1, 0, 1, 1, 1, 0, 1, -1, 1, 0, -1, 1, 1, 0, -1, -1, -1, 0, 1, 1, -1, 0, 1, -1, -1, 0, -1, 1, -1, 0,
-    -1, -1, 1, 1, 0, 1, 1, 1, 0, -1, 1, -1, 0, 1, 1, -1, 0, -1, -1, 1, 0, 1, -1, 1, 0, -1, -1, -1, 0, 1, -1, -1, 0, -1,
-    1, 1, 1, 0, 1, 1, -1, 0, 1, -1, 1, 0, 1, -1, -1, 0, -1, 1, 1, 0, -1, 1, -1, 0, -1, -1, 1, 0, -1, -1, -1, 0)
+  // format: off
+  private val grad4 = Array(
+     0,  1,  1,  1,    0,  1,  1, -1,    0,  1, -1,  1,    0,  1, -1, -1,
+     0, -1,  1,  1,    0, -1,  1, -1,    0, -1, -1,  1,    0, -1, -1, -1,
+     1,  0,  1,  1,    1,  0,  1, -1,    1,  0, -1,  1,    1,  0, -1, -1,
+    -1,  0,  1,  1,   -1,  0,  1, -1,   -1,  0, -1,  1,   -1,  0, -1, -1,
+     1,  1,  0,  1,    1,  1,  0, -1,    1, -1,  0,  1,    1, -1,  0, -1,
+    -1,  1,  0,  1,   -1,  1,  0, -1,   -1, -1,  0,  1,   -1, -1,  0, -1,
+     1,  1,  1,  0,    1,  1, -1,  0,    1, -1,  1,  0,    1, -1, -1,  0,
+    -1,  1,  1,  0,   -1,  1, -1,  0,   -1, -1,  1,  0,   -1, -1, -1,  0
+  )
+  // format: on
 
   private[this] val perm = {
     val arr = (0 until 256).toArray
-    for (i <- arr.indices) {
-      val idx = random.nextInt(256 - i) + i
-      val temp = arr(i)
-      arr(i) = arr(idx)
-      arr(idx) = temp
-    }
+    shuffleArray(arr, random)
     arr ++ arr
   }
 
