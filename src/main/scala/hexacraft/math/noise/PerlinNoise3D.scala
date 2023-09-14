@@ -7,7 +7,7 @@ import org.joml.Math.triLerp
 import java.util.Random
 
 // Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
-class SingleNoiseGen3D(random: Random) { // Apparently SimplexNoise exists in joml
+class PerlinNoise3D(random: Random) { // Apparently SimplexNoise exists in joml
   private[this] val perm = {
     val arr = (0 until 256).toArray
     shuffleArray(arr, random)

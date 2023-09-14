@@ -7,7 +7,7 @@ import org.joml.Math.{lerp, triLerp}
 import java.util.Random
 
 // Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
-class SingleNoiseGen4D(random: Random) { // Apparently SimplexNoise exists in joml
+class PerlinNoise4D(random: Random) { // Apparently SimplexNoise exists in joml
   // format: off
   private val grad4 = Array(
      0,  1,  1,  1,    0,  1,  1, -1,    0,  1, -1,  1,    0,  1, -1, -1,

@@ -6,7 +6,7 @@ import hexacraft.world.coord.fp.CylCoords
 import java.util.Random
 
 class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
-  private[this] val noiseGens = Seq.fill(numOctaves)(new SingleNoiseGen4D(random))
+  private[this] val noiseGens = Seq.fill(numOctaves)(PerlinNoise4D(random))
 
   def genNoise(x: Double, y: Double, z: Double, w: Double): Double = {
     var amp = 1d
