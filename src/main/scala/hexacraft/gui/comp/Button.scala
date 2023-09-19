@@ -10,18 +10,18 @@ object Button:
     new Button(text, bounds, clickAction)
 
 class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) extends Component with Boundable:
-  addText(Component.makeText(text, bounds, 4.0f).setTextAndFitSize(text, 4.0f))
+  addText(Component.makeText(text, bounds, 4.0f, shadow = true).setTextAndFitSize(text, 4.0f))
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
-    val mousePos = context.heightNormalizedMousePos // mouse.heightNormalizedPos(context.windowSize)
+    val mousePos = context.heightNormalizedMousePos
     val containsMouse = bounds.containsPoint(mousePos.x - transformation.x, mousePos.y - transformation.y)
 
     val color =
       if containsMouse
-      then new Vector4f(0.7f, 0.7f, 0.7f, 0.75f)
-      else new Vector4f(0.6f, 0.6f, 0.6f, 0.75f)
+      then new Vector4f(0.5f, 0.5f, 0.5f, 0.8f)
+      else new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
 
-    Component.drawRect(bounds, transformation.x, transformation.y, color, context.windowAspectRatio)
+    Component.drawFancyRect(bounds, transformation.x, transformation.y, color, context.windowAspectRatio)
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean = event match

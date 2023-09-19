@@ -17,11 +17,13 @@ class Text(
     val font: Font,
     val position: Vector2f,
     val maxLineLength: Float,
-    val centered: Boolean
+    val centered: Boolean,
+    val hasShadow: Boolean
 ) {
   private var textMeshVao: VAO = _
   private var _vertexCount: Int = 0
   private val _color: Vector3f = new Vector3f(0f, 0f, 0f)
+  private val _shadowColor: Vector3f = new Vector3f(0f, 0f, 0f)
   private var numberOfLines: Int = 0
   private var lineWidths: Seq[Double] = Nil
   update()
@@ -63,6 +65,7 @@ class Text(
     setMeshInfo(vao, data.getVertexCount)
 
   def color: Vector3f = _color
+  def shadowColor: Vector3f = _shadowColor
 
   /** Set the color of the text.
     *
@@ -77,12 +80,19 @@ class Text(
     _color.set(r, g, b)
     this
 
+  def setShadowColor(r: Float, g: Float, b: Float): Text =
+    _shadowColor.set(r, g, b)
+    this
+
   def getLineWidth(line: Int): Double = lineWidths(line)
 
   def setPosition(x: Float, y: Float): Text =
     position.x = x
     position.y = y
     this
+
+  def offsetPosition(dx: Float, dy: Float): Text =
+    setPosition(position.x + dx, position.y + dy)
 
   def getMesh: OpenGL.VertexArrayId = textMeshVao.id
 

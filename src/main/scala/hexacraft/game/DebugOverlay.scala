@@ -57,7 +57,7 @@ class DebugOverlay {
     yOff += 0.02f
 
     val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f)
-    val guiText = Component.makeText(text, location, 2, centered = false)
+    val guiText = Component.makeText(text, location, 2, centered = false, shadow = true)
     textMaster.loadText(guiText)
     texts += guiText
 
@@ -65,7 +65,7 @@ class DebugOverlay {
 
   private def addDebugText(id: String, display: String): Unit =
     val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f)
-    val guiText = Component.makeText("", location, 2, centered = false)
+    val guiText = Component.makeText("", location, 2, centered = false, shadow = true)
     textMaster.loadText(guiText)
     texts += guiText
 

@@ -39,6 +39,7 @@ object Component:
 
   private val imageShader = new ImageShader()
   private val colorShader = new ColorShader()
+  private val fancyRectShader = new FancyRectShader()
 
   def drawImage(
       location: LocationInfo,
@@ -78,8 +79,36 @@ object Component:
     colorShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render(rectVAO)
 
-  def makeText(text: String, location: LocationInfo, textSize: Float, centered: Boolean = true): Text =
+  def drawFancyRect(
+      location: LocationInfo,
+      xoffset: Float,
+      yoffset: Float,
+      color: Vector4f,
+      windowAspectRatio: Float
+  ): Unit =
+    fancyRectShader.enable()
+
+    fancyRectShader.setTransformationMatrix(
+      new Matrix4f()
+        .translate(location.x + xoffset, location.y + yoffset, 0)
+        .scale(location.w, location.h, 1)
+    )
+    fancyRectShader.setColor(color)
+
+    fancyRectShader.setWindowAspectRatio(windowAspectRatio)
+    Component.rectRenderer.render(rectVAO)
+
+  def makeText(
+      text: String,
+      location: LocationInfo,
+      textSize: Float,
+      centered: Boolean = true,
+      shadow: Boolean = false
+  ): Text =
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
-    val guiText = Text(text, textSize, Component.font, position, location.w, centered)
+    val guiText = Text(text, textSize, Component.font, position, location.w, centered, shadow)
+
+    if shadow then guiText.setShadowColor(0.3f, 0.3f, 0.3f)
     guiText.setColor(0.9f, 0.9f, 0.9f)
+
     guiText

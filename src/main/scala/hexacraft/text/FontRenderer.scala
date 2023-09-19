@@ -44,6 +44,15 @@ class FontRenderer {
 
   private def renderText(text: Text, xoffset: Float, yoffset: Float): Unit = {
     OpenGL.glBindVertexArray(text.getMesh)
+
+    if text.hasShadow then
+      shader.setColor(text.shadowColor)
+      shader.setTranslation(
+        text.position.x + xoffset + 0.001f * (2 + text.fontSize * 0.5f),
+        text.position.y + yoffset + -0.001f * (2 + text.fontSize * 0.5f)
+      )
+      OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
+
     shader.setColor(text.color)
     shader.setTranslation(text.position.x + xoffset, text.position.y + yoffset)
     OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
