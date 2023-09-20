@@ -45,7 +45,6 @@ def lwjglDependencies = {
 
 def otherDependencies = Seq(
   "org.joml" % "joml" % "1.10.5",
-  "com.eclipsesource.minimal-json" % "minimal-json" % "0.9.5",
   "com.flowpowered" % "flow-nbt" % "1.0.0"
 )
 

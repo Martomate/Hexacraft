@@ -7,7 +7,6 @@ import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.entity.{EntityModel, EntityPart}
 import hexacraft.world.entity.base.BasicEntityPart
 
-import com.eclipsesource.json.JsonObject
 import org.joml.Vector3f
 
 class PlayerEntityModel(
@@ -46,9 +45,7 @@ class PlayerAnimation(model: PlayerEntityModel):
     model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
 object PlayerEntityModel:
-  def fromJson(setup: JsonObject): PlayerEntityModel =
-    val partsNBT = setup.get("parts").asObject()
-
+  def create(textureName: String): PlayerEntityModel =
     def makeHexBox(r: Int, b: Float, h: Int): HexBox =
       new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
@@ -70,20 +67,20 @@ object PlayerEntityModel:
           0
         )
         .toCylCoordsOffset,
-      new Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
-      setup = partsNBT.get("head").asObject()
+      Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
+      (0, 176)
     )
     val leftBodyHalf = new BasicEntityPart(
       makeHexBox(bodyRadius, 0, bodyLength),
       BlockCoords.Offset(0, legLength / 32f, -0.5f * bodyRadius / 32).toCylCoordsOffset,
-      new Vector3f(0, 0, 0),
-      setup = partsNBT.get("leftbody").asObject()
+      Vector3f(0, 0, 0),
+      (0, 120)
     )
     val rightBodyHalf = new BasicEntityPart(
       makeHexBox(bodyRadius, 0, bodyLength),
       BlockCoords.Offset(0, legLength / 32f, 0.5f * bodyRadius / 32).toCylCoordsOffset,
-      new Vector3f(0, 0, 0),
-      setup = partsNBT.get("rightbody").asObject()
+      Vector3f(0, 0, 0),
+      (48, 120)
     )
     val rightArm = new BasicEntityPart(
       makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
@@ -94,8 +91,8 @@ object PlayerEntityModel:
           0.5f * 2 * bodyRadius / 32 + 0.5f * armRadius / 32
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat * -6 / 6, 0, 0),
-      setup = partsNBT.get("rightarm").asObject()
+      Vector3f(math.Pi.toFloat * -6 / 6, 0, 0),
+      (48, 64)
     )
     val leftArm = new BasicEntityPart(
       makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength),
@@ -106,8 +103,8 @@ object PlayerEntityModel:
           -0.5f * 2 * bodyRadius / 32 - 0.5f * armRadius / 32
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat * 6 / 6, 0, 0),
-      setup = partsNBT.get("leftarm").asObject()
+      Vector3f(math.Pi.toFloat * 6 / 6, 0, 0),
+      (0, 64)
     )
     val rightLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -118,8 +115,8 @@ object PlayerEntityModel:
           0.5f * legRadius / 32 + 0.001f
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("rightleg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (48, 0)
     )
     val leftLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -130,8 +127,8 @@ object PlayerEntityModel:
           -0.5f * legRadius / 32 - 0.001f
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("leftleg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (0, 0)
     )
 
     new PlayerEntityModel(
@@ -142,5 +139,5 @@ object PlayerEntityModel:
       leftArm,
       rightLeg,
       leftLeg,
-      setup.getString("texture", "")
+      textureName
     )

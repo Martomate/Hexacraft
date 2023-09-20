@@ -4,36 +4,27 @@ import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.EntityPart
 
-import com.eclipsesource.json.JsonObject
 import org.joml.{Matrix4f, Vector3f}
 
 class BasicEntityPart(
     override val box: HexBox,
     pos: CylCoords.Offset,
     val rotation: Vector3f,
-    parentPart: EntityPart = null,
-    setup: JsonObject = new JsonObject
+    textureBaseOffset: (Int, Int) = (0, 0),
+    parentPart: EntityPart = null
 ) extends EntityPart {
   private val boxRadius = (box.radius * 32 / 0.5f).round
   private val boxHeight = ((box.top - box.bottom) * 32 / 0.5f).round
 
-  private val textureBaseOffset = {
-    val tex = setup.get("textures").asObject()
-    val defTag = tex.get("default")
-    if (defTag != null) {
-      val texInfo = defTag.asObject()
-      (texInfo.get("xoff").asInt(), texInfo.get("yoff").asInt())
-    } else (0, 0)
-  }
+  override def baseTransform: Matrix4f =
+    val m = if parentPart != null then Matrix4f(parentPart.baseTransform) else Matrix4f()
 
-  override def baseTransform: Matrix4f = (if (parentPart != null)
-                                            new Matrix4f(parentPart.baseTransform)
-                                          else new Matrix4f())
-    .translate(pos.toVector3f)
-    .rotateZ(rotation.z)
-    .rotateX(rotation.x)
-    .rotateY(rotation.y)
-    .translate(0, box.bottom, 0)
+    m
+      .translate(pos.toVector3f)
+      .rotateZ(rotation.z)
+      .rotateX(rotation.x)
+      .rotateY(rotation.y)
+      .translate(0, box.bottom, 0)
 
   override def transform: Matrix4f = baseTransform
     .scale(new Vector3f(box.radius, box.top - box.bottom, box.radius))

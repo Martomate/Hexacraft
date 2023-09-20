@@ -50,7 +50,6 @@ class RootArchTest extends FunSuite {
     val World = "World"
 
     val JOML = "JOML"
-    val JSON = "JSON"
     val NbtLib = "NbtLib"
     val LWJGL = "LWJGL"
     val OpenGL = "OpenGL"
@@ -74,7 +73,6 @@ class RootArchTest extends FunSuite {
       .layer(Util, "hexacraft.util..")
       .layer(World, "hexacraft.world..")
       .optionalLayer(JOML, "org.joml..")
-      .optionalLayer(JSON, "com.eclipsesource.json..")
       .optionalLayer(NbtLib, "com.flowpowered.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
@@ -91,7 +89,7 @@ class RootArchTest extends FunSuite {
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
       .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
-      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, JSON, LWJGL, Nbt, NbtLib))
+      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, LWJGL, Nbt, NbtLib))
       .check(allClasses)
   }
 

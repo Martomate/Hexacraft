@@ -8,7 +8,7 @@ import hexacraft.world.coord.integer.BlockRelWorld
 
 import org.joml.{Vector3d, Vector3f}
 
-class Camera(val proj: CameraProjection)(implicit val worldSize: CylinderSize) {
+class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
   val view = new CameraView
   def position: Vector3d = view.position
   def rotation: Vector3f = view.rotation

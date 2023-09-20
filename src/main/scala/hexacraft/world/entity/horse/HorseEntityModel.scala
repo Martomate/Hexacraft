@@ -1,5 +1,6 @@
 package hexacraft.world.entity.horse
 
+import hexacraft.math.MathUtils
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.HexBox
@@ -7,8 +8,6 @@ import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.entity.{EntityModel, EntityPart}
 import hexacraft.world.entity.base.BasicEntityPart
 
-import com.eclipsesource.json.JsonObject
-import hexacraft.math.MathUtils
 import org.joml.Vector3f
 
 class HorseEntityModel(
@@ -53,9 +52,7 @@ class HorseAnimation(model: HorseEntityModel):
     model.head.rotation.x = MathUtils.remap(-1, 1, pi / 4, pi / 2, neckSin)
 
 object HorseEntityModel:
-  def fromJson(setup: JsonObject): HorseEntityModel =
-    val partsNBT = setup.get("parts").asObject()
-
+  def fromJson(textureName: String): HorseEntityModel =
     def makeHexBox(r: Int, b: Int, h: Int): HexBox =
       new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
@@ -83,25 +80,22 @@ object HorseEntityModel:
           -(bodyLength - neckRadius * 2 + 2) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(
+      Vector3f(
         0,
         math.Pi.toFloat / 2,
         -math.Pi.toFloat / 2 + math.Pi.toFloat / 4
-      ),
-      setup = partsNBT.get("body").asObject()
+      )
     )
     val head = new BasicEntityPart(
       makeHexBox(headRadius, -neckRadius, headDepth),
       BlockCoords.Offset(0, neckDepth / 32d, 0).toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat / 4, 0, 0),
-      parentPart = neck,
-      setup = partsNBT.get("head").asObject()
+      Vector3f(math.Pi.toFloat / 4, 0, 0),
+      parentPart = neck
     )
     val body = new BasicEntityPart(
       makeHexBox(bodyRadius, 0, bodyLength),
       BlockCoords.Offset(0, (legLength + legYOffset) / 32d, 0).toCylCoordsOffset,
-      new Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2),
-      setup = partsNBT.get("body").asObject()
+      Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2)
     )
     val frontRightLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -112,8 +106,7 @@ object HorseEntityModel:
           legOffset / 32d - (bodyLength - legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("front_right_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0)
     )
     val frontLeftLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -124,8 +117,7 @@ object HorseEntityModel:
           -legOffset / 32d - (bodyLength - legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("front_left_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0)
     )
     val backRightLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -136,8 +128,7 @@ object HorseEntityModel:
           legOffset / 32d - legRadius * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("back_right_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0)
     )
     val backLeftLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -148,8 +139,7 @@ object HorseEntityModel:
           -legOffset / 32d - legRadius * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("back_left_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0)
     )
 
     new HorseEntityModel(
@@ -160,5 +150,5 @@ object HorseEntityModel:
       frontLeftLeg,
       backRightLeg,
       backLeftLeg,
-      setup.getString("texture", "")
+      textureName
     )

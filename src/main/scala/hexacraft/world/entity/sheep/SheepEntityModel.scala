@@ -7,7 +7,6 @@ import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.entity.{EntityModel, EntityPart}
 import hexacraft.world.entity.base.BasicEntityPart
 
-import com.eclipsesource.json.JsonObject
 import org.joml.Vector3f
 
 class SheepEntityModel(
@@ -45,9 +44,7 @@ class SheepAnimation(model: SheepEntityModel):
     model.backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
 object SheepEntityModel:
-  def fromJson(setup: JsonObject): SheepEntityModel =
-    val partsNBT = setup.get("parts").asObject()
-
+  def create(textureName: String): SheepEntityModel =
     def makeHexBox(r: Int, b: Float, h: Int): HexBox =
       new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
@@ -77,8 +74,8 @@ object SheepEntityModel:
           -(totalXOffset + bodyLength + headOffset) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
-      setup = partsNBT.get("head").asObject()
+      Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
+      (0, 168)
     )
     val body = new BasicEntityPart(
       makeHexBox(bodyRadius, 0, bodyLength),
@@ -89,8 +86,8 @@ object SheepEntityModel:
           -totalXOffset * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2),
-      setup = partsNBT.get("body").asObject()
+      Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2),
+      (0, 88)
     )
     val frontRightLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -101,8 +98,8 @@ object SheepEntityModel:
           legOffset / 32d - (totalXOffset + bodyLength - legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("front_right_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (36, 44)
     )
     val frontLeftLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -113,8 +110,8 @@ object SheepEntityModel:
           -legOffset / 32d - (totalXOffset + bodyLength - legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("front_left_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (0, 44)
     )
     val backRightLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -125,8 +122,8 @@ object SheepEntityModel:
           legOffset / 32d - (totalXOffset + legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("back_right_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (36, 0)
     )
     val backLeftLeg = new BasicEntityPart(
       makeHexBox(legRadius, 0, legLength),
@@ -137,8 +134,8 @@ object SheepEntityModel:
           -legOffset / 32d - (totalXOffset + legRadius) * pixSizeZ
         )
         .toCylCoordsOffset,
-      new Vector3f(math.Pi.toFloat, 0, 0),
-      setup = partsNBT.get("back_left_leg").asObject()
+      Vector3f(math.Pi.toFloat, 0, 0),
+      (0, 0)
     )
 
     new SheepEntityModel(
@@ -148,5 +145,5 @@ object SheepEntityModel:
       frontLeftLeg,
       backRightLeg,
       backLeftLeg,
-      setup.getString("texture", "")
+      textureName
     )
