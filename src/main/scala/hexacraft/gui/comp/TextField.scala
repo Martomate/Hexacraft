@@ -12,7 +12,7 @@ class TextField(
     centered: Boolean = true,
     maxFontSize: Float = 4f
 ) extends Component:
-  private val bgColor = new Vector4f(0.5f)
+  private val bgColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
   private val textColor = new Vector3f(1.0f)
 
   private val contentText: Text = makeContentText()
@@ -71,7 +71,14 @@ class TextField(
         cursorTextVisible = false
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
-    Component.drawRect(location, transformation.x, transformation.y, bgColor, context.windowAspectRatio)
+    Component.drawFancyRect(
+      location,
+      transformation.x,
+      transformation.y,
+      bgColor,
+      context.windowAspectRatio,
+      inverted = true
+    )
     super.render(transformation)
 
   override def handleEvent(event: Event): Boolean =

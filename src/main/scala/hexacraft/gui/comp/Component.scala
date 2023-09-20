@@ -84,7 +84,8 @@ object Component:
       xoffset: Float,
       yoffset: Float,
       color: Vector4f,
-      windowAspectRatio: Float
+      windowAspectRatio: Float,
+      inverted: Boolean = false
   ): Unit =
     fancyRectShader.enable()
 
@@ -94,6 +95,7 @@ object Component:
         .scale(location.w, location.h, 1)
     )
     fancyRectShader.setColor(color)
+    fancyRectShader.setInverted(inverted)
 
     fancyRectShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render(rectVAO)
