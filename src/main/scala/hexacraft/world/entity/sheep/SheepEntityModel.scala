@@ -44,10 +44,13 @@ class SheepAnimation(model: SheepEntityModel):
     model.backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
 
 object SheepEntityModel:
-  def create(textureName: String): SheepEntityModel =
-    def makeHexBox(r: Int, b: Float, h: Int): HexBox =
-      new HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+  private def makeHexBox(r: Int, b: Float, h: Int): HexBox =
+    HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
 
+  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset =
+    BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
+
+  def create(textureName: String): SheepEntityModel =
     val legLength = 32
     val legRadius = 6
     val bodyLength = 48
@@ -60,90 +63,36 @@ object SheepEntityModel:
     val legOffset = bodyRadius * 0.25f / CylinderSize.y60
     val legYOffset = 3
 
-    val pixSizeX: Double = 0.5 / CylinderSize.y60 / CylinderSize.y60 / 32
-    val pixSizeZ: Double = pixSizeX * 0.5
+    val px = 2.0 / 3
+    val pz = 1.0 / 3
 
-    val totalXOffset = -bodyLength / 2
+    val headBounds = makeHexBox(headRadius, -headDepth / 2f, headDepth)
+    val bodyBounds = makeHexBox(bodyRadius, 0, bodyLength)
+    val legBounds = makeHexBox(legRadius, 0, legLength)
 
-    val head = new BasicEntityPart(
-      makeHexBox(headRadius, -headDepth / 2f, headDepth),
-      BlockCoords
-        .Offset(
-          (totalXOffset + bodyLength + headOffset) * pixSizeX,
-          (legLength + legYOffset) / 32d + (headRadius + headYOffset) / 32d * CylinderSize.y60,
-          -(totalXOffset + bodyLength + headOffset) * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(0, math.Pi.toFloat / 2, math.Pi.toFloat / 2),
-      (0, 168)
-    )
-    val body = new BasicEntityPart(
-      makeHexBox(bodyRadius, 0, bodyLength),
-      BlockCoords
-        .Offset(
-          totalXOffset * pixSizeX,
-          (legLength + legYOffset) / 32d,
-          -totalXOffset * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(0, math.Pi.toFloat / 2, -math.Pi.toFloat / 2),
-      (0, 88)
-    )
-    val frontRightLeg = new BasicEntityPart(
-      makeHexBox(legRadius, 0, legLength),
-      BlockCoords
-        .Offset(
-          (totalXOffset + bodyLength - legRadius) * pixSizeX,
-          legLength / 32d,
-          legOffset / 32d - (totalXOffset + bodyLength - legRadius) * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(math.Pi.toFloat, 0, 0),
-      (36, 44)
-    )
-    val frontLeftLeg = new BasicEntityPart(
-      makeHexBox(legRadius, 0, legLength),
-      BlockCoords
-        .Offset(
-          (totalXOffset + bodyLength - legRadius) * pixSizeX,
-          legLength / 32d,
-          -legOffset / 32d - (totalXOffset + bodyLength - legRadius) * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(math.Pi.toFloat, 0, 0),
-      (0, 44)
-    )
-    val backRightLeg = new BasicEntityPart(
-      makeHexBox(legRadius, 0, legLength),
-      BlockCoords
-        .Offset(
-          (totalXOffset + legRadius) * pixSizeX,
-          legLength / 32d,
-          legOffset / 32d - (totalXOffset + legRadius) * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(math.Pi.toFloat, 0, 0),
-      (36, 0)
-    )
-    val backLeftLeg = new BasicEntityPart(
-      makeHexBox(legRadius, 0, legLength),
-      BlockCoords
-        .Offset(
-          (totalXOffset + legRadius) * pixSizeX,
-          legLength / 32d,
-          -legOffset / 32d - (totalXOffset + legRadius) * pixSizeZ
-        )
-        .toCylCoordsOffset,
-      Vector3f(math.Pi.toFloat, 0, 0),
-      (0, 0)
-    )
+    val headDistXZ = 0.5 * bodyLength + headOffset
+    val bodyDist = 0.5 * bodyLength
+    val legDist = 0.5 * bodyLength - legRadius
+
+    val headY = legLength + legYOffset + (headRadius + headYOffset) * CylinderSize.y60
+    val bodyY = legLength + legYOffset
+    val legY = legLength
+
+    val headPos = makePartPosition(headDistXZ * px, headY, -headDistXZ * pz).toCylCoordsOffset
+    val bodyPos = makePartPosition(-bodyDist * px, bodyY, bodyDist * pz).toCylCoordsOffset
+    val frontRightLegPos = makePartPosition(legDist * px, legY, legOffset - legDist * pz).toCylCoordsOffset
+    val frontLeftLegPos = makePartPosition(legDist * px, legY, -legOffset - legDist * pz).toCylCoordsOffset
+    val backRightLegPos = makePartPosition(-legDist * px, legY, legOffset + legDist * pz).toCylCoordsOffset
+    val backLeftLegPos = makePartPosition(-legDist * px, legY, -legOffset + legDist * pz).toCylCoordsOffset
+
+    val pi = math.Pi.toFloat
 
     new SheepEntityModel(
-      head,
-      body,
-      frontRightLeg,
-      frontLeftLeg,
-      backRightLeg,
-      backLeftLeg,
+      head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 168)),
+      body = BasicEntityPart(bodyBounds, bodyPos, Vector3f(0, pi / 2, -pi / 2), (0, 88)),
+      frontRightLeg = BasicEntityPart(legBounds, frontRightLegPos, Vector3f(pi, 0, 0), (36, 44)),
+      frontLeftLeg = BasicEntityPart(legBounds, frontLeftLegPos, Vector3f(pi, 0, 0), (0, 44)),
+      backRightLeg = BasicEntityPart(legBounds, backRightLegPos, Vector3f(pi, 0, 0), (36, 0)),
+      backLeftLeg = BasicEntityPart(legBounds, backLeftLegPos, Vector3f(pi, 0, 0), (0, 0)),
       textureName
     )
