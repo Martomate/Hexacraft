@@ -15,6 +15,9 @@ class ChunkRenderHandler:
   private val regularBlockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
   private val transmissiveBlockHexagonHandler = new HexagonRenderHandler(blockShader, blockSideShader)
 
+  def regularChunkBufferFragmentation: IndexedSeq[Float] = regularBlockHexagonHandler.fragmentation
+  def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = transmissiveBlockHexagonHandler.fragmentation
+
   def onTotalSizeChanged(totalSize: Int): Unit =
     blockShader.setTotalSize(totalSize)
     blockSideShader.setTotalSize(totalSize)

@@ -1,7 +1,6 @@
 package hexacraft.game
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
-import hexacraft.nbt.NBTUtil
 import hexacraft.world.{MigrationManager, WorldProvider}
 import hexacraft.world.settings.{WorldInfo, WorldSettings}
 

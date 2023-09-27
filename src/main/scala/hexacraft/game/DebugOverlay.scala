@@ -17,12 +17,26 @@ object DebugOverlay {
       cameraPosition: CylCoords,
       cameraChunkCoords: ChunkRelWorld,
       cameraRotation: Vector3f,
-      viewDistance: Double
+      viewDistance: Double,
+      regularChunkBufferFragmentation: IndexedSeq[Float],
+      transmissiveChunkBufferFragmentation: IndexedSeq[Float]
   )
 
   object Content {
-    def fromCamera(camera: Camera, viewDistance: Double)(using CylinderSize): Content =
-      Content(CylCoords(camera.position), camera.blockCoords.getChunkRelWorld, camera.rotation, viewDistance)
+    def fromCamera(
+        camera: Camera,
+        viewDistance: Double,
+        regularChunkBufferFragmentation: IndexedSeq[Float],
+        transmissiveChunkBufferFragmentation: IndexedSeq[Float]
+    )(using CylinderSize): Content =
+      Content(
+        CylCoords(camera.position),
+        camera.blockCoords.getChunkRelWorld,
+        camera.rotation,
+        viewDistance,
+        regularChunkBufferFragmentation,
+        transmissiveChunkBufferFragmentation
+      )
   }
 }
 
@@ -52,6 +66,8 @@ class DebugOverlay {
 
   addLabel("Other")
   addDebugText("viewDist", "viewDistance")
+  addDebugText("fragmentation.opaque", "fragmentation (opaque)")
+  addDebugText("fragmentation.transmissive", "fragmentation (transmissive)")
 
   private def addLabel(text: String): Unit =
     yOff += 0.02f
@@ -64,7 +80,7 @@ class DebugOverlay {
     yOff += 0.03f
 
   private def addDebugText(id: String, display: String): Unit =
-    val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f)
+    val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.5f, 0.05f)
     val guiText = Component.makeText("", location, 2, centered = false, shadow = true)
     textMaster.loadText(guiText)
     texts += guiText
@@ -91,6 +107,14 @@ class DebugOverlay {
     setValue("r.z", info.cameraRotation.z)
 
     setValue("viewDist", f"${info.viewDistance}%.2f")
+    setValue(
+      "fragmentation.opaque",
+      info.regularChunkBufferFragmentation.sortBy(-_).map(v => f"$v%.2f").mkString(" ")
+    )
+    setValue(
+      "fragmentation.transmissive",
+      info.transmissiveChunkBufferFragmentation.sortBy(-_).map(v => f"$v%.2f").mkString(" ")
+    )
 
   def render(transformation: GUITransformation)(using context: RenderContext): Unit =
     texts.foreach(t => t.setPosition(-context.windowAspectRatio + 0.01f * 2 * 16 / 9, t.position.y))

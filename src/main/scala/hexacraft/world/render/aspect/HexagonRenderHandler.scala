@@ -14,6 +14,8 @@ class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader) {
   private val sideHandlers: IndexedSeq[RenderAspectHandler] =
     IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
 
+  def fragmentation: IndexedSeq[Float] = sideHandlers.map(_.fragmentation)
+
   def render(): Unit =
     for side <- 0 until 8 do
       val sh = if side < 2 then topShader else sideShader

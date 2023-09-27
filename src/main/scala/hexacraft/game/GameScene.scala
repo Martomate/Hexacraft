@@ -316,7 +316,15 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     worldRenderer.tick(camera, world.renderDistance)
 
     if debugOverlay != null
-    then debugOverlay.updateContent(DebugOverlay.Content.fromCamera(camera, viewDistance))
+    then
+      debugOverlay.updateContent(
+        DebugOverlay.Content.fromCamera(
+          camera,
+          viewDistance,
+          worldRenderer.regularChunkBufferFragmentation,
+          worldRenderer.transmissiveChunkBufferFragmentation
+        )
+      )
 
     for s <- overlays do s.tick()
 

@@ -11,6 +11,8 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
 
   private def length: Int = segmentHandler.length
 
+  def fragmentation: Float = segmentHandler.fragmentation
+
   def render(): Unit = bufferHandler.render(length)
 
   def setChunkContent(coords: ChunkRelWorld, content: Option[ByteBuffer]): Unit =

@@ -52,6 +52,9 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
   def addPlayer(player: Entity): Unit = players += player
   def removePlayer(player: Entity): Unit = players -= player
 
+  def regularChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.regularChunkBufferFragmentation
+  def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
+
   private def updateChunkIfPresent(coords: ChunkRelWorld) =
     val chunkOpt = world.getChunk(coords)
     for chunk <- chunkOpt do updateChunkData(chunk)

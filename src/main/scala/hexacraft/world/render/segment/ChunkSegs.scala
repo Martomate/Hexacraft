@@ -59,4 +59,5 @@ class ChunkSegs extends mutable.Iterable[Segment] {
 
   def firstSegment(): Segment = segments.firstKey
   def lastSegment(): Segment = segments.last
+  def segmentCount: Int = segments.size
 }

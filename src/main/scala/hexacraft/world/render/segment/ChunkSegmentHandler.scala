@@ -10,6 +10,8 @@ class ChunkSegmentHandler {
 
   def length: Int = lastSegment().map(s => s._2.start + s._2.length).getOrElse(0)
 
+  def fragmentation: Float = allSegments.segmentCount.toFloat / allSegments.keyCount
+
   def hasMapping(coords: ChunkRelWorld): Boolean =
     contentMap.get(coords).exists(_.totalLength != 0)
 
