@@ -156,7 +156,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     case KeyboardKey.Function(7) =>
       setDebugScreenVisible(debugOverlay == null)
     case KeyboardKey.Digit(digit) =>
-      setSelectedItemSlot(digit)
+      if digit > 0 then setSelectedItemSlot(digit - 1)
     case KeyboardKey.Letter('P') =>
       val startPos = CylCoords(player.position)
 
