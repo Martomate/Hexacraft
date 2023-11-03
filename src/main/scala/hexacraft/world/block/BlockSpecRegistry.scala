@@ -44,7 +44,8 @@ object BlockSpecRegistry {
           .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
           .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
       ),
-      "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch"))
+      "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
+      "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
     )(textureMapping)
 
     specs

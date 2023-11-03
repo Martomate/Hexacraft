@@ -352,9 +352,12 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private def performRightMouseClick(): Unit =
     selectedBlockAndSide match
-      case Some((_, coords, Some(side))) =>
+      case Some((state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
-        tryPlacingBlockAt(coordsInFront)
+
+        state.blockType match
+          case Block.Tnt => explode(coords)
+          case _         => tryPlacingBlockAt(coordsInFront)
       case _ =>
 
   private def tryPlacingBlockAt(coords: BlockRelWorld): Unit =
@@ -372,6 +375,14 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
       if !collides
       then world.setBlock(coords, state)
+
+  private def explode(coords: BlockRelWorld): Unit =
+    for dy <- -1 to 1 do
+      for offset <- NeighborOffsets.all do
+        val c = coords.offset(offset).offset(0, dy, 0)
+        world.setBlock(c, BlockState.Air)
+
+    world.setBlock(coords, BlockState.Air)
 
   override def unload(): Unit =
     setMouseCursorInvisible(false)

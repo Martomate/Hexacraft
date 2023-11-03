@@ -52,7 +52,8 @@ object Inventory {
         6 -> Block.Leaves,
         7 -> Block.Planks,
         8 -> Block.BirchLog,
-        9 -> Block.BirchLeaves
+        9 -> Block.BirchLeaves,
+        10 -> Block.Tnt
       )
     )
 
