@@ -1,7 +1,7 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow}
-import hexacraft.gui.{Event, Scene, WindowExtras}
+import hexacraft.game.*
+import hexacraft.gui.{Event, Scene, WindowSize}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
@@ -10,9 +10,8 @@ import hexacraft.menu.*
 import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 import hexacraft.world.settings.WorldSettings
-
 import munit.FunSuite
-import org.joml.{Vector2i, Vector2ic}
+import org.joml.Vector2i
 
 import java.nio.file.Path
 
@@ -20,17 +19,11 @@ class MainRouterTest extends FunSuite {
   override def beforeEach(context: BeforeEach): Unit = OpenGL._enterTestMode()
 
   given GameWindow = null
-  given GameMouse = null
   given GameKeyboard = null
-  given WindowExtras = null
 
   private val saveDirPath = Path.of("abc")
 
-  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull())(using
-      GameMouse,
-      GameWindow,
-      WindowExtras
-  ): Scene =
+  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull())(using GameWindow): Scene =
     val tracker = Tracker.withStorage[MainRouter.Event]
     val router = new MainRouter(saveDirPath.toFile, false, fs)(tracker)
 
@@ -43,11 +36,9 @@ class MainRouterTest extends FunSuite {
     assert(scene.isDefined)
     scene.get
 
-  def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
-      GameMouse,
-      GameWindow,
-      WindowExtras
-  )(using munit.Location): Seq[MainRouter.Event] =
+  def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using GameWindow)(using
+      munit.Location
+  ): Seq[MainRouter.Event] =
     val tracker = Tracker.withStorage[MainRouter.Event]
     val router = new MainRouter(saveDirPath.toFile, true, fs)(tracker)
 
@@ -62,9 +53,7 @@ class MainRouterTest extends FunSuite {
     tracker.events.drop(1)
 
   def performRouteAndClick(route: SceneRoute, clickAt: (Float, Float), fs: FileSystem = FileSystem.createNull())(using
-      GameMouse,
-      GameWindow,
-      WindowExtras
+      GameWindow
   )(using munit.Location): Seq[MainRouter.Event] =
     val events = Seq(
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
@@ -112,11 +101,9 @@ class MainRouterTest extends FunSuite {
     val windowHeight = 1080
 
     given GameWindow = new GameWindow:
-      override def windowSize: Vector2ic = new Vector2i(windowWidth, windowHeight)
-      override def framebufferSize: Vector2ic = new Vector2i(windowWidth, windowHeight)
+      override def windowSize: WindowSize =
+        WindowSize(Vector2i(windowWidth, windowHeight), Vector2i(windowWidth, windowHeight))
 
-    given WindowExtras = new WindowExtras:
-      override def resetMousePos(): Unit = ()
       override def setCursorMode(cursorMode: CursorMode): Unit = ()
 
     test("WorldChooser routes to WorldChooserMenu") {
@@ -154,11 +141,9 @@ class MainRouterTest extends FunSuite {
     val windowHeight = 1080
 
     given GameWindow = new GameWindow:
-      override def windowSize: Vector2ic = new Vector2i(windowWidth, windowHeight)
-      override def framebufferSize: Vector2ic = new Vector2i(windowWidth, windowHeight)
+      override def windowSize: WindowSize =
+        WindowSize(Vector2i(windowWidth, windowHeight), Vector2i(windowWidth, windowHeight))
 
-    given WindowExtras = new WindowExtras:
-      override def resetMousePos(): Unit = ()
       override def setCursorMode(cursorMode: CursorMode): Unit = ()
 
     test("NewWorld routes to NewWorldMenu") {
@@ -246,11 +231,8 @@ class MainRouterTest extends FunSuite {
 
   def testGameScene(): Unit = {
     given GameWindow = new GameWindow:
-      override def windowSize: Vector2ic = new Vector2i(1920, 1080)
-      override def framebufferSize: Vector2ic = new Vector2i(1920, 1080)
+      override def windowSize: WindowSize = WindowSize(Vector2i(1920, 1080), Vector2i(1920, 1080))
 
-    given WindowExtras = new WindowExtras:
-      override def resetMousePos(): Unit = ()
       override def setCursorMode(cursorMode: CursorMode): Unit = ()
 
     test("Game routes to GameScene".ignore) {

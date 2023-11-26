@@ -1,7 +1,7 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameMouse, GameWindow}
-import hexacraft.gui.{Event, RenderContext, Scene, WindowExtras}
+import hexacraft.game.{GameKeyboard, GameWindow}
+import hexacraft.gui.{Event, MousePosition, RenderContext, Scene, TickContext, WindowSize}
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
@@ -10,44 +10,43 @@ import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
 import hexacraft.util.{Resource, Result}
 import hexacraft.world.World
-import org.joml.{Vector2i, Vector2ic}
+import org.joml.{Vector2f, Vector2i}
 
 import java.io.File
 import scala.collection.mutable
 
-class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
+class MainWindow(isDebug: Boolean) extends GameWindow:
   val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
 
   private val fs = FileSystem.create()
 
   private val multiplayerEnabled = isDebug
 
-  private val _windowSize = new Vector2i(960, 540)
-  def windowSize: Vector2ic = _windowSize
-
-  private val _framebufferSize = new Vector2i(0, 0) // Initialized in initWindow
-  def framebufferSize: Vector2ic = _framebufferSize
+  private var _windowSize = WindowSize(Vector2i(960, 540), Vector2i(0, 0)) // Initialized in initWindow
+  def windowSize: WindowSize = _windowSize
 
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
 
   private val windowSystem = createWindowSystem()
-  private val window: Window = initWindow(_windowSize.x, _windowSize.y)
+  private val window: Window = initWindow(_windowSize.logicalSize.x, _windowSize.logicalSize.y)
 
   private val fullscreenManager = new FullscreenManager(window, windowSystem)
 
-  private val mouse: RealGameMouse = new RealGameMouse
+  private val mouse: GameMouse = new GameMouse
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
   private var scene: Scene = _
 
   override def setCursorMode(cursorMode: CursorMode): Unit =
     window.setCursorMode(cursorMode)
+    resetMousePos()
 
-  def resetMousePos(): Unit =
+  private def resetMousePos(): Unit =
     val (cx, cy) = window.cursorPosition
     mouse.skipNextMouseMovedUpdate()
-    mouse.moveTo(cx, _windowSize.y - cy)
+    mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
+    mouse.skipNextMouseMovedUpdate()
 
   private def loop(): Unit =
     var prevTime = System.nanoTime
@@ -115,40 +114,40 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
       scene.handleEvent(Event.CharEvent(character))
 
     case CallbackEvent.MouseClicked(_, button, action, mods) =>
-      val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
+      val normalizedMousePos = mouse.currentPos.heightNormalizedPos(windowSize.logicalSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
       scene.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
 
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
-      val normalizedMousePos = mouse.heightNormalizedPos(windowSize)
+      val normalizedMousePos = mouse.currentPos.heightNormalizedPos(windowSize.logicalSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
       scene.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat, mousePos))
 
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then
-        if w != _windowSize.x || h != _windowSize.y
+        if w != _windowSize.logicalSize.x || h != _windowSize.logicalSize.y
         then scene.windowResized(w, h)
 
-        _windowSize.set(w, h)
+        _windowSize = WindowSize(Vector2i(w, h), _windowSize.physicalSize)
         resetMousePos()
 
     case CallbackEvent.FramebufferResized(_, w, h) =>
       if w > 0 && h > 0
       then
-        if w != _framebufferSize.x || h != _framebufferSize.y
+        if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y
         then
           OpenGL.glViewport(0, 0, w, h)
           scene.framebufferResized(w, h)
 
-        _framebufferSize.set(w, h)
+        _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(w, h))
 
   private def reloadResources(): Unit =
     Resource.reloadAllResources()
-    scene.onReloadedResources()
+    scene.onReloadedResources(windowSize)
 
     // This step is needed to set some uniforms after the reload
-    scene.windowResized(_windowSize.x, _windowSize.y)
+    scene.windowResized(_windowSize.logicalSize.x, _windowSize.logicalSize.y)
 
     println("Reloaded resources")
 
@@ -160,18 +159,26 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
   private def onUpdateVsync(vsync: Boolean): Unit = windowSystem.setVsync(vsync)
 
   private def render(): Unit =
-    given GameWindow = this
-
     scene.render(GUITransformation(0, 0))(using
-      RenderContext(this.aspectRatio, this.framebufferSize, mouse.heightNormalizedPos(this.windowSize))
+      RenderContext(
+        this._windowSize.logicalAspectRatio,
+        this._windowSize.physicalSize,
+        mouse.currentPos.heightNormalizedPos(this.windowSize.logicalSize)
+      )
     )
     VAO.unbindVAO()
 
   private def tick(): Unit =
     val (cx, cy) = window.cursorPosition
-    mouse.moveTo(cx, _windowSize.y - cy)
+    mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
 
-    scene.tick()
+    scene.tick(
+      TickContext(
+        windowSize = _windowSize,
+        currentMousePosition = mouse.currentPos,
+        previousMousePosition = mouse.previousPos
+      )
+    )
 
   private def setScene(newScene: Scene): Unit =
     if scene != null then scene.unload()
@@ -179,9 +186,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
 
   private def makeSceneRouter(): MainRouter =
     given GameWindow = this
-    given GameMouse = mouse
     given GameKeyboard = keyboard
-    given WindowExtras = this
 
     MainRouter(saveFolder, multiplayerEnabled, fs):
       case MainRouter.Event.SceneChanged(newScene) => setScene(newScene)
@@ -222,7 +227,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow with WindowExtras:
       .unwrap()
 
     val (fw, fh) = window.framebufferSize
-    _framebufferSize.set(fw, fh)
+    _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(fw, fh))
 
     window.setKeyCallback(callbackQueue.enqueue)
     window.setCharCallback(callbackQueue.enqueue)

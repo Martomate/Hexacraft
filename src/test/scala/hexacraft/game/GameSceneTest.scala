@@ -1,30 +1,21 @@
 package hexacraft.game
 
-import hexacraft.gui.{Event, WindowExtras}
+import hexacraft.gui.{Event, WindowSize}
 import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
-import hexacraft.main.RealGameMouse
 import hexacraft.util.Tracker
 import hexacraft.world.{CylinderSize, FakeBlockTextureLoader, FakeWorldProvider}
-
 import munit.FunSuite
-import org.joml.{Vector2i, Vector2ic}
+import org.joml.Vector2i
 
 class GameSceneTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
   given blockLoader: BlockTextureLoader = new FakeBlockTextureLoader
 
-  given GameMouse = new RealGameMouse
   given GameKeyboard = _ => false
 
-  given GameWindow = new GameWindow:
-    override def windowSize: Vector2ic = new Vector2i(1920, 1080)
-    override def framebufferSize: Vector2ic = new Vector2i(1920, 1080)
-
-  given WindowExtras = new WindowExtras:
-    override def resetMousePos(): Unit = ()
-    override def setCursorMode(cursorMode: CursorMode): Unit = ()
+  private val windowSize = WindowSize(Vector2i(1920, 1080), Vector2i(1920, 1080))
 
   test("GameScene.unload frees all shader programs owned by the GameScene") {
     OpenGL._enterTestMode()
@@ -32,13 +23,13 @@ class GameSceneTest extends FunSuite {
     val worldProvider = new FakeWorldProvider(123L)
 
     // Load and unload the game (to ensure static shaders are loaded)
-    new GameScene(worldProvider)(_ => ()).unload()
+    new GameScene(worldProvider, windowSize)(_ => ()).unload()
 
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene = new GameScene(worldProvider)(_ => ())
+    val gameScene = new GameScene(worldProvider, windowSize)(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -59,13 +50,20 @@ class GameSceneTest extends FunSuite {
     val gameSceneTracker = Tracker.withStorage[GameScene.Event]
 
     val worldProvider = new FakeWorldProvider(123L)
-    val gameScene = new GameScene(worldProvider)(gameSceneTracker)
+    val gameScene = new GameScene(worldProvider, windowSize)(gameSceneTracker)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 
     gameScene.handleEvent(Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, (0, -0.4f)))
     gameScene.handleEvent(Event.MouseClickEvent(MouseButton.Left, MouseAction.Release, KeyMods.none, (0, -0.4f)))
 
-    assertEquals(gameSceneTracker.events, Seq(GameScene.Event.QuitGame))
+    assertEquals(
+      gameSceneTracker.events,
+      Seq(
+        GameScene.Event.CursorCaptured, // when the game starts
+        GameScene.Event.CursorReleased, // when Escape is pressed
+        GameScene.Event.GameQuit // when the "Back to Menu" button is pressed
+      )
+    )
   }
 }

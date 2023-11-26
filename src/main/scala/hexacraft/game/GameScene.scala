@@ -29,15 +29,14 @@ import scala.collection.mutable.ArrayBuffer
 
 object GameScene {
   enum Event:
-    case QuitGame
+    case GameQuit
+    case CursorCaptured
+    case CursorReleased
 }
 
-class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Event])(using
-    mouse: GameMouse,
-    keyboard: GameKeyboard,
-    window: GameWindow,
-    blockLoader: BlockTextureLoader
-)(using WindowExtras)
+class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
+    eventHandler: Tracker[GameScene.Event]
+)(using keyboard: GameKeyboard, blockLoader: BlockTextureLoader)
     extends Scene:
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
@@ -64,13 +63,13 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private val otherPlayer: ControlledPlayerEntity =
     new ControlledPlayerEntity(playerModel, new EntityBaseData(CylCoords(player.position)))
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, window.framebufferSize)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
   otherPlayer.setPosition(otherPlayer.position.offset(-2, -2, -1))
 
-  val camera: Camera = new Camera(makeCameraProjection)
+  val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 
   private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, player)
@@ -79,7 +78,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
   private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
-  private val toolbar: Toolbar = makeToolbar(player)
+  private val toolbar: Toolbar = makeToolbar(player, initialWindowSize)
   private val blockInHandRenderer: GuiBlockRenderer = makeBlockInHandRenderer(world, camera)
   updateBlockInHandRendererContent()
 
@@ -94,7 +93,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private var pauseMenu: PauseMenu = _
   private var inventoryScene: InventoryBox = _
 
-  setUniforms()
+  setUniforms(initialWindowSize.logicalAspectRatio)
   setUseMouse(true)
 
   saveWorldInfo()
@@ -103,15 +102,15 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
     worldProvider.saveWorldData(worldTag)
 
-  override def onReloadedResources(): Unit =
-    for s <- overlays do s.onReloadedResources()
-    setUniforms()
+  override def onReloadedResources(windowSize: WindowSize): Unit =
+    for s <- overlays do s.onReloadedResources(windowSize)
+    setUniforms(windowSize.logicalAspectRatio)
     world.onReloadedResources()
 
-  private def setUniforms(): Unit =
+  private def setUniforms(windowAspectRatio: Float): Unit =
     setProjMatrixForAll()
     worldRenderer.onTotalSizeChanged(world.size.totalSize)
-    crosshairShader.setWindowAspectRatio(window.aspectRatio)
+    crosshairShader.setWindowAspectRatio(windowAspectRatio)
 
   private def setProjMatrixForAll(): Unit =
     worldRenderer.onProjMatrixChanged(camera)
@@ -131,7 +130,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
           pauseMenu.unload()
           pauseMenu = null
           setPaused(false)
-        case QuitGame => eventHandler.notify(GameScene.Event.QuitGame)
+        case QuitGame => eventHandler.notify(GameScene.Event.GameQuit)
 
       overlays += pauseMenu
       setPaused(true)
@@ -182,7 +181,6 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private def setUseMouse(useMouse: Boolean): Unit =
     moveWithMouse = useMouse
     setMouseCursorInvisible(moveWithMouse)
-    summon[WindowExtras].resetMousePos()
 
   override def handleEvent(event: Event): Boolean =
     if overlays.reverseIterator.exists(_.handleEvent(event))
@@ -218,7 +216,8 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
       setMouseCursorInvisible(!paused && moveWithMouse)
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit =
-    summon[WindowExtras].setCursorMode(if invisible then CursorMode.Disabled else CursorMode.Normal)
+    import GameScene.Event.*
+    eventHandler.notify(if invisible then CursorCaptured else CursorReleased)
 
   override def windowResized(width: Int, height: Int): Unit =
     val aspectRatio = width.toFloat / height
@@ -284,14 +283,14 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
       )
       .sum
 
-  override def tick(): Unit =
+  override def tick(ctx: TickContext): Unit =
     val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
     if world.getChunk(playerCoords.getChunkRelWorld).isDefined
     then
       val maxSpeed = playerInputHandler.maxSpeed
       if !isPaused && !isInPopup then
         playerInputHandler.tick(
-          if moveWithMouse then mouse.moved else new Vector2f,
+          if moveWithMouse then ctx.mouseMovement else new Vector2f,
           maxSpeed,
           playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
         )
@@ -303,7 +302,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
 
     updateBlockInHandRendererContent()
 
-    selectedBlockAndSide = updatedMousePicker()
+    selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
 
     if (rightMouseButtonTimer.tick()) {
       performRightMouseClick()
@@ -326,16 +325,19 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
         )
       )
 
-    for s <- overlays do s.tick()
+    for s <- overlays do s.tick(ctx)
 
-  private def updatedMousePicker(): Option[(BlockState, BlockRelWorld, Option[Int])] =
+  private def updatedMousePicker(
+      windowSize: WindowSize,
+      mouse: MousePosition
+  ): Option[(BlockState, BlockRelWorld, Option[Int])] =
     if isPaused || isInPopup
     then None
     else
       val screenCoords =
         if moveWithMouse
         then new Vector2f(0, 0)
-        else mouse.normalizedScreenCoords(window.windowSize)
+        else mouse.normalizedScreenCoords(windowSize.logicalSize)
 
       // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
       for
@@ -406,7 +408,7 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
   private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
     val renderer = GuiBlockRenderer(1, 1)
     renderer.setViewMatrix(makeBlockInHandViewMatrix)
-    renderer.setWindowAspectRatio(window.aspectRatio)
+    renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
     renderer
 
   private def makeCrosshairVAO: VAO = VAO
@@ -417,21 +419,21 @@ class GameScene(worldProvider: WorldProvider)(eventHandler: Tracker[GameScene.Ev
     )
     .finish(4)
 
-  private def makeToolbar(player: Player): Toolbar =
+  private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar =
     val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
 
     val toolbar = new Toolbar(location, player.inventory)
     toolbar.setSelectedIndex(player.selectedItemSlot)
-    toolbar.setWindowAspectRatio(window.aspectRatio)
+    toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
     toolbar
 
-  private def makeCameraProjection =
+  private def makeCameraProjection(windowSize: WindowSize) =
     val far = world.size.worldSize match
       case 0 => 100000f
       case 1 => 10000f
       case _ => 1000f
 
-    new CameraProjection(70f, window.aspectRatio, 0.02f, far)
+    new CameraProjection(70f, windowSize.logicalAspectRatio, 0.02f, far)
 
   private def makeBlockInHandViewMatrix =
     new Matrix4f()

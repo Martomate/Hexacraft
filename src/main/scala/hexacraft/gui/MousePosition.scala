@@ -1,11 +1,8 @@
-package hexacraft.game
+package hexacraft.gui
 
 import org.joml.{Vector2f, Vector2fc, Vector2ic}
 
-trait GameMouse:
-  def pos: Vector2fc
-  def moved: Vector2fc
-
+case class MousePosition(pos: Vector2fc):
   def normalizedScreenCoords(windowSize: Vector2ic): Vector2fc =
     val x = pos.x / windowSize.x * 2 - 1
     val y = pos.y / windowSize.y * 2 - 1

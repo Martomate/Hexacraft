@@ -1,11 +1,10 @@
 package hexacraft.gui.comp
 
-import hexacraft.gui.{Event, LocationInfo, RenderContext}
+import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext, WindowSize}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.text.{Fonts, Text, TextMaster}
 import hexacraft.text.font.Font
-
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
 abstract class Component:
@@ -14,14 +13,14 @@ abstract class Component:
   protected def addText(text: Text): Unit = textMaster.loadText(text)
   protected def removeText(text: Text): Unit = textMaster.removeText(text)
 
-  def tick(): Unit = ()
+  def tick(ctx: TickContext): Unit = ()
 
   def render(transformation: GUITransformation)(using context: RenderContext): Unit =
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
 
   def handleEvent(event: Event): Boolean = false
-  def onReloadedResources(): Unit = ()
+  def onReloadedResources(windowSize: WindowSize): Unit = ()
 
   def unload(): Unit = textMaster.unload()
 

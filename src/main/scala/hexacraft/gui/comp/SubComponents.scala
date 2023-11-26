@@ -1,6 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.gui.{Event, RenderContext}
+import hexacraft.gui.{Event, RenderContext, TickContext}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -14,9 +14,9 @@ trait SubComponents extends Component:
     super.render(transformation)
     comps.foreach(_.render(transformation))
 
-  override def tick(): Unit =
-    super.tick()
-    comps.foreach(_.tick())
+  override def tick(ctx: TickContext): Unit =
+    super.tick(ctx)
+    comps.foreach(_.tick(ctx))
 
   def addComponent(comp: Component): Unit =
     comps += comp

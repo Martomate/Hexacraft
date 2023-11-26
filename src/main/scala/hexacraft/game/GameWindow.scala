@@ -1,9 +1,8 @@
 package hexacraft.game
 
-import org.joml.Vector2ic
+import hexacraft.gui.WindowSize
+import hexacraft.infra.window.CursorMode
 
 trait GameWindow:
-  def windowSize: Vector2ic
-  def framebufferSize: Vector2ic
-
-  def aspectRatio: Float = windowSize.x.toFloat / windowSize.y
+  def windowSize: WindowSize
+  def setCursorMode(cursorMode: CursorMode): Unit

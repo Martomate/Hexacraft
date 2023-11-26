@@ -1,9 +1,8 @@
 package hexacraft.gui.comp
 
-import hexacraft.gui.{Event, LocationInfo, RenderContext}
+import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
 import hexacraft.infra.window.{KeyAction, KeyboardKey}
 import hexacraft.text.Text
-
 import org.joml.{Vector3f, Vector4f}
 
 class TextField(
@@ -50,7 +49,7 @@ class TextField(
 
   def text: String = contentText.text
 
-  override def tick(): Unit =
+  override def tick(ctx: TickContext): Unit =
     if focused
     then
       if time % 30 == 0

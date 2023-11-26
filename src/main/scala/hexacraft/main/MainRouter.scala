@@ -1,11 +1,11 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameMouse, GameScene, GameWindow, WorldProviderFromFile}
-import hexacraft.gui.{Scene, WindowExtras}
+import hexacraft.game.{GameKeyboard, GameScene, GameWindow, WorldProviderFromFile}
+import hexacraft.gui.Scene
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
+import hexacraft.infra.window.CursorMode
 import hexacraft.menu.*
 import hexacraft.util.Tracker
-import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.settings.WorldSettings
 
 import java.io.File
@@ -18,11 +18,11 @@ object MainRouter {
 
 class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
     eventListener: Tracker[MainRouter.Event]
-)(using GameWindow, GameMouse, GameKeyboard, WindowExtras) {
+)(using window: GameWindow)(using GameKeyboard) {
 
   def route(sceneRoute: SceneRoute): Unit = eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
 
-  private def createScene(sceneRoute: SceneRoute)(using GameWindow, GameMouse): Scene = sceneRoute match
+  private def createScene(sceneRoute: SceneRoute): Scene = sceneRoute match
     case SceneRoute.Main =>
       import MainMenu.Event.*
 
@@ -78,8 +78,12 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
     case SceneRoute.Game(saveDir, settings) =>
       given blockLoader: BlockTextureLoader = BlockTextureLoader.instance // this loads it to memory
 
-      GameScene(new WorldProviderFromFile(saveDir, settings, fs)):
-        case GameScene.Event.QuitGame =>
+      GameScene(new WorldProviderFromFile(saveDir, settings, fs), window.windowSize):
+        case GameScene.Event.GameQuit =>
           route(SceneRoute.Main)
           System.gc()
+        case GameScene.Event.CursorCaptured =>
+          window.setCursorMode(CursorMode.Disabled)
+        case GameScene.Event.CursorReleased =>
+          window.setCursorMode(CursorMode.Normal)
 }
