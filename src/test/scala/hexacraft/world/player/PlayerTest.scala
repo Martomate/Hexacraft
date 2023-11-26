@@ -1,10 +1,10 @@
 package hexacraft.world.player
 
-import com.martomate.nbt.{Nbt, NBTUtil}
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.Block
 import hexacraft.world.coord.fp.CylCoords
 
+import com.martomate.nbt.Nbt
 import munit.FunSuite
 
 class PlayerTest extends FunSuite {
@@ -43,7 +43,7 @@ class PlayerTest extends FunSuite {
   }
 
   test("fromNBT should have good default values") {
-    val player = Player.fromNBT(Nbt.from(NBTUtil.makeCompoundTag("player", Seq())))
+    val player = Player.fromNBT(Nbt.emptyMap)
 
     assert(player.position.length() < 1e-9)
     assert(player.rotation.length() < 1e-9)

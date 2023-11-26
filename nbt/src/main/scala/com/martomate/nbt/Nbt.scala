@@ -33,6 +33,9 @@ object Nbt {
   }
 
   case class ShortArrayTag(vs: ArraySeq[Short]) extends Nbt
+  object ShortArrayTag {
+    def apply(arr: Array[Short]): ShortArrayTag = ShortArrayTag(ArraySeq.unsafeWrapArray(arr))
+  }
 
   case class IntArrayTag(vs: ArraySeq[Int]) extends Nbt
 
@@ -108,6 +111,13 @@ object Nbt {
   def emptyMap: Nbt.MapTag = Nbt.MapTag(ListMap.empty)
 
   def makeMap(elems: (String, Nbt)*): Nbt.MapTag = Nbt.MapTag(ListMap.from(elems))
+
+  def makeVectorTag(vector: Vector3d): Nbt.MapTag =
+    Nbt.makeMap(
+      "x" -> Nbt.DoubleTag(vector.x),
+      "y" -> Nbt.DoubleTag(vector.y),
+      "z" -> Nbt.DoubleTag(vector.z)
+    )
 
   def fromBinary(bytes: Array[Byte]): (String, Nbt) =
     val stream = new NBTInputStream(new ByteArrayInputStream(bytes), false)

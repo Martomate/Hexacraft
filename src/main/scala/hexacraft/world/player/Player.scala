@@ -1,9 +1,9 @@
 package hexacraft.world.player
 
-import com.martomate.nbt.{Nbt, NBTUtil}
 import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 
+import com.martomate.nbt.Nbt
 import org.joml.Vector3d
 
 class Player(val inventory: Inventory) {
@@ -19,9 +19,9 @@ class Player(val inventory: Inventory) {
   def toNBT: Nbt.MapTag = {
     Nbt
       .makeMap(
-        "position" -> Nbt.from(NBTUtil.makeVectorTag("position", position)),
-        "rotation" -> Nbt.from(NBTUtil.makeVectorTag("rotation", rotation)),
-        "velocity" -> Nbt.from(NBTUtil.makeVectorTag("velocity", velocity)),
+        "position" -> Nbt.makeVectorTag(position),
+        "rotation" -> Nbt.makeVectorTag(rotation),
+        "velocity" -> Nbt.makeVectorTag(velocity),
         "flying" -> Nbt.ByteTag(flying),
         "selectedItemSlot" -> Nbt.ShortTag(selectedItemSlot.toShort),
         "inventory" -> inventory.toNBT

@@ -1,6 +1,6 @@
 package hexacraft.world.settings
 
-import com.martomate.nbt.{Nbt, NBTUtil}
+import com.martomate.nbt.Nbt
 import hexacraft.world.{CylinderSize, MigrationManager}
 
 import java.io.File

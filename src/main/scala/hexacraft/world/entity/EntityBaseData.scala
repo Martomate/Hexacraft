@@ -1,9 +1,9 @@
 package hexacraft.world.entity
 
-import com.martomate.nbt.{Nbt, NBTUtil}
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
 
+import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector3d}
 
 class EntityBaseData(
@@ -18,9 +18,9 @@ class EntityBaseData(
     .rotateY(rotation.y.toFloat)
 
   def toNBT: EntityBaseData.NbtData = EntityBaseData.NbtData(
-    pos = Nbt.from(NBTUtil.makeVectorTag("pos", position.toVector3d)),
-    velocity = Nbt.from(NBTUtil.makeVectorTag("velocity", velocity)),
-    rotation = Nbt.from(NBTUtil.makeVectorTag("rotation", rotation))
+    pos = Nbt.makeVectorTag(position.toVector3d),
+    velocity = Nbt.makeVectorTag(velocity),
+    rotation = Nbt.makeVectorTag(rotation)
   )
 
 object EntityBaseData:

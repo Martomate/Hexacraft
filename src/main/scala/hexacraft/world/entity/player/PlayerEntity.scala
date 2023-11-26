@@ -1,6 +1,6 @@
 package hexacraft.world.entity.player
 
-import com.martomate.nbt.{Nbt, NBTUtil}
+import com.martomate.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords

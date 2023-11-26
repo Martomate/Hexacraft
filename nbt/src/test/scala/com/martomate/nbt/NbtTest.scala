@@ -1,15 +1,11 @@
 package com.martomate.nbt
 
-import com.flowpowered.nbt.*
 import munit.FunSuite
 import org.joml.Vector3d
 
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters.*
 
-class NBTUtilTest extends FunSuite {
-  def makeCTag(children: Tag[_]*) = new CompoundTag("tag", new CompoundMap(children.asJava))
-
+class NbtTest extends FunSuite {
   def testGet[T](
       name: String,
       method: Nbt.MapTag => (String, => T) => T,
@@ -57,24 +53,20 @@ class NBTUtilTest extends FunSuite {
     }
   }
 
-  private val booleanCTag = Nbt.from(makeCTag(new ByteTag("tag", 1.toByte)))
-  private val byteCTag = Nbt.from(makeCTag(new ByteTag("tag", 42.toByte)))
-  private val shortCTag = Nbt.from(makeCTag(new ShortTag("tag", 4242.toShort)))
+  private val booleanCTag = Nbt.makeMap("tag" -> Nbt.ByteTag(1.toByte))
+  private val byteCTag = Nbt.makeMap("tag" -> Nbt.ByteTag(42.toByte))
+  private val shortCTag = Nbt.makeMap("tag" -> Nbt.ShortTag(4242.toShort))
   //  intCTag
-  private val longCTag = Nbt.from(makeCTag(new LongTag("tag", 4242424242424242L)))
+  private val longCTag = Nbt.makeMap("tag" -> Nbt.LongTag(4242424242424242L))
   //  floatCTag
-  private val doubleCTag = Nbt.from(makeCTag(new DoubleTag("tag", 42.42424242424242d)))
-  private val stringCTag = Nbt.from(makeCTag(new StringTag("tag", "42.42424242424242D")))
-  private val compCTag = Nbt.from(makeCTag(makeCTag(new ByteTag("tag", 42.toByte))))
+  private val doubleCTag = Nbt.makeMap("tag" -> Nbt.DoubleTag(42.42424242424242d))
+  private val stringCTag = Nbt.makeMap("tag" -> Nbt.StringTag("42.42424242424242D"))
+  private val compCTag = Nbt.makeMap("tag" -> Nbt.makeMap("tag" -> Nbt.ByteTag(42.toByte)))
   private val byteArr = Seq(42, 13, 42, -42).map(_.toByte).toArray
-  private val byteArrCTag = Nbt.from(makeCTag(new ByteArrayTag("tag", byteArr)))
+  private val byteArrCTag = Nbt.makeMap("tag" -> Nbt.ByteArrayTag(byteArr))
   private val shortArr = Seq(4242, 1313, 4242, -4242).map(_.toShort).toArray
-  private val shortArrCTag = Nbt.from(makeCTag(new ShortArrayTag("tag", shortArr)))
-  private val listCTag = Nbt.from(
-    makeCTag(
-      new ListTag("tag", classOf[StringTag], java.util.Arrays.asList(new StringTag("", "a"), new StringTag("", "bcd")))
-    )
-  )
+  private val shortArrCTag = Nbt.makeMap("tag" -> Nbt.ShortArrayTag(shortArr))
+  private val listCTag = Nbt.makeMap("tag" -> Nbt.ListTag(Seq(Nbt.StringTag("a"), Nbt.StringTag("bcd"))))
 
   testGet("getBoolean", _.getBoolean, booleanCTag, true, false)
   testGet("getByte", _.getByte, byteCTag, 42.toByte, 13.toByte)
@@ -101,7 +93,7 @@ class NBTUtilTest extends FunSuite {
   testGetOption("getShortArray", _.getShortArray, shortArrCTag, ArraySeq.unsafeWrapArray(shortArr))
 
   test("setVector should set the correct values") {
-    val cTag = Nbt.from(makeCTag(new DoubleTag("x", 1.23), new DoubleTag("z", 4.32), new DoubleTag("y", 9.87)))
+    val cTag = Nbt.makeMap("x" -> Nbt.DoubleTag(1.23), "z" -> Nbt.DoubleTag(4.32), "y" -> Nbt.DoubleTag(9.87))
     val vec = new Vector3d()
 
     assertEquals(cTag.setVector(vec), vec)
@@ -114,20 +106,27 @@ class NBTUtilTest extends FunSuite {
   test("makeVectorTag should set the correct values") {
     val vec = new Vector3d(1.23, 9.87, 4.32)
 
-    val cTag = NBTUtil.makeVectorTag("tag", vec)
-
-    assertEquals(cTag, makeCTag(new DoubleTag("x", 1.23), new DoubleTag("y", 9.87), new DoubleTag("z", 4.32)))
-  }
-
-  private val bigTag = makeCTag(new ByteTag("byteTag", 13.toByte), makeCTag(new ShortTag("shortTag", 1212.toShort)))
-  test("makeCompoundTag should return a CompoundTag with the provided tag in it") {
-    assertEquals(NBTUtil.makeCompoundTag("tag", Seq(bigTag)), makeCTag(bigTag))
+    assertEquals(
+      Nbt.makeVectorTag(vec),
+      Nbt.makeMap(
+        "x" -> Nbt.DoubleTag(1.23),
+        "y" -> Nbt.DoubleTag(9.87),
+        "z" -> Nbt.DoubleTag(4.32)
+      )
+    )
   }
 
   test("toBinary works for Maps") {
     assertEquals(
       Nbt.makeMap("ab" -> Nbt.ShortTag(0x1234)).toBinary("cde").toSeq,
       Array[Byte](10, 0, 3, 'c', 'd', 'e', 2, 0, 2, 'a', 'b', 0x12, 0x34, 0).toSeq
+    )
+  }
+
+  test("fromBinary works for Maps") {
+    assertEquals(
+      Nbt.fromBinary(Array[Byte](10, 0, 3, 'c', 'd', 'e', 2, 0, 2, 'a', 'b', 0x12, 0x34, 0)),
+      "cde" -> Nbt.makeMap("ab" -> Nbt.ShortTag(0x1234))
     )
   }
 }
