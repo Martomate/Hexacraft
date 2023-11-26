@@ -1,21 +1,19 @@
 package hexacraft.world
 
-import hexacraft.nbt.NBTUtil
+import hexacraft.nbt.Nbt
 import hexacraft.world.settings.{WorldGenSettings, WorldInfo}
 
-import com.flowpowered.nbt.CompoundTag
-
-class FakeWorldProvider(seed: Long)(implicit cylSize: CylinderSize) extends WorldProvider {
+class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {
   override def getWorldInfo: WorldInfo = new WorldInfo(
     "test world",
     cylSize,
     new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001),
-    NBTUtil.makeCompoundTag("", Seq.empty)
+    Nbt.emptyMap
   )
 
-  private var fs: Map[String, CompoundTag] = Map.empty
+  private var fs: Map[String, Nbt.MapTag] = Map.empty
 
-  override def loadState(path: String): CompoundTag = fs.getOrElse(path, NBTUtil.makeCompoundTag("", Seq.empty))
+  override def loadState(path: String): Nbt.MapTag = fs.getOrElse(path, Nbt.emptyMap)
 
-  override def saveState(tag: CompoundTag, path: String): Unit = fs += path -> tag
+  override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit = fs += path -> tag
 }

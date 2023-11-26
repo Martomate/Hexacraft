@@ -1,8 +1,6 @@
 package hexacraft.world.settings
 
-import hexacraft.nbt.{Nbt, NBTUtil}
-
-import com.flowpowered.nbt.{CompoundTag, DoubleTag, LongTag}
+import hexacraft.nbt.Nbt
 
 import java.util.Random
 
@@ -15,22 +13,18 @@ class WorldGenSettings(
     val biomeHeightVariationGenScale: Double
 ) {
 
-  def toNBT: CompoundTag = NBTUtil.makeCompoundTag(
-    "gen",
-    Seq(
-      new LongTag("seed", seed),
-      new DoubleTag("blockGenScale", blockGenScale),
-      new DoubleTag("heightMapGenScale", heightMapGenScale),
-      new DoubleTag("blockDensityGenScale", blockDensityGenScale),
-      new DoubleTag("biomeHeightGenScale", biomeHeightMapGenScale),
-      new DoubleTag("biomeHeightVariationGenScale", biomeHeightVariationGenScale)
-    )
+  def toNBT: Nbt.MapTag = Nbt.makeMap(
+    "seed" -> Nbt.LongTag(seed),
+    "blockGenScale" -> Nbt.DoubleTag(blockGenScale),
+    "heightMapGenScale" -> Nbt.DoubleTag(heightMapGenScale),
+    "blockDensityGenScale" -> Nbt.DoubleTag(blockDensityGenScale),
+    "biomeHeightGenScale" -> Nbt.DoubleTag(biomeHeightMapGenScale),
+    "biomeHeightVariationGenScale" -> Nbt.DoubleTag(biomeHeightVariationGenScale)
   )
 }
 
 object WorldGenSettings {
-  def fromNBT(nbt2: CompoundTag, defaultSettings: WorldSettings): WorldGenSettings = {
-    val nbt = Nbt.from(nbt2)
+  def fromNBT(nbt: Nbt.MapTag, defaultSettings: WorldSettings): WorldGenSettings = {
     new WorldGenSettings(
       nbt.getLong("seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
       nbt.getDouble("blockGenScale", 0.1),

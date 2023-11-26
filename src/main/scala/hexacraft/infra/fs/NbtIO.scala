@@ -4,23 +4,21 @@ import hexacraft.math.GzipAlgorithm
 import hexacraft.nbt.Nbt
 import hexacraft.util.AsyncFileIO
 
-import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
-
 import java.io.File
 
 class NbtIO(fs: FileSystem) {
-  def saveTag(tag: Tag[_], nbtFile: File): Unit =
+  def saveTag(tag: Nbt, name: String, nbtFile: File): Unit =
     AsyncFileIO.perform(
       nbtFile,
       nbtFile => {
-        val bytes = Nbt.convertTag(tag).toBinary(tag.getName)
+        val bytes = tag.toBinary(name)
         val compressedBytes = GzipAlgorithm.compress(bytes)
 
         fs.writeBytes(nbtFile.toPath, compressedBytes)
       }
     )
 
-  def loadTag(file: File): CompoundTag =
+  def loadTag(file: File): (String, Nbt.MapTag) =
     if fs.exists(file.toPath) then
       AsyncFileIO.perform(
         file,
@@ -28,8 +26,8 @@ class NbtIO(fs: FileSystem) {
           val compressedBytes = fs.readAllBytes(file.toPath).unwrap()
           val bytes = GzipAlgorithm.decompress(compressedBytes)
           val (name, tag) = Nbt.fromBinary(bytes)
-          tag.asInstanceOf[Nbt.MapTag].toCompoundTag(name)
+          (name, tag.asInstanceOf[Nbt.MapTag])
         }
       )
-    else new CompoundTag("", new CompoundMap())
+    else ("", Nbt.emptyMap)
 }

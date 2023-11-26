@@ -13,7 +13,7 @@ object Entity {
   def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize): Result[Entity, String] =
     val entType = tag.getString("type", "")
     registry.get(entType) match
-      case Some(factory) => Ok(factory.fromNBT(tag.toCompoundTag("")))
+      case Some(factory) => Ok(factory.fromNBT(tag))
       case None          => Err(s"Entity-type '$entType' not found")
 }
 

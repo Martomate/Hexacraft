@@ -28,5 +28,5 @@ class SheepEntity(
   override def toNBT: Nbt.MapTag =
     super.toNBT
       .withField("type", Nbt.StringTag("sheep"))
-      .withField("ai", Nbt.from(NBTUtil.makeCompoundTag("ai", ai.toNBT)))
+      .withField("ai", ai.toNBT)
 }

@@ -1,15 +1,14 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.bits.Int12
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.nbt.Nbt
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.*
 import hexacraft.world.gen.WorldGenerator
 
-import com.flowpowered.nbt.{CompoundTag, ShortArrayTag}
-
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 trait ChunkColumnTerrain:
@@ -26,7 +25,7 @@ object ChunkColumn:
 
     val columnNBT = worldProvider.loadColumnData(coords)
 
-    val heightMap = Nbt.from(columnNBT).getShortArray("heightMap") match
+    val heightMap = columnNBT.getShortArray("heightMap") match
       case Some(heightNBT) => Array.tabulate(16, 16)((x, z) => heightNBT((x << 4) | z))
       case None            => Array.tabulate(16, 16)((x, z) => generatedHeightMap(x)(z))
 
@@ -119,13 +118,9 @@ class ChunkColumn private (
   def onReloadedResources(): Unit =
     chunks.foreachValue(_.requestRenderUpdate())
 
-  def toNBT: CompoundTag =
-    NBTUtil.makeCompoundTag(
-      "column",
-      Seq(
-        new ShortArrayTag("heightMap", Array.tabulate(16 * 16)(i => heightMap(i >> 4)(i & 0xf)))
-      )
-    )
+  def toNBT: Nbt.MapTag = Nbt.makeMap(
+    "heightMap" -> Nbt.ShortArrayTag(ArraySeq.tabulate(16 * 16)(i => heightMap(i >> 4)(i & 0xf)))
+  )
 
   def unload(): Unit =
     chunks.foreachValue(_.unload())

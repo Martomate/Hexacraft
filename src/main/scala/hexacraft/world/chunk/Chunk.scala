@@ -9,8 +9,6 @@ import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorl
 import hexacraft.world.entity.{Entity, EntityRegistry}
 import hexacraft.world.gen.WorldGenerator
 
-import com.flowpowered.nbt.CompoundTag
-
 import scala.annotation.tailrec
 
 object Chunk:
@@ -34,11 +32,10 @@ class Chunk(
     worldProvider: WorldProvider,
     registry: EntityRegistry
 )(using CylinderSize):
-  private val loadedTag: CompoundTag = worldProvider.loadChunkData(coords)
+  private val loadedTag: Nbt.MapTag = worldProvider.loadChunkData(coords)
   private val chunkData: ChunkData =
-    if !loadedTag.getValue.isEmpty then ChunkData.fromNBT(Nbt.from(loadedTag))(registry)
-    else generator.generate()
-  private var needsToSave: Boolean = loadedTag.getValue.isEmpty
+    if loadedTag.vs.nonEmpty then ChunkData.fromNBT(loadedTag)(registry) else generator.generate()
+  private var needsToSave: Boolean = loadedTag.vs.isEmpty
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -87,13 +84,13 @@ class Chunk(
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
 
-  def saveIfNeeded(): Option[CompoundTag] = if needsToSave then Some(save()) else None
+  def saveIfNeeded(): Option[Nbt.MapTag] = if needsToSave then Some(save()) else None
 
   def unload(): Unit =
     saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, coords))
 
-  private def save(): CompoundTag =
-    val chunkTag = chunkData.toNBT.toCompoundTag("chunk")
+  private def save(): Nbt.MapTag =
+    val chunkTag = chunkData.toNBT
     needsToSave = false
     chunkTag
 

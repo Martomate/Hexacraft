@@ -1,9 +1,7 @@
 package hexacraft.world
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
-import hexacraft.nbt.{Nbt, NBTUtil}
-
-import com.flowpowered.nbt.ShortTag
+import hexacraft.nbt.Nbt
 
 import java.io.File
 import scala.util.{Success, Try}
@@ -18,8 +16,8 @@ class MigrationManager(fs: FileSystem) {
   def migrateIfNeeded(saveDir: File): Unit = {
     val nbtIO = new NbtIO(this.fs)
     val saveFile = new File(saveDir, "world.dat")
-    val nbtData = nbtIO.loadTag(saveFile)
-    val version = Nbt.from(nbtData).getShort("version", 1)
+    val (rootName, nbtData) = nbtIO.loadTag(saveFile)
+    val version = nbtData.getShort("version", 1)
 
     if (version > MigrationManager.LatestVersion)
       throw new IllegalArgumentException(
@@ -29,8 +27,8 @@ class MigrationManager(fs: FileSystem) {
 
     for (v <- version.toInt until MigrationManager.LatestVersion) {
       migrateFrom(v, saveDir)
-      nbtData.getValue.put("version", new ShortTag("version", (v + 1).toShort))
-      nbtIO.saveTag(nbtData, saveFile)
+      val updatedNbt = nbtData.withField("version", Nbt.ShortTag((v + 1).toShort))
+      nbtIO.saveTag(updatedNbt, rootName, saveFile)
     }
   }
 

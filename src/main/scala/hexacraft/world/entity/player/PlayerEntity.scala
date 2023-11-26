@@ -29,7 +29,7 @@ class PlayerEntity(
   override def toNBT: Nbt.MapTag =
     super.toNBT
       .withField("type", Nbt.StringTag("player"))
-      .withField("ai", Nbt.from(NBTUtil.makeCompoundTag("ai", ai.toNBT)))
+      .withField("ai", ai.toNBT)
 }
 
 class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) extends Entity(initData, model) {

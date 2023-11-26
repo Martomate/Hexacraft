@@ -1,15 +1,14 @@
 package hexacraft.nbt
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
-import hexacraft.nbt.{Nbt, NBTUtil}
+import hexacraft.math.GzipAlgorithm
 
 import com.flowpowered.nbt.*
-import hexacraft.math.GzipAlgorithm
 import munit.FunSuite
 import org.joml.Vector3d
 
 import java.io.*
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
@@ -155,7 +154,8 @@ class NBTUtilTest extends FunSuite {
     val nbtIO = new NbtIO(fs)
 
     val file = new File("abc.dat")
-    nbtIO.saveTag(makeCTag(), file)
+    val tag = makeCTag()
+    nbtIO.saveTag(Nbt.convertTag(tag), tag.getName, file)
 
     val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
     val compressedBytes = ArraySeq.unsafeWrapArray(GzipAlgorithm.compress(bytes))
@@ -171,9 +171,10 @@ class NBTUtilTest extends FunSuite {
     val tracker = fs.trackWrites()
     val nbtIO = new NbtIO(fs)
 
-    val tag = nbtIO.loadTag(path.toFile)
+    val (name, tag) = nbtIO.loadTag(path.toFile)
 
-    assertEquals(tag, new CompoundTag("tag", new CompoundMap()))
+    assertEquals(tag, Nbt.emptyMap)
+    assertEquals(name, "tag")
   }
 
   test("toBinary works for Maps") {

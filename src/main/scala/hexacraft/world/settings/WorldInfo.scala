@@ -3,38 +3,29 @@ package hexacraft.world.settings
 import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{CylinderSize, MigrationManager}
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag, StringTag}
-
 import java.io.File
 
 class WorldInfo(
     val worldName: String,
     val worldSize: CylinderSize,
     val gen: WorldGenSettings,
-    val player: CompoundTag
+    val player: Nbt.MapTag
 ) {
-  def toNBT: CompoundTag = {
-    NBTUtil.makeCompoundTag(
-      "world",
-      Seq(
-        new ShortTag("version", MigrationManager.LatestVersion),
-        NBTUtil.makeCompoundTag(
-          "general",
-          Seq(
-            new ByteTag("worldSize", worldSize.worldSize.toByte),
-            new StringTag("name", worldName)
-          )
-        ),
-        gen.toNBT,
-        player
-      )
+  def toNBT: Nbt.MapTag = {
+    Nbt.makeMap(
+      "version" -> Nbt.ShortTag(MigrationManager.LatestVersion),
+      "general" -> Nbt.makeMap(
+        "worldSize" -> Nbt.ByteTag(worldSize.worldSize.toByte),
+        "name" -> Nbt.StringTag(worldName)
+      ),
+      "gen" -> gen.toNBT,
+      "player" -> player
     )
   }
 }
 
 object WorldInfo {
-  def fromNBT(nbt: CompoundTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
-    val nbtData = Nbt.from(nbt)
+  def fromNBT(nbtData: Nbt.MapTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
     val generalSettings: Nbt.MapTag =
       nbtData.getCompoundTag("general").getOrElse(Nbt.emptyMap)
     val name: String =
@@ -43,14 +34,8 @@ object WorldInfo {
       generalSettings.getByte("worldSize", worldSettings.size.getOrElse(7))
     )
     val gen: WorldGenSettings =
-      WorldGenSettings.fromNBT(
-        nbtData
-          .getCompoundTag("gen")
-          .map(_.toCompoundTag("gen"))
-          .getOrElse(NBTUtil.makeCompoundTag("gen", Seq())),
-        worldSettings
-      )
-    val player: CompoundTag = nbtData.getCompoundTag("player").map(_.toCompoundTag("player")).orNull
+      WorldGenSettings.fromNBT(nbtData.getCompoundTag("gen").getOrElse(Nbt.emptyMap), worldSettings)
+    val player: Nbt.MapTag = nbtData.getCompoundTag("player").orNull
 
     new WorldInfo(name, size, gen, player)
   }

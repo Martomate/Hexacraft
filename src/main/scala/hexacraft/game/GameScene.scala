@@ -6,6 +6,7 @@ import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
+import hexacraft.nbt.Nbt
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{World, WorldProvider}
@@ -21,7 +22,6 @@ import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.settings.WorldInfo
 
-import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import scala.collection.mutable
@@ -442,7 +442,7 @@ class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
       .rotateX(3.1415f / 6)
       .translate(0, -0.25f, 0)
 
-  private def makePlayer(playerNbt: CompoundTag): Player =
+  private def makePlayer(playerNbt: Nbt.MapTag): Player =
     if playerNbt != null
     then Player.fromNBT(playerNbt)
     else

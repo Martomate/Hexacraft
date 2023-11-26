@@ -21,7 +21,7 @@ class RootArchTest extends FunSuite {
     Packages("hexacraft.world..").assertNotUsedIn("hexacraft.util..")
   }
 
-  test("Nbt library should only be used in Nbt wrapper".ignore) {
+  test("Nbt library should only be used in Nbt wrapper") {
     Packages("com.flowpowered.nbt..").assertOnlyUsedIn("hexacraft.nbt")
   }
 
@@ -79,17 +79,17 @@ class RootArchTest extends FunSuite {
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
       .where(
         Game,
-        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt, NbtLib)
+        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt)
       )
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Util, JOML))
-      .where(Infra, _.mayOnlyAccessLayers(Math, Renderer, Util, World, OpenGL, GLFW, LWJGL, Nbt, NbtLib))
+      .where(Infra, _.mayOnlyAccessLayers(Math, Renderer, Util, World, OpenGL, GLFW, LWJGL, Nbt))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Menu, Renderer, Util, World, JOML, LWJGL))
       .where(Menu, _.mayOnlyAccessLayers(root, Infra, Text, Game, GUI, World, JOML, Nbt))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
       .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
-      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, LWJGL, Nbt, NbtLib))
+      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, LWJGL, Nbt))
       .check(allClasses)
   }
 

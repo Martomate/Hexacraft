@@ -4,7 +4,6 @@ import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
 
-import com.flowpowered.nbt.CompoundTag
 import org.joml.{Matrix4f, Vector3d}
 
 class EntityBaseData(
@@ -27,8 +26,7 @@ class EntityBaseData(
 object EntityBaseData:
   case class NbtData(pos: Nbt.MapTag, velocity: Nbt.MapTag, rotation: Nbt.MapTag)
 
-  def fromNBT(tag2: CompoundTag)(using CylinderSize): EntityBaseData =
-    val tag = Nbt.from(tag2)
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): EntityBaseData =
     val position = tag
       .getCompoundTag("pos")
       .map(t => CylCoords(t.setVector(new Vector3d)))

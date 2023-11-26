@@ -4,8 +4,6 @@ import hexacraft.nbt.Nbt
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.block.Block
 
-import com.flowpowered.nbt.*
-
 class Inventory(init_slots: Map[Int, Block]) {
   private val dispatcher = new EventDispatcher[Unit]
   def trackChanges(tracker: Tracker[Unit]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -21,15 +19,15 @@ class Inventory(init_slots: Map[Int, Block]) {
     slots(idx) = block
     dispatcher.notify(())
 
-  def toNBT: Seq[Tag[_]] =
-    Seq(
-      Nbt
-        .ListTag(
-          slots.toSeq.zipWithIndex
-            .filter((block, _) => block.id != Block.Air.id)
-            .map((block, idx) => Nbt.makeMap("slot" -> Nbt.ByteTag(idx.toByte), "id" -> Nbt.ByteTag(block.id)))
-        )
-        .toRaw("slots")
+  def toNBT: Nbt.MapTag =
+    Nbt.makeMap(
+      "slots" ->
+        Nbt
+          .ListTag(
+            slots.toSeq.zipWithIndex
+              .filter((block, _) => block.id != Block.Air.id)
+              .map((block, idx) => Nbt.makeMap("slot" -> Nbt.ByteTag(idx.toByte), "id" -> Nbt.ByteTag(block.id)))
+          )
     )
 
   override def equals(obj: Any): Boolean =

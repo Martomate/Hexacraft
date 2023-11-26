@@ -6,7 +6,6 @@ import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.EntityBaseData
 
-import com.flowpowered.nbt.*
 import org.joml.{Vector3d, Vector3dc}
 
 class SimpleWalkAI(using CylinderSize) extends EntityAI {
@@ -66,11 +65,11 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
 
   override def acceleration(): Vector3dc = movingForce
 
-  override def toNBT: Seq[Tag[_]] = Seq(
-    new StringTag("type", "simple"),
-    new DoubleTag("targetX", target.x),
-    new DoubleTag("targetZ", target.z),
-    new ShortTag("timeout", timeout.toShort)
+  override def toNBT: Nbt.MapTag = Nbt.makeMap(
+    "type" -> Nbt.StringTag("simple"),
+    "targetX" -> Nbt.DoubleTag(target.x),
+    "targetZ" -> Nbt.DoubleTag(target.z),
+    "timeout" -> Nbt.ShortTag(timeout.toShort)
   )
 }
 

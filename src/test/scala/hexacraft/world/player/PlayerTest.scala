@@ -13,10 +13,7 @@ class PlayerTest extends FunSuite {
   test("saving should save all the fields as NBT") {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))
 
-    val nbt2 = player.toNBT
-    assertEquals(nbt2.getName, "player")
-
-    val nbt = Nbt.from(nbt2)
+    val nbt = player.toNBT
     assert(nbt.getCompoundTag("position").isDefined)
     assert(nbt.getCompoundTag("rotation").isDefined)
     assert(nbt.getCompoundTag("velocity").isDefined)
@@ -46,7 +43,7 @@ class PlayerTest extends FunSuite {
   }
 
   test("fromNBT should have good default values") {
-    val player = Player.fromNBT(NBTUtil.makeCompoundTag("player", Seq()))
+    val player = Player.fromNBT(Nbt.from(NBTUtil.makeCompoundTag("player", Seq())))
 
     assert(player.position.length() < 1e-9)
     assert(player.rotation.length() < 1e-9)

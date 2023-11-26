@@ -7,8 +7,6 @@ import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import hexacraft.world.settings.WorldGenSettings
 
-import com.flowpowered.nbt.CompoundTag
-
 import java.util.Random
 
 class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
@@ -39,8 +37,6 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
     val height = biomeHeightGenerator.genNoiseFromCylXZ(c)
     val heightVariation = biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
     heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
-
-  def toNBT: CompoundTag = worldGenSettings.toNBT
 }
 
 object WorldGenerator {

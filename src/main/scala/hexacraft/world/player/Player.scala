@@ -4,7 +4,6 @@ import hexacraft.nbt.{Nbt, NBTUtil}
 import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords
 
-import com.flowpowered.nbt.{ByteTag, CompoundTag, ShortTag}
 import org.joml.Vector3d
 
 class Player(val inventory: Inventory) {
@@ -17,18 +16,16 @@ class Player(val inventory: Inventory) {
 
   def blockInHand: Block = inventory(selectedItemSlot) // TODO: temporary, make inventory system
 
-  def toNBT: CompoundTag = {
-    NBTUtil.makeCompoundTag(
-      "player",
-      Seq(
-        NBTUtil.makeVectorTag("position", position),
-        NBTUtil.makeVectorTag("rotation", rotation),
-        NBTUtil.makeVectorTag("velocity", velocity),
-        new ByteTag("flying", flying),
-        new ShortTag("selectedItemSlot", selectedItemSlot.toShort),
-        NBTUtil.makeCompoundTag("inventory", inventory.toNBT)
+  def toNBT: Nbt.MapTag = {
+    Nbt
+      .makeMap(
+        "position" -> Nbt.from(NBTUtil.makeVectorTag("position", position)),
+        "rotation" -> Nbt.from(NBTUtil.makeVectorTag("rotation", rotation)),
+        "velocity" -> Nbt.from(NBTUtil.makeVectorTag("velocity", velocity)),
+        "flying" -> Nbt.ByteTag(flying),
+        "selectedItemSlot" -> Nbt.ShortTag(selectedItemSlot.toShort),
+        "inventory" -> inventory.toNBT
       )
-    )
   }
 }
 
@@ -43,8 +40,7 @@ object Player {
     player
   }
 
-  def fromNBT(tag2: CompoundTag): Player = {
-    val tag = Nbt.from(tag2)
+  def fromNBT(tag: Nbt.MapTag): Player = {
     val inventory =
       tag.getCompoundTag("inventory") match
         case Some(tag) => Inventory.fromNBT(tag)
