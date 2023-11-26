@@ -1,6 +1,6 @@
 package hexacraft.world.entity.sheep
 
-import hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.nbt.{Nbt, NBTUtil}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.HexBox
 import hexacraft.world.entity.*

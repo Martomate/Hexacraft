@@ -1,4 +1,4 @@
-package hexacraft.nbt
+package com.martomate.nbt
 
 import com.flowpowered.nbt.{CompoundMap, CompoundTag, Tag}
 import com.flowpowered.nbt.stream.{NBTInputStream, NBTOutputStream}

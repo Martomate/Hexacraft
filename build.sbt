@@ -1,56 +1,31 @@
+import Dependencies.*
+
 import scala.util.Properties.isMac
 
-lazy val root = Project("hexacraft", file("."))
-  .enablePlugins(LauncherJarPlugin)
-  .settings(Defaults.coreDefaultSettings*)
-  .settings(mainSettings*)
-
-def mainSettings: Seq[Def.SettingsDefinition] = Seq(
-  name := "Hexacraft",
+val commonSettings: Seq[Def.SettingsDefinition] = Seq(
   organization := "com.martomate",
   version := "0.11",
   scalaVersion := "3.3.0",
-  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
-  javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None),
-  publishArtifact := false,
-  libraryDependencies ++= lwjglDependencies ++ otherDependencies ++ testDependencies,
-  logBuffered := false,
-  fork := true
+  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
 )
 
-def lwjglDependencies = {
-  val lwjglVersion = "3.3.2"
-
-  val platforms = Seq(
-    "natives-windows",
-    "natives-windows-arm64",
-    "natives-linux",
-    "natives-linux-arm64",
-    "natives-macos",
-    "natives-macos-arm64"
+lazy val nbt = project
+  .in(file("nbt"))
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= Seq(Joml, FlowNbt) :+ MUnit
   )
 
-  Seq(
-    "org.lwjgl" % "lwjgl" % lwjglVersion,
-    "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
-    "org.lwjgl" % "lwjgl-opengl" % lwjglVersion
-  ) ++ platforms.flatMap(platform =>
-    Seq(
-      "org.lwjgl" % "lwjgl" % lwjglVersion classifier platform,
-      "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier platform,
-      "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier platform
-    )
+lazy val root = Project("hexacraft", file("."))
+  .dependsOn(nbt)
+  .enablePlugins(LauncherJarPlugin)
+  .settings(Defaults.coreDefaultSettings*)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= lwjglDependencies ++ Seq(Joml, FlowNbt) ++ Seq(MUnit, Mockito) ++ ArchUnit,
+    javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)
   )
-}
 
-def otherDependencies = Seq(
-  "org.joml" % "joml" % "1.10.5",
-  "com.flowpowered" % "flow-nbt" % "1.0.0"
-)
-
-def testDependencies = Seq(
-  "org.scalameta" %% "munit" % "0.7.29" % "test",
-  "org.scalatestplus" %% "mockito-4-11" % "3.2.16.0" % "test",
-  "com.tngtech.archunit" % "archunit" % "1.0.1" % "test",
-  "org.slf4j" % "slf4j-nop" % "2.0.5" % "test" // Needed for ArchUnit
-)
+ThisBuild / publishArtifact := false
+ThisBuild / logBuffered := false
+ThisBuild / fork := true

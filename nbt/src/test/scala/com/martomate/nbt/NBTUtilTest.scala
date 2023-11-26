@@ -1,15 +1,9 @@
-package hexacraft.nbt
-
-import hexacraft.infra.fs.{FileSystem, NbtIO}
-import hexacraft.math.GzipAlgorithm
+package com.martomate.nbt
 
 import com.flowpowered.nbt.*
 import munit.FunSuite
 import org.joml.Vector3d
 
-import java.io.*
-import java.nio.file.Path
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters.*
 
@@ -128,53 +122,6 @@ class NBTUtilTest extends FunSuite {
   private val bigTag = makeCTag(new ByteTag("byteTag", 13.toByte), makeCTag(new ShortTag("shortTag", 1212.toShort)))
   test("makeCompoundTag should return a CompoundTag with the provided tag in it") {
     assertEquals(NBTUtil.makeCompoundTag("tag", Seq(bigTag)), makeCTag(bigTag))
-  }
-
-  extension (bytes: Array[Byte])
-    def asHexString: String = bytes.map(b => "%02X".format(b)).mkString("")
-
-    def gzipCompressed: Array[Byte] =
-      val out = new ByteArrayOutputStream()
-      val stream = new BufferedOutputStream(new GZIPOutputStream(out))
-      try
-        stream.write(bytes)
-        stream.flush()
-      finally stream.close()
-      out.toByteArray
-
-    def gzipDecompressed: Array[Byte] =
-      val stream = new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(bytes)))
-      try
-        stream.readAllBytes()
-      finally stream.close()
-
-  test("tags can be saved".ignore) {
-    val fs = FileSystem.createNull()
-    val tracker = fs.trackWrites()
-    val nbtIO = new NbtIO(fs)
-
-    val file = new File("abc.dat")
-    val tag = makeCTag()
-    nbtIO.saveTag(Nbt.convertTag(tag), tag.getName, file)
-
-    val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
-    val compressedBytes = ArraySeq.unsafeWrapArray(GzipAlgorithm.compress(bytes))
-
-    assertEquals(tracker.events, Seq(FileSystem.FileWrittenEvent(file.toPath, compressedBytes)))
-  }
-
-  test("tags can be loaded".ignore) {
-    val path = Path.of("world.dat")
-    val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
-
-    val fs = FileSystem.createNull(existingFiles = Map(path -> bytes.gzipCompressed))
-    val tracker = fs.trackWrites()
-    val nbtIO = new NbtIO(fs)
-
-    val (name, tag) = nbtIO.loadTag(path.toFile)
-
-    assertEquals(tag, Nbt.emptyMap)
-    assertEquals(name, "tag")
   }
 
   test("toBinary works for Maps") {

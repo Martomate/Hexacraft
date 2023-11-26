@@ -1,8 +1,9 @@
 package hexacraft.infra.fs
 
 import hexacraft.math.GzipAlgorithm
-import hexacraft.nbt.Nbt
 import hexacraft.util.AsyncFileIO
+
+import com.martomate.nbt.Nbt
 
 import java.io.File
 

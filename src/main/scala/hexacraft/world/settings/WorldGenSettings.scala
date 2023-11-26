@@ -1,7 +1,6 @@
 package hexacraft.world.settings
 
-import hexacraft.nbt.Nbt
-
+import com.martomate.nbt.Nbt
 import java.util.Random
 
 class WorldGenSettings(

@@ -1,7 +1,7 @@
 package hexacraft.world.chunk
 
+import com.martomate.nbt.Nbt
 import hexacraft.math.bits.Int12
-import hexacraft.nbt.Nbt
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}

@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.{Nbt, NBTUtil}
+import com.martomate.nbt.{Nbt, NBTUtil}
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
 

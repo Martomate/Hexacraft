@@ -1,5 +1,6 @@
 package hexacraft.main
 
+import com.martomate.nbt.Nbt
 import hexacraft.game.*
 import hexacraft.gui.{Event, Scene, WindowSize}
 import hexacraft.infra.fs.FileSystem
@@ -7,7 +8,6 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
 import hexacraft.menu.*
-import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 import hexacraft.world.settings.WorldSettings
 

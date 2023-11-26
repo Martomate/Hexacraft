@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.BlockState

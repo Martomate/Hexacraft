@@ -1,4 +1,4 @@
-package hexacraft.nbt
+package com.martomate.nbt
 
 import com.flowpowered.nbt.{CompoundTag, DoubleTag, Tag}
 import org.joml.Vector3d

@@ -1,6 +1,6 @@
 package hexacraft.world.entity.sheep
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.entity.{EntityBaseData, EntityFactory, EntityModel}

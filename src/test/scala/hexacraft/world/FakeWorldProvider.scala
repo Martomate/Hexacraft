@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.world.settings.{WorldGenSettings, WorldInfo}
 
 class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {

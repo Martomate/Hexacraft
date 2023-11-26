@@ -1,6 +1,6 @@
 package hexacraft.world.entity.ai
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.CylCoords

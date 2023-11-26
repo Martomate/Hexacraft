@@ -1,12 +1,12 @@
 package hexacraft.game
 
+import com.martomate.nbt.Nbt
 import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
-import hexacraft.nbt.Nbt
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{World, WorldProvider}

@@ -1,6 +1,6 @@
 package hexacraft.world.entity.ai
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.world.BlocksInWorld
 import hexacraft.world.block.HexBox
 import hexacraft.world.entity.EntityBaseData

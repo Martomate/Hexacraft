@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, Tracker}
 import hexacraft.world.*
 import hexacraft.world.block.BlockState

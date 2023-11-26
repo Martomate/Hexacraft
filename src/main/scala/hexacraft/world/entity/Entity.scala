@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}

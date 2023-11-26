@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
+import com.martomate.nbt.Nbt
 import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
 import hexacraft.world.settings.WorldInfo
 

@@ -21,8 +21,8 @@ class RootArchTest extends FunSuite {
     Packages("hexacraft.world..").assertNotUsedIn("hexacraft.util..")
   }
 
-  test("Nbt library should only be used in Nbt wrapper") {
-    Packages("com.flowpowered.nbt..").assertOnlyUsedIn("hexacraft.nbt")
+  test("Nbt library should only be used in Nbt module") {
+    Packages("com.flowpowered.nbt..").assertOnlyUsedIn() // not used in any package, only in nbt module
   }
 
   test("Glfw library should only be used in Glfw wrapper") {
@@ -43,14 +43,13 @@ class RootArchTest extends FunSuite {
     val Main = "Main"
     val Math = "Math"
     val Menu = "Menu"
-    val Nbt = "Nbt"
     val Physics = "Physics"
     val Renderer = "Renderer"
     val Util = "Util"
     val World = "World"
 
+    val Nbt = "Nbt"
     val JOML = "JOML"
-    val NbtLib = "NbtLib"
     val LWJGL = "LWJGL"
     val OpenGL = "OpenGL"
     val GLFW = "GLFW"
@@ -66,14 +65,13 @@ class RootArchTest extends FunSuite {
       .layer(Main, "hexacraft.main..")
       .layer(Math, "hexacraft.math..")
       .layer(Menu, "hexacraft.menu..")
-      .layer(Nbt, "hexacraft.nbt..")
       .layer(Physics, "hexacraft.physics..")
       .layer(Renderer, "hexacraft.renderer..")
       .layer(Text, "hexacraft.text..")
       .layer(Util, "hexacraft.util..")
       .layer(World, "hexacraft.world..")
       .optionalLayer(JOML, "org.joml..")
-      .optionalLayer(NbtLib, "com.flowpowered.nbt..")
+      .optionalLayer(Nbt, "com.martomate.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
@@ -87,7 +85,6 @@ class RootArchTest extends FunSuite {
       .where(Menu, _.mayOnlyAccessLayers(root, Infra, Text, Game, GUI, World, JOML, Nbt))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, JOML))
-      .where(Nbt, _.mayOnlyAccessLayers(JOML, NbtLib))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
       .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Physics, Util, JOML, LWJGL, Nbt))
       .check(allClasses)
