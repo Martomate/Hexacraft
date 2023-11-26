@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameScene, GameWindow, WorldProviderFromFile}
+import hexacraft.game.{GameKeyboard, GameScene, WorldProviderFromFile}
 import hexacraft.gui.Scene
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
@@ -16,9 +16,9 @@ object MainRouter {
     case QuitRequested
 }
 
-class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem)(
+class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem, window: GameWindow)(
     eventListener: Tracker[MainRouter.Event]
-)(using window: GameWindow)(using GameKeyboard) {
+)(using kb: GameKeyboard) {
 
   def route(sceneRoute: SceneRoute): Unit = eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
 

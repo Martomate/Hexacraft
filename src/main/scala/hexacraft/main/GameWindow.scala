@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.main
 
 import hexacraft.gui.WindowSize
 import hexacraft.infra.window.CursorMode

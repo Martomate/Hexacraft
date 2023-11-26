@@ -1,7 +1,7 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameWindow}
-import hexacraft.gui.{Event, MousePosition, RenderContext, Scene, TickContext, WindowSize}
+import hexacraft.game.GameKeyboard
+import hexacraft.gui.*
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
@@ -10,7 +10,8 @@ import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
 import hexacraft.util.{Resource, Result}
 import hexacraft.world.World
-import org.joml.{Vector2f, Vector2i}
+
+import org.joml.Vector2i
 
 import java.io.File
 import scala.collection.mutable
@@ -106,7 +107,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow:
         then reloadResources()
 
         if key == KeyboardKey.Function(11)
-        then setFullscreen()
+        then toggleFullscreen()
 
       scene.handleEvent(Event.KeyEvent(key, scancode, action, mods))
 
@@ -185,10 +186,9 @@ class MainWindow(isDebug: Boolean) extends GameWindow:
     scene = newScene
 
   private def makeSceneRouter(): MainRouter =
-    given GameWindow = this
     given GameKeyboard = keyboard
 
-    MainRouter(saveFolder, multiplayerEnabled, fs):
+    MainRouter(saveFolder, multiplayerEnabled, fs, this):
       case MainRouter.Event.SceneChanged(newScene) => setScene(newScene)
       case MainRouter.Event.QuitRequested          => tryQuit()
 
@@ -207,7 +207,7 @@ class MainWindow(isDebug: Boolean) extends GameWindow:
       window.close()
       windowSystem.shutdown()
 
-  private def setFullscreen(): Unit =
+  private def toggleFullscreen(): Unit =
     fullscreenManager.toggleFullscreen()
     mouse.skipNextMouseMovedUpdate()
 

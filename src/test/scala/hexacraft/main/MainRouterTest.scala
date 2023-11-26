@@ -10,6 +10,7 @@ import hexacraft.menu.*
 import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 import hexacraft.world.settings.WorldSettings
+
 import munit.FunSuite
 import org.joml.Vector2i
 
@@ -18,14 +19,13 @@ import java.nio.file.Path
 class MainRouterTest extends FunSuite {
   override def beforeEach(context: BeforeEach): Unit = OpenGL._enterTestMode()
 
-  given GameWindow = null
   given GameKeyboard = null
 
   private val saveDirPath = Path.of("abc")
 
-  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull())(using GameWindow): Scene =
+  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, false, fs)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null)(tracker)
 
     router.route(route)
 
@@ -36,11 +36,11 @@ class MainRouterTest extends FunSuite {
     assert(scene.isDefined)
     scene.get
 
-  def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using GameWindow)(using
+  def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
       munit.Location
   ): Seq[MainRouter.Event] =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, true, fs)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null)(tracker)
 
     router.route(route)
 
@@ -53,8 +53,8 @@ class MainRouterTest extends FunSuite {
     tracker.events.drop(1)
 
   def performRouteAndClick(route: SceneRoute, clickAt: (Float, Float), fs: FileSystem = FileSystem.createNull())(using
-      GameWindow
-  )(using munit.Location): Seq[MainRouter.Event] =
+      munit.Location
+  ): Seq[MainRouter.Event] =
     val events = Seq(
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Release, KeyMods.none, clickAt)
