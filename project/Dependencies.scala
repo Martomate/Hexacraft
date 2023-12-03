@@ -3,9 +3,12 @@ import sbt.*
 import scala.collection.immutable.Seq
 
 object Dependencies {
-  lazy val lwjglDependencies = {
-    val lwjglVersion = "3.3.2"
+  object versions {
+    val lwjgl = "3.3.2"
+    val joml = "1.10.5"
+  }
 
+  lazy val lwjglDependencies = {
     val platforms = Seq(
       "natives-windows",
       "natives-windows-arm64",
@@ -16,19 +19,19 @@ object Dependencies {
     )
 
     Seq(
-      "org.lwjgl" % "lwjgl" % lwjglVersion,
-      "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
-      "org.lwjgl" % "lwjgl-opengl" % lwjglVersion
+      "org.lwjgl" % "lwjgl" % versions.lwjgl,
+      "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl,
+      "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl
     ) ++ platforms.flatMap(platform =>
       Seq(
-        "org.lwjgl" % "lwjgl" % lwjglVersion classifier platform,
-        "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier platform,
-        "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier platform
+        "org.lwjgl" % "lwjgl" % versions.lwjgl classifier platform,
+        "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl classifier platform,
+        "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl classifier platform
       )
     )
   }
 
-  lazy val Joml = "org.joml" % "joml" % "1.10.5"
+  lazy val Joml = "org.joml" % "joml" % versions.joml
   lazy val FlowNbt = "com.flowpowered" % "flow-nbt" % "1.0.0"
 
   lazy val MUnit = "org.scalameta" %% "munit" % "0.7.29" % "test"

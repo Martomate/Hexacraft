@@ -1,0 +1,6 @@
+version: '3'
+
+tasks:
+  package:
+    cmds:
+      - sbt clean game/packArchiveZip
