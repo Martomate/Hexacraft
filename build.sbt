@@ -9,14 +9,14 @@ ThisBuild / publishArtifact := false
 ThisBuild / logBuffered := false
 ThisBuild / fork := true
 
-val commonSettings: Seq[Def.SettingsDefinition] = Defaults.coreDefaultSettings ++ Seq(
-  artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
-    module.organization + "." + artifact.name + "-" + module.revision + "." + artifact.extension
+val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ Seq(
+  artifactName := { (_: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+    module.organization + "." + module.name + "-" + module.revision + "." + artifact.extension
   },
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
 )
 
-lazy val root = project
+lazy val hexacraft = project
   .in(file("."))
   .aggregate(nbt, game)
   .dependsOn(nbt, game)
@@ -33,14 +33,15 @@ lazy val game = project
   .dependsOn(nbt)
   .settings(commonSettings*)
   .settings( // General
-    name := "hexacraft",
     javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)
   )
   .settings( // Dependencies
     libraryDependencies ++= lwjglDependencies ++ Seq(Joml) ++ Seq(MUnit, Mockito) ++ ArchUnit
   )
   .enablePlugins(PackPlugin)
-  .settings( // Packaging
+  .settings( // Packaging (using sbt-pack)
+    moduleName := "hexacraft",
+    packArchivePrefix := "hexacraft",
     packMain := Map(
       "hexacraft" -> "hexacraft.main.Main",
       "hexacraft-mac" -> "hexacraft.main.Main"
@@ -50,7 +51,6 @@ lazy val game = project
       "hexacraft-mac" -> Seq("-XstartOnFirstThread")
     ),
     packJarNameConvention := "full",
-    packCopyDependenciesTarget := packTargetDir.value / packDir.value / "libs",
     packGenerateMakefile := false,
     packArchiveExcludes := Seq("VERSION", "bin/hexacraft-mac.bat")
   )
