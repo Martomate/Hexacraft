@@ -5,7 +5,6 @@ import hexacraft.gui.*
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.os.OSUtils
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
 import hexacraft.util.{Resource, Result}
@@ -16,9 +15,7 @@ import org.joml.Vector2i
 import java.io.File
 import scala.collection.mutable
 
-class MainWindow(isDebug: Boolean) extends GameWindow:
-  val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
-
+class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
   private val fs = FileSystem.create()
 
   private val multiplayerEnabled = isDebug
@@ -264,6 +261,6 @@ class MainWindow(isDebug: Boolean) extends GameWindow:
   private def tryQuit(): Unit = window.requestClose()
 
   private def destroy(): Unit =
-    scene.unload()
+    if scene != null then scene.unload()
 
     Resource.freeAllResources()

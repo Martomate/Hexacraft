@@ -4,8 +4,7 @@ import hexacraft.infra.os.OSUtils
 
 import org.lwjgl.system.Configuration
 
-import java.io.{File, FileOutputStream, PrintStream}
-import java.time.OffsetDateTime
+import java.io.File
 
 object Main:
   def main(args: Array[String]): Unit =
@@ -14,23 +13,16 @@ object Main:
     val isDebugStr = System.getProperty("hexacraft.debug")
     val isDebug = isDebugStr != null && isDebugStr == "true"
 
-    val window = new MainWindow(isDebug)
+    val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
+
+    val errorHandler = MainErrorLogger.create(!isDebug, saveFolder)
+
+    val window = new MainWindow(isDebug, saveFolder)
     try window.run()
     catch
       case t: Throwable =>
-        if isDebug
-        then t.printStackTrace()
-        else logThrowable(t, window.saveFolder)
+        errorHandler.log(t)
         System.exit(1)
-
-  private def logThrowable(e: Throwable, saveFolder: File): Unit =
-    val now = OffsetDateTime.now()
-    val logFile = new File(saveFolder, s"logs/error_$now.log")
-    logFile.getParentFile.mkdirs()
-    e.printStackTrace(new PrintStream(new FileOutputStream(logFile)))
-    System.err.println(
-      s"The program has crashed. The crash report can be found in: ${logFile.getAbsolutePath}"
-    )
 
   private def setNativesFolder(): Unit =
     var file = new File("lib/natives")
