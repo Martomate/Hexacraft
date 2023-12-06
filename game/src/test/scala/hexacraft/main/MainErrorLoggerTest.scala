@@ -24,9 +24,9 @@ class MainErrorLoggerTest extends FunSuite {
 
     val output = captureStdErr(logger.log(new Exception("something happened")))
 
-    val lines = output.lines().toList
-    assert(lines.size() > 1)
-    assertEquals(lines.get(0), "java.lang.Exception: something happened")
+    val lines = output.linesIterator.toList
+    assert(lines.size > 1)
+    assertEquals(lines(0), "java.lang.Exception: something happened")
   }
 
   test("write a log file in release mode") {
@@ -47,9 +47,9 @@ class MainErrorLoggerTest extends FunSuite {
     assert(logFileName.startsWith("error_"))
     assert(logFileName.endsWith(".log"))
 
-    val logLines = String(writeEvent.bytes.toArray).lines().toList
-    assert(logLines.size() > 1)
-    assertEquals(logLines.get(0), "java.lang.Exception: something happened")
+    val logLines = String(writeEvent.bytes.toArray).linesIterator.toList
+    assert(logLines.size > 1)
+    assertEquals(logLines(0), "java.lang.Exception: something happened")
   }
 
   // TODO: the check below should probably live in FileSystem instead

@@ -15,9 +15,9 @@ A game with hexagonal blocks on a cylindrical world inspired by Minecraft
 
 ## Installation
 
-The game requires Java 8 (or later) to be installed. If it's not installed you can get it [here](https://java.com).
+The game requires Java 11 (or later) to be installed. If it's not installed you can get it [here](https://www.oracle.com/java/technologies/downloads/).
 
-You can download the launcher [here](https://github.com/Martomate/Hexacraft/releases/tag/launcher-1.1).
+You can download the launcher [here](https://github.com/Martomate/Hexacraft/releases/tag/launcher-1.2.1).
 
 ## Usage
 

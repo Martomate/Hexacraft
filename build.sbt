@@ -13,7 +13,8 @@ val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ 
   artifactName := { (_: ScalaVersion, module: ModuleID, artifact: Artifact) =>
     module.organization + "." + module.name + "-" + module.revision + "." + artifact.extension
   },
-  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
+  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
+  javacOptions ++= Seq("-release", "11")
 )
 
 lazy val hexacraft = project
