@@ -25,33 +25,33 @@ You can download the launcher [here](https://github.com/Martomate/Hexacraft/rele
 The controls are almost the same as in Minecraft.
 
 #### Movement:
-Action          | Keys
---------------- | -------------------------------
-Movement        | WASD
-Camera rotation | Mouse or arrow keys, PgUp, PgDn
-Jump            | Space
-Fly             | F
-Fly up          | Space
-Fly down        | Left Shift
-Walk slow       | Left Ctrl
-Walk fast       | Left Alt
-Walk superfast  | Right Ctrl
+| Action          | Keys                             |
+|-----------------|----------------------------------|
+| Movement        | WASD                             |
+| Camera rotation | Mouse or arrow keys, PgUp, PgDn  |
+| Jump            | Space                            |
+| Fly             | F                                |
+| Fly up          | Space                            |
+| Fly down        | Left Shift                       |
+| Walk slow       | Left Ctrl                        |
+| Walk fast       | Left Alt                         |
+| Walk superfast  | Right Ctrl                       |
 
 #### Other useful controls
-Action             | Keys
------------------- | ---------------------
-Select hotbar slot | 1 ... 9, scroll wheel
-Place block        | Right click
-Remove block       | Left click
-Pause              | Escape
-Fullscreen         | F11
+| Action              | Keys                  |
+|---------------------|-----------------------|
+| Select hotbar slot  | 1 ... 9, scroll wheel |
+| Place block         | Right click           |
+| Remove block        | Left click            |
+| Pause               | Escape                |
+| Fullscreen          | F11                   |
 
 #### Extra
-Action                      | Keys
---------------------------- | ---------------------
-Free the mouse              | M
-Debug info                  | F7
-Place block under your feet | B
+| Action                       | Keys                  |
+|------------------------------|-----------------------|
+| Free the mouse               | M                     |
+| Debug info                   | F7                    |
+| Place block under your feet  | B                     |
 
 ### Worlds are saved
 The program works very similarly to Minecraft (at least when it comes to saving worlds).
