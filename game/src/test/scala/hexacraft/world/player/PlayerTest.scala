@@ -30,7 +30,7 @@ class PlayerTest extends FunSuite {
     playerBefore.rotation.set(0.1, 0.2, -0.3)
     playerBefore.flying = true
     playerBefore.selectedItemSlot = 7
-    playerBefore.inventory(3) = Block.Stone
+    playerBefore.inventory = playerBefore.inventory.updated(3, Block.Stone)
 
     val playerAfter = Player.fromNBT(playerBefore.toNBT)
 

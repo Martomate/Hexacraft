@@ -143,14 +143,16 @@ class GameScene(
         setUseMouse(false)
         isInPopup = true
 
-        val onCloseInventory = () => {
-          overlays -= inventoryScene
-          inventoryScene.unload()
-          inventoryScene = null
-          isInPopup = false
-          setUseMouse(true)
-        }
-        inventoryScene = InventoryBox(player.inventory, onCloseInventory, blockSpecRegistry)
+        inventoryScene = InventoryBox(player.inventory, blockSpecRegistry):
+          case InventoryBox.Event.BoxClosed =>
+            overlays -= inventoryScene
+            inventoryScene.unload()
+            inventoryScene = null
+            isInPopup = false
+            setUseMouse(true)
+          case InventoryBox.Event.InventoryUpdated(inv) =>
+            player.inventory = inv
+            toolbar.onInventoryUpdated(inv)
 
         overlays += inventoryScene
     case KeyboardKey.Letter('M') =>

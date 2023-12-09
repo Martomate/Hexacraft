@@ -1,33 +1,30 @@
 package hexacraft.game.inventory
 
+import hexacraft.game
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
+import hexacraft.util.Tracker
 import hexacraft.world.block.{Block, BlockSpecRegistry}
 import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
 object InventoryBox {
-  def apply(inventory: Inventory, closeScene: () => Unit, specs: BlockSpecRegistry): InventoryBox =
-    val box = new InventoryBox(
-      inventory,
-      closeScene,
-      makeGuiBlockRenderer(specs),
-      makeFloatingBlockRenderer(specs)
-    )
+  enum Event:
+    case BoxClosed
+    case InventoryUpdated(inventory: Inventory)
+
+  def apply(currentInventory: Inventory, specs: BlockSpecRegistry)(eventHandler: Tracker[Event]): InventoryBox =
+    val gridRenderer = new GuiBlockRenderer(9, 4)(specs)
+    gridRenderer.setViewMatrix(makeTiltedBlockViewMatrix)
+
+    val floatingBlockRenderer = new GuiBlockRenderer(1, 1)(specs)
+    floatingBlockRenderer.setViewMatrix(makeTiltedBlockViewMatrix)
+
+    val box = new InventoryBox(currentInventory, gridRenderer, floatingBlockRenderer, eventHandler)
     box.updateRendererContent()
     box
-
-  private def makeGuiBlockRenderer(specs: BlockSpecRegistry) =
-    val renderer = new GuiBlockRenderer(9, 4)(specs)
-    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
-    renderer
-
-  private def makeFloatingBlockRenderer(specs: BlockSpecRegistry) =
-    val renderer = GuiBlockRenderer(1, 1)(specs)
-    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
-    renderer
 
   private def makeTiltedBlockViewMatrix =
     new Matrix4f()
@@ -38,10 +35,10 @@ object InventoryBox {
 }
 
 class InventoryBox private (
-    inventory: Inventory,
-    closeScene: () => Unit,
+    private var inventory: Inventory,
     gridRenderer: GuiBlockRenderer,
-    floatingBlockRenderer: GuiBlockRenderer
+    floatingBlockRenderer: GuiBlockRenderer,
+    eventHandler: Tracker[InventoryBox.Event]
 ) extends Component {
 
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
@@ -54,8 +51,6 @@ class InventoryBox private (
 
   /** The block currently being moved */
   private var floatingBlock: Option[Block] = None
-
-  private val revokeInventoryTracker = inventory.trackChanges(_ => updateRendererContent())
 
   private def updateRendererContent(): Unit =
     gridRenderer.updateContent(-4 * 0.2f, -2 * 0.2f, (0 until 9 * 4).map(i => inventory(i)))
@@ -76,13 +71,15 @@ class InventoryBox private (
         key match
           case KeyboardKey.Escape | KeyboardKey.Letter('E') =>
             handleFloatingBlock()
-            closeScene()
+            eventHandler.notify(InventoryBox.Event.BoxClosed)
           case _ =>
       case MouseClickEvent(_, MouseAction.Release, _, mousePos) if location.containsPoint(mousePos) =>
         hoverIndex match
           case Some(hover) =>
             val newFloatingBlock = Some(inventory(hover)).filter(_ != Block.Air)
-            inventory(hover) = floatingBlock.getOrElse(Block.Air)
+            inventory = inventory.updated(hover, floatingBlock.getOrElse(Block.Air))
+            eventHandler.notify(InventoryBox.Event.InventoryUpdated(inventory))
+            updateRendererContent()
             floatingBlock = newFloatingBlock
           case None =>
             handleFloatingBlock()
@@ -93,8 +90,11 @@ class InventoryBox private (
     floatingBlock match
       case Some(block) =>
         inventory.firstEmptySlot match
-          case Some(slot) => inventory(slot) = block
-          case None       => // TODO: drop the block because the inventory is full
+          case Some(slot) =>
+            inventory = inventory.updated(slot, block)
+            eventHandler.notify(InventoryBox.Event.InventoryUpdated(inventory))
+            updateRendererContent()
+          case None => // TODO: drop the block because the inventory is full
       case None =>
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
@@ -121,7 +121,6 @@ class InventoryBox private (
     then floatingBlockRenderer.render(transformation)
 
   override def unload(): Unit =
-    revokeInventoryTracker()
     gridRenderer.unload()
     floatingBlockRenderer.unload()
     super.unload()

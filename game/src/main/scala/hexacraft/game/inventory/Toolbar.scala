@@ -7,7 +7,7 @@ import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, inventory: Inventory)(specs: BlockSpecRegistry)
+class Toolbar(location: LocationInfo, private var inventory: Inventory)(specs: BlockSpecRegistry)
     extends Component
     with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
@@ -37,7 +37,9 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(specs: BlockSpecRegi
   def setWindowAspectRatio(aspectRatio: Float): Unit =
     guiBlockRenderer.setWindowAspectRatio(aspectRatio)
 
-  private val revokeInventoryTracker = inventory.trackChanges(_ => updateRendererContent())
+  def onInventoryUpdated(inventory: Inventory): Unit =
+    this.inventory = inventory
+    updateRendererContent()
 
   private def updateRendererContent(): Unit =
     guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f, (0 until 9).map(i => inventory(i)))
@@ -56,7 +58,6 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(specs: BlockSpecRegi
   }
 
   override def unload(): Unit = {
-    revokeInventoryTracker()
     guiBlockRenderer.unload()
     super.unload()
   }

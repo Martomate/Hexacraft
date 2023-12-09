@@ -6,7 +6,7 @@ import hexacraft.world.coord.fp.CylCoords
 import com.martomate.nbt.Nbt
 import org.joml.Vector3d
 
-class Player(val inventory: Inventory) {
+class Player(var inventory: Inventory) {
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
   val velocity = new Vector3d
   val position = new Vector3d
