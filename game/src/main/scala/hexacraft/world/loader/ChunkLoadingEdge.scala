@@ -12,7 +12,7 @@ object ChunkLoadingEdge {
     case ChunkLoadable(chunk: ChunkRelWorld, loadable: Boolean)
 }
 
-class ChunkLoadingEdge(implicit cylSize: CylinderSize) {
+class ChunkLoadingEdge(using CylinderSize) {
   private val chunksLoaded: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksEdge: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksLoadable: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty

@@ -7,7 +7,7 @@ import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorl
 import munit.FunSuite
 
 abstract class ChunkStorageTest(makeStorage: => ChunkStorage) extends FunSuite {
-  protected implicit val cylSize: CylinderSize = CylinderSize(4)
+  given CylinderSize = CylinderSize(4)
 
   test("the storage should be correct for 0 blocks") {
     val storage = makeStorage

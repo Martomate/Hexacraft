@@ -1,19 +1,16 @@
 package hexacraft.game
 
 import hexacraft.gui.{Event, WindowSize}
-import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.util.Tracker
 import hexacraft.world.{CylinderSize, FakeBlockTextureLoader, FakeWorldProvider}
+
 import munit.FunSuite
 import org.joml.Vector2i
 
 class GameSceneTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
-  given blockLoader: BlockTextureLoader = new FakeBlockTextureLoader
-
-  given GameKeyboard = _ => false
 
   private val windowSize = WindowSize(Vector2i(1920, 1080), Vector2i(1920, 1080))
 
@@ -21,15 +18,16 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
+    val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    new GameScene(worldProvider, windowSize)(_ => ()).unload()
+    new GameScene(worldProvider, _ => false, textureLoader, windowSize)(_ => ()).unload()
 
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene = new GameScene(worldProvider, windowSize)(_ => ())
+    val gameScene = new GameScene(worldProvider, _ => false, textureLoader, windowSize)(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -50,7 +48,7 @@ class GameSceneTest extends FunSuite {
     val gameSceneTracker = Tracker.withStorage[GameScene.Event]
 
     val worldProvider = new FakeWorldProvider(123L)
-    val gameScene = new GameScene(worldProvider, windowSize)(gameSceneTracker)
+    val gameScene = new GameScene(worldProvider, _ => false, new FakeBlockTextureLoader, windowSize)(gameSceneTracker)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 

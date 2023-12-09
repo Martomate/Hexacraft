@@ -16,7 +16,7 @@ class NoiseGenerator3DTest extends FunSuite {
     // These assertions act as regression tests
     assertEqualsDouble(gen.genNoise(0.1, 0.2, 0.3), -0.008011387068078604, 1e-15)
     assertEqualsDouble(gen.genNoise(-0.1, 0.2, 0.3), -0.012011955862618138, 1e-15)
-    assertEqualsDouble(gen.genNoise(0.1234, -0.2, 0.3), 4.6908453063207456E-4, 1e-15)
+    assertEqualsDouble(gen.genNoise(0.1234, -0.2, 0.3), 4.6908453063207456e-4, 1e-15)
     assertEqualsDouble(gen.genNoise(0.2345, 0.2, -0.3), 0.006672026046915622, 1e-15)
   }
 
@@ -53,8 +53,8 @@ class NoiseGenerator3DTest extends FunSuite {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
-    val size = CylinderSize(5)
-    import size.impl
+    given size: CylinderSize = CylinderSize(5)
+
     val scale = 100
     for (_ <- 1 to 10) {
       val cyl = CylCoords(nextDouble(rand, scale), nextDouble(rand, scale), nextDouble(rand, scale))

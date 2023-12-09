@@ -13,7 +13,7 @@ object GuiBlockRenderer:
   private val guiBlockShader = new GuiBlockShader(isSide = false)
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
-class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(using blockSpecs: BlockSpecRegistry):
+class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockSpecs: BlockSpecRegistry):
   private val guiBlockRenderers =
     for s <- 0 until 8 yield BlockRenderer(GuiBlockVao.forSide(s), GpuState.of(OpenGL.State.DepthTest -> false))
 

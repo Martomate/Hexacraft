@@ -6,8 +6,7 @@ import hexacraft.world.CylinderSize
 import munit.FunSuite
 
 class ChunkRelWorldTest extends FunSuite {
-  private val cylSize = CylinderSize(4)
-  import cylSize.impl
+  given cylSize: CylinderSize = CylinderSize(4)
 
   test("Y should be correct in entire range") {
     assertEquals(ChunkRelWorld(532, -14, 17).Y, Int12(-14))

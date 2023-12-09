@@ -1,8 +1,7 @@
 package hexacraft.main
 
-import com.martomate.nbt.Nbt
 import hexacraft.game.*
-import hexacraft.gui.{Event, Scene, WindowSize}
+import hexacraft.gui.{Event, Scene}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
@@ -11,21 +10,19 @@ import hexacraft.menu.*
 import hexacraft.util.Tracker
 import hexacraft.world.settings.WorldSettings
 
+import com.martomate.nbt.Nbt
 import munit.FunSuite
-import org.joml.Vector2i
 
 import java.nio.file.Path
 
 class MainRouterTest extends FunSuite {
   override def beforeEach(context: BeforeEach): Unit = OpenGL._enterTestMode()
 
-  given GameKeyboard = null
-
   private val saveDirPath = Path.of("abc")
 
   def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null)(tracker)
 
     router.route(route)
 
@@ -40,7 +37,7 @@ class MainRouterTest extends FunSuite {
       munit.Location
   ): Seq[MainRouter.Event] =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null)(tracker)
 
     router.route(route)
 
@@ -97,15 +94,6 @@ class MainRouterTest extends FunSuite {
   }
 
   def testWorldChooserMenu(): Unit = {
-    val windowWidth = 1920
-    val windowHeight = 1080
-
-    given GameWindow = new GameWindow:
-      override def windowSize: WindowSize =
-        WindowSize(Vector2i(windowWidth, windowHeight), Vector2i(windowWidth, windowHeight))
-
-      override def setCursorMode(cursorMode: CursorMode): Unit = ()
-
     test("WorldChooser routes to WorldChooserMenu") {
       val scene = performSingleRoute(SceneRoute.WorldChooser)
       assert(scene.isInstanceOf[WorldChooserMenu])
@@ -137,15 +125,6 @@ class MainRouterTest extends FunSuite {
   }
 
   def testNewWorldMenu(): Unit = {
-    val windowWidth = 1920
-    val windowHeight = 1080
-
-    given GameWindow = new GameWindow:
-      override def windowSize: WindowSize =
-        WindowSize(Vector2i(windowWidth, windowHeight), Vector2i(windowWidth, windowHeight))
-
-      override def setCursorMode(cursorMode: CursorMode): Unit = ()
-
     test("NewWorld routes to NewWorldMenu") {
       val scene = performSingleRoute(SceneRoute.NewWorld)
       assert(scene.isInstanceOf[NewWorldMenu])
@@ -230,11 +209,6 @@ class MainRouterTest extends FunSuite {
   }
 
   def testGameScene(): Unit = {
-    given GameWindow = new GameWindow:
-      override def windowSize: WindowSize = WindowSize(Vector2i(1920, 1080), Vector2i(1920, 1080))
-
-      override def setCursorMode(cursorMode: CursorMode): Unit = ()
-
     test("Game routes to GameScene".ignore) {
       val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none))
       assert(scene.isInstanceOf[GameScene])

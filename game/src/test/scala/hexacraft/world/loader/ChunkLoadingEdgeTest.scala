@@ -8,7 +8,7 @@ import munit.FunSuite
 import org.scalatestplus.mockito.MockitoSugar
 
 class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
-  implicit val cylSize: CylinderSize = CylinderSize(4)
+  given CylinderSize = CylinderSize(4)
 
   test("isLoaded should be false in the beginning") {
     val edge = new ChunkLoadingEdge

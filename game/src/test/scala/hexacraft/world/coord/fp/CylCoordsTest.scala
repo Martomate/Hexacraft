@@ -5,7 +5,7 @@ import hexacraft.world.CylinderSize
 import munit.FunSuite
 
 class CylCoordsTest extends FunSuite {
-  implicit val cylSize: CylinderSize = CylinderSize(3)
+  given CylinderSize = CylinderSize(3)
   val eps = 1e-9
 
   test("distanceSq should be 0 for itself") {

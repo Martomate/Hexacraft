@@ -16,9 +16,13 @@ object MainRouter {
     case QuitRequested
 }
 
-class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem, window: GameWindow)(
-    eventListener: Tracker[MainRouter.Event]
-)(using kb: GameKeyboard) {
+class MainRouter(
+    saveFolder: File,
+    multiplayerEnabled: Boolean,
+    fs: FileSystem,
+    window: GameWindow,
+    kb: GameKeyboard
+)(eventListener: Tracker[MainRouter.Event]) {
 
   def route(sceneRoute: SceneRoute): Unit = eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
 
@@ -76,9 +80,9 @@ class MainRouter(saveFolder: File, multiplayerEnabled: Boolean, fs: FileSystem, 
       new SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings) =>
-      given blockLoader: BlockTextureLoader = BlockTextureLoader.instance // this loads it to memory
+      val worldProvider = new WorldProviderFromFile(saveDir, settings, fs)
 
-      GameScene(new WorldProviderFromFile(saveDir, settings, fs), window.windowSize):
+      GameScene(worldProvider, kb, BlockTextureLoader.instance, window.windowSize):
         case GameScene.Event.GameQuit =>
           route(SceneRoute.Main)
           System.gc()

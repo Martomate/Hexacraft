@@ -4,9 +4,8 @@ import hexacraft.math.MathUtils
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.fp
 
-class SkewCylCoords private (_x: Double, _y: Double, _z: Double)(implicit
-    val cylSize: CylinderSize
-) extends AbstractCoords[SkewCylCoords](_x, _y, _z) {
+class SkewCylCoords private (_x: Double, _y: Double, _z: Double)(using CylinderSize)
+    extends AbstractCoords[SkewCylCoords](_x, _y, _z) {
 
   def toNormalCoords(reference: CylCoords): NormalCoords = toCylCoords.toNormalCoords(reference)
   def toCylCoords: CylCoords = CylCoords(x * CylinderSize.y60, y, z + x * 0.5)

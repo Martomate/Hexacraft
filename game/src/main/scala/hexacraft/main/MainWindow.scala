@@ -183,9 +183,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
     scene = newScene
 
   private def makeSceneRouter(): MainRouter =
-    given GameKeyboard = keyboard
-
-    MainRouter(saveFolder, multiplayerEnabled, fs, this):
+    MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard):
       case MainRouter.Event.SceneChanged(newScene) => setScene(newScene)
       case MainRouter.Event.QuitRequested          => tryQuit()
 

@@ -30,8 +30,6 @@ case class CylinderSize(worldSize: Int) extends AnyVal:
     */
   def circumference: Double = totalSize * CylinderSize.y60
 
-  implicit def impl: CylinderSize = this
-
 object CylinderSize:
   val y60: Double = Math.sqrt(3) / 2
 

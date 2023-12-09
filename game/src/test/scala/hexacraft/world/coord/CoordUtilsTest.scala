@@ -7,7 +7,7 @@ import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import munit.FunSuite
 
 class CoordUtilsTest extends FunSuite {
-  implicit val cylSize: CylinderSize = CylinderSize(4)
+  given cylSize: CylinderSize = CylinderSize(4)
 
   test("approximateIntCoords should return the input when it's integers") {
     val f = CoordUtils.approximateIntCoords _

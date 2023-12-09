@@ -7,7 +7,7 @@ import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, inventory: Inventory)(using BlockSpecRegistry)
+class Toolbar(location: LocationInfo, inventory: Inventory)(specs: BlockSpecRegistry)
     extends Component
     with SubComponents {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
@@ -22,7 +22,7 @@ class Toolbar(location: LocationInfo, inventory: Inventory)(using BlockSpecRegis
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
   private val guiBlockRenderer =
-    val renderer = new GuiBlockRenderer(9, 1)
+    val renderer = new GuiBlockRenderer(9, 1)(specs)
     renderer.setViewMatrix(
       new Matrix4f()
         .translate(0, 0, -14f)

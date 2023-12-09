@@ -17,8 +17,9 @@ object ChunkRenderDataFactory:
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       world: BlocksInWorld,
-      transmissiveBlocks: Boolean
-  )(using CylinderSize, BlockSpecRegistry): ChunkRenderData =
+      transmissiveBlocks: Boolean,
+      blockSpecs: BlockSpecRegistry
+  )(using CylinderSize): ChunkRenderData =
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
@@ -87,7 +88,7 @@ object ChunkRenderDataFactory:
           case None     => 0
       }
 
-      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf)
+      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf, blockSpecs)
       buf.flip()
       buf
 
@@ -99,8 +100,9 @@ object ChunkRenderDataFactory:
       side: Int,
       shouldRender: java.util.BitSet,
       brightness: BlockRelWorld => Float,
-      buf: ByteBuffer
-  )(using blockSpecs: BlockSpecRegistry, cylSize: CylinderSize): Unit =
+      buf: ByteBuffer,
+      blockSpecs: BlockSpecRegistry
+  )(using CylinderSize): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
 
     var i1 = 0

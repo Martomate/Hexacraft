@@ -6,8 +6,7 @@ import hexacraft.world.CylinderSize
 import munit.FunSuite
 
 class ColumnRelWorldTest extends FunSuite {
-  private val cylSize = CylinderSize(4)
-  import cylSize.impl
+  given cylSize: CylinderSize = CylinderSize(4)
 
   test("X should be correct in entire range") {
     assertEquals(ColumnRelWorld(-14, 17).X, Int20(-14))

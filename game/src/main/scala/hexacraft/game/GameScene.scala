@@ -1,6 +1,5 @@
 package hexacraft.game
 
-import com.martomate.nbt.Nbt
 import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
@@ -9,7 +8,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
-import hexacraft.world.{World, WorldProvider}
+import hexacraft.world.{CylinderSize, World, WorldProvider}
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState, HexBox}
 import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.CoordUtils
@@ -22,6 +21,7 @@ import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
 import hexacraft.world.settings.WorldInfo
 
+import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import scala.collection.mutable
@@ -34,27 +34,30 @@ object GameScene {
     case CursorReleased
 }
 
-class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
-    eventHandler: Tracker[GameScene.Event]
-)(using keyboard: GameKeyboard, blockLoader: BlockTextureLoader)
+class GameScene(
+    worldProvider: WorldProvider,
+    keyboard: GameKeyboard,
+    blockLoader: BlockTextureLoader,
+    initialWindowSize: WindowSize
+)(eventHandler: Tracker[GameScene.Event])
     extends Scene:
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
 
-  given BlockSpecRegistry = BlockSpecRegistry.load(blockLoader.textureMapping)
+  private val blockSpecRegistry = BlockSpecRegistry.load(blockLoader.textureMapping)
 
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
     new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.of(OpenGL.State.DepthTest -> false))
 
-  given entityModelLoader: EntityModelLoader = new EntityModelLoader()
+  private val entityModelLoader: EntityModelLoader = new EntityModelLoader()
   private val playerModel: EntityModel = entityModelLoader.load("player")
   private val sheepModel: EntityModel = entityModelLoader.load("sheep")
 
   private val worldInfo = worldProvider.getWorldInfo
-  private val world = World(worldProvider, worldInfo)
-  import world.size.impl
+  private val world = World(worldProvider, worldInfo, entityModelLoader)
+  given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
 
@@ -63,7 +66,7 @@ class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
   private val otherPlayer: ControlledPlayerEntity =
     new ControlledPlayerEntity(playerModel, new EntityBaseData(CylCoords(player.position)))
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, blockSpecRegistry, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
@@ -139,13 +142,15 @@ class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
       then
         setUseMouse(false)
         isInPopup = true
-        inventoryScene = InventoryBox(player.inventory)(() => {
+
+        val onCloseInventory = () => {
           overlays -= inventoryScene
           inventoryScene.unload()
           inventoryScene = null
           isInPopup = false
           setUseMouse(true)
-        })
+        }
+        inventoryScene = InventoryBox(player.inventory, onCloseInventory, blockSpecRegistry)
 
         overlays += inventoryScene
     case KeyboardKey.Letter('M') =>
@@ -406,7 +411,7 @@ class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
   private def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
-    val renderer = GuiBlockRenderer(1, 1)
+    val renderer = GuiBlockRenderer(1, 1)(blockSpecRegistry)
     renderer.setViewMatrix(makeBlockInHandViewMatrix)
     renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
     renderer
@@ -422,7 +427,7 @@ class GameScene(worldProvider: WorldProvider, initialWindowSize: WindowSize)(
   private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar =
     val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
 
-    val toolbar = new Toolbar(location, player.inventory)
+    val toolbar = new Toolbar(location, player.inventory)(blockSpecRegistry)
     toolbar.setSelectedIndex(player.selectedItemSlot)
     toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
     toolbar

@@ -8,7 +8,7 @@ import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffs
 
 import scala.collection.mutable
 
-class LightPropagator(world: BlocksInWorld)(implicit cylSize: CylinderSize) {
+class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
   def initBrightnesses(chunk: Chunk): Unit = {

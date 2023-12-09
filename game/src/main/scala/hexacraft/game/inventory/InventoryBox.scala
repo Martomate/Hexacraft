@@ -8,7 +8,42 @@ import hexacraft.world.player.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
 
-class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using BlockSpecRegistry) extends Component {
+object InventoryBox {
+  def apply(inventory: Inventory, closeScene: () => Unit, specs: BlockSpecRegistry): InventoryBox =
+    val box = new InventoryBox(
+      inventory,
+      closeScene,
+      makeGuiBlockRenderer(specs),
+      makeFloatingBlockRenderer(specs)
+    )
+    box.updateRendererContent()
+    box
+
+  private def makeGuiBlockRenderer(specs: BlockSpecRegistry) =
+    val renderer = new GuiBlockRenderer(9, 4)(specs)
+    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
+    renderer
+
+  private def makeFloatingBlockRenderer(specs: BlockSpecRegistry) =
+    val renderer = GuiBlockRenderer(1, 1)(specs)
+    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
+    renderer
+
+  private def makeTiltedBlockViewMatrix =
+    new Matrix4f()
+      .translate(0, 0, -14f)
+      .rotateX(3.1415f / 6)
+      .rotateY(3.1415f / 24)
+      .translate(0, -0.25f, 0)
+}
+
+class InventoryBox private (
+    inventory: Inventory,
+    closeScene: () => Unit,
+    gridRenderer: GuiBlockRenderer,
+    floatingBlockRenderer: GuiBlockRenderer
+) extends Component {
+
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
@@ -20,14 +55,10 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using BlockSpec
   /** The block currently being moved */
   private var floatingBlock: Option[Block] = None
 
-  private val guiBlockRenderer = makeGuiBlockRenderer()
-  private val floatingBlockRenderer = makeFloatingBlockRenderer()
-  updateRendererContent()
-
   private val revokeInventoryTracker = inventory.trackChanges(_ => updateRendererContent())
 
   private def updateRendererContent(): Unit =
-    guiBlockRenderer.updateContent(-4 * 0.2f, -2 * 0.2f, (0 until 9 * 4).map(i => inventory(i)))
+    gridRenderer.updateContent(-4 * 0.2f, -2 * 0.2f, (0 until 9 * 4).map(i => inventory(i)))
     if floatingBlock.isEmpty then floatingBlockRenderer.updateContent(0, 0, Seq(Block.Air))
 
   private def calculateHoverIndex(mx: Float, my: Float) =
@@ -67,7 +98,7 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using BlockSpec
       case None =>
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
-    guiBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
+    gridRenderer.setWindowAspectRatio(context.windowAspectRatio)
     floatingBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
 
     val mousePos = context.heightNormalizedMousePos
@@ -84,31 +115,14 @@ class InventoryBox(inventory: Inventory)(closeScene: () => Unit)(using BlockSpec
       val yOffset = transformation.y + (hoverIndex.get / 9) * 0.2f
       Component.drawRect(selectedBox, xOffset, yOffset, selectedColor, context.windowAspectRatio)
 
-    guiBlockRenderer.render(transformation)
+    gridRenderer.render(transformation)
 
     if floatingBlock.isDefined
     then floatingBlockRenderer.render(transformation)
 
-  private def makeGuiBlockRenderer() =
-    val renderer = new GuiBlockRenderer(9, 4)
-    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
-    renderer
-
-  private def makeFloatingBlockRenderer() =
-    val renderer = GuiBlockRenderer(1, 1)
-    renderer.setViewMatrix(makeTiltedBlockViewMatrix)
-    renderer
-
-  private def makeTiltedBlockViewMatrix =
-    new Matrix4f()
-      .translate(0, 0, -14f)
-      .rotateX(3.1415f / 6)
-      .rotateY(3.1415f / 24)
-      .translate(0, -0.25f, 0)
-
   override def unload(): Unit =
     revokeInventoryTracker()
-    guiBlockRenderer.unload()
+    gridRenderer.unload()
     floatingBlockRenderer.unload()
     super.unload()
 }

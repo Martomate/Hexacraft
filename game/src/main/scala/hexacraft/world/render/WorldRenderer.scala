@@ -15,7 +15,9 @@ import org.joml.{Vector2ic, Vector3f}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(using CylinderSize, BlockSpecRegistry):
+class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initialFramebufferSize: Vector2ic)(using
+    CylinderSize
+):
   private val skyShader = new SkyShader()
   private val entityShader = new EntityShader(isSide = false)
   private val entitySideShader = new EntityShader(isSide = true)
@@ -68,8 +70,8 @@ class WorldRenderer(world: BlocksInWorld, initialFramebufferSize: Vector2ic)(usi
       then (ChunkRenderData.empty, ChunkRenderData.empty)
       else
         (
-          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, false),
-          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, true)
+          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, false, blockSpecs),
+          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, true, blockSpecs)
         )
 
     chunkHandler.setChunkRenderData(ch.coords, opaqueBlocks, transmissiveBlocks)

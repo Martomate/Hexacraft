@@ -10,7 +10,7 @@ import munit.FunSuite
 import scala.collection.mutable
 
 class ChunkLoadingPrioritizerTest extends FunSuite {
-  implicit val cylSize: CylinderSize = CylinderSize(4)
+  given CylinderSize = CylinderSize(4)
 
   def make(origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0)), maxDist: Double = 4): ChunkLoadingPrioritizer =
     new ChunkLoadingPrioritizer(origin, maxDist)

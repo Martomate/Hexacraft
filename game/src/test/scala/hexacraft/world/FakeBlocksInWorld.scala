@@ -3,7 +3,6 @@ package hexacraft.world
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, ChunkColumn}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
-import hexacraft.world.entity.EntityModelLoader
 import hexacraft.world.gen.WorldGenerator
 
 import scala.collection.mutable
@@ -45,7 +44,6 @@ object FakeBlocksInWorld {
     new FakeBlocksInWorld(provider)
 
   def withBlocks(provider: FakeWorldProvider, blocks: Map[BlockRelWorld, BlockState])(using
-      EntityModelLoader,
       CylinderSize
   ): FakeBlocksInWorld =
     val world = new FakeBlocksInWorld(provider)

@@ -22,10 +22,10 @@ object World:
 
   var shouldChillChunkLoader = false
 
-  def apply(provider: WorldProvider, worldInfo: WorldInfo)(using EntityModelLoader): World =
-    new World(provider, worldInfo, makeEntityRegistry)
+  def apply(provider: WorldProvider, worldInfo: WorldInfo, modelLoader: EntityModelLoader): World =
+    new World(provider, worldInfo, makeEntityRegistry(modelLoader))
 
-  private def makeEntityRegistry(using modelLoader: EntityModelLoader): EntityRegistry =
+  private def makeEntityRegistry(modelLoader: EntityModelLoader): EntityRegistry =
     val entityTypes = Map(
       "player" -> new PlayerFactory(() => modelLoader.load("player")),
       "sheep" -> new SheepFactory(() => modelLoader.load("sheep"))
@@ -39,8 +39,7 @@ object World:
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)
     extends BlockRepository
     with BlocksInWorld:
-  val size: CylinderSize = worldInfo.worldSize
-  import size.impl
+  given size: CylinderSize = worldInfo.worldSize
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed)

@@ -53,8 +53,8 @@ class NoiseGenerator4DTest extends FunSuite {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
-    val size = CylinderSize(5)
-    import size.impl
+    given size: CylinderSize = CylinderSize(5)
+
     val scale = 100
     for (_ <- 1 to 10) {
       val cyl = CylCoords(nextDouble(rand, scale), nextDouble(rand, scale), nextDouble(rand, scale))

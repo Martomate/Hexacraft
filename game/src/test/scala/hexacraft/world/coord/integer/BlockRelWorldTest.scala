@@ -6,8 +6,7 @@ import hexacraft.world.CylinderSize
 import munit.FunSuite
 
 class BlockRelWorldTest extends FunSuite {
-  private val cylSize = CylinderSize(4)
-  import cylSize.impl
+  given cylSize: CylinderSize = CylinderSize(4)
 
   test("chunk xyz should be correct in normal range") {
     val c = BlockRelWorld(532, -14, 17, 3, 7, 5)
