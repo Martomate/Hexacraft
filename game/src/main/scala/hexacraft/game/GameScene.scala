@@ -19,7 +19,6 @@ import hexacraft.world.entity.player.ControlledPlayerEntity
 import hexacraft.world.player.Player
 import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
-import hexacraft.world.settings.WorldInfo
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
@@ -102,7 +101,7 @@ class GameScene(
   saveWorldInfo()
 
   private def saveWorldInfo(): Unit =
-    val worldTag = new WorldInfo(worldInfo.worldName, worldInfo.worldSize, worldInfo.gen, player.toNBT).toNBT
+    val worldTag = worldInfo.copy(player = player.toNBT).toNBT
     worldProvider.saveWorldData(worldTag)
 
   override def onReloadedResources(windowSize: WindowSize): Unit =
@@ -138,19 +137,21 @@ class GameScene(
       overlays += pauseMenu
       setPaused(true)
     case KeyboardKey.Letter('E') =>
+      import InventoryBox.Event.*
+
       if !isPaused
       then
         setUseMouse(false)
         isInPopup = true
 
         inventoryScene = InventoryBox(player.inventory, blockSpecRegistry):
-          case InventoryBox.Event.BoxClosed =>
+          case BoxClosed =>
             overlays -= inventoryScene
             inventoryScene.unload()
             inventoryScene = null
             isInPopup = false
             setUseMouse(true)
-          case InventoryBox.Event.InventoryUpdated(inv) =>
+          case InventoryUpdated(inv) =>
             player.inventory = inv
             toolbar.onInventoryUpdated(inv)
 

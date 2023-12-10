@@ -15,7 +15,7 @@ class SheepFactory(makeModel: () => EntityModel) extends EntityFactory:
     val model = makeModel()
     val baseData = EntityBaseData.fromNBT(tag)
     val ai: EntityAI =
-      tag.getCompoundTag("ai") match
+      tag.getMap("ai") match
         case Some(t) => SimpleWalkAI.fromNBT(t)
         case None    => SimpleWalkAI.create
     new SheepEntity(model, baseData, ai)

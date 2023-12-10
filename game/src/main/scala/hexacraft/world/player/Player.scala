@@ -42,15 +42,15 @@ object Player {
 
   def fromNBT(tag: Nbt.MapTag): Player = {
     val inventory =
-      tag.getCompoundTag("inventory") match
+      tag.getMap("inventory") match
         case Some(tag) => Inventory.fromNBT(tag)
         case None      => Inventory.default
 
     val player = new Player(inventory)
 
-    tag.getCompoundTag("position").foreach(p => p.setVector(player.position))
-    tag.getCompoundTag("rotation").foreach(p => p.setVector(player.rotation))
-    tag.getCompoundTag("velocity").foreach(p => p.setVector(player.velocity))
+    tag.getMap("position").foreach(p => p.setVector(player.position))
+    tag.getMap("rotation").foreach(p => p.setVector(player.rotation))
+    tag.getMap("velocity").foreach(p => p.setVector(player.velocity))
 
     player.flying = tag.getByte("flying", 0) != 0
     player.selectedItemSlot = tag.getShort("selectedItemSlot", 0)

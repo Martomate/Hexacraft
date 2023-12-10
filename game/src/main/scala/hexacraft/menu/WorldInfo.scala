@@ -11,7 +11,7 @@ object WorldInfo {
     val (_, nbt) = io.loadTag(nbtFile.toFile)
 
     val name = nbt
-      .getCompoundTag("general")
+      .getMap("general")
       .flatMap(general => general.getString("name"))
       .getOrElse(saveFile.getName)
 

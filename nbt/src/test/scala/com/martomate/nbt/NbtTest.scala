@@ -87,7 +87,7 @@ class NbtTest extends FunSuite {
   testGetOption("getTag (Double)", _.getTag, doubleCTag, doubleCTag.vs("tag"))
   testGetOption("getTag (String)", _.getTag, stringCTag, stringCTag.vs("tag"))
   testGetOption("getTag (Compound)", _.getTag, compCTag, compCTag.vs("tag"))
-  testGetOption("getCompoundTag", _.getCompoundTag, compCTag, compCTag.vs("tag"))
+  testGetOption("getMap", _.getMap, compCTag, compCTag.vs("tag"))
 
   testGetOption("getByteArray", _.getByteArray, byteArrCTag, ArraySeq.unsafeWrapArray(byteArr))
   testGetOption("getShortArray", _.getShortArray, shortArrCTag, ArraySeq.unsafeWrapArray(shortArr))

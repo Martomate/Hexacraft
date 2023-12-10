@@ -1,16 +1,12 @@
 package hexacraft.world.settings
 
-import com.martomate.nbt.Nbt
 import hexacraft.world.{CylinderSize, MigrationManager}
+
+import com.martomate.nbt.Nbt
 
 import java.io.File
 
-class WorldInfo(
-    val worldName: String,
-    val worldSize: CylinderSize,
-    val gen: WorldGenSettings,
-    val player: Nbt.MapTag
-) {
+case class WorldInfo(worldName: String, worldSize: CylinderSize, gen: WorldGenSettings, player: Nbt.MapTag) {
   def toNBT: Nbt.MapTag = {
     Nbt.makeMap(
       "version" -> Nbt.ShortTag(MigrationManager.LatestVersion),
@@ -26,17 +22,18 @@ class WorldInfo(
 
 object WorldInfo {
   def fromNBT(nbtData: Nbt.MapTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
-    val generalSettings: Nbt.MapTag =
-      nbtData.getCompoundTag("general").getOrElse(Nbt.emptyMap)
-    val name: String =
-      generalSettings.getString("name", worldSettings.name.getOrElse(saveDir.getName))
-    val size: CylinderSize = CylinderSize(
-      generalSettings.getByte("worldSize", worldSettings.size.getOrElse(7))
-    )
-    val gen: WorldGenSettings =
-      WorldGenSettings.fromNBT(nbtData.getCompoundTag("gen").getOrElse(Nbt.emptyMap), worldSettings)
-    val player: Nbt.MapTag = nbtData.getCompoundTag("player").orNull
+    val generalSettings = nbtData.getMap("general").getOrElse(Nbt.emptyMap)
 
-    new WorldInfo(name, size, gen, player)
+    val name = generalSettings.getString("name", worldSettings.name.getOrElse(saveDir.getName))
+    val worldSize = generalSettings.getByte("worldSize", worldSettings.size.getOrElse(7))
+    val gen = nbtData.getMap("gen").getOrElse(Nbt.emptyMap)
+    val player = nbtData.getMap("player").orNull
+
+    WorldInfo(
+      worldName = name,
+      worldSize = CylinderSize(worldSize),
+      gen = WorldGenSettings.fromNBT(gen, worldSettings),
+      player = player
+    )
   }
 }

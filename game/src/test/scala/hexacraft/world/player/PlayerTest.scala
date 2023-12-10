@@ -14,14 +14,14 @@ class PlayerTest extends FunSuite {
     val player = Player.atStartPos(CylCoords(3.2, 4.56, -1.7))
 
     val nbt = player.toNBT
-    assert(nbt.getCompoundTag("position").isDefined)
-    assert(nbt.getCompoundTag("rotation").isDefined)
-    assert(nbt.getCompoundTag("velocity").isDefined)
+    assert(nbt.getMap("position").isDefined)
+    assert(nbt.getMap("rotation").isDefined)
+    assert(nbt.getMap("velocity").isDefined)
 
     assertEquals(nbt.getByte("flying", 1), 0.toByte)
     assertEquals(nbt.getShort("selectedItemSlot", 100), 0.toShort)
 
-    assert(nbt.getCompoundTag("inventory").isDefined)
+    assert(nbt.getMap("inventory").isDefined)
   }
 
   test("saving should be possible to load the player from NBT") {

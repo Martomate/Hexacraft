@@ -85,7 +85,7 @@ object Nbt {
         case Some(t) => Some(t)
         case _       => None
 
-    def getCompoundTag(name: String): Option[Nbt.MapTag] =
+    def getMap(name: String): Option[Nbt.MapTag] =
       vs.get(name) match
         case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs))
         case _                    => None
