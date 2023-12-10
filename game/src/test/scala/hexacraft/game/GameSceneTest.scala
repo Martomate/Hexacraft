@@ -21,13 +21,14 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    new GameScene(worldProvider, _ => false, textureLoader, windowSize)(_ => ()).unload()
+    new GameScene(NetworkHandler(true, false, worldProvider), _ => false, textureLoader, windowSize)(_ => ()).unload()
 
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene = new GameScene(worldProvider, _ => false, textureLoader, windowSize)(_ => ())
+    val gameScene =
+      new GameScene(NetworkHandler(true, false, worldProvider), _ => false, textureLoader, windowSize)(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -48,7 +49,10 @@ class GameSceneTest extends FunSuite {
     val gameSceneTracker = Tracker.withStorage[GameScene.Event]
 
     val worldProvider = new FakeWorldProvider(123L)
-    val gameScene = new GameScene(worldProvider, _ => false, new FakeBlockTextureLoader, windowSize)(gameSceneTracker)
+    val gameScene =
+      new GameScene(NetworkHandler(true, false, worldProvider), _ => false, new FakeBlockTextureLoader, windowSize)(
+        gameSceneTracker
+      )
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 

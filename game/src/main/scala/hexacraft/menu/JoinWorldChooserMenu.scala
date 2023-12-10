@@ -46,7 +46,7 @@ class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit) extends 
     // TODO: connect to the server registry to get this information
     OnlineWorldConnectionDetails(
       InetAddress.getByName("localhost"),
-      2345,
+      1234,
       System.currentTimeMillis() + 10
     )
 }

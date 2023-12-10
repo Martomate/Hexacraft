@@ -19,12 +19,89 @@ import hexacraft.world.entity.player.ControlledPlayerEntity
 import hexacraft.world.player.Player
 import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
+import hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 
+import java.io.BufferedInputStream
+import java.net.{InetAddress, InetSocketAddress, ServerSocket, Socket, SocketException}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
+class RemoteWorldProvider(ip: InetAddress, port: Int) extends WorldProvider {
+  override def getWorldInfo: WorldInfo =
+    val serverAddress = InetSocketAddress(ip, port)
+    val socket = Socket()
+    socket.connect(serverAddress)
+    val out = socket.getOutputStream
+    out.write("GET world_info\n".getBytes)
+    out.flush()
+    val in = socket.getInputStream
+    val response = in.readAllBytes()
+    val (_, tag) = Nbt.fromBinary(response)
+    socket.close()
+    WorldInfo.fromNBT(tag.asInstanceOf[Nbt.MapTag], null, WorldSettings.none)
+
+  override def loadState(path: String): Nbt.MapTag =
+    val serverAddress = InetSocketAddress(ip, port)
+    val socket = Socket()
+    socket.connect(serverAddress)
+    val out = socket.getOutputStream
+    out.write(s"GET state $path\n".getBytes)
+    out.flush()
+    val in = socket.getInputStream
+    val response = in.readAllBytes()
+    val (_, tag) = Nbt.fromBinary(response)
+    socket.close()
+    tag.asInstanceOf[Nbt.MapTag]
+
+  override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit =
+    // throw new UnsupportedOperationException()
+    ()
+}
+
+class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider) {
+  private var serverSocket: ServerSocket = _
+  def runServer(): Unit =
+    if !isOnline then return
+
+    if serverSocket != null then throw new IllegalStateException("You may only start the server once")
+    serverSocket = ServerSocket(1234)
+    println(s"Running server on port ${serverSocket.getLocalPort}")
+    while !serverSocket.isClosed do
+      try
+        val clientSocket = serverSocket.accept()
+        println(s"Received connection from ${clientSocket.getInetAddress}:${clientSocket.getPort}")
+        val in = BufferedInputStream(clientSocket.getInputStream)
+        val bytes = new Array[Byte](256)
+        in.read(bytes, 0, bytes.length)
+        val messageLength = bytes.indexOf('\n'.toByte)
+        val message = String(bytes, 0, messageLength)
+        println(s"Received message: $message")
+
+        val out = clientSocket.getOutputStream
+        if message == "GET world_info" then
+          val info = worldProvider.getWorldInfo
+          val infoBytes = info.toNBT.toBinary()
+          out.write(infoBytes)
+          out.flush()
+        else if message.startsWith("GET state ") then
+          val path = message.substring(10)
+          val state = worldProvider.loadState(path)
+          val infoBytes = state.toBinary()
+          out.write(infoBytes)
+          out.flush()
+        out.close()
+      catch
+        case e: SocketException =>
+          if !serverSocket.isClosed then throw e
+
+    println(s"Stopping server")
+
+  def unload(): Unit =
+    if isHosting && serverSocket != null then serverSocket.close()
+}
 
 object GameScene {
   enum Event:
@@ -34,12 +111,14 @@ object GameScene {
 }
 
 class GameScene(
-    worldProvider: WorldProvider,
+    net: NetworkHandler,
     keyboard: GameKeyboard,
     blockLoader: BlockTextureLoader,
     initialWindowSize: WindowSize
 )(eventHandler: Tracker[GameScene.Event])
     extends Scene:
+
+  if net.isHosting then Thread(() => net.runServer()).start()
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
 
@@ -54,8 +133,8 @@ class GameScene(
   private val playerModel: EntityModel = entityModelLoader.load("player")
   private val sheepModel: EntityModel = entityModelLoader.load("sheep")
 
-  private val worldInfo = worldProvider.getWorldInfo
-  private val world = World(worldProvider, worldInfo, entityModelLoader)
+  private val worldInfo = net.worldProvider.getWorldInfo
+  private val world = World(net.worldProvider, worldInfo, entityModelLoader)
   given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
@@ -102,7 +181,7 @@ class GameScene(
 
   private def saveWorldInfo(): Unit =
     val worldTag = worldInfo.copy(player = player.toNBT).toNBT
-    worldProvider.saveWorldData(worldTag)
+    if net.isHosting then net.worldProvider.saveWorldData(worldTag)
 
   override def onReloadedResources(windowSize: WindowSize): Unit =
     for s <- overlays do s.onReloadedResources(windowSize)
@@ -410,6 +489,8 @@ class GameScene(
 
     if debugOverlay != null
     then debugOverlay.unload()
+
+    net.unload()
 
   private def viewDistance: Double = world.renderDistance
 

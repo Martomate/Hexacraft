@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameScene, WorldProviderFromFile}
+import hexacraft.game.{GameKeyboard, GameScene, NetworkHandler, RemoteWorldProvider, WorldProviderFromFile}
 import hexacraft.gui.Scene
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
@@ -40,16 +40,18 @@ class MainRouter(
       import WorldChooserMenu.Event.*
 
       WorldChooserMenu(saveFolder, fs):
-        case StartGame(saveDir, settings) => route(SceneRoute.Game(saveDir, settings))
-        case CreateNewWorld               => route(SceneRoute.NewWorld)
-        case GoBack                       => route(SceneRoute.Main)
+        case StartGame(saveDir, settings) =>
+          route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
+        case CreateNewWorld => route(SceneRoute.NewWorld)
+        case GoBack         => route(SceneRoute.Main)
 
     case SceneRoute.NewWorld =>
       import NewWorldMenu.Event.*
 
       NewWorldMenu(saveFolder):
-        case StartGame(saveDir, settings) => route(SceneRoute.Game(saveDir, settings))
-        case GoBack                       => route(SceneRoute.WorldChooser)
+        case StartGame(saveDir, settings) =>
+          route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
+        case GoBack => route(SceneRoute.WorldChooser)
 
     case SceneRoute.Multiplayer =>
       import MultiplayerMenu.Event.*
@@ -65,6 +67,7 @@ class MainRouter(
       JoinWorldChooserMenu:
         case Join(address, port) =>
           println(s"Will connect to: $address at port $port")
+          route(SceneRoute.Game(null, WorldSettings.none, isHosting = false, isOnline = true, (address, port)))
         case GoBack => route(SceneRoute.Multiplayer)
 
     case SceneRoute.HostWorld =>
@@ -73,16 +76,19 @@ class MainRouter(
       HostWorldChooserMenu(saveFolder, fs):
         case Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
-          route(SceneRoute.Game(f.saveFile, WorldSettings.none))
+          route(SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null))
         case GoBack => route(SceneRoute.Multiplayer)
 
     case SceneRoute.Settings =>
       new SettingsMenu(() => route(SceneRoute.Main))
 
-    case SceneRoute.Game(saveDir, settings) =>
-      val worldProvider = new WorldProviderFromFile(saveDir, settings, fs)
+    case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
+      val worldProvider =
+        if isHosting
+        then WorldProviderFromFile(saveDir, settings, fs)
+        else RemoteWorldProvider(serverLocation._1, serverLocation._2)
 
-      GameScene(worldProvider, kb, BlockTextureLoader.instance, window.windowSize):
+      GameScene(NetworkHandler(isHosting, isOnline, worldProvider), kb, BlockTextureLoader.instance, window.windowSize):
         case GameScene.Event.GameQuit =>
           route(SceneRoute.Main)
           System.gc()

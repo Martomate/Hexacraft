@@ -210,7 +210,7 @@ class MainRouterTest extends FunSuite {
 
   def testGameScene(): Unit = {
     test("Game routes to GameScene".ignore) {
-      val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none))
+      val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null))
       assert(scene.isInstanceOf[GameScene])
     }
 
@@ -218,7 +218,7 @@ class MainRouterTest extends FunSuite {
       val clickAt = (0f, -0.4f)
 
       val events = performRouteAndSendEvents(
-        SceneRoute.Game(saveDirPath.toFile, WorldSettings.none),
+        SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null),
         Seq(
           Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none),
           Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
