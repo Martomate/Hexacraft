@@ -6,6 +6,7 @@ object Dependencies {
   object versions {
     val lwjgl = "3.3.2"
     val joml = "1.10.5"
+    val zeromq = "0.5.4"
   }
 
   lazy val lwjglDependencies = {
@@ -33,6 +34,7 @@ object Dependencies {
 
   lazy val Joml = "org.joml" % "joml" % versions.joml
   lazy val FlowNbt = "com.flowpowered" % "flow-nbt" % "1.0.0"
+  lazy val ZeroMQ = "org.zeromq" % "jeromq" % versions.zeromq
 
   lazy val MUnit = "org.scalameta" %% "munit" % "0.7.29" % "test"
   lazy val Mockito = "org.scalatestplus" %% "mockito-4-11" % "3.2.16.0" % "test"

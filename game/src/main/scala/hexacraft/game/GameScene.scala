@@ -1,5 +1,6 @@
 package hexacraft.game
 
+import hexacraft.game.NetworkPacket.{GetState, GetWorldInfo}
 import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
@@ -23,37 +24,43 @@ import hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
+import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
+import zmq.ZError
 
-import java.io.BufferedInputStream
-import java.net.{InetAddress, InetSocketAddress, ServerSocket, Socket, SocketException}
+import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class RemoteWorldProvider(ip: InetAddress, port: Int) extends WorldProvider {
+enum NetworkPacket {
+  case GetWorldInfo
+  case GetState(path: String)
+}
+
+object NetworkPacket {
+  def deserialize(bytes: Array[Byte], charset: Charset): NetworkPacket =
+    val message = String(bytes, charset)
+    if message == "get_world_info" then NetworkPacket.GetWorldInfo
+    else if message.startsWith("get_state ") then
+      val path = message.substring(10)
+      NetworkPacket.GetState(path)
+    else throw new IllegalArgumentException("unknown packet type")
+
+  extension (p: NetworkPacket) {
+    def serialize(charset: Charset): Array[Byte] =
+      val str = p match
+        case NetworkPacket.GetWorldInfo   => "get_world_info"
+        case NetworkPacket.GetState(path) => s"get_state $path"
+      str.getBytes(charset)
+  }
+}
+
+class RemoteWorldProvider(client: GameClient) extends WorldProvider {
   override def getWorldInfo: WorldInfo =
-    val serverAddress = InetSocketAddress(ip, port)
-    val socket = Socket()
-    socket.connect(serverAddress)
-    val out = socket.getOutputStream
-    out.write("GET world_info\n".getBytes)
-    out.flush()
-    val in = socket.getInputStream
-    val response = in.readAllBytes()
-    val (_, tag) = Nbt.fromBinary(response)
-    socket.close()
+    val tag = client.query(GetWorldInfo)
     WorldInfo.fromNBT(tag.asInstanceOf[Nbt.MapTag], null, WorldSettings.none)
 
   override def loadState(path: String): Nbt.MapTag =
-    val serverAddress = InetSocketAddress(ip, port)
-    val socket = Socket()
-    socket.connect(serverAddress)
-    val out = socket.getOutputStream
-    out.write(s"GET state $path\n".getBytes)
-    out.flush()
-    val in = socket.getInputStream
-    val response = in.readAllBytes()
-    val (_, tag) = Nbt.fromBinary(response)
-    socket.close()
+    val tag = client.query(GetState(path))
     tag.asInstanceOf[Nbt.MapTag]
 
   override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit =
@@ -61,46 +68,99 @@ class RemoteWorldProvider(ip: InetAddress, port: Int) extends WorldProvider {
     ()
 }
 
-class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider) {
-  private var serverSocket: ServerSocket = _
-  def runServer(): Unit =
-    if !isOnline then return
+class GameClient(serverIp: String, serverPort: Int) {
+  def notify(message: String): Unit =
+    val context = ZContext()
+    try {
+      val socket = context.createSocket(SocketType.REQ)
+      socket.connect(s"tcp://$serverIp:$serverPort")
 
-    if serverSocket != null then throw new IllegalStateException("You may only start the server once")
-    serverSocket = ServerSocket(1234)
-    println(s"Running server on port ${serverSocket.getLocalPort}")
-    while !serverSocket.isClosed do
-      try
-        val clientSocket = serverSocket.accept()
-        println(s"Received connection from ${clientSocket.getInetAddress}:${clientSocket.getPort}")
-        val in = BufferedInputStream(clientSocket.getInputStream)
-        val bytes = new Array[Byte](256)
-        in.read(bytes, 0, bytes.length)
-        val messageLength = bytes.indexOf('\n'.toByte)
-        val message = String(bytes, 0, messageLength)
-        println(s"Received message: $message")
+      if !socket.send(message.getBytes(ZMQ.CHARSET)) then
+        val err = socket.errno()
+        throw new IllegalStateException(s"Could not send message. Error: $err")
+      socket.close()
+    } finally context.close()
 
-        val out = clientSocket.getOutputStream
-        if message == "GET world_info" then
-          val info = worldProvider.getWorldInfo
-          val infoBytes = info.toNBT.toBinary()
-          out.write(infoBytes)
-          out.flush()
-        else if message.startsWith("GET state ") then
-          val path = message.substring(10)
-          val state = worldProvider.loadState(path)
-          val infoBytes = state.toBinary()
-          out.write(infoBytes)
-          out.flush()
-        out.close()
-      catch
-        case e: SocketException =>
-          if !serverSocket.isClosed then throw e
+  private def queryRaw(message: Array[Byte]): Array[Byte] =
+    val context = ZContext()
+    try {
+      val socket = context.createSocket(SocketType.REQ)
+      socket.connect(s"tcp://$serverIp:$serverPort")
+
+      if !socket.send(message) then
+        val err = socket.errno()
+        throw new IllegalStateException(s"Could not send message. Error: $err")
+
+      val response = socket.recv(0)
+      if response == null then
+        val err = socket.errno()
+        throw new IllegalStateException(s"Could not receive message. Error: $err")
+      socket.close()
+
+      response
+    } finally context.close()
+
+  def query(packet: NetworkPacket): Nbt =
+    val response = queryRaw(packet.serialize(ZMQ.CHARSET))
+    val (_, tag) = Nbt.fromBinary(response)
+    tag
+}
+
+class GameServer(worldProvider: WorldProvider) {
+  private var serverThread: Thread = _
+
+  def run(): Unit =
+    if serverThread != null then throw new RuntimeException("You may only start the server once")
+    serverThread = Thread.currentThread()
+
+    try {
+      val context = ZContext()
+      try {
+        val serverSocket = context.createSocket(SocketType.REP)
+        val serverPort = 1234
+        if !serverSocket.bind(s"tcp://*:$serverPort") then throw new IllegalStateException("Server could not be bound")
+        println(s"Running server on port $serverPort")
+
+        while !Thread.currentThread().isInterrupted do
+          val bytes = serverSocket.recv(0)
+          if bytes == null then throw new ZMQException(serverSocket.errno())
+
+          val packet = NetworkPacket.deserialize(bytes, ZMQ.CHARSET)
+          println(s"Received message: $packet")
+          handlePacket(packet, serverSocket)
+      } finally context.close()
+    } catch {
+      case e: ZMQException =>
+        e.getErrorCode match
+          case ZError.EINTR => // noop
+          case _            => throw e
+      case e => throw e
+    }
 
     println(s"Stopping server")
 
+  private def handlePacket(packet: NetworkPacket, socket: ZMQ.Socket): Unit =
+    packet match
+      case NetworkPacket.GetWorldInfo =>
+        val info = worldProvider.getWorldInfo
+        socket.send(info.toNBT.toBinary())
+      case NetworkPacket.GetState(path) =>
+        val state = worldProvider.loadState(path)
+        socket.send(state.toBinary())
+
+  def stop(): Unit =
+    if serverThread != null then serverThread.interrupt()
+}
+
+class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider) {
+  private var server: GameServer = _
+
+  def runServer(): Unit = if isOnline then
+    server = GameServer(worldProvider)
+    server.run()
+
   def unload(): Unit =
-    if isHosting && serverSocket != null then serverSocket.close()
+    if server != null then server.stop()
 }
 
 object GameScene {

@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.game.{GameKeyboard, GameScene, NetworkHandler, RemoteWorldProvider, WorldProviderFromFile}
+import hexacraft.game.{GameClient, GameKeyboard, GameScene, NetworkHandler, RemoteWorldProvider, WorldProviderFromFile}
 import hexacraft.gui.Scene
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
@@ -86,7 +86,7 @@ class MainRouter(
       val worldProvider =
         if isHosting
         then WorldProviderFromFile(saveDir, settings, fs)
-        else RemoteWorldProvider(serverLocation._1, serverLocation._2)
+        else RemoteWorldProvider(GameClient(serverLocation._1, serverLocation._2))
 
       GameScene(NetworkHandler(isHosting, isOnline, worldProvider), kb, BlockTextureLoader.instance, window.windowSize):
         case GameScene.Event.GameQuit =>

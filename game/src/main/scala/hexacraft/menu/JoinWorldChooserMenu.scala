@@ -3,16 +3,15 @@ package hexacraft.menu
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, ScrollPane}
 
-import java.net.InetAddress
 import scala.util.Random
 
 object JoinWorldChooserMenu {
   enum Event:
-    case Join(address: InetAddress, port: Int)
+    case Join(address: String, port: Int)
     case GoBack
 
   private case class OnlineWorldInfo(id: Long, name: String, description: String)
-  private case class OnlineWorldConnectionDetails(address: InetAddress, port: Int, time: Long)
+  private case class OnlineWorldConnectionDetails(address: String, port: Int, time: Long)
 }
 
 class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit) extends MenuScene {
@@ -45,7 +44,7 @@ class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit) extends 
   private def loadOnlineWorld(id: Long): OnlineWorldConnectionDetails =
     // TODO: connect to the server registry to get this information
     OnlineWorldConnectionDetails(
-      InetAddress.getByName("localhost"),
+      "localhost",
       1234,
       System.currentTimeMillis() + 10
     )

@@ -3,7 +3,6 @@ package hexacraft.main
 import hexacraft.world.settings.WorldSettings
 
 import java.io.File
-import java.net.InetAddress
 
 enum SceneRoute {
   case Main
@@ -18,6 +17,6 @@ enum SceneRoute {
       settings: WorldSettings,
       isHosting: Boolean,
       isOnline: Boolean,
-      serverLocation: (InetAddress, Int)
+      serverLocation: (String, Int)
   )
 }

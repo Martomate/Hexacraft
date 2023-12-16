@@ -37,7 +37,7 @@ lazy val game = project
     javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)
   )
   .settings( // Dependencies
-    libraryDependencies ++= lwjglDependencies ++ Seq(Joml) ++ Seq(MUnit, Mockito) ++ ArchUnit
+    libraryDependencies ++= lwjglDependencies ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito) ++ ArchUnit
   )
   .enablePlugins(PackPlugin)
   .settings( // Packaging (using sbt-pack)
