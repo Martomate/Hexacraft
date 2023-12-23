@@ -1,7 +1,6 @@
 package hexacraft.main
 
-import hexacraft.world.settings.WorldSettings
-
+import hexacraft.world.WorldSettings
 import java.io.File
 
 enum SceneRoute {

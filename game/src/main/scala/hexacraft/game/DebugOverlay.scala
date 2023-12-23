@@ -3,8 +3,7 @@ package hexacraft.game
 import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.text.{Text, TextMaster}
-import hexacraft.world.CylinderSize
-import hexacraft.world.camera.Camera
+import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.ChunkRelWorld
 

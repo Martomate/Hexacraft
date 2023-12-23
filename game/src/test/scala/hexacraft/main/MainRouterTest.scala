@@ -8,9 +8,9 @@ import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
 import hexacraft.menu.*
 import hexacraft.util.Tracker
-import hexacraft.world.settings.WorldSettings
 
 import com.martomate.nbt.Nbt
+import hexacraft.world.WorldSettings
 import munit.FunSuite
 
 import java.nio.file.Path

@@ -1,7 +1,6 @@
 package hexacraft.world.loader
 
-import hexacraft.world.CylinderSize
-import hexacraft.world.camera.CameraView
+import hexacraft.world.{CameraView, CylinderSize}
 import hexacraft.world.coord.fp.CylCoords
 
 import org.joml.{Vector3d, Vector4d}

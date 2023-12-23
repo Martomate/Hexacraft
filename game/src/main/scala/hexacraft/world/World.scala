@@ -2,17 +2,13 @@ package hexacraft.world
 
 import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, BlockState}
-import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.*
-import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry}
-import hexacraft.world.entity.player.PlayerFactory
-import hexacraft.world.entity.sheep.SheepFactory
+import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry, PlayerFactory, SheepFactory}
 import hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import hexacraft.world.loader.{ChunkLoader, PosAndDir}
-import hexacraft.world.settings.WorldInfo
 
 import scala.collection.mutable
 

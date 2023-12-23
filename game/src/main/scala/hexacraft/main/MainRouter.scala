@@ -6,7 +6,7 @@ import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
 import hexacraft.menu.*
 import hexacraft.util.Tracker
-import hexacraft.world.settings.WorldSettings
+import hexacraft.world.WorldSettings
 
 import java.io.File
 

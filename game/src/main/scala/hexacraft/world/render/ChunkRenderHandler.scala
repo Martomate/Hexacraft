@@ -1,9 +1,9 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.TextureArray
-import hexacraft.world.camera.Camera
 import hexacraft.world.coord.integer.ChunkRelWorld
 import hexacraft.world.render.aspect.HexagonRenderHandler
+import hexacraft.world.Camera
 
 import org.joml.Vector3f
 

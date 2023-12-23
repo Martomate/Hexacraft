@@ -1,10 +1,48 @@
-package hexacraft.world.entity.base
+package hexacraft.world.entity
 
+import hexacraft.renderer.TextureSingle
 import hexacraft.world.block.HexBox
 import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.entity.EntityPart
 
 import org.joml.{Matrix4f, Vector3f}
+
+trait EntityModel {
+  def parts: Seq[EntityPart]
+  def texture: TextureSingle
+  def tick(): Unit
+}
+
+trait EntityPart {
+  def baseTransform: Matrix4f
+  def transform: Matrix4f
+  def box: HexBox
+  def texture(side: Int): Int
+  def textureOffset(side: Int): (Int, Int) = (0, 0)
+  def textureSize(side: Int): (Int, Int)
+}
+
+class EntityModelLoader {
+
+  def load(name: String): EntityModel = name match {
+    case "player" => PlayerEntityModel.create("player")
+    case "sheep"  => SheepEntityModel.create("sheep")
+    case _        => BasicEntityModel.create(CylCoords.Offset(0, 0, 0), HexBox(0, 0, 0))
+  }
+}
+
+object BasicEntityModel:
+  def create(pos: CylCoords.Offset, box: HexBox): BasicEntityModel =
+    new BasicEntityModel(pos, box)
+
+class BasicEntityModel(pos: CylCoords.Offset, box: HexBox) extends EntityModel {
+  private val theBox = new BasicEntityPart(box, pos, new Vector3f)
+
+  override val parts: Seq[EntityPart] = Seq(theBox)
+
+  override def tick(): Unit = ()
+
+  override def texture: TextureSingle = ???
+}
 
 class BasicEntityPart(
     override val box: HexBox,

@@ -9,18 +9,15 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
-import hexacraft.world.{CylinderSize, World, WorldProvider}
+import hexacraft.world.{Camera, CameraProjection, CylinderSize, World, WorldInfo, WorldProvider, WorldSettings}
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState, HexBox}
-import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
-import hexacraft.world.entity.{EntityBaseData, EntityModel, EntityModelLoader}
-import hexacraft.world.entity.player.ControlledPlayerEntity
+import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityModel, EntityModelLoader}
 import hexacraft.world.player.Player
 import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
-import hexacraft.world.settings.{WorldInfo, WorldSettings}
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}

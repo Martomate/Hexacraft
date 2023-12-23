@@ -3,9 +3,8 @@ package hexacraft.world.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.RevokeTrackerFn
-import hexacraft.world.{BlocksInWorld, CylinderSize, LightPropagator, World}
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, LightPropagator, World}
 import hexacraft.world.block.{BlockSpecRegistry, BlockState}
-import hexacraft.world.camera.Camera
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.Entity

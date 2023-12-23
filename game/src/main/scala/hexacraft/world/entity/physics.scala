@@ -5,7 +5,7 @@ import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.{Block, HexBox}
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 
-import org.joml.{Vector3d, Vector3f}
+import org.joml.Vector3d
 
 class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using
     CylinderSize
@@ -48,7 +48,3 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
   ): Unit =
     velocity.y += (submergedVolume * fluidDensity.toSI * 9.82) / (objectMass * 60)
 }
-
-// TODO: Collision detection.
-// There needs to be a method taking and entity and the world, returning collision info
-// The question is: Who is responsible for checking collision? The entity, the chunk or the world?

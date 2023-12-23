@@ -4,8 +4,8 @@ import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray}
 import hexacraft.world.block.{Block, BlockSpecRegistry}
-import hexacraft.world.camera.CameraProjection
 import hexacraft.world.render.BlockRenderer
+import hexacraft.world.CameraProjection
 
 import org.joml.Matrix4f
 

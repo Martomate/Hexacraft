@@ -3,7 +3,7 @@ package hexacraft.menu
 import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, TextField}
 import hexacraft.menu.NewWorldMenu.Event
-import hexacraft.world.settings.WorldSettings
+import hexacraft.world.WorldSettings
 
 import java.io.File
 import scala.util.Random

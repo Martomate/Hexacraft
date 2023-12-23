@@ -1,7 +1,6 @@
 package hexacraft.world
 
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}

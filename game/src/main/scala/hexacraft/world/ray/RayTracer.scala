@@ -1,9 +1,8 @@
 package hexacraft.world.ray
 
 import hexacraft.math.MathUtils.oppositeSide
-import hexacraft.world.{BlocksInWorld, CylinderSize}
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.camera.Camera
 import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
 
 import org.joml.Vector3d

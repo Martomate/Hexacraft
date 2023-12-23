@@ -2,7 +2,6 @@ package hexacraft.world.ray
 
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.camera.{Camera, CameraProjection}
 import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.BlockRelWorld
 

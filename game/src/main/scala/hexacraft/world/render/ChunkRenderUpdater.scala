@@ -1,8 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.util.{TickableTimer, UniquePQ}
-import hexacraft.world.CylinderSize
-import hexacraft.world.camera.Camera
+import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}

@@ -4,7 +4,7 @@ import hexacraft.gui.{LocationInfo, MenuScene}
 import hexacraft.gui.comp.{Button, Label, ScrollPane}
 import hexacraft.infra.fs.FileSystem
 import hexacraft.menu.WorldChooserMenu.Event
-import hexacraft.world.settings.WorldSettings
+import hexacraft.world.WorldSettings
 
 import java.io.File
 import java.nio.file.Path

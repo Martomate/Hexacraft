@@ -1,8 +1,7 @@
 package hexacraft.world.ray
 
-import hexacraft.world.CylinderSize
+import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.block.HexBox
-import hexacraft.world.camera.Camera
 import hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
 import hexacraft.world.coord.integer.BlockRelWorld
 
