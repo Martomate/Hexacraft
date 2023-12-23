@@ -1,5 +1,6 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.world.coord.Offset
 import munit.FunSuite
 
 class OffsetTest extends FunSuite {

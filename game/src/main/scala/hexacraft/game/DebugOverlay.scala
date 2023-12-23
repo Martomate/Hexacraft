@@ -4,8 +4,7 @@ import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.text.{Text, TextMaster}
 import hexacraft.world.{Camera, CylinderSize}
-import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.{ChunkRelWorld, CylCoords}
 
 import org.joml.Vector3f
 

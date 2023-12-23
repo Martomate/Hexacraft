@@ -1,6 +1,6 @@
 package hexacraft.world.block
 
-import hexacraft.world.coord.fp.CylCoords
+import hexacraft.world.coord.CylCoords
 
 object BlockState {
   val Air: BlockState = new BlockState(Block.Air)

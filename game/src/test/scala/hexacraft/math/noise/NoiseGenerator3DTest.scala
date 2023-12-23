@@ -1,7 +1,7 @@
 package hexacraft.math.noise
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.fp.CylCoords
+import hexacraft.world.coord.CylCoords
 
 import munit.FunSuite
 

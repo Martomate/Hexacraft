@@ -1,7 +1,7 @@
 package hexacraft.world.chunk
 
 import hexacraft.world.{CylinderSize, FakeBlocksInWorld, FakeWorldProvider}
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.ChunkRelWorld
 
 import munit.FunSuite
 

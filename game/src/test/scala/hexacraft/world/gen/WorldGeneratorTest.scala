@@ -1,7 +1,7 @@
 package hexacraft.world.gen
 
 import hexacraft.world.{CylinderSize, WorldGenerator}
-import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 import munit.FunSuite
 
 class WorldGeneratorTest extends FunSuite {

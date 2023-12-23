@@ -1,7 +1,6 @@
 package hexacraft.world.block
 
 import hexacraft.physics.Viscosity
-import hexacraft.world.block.fluid.BlockFluid
 
 object Block {
   private val maxBlocks = 256
@@ -55,4 +54,16 @@ class Block(val id: Byte, val name: String, val displayName: String) {
     case _            => false
 
   override def toString: String = displayName
+}
+
+class BlockAir extends Block(0, "air", "Air") {
+  override def canBeRendered: Boolean = false
+  override def isCovering(metadata: Byte, side: Int): Boolean = false
+  override def isTransmissive: Boolean = true
+  override def isSolid: Boolean = false
+  override def viscosity: Viscosity = Viscosity.air
+}
+
+trait EmittingLight extends Block {
+  override def lightEmitted: Byte = 14
 }

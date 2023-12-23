@@ -2,8 +2,7 @@ package hexacraft.world.ray
 
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld}
 
 import munit.FunSuite
 import org.joml.Vector2f

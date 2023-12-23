@@ -2,9 +2,7 @@ package hexacraft.world.loader
 
 import hexacraft.util.TickableTimer
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils}
 
 import scala.collection.mutable
 

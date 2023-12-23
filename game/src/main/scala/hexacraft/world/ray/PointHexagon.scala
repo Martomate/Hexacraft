@@ -2,8 +2,7 @@ package hexacraft.world.ray
 
 import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.block.HexBox
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords, NormalCoords}
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, NormalCoords}
 
 import org.joml.Vector3d
 

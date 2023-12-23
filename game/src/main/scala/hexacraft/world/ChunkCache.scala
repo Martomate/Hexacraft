@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.ChunkRelWorld
 
 import scala.collection.mutable
 

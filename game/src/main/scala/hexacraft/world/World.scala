@@ -3,9 +3,7 @@ package hexacraft.world
 import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.chunk.*
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.coord.integer.*
+import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry, PlayerFactory, SheepFactory}
 import hexacraft.world.loader.{ChunkLoader, PosAndDir}
 

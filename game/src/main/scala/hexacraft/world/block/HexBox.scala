@@ -3,9 +3,7 @@ package hexacraft.world.block
 import hexacraft.math.geometry.{ConvexHull, OrthogonalProjection}
 import hexacraft.math.MathUtils
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 
 import org.joml.Vector3dc
 

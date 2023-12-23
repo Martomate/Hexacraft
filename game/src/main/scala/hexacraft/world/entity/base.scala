@@ -4,9 +4,9 @@ import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.HexBox
-import hexacraft.world.coord.fp.CylCoords
 
 import com.martomate.nbt.Nbt
+import hexacraft.world.coord.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
 object Entity {

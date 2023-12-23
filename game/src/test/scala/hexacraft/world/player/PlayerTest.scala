@@ -2,9 +2,9 @@ package hexacraft.world.player
 
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.Block
-import hexacraft.world.coord.fp.CylCoords
 
 import com.martomate.nbt.Nbt
+import hexacraft.world.coord.CylCoords
 import munit.FunSuite
 
 class PlayerTest extends FunSuite {

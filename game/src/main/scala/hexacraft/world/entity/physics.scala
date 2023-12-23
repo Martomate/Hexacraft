@@ -3,7 +3,7 @@ package hexacraft.world.entity
 import hexacraft.physics.Density
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.{Block, HexBox}
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
+import hexacraft.world.coord.{BlockCoords, CylCoords}
 
 import org.joml.Vector3d
 

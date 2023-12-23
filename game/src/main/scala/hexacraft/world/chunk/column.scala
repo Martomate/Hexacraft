@@ -1,11 +1,12 @@
 package hexacraft.world.chunk
 
-import com.martomate.nbt.Nbt
 import hexacraft.math.bits.Int12
 import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldGenerator, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.coord.integer.*
+
+import com.martomate.nbt.Nbt
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable

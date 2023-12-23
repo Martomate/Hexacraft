@@ -1,8 +1,6 @@
 package hexacraft.world.coord
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
 

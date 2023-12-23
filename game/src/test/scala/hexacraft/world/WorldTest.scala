@@ -2,8 +2,7 @@ package hexacraft.world
 
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.{Entity, EntityBaseData, EntityModelLoader}
 
 import munit.FunSuite

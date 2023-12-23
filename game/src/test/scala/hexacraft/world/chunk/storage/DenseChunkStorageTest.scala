@@ -1,6 +1,7 @@
 package hexacraft.world.chunk.storage
 
 import hexacraft.world.block.Block
+import hexacraft.world.chunk.{DenseChunkStorage, SparseChunkStorage}
 
 class DenseChunkStorageTest extends ChunkStorageTest(new DenseChunkStorage) {
   test("isDense should be true") {

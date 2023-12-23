@@ -11,9 +11,7 @@ import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
 import hexacraft.world.{Camera, CameraProjection, CylinderSize, World, WorldInfo, WorldProvider, WorldSettings}
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState, HexBox}
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import hexacraft.world.coord.integer.{BlockRelWorld, NeighborOffsets}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
 import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityModel, EntityModelLoader}
 import hexacraft.world.player.Player
 import hexacraft.world.ray.{Ray, RayTracer}

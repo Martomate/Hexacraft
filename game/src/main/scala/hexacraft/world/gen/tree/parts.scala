@@ -1,7 +1,7 @@
 package hexacraft.world.gen.tree
 
 import hexacraft.world.block.Block
-import hexacraft.world.coord.integer.{NeighborOffsets, Offset}
+import hexacraft.world.coord.{NeighborOffsets, Offset}
 
 import scala.collection.mutable
 import scala.util.Random

@@ -1,6 +1,6 @@
 package hexacraft.world.block
 
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.BlockRelWorld
 
 trait BlockRepository {
   def getBlock(coords: BlockRelWorld): BlockState

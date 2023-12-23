@@ -3,8 +3,7 @@ package hexacraft.world.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.CylCoords
+import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector4f}

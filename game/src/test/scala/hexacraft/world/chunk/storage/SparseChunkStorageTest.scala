@@ -1,5 +1,7 @@
 package hexacraft.world.chunk.storage
 
+import hexacraft.world.chunk.{DenseChunkStorage, SparseChunkStorage}
+
 class SparseChunkStorageTest extends ChunkStorageTest(new SparseChunkStorage) {
   test("isDense should be false") {
     val storage = new SparseChunkStorage

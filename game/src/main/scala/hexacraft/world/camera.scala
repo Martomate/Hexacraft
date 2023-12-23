@@ -1,9 +1,7 @@
 package hexacraft.world
 
 import hexacraft.math.MathUtils
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 

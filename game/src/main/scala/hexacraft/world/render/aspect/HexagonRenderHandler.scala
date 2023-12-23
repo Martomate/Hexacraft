@@ -1,6 +1,6 @@
 package hexacraft.world.render.aspect
 
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.render.{BlockShader, BlockVao}
 import hexacraft.world.render.buffer.{BufferHandler, VaoRenderBuffer}
 

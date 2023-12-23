@@ -2,7 +2,7 @@ package hexacraft.world.coord.integer
 
 import hexacraft.math.bits.{Int12, Int20}
 import hexacraft.world.CylinderSize
-
+import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import munit.FunSuite
 
 class ChunkRelWorldTest extends FunSuite {

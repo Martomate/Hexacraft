@@ -1,6 +1,6 @@
 package hexacraft.world.render.aspect
 
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.render.buffer.BufferHandler
 import hexacraft.world.render.segment.{ChunkSegmentHandler, ChunkSegs, Segment}
 

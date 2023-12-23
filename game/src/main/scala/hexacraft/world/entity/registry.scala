@@ -1,9 +1,9 @@
 package hexacraft.world.entity
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.fp.CylCoords
 
 import com.martomate.nbt.Nbt
+import hexacraft.world.coord.CylCoords
 
 trait EntityFactory:
   def atStartPos(pos: CylCoords)(using CylinderSize): Entity

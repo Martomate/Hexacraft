@@ -1,5 +1,7 @@
 package hexacraft.world.coord.integer
 
+import hexacraft.world.coord.BlockRelChunk
+
 import munit.FunSuite
 
 class BlockRelChunkTest extends FunSuite {
@@ -19,7 +21,7 @@ class BlockRelChunkTest extends FunSuite {
 
   test("value should be in xyz-format and correct") {
     val c = BlockRelChunk(3, 7, 5)
-    assertEquals(c.value, (3 << 8 | 7 << 4 | 5))
+    assertEquals(c.value, 3 << 8 | 7 << 4 | 5)
   }
 
   test("offset should be correct") {

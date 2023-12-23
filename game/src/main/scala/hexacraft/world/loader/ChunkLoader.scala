@@ -2,8 +2,7 @@ package hexacraft.world.loader
 
 import hexacraft.world.{CylinderSize, World}
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
 
 import scala.collection.mutable
 import scala.concurrent.Future

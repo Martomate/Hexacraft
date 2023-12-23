@@ -2,7 +2,7 @@ package hexacraft.world.loader
 
 import hexacraft.util.{EventDispatcher, Tracker}
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.ChunkRelWorld
 
 import scala.collection.mutable
 

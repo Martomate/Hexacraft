@@ -2,9 +2,8 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils.oppositeSide
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.Chunk
-import hexacraft.world.chunk.storage.LocalBlockState
-import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
+import hexacraft.world.chunk.{Chunk, LocalBlockState}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
 
 import scala.collection.mutable
 

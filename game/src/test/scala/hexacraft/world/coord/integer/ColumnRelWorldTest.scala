@@ -2,7 +2,7 @@ package hexacraft.world.coord.integer
 
 import hexacraft.math.bits.Int20
 import hexacraft.world.CylinderSize
-
+import hexacraft.world.coord.ColumnRelWorld
 import munit.FunSuite
 
 class ColumnRelWorldTest extends FunSuite {

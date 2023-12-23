@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 import munit.FunSuite
 

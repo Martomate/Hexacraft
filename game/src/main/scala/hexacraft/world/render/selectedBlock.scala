@@ -3,8 +3,7 @@ package hexacraft.world.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.block.BlockState
-import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockRelWorld, CylCoords}
 
 import org.joml.{Matrix4f, Vector3d}
 import org.lwjgl.BufferUtils

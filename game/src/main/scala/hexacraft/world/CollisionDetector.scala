@@ -2,9 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils
 import hexacraft.world.block.HexBox
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
-import hexacraft.world.coord.integer.{BlockRelWorld, Offset}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, Offset, SkewCylCoords}
 
 import org.joml.Vector3d
 

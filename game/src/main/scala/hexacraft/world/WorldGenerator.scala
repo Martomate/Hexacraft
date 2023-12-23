@@ -2,8 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.{Range2D, Range3D}
 import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{BlockCoords, ChunkRelWorld, ColumnRelWorld}
 
 import java.util.Random
 

@@ -2,8 +2,7 @@ package hexacraft.world
 
 import hexacraft.world.block.*
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords, SkewCylCoords}
-import hexacraft.world.coord.integer.{BlockRelWorld, Offset}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, Offset, SkewCylCoords}
 
 import munit.FunSuite
 import org.joml.Vector3d

@@ -2,10 +2,8 @@ package hexacraft.world.gen
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
-import hexacraft.world.chunk.storage.LocalBlockState
-import hexacraft.world.coord.fp.BlockCoords
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityFactory}
 import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 

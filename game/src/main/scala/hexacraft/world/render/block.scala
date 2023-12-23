@@ -4,8 +4,8 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.BlockSpecRegistry
-import hexacraft.world.chunk.storage.LocalBlockState
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
+import hexacraft.world.chunk.LocalBlockState
+import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 import org.lwjgl.BufferUtils

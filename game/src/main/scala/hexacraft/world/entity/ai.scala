@@ -2,9 +2,7 @@ package hexacraft.world.entity
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, HexBox}
-import hexacraft.world.coord.CoordUtils
-import hexacraft.world.coord.fp.CylCoords
-import hexacraft.world.coord.integer.BlockRelWorld
+import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
 
 import com.martomate.nbt.Nbt
 import org.joml.{Vector3d, Vector3dc}

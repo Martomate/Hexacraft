@@ -6,7 +6,7 @@ import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, LightPropagator, World}
 import hexacraft.world.block.{BlockSpecRegistry, BlockState}
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2ic, Vector3f}

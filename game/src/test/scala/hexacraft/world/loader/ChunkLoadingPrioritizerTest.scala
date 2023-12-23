@@ -2,8 +2,7 @@ package hexacraft.world.loader
 
 import hexacraft.util.SeqUtils
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.fp.{BlockCoords, CylCoords}
-import hexacraft.world.coord.integer.ChunkRelWorld
+import hexacraft.world.coord.{BlockCoords, ChunkRelWorld, CylCoords}
 
 import munit.FunSuite
 

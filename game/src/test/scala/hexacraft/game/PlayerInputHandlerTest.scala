@@ -1,7 +1,7 @@
 package hexacraft.game
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.coord.fp.CylCoords
+import hexacraft.world.coord.CylCoords
 import hexacraft.world.player.Player
 
 import munit.FunSuite

@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.integer.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 trait WorldProvider {
   def getWorldInfo: WorldInfo

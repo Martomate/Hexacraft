@@ -1,9 +1,9 @@
 package hexacraft.world.player
 
 import hexacraft.world.block.{Block, HexBox}
-import hexacraft.world.coord.fp.CylCoords
 
 import com.martomate.nbt.Nbt
+import hexacraft.world.coord.CylCoords
 import org.joml.Vector3d
 
 class Player(var inventory: Inventory) {
