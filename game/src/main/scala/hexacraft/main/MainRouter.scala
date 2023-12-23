@@ -1,10 +1,17 @@
 package hexacraft.main
 
-import hexacraft.game.{GameClient, GameKeyboard, GameScene, NetworkHandler, RemoteWorldProvider, WorldProviderFromFile}
+import hexacraft.game.{
+  GameClient,
+  GameKeyboard,
+  GameScene,
+  Menus,
+  NetworkHandler,
+  RemoteWorldProvider,
+  WorldProviderFromFile
+}
 import hexacraft.gui.Scene
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
-import hexacraft.menu.*
 import hexacraft.util.Tracker
 import hexacraft.world.WorldSettings
 
@@ -28,59 +35,59 @@ class MainRouter(
 
   private def createScene(sceneRoute: SceneRoute): Scene = sceneRoute match
     case SceneRoute.Main =>
-      import MainMenu.Event.*
+      import Menus.MainMenu.Event.*
 
-      MainMenu(multiplayerEnabled):
+      Menus.MainMenu(multiplayerEnabled):
         case Play        => route(SceneRoute.WorldChooser)
         case Multiplayer => route(SceneRoute.Multiplayer)
         case Settings    => route(SceneRoute.Settings)
         case Quit        => eventListener.notify(MainRouter.Event.QuitRequested)
 
     case SceneRoute.WorldChooser =>
-      import WorldChooserMenu.Event.*
+      import Menus.WorldChooserMenu.Event.*
 
-      WorldChooserMenu(saveFolder, fs):
+      Menus.WorldChooserMenu(saveFolder, fs):
         case StartGame(saveDir, settings) =>
           route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
         case CreateNewWorld => route(SceneRoute.NewWorld)
         case GoBack         => route(SceneRoute.Main)
 
     case SceneRoute.NewWorld =>
-      import NewWorldMenu.Event.*
+      import Menus.NewWorldMenu.Event.*
 
-      NewWorldMenu(saveFolder):
+      Menus.NewWorldMenu(saveFolder):
         case StartGame(saveDir, settings) =>
           route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
         case GoBack => route(SceneRoute.WorldChooser)
 
     case SceneRoute.Multiplayer =>
-      import MultiplayerMenu.Event.*
+      import Menus.MultiplayerMenu.Event.*
 
-      MultiplayerMenu:
+      Menus.MultiplayerMenu:
         case Join   => route(SceneRoute.JoinWorld)
         case Host   => route(SceneRoute.HostWorld)
         case GoBack => route(SceneRoute.Main)
 
     case SceneRoute.JoinWorld =>
-      import JoinWorldChooserMenu.Event.*
+      import Menus.JoinWorldChooserMenu.Event.*
 
-      JoinWorldChooserMenu:
+      Menus.JoinWorldChooserMenu:
         case Join(address, port) =>
           println(s"Will connect to: $address at port $port")
           route(SceneRoute.Game(null, WorldSettings.none, isHosting = false, isOnline = true, (address, port)))
         case GoBack => route(SceneRoute.Multiplayer)
 
     case SceneRoute.HostWorld =>
-      import HostWorldChooserMenu.Event.*
+      import Menus.HostWorldChooserMenu.Event.*
 
-      HostWorldChooserMenu(saveFolder, fs):
+      Menus.HostWorldChooserMenu(saveFolder, fs):
         case Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
           route(SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null))
         case GoBack => route(SceneRoute.Multiplayer)
 
     case SceneRoute.Settings =>
-      new SettingsMenu(() => route(SceneRoute.Main))
+      new Menus.SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
       val worldProvider =
