@@ -1,11 +1,13 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.TextureArray
+import hexacraft.world.Camera
 import hexacraft.world.coord.integer.ChunkRelWorld
 import hexacraft.world.render.aspect.HexagonRenderHandler
-import hexacraft.world.Camera
 
 import org.joml.Vector3f
+
+import java.nio.ByteBuffer
 
 class ChunkRenderHandler:
   private val blockShader = new BlockShader(isSide = false)
@@ -41,11 +43,11 @@ class ChunkRenderHandler:
 
   def setChunkRenderData(
       coords: ChunkRelWorld,
-      opaqueBlocks: ChunkRenderData,
-      transmissiveBlocks: ChunkRenderData
+      opaqueBlocks: IndexedSeq[ByteBuffer],
+      transmissiveBlocks: IndexedSeq[ByteBuffer]
   ): Unit =
-    regularBlockHexagonHandler.setChunkContent(coords, opaqueBlocks.blockDataPerSide)
-    transmissiveBlockHexagonHandler.setChunkContent(coords, transmissiveBlocks.blockDataPerSide)
+    regularBlockHexagonHandler.setChunkContent(coords, opaqueBlocks)
+    transmissiveBlockHexagonHandler.setChunkContent(coords, transmissiveBlocks)
 
   def clearChunkRenderData(coords: ChunkRelWorld): Unit =
     regularBlockHexagonHandler.clearChunkContent(coords)

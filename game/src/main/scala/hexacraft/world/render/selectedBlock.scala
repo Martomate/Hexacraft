@@ -1,12 +1,36 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.VAO
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.BlockRelWorld
 
+import org.joml.{Matrix4f, Vector3d}
 import org.lwjgl.BufferUtils
+
+class SelectedBlockShader {
+  private val config = ShaderConfig("selected_block")
+    .withAttribs("position", "blockPos", "color", "blockHeight")
+
+  private val shader = Shader.from(config)
+
+  def setTotalSize(totalSize: Int): Unit =
+    shader.setUniform1i("totalSize", totalSize)
+
+  def setCameraPosition(cam: Vector3d): Unit =
+    shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
+
+  def setProjectionMatrix(matrix: Matrix4f): Unit =
+    shader.setUniformMat4("projMatrix", matrix)
+
+  def setViewMatrix(matrix: Matrix4f): Unit =
+    shader.setUniformMat4("viewMatrix", matrix)
+
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
+}
 
 object SelectedBlockVao {
   def create: SelectedBlockVao =

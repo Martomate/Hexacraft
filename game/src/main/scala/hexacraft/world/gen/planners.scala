@@ -1,15 +1,37 @@
-package hexacraft.world.gen.planner
+package hexacraft.world.gen
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
 import hexacraft.world.chunk.storage.LocalBlockState
+import hexacraft.world.coord.fp.BlockCoords
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld}
-import hexacraft.world.gen.PlannedWorldChange
-import hexacraft.world.gen.feature.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
+import hexacraft.world.entity.{Entity, EntityFactory}
+import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 
 import scala.collection.mutable
 import scala.util.Random
+
+trait WorldFeaturePlanner {
+  def decorate(chunk: Chunk): Unit
+  def plan(coords: ChunkRelWorld): Unit
+}
+
+class PlannedWorldChange:
+  private val changes: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
+
+  def setBlock(coords: BlockRelWorld, block: BlockState): Unit =
+    changes
+      .getOrElseUpdate(coords.getChunkRelWorld, mutable.Buffer.empty)
+      .append(LocalBlockState(coords.getBlockRelChunk, block))
+
+  def chunkChanges: Map[ChunkRelWorld, Seq[LocalBlockState]] = changes.view.mapValues(_.toSeq).toMap
+
+object PlannedWorldChange:
+  def from(blocks: Seq[(BlockRelWorld, BlockState)]): PlannedWorldChange =
+    val worldChange = new PlannedWorldChange
+    for (c, b) <- blocks do worldChange.setBlock(c, b)
+    worldChange
 
 class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize) extends WorldFeaturePlanner:
   private val plannedChanges: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
@@ -75,4 +97,37 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
   private def generateChanges(tree: PlannedWorldChange): Unit =
     for (c, ch) <- tree.chunkChanges do plannedChanges.getOrElseUpdate(c, mutable.Buffer.empty).appendAll(ch)
 
-// TODO: fix bug where trees are not spawning anymore! (and maybe add a test for it..)
+class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mainSeed: Long)(using
+    CylinderSize
+) extends WorldFeaturePlanner:
+  private val plannedEntities: mutable.Map[ChunkRelWorld, Seq[Entity]] = mutable.Map.empty
+  private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
+
+  private val maxEntitiesPerGroup = 7
+
+  override def decorate(chunk: Chunk): Unit =
+    for
+      entities <- plannedEntities.get(chunk.coords)
+      entity <- entities
+    do chunk.addEntity(entity)
+
+  override def plan(coords: ChunkRelWorld): Unit =
+    if !chunksPlanned(coords) then
+      val rand = new Random(mainSeed ^ coords.value + 364453868)
+      if rand.nextDouble() < 0.01 then plannedEntities(coords) = makePlan(rand, coords)
+      chunksPlanned += coords
+
+  private def makePlan(rand: Random, coords: ChunkRelWorld): Seq[Entity] =
+    val thePlan = mutable.Buffer.empty[Entity]
+    val count = rand.nextInt(maxEntitiesPerGroup) + 1
+    for _ <- 0 until count do
+      val column = world.provideColumn(coords.getColumnRelWorld)
+      val cx = rand.nextInt(16)
+      val cz = rand.nextInt(16)
+      val y = column.terrainHeight(cx, cz)
+      if y >= coords.Y.toInt * 16 && y < (coords.Y.toInt + 1) * 16 then
+        val groundCoords = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
+        val entityStartPos = groundCoords.offset(0, 0.001f, 0)
+        val entity = entityFactory.atStartPos(entityStartPos)
+        thePlan += entity
+    thePlan.toSeq

@@ -1,9 +1,8 @@
-package hexacraft.world.gen
+package hexacraft.world
 
-import hexacraft.world.{BlocksInWorld, CylinderSize, World}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.EntityRegistry
-import hexacraft.world.gen.planner.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
+import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
 class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize):
   private val planners: Seq[WorldFeaturePlanner] = Seq(

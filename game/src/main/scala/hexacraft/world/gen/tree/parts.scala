@@ -1,4 +1,4 @@
-package hexacraft.world.gen.feature.tree
+package hexacraft.world.gen.tree
 
 import hexacraft.world.block.Block
 import hexacraft.world.coord.integer.{NeighborOffsets, Offset}

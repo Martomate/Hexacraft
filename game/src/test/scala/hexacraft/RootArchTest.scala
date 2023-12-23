@@ -53,6 +53,7 @@ class RootArchTest extends FunSuite {
     val LWJGL = "LWJGL"
     val OpenGL = "OpenGL"
     val GLFW = "GLFW"
+    val ZeroMQ = "ZeroMQ"
 
     layeredArchitecture()
       .consideringAllDependencies()
@@ -75,9 +76,10 @@ class RootArchTest extends FunSuite {
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..")
       .optionalLayer(OpenGL, "org.lwjgl.opengl..")
       .optionalLayer(GLFW, "org.lwjgl.glfw..")
+      .optionalLayer(ZeroMQ, "org.zeromq..")
       .where(
         Game,
-        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt)
+        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt, ZeroMQ)
       )
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Renderer, Util, World, OpenGL, GLFW, LWJGL, Nbt))

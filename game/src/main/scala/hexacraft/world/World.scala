@@ -7,7 +7,6 @@ import hexacraft.world.coord.CoordUtils
 import hexacraft.world.coord.fp.CylCoords
 import hexacraft.world.coord.integer.*
 import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry, PlayerFactory, SheepFactory}
-import hexacraft.world.gen.{WorldGenerator, WorldPlanner}
 import hexacraft.world.loader.{ChunkLoader, PosAndDir}
 
 import scala.collection.mutable

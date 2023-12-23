@@ -1,10 +1,9 @@
 package hexacraft.world.chunk
 
-import hexacraft.world.{BlocksInWorld, CylinderSize}
+import hexacraft.world.{BlocksInWorld, CylinderSize, WorldGenerator}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.storage.{ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.integer.{BlockRelChunk, ChunkRelWorld}
-import hexacraft.world.gen.WorldGenerator
 
 class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldGenerator: WorldGenerator)(using CylinderSize) {
   def generate(): ChunkData =

@@ -66,7 +66,7 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
 
     val (opaqueBlocks, transmissiveBlocks) =
       if ch.blocks.isEmpty
-      then (ChunkRenderData.empty, ChunkRenderData.empty)
+      then (ChunkRenderDataFactory.empty, ChunkRenderDataFactory.empty)
       else
         (
           ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, false, blockSpecs),

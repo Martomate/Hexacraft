@@ -7,7 +7,6 @@ import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityRegistry}
-import hexacraft.world.gen.WorldGenerator
 
 import scala.annotation.tailrec
 

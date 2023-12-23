@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
 class WorldCombinerShader {
   private val config = ShaderConfig("world_combiner").withAttribs("position")
@@ -20,4 +20,15 @@ class WorldCombinerShader {
   def enable(): Unit = shader.activate()
 
   def free(): Unit = shader.free()
+}
+
+object WorldCombinerVao {
+  def create: VAO =
+    VAO
+      .builder()
+      .addVertexVbo(4)(
+        _.floats(0, 2),
+        _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
+      )
+      .finish(4)
 }

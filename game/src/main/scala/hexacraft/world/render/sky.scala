@@ -1,6 +1,6 @@
 package hexacraft.world.render
 
-import hexacraft.renderer.{Shader, ShaderConfig}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
 import org.joml.{Matrix4f, Vector3f}
 
@@ -20,4 +20,15 @@ class SkyShader {
   def enable(): Unit = shader.activate()
 
   def free(): Unit = shader.free()
+}
+
+object SkyVao {
+  def create: VAO =
+    VAO
+      .builder()
+      .addVertexVbo(4)(
+        _.floats(0, 2),
+        _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
+      )
+      .finish(4)
 }

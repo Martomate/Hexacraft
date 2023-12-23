@@ -3,10 +3,9 @@ package hexacraft.world.chunk
 import com.martomate.nbt.Nbt
 import hexacraft.math.bits.Int12
 import hexacraft.util.RevokeTrackerFn
-import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldProvider}
+import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldGenerator, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.integer.*
-import hexacraft.world.gen.WorldGenerator
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable

@@ -1,18 +1,95 @@
 package hexacraft.world.render
 
+import hexacraft.infra.gpu.OpenGL
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.BlockSpecRegistry
-import hexacraft.world.chunk.Chunk
 import hexacraft.world.chunk.storage.LocalBlockState
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, Offset}
 
+import org.joml.{Matrix4f, Vector3d, Vector3f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 import java.util
 import scala.collection.mutable.ArrayBuffer
 
+class BlockShader(isSide: Boolean) {
+  private val config = ShaderConfig("block")
+    .withAttribs(
+      "position",
+      "texCoords",
+      "normal",
+      "vertexIndex",
+      "faceIndex",
+      "blockPos",
+      "blockTex",
+      "blockHeight",
+      "brightness"
+    )
+    .withDefines("isSide" -> (if isSide then "1" else "0"))
+
+  private val shader = Shader.from(config)
+
+  def setTotalSize(totalSize: Int): Unit =
+    shader.setUniform1i("totalSize", totalSize)
+
+  def setSunPosition(sun: Vector3f): Unit =
+    shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+
+  def setCameraPosition(cam: Vector3d): Unit =
+    shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
+
+  def setProjectionMatrix(matrix: Matrix4f): Unit =
+    shader.setUniformMat4("projMatrix", matrix)
+
+  def setViewMatrix(matrix: Matrix4f): Unit =
+    shader.setUniformMat4("viewMatrix", matrix)
+
+  def setSide(side: Int): Unit =
+    shader.setUniform1i("side", side)
+
+  def enable(): Unit = shader.activate()
+
+  def free(): Unit = shader.free()
+}
+
+object BlockVao {
+  private def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2
+  private def brightnessesPerInstance(side: Int): Int = if side < 2 then 7 else 4
+
+  def bytesPerInstance(side: Int): Int = (5 + BlockVao.brightnessesPerInstance(side)) * 4
+
+  def forSide(side: Int)(maxInstances: Int): VAO =
+    val verticesPerInstance = BlockVao.verticesPerInstance(side)
+    val brightnessesPerInstance = BlockVao.brightnessesPerInstance(side)
+
+    VAO
+      .builder()
+      .addVertexVbo(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
+        _.floats(0, 3)
+          .floats(1, 2)
+          .floats(2, 3)
+          .ints(3, 1)
+          .ints(4, 1),
+        _.fill(0, BlockRenderer.setupBlockVBO(side))
+      )
+      .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
+        _.ints(5, 3)
+          .ints(6, 1)
+          .floats(7, 1)
+          .floatsArray(8, 1)(brightnessesPerInstance)
+      )
+      .finish(verticesPerInstance, maxInstances)
+}
+
 object ChunkRenderDataFactory:
+  private def blockSideStride(side: Int): Int = if (side < 2) (5 + 7) * 4 else (5 + 4) * 4
+
+  private type ChunkRenderData = IndexedSeq[ByteBuffer]
+
+  def empty: ChunkRenderData = IndexedSeq.fill(8)(null)
+
   def makeChunkRenderData(
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
@@ -77,7 +154,7 @@ object ChunkRenderDataFactory:
     val blocksBuffers = for (side <- 0 until 8) yield
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
-      val buf = BufferUtils.createByteBuffer(sidesCount(side) * ChunkRenderData.blockSideStride(side))
+      val buf = BufferUtils.createByteBuffer(sidesCount(side) * blockSideStride(side))
 
       val brightnessFn = (coords: BlockRelWorld) => {
         val cc = coords.getChunkRelWorld
@@ -92,7 +169,7 @@ object ChunkRenderDataFactory:
       buf.flip()
       buf
 
-    ChunkRenderData(blocksBuffers)
+    blocksBuffers
 
   private def populateBuffer(
       chunkCoords: ChunkRelWorld,

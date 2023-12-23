@@ -3,7 +3,6 @@ package hexacraft.world
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, ChunkColumn}
 import hexacraft.world.coord.integer.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
-import hexacraft.world.gen.WorldGenerator
 
 import scala.collection.mutable
 
