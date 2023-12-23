@@ -1,13 +1,13 @@
 package hexacraft.game.inventory
 
 import hexacraft.game
+import hexacraft.game.GuiBlockRenderer
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import hexacraft.util.Tracker
 import hexacraft.world.block.{Block, BlockSpecRegistry}
 import hexacraft.world.player.Inventory
-
 import org.joml.{Matrix4f, Vector4f}
 
 object InventoryBox {

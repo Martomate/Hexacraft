@@ -1,10 +1,10 @@
 package hexacraft.game.inventory
 
+import hexacraft.game.GuiBlockRenderer
 import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation, SubComponents}
 import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.player.Inventory
-
 import org.joml.{Matrix4f, Vector4f}
 
 class Toolbar(location: LocationInfo, private var inventory: Inventory)(specs: BlockSpecRegistry)

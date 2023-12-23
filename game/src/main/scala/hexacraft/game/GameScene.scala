@@ -1,7 +1,7 @@
 package hexacraft.game
 
 import hexacraft.game.NetworkPacket.{GetState, GetWorldInfo}
-import hexacraft.game.inventory.{GuiBlockRenderer, InventoryBox, Toolbar}
+import hexacraft.game.inventory.{InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.fs.BlockTextureLoader
