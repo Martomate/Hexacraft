@@ -1,6 +1,7 @@
 package hexacraft.world.block
 
 import hexacraft.physics.Viscosity
+import hexacraft.world.HexBox
 
 object Block {
   private val maxBlocks = 256

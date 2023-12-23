@@ -1,8 +1,8 @@
 package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
-import hexacraft.world.block.HexBox
 import hexacraft.world.coord.CylCoords
+import hexacraft.world.HexBox
 
 import org.joml.{Matrix4f, Vector3f}
 

@@ -1,6 +1,6 @@
 package hexacraft.gui
 
-import org.joml.{Vector2fc, Vector2ic}
+import org.joml.Vector2ic
 
 /** x, y, w, h are position and size. The entire screen corresponds to `(-a, -1, 2 * a, 2)` where
   * `a` is `window.aspectRatio`.

@@ -3,7 +3,6 @@ package hexacraft.world.render
 import hexacraft.renderer.TextureArray
 import hexacraft.world.Camera
 import hexacraft.world.coord.ChunkRelWorld
-import hexacraft.world.render.aspect.HexagonRenderHandler
 
 import org.joml.Vector3f
 

@@ -1,7 +1,6 @@
 package hexacraft.world.coord
 
 import hexacraft.world.CylinderSize
-
 import munit.FunSuite
 
 class CoordUtilsTest extends FunSuite {

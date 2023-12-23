@@ -1,8 +1,7 @@
 package hexacraft.game
 
-import hexacraft.world.CylinderSize
+import hexacraft.world.{CylinderSize, Player}
 import hexacraft.world.coord.CylCoords
-import hexacraft.world.player.Player
 
 import munit.FunSuite
 import org.joml.Vector2f

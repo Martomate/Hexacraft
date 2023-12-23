@@ -1,8 +1,7 @@
 package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
-import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
-import hexacraft.world.block.HexBox
+import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
 
 import com.martomate.nbt.Nbt
 import hexacraft.world.coord.{BlockCoords, CylCoords}

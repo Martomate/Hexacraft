@@ -1,7 +1,6 @@
 package hexacraft.game
 
-import hexacraft.world.player.Player
-
+import hexacraft.world.Player
 import org.joml.Vector2fc
 
 class PlayerInputHandler(keyboard: GameKeyboard, player: Player):

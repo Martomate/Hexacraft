@@ -1,10 +1,9 @@
 package hexacraft.world.render
 
 import hexacraft.util.{TickableTimer, UniquePQ}
-import hexacraft.world.{Camera, CylinderSize}
+import hexacraft.world.{Camera, CylinderSize, PosAndDir}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import hexacraft.world.loader.PosAndDir
 
 object ChunkRenderUpdater:
   private val chunkRenderUpdatesPerTick = 4

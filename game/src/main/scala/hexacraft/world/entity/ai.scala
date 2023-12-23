@@ -1,7 +1,7 @@
 package hexacraft.world.entity
 
-import hexacraft.world.{BlocksInWorld, CylinderSize}
-import hexacraft.world.block.{Block, HexBox}
+import hexacraft.world.{BlocksInWorld, CylinderSize, HexBox}
+import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
 
 import com.martomate.nbt.Nbt

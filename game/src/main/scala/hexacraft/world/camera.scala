@@ -2,7 +2,6 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
-
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 
 class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {

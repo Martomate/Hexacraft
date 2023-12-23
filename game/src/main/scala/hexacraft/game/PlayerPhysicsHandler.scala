@@ -1,9 +1,7 @@
 package hexacraft.game
 
 import hexacraft.physics.{Density, DragCoefficient, FluidDynamics, Viscosity}
-import hexacraft.world.{BlocksInWorld, CollisionDetector}
-import hexacraft.world.block.HexBox
-import hexacraft.world.player.Player
+import hexacraft.world.{BlocksInWorld, CollisionDetector, HexBox, Player}
 
 import org.joml.Vector3d
 

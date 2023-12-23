@@ -1,7 +1,6 @@
 package hexacraft.game
 
 import hexacraft.game.NetworkPacket.{GetState, GetWorldInfo}
-import hexacraft.game.inventory.{InventoryBox, Toolbar}
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.fs.BlockTextureLoader
@@ -9,12 +8,10 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
-import hexacraft.world.{Camera, CameraProjection, CylinderSize, World, WorldInfo, WorldProvider, WorldSettings}
-import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState, HexBox}
+import hexacraft.world.{Camera, CameraProjection, CylinderSize, HexBox, Player, Ray, RayTracer, World, WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
 import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityModel, EntityModelLoader}
-import hexacraft.world.player.Player
-import hexacraft.world.ray.{Ray, RayTracer}
 import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
