@@ -4,8 +4,10 @@ import hexacraft.util.{EventDispatcher, TickableTimer, Tracker}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils, CylCoords}
 
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 class ChunkLoader(
     chunkFactory: ChunkRelWorld => Chunk,
@@ -54,6 +56,10 @@ class ChunkLoader(
       case World.Event.ChunkAdded(chunk)    => chunksLoading -= chunk.coords
       case World.Event.ChunkRemoved(coords) => chunksUnloading -= coords
       case _                                =>
+
+  def unload(): Unit =
+    for f <- chunksLoading.values do Await.result(f, Duration(10, TimeUnit.SECONDS))
+    for f <- chunksUnloading.values do Await.result(f, Duration(10, TimeUnit.SECONDS))
 }
 
 object ChunkLoadingPrioritizer {

@@ -68,7 +68,7 @@ class WorldTest extends FunSuite {
 
     // Run the game a bit
     world.tick(camera)
-    Thread.sleep(10)
+    Thread.sleep(20)
     world.tick(camera)
 
     // The chunk should be loaded
@@ -88,7 +88,7 @@ class WorldTest extends FunSuite {
 
     // Run the game a bit
     world.tick(camera)
-    Thread.sleep(10)
+    Thread.sleep(20)
     world.tick(camera)
 
     // The chunk should be loaded
@@ -99,7 +99,7 @@ class WorldTest extends FunSuite {
 
     // Run the game a bit
     world.tick(camera)
-    Thread.sleep(10)
+    Thread.sleep(20)
     world.tick(camera)
 
     // The chunk should be unloaded

@@ -220,6 +220,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     blockUpdateTimer.enabled = false
     for col <- columns.values do col.unload()
     columns.clear()
+    chunkLoader.unload()
 
   private def onChunkEvent(event: Chunk.Event): Unit =
     event match
