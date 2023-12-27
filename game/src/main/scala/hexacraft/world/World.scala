@@ -43,7 +43,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private val columns = mutable.LongMap.empty[ChunkColumn]
 
-  private val chunkLoadingOrigin = PosAndDir(CylCoords(0, 0, 0))
   private val chunkLoader: ChunkLoader = makeChunkLoader()
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
@@ -62,17 +61,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       new Chunk(coords, generator, worldProvider, entityRegistry)
 
     val chunkUnloader = (coords: ChunkRelWorld) =>
-      getChunk(coords).foreach(chunk =>
-        chunk.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, chunk.coords))
-      )
+      for
+        chunk <- getChunk(coords)
+        data <- chunk.saveIfNeeded()
+      do worldProvider.saveChunkData(data, chunk.coords)
 
-    new ChunkLoader(
-      chunkLoadingOrigin,
-      chunkFactory,
-      chunkUnloader,
-      renderDistance,
-      () => World.shouldChillChunkLoader
-    )
+    new ChunkLoader(chunkFactory, chunkUnloader, renderDistance)
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = columns.get(coords.value)
 
@@ -159,11 +153,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
         col.unload()
 
   def tick(camera: Camera): Unit =
-    chunkLoadingOrigin.setPosAndDirFrom(camera.view)
-    chunkLoader.tick()
+    val (chunksToAdd, chunksToRemove) = chunkLoader.tick(
+      PosAndDir.fromCameraView(camera.view),
+      World.shouldChillChunkLoader
+    )
 
-    for ch <- chunkLoader.chunksToAdd() do setChunk(ch)
-    for ch <- chunkLoader.chunksToRemove() do removeChunk(ch)
+    for ch <- chunksToAdd do setChunk(ch)
+    for ch <- chunksToRemove do removeChunk(ch)
 
     if blockUpdateTimer.tick() then performBlockUpdates()
     if relocateEntitiesTimer.tick() then performEntityRelocation()

@@ -2,17 +2,15 @@ package hexacraft.world
 
 import hexacraft.util.{EventDispatcher, TickableTimer, Tracker}
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils, CylCoords}
 
 import scala.collection.mutable
 import scala.concurrent.Future
 
 class ChunkLoader(
-    origin: PosAndDir,
     chunkFactory: ChunkRelWorld => Chunk,
     chunkUnloader: ChunkRelWorld => Unit,
-    maxDist: Double,
-    shouldLoadSlowly: () => Boolean
+    maxDist: Double
 )(using CylinderSize) {
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -21,7 +19,7 @@ class ChunkLoader(
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
 
-  private val prioritizer = new ChunkLoadingPrioritizer(origin, maxDist)
+  private val prioritizer = new ChunkLoadingPrioritizer(maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double =
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -29,9 +27,10 @@ class ChunkLoader(
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
 
-  def tick(): Unit =
-    prioritizer.tick()
-    val (maxLoad, maxUnload) = if shouldLoadSlowly() then (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
+  def tick(origin: PosAndDir, shouldLoadSlowly: Boolean): (Seq[Chunk], Seq[ChunkRelWorld]) =
+    prioritizer.tick(origin)
+
+    val (maxLoad, maxUnload) = if shouldLoadSlowly then (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
 
     for _ <- 1 to LoadsPerTick do
       if chunksLoading.size < maxLoad then
@@ -45,11 +44,10 @@ class ChunkLoader(
             chunkUnloader(coords)
             coords
 
-  def chunksToAdd(): Iterable[Chunk] =
-    chunksLoading.values.flatMap(_.value).flatMap(_.toOption)
+    val chunksToAdd = chunksLoading.values.flatMap(_.value).flatMap(_.toOption).toSeq
+    val chunksToRemove = chunksUnloading.values.flatMap(_.value).flatMap(_.toOption).toSeq
 
-  def chunksToRemove(): Iterable[ChunkRelWorld] =
-    chunksUnloading.values.flatMap(_.value).flatMap(_.toOption)
+    (chunksToAdd, chunksToRemove)
 
   def onWorldEvent(event: World.Event): Unit =
     event match
@@ -62,7 +60,8 @@ object ChunkLoadingPrioritizer {
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
 }
 
-class ChunkLoadingPrioritizer(origin: PosAndDir, maxDist: Double)(using CylinderSize) {
+class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
+  private var origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0))
   private val edge = new ChunkLoadingEdge
   edge.trackEvents(this.onChunkEdgeEvent _)
 
@@ -82,7 +81,9 @@ class ChunkLoadingPrioritizer(origin: PosAndDir, maxDist: Double)(using Cylinder
 
   def -=(chunk: ChunkRelWorld): Unit = edge.unloadChunk(chunk)
 
-  def tick(): Unit = if reorderingTimer.tick() then reorderPQs()
+  def tick(origin: PosAndDir): Unit =
+    this.origin = origin
+    if reorderingTimer.tick() then reorderPQs()
 
   def reorderPQs(): Unit =
     val addSeq = addableChunks.toSeq

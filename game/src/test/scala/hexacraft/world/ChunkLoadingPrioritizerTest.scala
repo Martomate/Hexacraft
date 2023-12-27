@@ -1,8 +1,8 @@
 package hexacraft.world
 
 import hexacraft.util.SeqUtils
-import hexacraft.world.{ChunkLoadingPrioritizer, CylinderSize, PosAndDir}
 import hexacraft.world.coord.{BlockCoords, ChunkRelWorld, CylCoords}
+
 import munit.FunSuite
 
 import scala.collection.mutable
@@ -11,7 +11,9 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
   given CylinderSize = CylinderSize(4)
 
   def make(origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0)), maxDist: Double = 4): ChunkLoadingPrioritizer =
-    new ChunkLoadingPrioritizer(origin, maxDist)
+    val prio = new ChunkLoadingPrioritizer(maxDist)
+    prio.tick(origin)
+    prio
 
   private def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
 
