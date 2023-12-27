@@ -49,7 +49,7 @@ class WorldTest extends FunSuite {
     assert(chunk.isDecorated)
 
     // There should be a tree in the chunk
-    assert(chunk.blocks.exists(s => s.block.blockType == Block.Log))
+    assert(chunk.blocks.exists(s => s.block.blockType == Block.OakLog))
 
     // Clean up
     world.unload()

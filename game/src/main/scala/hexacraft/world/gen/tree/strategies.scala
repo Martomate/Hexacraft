@@ -9,22 +9,20 @@ import scala.util.Random
 trait TreeGenStrategy {
   protected final type BlockSpec = (Offset, Block)
 
-  def blocks: Seq[BlockSpec]
+  def blocks(rand: Random): Seq[BlockSpec]
 }
 
-class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenStrategy {
-  override def blocks: Seq[(Offset, Block)] = {
-    val builder = new Builder
+class HugeTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
+  override def blocks(rand: Random): Seq[(Offset, Block)] = {
+    val builder = new Builder(rand)
 
-    for (_ <- 0 until stems) {
-      builder.generateStem(Offset(0, 0, 0), 7, 3, 40)
-      builder.generateTreeCrown(Offset(0, 40, 0), 60, 0.7f, 0.5f, 0.5f)
-    }
+    builder.generateStem(Offset(0, 0, 0), 7, 3, 40)
+    builder.generateTreeCrown(Offset(0, 40, 0), 60, 0.7f, 0.5f, 0.5f)
 
     builder.blocks
   }
 
-  private class Builder {
+  private class Builder(rand: Random) {
     val logs: ArrayBuffer[BlockSpec] = ArrayBuffer.empty
     val leaves: ArrayBuffer[BlockSpec] = ArrayBuffer.empty
 
@@ -48,12 +46,12 @@ class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenSt
       val neighborHeights =
         randomlyDivideInterval(crossSectionBottom - crossSectionTop + 1, 0.1f, length).map(_.round)
 
-      logs ++= PillarGenerator(length).generate(start, Block.Log)
+      logs ++= PillarGenerator(length).generate(start, logBlock)
       for (i <- 0 until crossSectionTop - 1)
-        logs ++= PillarGenerator(length).generate(reorderedNeighbors(i), Block.Log)
+        logs ++= PillarGenerator(length).generate(reorderedNeighbors(i), logBlock)
 
       for ((r, h) <- neighborRoots.zip(neighborHeights))
-        logs ++= PillarGenerator(h).generate(r, Block.Log)
+        logs ++= PillarGenerator(h).generate(r, logBlock)
     }
 
     private def randomlyDivideInterval(parts: Int, randomness: Float, length: Int): Seq[Float] = {
@@ -72,7 +70,7 @@ class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenSt
     ): Unit = {
       val blobGen =
         BlobGenerator(rand, (size * 40 + 1).toInt, irregularity, flatnessBottom, flatnessTop)
-      leaves ++= blobGen.generate(center, Block.Leaves)
+      leaves ++= blobGen.generate(center, leavesBlock)
     }
 
     def blocks: Seq[BlockSpec] = (leaves ++ logs).toSeq
@@ -80,8 +78,8 @@ class HugeTreeGenStrategy(size: Int, stems: Int, rand: Random) extends TreeGenSt
 
 }
 
-class TallTreeGenStrategy(height: Int, rand: Random)(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
-  override def blocks: Seq[BlockSpec] = {
+class TallTreeGenStrategy(height: Int)(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
+  override def blocks(rand: Random): Seq[BlockSpec] = {
     val arr = ArrayBuffer.empty[BlockSpec]
     val treeTop = Offset(0, height, 0)
     arr ++= BlobGenerator(rand, 60, 0.05f, 0.7f, 0.7f).generate(treeTop, leavesBlock)
@@ -91,7 +89,7 @@ class TallTreeGenStrategy(height: Int, rand: Random)(logBlock: Block, leavesBloc
 }
 
 class ShortTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
-  override def blocks: Seq[BlockSpec] =
+  override def blocks(rand: Random): Seq[BlockSpec] =
     PlatformGenerator(1).generate(0, 6, 0, leavesBlock) ++
       PlatformGenerator(2).generate(0, 7, 0, leavesBlock) ++
       PlatformGenerator(1).generate(0, 8, 0, leavesBlock) ++

@@ -5,7 +5,7 @@ import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityFactory}
-import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
+import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy, TreeGenStrategy}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -30,6 +30,8 @@ object PlannedWorldChange:
     val worldChange = new PlannedWorldChange
     for (c, b) <- blocks do worldChange.setBlock(c, b)
     worldChange
+
+class WoodChoice(val log: Block, val leaves: Block)
 
 class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize) extends WorldFeaturePlanner:
   private val plannedChanges: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
@@ -72,22 +74,26 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
   private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit =
     val rand = new Random(mainSeed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
-    // short and tall trees can be birches, but the huge ones cannot
-    val isBirchTree = rand.nextDouble() < 0.1
-    val logBlock = if isBirchTree then Block.BirchLog else Block.Log
-    val leavesBlock = if isBirchTree then Block.BirchLeaves else Block.Leaves
+    val birchWood = WoodChoice(Block.BirchLog, Block.BirchLeaves)
+    val oakWood = WoodChoice(Block.OakLog, Block.OakLeaves)
 
+    // short and tall trees can be birches, but the huge ones cannot
     val choice = rand.nextDouble()
     val treeGenStrategy =
       if allowBig && choice < 0.05
-      then new HugeTreeGenStrategy(24, 1, rand)
-      else if choice < 0.3
-      then new TallTreeGenStrategy(16, rand)(logBlock, leavesBlock)
-      else new ShortTreeGenStrategy(logBlock, leavesBlock)
+      then new HugeTreeGenStrategy(oakWood.log, oakWood.leaves)
+      else {
+        val useBirch = rand.nextDouble() < 0.1
+        val woodChoice = if useBirch then birchWood else oakWood
+
+        if choice < 0.3
+        then new TallTreeGenStrategy(16)(woodChoice.log, woodChoice.leaves)
+        else new ShortTreeGenStrategy(woodChoice.log, woodChoice.leaves)
+      }
 
     val groundCoords = BlockRelWorld(coords.X.toInt * 16 + cx, yy, coords.Z.toInt * 16 + cz)
     val tree = PlannedWorldChange.from(
-      for (c, b) <- treeGenStrategy.blocks
+      for (c, b) <- treeGenStrategy.blocks(rand)
       yield (groundCoords.offset(c), new BlockState(b))
     )
     generateChanges(tree)
