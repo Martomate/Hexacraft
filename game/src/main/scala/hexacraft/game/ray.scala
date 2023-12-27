@@ -1,6 +1,7 @@
-package hexacraft.world
+package hexacraft.game
 
 import hexacraft.math.MathUtils.oppositeSide
+import hexacraft.world.{Camera, CylinderSize, HexBox}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.*
 
@@ -8,22 +9,20 @@ import org.joml.{Vector2fc, Vector3d, Vector4f}
 
 import scala.annotation.tailrec
 
-class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
-    cylSize: CylinderSize
-):
+class RayTracer(camera: Camera, maxDistance: Double)(using CylinderSize):
   def trace(
       ray: Ray,
-      blockFoundFn: BlockRelWorld => Boolean
+      blockAtCoords: BlockRelWorld => Option[BlockState]
   ): Option[(BlockRelWorld, Option[Int])] =
-    if blockFoundFn(camera.blockCoords) && blockTouched(ray, camera.blockCoords)
+    if blockTouched(blockAtCoords, ray, camera.blockCoords)
     then Some((camera.blockCoords, None))
-    else traceIt(camera.blockCoords, ray, blockFoundFn, 1000)
+    else traceIt(camera.blockCoords, ray, blockAtCoords, 1000)
 
   @tailrec
   private def traceIt(
       current: BlockRelWorld,
       ray: Ray,
-      blockFoundFn: BlockRelWorld => Boolean,
+      blockAtCoords: BlockRelWorld => Option[BlockState],
       ttl: Int
   ): Option[(BlockRelWorld, Option[Int])] =
     if (ttl < 0) // TODO: this is a temporary fix for ray-loops
@@ -43,9 +42,9 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
       if distance <= maxDistance * CylinderSize.y60 then
         val hitBlockCoords = current.offset(NeighborOffsets(side))
 
-        if blockFoundFn(hitBlockCoords) && blockTouched(ray, hitBlockCoords)
+        if blockTouched(blockAtCoords, ray, hitBlockCoords)
         then Some((hitBlockCoords, Some(oppositeSide(side))))
-        else traceIt(hitBlockCoords, ray, blockFoundFn, ttl - 1)
+        else traceIt(hitBlockCoords, ray, blockAtCoords, ttl - 1)
       else None
     else
       System.err.println(
@@ -84,9 +83,13 @@ class RayTracer(world: BlocksInWorld, camera: Camera, maxDistance: Double)(using
     then 1
     else index + 2
 
-  private def blockTouched(ray: Ray, hitBlockCoords: BlockRelWorld): Boolean =
-    world.getBlock(hitBlockCoords) match
-      case block if block.blockType != Block.Air =>
+  private def blockTouched(
+      blockAtCoords: BlockRelWorld => Option[BlockState],
+      ray: Ray,
+      hitBlockCoords: BlockRelWorld
+  ): Boolean =
+    blockAtCoords(hitBlockCoords) match
+      case Some(block) if block.blockType != Block.Air =>
         (0 until 8).exists(side => {
           val boundingBox = block.blockType.bounds(block.metadata)
           val points = PointHexagon.fromHexBox(boundingBox, hitBlockCoords, camera)

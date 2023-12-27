@@ -8,7 +8,17 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
-import hexacraft.world.{Camera, CameraProjection, CylinderSize, HexBox, Player, Ray, RayTracer, World, WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.world.{
+  Camera,
+  CameraProjection,
+  CylinderSize,
+  HexBox,
+  Player,
+  World,
+  WorldInfo,
+  WorldProvider,
+  WorldSettings
+}
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
 import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityModel, EntityModelLoader}
@@ -204,7 +214,7 @@ class GameScene(
 
   val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 
-  private val mousePicker: RayTracer = new RayTracer(world, camera, 7)
+  private val mousePicker: RayTracer = new RayTracer(camera, 7)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, player)
   private val playerPhysicsHandler: PlayerPhysicsHandler =
     new PlayerPhysicsHandler(player, world, world.collisionDetector)
@@ -481,7 +491,7 @@ class GameScene(
       // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
       for
         ray <- Ray.fromScreen(camera, screenCoords)
-        hit <- mousePicker.trace(ray, c => world.getBlock(c).blockType.isSolid)
+        hit <- mousePicker.trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
       yield (world.getBlock(hit._1), hit._1, hit._2)
 
   private def performLeftMouseClick(): Unit =

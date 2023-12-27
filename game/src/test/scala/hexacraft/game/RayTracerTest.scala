@@ -1,8 +1,9 @@
-package hexacraft.world
+package hexacraft.game
 
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld}
+
 import munit.FunSuite
 import org.joml.Vector2f
 
@@ -12,14 +13,13 @@ class RayTracerTest extends FunSuite {
   private def makeCameraProjection = new CameraProjection(70, 1.6f, 0.01f, 1000f)
 
   test("the raytracer should not crash") {
-    val world: BlocksInWorld = FakeBlocksInWorld.empty(new FakeWorldProvider(1289))
     val camera = new Camera(makeCameraProjection)
 
     val ray = Ray.fromScreen(camera, new Vector2f(-0.3f, 0.2f)).get
 
     // There are no blocks so it should fail
-    val rayTracer = new RayTracer(world, camera, 5.0)
-    assertEquals(rayTracer.trace(ray, _ => true), None)
+    val rayTracer = new RayTracer(camera, 5.0)
+    assertEquals(rayTracer.trace(ray, _ => None), None)
   }
 
   test("the raytracer should return a block if the camera is in it") {
@@ -42,8 +42,8 @@ class RayTracerTest extends FunSuite {
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
 
     // The ray tracer should find the block
-    val rayTracer = new RayTracer(world, camera, 5.0)
-    assertEquals(rayTracer.trace(ray, _ => true), Some((location, None)))
+    val rayTracer = new RayTracer(camera, 5.0)
+    assertEquals(rayTracer.trace(ray, coords => Some(world.getBlock(coords))), Some((location, None)))
   }
 
   test("the raytracer should return None if the mouse is not on the screen") {
@@ -91,8 +91,8 @@ class RayTracerTest extends FunSuite {
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
 
     // The ray tracer should find the block
-    val rayTracer = new RayTracer(world, camera, 5.0)
-    assertEquals(rayTracer.trace(ray, _ => true), Some((BlockRelWorld(0, 0, 1), Some(6))))
+    val rayTracer = new RayTracer(camera, 5.0)
+    assertEquals(rayTracer.trace(ray, coords => Some(world.getBlock(coords))), Some((BlockRelWorld(0, 0, 1), Some(6))))
   }
 
   // TODO: there is a bug where a ray can escape confinement if it starts at (0,0,0) with a y-rotation of Pi/2
