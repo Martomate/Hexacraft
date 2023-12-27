@@ -253,12 +253,13 @@ class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
             if (neigh != null) {
               val otherSide = oppositeSide(s)
 
+              // The neighboring chunk edge might be in light. This line ensures that it is indeed render-updated.
+              if (!neighborMap.contains(neigh)) neighborMap.put(neigh, mutable.ArrayBuffer.empty)
+
               val bl = neigh.getBlock(c2)
               if (!bl.blockType.isCovering(bl.metadata, otherSide)) {
                 val thisSLevel = neigh.lighting.getSunlight(c2)
                 val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
-
-                if (!neighborMap.contains(neigh)) neighborMap.put(neigh, mutable.ArrayBuffer.empty)
 
                 if (thisSLevel < nextS) {
                   neigh.lighting.setSunlight(c2, nextS)
