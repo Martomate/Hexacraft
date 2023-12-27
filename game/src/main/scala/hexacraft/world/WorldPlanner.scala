@@ -23,6 +23,7 @@ class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Lon
           p <- planners
         do p.plan(ch)
       case World.Event.ChunkRemoved(_) =>
+      case _                           =>
 
 object WorldPlanner:
   def apply(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize): WorldPlanner =

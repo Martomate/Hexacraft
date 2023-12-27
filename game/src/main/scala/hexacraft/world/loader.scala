@@ -53,6 +53,7 @@ class ChunkLoader(
     event match
       case World.Event.ChunkAdded(chunk)    => chunksLoading -= chunk.coords
       case World.Event.ChunkRemoved(coords) => chunksUnloading -= coords
+      case _                                =>
 }
 
 object ChunkLoadingPrioritizer {

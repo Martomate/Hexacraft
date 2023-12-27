@@ -27,6 +27,8 @@ object World:
   enum Event:
     case ChunkAdded(chunk: Chunk)
     case ChunkRemoved(coords: ChunkRelWorld)
+    case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
+    case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)
     extends BlockRepository
@@ -140,8 +142,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def removeChunk(ch: ChunkRelWorld): Unit =
     for col <- columns.get(ch.getColumnRelWorld.value) do
       for removedChunk <- col.removeChunk(ch.Y) do
-        val revoke = chunkEventTrackerRevokeFns(removedChunk.coords)
-        revoke()
+        chunkEventTrackerRevokeFns.remove(removedChunk.coords) match
+          case Some(revoke) => revoke()
+          case None         =>
 
         dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
@@ -220,8 +223,11 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private def onChunkEvent(event: Chunk.Event): Unit =
     event match
-      case Chunk.Event.BlockReplaced(coords, _, block) => onSetBlock(coords, block)
-      case _                                           =>
+      case Chunk.Event.ChunkNeedsRenderUpdate(coords) =>
+        dispatcher.notify(World.Event.ChunkNeedsRenderUpdate(coords))
+      case Chunk.Event.BlockReplaced(coords, prev, block) =>
+        onSetBlock(coords, block)
+        dispatcher.notify(World.Event.BlockReplaced(coords, prev, block))
 
   private def requestBlockUpdate(coords: BlockRelWorld): Unit = blocksToUpdate.enqueue(coords)
 
@@ -237,6 +243,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       val zz = affectedChunkOffset(coords.cz)
 
       chunkOffset.dx * xx == 1 || chunkOffset.dy * yy == 1 || chunkOffset.dz * zz == 1
+
+    for col <- columns.get(coords.getColumnRelWorld.value) do col.updateHeightmapAfterBlockUpdate(coords, block)
 
     val cCoords = coords.getChunkRelWorld
     val bCoords = coords.getBlockRelChunk

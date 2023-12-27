@@ -2,7 +2,6 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
-import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, LightPropagator, World}
 import hexacraft.world.block.{BlockSpecRegistry, BlockState}
 import hexacraft.world.chunk.Chunk
@@ -46,8 +45,6 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityPartVao.forSide(s), GpuState())
 
   private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater
-
-  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private val players = ArrayBuffer.empty[Entity]
   def addPlayer(player: Entity): Unit = players += player
@@ -150,15 +147,12 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
     event match
       case World.Event.ChunkAdded(chunk) =>
         chunksToRender.add(chunk.coords)
-
-        val revoke = chunk.trackEvents(chunkRenderUpdater.onChunkEvent _)
-        chunkEventTrackerRevokeFns += chunk.coords -> revoke
       case World.Event.ChunkRemoved(coords) =>
         chunksToRender.remove(coords)
         chunkHandler.clearChunkRenderData(coords)
-
-        val revoke = chunkEventTrackerRevokeFns(coords)
-        revoke()
+      case World.Event.ChunkNeedsRenderUpdate(coords) =>
+        chunkRenderUpdater.onChunkNeedsRenderUpdate(coords)
+      case _ =>
 
   def framebufferResized(width: Int, height: Int): Unit =
     val newFrameBuffer = MainFrameBuffer.fromSize(width, height)

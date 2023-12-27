@@ -2,7 +2,6 @@ package hexacraft.world.render
 
 import hexacraft.util.{TickableTimer, UniquePQ}
 import hexacraft.world.{Camera, CylinderSize, PosAndDir}
-import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 
 object ChunkRenderUpdater:
@@ -48,8 +47,5 @@ class ChunkRenderUpdater(using CylinderSize):
 
     dist
 
-  def onChunkEvent(event: Chunk.Event): Unit =
-    event match
-      case Chunk.Event.ChunkNeedsRenderUpdate(coords) =>
-        chunkRenderUpdateQueue.enqueue(coords)
-      case _ =>
+  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
+    chunkRenderUpdateQueue.enqueue(coords)

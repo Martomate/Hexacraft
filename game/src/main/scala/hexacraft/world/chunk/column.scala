@@ -1,12 +1,11 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.bits.Int12
-import hexacraft.util.RevokeTrackerFn
 import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldGenerator, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
@@ -40,8 +39,6 @@ class ChunkColumn private (
 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
-  private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
-
   def isEmpty: Boolean = chunks.isEmpty
 
   private def saveFilePath: String = s"data/${coords.value}/column.dat"
@@ -52,32 +49,18 @@ class ChunkColumn private (
   def getChunk(Y: Int12): Option[Chunk] = chunks.get(Y.repr.toInt)
 
   def setChunk(chunk: Chunk): Unit =
-    chunks.put(chunk.coords.Y.repr.toInt, chunk) match
-      case Some(oldChunk) =>
-        if oldChunk != chunk then
-          chunkEventTrackerRevokeFns(oldChunk.coords)()
-          chunkEventTrackerRevokeFns += chunk.coords -> chunk.trackEvents(onChunkEvent _)
-          onChunkLoaded(chunk)
-      case None =>
-        chunkEventTrackerRevokeFns += chunk.coords -> chunk.trackEvents(onChunkEvent _)
-        onChunkLoaded(chunk)
+    val chunkCoords = chunk.coords
 
-  def removeChunk(Y: Int12): Option[Chunk] =
-    val oldChunkOpt = chunks.remove(Y.repr.toInt)
-    oldChunkOpt match
-      case Some(oldChunk) => chunkEventTrackerRevokeFns(oldChunk.coords)()
-      case None           =>
-    oldChunkOpt
+    chunks.put(chunkCoords.Y.repr.toInt, chunk) match
+      case Some(`chunk`)  => // the chunk is not new so nothing needs to be done
+      case Some(oldChunk) => onChunkLoaded(chunk)
+      case None           => onChunkLoaded(chunk)
+
+  def removeChunk(Y: Int12): Option[Chunk] = chunks.remove(Y.repr.toInt)
 
   def allChunks: Iterable[Chunk] = chunks.values
 
-  private def onChunkEvent(event: Chunk.Event): Unit =
-    event match
-      case Chunk.Event.BlockReplaced(coords, _, now) =>
-        onSetBlock(coords, now)
-      case _ =>
-
-  def onSetBlock(coords: BlockRelWorld, now: BlockState): Unit =
+  def updateHeightmapAfterBlockUpdate(coords: BlockRelWorld, now: BlockState): Unit =
     val height = terrainHeight(coords.cx, coords.cz)
 
     if now.blockType != Block.Air then { // a block is being added
