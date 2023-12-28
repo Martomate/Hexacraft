@@ -15,7 +15,7 @@ class ChunkCacheTest extends FunSuite {
 
     // Load a chunk
     val coords = ChunkRelWorld(2, -7, 3)
-    val chunk = Chunk(coords, world, provider)
+    val chunk = Chunk.fromGenerator(coords, world, WorldGenerator(provider.getWorldInfo.gen))
     val column = world.provideColumn(ColumnRelWorld(2, 3))
     column.setChunk(chunk)
 
@@ -41,7 +41,7 @@ class ChunkCacheTest extends FunSuite {
     cache.clearCache()
 
     // Load a chunk
-    val chunk = Chunk(coords, world, provider)
+    val chunk = Chunk.fromGenerator(coords, world, WorldGenerator(provider.getWorldInfo.gen))
     val column = world.provideColumn(ColumnRelWorld(0, 0))
     column.setChunk(chunk)
 

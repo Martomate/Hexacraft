@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.world.{CylinderSize, FakeBlocksInWorld, FakeWorldProvider}
+import hexacraft.world.{CylinderSize, FakeBlocksInWorld, FakeWorldProvider, WorldGenerator}
 import hexacraft.world.coord.ChunkRelWorld
 
 import munit.FunSuite
@@ -12,7 +12,7 @@ class ChunkTest extends FunSuite {
     val coords = ChunkRelWorld(-2, 13, 61)
     val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.empty(provider)
-    val chunk = Chunk(coords, world, provider)
+    val chunk = Chunk.fromGenerator(coords, world, WorldGenerator(provider.getWorldInfo.gen))
     assertEquals(chunk.coords, coords)
   }
 }

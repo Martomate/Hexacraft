@@ -233,7 +233,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(17, -48, 3)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Check for collision
@@ -254,7 +254,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(17, -48, 3)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Place a block
@@ -291,7 +291,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(1, -7, 7)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Clear the surrounding blocks
@@ -314,7 +314,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
@@ -360,7 +360,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
@@ -408,7 +408,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt
@@ -454,7 +454,7 @@ class CollisionDetectorTest extends FunSuite {
 
     // Ensure the chunk is loaded
     val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk(coords.getChunkRelWorld, world, provider)
+    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
     world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
 
     // Set blocks: Dirt, 3 Air, Dirt

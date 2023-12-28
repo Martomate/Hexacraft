@@ -106,6 +106,6 @@ class ChunkColumn private (
   )
 
   def unload(): Unit =
-    chunks.foreachValue(_.unload())
+    chunks.foreachValue(ch => ch.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, ch.coords)))
 
     worldProvider.saveColumnData(this.toNBT, coords)

@@ -21,7 +21,7 @@ class WorldTest extends FunSuite {
 
     // Set a chunk in the world
     assertEquals(world.getChunk(cCoords), None)
-    val chunk = Chunk(cCoords, world, provider)
+    val chunk = Chunk.fromGenerator(cCoords, world, WorldGenerator(provider.getWorldInfo.gen))
     world.setChunk(chunk)
     assertEquals(world.getChunk(cCoords), Some(chunk))
 
@@ -42,7 +42,7 @@ class WorldTest extends FunSuite {
     val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
 
     // Set a chunk in the world
-    val chunk = Chunk(chunkCoords, world, provider)
+    val chunk = Chunk.fromGenerator(chunkCoords, world, WorldGenerator(provider.getWorldInfo.gen))
     world.setChunk(chunk)
 
     // The planner should have decorated the chunk

@@ -2,41 +2,30 @@ package hexacraft.world.chunk
 
 import hexacraft.util.{EventDispatcher, RevokeTrackerFn, SmartArray, Tracker}
 import hexacraft.util.Result.{Err, Ok}
-import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, LightPropagator, WorldGenerator, WorldProvider}
-import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, LightPropagator, WorldGenerator}
+import hexacraft.world.block.BlockState
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityRegistry}
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Chunk:
-  def apply(
-      coords: ChunkRelWorld,
-      world: BlocksInWorld,
-      worldProvider: WorldProvider,
-      entityRegistry: EntityRegistry = EntityRegistry.empty
-  )(using CylinderSize): Chunk =
-    val worldGenerator = new WorldGenerator(worldProvider.getWorldInfo.gen)
-    val chunkGenerator = new ChunkGenerator(coords, world, worldGenerator)
-    new Chunk(coords, chunkGenerator, worldProvider, entityRegistry)
-
   enum Event:
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
-class Chunk(
-    val coords: ChunkRelWorld,
-    generator: ChunkGenerator,
-    worldProvider: WorldProvider,
-    registry: EntityRegistry
-)(using CylinderSize):
-  private val loadedTag: Nbt.MapTag = worldProvider.loadChunkData(coords)
-  private val chunkData: ChunkData =
-    if loadedTag.vs.nonEmpty then ChunkData.fromNBT(loadedTag)(registry) else generator.generate()
-  private var needsToSave: Boolean = loadedTag.vs.isEmpty
+  def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag, entityRegistry: EntityRegistry)(using CylinderSize): Chunk =
+    new Chunk(coords, ChunkData.fromNBT(loadedTag)(entityRegistry), false)
+
+  def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) =
+    val column = world.provideColumn(coords.getColumnRelWorld)
+    new Chunk(coords, generator.generateChunk(coords, column), true)
+
+class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsToSave: Boolean)(using CylinderSize):
+  private var needsToSave: Boolean = initNeedsToSave
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -86,9 +75,6 @@ class Chunk(
         tickEntities(ents.tail)
 
   def saveIfNeeded(): Option[Nbt.MapTag] = if needsToSave then Some(save()) else None
-
-  def unload(): Unit =
-    saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, coords))
 
   private def save(): Nbt.MapTag =
     val chunkTag = chunkData.toNBT
@@ -166,36 +152,6 @@ object ChunkData:
         case Err(message) => println(message)
 
     entities
-
-class ChunkGenerator(coords: ChunkRelWorld, world: BlocksInWorld, worldGenerator: WorldGenerator)(using CylinderSize) {
-  def generate(): ChunkData =
-    val storage: ChunkStorage = new DenseChunkStorage
-    val column = world.provideColumn(coords.getColumnRelWorld)
-    val blockNoise = worldGenerator.getBlockInterpolator(coords)
-
-    for (i <- 0 until 16; j <- 0 until 16; k <- 0 until 16) {
-      val noise = blockNoise(i, j, k)
-      val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight(i, k)
-      val limit = limitForBlockNoise(yToGo)
-      if (noise > limit)
-        storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
-    }
-
-    val data = ChunkData.fromStorage(storage)
-    data
-
-  private def getBlockAtDepth(yToGo: Int) = {
-    if (yToGo < -5) Block.Stone
-    else if (yToGo < -1) Block.Dirt
-    else Block.Grass
-  }
-
-  private def limitForBlockNoise(yToGo: Int): Double = {
-    if (yToGo < -6) -0.4
-    else if (yToGo < 0) -0.4 - (6 + yToGo) * 0.025
-    else 4
-  }
-}
 
 class ChunkLighting:
   private val brightness: SmartArray[Byte] = SmartArray.withByteArray(16 * 16 * 16, 0)

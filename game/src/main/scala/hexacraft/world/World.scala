@@ -59,8 +59,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
-      val generator = new ChunkGenerator(coords, this, worldGenerator)
-      new Chunk(coords, generator, worldProvider, entityRegistry)
+      val loadedTag = worldProvider.loadChunkData(coords)
+      if loadedTag.vs.isEmpty
+      then Chunk.fromGenerator(coords, this, worldGenerator)
+      else Chunk.fromNbt(coords, loadedTag, entityRegistry)
 
     val chunkUnloader = (coords: ChunkRelWorld) =>
       for
@@ -148,7 +150,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
         dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
-        removedChunk.unload()
+        removedChunk.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, removedChunk.coords))
         requestRenderUpdateForNeighborChunks(ch)
 
       if col.isEmpty then
