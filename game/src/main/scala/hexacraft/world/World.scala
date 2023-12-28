@@ -65,10 +65,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
       else Chunk.fromNbt(coords, loadedTag, entityRegistry)
 
     val chunkUnloader = (coords: ChunkRelWorld) =>
-      for
-        chunk <- getChunk(coords)
-        data <- chunk.saveIfNeeded()
-      do worldProvider.saveChunkData(data, chunk.coords)
+      for chunk <- getChunk(coords) do
+        if chunk.needsToSave then
+          worldProvider.saveChunkData(chunk.toNbt, chunk.coords)
+          chunk.markAsSaved()
 
     new ChunkLoader(chunkFactory, chunkUnloader, renderDistance)
 
@@ -130,7 +130,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     requestRenderUpdateForNeighborChunks(ch.coords)
 
     worldPlanner.decorate(ch)
-    ch.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, ch.coords))
+    if ch.needsToSave then
+      worldProvider.saveChunkData(ch.toNbt, ch.coords)
+      ch.markAsSaved()
 
     for block <- ch.blocks do
       requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
@@ -150,12 +152,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
         dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
-        removedChunk.saveIfNeeded().foreach(data => worldProvider.saveChunkData(data, removedChunk.coords))
+        if removedChunk.needsToSave then worldProvider.saveChunkData(removedChunk.toNbt, removedChunk.coords)
         requestRenderUpdateForNeighborChunks(ch)
 
       if col.isEmpty then
         columns.remove(col.coords.value)
-        col.unload()
+        worldProvider.saveColumnData(col.toNBT, col.coords)
 
   def tick(camera: Camera): Unit =
     val (chunksToAdd, chunksToRemove) = chunkLoader.tick(
@@ -207,7 +209,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     columns.get(here.value) match
       case Some(col) => col
       case None =>
-        val col = ChunkColumn.create(here, worldGenerator, worldProvider)
+        val columnNBT = worldProvider.loadColumnData(here)
+        val col = ChunkColumn.create(here, worldGenerator, columnNBT)
         columns(here.value) = col
         col
 
@@ -220,7 +223,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   def unload(): Unit =
     blockUpdateTimer.enabled = false
-    for col <- columns.values do col.unload()
+    for col <- columns.values do
+      for ch <- col.allChunks if ch.needsToSave do worldProvider.saveChunkData(ch.toNbt, ch.coords)
+
+      worldProvider.saveColumnData(col.toNBT, col.coords)
     columns.clear()
     chunkLoader.unload()
 

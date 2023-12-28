@@ -25,7 +25,8 @@ object Chunk:
     new Chunk(coords, generator.generateChunk(coords, column), true)
 
 class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsToSave: Boolean)(using CylinderSize):
-  private var needsToSave: Boolean = initNeedsToSave
+  private var _needsToSave: Boolean = initNeedsToSave
+  def needsToSave: Boolean = _needsToSave
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -40,11 +41,11 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
 
   def addEntity(entity: Entity): Unit =
     chunkData.addEntity(entity)
-    needsToSave = true
+    _needsToSave = true
 
   def removeEntity(entity: Entity): Unit =
     chunkData.removeEntity(entity)
-    needsToSave = true
+    _needsToSave = true
 
   def blocks: Array[LocalBlockState] = chunkData.allBlocks
 
@@ -54,7 +55,7 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
     val before = getBlock(blockCoords)
     if before != block then
       chunkData.setBlock(blockCoords, block)
-      needsToSave = true
+      _needsToSave = true
 
       dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
 
@@ -74,18 +75,15 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
         ents.head.tick(world, collisionDetector)
         tickEntities(ents.tail)
 
-  def saveIfNeeded(): Option[Nbt.MapTag] = if needsToSave then Some(save()) else None
+  def toNbt: Nbt.MapTag = chunkData.toNBT
 
-  private def save(): Nbt.MapTag =
-    val chunkTag = chunkData.toNBT
-    needsToSave = false
-    chunkTag
+  def markAsSaved(): Unit = _needsToSave = false
 
   def isDecorated: Boolean = chunkData.isDecorated
   def setDecorated(): Unit =
     if !chunkData.isDecorated then
       chunkData.setDecorated()
-      needsToSave = true
+      _needsToSave = true
 
 class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize):
   private var _isDecorated: Boolean = false
