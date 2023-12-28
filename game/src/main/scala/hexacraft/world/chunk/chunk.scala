@@ -18,15 +18,15 @@ object Chunk:
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
   def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag, entityRegistry: EntityRegistry)(using CylinderSize): Chunk =
-    new Chunk(coords, ChunkData.fromNBT(loadedTag)(entityRegistry), false)
+    new Chunk(coords, ChunkData.fromNBT(loadedTag)(entityRegistry))
 
   def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) =
     val column = world.provideColumn(coords.getColumnRelWorld)
-    new Chunk(coords, generator.generateChunk(coords, column), true)
+    new Chunk(coords, generator.generateChunk(coords, column))
 
-class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsToSave: Boolean)(using CylinderSize):
-  private var _needsToSave: Boolean = initNeedsToSave
-  def needsToSave: Boolean = _needsToSave
+class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData)(using CylinderSize):
+  private var _modCount: Long = 0L
+  def modCount: Long = _modCount
 
   private val dispatcher = new EventDispatcher[Chunk.Event]
   def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
@@ -41,11 +41,11 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
 
   def addEntity(entity: Entity): Unit =
     chunkData.addEntity(entity)
-    _needsToSave = true
+    _modCount += 1
 
   def removeEntity(entity: Entity): Unit =
     chunkData.removeEntity(entity)
-    _needsToSave = true
+    _modCount += 1
 
   def blocks: Array[LocalBlockState] = chunkData.allBlocks
 
@@ -55,7 +55,7 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
     val before = getBlock(blockCoords)
     if before != block then
       chunkData.setBlock(blockCoords, block)
-      _needsToSave = true
+      _modCount += 1
 
       dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
 
@@ -77,13 +77,11 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData, initNeedsT
 
   def toNbt: Nbt.MapTag = chunkData.toNBT
 
-  def markAsSaved(): Unit = _needsToSave = false
-
   def isDecorated: Boolean = chunkData.isDecorated
   def setDecorated(): Unit =
     if !chunkData.isDecorated then
       chunkData.setDecorated()
-      _needsToSave = true
+      _modCount += 1
 
 class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize):
   private var _isDecorated: Boolean = false

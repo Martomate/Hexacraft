@@ -49,6 +49,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
+  private val savedChunkModCounts = mutable.Map.empty[ChunkRelWorld, Long]
   private val chunkEventTrackerRevokeFns = mutable.Map.empty[ChunkRelWorld, RevokeTrackerFn]
 
   private val dispatcher = new EventDispatcher[World.Event]
@@ -60,15 +61,18 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
       val loadedTag = worldProvider.loadChunkData(coords)
-      if loadedTag.vs.isEmpty
-      then Chunk.fromGenerator(coords, this, worldGenerator)
-      else Chunk.fromNbt(coords, loadedTag, entityRegistry)
+      val (chunk, isNew) =
+        if loadedTag.vs.isEmpty
+        then (Chunk.fromGenerator(coords, this, worldGenerator), true)
+        else (Chunk.fromNbt(coords, loadedTag, entityRegistry), false)
+      savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
+      chunk
 
     val chunkUnloader = (coords: ChunkRelWorld) =>
       for chunk <- getChunk(coords) do
-        if chunk.needsToSave then
+        if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then
           worldProvider.saveChunkData(chunk.toNbt, chunk.coords)
-          chunk.markAsSaved()
+        savedChunkModCounts -= coords
 
     new ChunkLoader(chunkFactory, chunkUnloader, renderDistance)
 
@@ -130,9 +134,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     requestRenderUpdateForNeighborChunks(ch.coords)
 
     worldPlanner.decorate(ch)
-    if ch.needsToSave then
+    if ch.modCount != savedChunkModCounts.getOrElse(ch.coords, -1L) then
       worldProvider.saveChunkData(ch.toNbt, ch.coords)
-      ch.markAsSaved()
+      savedChunkModCounts(ch.coords) = ch.modCount
 
     for block <- ch.blocks do
       requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, ch.coords))
@@ -152,7 +156,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
         dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
-        if removedChunk.needsToSave then worldProvider.saveChunkData(removedChunk.toNbt, removedChunk.coords)
+        if removedChunk.modCount != savedChunkModCounts.getOrElse(removedChunk.coords, -1L) then
+          worldProvider.saveChunkData(removedChunk.toNbt, removedChunk.coords)
+          savedChunkModCounts -= removedChunk.coords
         requestRenderUpdateForNeighborChunks(ch)
 
       if col.isEmpty then
@@ -224,7 +230,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
   def unload(): Unit =
     blockUpdateTimer.enabled = false
     for col <- columns.values do
-      for ch <- col.allChunks if ch.needsToSave do worldProvider.saveChunkData(ch.toNbt, ch.coords)
+      for ch <- col.allChunks if ch.modCount != savedChunkModCounts.getOrElse(ch.coords, -1L) do
+        worldProvider.saveChunkData(ch.toNbt, ch.coords)
 
       worldProvider.saveColumnData(col.toNBT, col.coords)
     columns.clear()
