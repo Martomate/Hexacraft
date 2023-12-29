@@ -26,16 +26,19 @@ import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
-import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
+import org.zeromq.{SocketType, ZContext, ZMonitor, ZMQ, ZMQException}
 import zmq.ZError
 
 import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 enum NetworkPacket {
   case GetWorldInfo
   case GetState(path: String)
+  case PlayerRightClicked
+  case PlayerLeftClicked
 }
 
 object NetworkPacket {
@@ -45,13 +48,19 @@ object NetworkPacket {
     else if message.startsWith("get_state ") then
       val path = message.substring(10)
       NetworkPacket.GetState(path)
-    else throw new IllegalArgumentException("unknown packet type")
+    else if message == "right_mouse_clicked" then PlayerRightClicked
+    else if message == "left_mouse_clicked" then PlayerLeftClicked
+    else
+      val bytesHex = bytes.map(b => Integer.toHexString(b & 0xff)).mkString("Array(", ", ", ")")
+      throw new IllegalArgumentException(s"unknown packet type (message: '$message', raw: $bytesHex)")
 
   extension (p: NetworkPacket) {
     def serialize(charset: Charset): Array[Byte] =
       val str = p match
-        case NetworkPacket.GetWorldInfo   => "get_world_info"
-        case NetworkPacket.GetState(path) => s"get_state $path"
+        case NetworkPacket.GetWorldInfo       => "get_world_info"
+        case NetworkPacket.GetState(path)     => s"get_state $path"
+        case NetworkPacket.PlayerRightClicked => "right_mouse_clicked"
+        case NetworkPacket.PlayerLeftClicked  => "left_mouse_clicked"
       str.getBytes(charset)
   }
 }
@@ -71,44 +80,85 @@ class RemoteWorldProvider(client: GameClient) extends WorldProvider {
 }
 
 class GameClient(serverIp: String, serverPort: Int) {
-  def notify(message: String): Unit =
-    val context = ZContext()
+  private val clientId = (new Random().nextInt(1000000) + 1000000).toString.substring(1)
+
+  private val context = ZContext()
+  context.setUncaughtExceptionHandler((thread, exc) => println(s"Uncaught exception: $exc"))
+  context.setNotificationExceptionHandler((thread, exc) => println(s"Notification: $exc"))
+
+  private val socket = context.createSocket(SocketType.DEALER)
+
+  private var _shouldLogout = false
+  def shouldLogout: Boolean = _shouldLogout
+
+  private var monitoringThread: Thread = _
+
+  def runMonitoring(): Unit = {
+    if monitoringThread != null then throw new Exception("May only run monitoring once")
+    monitoringThread = Thread.currentThread()
+
+    val monitor = ZMonitor(context, socket)
+    monitor.add(ZMonitor.Event.ALL)
+    monitor.verbose(true)
+    monitor.start()
     try {
-      val socket = context.createSocket(SocketType.REQ)
-      socket.connect(s"tcp://$serverIp:$serverPort")
+      while !Thread.interrupted() do
+        val event = monitor.nextEvent(100)
+        if event != null then
+          println(event)
 
-      if !socket.send(message.getBytes(ZMQ.CHARSET)) then
-        val err = socket.errno()
-        throw new IllegalStateException(s"Could not send message. Error: $err")
-      socket.close()
-    } finally context.close()
+          if event.`type` == ZMonitor.Event.DISCONNECTED then _shouldLogout = true
+    } catch {
+      case e: ZMQException =>
+        e.getErrorCode match
+          case ZError.EINTR => // noop
+          case _            => throw e
+      case e => throw e
+    }
+    monitor.close()
+  }
 
-  private def queryRaw(message: Array[Byte]): Array[Byte] =
-    val context = ZContext()
-    try {
-      val socket = context.createSocket(SocketType.REQ)
-      socket.connect(s"tcp://$serverIp:$serverPort")
+  socket.setIdentity(clientId.getBytes)
+  socket.setSendTimeOut(3000)
+  socket.setReceiveTimeOut(3000)
+  socket.setReconnectIVL(-1)
+  socket.setHeartbeatIvl(200)
+  socket.setHeartbeatTimeout(1000)
+  socket.connect(s"tcp://$serverIp:$serverPort")
 
-      if !socket.send(message) then
-        val err = socket.errno()
-        throw new IllegalStateException(s"Could not send message. Error: $err")
+  def notify(packet: NetworkPacket): Unit = this.synchronized {
+    val message = packet.serialize(ZMQ.CHARSET)
 
-      val response = socket.recv(0)
-      if response == null then
-        val err = socket.errno()
-        throw new IllegalStateException(s"Could not receive message. Error: $err")
-      socket.close()
+    if !socket.send(message) then
+      val err = socket.errno()
+      ZMQ.EVENT_ALL
+      throw new ZMQException("Could not send message", err)
+  }
 
-      response
-    } finally context.close()
+  private def queryRaw(message: Array[Byte]): Array[Byte] = this.synchronized {
+    if !socket.send(message) then
+      val err = socket.errno()
+      throw new ZMQException("Could not send message", err)
+
+    val response = socket.recv(0)
+    if response == null then
+      val err = socket.errno()
+      throw new ZMQException("Could not receive message", err)
+
+    response
+  }
 
   def query(packet: NetworkPacket): Nbt =
     val response = queryRaw(packet.serialize(ZMQ.CHARSET))
     val (_, tag) = Nbt.fromBinary(response)
     tag
+
+  def close(): Unit =
+    context.close()
+    if monitoringThread != null then monitoringThread.interrupt()
 }
 
-class GameServer(worldProvider: WorldProvider) {
+class GameServer(worldProvider: WorldProvider, game: GameScene) {
   private var serverThread: Thread = _
 
   def run(): Unit =
@@ -118,18 +168,27 @@ class GameServer(worldProvider: WorldProvider) {
     try {
       val context = ZContext()
       try {
-        val serverSocket = context.createSocket(SocketType.REP)
+        val serverSocket = context.createSocket(SocketType.ROUTER)
+        serverSocket.setHeartbeatIvl(1000)
+        serverSocket.setHeartbeatTtl(3000)
+        serverSocket.setHeartbeatTimeout(3000)
+
         val serverPort = 1234
         if !serverSocket.bind(s"tcp://*:$serverPort") then throw new IllegalStateException("Server could not be bound")
         println(s"Running server on port $serverPort")
 
         while !Thread.currentThread().isInterrupted do
+          val identity = serverSocket.recv(0)
+          if identity.isEmpty then throw new Exception("Received an empty identity frame")
           val bytes = serverSocket.recv(0)
           if bytes == null then throw new ZMQException(serverSocket.errno())
 
           val packet = NetworkPacket.deserialize(bytes, ZMQ.CHARSET)
-          println(s"Received message: $packet")
-          handlePacket(packet, serverSocket)
+          handlePacket(packet, serverSocket) match
+            case Some(res) =>
+              serverSocket.sendMore(identity)
+              serverSocket.send(res.toBinary())
+            case None =>
       } finally context.close()
     } catch {
       case e: ZMQException =>
@@ -141,28 +200,46 @@ class GameServer(worldProvider: WorldProvider) {
 
     println(s"Stopping server")
 
-  private def handlePacket(packet: NetworkPacket, socket: ZMQ.Socket): Unit =
+  private def handlePacket(packet: NetworkPacket, socket: ZMQ.Socket): Option[Nbt.MapTag] =
+    import NetworkPacket.*
+
     packet match
-      case NetworkPacket.GetWorldInfo =>
+      case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
-        socket.send(info.toNBT.toBinary())
-      case NetworkPacket.GetState(path) =>
-        val state = worldProvider.loadState(path)
-        socket.send(state.toBinary())
+        Some(info.toNBT)
+      case GetState(path) =>
+        Some(worldProvider.loadState(path))
+      case PlayerRightClicked =>
+        println("right click!")
+        game.performRightMouseClick()
+        None
+      case PlayerLeftClicked =>
+        println("left click!")
+        game.performLeftMouseClick()
+        None
 
   def stop(): Unit =
     if serverThread != null then serverThread.interrupt()
 }
 
-class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider) {
+class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider, client: GameClient) {
   private var server: GameServer = _
 
-  def runServer(): Unit = if isOnline then
-    server = GameServer(worldProvider)
+  def runServer(game: GameScene): Unit = if isOnline then
+    server = GameServer(worldProvider, game)
     server.run()
 
+  def runClient(): Unit = if client != null then new Thread(() => client.runMonitoring()).start()
+
   def unload(): Unit =
+    if client != null then client.close()
     if server != null then server.stop()
+
+  def shouldLogout: Boolean = if client != null then client.shouldLogout else false
+
+  def notifyServer(packet: NetworkPacket): Unit =
+    println(s"Sending to server: $packet")
+    client.notify(packet)
 }
 
 object GameScene {
@@ -179,8 +256,6 @@ class GameScene(
     initialWindowSize: WindowSize
 )(eventHandler: Tracker[GameScene.Event])
     extends Scene:
-
-  if net.isHosting then Thread(() => net.runServer()).start()
 
   TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
 
@@ -240,6 +315,9 @@ class GameScene(
   setUseMouse(true)
 
   saveWorldInfo()
+
+  if net.isHosting then Thread(() => net.runServer(this)).start()
+  net.runClient()
 
   private def saveWorldInfo(): Unit =
     val worldTag = worldInfo.copy(player = player.toNBT).toNBT
@@ -433,48 +511,56 @@ class GameScene(
       .sum
 
   override def tick(ctx: TickContext): Unit =
-    val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
-    if world.getChunk(playerCoords.getChunkRelWorld).isDefined
-    then
-      val maxSpeed = playerInputHandler.maxSpeed
-      if !isPaused && !isInPopup then
-        playerInputHandler.tick(
-          if moveWithMouse then ctx.mouseMovement else new Vector2f,
-          maxSpeed,
-          playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
-        )
-      if !isPaused then playerPhysicsHandler.tick(maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
+    if net.shouldLogout then eventHandler.notify(GameScene.Event.GameQuit)
+    else
+      try
+        val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
+        if world.getChunk(playerCoords.getChunkRelWorld).isDefined
+        then
+          val maxSpeed = playerInputHandler.maxSpeed
+          if !isPaused && !isInPopup then
+            playerInputHandler.tick(
+              if moveWithMouse then ctx.mouseMovement else new Vector2f,
+              maxSpeed,
+              playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
+            )
+          if !isPaused then playerPhysicsHandler.tick(maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
 
-    camera.setPositionAndRotation(player.position, player.rotation)
-    camera.updateCoords()
-    camera.updateViewMatrix()
+        camera.setPositionAndRotation(player.position, player.rotation)
+        camera.updateCoords()
+        camera.updateViewMatrix()
 
-    updateBlockInHandRendererContent()
+        updateBlockInHandRendererContent()
 
-    selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
+        selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
 
-    if (rightMouseButtonTimer.tick()) {
-      performRightMouseClick()
-    }
-    if (leftMouseButtonTimer.tick()) {
-      performLeftMouseClick()
-    }
+        if (rightMouseButtonTimer.tick()) {
+          if !net.isHosting then net.notifyServer(NetworkPacket.PlayerRightClicked)
+          performRightMouseClick()
+        }
+        if (leftMouseButtonTimer.tick()) {
+          if !net.isHosting then net.notifyServer(NetworkPacket.PlayerLeftClicked)
+          performLeftMouseClick()
+        }
 
-    world.tick(camera)
-    worldRenderer.tick(camera, world.renderDistance)
+        world.tick(camera)
+        worldRenderer.tick(camera, world.renderDistance)
 
-    if debugOverlay != null
-    then
-      debugOverlay.updateContent(
-        DebugOverlay.Content.fromCamera(
-          camera,
-          viewDistance,
-          worldRenderer.regularChunkBufferFragmentation,
-          worldRenderer.transmissiveChunkBufferFragmentation
-        )
-      )
+        if debugOverlay != null
+        then
+          debugOverlay.updateContent(
+            DebugOverlay.Content.fromCamera(
+              camera,
+              viewDistance,
+              worldRenderer.regularChunkBufferFragmentation,
+              worldRenderer.transmissiveChunkBufferFragmentation
+            )
+          )
 
-    for s <- overlays do s.tick(ctx)
+        for s <- overlays do s.tick(ctx)
+      catch
+        case e: ZMQException => println(e)
+        case e               => throw e
 
   private def updatedMousePicker(
       windowSize: WindowSize,
@@ -494,14 +580,14 @@ class GameScene(
         hit <- mousePicker.trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
       yield (world.getBlock(hit._1), hit._1, hit._2)
 
-  private def performLeftMouseClick(): Unit =
+  def performLeftMouseClick(): Unit =
     selectedBlockAndSide match
       case Some((state, coords, _)) =>
         if state.blockType != Block.Air
         then world.removeBlock(coords)
       case _ =>
 
-  private def performRightMouseClick(): Unit =
+  def performRightMouseClick(): Unit =
     selectedBlockAndSide match
       case Some((state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))

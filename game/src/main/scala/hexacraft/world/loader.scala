@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 class ChunkLoader(
     chunkFactory: ChunkRelWorld => Chunk,

@@ -35,6 +35,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
   private var scene: Scene = _
+  private var nextScene: Scene = _
 
   override def setCursorMode(cursorMode: CursorMode): Unit =
     window.setCursorMode(cursorMode)
@@ -55,6 +56,10 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
       val currentTime = System.nanoTime
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
+
+      if nextScene != null then
+        setScene(nextScene)
+        nextScene = null
 
       for (_ <- 0 until delta)
         tick()
@@ -184,7 +189,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
 
   private def makeSceneRouter(): MainRouter =
     MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard):
-      case MainRouter.Event.SceneChanged(newScene) => setScene(newScene)
+      case MainRouter.Event.SceneChanged(newScene) => nextScene = newScene
       case MainRouter.Event.QuitRequested          => tryQuit()
 
   def run(): Unit =
@@ -260,5 +265,6 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
 
   private def destroy(): Unit =
     if scene != null then scene.unload()
+    if nextScene != null then nextScene.unload()
 
     Resource.freeAllResources()
