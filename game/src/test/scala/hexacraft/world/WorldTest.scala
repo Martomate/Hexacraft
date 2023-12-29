@@ -3,7 +3,7 @@ package hexacraft.world
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import hexacraft.world.entity.{Entity, EntityBaseData, EntityModelLoader}
+import hexacraft.world.entity.{Entity, EntityBaseData, EntityRegistry}
 
 import munit.FunSuite
 
@@ -12,7 +12,7 @@ class WorldTest extends FunSuite {
 
   test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo, new EntityModelLoader)
+    val world = World(provider, provider.getWorldInfo, EntityRegistry())
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     world.tick(camera)
@@ -37,7 +37,7 @@ class WorldTest extends FunSuite {
 
   test("the world should decorate new chunks") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo, new EntityModelLoader)
+    val world = World(provider, provider.getWorldInfo, EntityRegistry())
 
     val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
 
@@ -57,7 +57,7 @@ class WorldTest extends FunSuite {
 
   test("the world should load chunks close to the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo, new EntityModelLoader)
+    val world = World(provider, provider.getWorldInfo, EntityRegistry())
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -80,7 +80,7 @@ class WorldTest extends FunSuite {
 
   test("the world should unload chunks far from the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo, new EntityModelLoader)
+    val world = World(provider, provider.getWorldInfo, EntityRegistry())
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -111,7 +111,7 @@ class WorldTest extends FunSuite {
 
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo, new EntityModelLoader)
+    val world = World(provider, provider.getWorldInfo, EntityRegistry())
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val entityPosition = CylCoords(1, 2, 3)
@@ -123,7 +123,7 @@ class WorldTest extends FunSuite {
     world.tick(camera)
 
     var ticks = 0
-    val entity = new Entity(new EntityBaseData(entityPosition), null) {
+    val entity = new Entity("scorpion", new EntityBaseData(entityPosition), null, None) {
       override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ticks += 1
     }
 

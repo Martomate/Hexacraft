@@ -2,17 +2,17 @@ package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
+import hexacraft.world.coord.{BlockCoords, CylCoords}
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.{BlockCoords, CylCoords}
 import org.joml.Vector3f
 
 class SheepEntity(
     model: EntityModel,
     initData: EntityBaseData,
-    private val ai: EntityAI
+    ai: EntityAI
 )(using CylinderSize)
-    extends Entity(initData, model) {
+    extends Entity("sheep", initData, model, Some(ai)) {
   override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
 
   override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
@@ -25,11 +25,6 @@ class SheepEntity(
     EntityPhysicsSystem(world, collisionDetector).update(data, boundingBox)
     model.tick()
   }
-
-  override def toNBT: Nbt.MapTag =
-    super.toNBT
-      .withField("type", Nbt.StringTag("sheep"))
-      .withField("ai", ai.toNBT)
 }
 
 class SheepFactory(makeModel: () => EntityModel) extends EntityFactory:

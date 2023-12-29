@@ -3,9 +3,9 @@ package hexacraft.world.entity
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
+import hexacraft.world.coord.CylCoords
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.CylCoords
 import org.joml.{Matrix4f, Vector3d}
 
 object Entity {
@@ -16,7 +16,12 @@ object Entity {
       case None          => Err(s"Entity-type '$entType' not found")
 }
 
-class Entity(protected val data: EntityBaseData, val model: EntityModel) {
+class Entity(
+    val typeName: String,
+    protected val data: EntityBaseData,
+    val model: EntityModel,
+    val ai: Option[EntityAI]
+) {
   def position: CylCoords = data.position
   def rotation: Vector3d = data.rotation
   def velocity: Vector3d = data.velocity
@@ -30,11 +35,14 @@ class Entity(protected val data: EntityBaseData, val model: EntityModel) {
   def toNBT: Nbt.MapTag =
     val dataNbt = data.toNBT
 
-    Nbt.makeMap(
-      "pos" -> dataNbt.pos,
-      "velocity" -> dataNbt.velocity,
-      "rotation" -> dataNbt.rotation
-    )
+    Nbt
+      .makeMap(
+        "type" -> Nbt.StringTag(typeName),
+        "pos" -> dataNbt.pos,
+        "velocity" -> dataNbt.velocity,
+        "rotation" -> dataNbt.rotation
+      )
+      .withOptionalField("ai", ai.map(_.toNBT))
 }
 
 class EntityBaseData(

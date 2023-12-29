@@ -7,7 +7,7 @@ import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner
 class WorldPlanner(world: BlocksInWorld, registry: EntityRegistry, mainSeed: Long)(using CylinderSize):
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
-    new EntityGroupPlanner(world, registry.get("sheep").get, mainSeed)
+    new EntityGroupPlanner(world, registry.sheep, mainSeed)
   )
 
   def decorate(chunk: Chunk): Unit =

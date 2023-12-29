@@ -1,8 +1,8 @@
 package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
-import hexacraft.world.coord.CylCoords
 import hexacraft.world.HexBox
+import hexacraft.world.coord.CylCoords
 
 import org.joml.{Matrix4f, Vector3f}
 
@@ -19,29 +19,6 @@ trait EntityPart {
   def texture(side: Int): Int
   def textureOffset(side: Int): (Int, Int) = (0, 0)
   def textureSize(side: Int): (Int, Int)
-}
-
-class EntityModelLoader {
-
-  def load(name: String): EntityModel = name match {
-    case "player" => PlayerEntityModel.create("player")
-    case "sheep"  => SheepEntityModel.create("sheep")
-    case _        => BasicEntityModel.create(CylCoords.Offset(0, 0, 0), HexBox(0, 0, 0))
-  }
-}
-
-object BasicEntityModel:
-  def create(pos: CylCoords.Offset, box: HexBox): BasicEntityModel =
-    new BasicEntityModel(pos, box)
-
-class BasicEntityModel(pos: CylCoords.Offset, box: HexBox) extends EntityModel {
-  private val theBox = new BasicEntityPart(box, pos, new Vector3f)
-
-  override val parts: Seq[EntityPart] = Seq(theBox)
-
-  override def tick(): Unit = ()
-
-  override def texture: TextureSingle = ???
 }
 
 class BasicEntityPart(

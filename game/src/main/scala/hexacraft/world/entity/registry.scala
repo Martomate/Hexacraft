@@ -1,21 +1,22 @@
 package hexacraft.world.entity
 
 import hexacraft.world.CylinderSize
+import hexacraft.world.coord.CylCoords
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.CylCoords
 
 trait EntityFactory:
   def atStartPos(pos: CylCoords)(using CylinderSize): Entity
 
   def fromNBT(tag: Nbt.MapTag)(using CylinderSize): Entity
 
-trait EntityRegistry {
-  def get(name: String): Option[EntityFactory]
-}
+class EntityRegistry {
+  val player: PlayerFactory = new PlayerFactory(() => PlayerEntityModel.create("player"))
+  val sheep: SheepFactory = new SheepFactory(() => SheepEntityModel.create("sheep"))
 
-object EntityRegistry {
-  def empty: EntityRegistry = _ => None
-
-  def from(mappings: Map[String, EntityFactory]): EntityRegistry = name => mappings.get(name)
+  def get(name: String): Option[EntityFactory] =
+    name match
+      case "player" => Some(player)
+      case "sheep"  => Some(sheep)
+      case _        => None
 }

@@ -21,7 +21,7 @@ import hexacraft.world.{
 }
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
-import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityModel, EntityModelLoader}
+import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityRegistry, PlayerEntityModel}
 import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
@@ -266,12 +266,8 @@ class GameScene(
   private val crosshairRenderer: Renderer =
     new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.of(OpenGL.State.DepthTest -> false))
 
-  private val entityModelLoader: EntityModelLoader = new EntityModelLoader()
-  private val playerModel: EntityModel = entityModelLoader.load("player")
-  private val sheepModel: EntityModel = entityModelLoader.load("sheep")
-
   private val worldInfo = net.worldProvider.getWorldInfo
-  private val world = World(net.worldProvider, worldInfo, entityModelLoader)
+  private val world = World(net.worldProvider, worldInfo, EntityRegistry())
   given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
@@ -279,7 +275,7 @@ class GameScene(
   private val overlays = mutable.ArrayBuffer.empty[Component]
 
   private val otherPlayer: ControlledPlayerEntity =
-    new ControlledPlayerEntity(playerModel, new EntityBaseData(CylCoords(player.position)))
+    new ControlledPlayerEntity(PlayerEntityModel.create("player"), new EntityBaseData(CylCoords(player.position)))
 
   private val worldRenderer: WorldRenderer = new WorldRenderer(world, blockSpecRegistry, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
@@ -386,11 +382,11 @@ class GameScene(
     case KeyboardKey.Letter('P') =>
       val startPos = CylCoords(player.position)
 
-      world.addEntity(world.entityRegistry.get("player").get.atStartPos(startPos))
+      world.addEntity(world.entityRegistry.player.atStartPos(startPos))
     case KeyboardKey.Letter('L') =>
       val startPos = CylCoords(player.position)
 
-      world.addEntity(world.entityRegistry.get("sheep").get.atStartPos(startPos))
+      world.addEntity(world.entityRegistry.sheep.atStartPos(startPos))
     case KeyboardKey.Letter('K') =>
       world.removeAllEntities()
     case _ =>

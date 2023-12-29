@@ -4,7 +4,7 @@ import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry, PlayerFactory, SheepFactory}
+import hexacraft.world.entity.{Entity, EntityRegistry}
 
 import com.martomate.nbt.Nbt
 
@@ -15,16 +15,6 @@ object World:
   private val ticksBetweenEntityRelocation = 120
 
   var shouldChillChunkLoader = false
-
-  def apply(provider: WorldProvider, worldInfo: WorldInfo, modelLoader: EntityModelLoader): World =
-    new World(provider, worldInfo, makeEntityRegistry(modelLoader))
-
-  private def makeEntityRegistry(modelLoader: EntityModelLoader): EntityRegistry =
-    val entityTypes = Map(
-      "player" -> new PlayerFactory(() => modelLoader.load("player")),
-      "sheep" -> new SheepFactory(() => modelLoader.load("sheep"))
-    )
-    EntityRegistry.from(entityTypes)
 
   enum Event:
     case ChunkAdded(chunk: Chunk)

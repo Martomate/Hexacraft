@@ -2,17 +2,17 @@ package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
+import hexacraft.world.coord.{BlockCoords, CylCoords}
 
 import com.martomate.nbt.Nbt
-import hexacraft.world.coord.{BlockCoords, CylCoords}
 import org.joml.Vector3f
 
 class PlayerEntity(
     model: EntityModel,
     initData: EntityBaseData,
-    private val ai: EntityAI
+    ai: EntityAI
 )(using CylinderSize)
-    extends Entity(initData, model) {
+    extends Entity("player", initData, model, Some(ai)) {
   override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
 
   override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
@@ -25,14 +25,9 @@ class PlayerEntity(
     EntityPhysicsSystem(world, collisionDetector).update(data, boundingBox)
     model.tick()
   }
-
-  override def toNBT: Nbt.MapTag =
-    super.toNBT
-      .withField("type", Nbt.StringTag("player"))
-      .withField("ai", ai.toNBT)
 }
 
-class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) extends Entity(initData, model) {
+class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) extends Entity(null, initData, model, None) {
   def setPosition(pos: CylCoords): Unit = this.data.position = pos
 }
 
