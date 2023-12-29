@@ -4,7 +4,7 @@ import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, EntityRegistry}
+import hexacraft.world.entity.Entity
 
 import com.martomate.nbt.Nbt
 
@@ -22,13 +22,11 @@ object World:
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
-class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegistry: EntityRegistry)
-    extends BlockRepository
-    with BlocksInWorld:
+class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld:
   given size: CylinderSize = worldInfo.worldSize
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
-  private val worldPlanner: WorldPlanner = WorldPlanner(this, entityRegistry, worldInfo.gen.seed)
+  private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed)
   private val lightPropagator: LightPropagator = new LightPropagator(this)
 
   val renderDistance: Double = 8 * CylinderSize.y60
@@ -54,7 +52,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     val chunkFactory = (coords: ChunkRelWorld) =>
       val (chunk, isNew) =
         worldProvider.loadChunkData(coords) match
-          case Some(loadedTag) => (Chunk.fromNbt(coords, loadedTag, entityRegistry), false)
+          case Some(loadedTag) => (Chunk.fromNbt(coords, loadedTag), false)
           case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
       savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
       chunk

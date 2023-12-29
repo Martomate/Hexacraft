@@ -3,7 +3,7 @@ package hexacraft.world.gen
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.{Entity, EntityFactory}
 import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy, TreeGenStrategy}
 
@@ -101,9 +101,13 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
   private def generateChanges(tree: PlannedWorldChange): Unit =
     for (c, ch) <- tree.chunkChanges do plannedChanges.getOrElseUpdate(c, mutable.Buffer.empty).appendAll(ch)
 
-class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mainSeed: Long)(using
-    CylinderSize
-) extends WorldFeaturePlanner:
+class EntityGroupPlanner(
+    world: BlocksInWorld,
+    entityFactory: CylCoords => Entity,
+    mainSeed: Long
+)(using CylinderSize)
+    extends WorldFeaturePlanner:
+
   private val plannedEntities: mutable.Map[ChunkRelWorld, Seq[Entity]] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -132,6 +136,6 @@ class EntityGroupPlanner(world: BlocksInWorld, entityFactory: EntityFactory, mai
       if y >= coords.Y.toInt * 16 && y < (coords.Y.toInt + 1) * 16 then
         val groundCoords = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
         val entityStartPos = groundCoords.offset(0, 0.001f, 0)
-        val entity = entityFactory.atStartPos(entityStartPos)
+        val entity = entityFactory(entityStartPos)
         thePlan += entity
     thePlan.toSeq

@@ -8,25 +8,15 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
-import hexacraft.world.{
-  Camera,
-  CameraProjection,
-  CylinderSize,
-  HexBox,
-  Player,
-  World,
-  WorldInfo,
-  WorldProvider,
-  WorldSettings
-}
+import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState}
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
-import hexacraft.world.entity.{ControlledPlayerEntity, EntityBaseData, EntityRegistry, PlayerEntityModel}
+import hexacraft.world.coord.*
+import hexacraft.world.entity.*
 import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
-import org.zeromq.{SocketType, ZContext, ZMonitor, ZMQ, ZMQException}
+import org.zeromq.*
 import zmq.ZError
 
 import java.nio.charset.Charset
@@ -267,7 +257,7 @@ class GameScene(
     new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.of(OpenGL.State.DepthTest -> false))
 
   private val worldInfo = net.worldProvider.getWorldInfo
-  private val world = World(net.worldProvider, worldInfo, EntityRegistry())
+  private val world = World(net.worldProvider, worldInfo)
   given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
@@ -380,13 +370,9 @@ class GameScene(
     case KeyboardKey.Digit(digit) =>
       if digit > 0 then setSelectedItemSlot(digit - 1)
     case KeyboardKey.Letter('P') =>
-      val startPos = CylCoords(player.position)
-
-      world.addEntity(world.entityRegistry.player.atStartPos(startPos))
+      world.addEntity(PlayerEntity.atStartPos(CylCoords(player.position)))
     case KeyboardKey.Letter('L') =>
-      val startPos = CylCoords(player.position)
-
-      world.addEntity(world.entityRegistry.sheep.atStartPos(startPos))
+      world.addEntity(SheepEntity.atStartPos(CylCoords(player.position)))
     case KeyboardKey.Letter('K') =>
       world.removeAllEntities()
     case _ =>

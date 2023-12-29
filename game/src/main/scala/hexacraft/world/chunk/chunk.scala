@@ -5,7 +5,7 @@ import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, LightPropagator, WorldGenerator}
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
-import hexacraft.world.entity.{Entity, EntityRegistry}
+import hexacraft.world.entity.{Entity, EntityFactory}
 
 import com.martomate.nbt.Nbt
 
@@ -17,8 +17,8 @@ object Chunk:
     case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
     case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
 
-  def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag, entityRegistry: EntityRegistry)(using CylinderSize): Chunk =
-    new Chunk(coords, ChunkData.fromNBT(loadedTag)(entityRegistry))
+  def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag)(using CylinderSize): Chunk =
+    new Chunk(coords, ChunkData.fromNBT(loadedTag))
 
   def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) =
     val column = world.provideColumn(coords.getColumnRelWorld)
@@ -120,7 +120,7 @@ object ChunkData:
   def fromStorage(storage: ChunkStorage)(using CylinderSize): ChunkData =
     new ChunkData(storage, mutable.ArrayBuffer.empty)
 
-  def fromNBT(nbt: Nbt.MapTag)(registry: EntityRegistry)(using CylinderSize): ChunkData =
+  def fromNBT(nbt: Nbt.MapTag)(using CylinderSize): ChunkData =
     val storage = nbt.getByteArray("blocks") match
       case Some(blocks) =>
         val meta = nbt.getByteArray("metadata")
@@ -130,20 +130,20 @@ object ChunkData:
 
     val entities =
       nbt.getList("entities") match
-        case Some(tags) => entitiesFromNbt(tags.map(_.asInstanceOf[Nbt.MapTag]), registry)
+        case Some(tags) => entitiesFromNbt(tags.map(_.asInstanceOf[Nbt.MapTag]))
         case None       => Nil
 
     val data = new ChunkData(storage, mutable.ArrayBuffer.from(entities))
     data._isDecorated = nbt.getBoolean("isDecorated", default = false)
     data
 
-  private def entitiesFromNbt(list: Seq[Nbt.MapTag], registry: EntityRegistry)(using
+  private def entitiesFromNbt(list: Seq[Nbt.MapTag])(using
       CylinderSize
   ): Iterable[Entity] =
     val entities = mutable.ArrayBuffer.empty[Entity]
 
     for tag <- list do
-      Entity.fromNbt(tag, registry) match
+      EntityFactory.fromNbt(tag) match
         case Ok(entity)   => entities += entity
         case Err(message) => println(message)
 

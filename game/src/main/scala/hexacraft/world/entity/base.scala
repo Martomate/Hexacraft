@@ -8,14 +8,6 @@ import hexacraft.world.coord.CylCoords
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector3d}
 
-object Entity {
-  def fromNbt(tag: Nbt.MapTag, registry: EntityRegistry)(using CylinderSize): Result[Entity, String] =
-    val entType = tag.getString("type", "")
-    registry.get(entType) match
-      case Some(factory) => Ok(factory.fromNBT(tag))
-      case None          => Err(s"Entity-type '$entType' not found")
-}
-
 class Entity(
     val typeName: String,
     protected val data: EntityBaseData,
@@ -44,6 +36,15 @@ class Entity(
       )
       .withOptionalField("ai", ai.map(_.toNBT))
 }
+
+object EntityFactory:
+  def fromNbt(tag: Nbt.MapTag)(using CylinderSize): Result[Entity, String] =
+    val entType = tag.getString("type", "")
+
+    entType match
+      case "player" => Ok(PlayerEntity.fromNBT(tag))
+      case "sheep"  => Ok(SheepEntity.fromNBT(tag))
+      case _        => Err(s"Entity-type '$entType' not found")
 
 class EntityBaseData(
     var position: CylCoords,

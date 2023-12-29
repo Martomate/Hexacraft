@@ -27,12 +27,14 @@ class SheepEntity(
   }
 }
 
-class SheepFactory(makeModel: () => EntityModel) extends EntityFactory:
-  override def atStartPos(pos: CylCoords)(using CylinderSize): SheepEntity =
+object SheepEntity:
+  private def makeModel(): EntityModel = SheepEntityModel.create("sheep")
+
+  def atStartPos(pos: CylCoords)(using CylinderSize): SheepEntity =
     val model = makeModel()
     new SheepEntity(model, new EntityBaseData(position = pos), SimpleWalkAI.create)
 
-  override def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SheepEntity =
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SheepEntity =
     val model = makeModel()
     val baseData = EntityBaseData.fromNBT(tag)
     val ai: EntityAI =

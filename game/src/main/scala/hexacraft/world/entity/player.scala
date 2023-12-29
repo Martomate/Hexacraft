@@ -31,12 +31,14 @@ class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) exten
   def setPosition(pos: CylCoords): Unit = this.data.position = pos
 }
 
-class PlayerFactory(makeModel: () => EntityModel) extends EntityFactory:
-  override def atStartPos(pos: CylCoords)(using CylinderSize): PlayerEntity =
+object PlayerEntity:
+  private def makeModel(): EntityModel = PlayerEntityModel.create("player")
+
+  def atStartPos(pos: CylCoords)(using CylinderSize): PlayerEntity =
     val model = makeModel()
     new PlayerEntity(model, new EntityBaseData(position = pos), SimpleWalkAI.create)
 
-  override def fromNBT(tag: Nbt.MapTag)(using CylinderSize): PlayerEntity =
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): PlayerEntity =
     val model = makeModel()
     val baseData = EntityBaseData.fromNBT(tag)
     val ai: EntityAI =
