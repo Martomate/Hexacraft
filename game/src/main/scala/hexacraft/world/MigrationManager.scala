@@ -1,7 +1,8 @@
 package hexacraft.world
 
-import com.martomate.nbt.Nbt
 import hexacraft.infra.fs.{FileSystem, NbtIO}
+
+import com.martomate.nbt.Nbt
 
 import java.io.File
 import scala.util.{Success, Try}
@@ -16,7 +17,7 @@ class MigrationManager(fs: FileSystem) {
   def migrateIfNeeded(saveDir: File): Unit = {
     val nbtIO = new NbtIO(this.fs)
     val saveFile = new File(saveDir, "world.dat")
-    val (rootName, nbtData) = nbtIO.loadTag(saveFile)
+    val (rootName, nbtData) = nbtIO.loadTag(saveFile).getOrElse(("", Nbt.emptyMap))
     val version = nbtData.getShort("version", 1)
 
     if (version > MigrationManager.LatestVersion)

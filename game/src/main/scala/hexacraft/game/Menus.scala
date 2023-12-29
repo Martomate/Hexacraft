@@ -6,6 +6,8 @@ import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.WorldSettings
 
+import com.martomate.nbt.Nbt
+
 import java.io.File
 import java.nio.file.Path
 import scala.util.Random
@@ -29,14 +31,15 @@ object Menus {
     def fromFile(saveFile: File, fs: FileSystem): WorldInfo = {
       val nbtFile = saveFile.toPath.resolve("world.dat")
       val io = new NbtIO(fs)
-      val (_, nbt) = io.loadTag(nbtFile.toFile)
 
-      val name = nbt
-        .getMap("general")
-        .flatMap(general => general.getString("name"))
-        .getOrElse(saveFile.getName)
+      val existingName =
+        for
+          (_, tag) <- io.loadTag(nbtFile.toFile)
+          general <- tag.getMap("general")
+          name <- general.getString("name")
+        yield name
 
-      new WorldInfo(saveFile, name)
+      WorldInfo(saveFile, existingName.getOrElse(saveFile.getName))
     }
   }
 

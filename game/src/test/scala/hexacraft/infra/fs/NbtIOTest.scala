@@ -51,7 +51,7 @@ class NbtIOTest extends FunSuite {
     val tracker = fs.trackWrites()
     val nbtIO = new NbtIO(fs)
 
-    val (name, tag) = nbtIO.loadTag(path.toFile)
+    val (name, tag) = nbtIO.loadTag(path.toFile).getOrElse(("", Nbt.emptyMap))
 
     assertEquals(tag, Nbt.emptyMap)
     assertEquals(name, "tag")

@@ -10,28 +10,35 @@ import com.martomate.nbt.Nbt
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
+type ChunkColumnHeightMap = Array[Array[Short]]
+
+object ChunkColumnHeightMap {
+  def generate(coords: ColumnRelWorld, worldGenerator: WorldGenerator): ChunkColumnHeightMap =
+    val gen = worldGenerator.getHeightmapInterpolator(coords)
+    from((x, z) => gen(x, z).toShort)
+
+  /** @param f a function from (x, z) => height */
+  def from(f: (Int, Int) => Short): ChunkColumnHeightMap = Array.tabulate(16, 16)(f)
+}
+
 trait ChunkColumnTerrain:
   def originalTerrainHeight(cx: Int, cz: Int): Short
   def terrainHeight(cx: Int, cz: Int): Short
 
 object ChunkColumn:
-  def create(coords: ColumnRelWorld, worldGenerator: WorldGenerator, columnNBT: Nbt.MapTag): ChunkColumn =
-    val generatedHeightMap =
-      val gen = worldGenerator.getHeightmapInterpolator(coords)
-      for x <- 0 until 16
-      yield for z <- 0 until 16
-      yield gen(x, z).toShort
+  def create(coords: ColumnRelWorld, worldGenerator: WorldGenerator, columnNbt: Option[Nbt.MapTag]): ChunkColumn =
+    val generatedHeightMap = ChunkColumnHeightMap.generate(coords, worldGenerator)
 
-    val heightMap = columnNBT.getShortArray("heightMap") match
-      case Some(heightNBT) => Array.tabulate(16, 16)((x, z) => heightNBT((x << 4) | z))
-      case None            => Array.tabulate(16, 16)((x, z) => generatedHeightMap(x)(z))
+    val heightMap = columnNbt.flatMap(_.getShortArray("heightMap")) match
+      case Some(heightNbt) => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z))
+      case None            => ChunkColumnHeightMap.from((x, z) => generatedHeightMap(x)(z))
 
     new ChunkColumn(coords, generatedHeightMap, heightMap)
 
 class ChunkColumn private (
     val coords: ColumnRelWorld,
-    generatedHeightMap: IndexedSeq[IndexedSeq[Short]],
-    heightMap: Array[Array[Short]]
+    generatedHeightMap: ChunkColumnHeightMap,
+    heightMap: ChunkColumnHeightMap
 ) extends ChunkColumnTerrain:
 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty

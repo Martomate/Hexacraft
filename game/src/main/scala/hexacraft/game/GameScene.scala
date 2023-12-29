@@ -70,9 +70,9 @@ class RemoteWorldProvider(client: GameClient) extends WorldProvider {
     val tag = client.query(GetWorldInfo)
     WorldInfo.fromNBT(tag.asInstanceOf[Nbt.MapTag], null, WorldSettings.none)
 
-  override def loadState(path: String): Nbt.MapTag =
+  override def loadState(path: String): Option[Nbt.MapTag] =
     val tag = client.query(GetState(path))
-    tag.asInstanceOf[Nbt.MapTag]
+    Some(tag.asInstanceOf[Nbt.MapTag])
 
   override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit =
     // throw new UnsupportedOperationException()
@@ -208,7 +208,7 @@ class GameServer(worldProvider: WorldProvider, game: GameScene) {
         val info = worldProvider.getWorldInfo
         Some(info.toNBT)
       case GetState(path) =>
-        Some(worldProvider.loadState(path))
+        Some(worldProvider.loadState(path).getOrElse(Nbt.emptyMap))
       case PlayerRightClicked =>
         println("right click!")
         game.performRightMouseClick()

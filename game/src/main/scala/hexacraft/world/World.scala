@@ -6,6 +6,8 @@ import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityModelLoader, EntityRegistry, PlayerFactory, SheepFactory}
 
+import com.martomate.nbt.Nbt
+
 import scala.collection.mutable
 
 object World:
@@ -60,11 +62,10 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
 
   private def makeChunkLoader(): ChunkLoader =
     val chunkFactory = (coords: ChunkRelWorld) =>
-      val loadedTag = worldProvider.loadChunkData(coords)
       val (chunk, isNew) =
-        if loadedTag.vs.isEmpty
-        then (Chunk.fromGenerator(coords, this, worldGenerator), true)
-        else (Chunk.fromNbt(coords, loadedTag, entityRegistry), false)
+        worldProvider.loadChunkData(coords) match
+          case Some(loadedTag) => (Chunk.fromNbt(coords, loadedTag, entityRegistry), false)
+          case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
       savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
       chunk
 
