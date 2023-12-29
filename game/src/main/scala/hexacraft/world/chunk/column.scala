@@ -1,7 +1,8 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.bits.Int12
-import hexacraft.world.{BlocksInWorld, CollisionDetector, WorldGenerator}
+import hexacraft.math.noise.Data2D
+import hexacraft.world.{BlocksInWorld, CollisionDetector}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
@@ -10,15 +11,32 @@ import com.martomate.nbt.Nbt
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
+class ChunkColumnData(val heightMap: Option[ChunkColumnHeightMap])
+
+object ChunkColumnData {
+  def fromNbt(tag: Nbt.MapTag): ChunkColumnData =
+    ChunkColumnData(
+      tag
+        .getShortArray("heightMap")
+        .map(heightNbt => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z)))
+    )
+
+  extension (col: ChunkColumnData)
+    def toNBT: Nbt.MapTag =
+      Nbt.emptyMap.withOptionalField(
+        "heightMap",
+        col.heightMap.map(heightMap => Nbt.ShortArrayTag(ArraySeq.tabulate(16 * 16)(i => heightMap(i >> 4)(i & 0xf))))
+      )
+}
+
 type ChunkColumnHeightMap = Array[Array[Short]]
 
 object ChunkColumnHeightMap {
-  def generate(coords: ColumnRelWorld, worldGenerator: WorldGenerator): ChunkColumnHeightMap =
-    val gen = worldGenerator.getHeightmapInterpolator(coords)
-    from((x, z) => gen(x, z).toShort)
 
   /** @param f a function from (x, z) => height */
   def from(f: (Int, Int) => Short): ChunkColumnHeightMap = Array.tabulate(16, 16)(f)
+
+  def fromData2D(data: Data2D): ChunkColumnHeightMap = from((x, z) => data(x, z).toShort)
 }
 
 trait ChunkColumnTerrain:
@@ -26,12 +44,14 @@ trait ChunkColumnTerrain:
   def terrainHeight(cx: Int, cz: Int): Short
 
 object ChunkColumn:
-  def create(coords: ColumnRelWorld, worldGenerator: WorldGenerator, columnNbt: Option[Nbt.MapTag]): ChunkColumn =
-    val generatedHeightMap = ChunkColumnHeightMap.generate(coords, worldGenerator)
-
-    val heightMap = columnNbt.flatMap(_.getShortArray("heightMap")) match
-      case Some(heightNbt) => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z))
-      case None            => ChunkColumnHeightMap.from((x, z) => generatedHeightMap(x)(z))
+  def create(
+      coords: ColumnRelWorld,
+      generatedHeightMap: ChunkColumnHeightMap,
+      columnData: Option[ChunkColumnData]
+  ): ChunkColumn =
+    val heightMap = columnData
+      .flatMap(_.heightMap)
+      .getOrElse(ChunkColumnHeightMap.from((x, z) => generatedHeightMap(x)(z)))
 
     new ChunkColumn(coords, generatedHeightMap, heightMap)
 
@@ -103,6 +123,4 @@ class ChunkColumn private (
   def onReloadedResources(): Unit =
     chunks.foreachValue(_.requestRenderUpdate())
 
-  def toNBT: Nbt.MapTag = Nbt.makeMap(
-    "heightMap" -> Nbt.ShortArrayTag(ArraySeq.tabulate(16 * 16)(i => heightMap(i >> 4)(i & 0xf)))
-  )
+  def toNBT: Nbt.MapTag = ChunkColumnData(Some(heightMap)).toNBT

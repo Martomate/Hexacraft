@@ -145,6 +145,11 @@ object Nbt {
     def withField(name: String, value: Nbt): Nbt.MapTag =
       MapTag(tag.vs + (name -> value))
 
+    def withOptionalField(name: String, valueOpt: Option[Nbt]): Nbt.MapTag =
+      valueOpt match
+        case Some(value) => MapTag(tag.vs + (name -> value))
+        case None        => tag
+
   def convertTag(tag: Tag[_]): Nbt =
     import com.flowpowered.nbt
 

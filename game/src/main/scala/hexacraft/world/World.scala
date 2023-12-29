@@ -216,8 +216,11 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo, val entityRegist
     columns.get(here.value) match
       case Some(col) => col
       case None =>
-        val columnNBT = worldProvider.loadColumnData(here)
-        val col = ChunkColumn.create(here, worldGenerator, columnNBT)
+        val col = ChunkColumn.create(
+          here,
+          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(here)),
+          worldProvider.loadColumnData(here).map(ChunkColumnData.fromNbt)
+        )
         columns(here.value) = col
         col
 
