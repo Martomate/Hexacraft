@@ -122,7 +122,4 @@ class ChunkColumn private (
           case Some(h) => heightMap(x)(z) = h.toShort
           case None    =>
 
-  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
-    chunks.foreachValue(_.tick(world, collisionDetector))
-
   def toNBT: Nbt.MapTag = ChunkColumnData(Some(heightMap)).toNBT

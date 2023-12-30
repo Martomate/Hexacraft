@@ -49,8 +49,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
         storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
     }
 
-    val data = ChunkData.fromStorage(storage)
-    data
+    ChunkData.fromStorage(storage)
 
   private def getBlockAtDepth(yToGo: Int) = {
     if (yToGo < -5) Block.Stone

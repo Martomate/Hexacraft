@@ -9,7 +9,6 @@ import hexacraft.world.entity.{Entity, EntityFactory}
 
 import com.martomate.nbt.Nbt
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Chunk:
@@ -30,51 +29,41 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData)(using Cyli
       lighting.setInitialized()
       lightPropagator.initBrightnesses(this)
 
-  def entities: collection.Seq[Entity] = chunkData.allEntities
+  def entities: collection.Seq[Entity] = chunkData.entities
 
   def addEntity(entity: Entity): Unit =
-    chunkData.addEntity(entity)
+    chunkData.entities += entity
     _modCount += 1
 
   def removeEntity(entity: Entity): Unit =
-    chunkData.removeEntity(entity)
+    chunkData.entities -= entity
     _modCount += 1
 
-  def blocks: Array[LocalBlockState] = chunkData.allBlocks
+  def blocks: Array[LocalBlockState] = chunkData.storage.allBlocks
 
-  def getBlock(coords: BlockRelChunk): BlockState = chunkData.getBlock(coords)
+  def getBlock(coords: BlockRelChunk): BlockState = chunkData.storage.getBlock(coords)
 
   def setBlock(blockCoords: BlockRelChunk, block: BlockState): Unit =
     val before = getBlock(blockCoords)
     if before != block then
-      chunkData.setBlock(blockCoords, block)
+      chunkData.storage.setBlock(blockCoords, block)
       _modCount += 1
 
-  def removeBlock(coords: BlockRelChunk): Unit = setBlock(coords, BlockState.Air)
-
-  def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
-    chunkData.optimizeStorage()
-
-    tickEntities(entities)
-
-    @tailrec
-    def tickEntities(ents: Iterable[Entity]): Unit =
-      if ents.nonEmpty then
-        ents.head.tick(world, collisionDetector)
-        tickEntities(ents.tail)
+  def optimizeStorage(): Unit = chunkData.optimizeStorage()
 
   def toNbt: Nbt.MapTag = chunkData.toNBT
 
   def isDecorated: Boolean = chunkData.isDecorated
   def setDecorated(): Unit =
     if !chunkData.isDecorated then
-      chunkData.setDecorated()
+      chunkData.isDecorated = true
       _modCount += 1
 
-class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer[Entity])(using CylinderSize):
-  private var _isDecorated: Boolean = false
-  def isDecorated: Boolean = _isDecorated
-
+class ChunkData(
+    private[chunk] var storage: ChunkStorage,
+    private[chunk] val entities: mutable.ArrayBuffer[Entity],
+    private[chunk] var isDecorated: Boolean
+):
   def optimizeStorage(): Unit =
     if storage.isDense then {
       if storage.numBlocks < 32
@@ -84,29 +73,19 @@ class ChunkData(private var storage: ChunkStorage, entities: mutable.ArrayBuffer
       then storage = DenseChunkStorage.fromStorage(storage)
     }
 
-  def getBlock(coords: BlockRelChunk): BlockState = storage.getBlock(coords)
-  def setBlock(coords: BlockRelChunk, block: BlockState): Unit = storage.setBlock(coords, block)
-  def allBlocks: Array[LocalBlockState] = storage.allBlocks
-
-  def addEntity(entity: Entity): Unit = entities += entity
-  def removeEntity(entity: Entity): Unit = entities -= entity
-  def allEntities: collection.Seq[Entity] = entities
-
-  def setDecorated(): Unit = _isDecorated = true
-
   def toNBT: Nbt.MapTag =
     val storageNbt = storage.toNBT
 
     Nbt.makeMap(
       "blocks" -> Nbt.ByteArrayTag(storageNbt.blocks),
       "metadata" -> Nbt.ByteArrayTag(storageNbt.metadata),
-      "entities" -> Nbt.ListTag(allEntities.map(e => e.toNBT).toSeq),
-      "isDecorated" -> Nbt.ByteTag(_isDecorated)
+      "entities" -> Nbt.ListTag(entities.map(e => e.toNBT).toSeq),
+      "isDecorated" -> Nbt.ByteTag(isDecorated)
     )
 
 object ChunkData:
-  def fromStorage(storage: ChunkStorage)(using CylinderSize): ChunkData =
-    new ChunkData(storage, mutable.ArrayBuffer.empty)
+  def fromStorage(storage: ChunkStorage): ChunkData =
+    new ChunkData(storage, mutable.ArrayBuffer.empty, false)
 
   def fromNBT(nbt: Nbt.MapTag)(using CylinderSize): ChunkData =
     val storage = nbt.getByteArray("blocks") match
@@ -116,26 +95,18 @@ object ChunkData:
       case None =>
         SparseChunkStorage.empty
 
-    val entities =
-      nbt.getList("entities") match
-        case Some(tags) => entitiesFromNbt(tags.map(_.asInstanceOf[Nbt.MapTag]))
-        case None       => Nil
-
-    val data = new ChunkData(storage, mutable.ArrayBuffer.from(entities))
-    data._isDecorated = nbt.getBoolean("isDecorated", default = false)
-    data
-
-  private def entitiesFromNbt(list: Seq[Nbt.MapTag])(using
-      CylinderSize
-  ): Iterable[Entity] =
     val entities = mutable.ArrayBuffer.empty[Entity]
-
-    for tag <- list do
+    for
+      tags <- nbt.getList("entities")
+      tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
+    do
       EntityFactory.fromNbt(tag) match
         case Ok(entity)   => entities += entity
         case Err(message) => println(message)
 
-    entities
+    val isDecorated = nbt.getBoolean("isDecorated", default = false)
+
+    new ChunkData(storage, entities, isDecorated)
 
 class ChunkLighting:
   private val brightness: SmartArray[Byte] = SmartArray.withByteArray(16 * 16 * 16, 0)

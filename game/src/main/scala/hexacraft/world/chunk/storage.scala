@@ -1,7 +1,6 @@
 package hexacraft.world.chunk
 
 import hexacraft.util.SmartArray
-import hexacraft.world.CylinderSize
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.BlockRelChunk
 
@@ -72,9 +71,7 @@ object DenseChunkStorage:
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result
 
-  def fromNBT(blocks: Array[Byte], metadata: Option[Array[Byte]])(using
-      CylinderSize
-  ): DenseChunkStorage =
+  def fromNBT(blocks: Array[Byte], metadata: Option[Array[Byte]]): DenseChunkStorage =
     val storage = new DenseChunkStorage
 
     val meta = metadata.map(_.apply).getOrElse(_ => 0)
@@ -114,7 +111,7 @@ class SparseChunkStorage extends ChunkStorage:
     ChunkStorage.NbtData(blocks = ids, metadata = meta)
 
 object SparseChunkStorage:
-  def empty(using CylinderSize): ChunkStorage = new SparseChunkStorage
+  def empty: ChunkStorage = new SparseChunkStorage
 
   def fromStorage(storage: ChunkStorage): SparseChunkStorage =
     val result = new SparseChunkStorage

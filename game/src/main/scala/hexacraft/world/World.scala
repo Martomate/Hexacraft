@@ -8,6 +8,7 @@ import hexacraft.world.entity.Entity
 
 import com.martomate.nbt.Nbt
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object World:
@@ -85,7 +86,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   def removeBlock(coords: BlockRelWorld): Unit =
     getChunk(coords.getChunkRelWorld) match
       case Some(chunk) =>
-        chunk.removeBlock(coords.getBlockRelChunk)
+        chunk.setBlock(coords.getBlockRelChunk, BlockState.Air)
         onSetBlock(coords, BlockState.Air)
       case None =>
 
@@ -163,7 +164,18 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     if blockUpdateTimer.tick() then performBlockUpdates()
     if relocateEntitiesTimer.tick() then performEntityRelocation()
 
-    for col <- columns.values do col.tick(this, collisionDetector)
+    for
+      col <- columns.values
+      ch <- col.allChunks
+    do
+      ch.optimizeStorage()
+      tickEntities(ch.entities)
+
+    @tailrec // this is done for performance
+    def tickEntities(ents: Iterable[Entity]): Unit =
+      if ents.nonEmpty then
+        ents.head.tick(this, collisionDetector)
+        tickEntities(ents.tail)
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
 
