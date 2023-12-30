@@ -53,7 +53,7 @@ class ChunkLoader(
 
   def onWorldEvent(event: World.Event): Unit =
     event match
-      case World.Event.ChunkAdded(chunk)    => chunksLoading -= chunk.coords
+      case World.Event.ChunkAdded(coords)   => chunksLoading -= coords
       case World.Event.ChunkRemoved(coords) => chunksUnloading -= coords
       case _                                =>
 

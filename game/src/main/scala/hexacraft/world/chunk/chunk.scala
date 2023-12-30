@@ -1,10 +1,10 @@
 package hexacraft.world.chunk
 
-import hexacraft.util.{EventDispatcher, RevokeTrackerFn, SmartArray, Tracker}
 import hexacraft.util.Result.{Err, Ok}
-import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, LightPropagator, WorldGenerator}
+import hexacraft.util.SmartArray
+import hexacraft.world.*
 import hexacraft.world.block.BlockState
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityFactory}
 
 import com.martomate.nbt.Nbt
@@ -13,10 +13,6 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Chunk:
-  enum Event:
-    case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
-    case BlockReplaced(coords: BlockRelWorld, prev: BlockState, now: BlockState)
-
   def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag)(using CylinderSize): Chunk =
     new Chunk(coords, ChunkData.fromNBT(loadedTag))
 
@@ -27,9 +23,6 @@ object Chunk:
 class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData)(using CylinderSize):
   private var _modCount: Long = 0L
   def modCount: Long = _modCount
-
-  private val dispatcher = new EventDispatcher[Chunk.Event]
-  def trackEvents(tracker: Tracker[Chunk.Event]): RevokeTrackerFn = dispatcher.track(tracker)
 
   val lighting: ChunkLighting = new ChunkLighting
   def initLightingIfNeeded(lightPropagator: LightPropagator): Unit =
@@ -57,12 +50,7 @@ class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData)(using Cyli
       chunkData.setBlock(blockCoords, block)
       _modCount += 1
 
-      dispatcher.notify(Chunk.Event.BlockReplaced(BlockRelWorld.fromChunk(blockCoords, coords), before, block))
-
   def removeBlock(coords: BlockRelChunk): Unit = setBlock(coords, BlockState.Air)
-
-  def requestRenderUpdate(): Unit =
-    dispatcher.notify(Chunk.Event.ChunkNeedsRenderUpdate(coords))
 
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
     chunkData.optimizeStorage()

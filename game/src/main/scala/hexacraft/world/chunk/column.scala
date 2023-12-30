@@ -2,7 +2,7 @@ package hexacraft.world.chunk
 
 import hexacraft.math.bits.Int12
 import hexacraft.math.noise.Data2D
-import hexacraft.world.{BlocksInWorld, CollisionDetector}
+import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
@@ -82,15 +82,21 @@ class ChunkColumn private (
 
   def allChunks: Iterable[Chunk] = chunks.values
 
+  def updateHeightmapAfterChunkUpdate(chunk: Chunk)(using CylinderSize): Unit =
+    val chunkCoords = chunk.coords
+    for
+      cx <- 0 until 16
+      cz <- 0 until 16
+    do
+      val blockCoords = BlockRelChunk(cx, 15, cz)
+      updateHeightmapAfterBlockUpdate(BlockRelWorld.fromChunk(blockCoords, chunkCoords), chunk.getBlock(blockCoords))
+
   def updateHeightmapAfterBlockUpdate(coords: BlockRelWorld, now: BlockState): Unit =
     val height = terrainHeight(coords.cx, coords.cz)
 
-    if now.blockType != Block.Air then { // a block is being added
-      if coords.y > height then heightMap(coords.cx)(coords.cz) = coords.y.toShort
-    } else { // a block is being removed
-      if coords.y == height then
-        // remove and find the next highest
-
+    if coords.y >= height then
+      if now.blockType != Block.Air then heightMap(coords.cx)(coords.cz) = coords.y.toShort
+      else
         heightMap(coords.cx)(coords.cz) = LazyList
           .range((height - 1).toShort, Short.MinValue, -1.toShort)
           .map(y =>
@@ -101,7 +107,6 @@ class ChunkColumn private (
           .takeWhile(_ != null) // stop searching if the chunk is not loaded
           .collectFirst({ case (y, block) if block.blockType != Block.Air => y })
           .getOrElse(Short.MinValue)
-    }
 
   private def onChunkLoaded(chunk: Chunk): Unit =
     val yy = chunk.coords.Y.toInt * 16
@@ -119,8 +124,5 @@ class ChunkColumn private (
 
   def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit =
     chunks.foreachValue(_.tick(world, collisionDetector))
-
-  def onReloadedResources(): Unit =
-    chunks.foreachValue(_.requestRenderUpdate())
 
   def toNBT: Nbt.MapTag = ChunkColumnData(Some(heightMap)).toNBT

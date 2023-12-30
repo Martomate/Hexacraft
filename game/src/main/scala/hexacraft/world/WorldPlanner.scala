@@ -17,9 +17,9 @@ class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(using CylinderSize):
 
   def onWorldEvent(event: World.Event): Unit =
     event match
-      case World.Event.ChunkAdded(chunk) =>
+      case World.Event.ChunkAdded(coords) =>
         for
-          ch <- chunk.coords.extendedNeighbors(1)
+          ch <- coords.extendedNeighbors(1)
           p <- planners
         do p.plan(ch)
       case World.Event.ChunkRemoved(_) =>

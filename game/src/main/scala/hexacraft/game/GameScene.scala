@@ -55,7 +55,8 @@ class GameScene(
   private val otherPlayer: ControlledPlayerEntity =
     new ControlledPlayerEntity(PlayerEntityModel.create("player"), new EntityBaseData(CylCoords(player.position)))
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, blockSpecRegistry, initialWindowSize.physicalSize)
+  private val worldRenderer: WorldRenderer =
+    new WorldRenderer(world, world.requestRenderUpdate, blockSpecRegistry, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)

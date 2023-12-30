@@ -3,11 +3,11 @@ package hexacraft.world
 import hexacraft.math.MathUtils.oppositeSide
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, LocalBlockState}
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, NeighborOffsets}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
 
 import scala.collection.mutable
 
-class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
+class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld => Unit)(using CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
   def initBrightnesses(chunk: Chunk): Unit = {
@@ -133,7 +133,7 @@ class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
       }
     }
 
-    chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
+    chunksNeedingRenderUpdate.foreach(c => requestRenderUpdate(c.coords))
 
     propagateTorchlight(lightQueue)
   }
@@ -167,7 +167,7 @@ class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
       }
     }
 
-    chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
+    chunksNeedingRenderUpdate.foreach(c => requestRenderUpdate(c.coords))
     propagateSunlight(lightQueue)
   }
 
@@ -201,7 +201,7 @@ class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
       }
     }
 
-    chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
+    chunksNeedingRenderUpdate.foreach(c => requestRenderUpdate(c.coords))
   }
 
   private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, Chunk)]): Unit = {
@@ -225,7 +225,7 @@ class LightPropagator(world: BlocksInWorld)(using CylinderSize) {
       }
     }
 
-    chunksNeedingRenderUpdate.foreach(_.requestRenderUpdate())
+    chunksNeedingRenderUpdate.foreach(c => requestRenderUpdate(c.coords))
   }
 
   private def propagateSunlightInChunk(

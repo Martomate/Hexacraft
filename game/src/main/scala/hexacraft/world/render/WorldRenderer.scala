@@ -13,7 +13,12 @@ import org.joml.{Vector2ic, Vector3f}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initialFramebufferSize: Vector2ic)(using
+class WorldRenderer(
+    world: BlocksInWorld,
+    requestRenderUpdate: ChunkRelWorld => Unit,
+    blockSpecs: BlockSpecRegistry,
+    initialFramebufferSize: Vector2ic
+)(using
     CylinderSize
 ):
   private val skyShader = new SkyShader()
@@ -24,7 +29,7 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
-  private val lightPropagator = new LightPropagator(world)
+  private val lightPropagator = new LightPropagator(world, requestRenderUpdate)
 
   private val skyVao: VAO = SkyVao.create
   private val skyRenderer =
@@ -145,8 +150,8 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
 
   def onWorldEvent(event: World.Event): Unit =
     event match
-      case World.Event.ChunkAdded(chunk) =>
-        chunksToRender.add(chunk.coords)
+      case World.Event.ChunkAdded(coords) =>
+        chunksToRender.add(coords)
       case World.Event.ChunkRemoved(coords) =>
         chunksToRender.remove(coords)
         chunkHandler.clearChunkRenderData(coords)
