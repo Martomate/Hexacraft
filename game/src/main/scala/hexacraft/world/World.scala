@@ -110,7 +110,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     do ch.removeEntity(e)
 
   private def chunkOfEntity(entity: Entity): Option[Chunk] =
-    getChunk(CoordUtils.approximateChunkCoords(entity.position))
+    getChunk(CoordUtils.approximateChunkCoords(entity.transform.position))
 
   def getHeight(x: Int, z: Int): Int =
     val coords = ColumnRelWorld(x >> 4, z >> 4)
@@ -181,13 +181,13 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   private def tickEntity(e: Entity): Unit =
     e.ai.foreach: ai =>
-      ai.tick(this, e.data, e.boundingBox)
-      e.data.velocity.add(ai.acceleration())
+      ai.tick(this, e.transform, e.velocity, e.boundingBox)
+      e.velocity.velocity.add(ai.acceleration())
 
-    e.data.velocity.x *= 0.9
-    e.data.velocity.z *= 0.9
+    e.velocity.velocity.x *= 0.9
+    e.velocity.velocity.z *= 0.9
 
-    entityPhysicsSystem.update(e.data, e.boundingBox)
+    entityPhysicsSystem.update(e.transform, e.velocity, e.boundingBox)
 
     e.model.foreach(_.tick())
 

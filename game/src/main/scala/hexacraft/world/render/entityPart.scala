@@ -108,7 +108,7 @@ object EntityRenderDataFactory {
     val tr = new Matrix4f
 
     for ent <- entities if ent.model.isDefined yield
-      val baseT = ent.transform
+      val baseT = ent.transform.transform
       val model = ent.model.get
 
       val parts = for part <- model.parts yield

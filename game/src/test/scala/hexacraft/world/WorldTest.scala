@@ -3,7 +3,7 @@ package hexacraft.world
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import hexacraft.world.entity.{Entity, EntityBaseData}
+import hexacraft.world.entity.{BoundsComponent, Entity, TransformComponent, VelocityComponent}
 
 import munit.FunSuite
 
@@ -122,31 +122,34 @@ class WorldTest extends FunSuite {
     Thread.sleep(20)
     world.tick(camera)
 
-    val entity = new Entity("scorpion", new EntityBaseData(entityPosition), None, None, new HexBox(0.5f, 0, 0.5f))
+    val entity = Entity(
+      "scorpion",
+      Seq(TransformComponent(entityPosition), VelocityComponent(), BoundsComponent(HexBox(0.5f, 0, 0.5f)))
+    )
 
     world.addEntity(entity)
 
-    val pos1 = entity.position
+    val pos1 = entity.transform.position
     world.tick(camera)
-    val pos2 = entity.position
+    val pos2 = entity.transform.position
     assertNotEquals(pos1, pos2)
 
     world.removeEntity(entity)
 
     world.tick(camera)
-    val pos3 = entity.position
+    val pos3 = entity.transform.position
     assertEquals(pos2, pos3)
 
     world.addEntity(entity)
 
     world.tick(camera)
-    val pos4 = entity.position
+    val pos4 = entity.transform.position
     assertNotEquals(pos3, pos4)
 
     world.removeAllEntities()
 
     world.tick(camera)
-    val pos5 = entity.position
+    val pos5 = entity.transform.position
     assertEquals(pos4, pos5)
   }
 }

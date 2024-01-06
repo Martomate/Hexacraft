@@ -55,10 +55,12 @@ class GameScene(
   private val otherPlayer: Entity =
     Entity(
       null,
-      new EntityBaseData(CylCoords(player.position)),
-      Some(PlayerEntityModel.create("player")),
-      None,
-      EntityFactory.playerBounds
+      Seq(
+        TransformComponent(CylCoords(player.position)),
+        VelocityComponent(),
+        BoundsComponent(EntityFactory.playerBounds),
+        ModelComponent(PlayerEntityModel.create("player"))
+      )
     )
 
   private val worldRenderer: WorldRenderer =
@@ -66,7 +68,7 @@ class GameScene(
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
-  otherPlayer.data.position = otherPlayer.position.offset(-2, -2, -1)
+  otherPlayer.transform.position = otherPlayer.transform.position.offset(-2, -2, -1)
 
   val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 

@@ -8,7 +8,12 @@ import com.martomate.nbt.Nbt
 import org.joml.{Vector3d, Vector3dc}
 
 trait EntityAI {
-  def tick(world: BlocksInWorld, entityBaseData: EntityBaseData, entityBoundingBox: HexBox): Unit
+  def tick(
+      world: BlocksInWorld,
+      transform: TransformComponent,
+      velocity: VelocityComponent,
+      entityBoundingBox: HexBox
+  ): Unit
   def acceleration(): Vector3dc
   def toNBT: Nbt.MapTag
 }
@@ -33,16 +38,21 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
 
   private val input: SimpleAIInput = new SimpleAIInput
 
-  def tick(world: BlocksInWorld, entityBaseData: EntityBaseData, entityBoundingBox: HexBox): Unit = {
-    val distSq = entityBaseData.position.distanceXZSq(target)
+  def tick(
+      world: BlocksInWorld,
+      transform: TransformComponent,
+      velocity: VelocityComponent,
+      entityBoundingBox: HexBox
+  ): Unit = {
+    val distSq = transform.position.distanceXZSq(target)
 
     movingForce.set(0)
 
     if (distSq < speed * speed || timeout == 0) {
       // new goal
       val angle = math.random() * 2 * math.Pi
-      val targetX = entityBaseData.position.x + reach * math.cos(angle)
-      val targetZ = entityBaseData.position.z + reach * -math.sin(angle)
+      val targetX = transform.position.x + reach * math.cos(angle)
+      val targetZ = transform.position.z + reach * -math.sin(angle)
       target = CylCoords(targetX, 0, targetZ)
 
       timeout = timeLimit
@@ -51,19 +61,19 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
       val blockInFront =
         input.blockInFront(
           world,
-          entityBaseData.position,
-          entityBaseData.rotation,
+          transform.position,
+          transform.rotation,
           entityBoundingBox.radius + speed * 4
         )
 
-      if (blockInFront != Block.Air && entityBaseData.velocity.y == 0) {
+      if (blockInFront != Block.Air && velocity.velocity.y == 0) {
         movingForce.y = 3.5
       }
-      val angle = entityBaseData.position.angleXZ(target)
+      val angle = transform.position.angleXZ(target)
 
       movingForce.x = speed * math.cos(angle)
       movingForce.z = speed * math.sin(angle)
-      entityBaseData.rotation.y = -angle
+      transform.rotation.y = -angle
     }
 
     timeout -= 1

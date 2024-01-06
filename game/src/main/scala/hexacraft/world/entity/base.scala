@@ -6,30 +6,42 @@ import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
 
 import com.martomate.nbt.Nbt
-import org.joml.{Matrix4f, Vector3d}
 
-class Entity(
-    val typeName: String,
-    val data: EntityBaseData,
-    val model: Option[EntityModel],
-    val ai: Option[EntityAI],
-    val boundingBox: HexBox
-) {
-  def position: CylCoords = data.position
-  def rotation: Vector3d = data.rotation
-  def velocity: Vector3d = data.velocity
+object Entity {
+  def apply(typeName: String, components: Seq[EntityComponent]): Entity = new Entity(typeName, components)
+}
 
-  def transform: Matrix4f = data.transform
+class Entity(val typeName: String, private val components: Seq[EntityComponent] = Nil) {
+  val transform: TransformComponent = components
+    .find(_.isInstanceOf[TransformComponent])
+    .map(_.asInstanceOf[TransformComponent])
+    .orNull
+
+  val velocity: VelocityComponent = components
+    .find(_.isInstanceOf[VelocityComponent])
+    .map(_.asInstanceOf[VelocityComponent])
+    .orNull
+
+  val boundingBox: HexBox = components
+    .find(_.isInstanceOf[BoundsComponent])
+    .map(_.asInstanceOf[BoundsComponent].bounds)
+    .orNull
+
+  val model: Option[EntityModel] = components
+    .find(_.isInstanceOf[ModelComponent])
+    .map(_.asInstanceOf[ModelComponent].model)
+
+  val ai: Option[EntityAI] = components
+    .find(_.isInstanceOf[AiComponent])
+    .map(_.asInstanceOf[AiComponent].ai)
 
   def toNBT: Nbt.MapTag =
-    val dataNbt = data.toNBT
-
     Nbt
       .makeMap(
         "type" -> Nbt.StringTag(typeName),
-        "pos" -> dataNbt.pos,
-        "velocity" -> dataNbt.velocity,
-        "rotation" -> dataNbt.rotation
+        "pos" -> Nbt.makeVectorTag(transform.position.toVector3d),
+        "velocity" -> Nbt.makeVectorTag(velocity.velocity),
+        "rotation" -> Nbt.makeVectorTag(transform.rotation)
       )
       .withOptionalField("ai", ai.map(_.toNBT))
 }
@@ -39,69 +51,32 @@ object EntityFactory:
   private val sheepBounds = new HexBox(0.4f, 0, 0.75f)
 
   def atStartPos(pos: CylCoords, entityType: String)(using CylinderSize): Result[Entity, String] =
-    entityType match
-      case "player" =>
-        val model = PlayerEntityModel.create("player")
-        Ok(Entity("player", new EntityBaseData(pos), Some(model), Some(SimpleWalkAI.create), playerBounds))
-
-      case "sheep" =>
-        val model = SheepEntityModel.create("sheep")
-        Ok(Entity("sheep", new EntityBaseData(pos), Some(model), Some(SimpleWalkAI.create), sheepBounds))
-
-      case _ => Err(s"Entity-type '$entityType' not found")
+    fromNbt(Nbt.makeMap("type" -> Nbt.StringTag(entityType))).map: e =>
+      e.transform.position = pos
+      e
 
   def fromNbt(tag: Nbt.MapTag)(using CylinderSize): Result[Entity, String] =
     val entType = tag.getString("type", "")
 
     entType match
       case "player" =>
-        val model = PlayerEntityModel.create("player")
-        val baseData = EntityBaseData.fromNBT(tag)
-        val ai: EntityAI =
-          tag.getMap("ai") match
-            case Some(t) => SimpleWalkAI.fromNBT(t)
-            case None    => SimpleWalkAI.create
-
-        Ok(Entity("player", baseData, Some(model), Some(ai), playerBounds))
+        val components = Seq(
+          TransformComponent.fromNBT(tag),
+          VelocityComponent.fromNBT(tag),
+          AiComponent.fromNBT(tag),
+          BoundsComponent(playerBounds),
+          ModelComponent(PlayerEntityModel.create("player"))
+        )
+        Ok(Entity("player", components))
 
       case "sheep" =>
-        val model = SheepEntityModel.create("sheep")
-        val baseData = EntityBaseData.fromNBT(tag)
-        val ai: EntityAI =
-          tag.getMap("ai") match
-            case Some(t) => SimpleWalkAI.fromNBT(t)
-            case None    => SimpleWalkAI.create
-        Ok(Entity("sheep", baseData, Some(model), Some(ai), sheepBounds))
+        val components = Seq(
+          TransformComponent.fromNBT(tag),
+          VelocityComponent.fromNBT(tag),
+          AiComponent.fromNBT(tag),
+          BoundsComponent(sheepBounds),
+          ModelComponent(SheepEntityModel.create("sheep"))
+        )
+        Ok(Entity("sheep", components))
 
       case _ => Err(s"Entity-type '$entType' not found")
-
-class EntityBaseData(
-    var position: CylCoords,
-    var rotation: Vector3d = new Vector3d,
-    var velocity: Vector3d = new Vector3d
-):
-  def transform: Matrix4f = new Matrix4f()
-    .translate(position.toVector3f)
-    .rotateZ(rotation.z.toFloat)
-    .rotateX(rotation.x.toFloat)
-    .rotateY(rotation.y.toFloat)
-
-  def toNBT: EntityBaseData.NbtData = EntityBaseData.NbtData(
-    pos = Nbt.makeVectorTag(position.toVector3d),
-    velocity = Nbt.makeVectorTag(velocity),
-    rotation = Nbt.makeVectorTag(rotation)
-  )
-
-object EntityBaseData:
-  case class NbtData(pos: Nbt.MapTag, velocity: Nbt.MapTag, rotation: Nbt.MapTag)
-
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): EntityBaseData =
-    val position = tag
-      .getMap("pos")
-      .map(t => CylCoords(t.setVector(new Vector3d)))
-      .getOrElse(CylCoords(0, 0, 0))
-
-    val data = new EntityBaseData(position = position)
-    tag.getMap("velocity").foreach(t => t.setVector(data.velocity))
-    tag.getMap("rotation").foreach(t => t.setVector(data.rotation))
-    data

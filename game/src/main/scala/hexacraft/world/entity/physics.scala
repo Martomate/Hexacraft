@@ -10,19 +10,19 @@ import org.joml.Vector3d
 class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using
     CylinderSize
 ) {
-  def update(data: EntityBaseData, boundingBox: HexBox): Unit =
-    applyBuoyancy(data.velocity, 75, volumeSubmergedInWater(boundingBox, data.position), Density.water)
+  def update(transform: TransformComponent, velocity: VelocityComponent, boundingBox: HexBox): Unit =
+    applyBuoyancy(velocity.velocity, 75, volumeSubmergedInWater(boundingBox, transform.position), Density.water)
 
-    data.velocity.y -= 9.82 / 60
-    data.velocity.div(60)
+    velocity.velocity.y -= 9.82 / 60
+    velocity.velocity.div(60)
     val (pos, vel) = collisionDetector.positionAndVelocityAfterCollision(
       boundingBox,
-      data.position.toVector3d,
-      data.velocity
+      transform.position.toVector3d,
+      velocity.velocity
     )
-    data.position = CylCoords(pos)
-    data.velocity.set(vel)
-    data.velocity.mul(60)
+    transform.position = CylCoords(pos)
+    velocity.velocity.set(vel)
+    velocity.velocity.mul(60)
 
   private def volumeSubmergedInWater(bounds: HexBox, position: CylCoords): Double =
     val solidBounds = bounds.scaledRadially(0.7)
