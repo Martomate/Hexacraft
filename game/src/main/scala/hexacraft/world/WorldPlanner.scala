@@ -1,13 +1,13 @@
 package hexacraft.world
 
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.entity.SheepEntity
+import hexacraft.world.entity.EntityFactory
 import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
 class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(using CylinderSize):
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
-    new EntityGroupPlanner(world, SheepEntity.atStartPos, mainSeed)
+    new EntityGroupPlanner(world, pos => EntityFactory.atStartPos(pos, "sheep").unwrap(), mainSeed)
   )
 
   def decorate(chunk: Chunk): Unit =

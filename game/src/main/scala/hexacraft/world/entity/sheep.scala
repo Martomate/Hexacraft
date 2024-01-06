@@ -2,46 +2,9 @@ package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
-import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.coord.BlockCoords
 
-import com.martomate.nbt.Nbt
 import org.joml.Vector3f
-
-class SheepEntity(
-    model: EntityModel,
-    initData: EntityBaseData,
-    ai: EntityAI
-)(using CylinderSize)
-    extends Entity("sheep", initData, model, Some(ai)) {
-  override val boundingBox: HexBox = new HexBox(0.4f, 0, 0.75f)
-
-  override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
-    ai.tick(world, data, boundingBox)
-    data.velocity.add(ai.acceleration())
-
-    data.velocity.x *= 0.9
-    data.velocity.z *= 0.9
-
-    EntityPhysicsSystem(world, collisionDetector).update(data, boundingBox)
-    model.tick()
-  }
-}
-
-object SheepEntity:
-  private def makeModel(): EntityModel = SheepEntityModel.create("sheep")
-
-  def atStartPos(pos: CylCoords)(using CylinderSize): SheepEntity =
-    val model = makeModel()
-    new SheepEntity(model, new EntityBaseData(position = pos), SimpleWalkAI.create)
-
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SheepEntity =
-    val model = makeModel()
-    val baseData = EntityBaseData.fromNBT(tag)
-    val ai: EntityAI =
-      tag.getMap("ai") match
-        case Some(t) => SimpleWalkAI.fromNBT(t)
-        case None    => SimpleWalkAI.create
-    new SheepEntity(model, baseData, ai)
 
 class SheepEntityModel(
     val head: BasicEntityPart,

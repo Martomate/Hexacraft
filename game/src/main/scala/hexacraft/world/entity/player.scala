@@ -1,52 +1,10 @@
 package hexacraft.world.entity
 
 import hexacraft.renderer.TextureSingle
-import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
-import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.{CylinderSize, HexBox}
+import hexacraft.world.coord.BlockCoords
 
-import com.martomate.nbt.Nbt
 import org.joml.Vector3f
-
-class PlayerEntity(
-    model: EntityModel,
-    initData: EntityBaseData,
-    ai: EntityAI
-)(using CylinderSize)
-    extends Entity("player", initData, model, Some(ai)) {
-  override val boundingBox: HexBox = new HexBox(0.2f, 0, 1.75f)
-
-  override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = {
-    ai.tick(world, data, boundingBox)
-    data.velocity.add(ai.acceleration())
-
-    data.velocity.x *= 0.9
-    data.velocity.z *= 0.9
-
-    EntityPhysicsSystem(world, collisionDetector).update(data, boundingBox)
-    model.tick()
-  }
-}
-
-class ControlledPlayerEntity(model: EntityModel, initData: EntityBaseData) extends Entity(null, initData, model, None) {
-  def setPosition(pos: CylCoords): Unit = this.data.position = pos
-}
-
-object PlayerEntity:
-  private def makeModel(): EntityModel = PlayerEntityModel.create("player")
-
-  def atStartPos(pos: CylCoords)(using CylinderSize): PlayerEntity =
-    val model = makeModel()
-    new PlayerEntity(model, new EntityBaseData(position = pos), SimpleWalkAI.create)
-
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): PlayerEntity =
-    val model = makeModel()
-    val baseData = EntityBaseData.fromNBT(tag)
-    val ai: EntityAI =
-      tag.getMap("ai") match
-        case Some(t) => SimpleWalkAI.fromNBT(t)
-        case None    => SimpleWalkAI.create
-
-    new PlayerEntity(model, baseData, ai)
 
 class PlayerEntityModel(
     val head: BasicEntityPart,

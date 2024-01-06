@@ -52,15 +52,21 @@ class GameScene(
 
   private val overlays = mutable.ArrayBuffer.empty[Component]
 
-  private val otherPlayer: ControlledPlayerEntity =
-    new ControlledPlayerEntity(PlayerEntityModel.create("player"), new EntityBaseData(CylCoords(player.position)))
+  private val otherPlayer: Entity =
+    Entity(
+      null,
+      new EntityBaseData(CylCoords(player.position)),
+      Some(PlayerEntityModel.create("player")),
+      None,
+      EntityFactory.playerBounds
+    )
 
   private val worldRenderer: WorldRenderer =
     new WorldRenderer(world, world.requestRenderUpdate, blockSpecRegistry, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
-  otherPlayer.setPosition(otherPlayer.position.offset(-2, -2, -1))
+  otherPlayer.data.position = otherPlayer.position.offset(-2, -2, -1)
 
   val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 
@@ -159,9 +165,9 @@ class GameScene(
     case KeyboardKey.Digit(digit) =>
       if digit > 0 then setSelectedItemSlot(digit - 1)
     case KeyboardKey.Letter('P') =>
-      world.addEntity(PlayerEntity.atStartPos(CylCoords(player.position)))
+      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "player").unwrap())
     case KeyboardKey.Letter('L') =>
-      world.addEntity(SheepEntity.atStartPos(CylCoords(player.position)))
+      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "sheep").unwrap())
     case KeyboardKey.Letter('K') =>
       world.removeAllEntities()
     case _ =>

@@ -122,30 +122,31 @@ class WorldTest extends FunSuite {
     Thread.sleep(20)
     world.tick(camera)
 
-    var ticks = 0
-    val entity = new Entity("scorpion", new EntityBaseData(entityPosition), null, None) {
-      override def tick(world: BlocksInWorld, collisionDetector: CollisionDetector): Unit = ticks += 1
-    }
+    val entity = new Entity("scorpion", new EntityBaseData(entityPosition), None, None, new HexBox(0.5f, 0, 0.5f))
 
     world.addEntity(entity)
 
-    assertEquals(ticks, 0)
+    val pos1 = entity.position
     world.tick(camera)
-    assertEquals(ticks, 1)
+    val pos2 = entity.position
+    assertNotEquals(pos1, pos2)
 
     world.removeEntity(entity)
 
     world.tick(camera)
-    assertEquals(ticks, 1)
+    val pos3 = entity.position
+    assertEquals(pos2, pos3)
 
     world.addEntity(entity)
 
     world.tick(camera)
-    assertEquals(ticks, 2)
+    val pos4 = entity.position
+    assertNotEquals(pos3, pos4)
 
     world.removeAllEntities()
 
     world.tick(camera)
-    assertEquals(ticks, 2)
+    val pos5 = entity.position
+    assertEquals(pos4, pos5)
   }
 }

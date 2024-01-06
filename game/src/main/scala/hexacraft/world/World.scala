@@ -4,7 +4,7 @@ import hexacraft.util.*
 import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 
 import com.martomate.nbt.Nbt
 
@@ -32,6 +32,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   val renderDistance: Double = 8 * CylinderSize.y60
 
   val collisionDetector: CollisionDetector = new CollisionDetector(this)
+
+  private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
 
   private val columns = mutable.LongMap.empty[ChunkColumn]
 
@@ -171,11 +173,23 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       ch.optimizeStorage()
       tickEntities(ch.entities)
 
-    @tailrec // this is done for performance
-    def tickEntities(ents: Iterable[Entity]): Unit =
-      if ents.nonEmpty then
-        ents.head.tick(this, collisionDetector)
-        tickEntities(ents.tail)
+  @tailrec // this is done for performance
+  private def tickEntities(ents: Iterable[Entity]): Unit =
+    if ents.nonEmpty then
+      tickEntity(ents.head)
+      tickEntities(ents.tail)
+
+  private def tickEntity(e: Entity): Unit =
+    e.ai.foreach: ai =>
+      ai.tick(this, e.data, e.boundingBox)
+      e.data.velocity.add(ai.acceleration())
+
+    e.data.velocity.x *= 0.9
+    e.data.velocity.z *= 0.9
+
+    entityPhysicsSystem.update(e.data, e.boundingBox)
+
+    e.model.foreach(_.tick())
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
 
