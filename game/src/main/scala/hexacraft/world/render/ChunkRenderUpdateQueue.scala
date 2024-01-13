@@ -4,31 +4,25 @@ import hexacraft.util.{TickableTimer, UniquePQ}
 import hexacraft.world.{Camera, CylinderSize, PosAndDir}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 
-object ChunkRenderUpdater:
-  private val chunkRenderUpdatesPerTick = 4
-  private val ticksBetweenColumnLoading = 5
-
-class ChunkRenderUpdater(using CylinderSize):
+class ChunkRenderUpdateQueue(using CylinderSize):
   private val origin = PosAndDir(CylCoords(0, 0, 0))
 
-  private val chunkRenderUpdateQueue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToUpdatePriority, Ordering.by(-_))
+  private val queue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToUpdatePriority, Ordering.by(-_))
 
-  private val reorderingTimer: TickableTimer = TickableTimer(ChunkRenderUpdater.ticksBetweenColumnLoading)
+  private val reorderingTimer: TickableTimer = TickableTimer(5)
 
-  def update(camera: Camera, renderDistance: Double, updateChunkIfPresent: ChunkRelWorld => Boolean): Unit =
+  def reorderAndFilter(camera: Camera, renderDistance: Double): Unit =
     origin.setPosAndDirFrom(camera.view)
 
     if reorderingTimer.tick() then
       val rDistSq = (renderDistance * 16) * (renderDistance * 16)
-      chunkRenderUpdateQueue.reprioritizeAndFilter(_._1 <= rDistSq)
+      queue.reprioritizeAndFilter(_._1 <= rDistSq)
 
-    val numUpdatesToPerform =
-      if chunkRenderUpdateQueue.size > 10
-      then ChunkRenderUpdater.chunkRenderUpdatesPerTick
-      else 1
+  def length: Int = queue.size
 
-    for _ <- 1 to numUpdatesToPerform do
-      while !chunkRenderUpdateQueue.isEmpty && !updateChunkIfPresent(chunkRenderUpdateQueue.dequeue()) do ()
+  def pop(): Option[ChunkRelWorld] = if !queue.isEmpty then Some(queue.dequeue()) else None
+
+  def insert(coords: ChunkRelWorld): Unit = queue.enqueue(coords)
 
   private def makeChunkToUpdatePriority(coords: ChunkRelWorld): Double =
     def distTo(x: Int, y: Int, z: Int): Double =
@@ -46,6 +40,3 @@ class ChunkRenderUpdater(using CylinderSize):
         dist = math.min(dist, distTo(15 * i, 15 * j, 15 * k))
 
     dist
-
-  def onChunkNeedsRenderUpdate(coords: ChunkRelWorld): Unit =
-    chunkRenderUpdateQueue.enqueue(coords)

@@ -141,7 +141,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
         if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y
         then
           OpenGL.glViewport(0, 0, w, h)
-          scene.framebufferResized(w, h)
+          scene.frameBufferResized(w, h)
 
         _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(w, h))
 

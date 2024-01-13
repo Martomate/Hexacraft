@@ -236,8 +236,8 @@ class GameScene(
 
     crosshairShader.setWindowAspectRatio(aspectRatio)
 
-  override def framebufferResized(width: Int, height: Int): Unit =
-    worldRenderer.framebufferResized(width, height)
+  override def frameBufferResized(width: Int, height: Int): Unit =
+    worldRenderer.frameBufferResized(width, height)
 
   override def render(transformation: GUITransformation)(using RenderContext): Unit =
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)

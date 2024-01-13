@@ -49,7 +49,7 @@ class WorldRenderer(
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityPartVao.forSide(s), GpuState())
 
-  private val chunkRenderUpdater: ChunkRenderUpdater = new ChunkRenderUpdater
+  private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
 
   private val players = ArrayBuffer.empty[Entity]
   def addPlayer(player: Entity): Unit = players += player
@@ -57,11 +57,6 @@ class WorldRenderer(
 
   def regularChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.regularChunkBufferFragmentation
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
-
-  private def updateChunkIfPresent(coords: ChunkRelWorld) =
-    val chunkOpt = world.getChunk(coords)
-    for chunk <- chunkOpt do updateChunkData(chunk)
-    chunkOpt.isDefined
 
   private def updateChunkData(ch: Chunk): Unit =
     ch.initLightingIfNeeded(lightPropagator)
@@ -78,7 +73,18 @@ class WorldRenderer(
     chunkHandler.setChunkRenderData(ch.coords, opaqueBlocks, transmissiveBlocks)
 
   def tick(camera: Camera, renderDistance: Double): Unit =
-    chunkRenderUpdater.update(camera, renderDistance, updateChunkIfPresent)
+    chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
+
+    val numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
+
+    for _ <- 1 to numUpdatesToPerform do
+      while chunkRenderUpdateQueue.pop() match
+          case Some(coords) =>
+            val chunkOpt = world.getChunk(coords)
+            for chunk <- chunkOpt do updateChunkData(chunk)
+            chunkOpt.isEmpty
+          case None => false
+      do ()
 
   def onTotalSizeChanged(totalSize: Int): Unit =
     chunkHandler.onTotalSizeChanged(totalSize)
@@ -156,10 +162,9 @@ class WorldRenderer(
         chunksToRender.remove(coords)
         chunkHandler.clearChunkRenderData(coords)
       case World.Event.ChunkNeedsRenderUpdate(coords) =>
-        chunkRenderUpdater.onChunkNeedsRenderUpdate(coords)
-      case _ =>
+        chunkRenderUpdateQueue.insert(coords)
 
-  def framebufferResized(width: Int, height: Int): Unit =
+  def frameBufferResized(width: Int, height: Int): Unit =
     val newFrameBuffer = MainFrameBuffer.fromSize(width, height)
     mainFrameBuffer.unload()
     mainFrameBuffer = newFrameBuffer
