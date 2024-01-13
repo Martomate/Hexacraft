@@ -128,6 +128,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       savedChunkModCounts(ch.coords) = ch.modCount
       col.updateHeightmapAfterChunkUpdate(ch)
 
+    ch.initLightingIfNeeded(lightPropagator)
+
     requestRenderUpdate(ch.coords)
     requestRenderUpdateForNeighborChunks(ch.coords)
 
@@ -246,7 +248,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       ch <- col.allChunks
     do requestRenderUpdate(ch.coords)
 
-  def requestRenderUpdate(chunkCoords: ChunkRelWorld): Unit =
+  private def requestRenderUpdate(chunkCoords: ChunkRelWorld): Unit =
     dispatcher.notify(World.Event.ChunkNeedsRenderUpdate(chunkCoords))
 
   def unload(): Unit =

@@ -63,8 +63,7 @@ class GameScene(
       )
     )
 
-  private val worldRenderer: WorldRenderer =
-    new WorldRenderer(world, world.requestRenderUpdate, blockSpecRegistry, initialWindowSize.physicalSize)
+  private val worldRenderer: WorldRenderer = new WorldRenderer(world, blockSpecRegistry, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)

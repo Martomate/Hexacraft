@@ -2,7 +2,8 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
-import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, LightPropagator, World}
+import hexacraft.util.TickableTimer
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
 import hexacraft.world.block.{BlockSpecRegistry, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
@@ -13,12 +14,7 @@ import org.joml.{Vector2ic, Vector3f}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(
-    world: BlocksInWorld,
-    requestRenderUpdate: ChunkRelWorld => Unit,
-    blockSpecs: BlockSpecRegistry,
-    initialFramebufferSize: Vector2ic
-)(using
+class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initialFrameBufferSize: Vector2ic)(using
     CylinderSize
 ):
   private val skyShader = new SkyShader()
@@ -28,8 +24,6 @@ class WorldRenderer(
   private val worldCombinerShader = new WorldCombinerShader()
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
-
-  private val lightPropagator = new LightPropagator(world, requestRenderUpdate)
 
   private val skyVao: VAO = SkyVao.create
   private val skyRenderer =
@@ -42,7 +36,7 @@ class WorldRenderer(
   private val selectedBlockVao = SelectedBlockVao.create
   private val selectedBlockRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)
 
-  private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFramebufferSize.x, initialFramebufferSize.y)
+  private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFrameBufferSize.x, initialFrameBufferSize.y)
 
   private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
@@ -50,6 +44,7 @@ class WorldRenderer(
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityPartVao.forSide(s), GpuState())
 
   private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
+  private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
 
   private val players = ArrayBuffer.empty[Entity]
   def addPlayer(player: Entity): Unit = players += player
@@ -59,8 +54,6 @@ class WorldRenderer(
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
 
   private def updateChunkData(ch: Chunk): Unit =
-    ch.initLightingIfNeeded(lightPropagator)
-
     val (opaqueBlocks, transmissiveBlocks) =
       if ch.blocks.isEmpty
       then (ChunkRenderDataFactory.empty, ChunkRenderDataFactory.empty)
@@ -73,7 +66,7 @@ class WorldRenderer(
     chunkHandler.setChunkRenderData(ch.coords, opaqueBlocks, transmissiveBlocks)
 
   def tick(camera: Camera, renderDistance: Double): Unit =
-    chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
+    if chunkRenderUpdateQueueReorderingTimer.tick() then chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
 
     val numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
 

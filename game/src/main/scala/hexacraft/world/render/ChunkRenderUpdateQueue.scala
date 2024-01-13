@@ -1,6 +1,6 @@
 package hexacraft.world.render
 
-import hexacraft.util.{TickableTimer, UniquePQ}
+import hexacraft.util.UniquePQ
 import hexacraft.world.{Camera, CylinderSize, PosAndDir}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 
@@ -9,14 +9,11 @@ class ChunkRenderUpdateQueue(using CylinderSize):
 
   private val queue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToUpdatePriority, Ordering.by(-_))
 
-  private val reorderingTimer: TickableTimer = TickableTimer(5)
-
   def reorderAndFilter(camera: Camera, renderDistance: Double): Unit =
     origin.setPosAndDirFrom(camera.view)
 
-    if reorderingTimer.tick() then
-      val rDistSq = (renderDistance * 16) * (renderDistance * 16)
-      queue.reprioritizeAndFilter(_._1 <= rDistSq)
+    val rDistSq = (renderDistance * 16) * (renderDistance * 16)
+    queue.reprioritizeAndFilter(_._1 <= rDistSq)
 
   def length: Int = queue.size
 
