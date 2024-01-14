@@ -53,31 +53,20 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
   def regularChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.regularChunkBufferFragmentation
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
 
-  private def updateChunkData(ch: Chunk): Unit =
-    val (opaqueBlocks, transmissiveBlocks) =
-      if ch.blocks.isEmpty
-      then (ChunkRenderDataFactory.empty, ChunkRenderDataFactory.empty)
-      else
-        (
-          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, false, blockSpecs),
-          ChunkRenderDataFactory.makeChunkRenderData(ch.coords, ch.blocks, world, true, blockSpecs)
-        )
-
-    chunkHandler.setChunkRenderData(ch.coords, opaqueBlocks, transmissiveBlocks)
-
   def tick(camera: Camera, renderDistance: Double): Unit =
     if chunkRenderUpdateQueueReorderingTimer.tick() then chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
 
-    val numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
+    var numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
 
-    for _ <- 1 to numUpdatesToPerform do
-      while chunkRenderUpdateQueue.pop() match
-          case Some(coords) =>
-            val chunkOpt = world.getChunk(coords)
-            for chunk <- chunkOpt do updateChunkData(chunk)
-            chunkOpt.isEmpty
-          case None => false
-      do ()
+    while numUpdatesToPerform > 0 do
+      chunkRenderUpdateQueue.pop() match
+        case Some(coords) =>
+          world.getChunk(coords) match
+            case Some(chunk) =>
+              chunkHandler.setChunkRenderData(coords, ChunkRenderData(coords, chunk.blocks, world, blockSpecs))
+              numUpdatesToPerform -= 1
+            case None =>
+        case None => numUpdatesToPerform = 0
 
   def onTotalSizeChanged(totalSize: Int): Unit =
     chunkHandler.onTotalSizeChanged(totalSize)

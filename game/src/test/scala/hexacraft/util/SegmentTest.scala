@@ -1,6 +1,5 @@
-package hexacraft.world.render
+package hexacraft.util
 
-import hexacraft.world.render.Segment
 import munit.FunSuite
 
 class SegmentTest extends FunSuite {

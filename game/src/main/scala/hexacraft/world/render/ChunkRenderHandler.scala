@@ -1,12 +1,34 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.TextureArray
-import hexacraft.world.Camera
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
+import hexacraft.world.block.BlockSpecRegistry
+import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.ChunkRelWorld
 
 import org.joml.Vector3f
 
 import java.nio.ByteBuffer
+
+class ChunkRenderData(
+    val opaqueBlocks: Option[IndexedSeq[ByteBuffer]],
+    val transmissiveBlocks: Option[IndexedSeq[ByteBuffer]]
+)
+
+object ChunkRenderData {
+  def apply(
+      coords: ChunkRelWorld,
+      blocks: Array[LocalBlockState],
+      world: BlocksInWorld,
+      blockSpecs: BlockSpecRegistry
+  )(using CylinderSize): ChunkRenderData =
+    if blocks.isEmpty then new ChunkRenderData(None, None)
+    else
+      new ChunkRenderData(
+        Some(BlockVboData.fromChunk(coords, blocks, world, false, blockSpecs)),
+        Some(BlockVboData.fromChunk(coords, blocks, world, true, blockSpecs))
+      )
+}
 
 class ChunkRenderHandler:
   private val blockShader = new BlockShader(isSide = false)
@@ -40,13 +62,14 @@ class ChunkRenderHandler:
     regularBlockHexagonHandler.render()
     transmissiveBlockHexagonHandler.render()
 
-  def setChunkRenderData(
-      coords: ChunkRelWorld,
-      opaqueBlocks: IndexedSeq[ByteBuffer],
-      transmissiveBlocks: IndexedSeq[ByteBuffer]
-  ): Unit =
-    regularBlockHexagonHandler.setChunkContent(coords, opaqueBlocks)
-    transmissiveBlockHexagonHandler.setChunkContent(coords, transmissiveBlocks)
+  def setChunkRenderData(coords: ChunkRelWorld, data: ChunkRenderData): Unit =
+    data.opaqueBlocks match
+      case Some(content) => regularBlockHexagonHandler.setChunkContent(coords, content)
+      case None          => regularBlockHexagonHandler.clearChunkContent(coords)
+
+    data.transmissiveBlocks match
+      case Some(content) => transmissiveBlockHexagonHandler.setChunkContent(coords, content)
+      case None          => transmissiveBlockHexagonHandler.clearChunkContent(coords)
 
   def clearChunkRenderData(coords: ChunkRelWorld): Unit =
     regularBlockHexagonHandler.clearChunkContent(coords)

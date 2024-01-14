@@ -2,6 +2,7 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{InstancedRenderer, VAO, VBO}
+import hexacraft.util.Segment
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer

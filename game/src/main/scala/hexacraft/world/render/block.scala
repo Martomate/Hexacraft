@@ -83,20 +83,16 @@ object BlockVao {
       .finish(verticesPerInstance, maxInstances)
 }
 
-object ChunkRenderDataFactory:
+object BlockVboData:
   private def blockSideStride(side: Int): Int = if (side < 2) (5 + 7) * 4 else (5 + 4) * 4
 
-  private type ChunkRenderData = IndexedSeq[ByteBuffer]
-
-  def empty: ChunkRenderData = IndexedSeq.fill(8)(null)
-
-  def makeChunkRenderData(
+  def fromChunk(
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       transmissiveBlocks: Boolean,
       blockSpecs: BlockSpecRegistry
-  )(using CylinderSize): ChunkRenderData =
+  )(using CylinderSize): IndexedSeq[ByteBuffer] =
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))

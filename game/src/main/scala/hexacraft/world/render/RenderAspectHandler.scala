@@ -1,5 +1,6 @@
 package hexacraft.world.render
 
+import hexacraft.util.{Segment, SegmentSet}
 import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer
@@ -13,14 +14,13 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
 
   def render(): Unit = bufferHandler.render(length)
 
-  def setChunkContent(coords: ChunkRelWorld, content: Option[ByteBuffer]): Unit =
-    content match
-      case Some(data) =>
-        if segmentHandler.hasMapping(coords)
-        then updateChunk(coords, data)
-        else addNewChunk(coords, data)
-      case None =>
-        removeChunk(coords)
+  def setChunkContent(coords: ChunkRelWorld, content: ByteBuffer): Unit =
+    if segmentHandler.hasMapping(coords)
+    then updateChunk(coords, content)
+    else addNewChunk(coords, content)
+
+  def clearChunkContent(coords: ChunkRelWorld): Unit =
+    removeChunk(coords)
 
   private def appendData(coords: ChunkRelWorld, data: ByteBuffer): Unit =
     if data.remaining() > 0 then
@@ -42,7 +42,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       do bufferHandler.set(s, data)
       appendData(coords, data)
     else
-      val leftOver: ChunkSegs = new ChunkSegs
+      val leftOver: SegmentSet = new SegmentSet
 
       for s <- segmentHandler.segments(coords) do
         if data.remaining() >= s.length
@@ -57,7 +57,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
 
       removeData(coords, leftOver)
 
-  private def removeData(coords: ChunkRelWorld, segments: ChunkSegs): Unit =
+  private def removeData(coords: ChunkRelWorld, segments: SegmentSet): Unit =
     while segments.totalLength > 0 do
       val lastRem = segments.lastSegment()
       val (lastChunk, lastSeg) = segmentHandler.lastSegment().get
@@ -81,7 +81,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
         segmentHandler.add(lastChunk, destSeg)
 
   private def removeChunk(coords: ChunkRelWorld): Unit =
-    val segments = new ChunkSegs
+    val segments = new SegmentSet
     for s <- segmentHandler.segments(coords) do segments.add(s)
     removeData(coords, segments)
 

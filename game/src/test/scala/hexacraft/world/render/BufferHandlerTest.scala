@@ -1,6 +1,7 @@
 package hexacraft.world.render
 
-import hexacraft.world.render.{BufferHandler, RenderBuffer, Segment}
+import hexacraft.util.Segment
+import hexacraft.world.render.{BufferHandler, RenderBuffer}
 import munit.FunSuite
 
 import java.nio.ByteBuffer

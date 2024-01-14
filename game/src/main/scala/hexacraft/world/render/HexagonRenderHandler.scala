@@ -22,10 +22,10 @@ class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader) {
       sideHandlers(side).render()
 
   def setChunkContent(coords: ChunkRelWorld, content: IndexedSeq[ByteBuffer]): Unit =
-    for s <- 0 until 8 do sideHandlers(s).setChunkContent(coords, Option(content(s)))
+    for s <- 0 until 8 do sideHandlers(s).setChunkContent(coords, content(s))
 
   def clearChunkContent(coords: ChunkRelWorld): Unit =
-    for s <- 0 until 8 do sideHandlers(s).setChunkContent(coords, None)
+    for s <- 0 until 8 do sideHandlers(s).clearChunkContent(coords)
 
   def unload(): Unit = sideHandlers.foreach(_.unload())
 }

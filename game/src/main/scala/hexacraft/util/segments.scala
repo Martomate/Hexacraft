@@ -1,44 +1,6 @@
-package hexacraft.world.render
-
-import hexacraft.world.coord.ChunkRelWorld
+package hexacraft.util
 
 import scala.collection.mutable
-
-class ChunkSegmentHandler {
-  private val contentMap: mutable.Map[ChunkRelWorld, ChunkSegs] = mutable.Map.empty
-  private val allSegments: ChunkSegsWithKey[ChunkRelWorld] = new ChunkSegsWithKey
-
-  def length: Int = lastSegment().map(s => s._2.start + s._2.length).getOrElse(0)
-
-  def fragmentation: Float = allSegments.segmentCount.toFloat / allSegments.keyCount
-
-  def hasMapping(coords: ChunkRelWorld): Boolean =
-    contentMap.get(coords).exists(_.totalLength != 0)
-
-  def totalLengthForChunk(coords: ChunkRelWorld): Int =
-    contentMap.get(coords).map(_.totalLength).getOrElse(0)
-
-  def add(coords: ChunkRelWorld, segment: Segment): Unit = {
-    contentMap.getOrElseUpdate(coords, new ChunkSegs).add(segment)
-    allSegments.add(coords, segment)
-  }
-
-  // TODO: Handle removal of parts of existing segments
-
-  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c
-    * <= a, d >= b
-    */
-  def remove(coords: ChunkRelWorld, segment: Segment): Unit = {
-    allSegments.remove(coords, segment)
-    contentMap.get(coords).exists(_.remove(segment))
-  }
-
-  def segments(coords: ChunkRelWorld): Iterable[Segment] =
-    contentMap.getOrElse(coords, Iterable.empty)
-
-  def lastSegment(): Option[(ChunkRelWorld, Segment)] =
-    if (allSegments.totalLength > 0) Some(allSegments.lastKeyAndSegment()) else None
-}
 
 case class Segment(start: Int, length: Int) {
   require(start >= 0, "'start' has to be non-negative")
@@ -51,7 +13,7 @@ case class Segment(start: Int, length: Int) {
     other.start < start + length && other.start + other.length > start
 }
 
-class ChunkSegs extends mutable.Iterable[Segment] {
+class SegmentSet extends mutable.Iterable[Segment] {
 
   private val segments: mutable.TreeSet[Segment] = mutable.TreeSet.empty { (s1, s2) =>
     if (s1.overlaps(s2)) 0
@@ -112,7 +74,7 @@ class ChunkSegs extends mutable.Iterable[Segment] {
 }
 
 // TODO: make thread-safe, or rewrite it
-class ChunkSegsWithKey[T] extends ChunkSegs {
+class KeyedSegmentSet[T] extends SegmentSet {
   private var currentKey: T = _
 
   private val invMapOrder: Ordering[Segment] = { (s1, s2) =>
@@ -143,14 +105,14 @@ class ChunkSegsWithKey[T] extends ChunkSegs {
       case None =>
   }
 
-  def add(chunk: T, segment: Segment): Unit = {
-    currentKey = chunk
+  def add(key: T, segment: Segment): Unit = {
+    currentKey = key
     add(segment)
   }
 
-  def remove(chunk: T, segment: Segment): Unit = {
-    require(invMap.get(segment).contains(chunk))
-    currentKey = chunk
+  def remove(key: T, segment: Segment): Unit = {
+    require(invMap.get(segment).contains(key))
+    currentKey = key
     remove(segment)
   }
 

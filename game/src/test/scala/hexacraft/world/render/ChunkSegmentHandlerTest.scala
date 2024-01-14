@@ -1,8 +1,9 @@
 package hexacraft.world.render
 
+import hexacraft.util.Segment
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.ChunkRelWorld
-import hexacraft.world.render.{ChunkSegmentHandler, Segment}
+import hexacraft.world.render.ChunkSegmentHandler
 import munit.FunSuite
 
 class ChunkSegmentHandlerTest extends FunSuite {
