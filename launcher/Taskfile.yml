@@ -1,0 +1,33 @@
+version: '3'
+
+tasks:
+  gen_macos_icons:
+    requires:
+      vars: ['SOURCE_DIR', 'DEST_DIR']
+    cmds:
+      - rm -rf {{.DEST_DIR}}
+      - mkdir -p {{.DEST_DIR}}
+      - sips -z 16 16     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_16x16.png
+      - sips -z 32 32     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_16x16@2x.png
+      - sips -z 32 32     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_32x32.png
+      - sips -z 64 64     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_32x32@2x.png
+      - sips -z 128 128   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_128x128.png
+      - sips -z 256 256   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_128x128@2x.png
+      - sips -z 256 256   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_256x256.png
+      - sips -z 512 512   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_256x256@2x.png
+      - sips -z 512 512   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_512x512.png
+      - sips -z 1024 1024 {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_512x512@2x.png
+
+  move_macos_assets:
+    dir: ./target/release/bundle/osx/HexacraftLauncher.app
+    cmds:
+      - mv ./Contents/Resources/assets ./Contents/MacOS/
+
+  package-macos:
+    cmds:
+      - task: gen_macos_icons
+        vars:
+          SOURCE_DIR: ./packaging/icons
+          DEST_DIR: ./target/packaging/icons
+      - cargo bundle --release
+      - task: move_macos_assets
