@@ -116,10 +116,74 @@ class KeyedSegmentSet[T] extends SegmentSet {
     remove(segment)
   }
 
-  def lastKeyAndSegment(): (T, Segment) = {
+  def lastKeyAndSegment: (T, Segment) = {
     val seg = lastSegment()
     (invMap(seg), seg)
   }
 
   def keyCount: Int = segmentsPerKey.size
+}
+
+/** A dense stack of keyed segments, which means that:
+  *   1. there are no gaps between the segments
+  *   1. segments can only be added/removed at the end
+  *   1. adjacent segments can only be merged if they have the same key
+  *
+  * It can also be thought of as a contiguous piece of memory where the bytes are colored.
+  */
+class DenseKeyedSegmentStack[K] {
+  private val contentMap: mutable.Map[K, SegmentSet] = mutable.Map.empty
+  private val allSegments: KeyedSegmentSet[K] = new KeyedSegmentSet
+
+  def length: Int = lastSegment.map(s => s._2.start + s._2.length).getOrElse(0)
+
+  def fragmentation: Float = allSegments.segmentCount.toFloat / allSegments.keyCount
+
+  def hasMapping(key: K): Boolean =
+    contentMap.get(key).exists(_.totalLength != 0)
+
+  def totalLengthForChunk(key: K): Int =
+    contentMap.get(key).map(_.totalLength).getOrElse(0)
+
+  /** Creates a new segment on top of the stack and labels it with the given key */
+  def push(key: K, numBytes: Int): Segment = {
+    val segment = Segment(length, numBytes)
+    this.add(key, segment)
+    segment
+  }
+
+  /** Sets the key for the segment
+    *
+    * @throws IllegalArgumentException if the segment does not belong to `from`
+    */
+  def relabel(from: K, to: K, segment: Segment): Unit = {
+    this.remove(from, segment)
+    this.add(to, segment)
+  }
+
+  /** Removes the given segment from the top of the stack
+    *
+    * @throws IllegalArgumentException if the segment is not the top of the stack
+    * @throws IllegalArgumentException if the segment does not belong to the given key
+    */
+  def pop(key: K, segment: Segment): Unit = {
+    require(segment.start + segment.length == length)
+    this.remove(key, segment)
+  }
+
+  private def add(key: K, segment: Segment): Unit = {
+    contentMap.getOrElseUpdate(key, new SegmentSet).add(segment)
+    allSegments.add(key, segment)
+  }
+
+  private def remove(key: K, segment: Segment): Unit = {
+    allSegments.remove(key, segment)
+    contentMap.get(key).exists(_.remove(segment))
+  }
+
+  def segments(key: K): Iterable[Segment] =
+    contentMap.getOrElse(key, Iterable.empty)
+
+  def lastSegment: Option[(K, Segment)] =
+    if allSegments.totalLength > 0 then Some(allSegments.lastKeyAndSegment) else None
 }

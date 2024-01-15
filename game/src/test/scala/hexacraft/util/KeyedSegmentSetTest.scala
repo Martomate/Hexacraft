@@ -5,21 +5,21 @@ class KeyedSegmentSetTest extends SegmentSetTest {
     val set = make
     set.add(12, Segment(5, 6))
     set.add(23, Segment(2, 2))
-    assertEquals(set.lastKeyAndSegment(), 12 -> Segment(5, 6))
+    assertEquals(set.lastKeyAndSegment, 12 -> Segment(5, 6))
   }
   test("lastKeyAndSegment should return the correct key when something is removed in the beginning") {
     val set = make
     set.add(23, Segment(2, 2))
     set.add(12, Segment(5, 6))
     set.remove(23, Segment(2, 2))
-    assertEquals(set.lastKeyAndSegment(), 12 -> Segment(5, 6))
+    assertEquals(set.lastKeyAndSegment, 12 -> Segment(5, 6))
   }
   test("lastKeyAndSegment should return the correct key when something is removed in the end") {
     val set = make
     set.add(23, Segment(2, 2))
     set.add(12, Segment(5, 6))
     set.remove(12, Segment(5, 6))
-    assertEquals(set.lastKeyAndSegment(), 23 -> Segment(2, 2))
+    assertEquals(set.lastKeyAndSegment, 23 -> Segment(2, 2))
   }
   test("lastKeyAndSegment should return the correct key when something is changed in the end") {
     val set = make
@@ -27,7 +27,7 @@ class KeyedSegmentSetTest extends SegmentSetTest {
     set.add(12, Segment(5, 6))
     set.remove(12, Segment(5, 6))
     set.add(23, Segment(5, 6))
-    assertEquals(set.lastKeyAndSegment(), 23 -> Segment(5, 6))
+    assertEquals(set.lastKeyAndSegment, 23 -> Segment(5, 6))
   }
   test("lastKeyAndSegment should return the correct key after several removals in the end") {
     val set = make
@@ -39,16 +39,16 @@ class KeyedSegmentSetTest extends SegmentSetTest {
     set.remove(12, Segment(35, 6))
     set.remove(12, Segment(25, 6))
     set.remove(12, Segment(45, 6))
-    assertEquals(set.lastKeyAndSegment(), 12 -> Segment(5, 6))
+    assertEquals(set.lastKeyAndSegment, 12 -> Segment(5, 6))
   }
   test("lastKeyAndSegment should return the correct key when part of the last segment is removed") {
     val set = make
     set.add(23, Segment(2, 2))
     set.add(12, Segment(5, 6))
     set.remove(12, Segment(5, 2))
-    assertEquals(set.lastKeyAndSegment(), 12 -> Segment(7, 4))
+    assertEquals(set.lastKeyAndSegment, 12 -> Segment(7, 4))
     set.remove(12, Segment(8, 3))
-    assertEquals(set.lastKeyAndSegment(), 12 -> Segment(7, 1))
+    assertEquals(set.lastKeyAndSegment, 12 -> Segment(7, 1))
   }
 
   test("add(T, Segment) should complain if the segment already exists, regardless of key") {
