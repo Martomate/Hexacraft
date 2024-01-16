@@ -4,7 +4,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
-import hexacraft.world.block.{BlockSpecRegistry, BlockState}
+import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.Entity
@@ -14,7 +14,11 @@ import org.joml.{Vector2ic, Vector3f}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initialFrameBufferSize: Vector2ic)(using
+class WorldRenderer(
+    world: BlocksInWorld,
+    blockTextureIndices: Map[String, IndexedSeq[Int]],
+    initialFrameBufferSize: Vector2ic
+)(using
     CylinderSize
 ):
   private val skyShader = new SkyShader()
@@ -63,7 +67,7 @@ class WorldRenderer(world: BlocksInWorld, blockSpecs: BlockSpecRegistry, initial
         case Some(coords) =>
           world.getChunk(coords) match
             case Some(chunk) =>
-              chunkHandler.setChunkRenderData(coords, ChunkRenderData(coords, chunk.blocks, world, blockSpecs))
+              chunkHandler.setChunkRenderData(coords, ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
               numUpdatesToPerform -= 1
             case None =>
         case None => numUpdatesToPerform = 0

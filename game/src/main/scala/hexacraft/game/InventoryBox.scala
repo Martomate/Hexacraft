@@ -5,7 +5,7 @@ import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import hexacraft.util.Tracker
 import hexacraft.world.Inventory
-import hexacraft.world.block.{Block, BlockSpecRegistry}
+import hexacraft.world.block.Block
 
 import org.joml.{Matrix4f, Vector4f}
 
@@ -14,11 +14,13 @@ object InventoryBox {
     case BoxClosed
     case InventoryUpdated(inventory: Inventory)
 
-  def apply(currentInventory: Inventory, specs: BlockSpecRegistry)(eventHandler: Tracker[Event]): InventoryBox =
-    val gridRenderer = new GuiBlockRenderer(9, 4)(specs)
+  def apply(currentInventory: Inventory, blockTextureIndices: Map[String, IndexedSeq[Int]])(
+      eventHandler: Tracker[Event]
+  ): InventoryBox =
+    val gridRenderer = new GuiBlockRenderer(9, 4)(blockTextureIndices)
     gridRenderer.setViewMatrix(makeTiltedBlockViewMatrix)
 
-    val floatingBlockRenderer = new GuiBlockRenderer(1, 1)(specs)
+    val floatingBlockRenderer = new GuiBlockRenderer(1, 1)(blockTextureIndices)
     floatingBlockRenderer.setViewMatrix(makeTiltedBlockViewMatrix)
 
     val box = new InventoryBox(currentInventory, gridRenderer, floatingBlockRenderer, eventHandler)

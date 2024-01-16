@@ -4,7 +4,7 @@ import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.world.CameraProjection
-import hexacraft.world.block.{Block, BlockSpecRegistry}
+import hexacraft.world.block.Block
 import hexacraft.world.render.BlockRenderer
 
 import org.joml.Matrix4f
@@ -13,7 +13,7 @@ object GuiBlockRenderer:
   private val guiBlockShader = new GuiBlockShader(isSide = false)
   private val guiBlockSideShader = new GuiBlockShader(isSide = true)
 
-class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockSpecs: BlockSpecRegistry):
+class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureIndices: Map[String, IndexedSeq[Int]]):
   private val guiBlockRenderers =
     for s <- 0 until 8 yield BlockRenderer(GuiBlockVao.forSide(s), GpuState.of(OpenGL.State.DepthTest -> false))
 
@@ -58,7 +58,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockSpecs: Blo
             then
               buf.putFloat(x * separation + xOff)
               buf.putFloat(y * separation + yOff)
-              buf.putInt(blockSpecs.textureIndex(blockToDraw.name, side))
+              buf.putInt(blockTextureIndices(blockToDraw.name)(side))
               buf.putFloat(1)
               buf.putFloat(1)
 

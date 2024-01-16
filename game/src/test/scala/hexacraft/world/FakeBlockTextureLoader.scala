@@ -1,8 +1,7 @@
 package hexacraft.world
 
-import hexacraft.infra.fs.{BlockTextureLoader, BlockTextureMapping}
+import hexacraft.infra.fs.BlockTextureLoader
 
 class FakeBlockTextureLoader extends BlockTextureLoader:
-  override def reload(): BlockTextureMapping = BlockTextureMapping(Seq(), Map.empty.withDefault(_ => 0))
-
-  override def textureMapping: BlockTextureMapping = BlockTextureMapping(Seq(), Map.empty.withDefault(_ => 0))
+  override def load(squareTextureNames: Seq[String], triTextureNames: Seq[String]): BlockTextureLoader.LoadedImages =
+    BlockTextureLoader.LoadedImages(Seq(), Map.empty.withDefault(_ => 0))

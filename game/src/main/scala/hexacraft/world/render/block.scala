@@ -3,7 +3,6 @@ package hexacraft.world.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
-import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
@@ -91,7 +90,7 @@ object BlockVboData:
       blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       transmissiveBlocks: Boolean,
-      blockSpecs: BlockSpecRegistry
+      blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): IndexedSeq[ByteBuffer] =
     val chunkCache = new ChunkCache(world)
 
@@ -161,7 +160,7 @@ object BlockVboData:
           case None     => 0
       }
 
-      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf, blockSpecs)
+      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf, blockTextureIndices)
       buf.flip()
       buf
 
@@ -174,7 +173,7 @@ object BlockVboData:
       shouldRender: java.util.BitSet,
       brightness: BlockRelWorld => Float,
       buf: ByteBuffer,
-      blockSpecs: BlockSpecRegistry
+      blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): Unit =
     val verticesPerInstance = if (side < 2) 7 else 4
 
@@ -192,7 +191,7 @@ object BlockVboData:
         buf.putInt(worldCoords.z)
 
         val blockType = block.blockType
-        buf.putInt(blockSpecs.textureIndex(blockType.name, side))
+        buf.putInt(blockTextureIndices(blockType.name)(side))
         buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0

@@ -3,11 +3,12 @@ package hexacraft.game
 import hexacraft.gui.{LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.world.Inventory
-import hexacraft.world.block.BlockSpecRegistry
 
 import org.joml.{Matrix4f, Vector4f}
 
-class Toolbar(location: LocationInfo, private var inventory: Inventory)(specs: BlockSpecRegistry) extends Component {
+class Toolbar(location: LocationInfo, private var inventory: Inventory)(
+    blockTextureIndices: Map[String, IndexedSeq[Int]]
+) extends Component {
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
   private val selectedBox = LocationInfo(
@@ -20,7 +21,7 @@ class Toolbar(location: LocationInfo, private var inventory: Inventory)(specs: B
   def setSelectedIndex(idx: Int): Unit = selectedIndex = idx
 
   private val guiBlockRenderer =
-    val renderer = new GuiBlockRenderer(9, 1)(specs)
+    val renderer = new GuiBlockRenderer(9, 1)(blockTextureIndices)
     renderer.setViewMatrix(
       new Matrix4f()
         .translate(0, 0, -14f)

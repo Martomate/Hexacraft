@@ -2,7 +2,6 @@ package hexacraft.world.render
 
 import hexacraft.renderer.TextureArray
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
-import hexacraft.world.block.BlockSpecRegistry
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.ChunkRelWorld
 
@@ -20,13 +19,13 @@ object ChunkRenderData {
       coords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       world: BlocksInWorld,
-      blockSpecs: BlockSpecRegistry
+      blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): ChunkRenderData =
     if blocks.isEmpty then new ChunkRenderData(None, None)
     else
       new ChunkRenderData(
-        Some(BlockVboData.fromChunk(coords, blocks, world, false, blockSpecs)),
-        Some(BlockVboData.fromChunk(coords, blocks, world, true, blockSpecs))
+        Some(BlockVboData.fromChunk(coords, blocks, world, false, blockTextureIndices)),
+        Some(BlockVboData.fromChunk(coords, blocks, world, true, blockTextureIndices))
       )
 }
 

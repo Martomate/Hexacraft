@@ -3,7 +3,7 @@ package hexacraft.renderer
 import hexacraft.infra.fs.FileUtils
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.*
-import hexacraft.util.{Resource, ResourceWrapper}
+import hexacraft.util.Resource
 
 import org.lwjgl.BufferUtils
 
@@ -97,11 +97,7 @@ object TextureArray {
 
   def getTextureArray(name: String): TextureArray = textures(name)
 
-  def registerTextureArray(
-      name: String,
-      texSize: Int,
-      images: ResourceWrapper[Seq[PixelArray]]
-  ): TextureArray = {
+  def registerTextureArray(name: String, texSize: Int, images: Seq[PixelArray]): TextureArray = {
     if (!textures.contains(name)) new TextureArray(name, texSize, images)
     else textures(name)
   }
@@ -110,7 +106,7 @@ object TextureArray {
 class TextureArray(
     val name: String,
     val texSize: Int,
-    wrappedImages: ResourceWrapper[Seq[PixelArray]]
+    images: Seq[PixelArray]
 ) extends Resource {
   private var texID: OpenGL.TextureId = _
 
@@ -119,7 +115,6 @@ class TextureArray(
   load()
 
   protected def load(): Unit = {
-    val images = wrappedImages.get
     val height = texSize
     val width = texSize * images.length
     val buf = BufferUtils.createByteBuffer(height * width * 4)
@@ -150,6 +145,8 @@ class TextureArray(
       TexelDataType.UnsignedByte,
       buf
     )
+
+    // TODO: generate mipmaps manually and take image.isTriImage into account
 
     OpenGL.glTexParameteri(
       OpenGL.TextureTarget.Texture2DArray,

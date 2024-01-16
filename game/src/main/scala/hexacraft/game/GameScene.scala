@@ -6,9 +6,10 @@ import hexacraft.infra.fs.BlockTextureLoader
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
-import hexacraft.util.{ResourceWrapper, TickableTimer, Tracker}
+import hexacraft.util.{TickableTimer, Tracker}
 import hexacraft.world.*
-import hexacraft.world.block.{Block, BlockSpecRegistry, BlockState}
+import hexacraft.world.block.{Block, BlockSpec, BlockState}
+import hexacraft.world.block.BlockSpec.{Offsets, Textures}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 import hexacraft.world.render.WorldRenderer
@@ -35,9 +36,12 @@ class GameScene(
 )(eventHandler: Tracker[GameScene.Event])
     extends Scene:
 
-  TextureArray.registerTextureArray("blocks", 32, new ResourceWrapper(() => blockLoader.reload().images))
+  private val blockSpecs = makeBlockSpecs()
+  private val blockTextureMapping = loadBlockTextures(blockSpecs)
+  private val blockTextureIndices: Map[String, IndexedSeq[Int]] =
+    blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
 
-  private val blockSpecRegistry = BlockSpecRegistry.load(blockLoader.textureMapping)
+  TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
 
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
@@ -63,7 +67,8 @@ class GameScene(
       )
     )
 
-  private val worldRenderer: WorldRenderer = new WorldRenderer(world, blockSpecRegistry, initialWindowSize.physicalSize)
+  private val worldRenderer: WorldRenderer =
+    new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
@@ -140,7 +145,7 @@ class GameScene(
         setUseMouse(false)
         isInPopup = true
 
-        inventoryScene = InventoryBox(player.inventory, blockSpecRegistry):
+        inventoryScene = InventoryBox(player.inventory, blockTextureIndices):
           case BoxClosed =>
             overlays -= inventoryScene
             inventoryScene.unload()
@@ -416,7 +421,7 @@ class GameScene(
   private def viewDistance: Double = world.renderDistance
 
   private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
-    val renderer = GuiBlockRenderer(1, 1)(blockSpecRegistry)
+    val renderer = GuiBlockRenderer(1, 1)(blockTextureIndices)
     renderer.setViewMatrix(makeBlockInHandViewMatrix)
     renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
     renderer
@@ -432,7 +437,7 @@ class GameScene(
   private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar =
     val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
 
-    val toolbar = new Toolbar(location, player.inventory)(blockSpecRegistry)
+    val toolbar = new Toolbar(location, player.inventory)(blockTextureIndices)
     toolbar.setSelectedIndex(player.selectedItemSlot)
     toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
     toolbar
@@ -460,3 +465,38 @@ class GameScene(
       val startZ = (math.random() * 100 - 50).toInt
       val startY = world.getHeight(startX, startZ) + 4
       Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
+
+  private def makeBlockSpecs() = Map(
+    "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
+    "grass" -> BlockSpec(Textures.basic("grassSide").withTop("grassTop").withBottom("dirt")),
+    "dirt" -> BlockSpec(Textures.basic("dirt")),
+    "sand" -> BlockSpec(Textures.basic("sand")),
+    "water" -> BlockSpec(Textures.basic("water")),
+    "log" -> BlockSpec(
+      Textures
+        .basic("logSide")
+        .withTop("log", Offsets(0, 1, 2, 0, 1, 2))
+        .withBottom("log", Offsets(0, 1, 2, 0, 1, 2))
+    ),
+    "leaves" -> BlockSpec(Textures.basic("leaves")),
+    "planks" -> BlockSpec(
+      Textures
+        .basic("planks_side")
+        .withTop("planks_top", Offsets(0, 1, 0, 1, 0, 1))
+        .withBottom("planks_top", Offsets(0, 1, 0, 1, 0, 1))
+    ),
+    "log_birch" -> BlockSpec(
+      Textures
+        .basic("logSide_birch")
+        .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
+        .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
+    ),
+    "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
+    "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
+  )
+
+  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec]) =
+    val textures = blockSpecs.values.map(_.textures)
+    val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
+    val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
+    blockLoader.load(squareTextureNames, triTextureNames)
