@@ -77,8 +77,6 @@ void main() {
 #pragma shader frag
 #define y60 0.866025403784439
 
-ivec2 triCoordsToStorage(in ivec2 triCoords);
-
 struct FragInFlat {
 	int blockTex;
 	int faceIndex;
@@ -122,10 +120,10 @@ void main() {
 
 	int texOffset = (fragInFlat.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 
-	vec2 tex = vec2(1 + px, 1) * factor * texSizef;
-	int texX = clamp(int(tex.x), 0, texSize * 2);
+	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texSizef;
+	int texX = clamp(int(tex.x), 0, texSize - 1);
 	int texY = clamp(int(tex.y), 0, texSize - 1);
-	ivec2 stCoords = triCoordsToStorage(ivec2(texX, texY));
+	ivec2 stCoords = ivec2(int(tex.x), int(tex.y));
 	color = textureGrad(
 		texSampler,
 		vec3(vec2(stCoords) / texSizef, texDepth + texOffset),
@@ -137,38 +135,4 @@ void main() {
 	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
 
 	color.rgb *= (fragIn.brightness * 0.8 + 0.2) * visibility;
-}
-
-// Recursive storage format
-ivec2 triCoordsToStorage(in ivec2 triCoords) {
-	int sx = 0;
-	int sy = 0;
-	int bsize = texSize;
-	int x = triCoords.x;
-	int y = triCoords.y;
-	int sign = 1;
-
-	while (bsize > 0) {
-		int rest = y - bsize;
-
-		if (y < bsize) {
-		} else if (x <= 2 * rest) { // left
-			sy += bsize * sign;
-			y = rest;
-		} else if (x >= 2 * bsize) { // right
-			sx += bsize * sign;
-			x -= 2 * bsize;
-			y = rest;
-		} else {
-			sx += (2 * bsize - 1) * sign;
-			sy += (2 * bsize - 1) * sign;
-			sign = -sign;
-			x = 2 * bsize - 1 - x;
-			y = bsize - 1 - rest;
-		}
-
-		bsize >>= 1;
-	}
-
-	return ivec2(sx, sy);
 }

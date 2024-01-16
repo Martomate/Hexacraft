@@ -36,7 +36,6 @@ class RootArchTest extends FunSuite {
   // TODO: reduce package dependencies and update this test accordingly
   test("packages should not depend on too many other packages") {
     val root = "root"
-    val Text = "Text"
     val Game = "Game"
     val GUI = "GUI"
     val Infra = "Infra"
@@ -44,6 +43,7 @@ class RootArchTest extends FunSuite {
     val Math = "Math"
     val Physics = "Physics"
     val Renderer = "Renderer"
+    val Text = "Text"
     val Util = "Util"
     val World = "World"
 
