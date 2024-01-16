@@ -105,11 +105,6 @@ class GameScene(
     val worldTag = worldInfo.copy(player = player.toNBT).toNBT
     if net.isHosting then net.worldProvider.saveWorldData(worldTag)
 
-  override def onReloadedResources(windowSize: WindowSize): Unit =
-    for s <- overlays do s.onReloadedResources(windowSize)
-    setUniforms(windowSize.logicalAspectRatio)
-    world.onReloadedResources()
-
   private def setUniforms(windowAspectRatio: Float): Unit =
     setProjMatrixForAll()
     worldRenderer.onTotalSizeChanged(world.size.totalSize)

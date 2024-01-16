@@ -1,14 +1,6 @@
 package hexacraft.util
 
-class ResourceWrapper[T](make: () => T) extends Resource {
-  private var elem: T = _
+class ResourceWrapper[T](make: () => T) {
+  private val elem: T = make()
   def get: T = elem
-
-  reload()
-
-  def reload(): Unit = {
-    elem = make()
-  }
-
-  def unload(): Unit = {}
 }

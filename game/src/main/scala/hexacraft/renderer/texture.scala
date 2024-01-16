@@ -72,11 +72,6 @@ class TextureSingle(val name: String) extends Resource {
     OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapT(TexWrap.ClampToEdge))
   }
 
-  protected def reload(): Unit = {
-    unload()
-    load()
-  }
-
   def bind(): Unit = {
     if (TextureSingle.boundTexture != this) {
       TextureSingle.boundTexture = this
@@ -173,11 +168,6 @@ class TextureArray(
       OpenGL.TexIntParameter.TextureWrapT(OpenGL.TexWrap.ClampToEdge)
     )
     OpenGL.glGenerateMipmap(OpenGL.TextureTarget.Texture2DArray)
-  }
-
-  protected def reload(): Unit = {
-    unload()
-    load()
   }
 
   def bind(): Unit = {

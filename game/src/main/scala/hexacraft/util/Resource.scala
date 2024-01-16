@@ -6,7 +6,6 @@ object Resource {
   private val resources: mutable.Set[Resource] = mutable.Set.empty
 
   def freeAllResources(): Unit = for r <- resources.clone() do r.free()
-  def reloadAllResources(): Unit = for r <- resources.clone() do r.reload()
 }
 
 abstract class Resource {
@@ -20,6 +19,5 @@ abstract class Resource {
       hasBeenFreed = true
       unload()
 
-  protected def reload(): Unit
   protected def unload(): Unit
 }

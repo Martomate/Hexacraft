@@ -5,6 +5,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.text.{Fonts, Text, TextMaster}
 import hexacraft.text.font.Font
+
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
 abstract class Component:
@@ -20,7 +21,6 @@ abstract class Component:
     textMaster.render(transformation.x, transformation.y)
 
   def handleEvent(event: Event): Boolean = false
-  def onReloadedResources(windowSize: WindowSize): Unit = ()
 
   def unload(): Unit = textMaster.unload()
 

@@ -105,9 +105,6 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
 
       if keyIsPressed
       then
-        if key == KeyboardKey.Letter('R') && window.isKeyPressed(KeyboardKey.Function(3))
-        then reloadResources()
-
         if key == KeyboardKey.Function(11)
         then toggleFullscreen()
 
@@ -144,15 +141,6 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
           scene.frameBufferResized(w, h)
 
         _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(w, h))
-
-  private def reloadResources(): Unit =
-    Resource.reloadAllResources()
-    scene.onReloadedResources(windowSize)
-
-    // This step is needed to set some uniforms after the reload
-    scene.windowResized(_windowSize.logicalSize.x, _windowSize.logicalSize.y)
-
-    println("Reloaded resources")
 
   private def handleDebugEvent(debugMessage: OpenGL.Debug.Message): Unit =
     val OpenGL.Debug.Message(source, debugType, _, severity, message, _) = debugMessage

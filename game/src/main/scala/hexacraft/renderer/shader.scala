@@ -42,11 +42,6 @@ class Shader private (config: ShaderConfig) extends Resource {
     attributeLocations.clear()
   }
 
-  protected def reload(): Unit = {
-    unload()
-    load()
-  }
-
   private def getUniformLocation(name: String): OpenGL.UniformLocation = uniformLocations.get(name) match {
     case Some(loc) => loc
     case None =>

@@ -72,8 +72,6 @@ class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val maxPrimCount: Int
       VAO.boundVAO = this
       OpenGL.glBindVertexArray(id)
 
-  protected def reload(): Unit = ()
-
   protected def unload(): Unit =
     OpenGL.glDeleteVertexArrays(id)
     for vbo <- vbos do vbo.unload()

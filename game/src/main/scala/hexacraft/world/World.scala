@@ -242,12 +242,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       case Some(c) => c.lighting.getBrightness(block.getBlockRelChunk)
       case None    => 1.0f
 
-  def onReloadedResources(): Unit =
-    for
-      col <- columns.values
-      ch <- col.allChunks
-    do requestRenderUpdate(ch.coords)
-
   private def requestRenderUpdate(chunkCoords: ChunkRelWorld): Unit =
     dispatcher.notify(World.Event.ChunkNeedsRenderUpdate(chunkCoords))
 
