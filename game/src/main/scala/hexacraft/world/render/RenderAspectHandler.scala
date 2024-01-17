@@ -61,7 +61,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       val (lastChunk, lastSeg) = memorySegments.lastSegment.get
       if coords == lastChunk then
         // remove it
-        memorySegments.pop(coords, lastRem)
+        memorySegments.pop(coords, lastRem) // TODO: this line crashed one time, not sure why
         segments.remove(lastRem)
       else
         // move data

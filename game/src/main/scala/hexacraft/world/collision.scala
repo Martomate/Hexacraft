@@ -2,6 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, Offset, SkewCylCoords}
+
 import org.joml.Vector3d
 
 class MovingBox(val bounds: HexBox, val pos: CylCoords, val velocity: CylCoords.Offset)
@@ -52,21 +53,22 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
     result
 
   private def _collides(box: MovingBox, ttl: Int): (Vector3d, Vector3d) =
-    if ttl < 0 // TODO: this is a temporary fix for the StackOverflow problem
-    then (box.pos.toVector3d, new Vector3d)
-    else if box.velocity.x == 0 && box.velocity.y == 0 && box.velocity.z == 0 // velocity is 0
-    then (box.pos.toVector3d, box.velocity.toVector3d)
-    else
-      val futureCoords = box.pos.offset(box.velocity).toBlockCoords
-      val (bc, fc) = CoordUtils.getEnclosingBlock(futureCoords)
-      val futurePos = BlockCoords(bc).offset(fc).toCylCoords
-      val futureBox = new MovingBox(box.bounds, futurePos, box.velocity)
+    if ttl < 0 then // TODO: this is a temporary fix for the StackOverflow problem
+      return (box.pos.toVector3d, new Vector3d)
 
-      minDistAndReflectionDir(futureBox, bc) match
-        case Some((minDist, reflectionDir)) =>
-          resultAfterCollision(box, minDist, reflectionDir, ttl)
-        case None =>
-          (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d) // no collision found
+    if box.velocity.x == 0 && box.velocity.y == 0 && box.velocity.z == 0 then // velocity is 0
+      return (box.pos.toVector3d, box.velocity.toVector3d)
+
+    val futureCoords = box.pos.offset(box.velocity).toBlockCoords
+    val (bc, fc) = CoordUtils.getEnclosingBlock(futureCoords)
+    val futurePos = BlockCoords(bc).offset(fc).toCylCoords
+    val futureBox = new MovingBox(box.bounds, futurePos, box.velocity)
+
+    minDistAndReflectionDir(futureBox, bc) match
+      case Some((minDist, reflectionDir)) =>
+        resultAfterCollision(box, minDist, reflectionDir, ttl)
+      case None =>
+        (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d) // no collision found
 
   /** This will check all blocks that could intersect the bounds of the object. If any block
     * intersects the bounds of the object it will return (dist: 0, side: -1) If no blocks are in the
@@ -97,18 +99,17 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
     */
   private def distanceToBlock(box: MovingBox, targetBlock: BlockRelWorld): Option[(Double, Int)] =
     val chunk = chunkCache.getChunk(targetBlock.getChunkRelWorld)
-    if chunk == null // Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
-    then Some((0, -1))
-    else
-      val blockState = chunk.getBlock(targetBlock.getBlockRelChunk)
 
-      if !blockState.blockType.isSolid
-      then None
-      else
-        val targetBounds = blockState.blockType.bounds(blockState.metadata)
-        val targetCoords = BlockCoords(targetBlock).toSkewCylCoords
+    // Chunk isn't loaded, you're stuck (so that you don't fall into the void or something)
+    if chunk == null then return Some((0, -1))
 
-        Some(distanceToCollision(box, targetBounds, targetCoords))
+    val blockState = chunk.getBlock(targetBlock.getBlockRelChunk)
+    if !blockState.blockType.isSolid then return None
+
+    val targetBounds = blockState.blockType.bounds(blockState.metadata)
+    val targetCoords = BlockCoords(targetBlock).toSkewCylCoords
+
+    Some(distanceToCollision(box, targetBounds, targetCoords))
 
   private def resultAfterCollision(
       box: MovingBox,
@@ -116,11 +117,13 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
       reflectionDir: Int,
       ttl: Int
   ): (Vector3d, Vector3d) =
-    if minDist >= 1d // no collision found
-    then (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d)
-    else if reflectionDir == -1 // inside a block
-    then (box.pos.toVector3d, new Vector3d)
-    else resultAfterCollisionImpl(box, minDist, reflectionDir, ttl)
+    if minDist >= 1d then // no collision found
+      return (box.pos.offset(box.velocity).toVector3d, box.velocity.toVector3d)
+
+    if reflectionDir == -1 then // inside a block
+      return (box.pos.toVector3d, new Vector3d)
+
+    resultAfterCollisionImpl(box, minDist, reflectionDir, ttl)
 
   private def resultAfterCollisionImpl(
       box: MovingBox,
@@ -129,8 +132,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
       ttl: Int
   ): (Vector3d, Vector3d) =
     val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
-    val newPos =
-      box.pos.offset(box.velocity.x * minDist, box.velocity.y * minDist, box.velocity.z * minDist)
+    val newPos = box.pos.offset(box.velocity.x * minDist, box.velocity.y * minDist, box.velocity.z * minDist)
     val vel = box.velocity.toVector3d.mul(1 - minDist)
     val dot = vel.dot(normal)
     vel.sub(normal.mul(dot))
@@ -195,19 +197,20 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize):
       d - dz + dx //   (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
-    if !distances.forall(_ >= 0)
-    then (1, -1)
-    else // no intersection before moving
-      val velDists = reflectionDirs.map(t => t.dx * vx + t.dy * vy + t.dz * vz) // the length of v along the normals
-      // TODO: possible bug: the dot product above uses normals that are not normalized. Could this lead to incorrect velDists?
-      if !distances.indices.exists(i => distances(i) <= velDists(i))
-      then (0, -1)
-      else // intersection after moving
-        val zipped = for (i <- distances.indices) yield {
-          val velDist = velDists(i)
-          val distBefore = ((distances(i) - velDist) * 1e9).toLong / 1e9
-          val a = if (velDist <= 0 || distBefore > 0) 1 else -distBefore / velDist
-          (a, i)
-        }
-        val minInZip = zipped.minBy(_._1)
-        (math.min(minInZip._1, 1), minInZip._2)
+    if !distances.forall(_ >= 0) then // intersection before moving
+      return (1, -1)
+
+    val velDists = reflectionDirs.map(t => t.dx * vx + t.dy * vy + t.dz * vz) // the length of v along the normals
+    // TODO: possible bug: the dot product above uses normals that are not normalized. Could this lead to incorrect velDists?
+
+    if !distances.indices.exists(i => distances(i) <= velDists(i)) then // no intersection after moving
+      return (0, -1)
+
+    val zipped = for (i <- distances.indices) yield {
+      val velDist = velDists(i)
+      val distBefore = ((distances(i) - velDist) * 1e9).toLong / 1e9
+      val a = if (velDist <= 0 || distBefore > 0) 1 else -distBefore / velDist
+      (a, i)
+    }
+    val minInZip = zipped.minBy(_._1)
+    (math.min(minInZip._1, 1), minInZip._2)

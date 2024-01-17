@@ -34,7 +34,7 @@ class GameScene(
     blockLoader: BlockTextureLoader,
     initialWindowSize: WindowSize
 )(eventHandler: Tracker[GameScene.Event])
-    extends Scene:
+    extends Scene {
 
   private val blockSpecs = makeBlockSpecs()
   private val blockTextureMapping = loadBlockTextures(blockSpecs)
@@ -50,6 +50,7 @@ class GameScene(
 
   private val worldInfo = net.worldProvider.getWorldInfo
   private val world = World(net.worldProvider, worldInfo)
+
   given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
@@ -77,9 +78,8 @@ class GameScene(
   val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 
   private val mousePicker: RayTracer = new RayTracer(camera, 7)
-  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard, player)
-  private val playerPhysicsHandler: PlayerPhysicsHandler =
-    new PlayerPhysicsHandler(player, world, world.collisionDetector)
+  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard)
+  private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
 
   private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
@@ -103,27 +103,35 @@ class GameScene(
 
   saveWorldInfo()
 
-  if net.isHosting then Thread(() => net.runServer(this)).start()
+  if net.isHosting then {
+    Thread(() => net.runServer(this)).start()
+  }
   net.runClient()
 
-  private def saveWorldInfo(): Unit =
+  private def saveWorldInfo(): Unit = {
     val worldTag = worldInfo.copy(player = player.toNBT).toNBT
-    if net.isHosting then net.worldProvider.saveWorldData(worldTag)
+    if net.isHosting then {
+      net.worldProvider.saveWorldData(worldTag)
+    }
+  }
 
-  private def setUniforms(windowAspectRatio: Float): Unit =
+  private def setUniforms(windowAspectRatio: Float): Unit = {
     setProjMatrixForAll()
     worldRenderer.onTotalSizeChanged(world.size.totalSize)
     crosshairShader.setWindowAspectRatio(windowAspectRatio)
+  }
 
-  private def setProjMatrixForAll(): Unit =
+  private def setProjMatrixForAll(): Unit = {
     worldRenderer.onProjMatrixChanged(camera)
+  }
 
   private def handleKeyPress(key: KeyboardKey): Unit = key match
     case KeyboardKey.Letter('B') =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
-      if world.getBlock(newCoords).blockType == Block.Air
-      then world.setBlock(newCoords, new BlockState(player.blockInHand))
+      if world.getBlock(newCoords).blockType == Block.Air then {
+        world.setBlock(newCoords, new BlockState(player.blockInHand))
+      }
     case KeyboardKey.Escape =>
       import PauseMenu.Event.*
 
@@ -140,8 +148,7 @@ class GameScene(
     case KeyboardKey.Letter('E') =>
       import InventoryBox.Event.*
 
-      if !isPaused
-      then
+      if !isPaused then {
         setUseMouse(false)
         isInPopup = true
 
@@ -157,6 +164,7 @@ class GameScene(
             toolbar.onInventoryUpdated(inv)
 
         overlays += inventoryScene
+      }
     case KeyboardKey.Letter('M') =>
       setUseMouse(!moveWithMouse)
     case KeyboardKey.Letter('F') =>
@@ -173,58 +181,77 @@ class GameScene(
       world.removeAllEntities()
     case _ =>
 
-  private def setDebugScreenVisible(visible: Boolean): Unit =
-    if visible
-    then
-      if debugOverlay == null
-      then debugOverlay = new DebugOverlay
-    else
-      if debugOverlay != null
-      then debugOverlay.unload()
+  private def setDebugScreenVisible(visible: Boolean): Unit = {
+    if visible then {
+      if debugOverlay == null then {
+        debugOverlay = new DebugOverlay
+      }
+    } else {
+      if debugOverlay != null then {
+        debugOverlay.unload()
+      }
       debugOverlay = null
+    }
+  }
 
-  private def setUseMouse(useMouse: Boolean): Unit =
+  private def setUseMouse(useMouse: Boolean): Unit = {
     moveWithMouse = useMouse
     setMouseCursorInvisible(moveWithMouse)
+  }
 
-  override def handleEvent(event: Event): Boolean =
-    if overlays.reverseIterator.exists(_.handleEvent(event))
-    then true
-    else
-      import Event.*
-      event match
-        case KeyEvent(key, _, action, _) =>
-          if action == KeyAction.Press then handleKeyPress(key)
-        case ScrollEvent(_, yOffset, _) if !isPaused && !isInPopup && moveWithMouse =>
+  override def handleEvent(event: Event): Boolean = {
+    if overlays.reverseIterator.exists(_.handleEvent(event)) then {
+      return true
+    }
+
+    import Event.*
+    event match
+      case KeyEvent(key, _, action, _) =>
+        if action == KeyAction.Press then {
+          handleKeyPress(key)
+        }
+      case ScrollEvent(_, yOffset, _) =>
+        if !isPaused && !isInPopup && moveWithMouse then {
           val dy = -math.signum(yOffset).toInt
-          if dy != 0 then setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
-        case MouseClickEvent(button, action, _, _) =>
-          button match
-            case MouseButton.Left  => leftMouseButtonTimer.enabled = action != MouseAction.Release
-            case MouseButton.Right => rightMouseButtonTimer.enabled = action != MouseAction.Release
-            case _                 =>
-        case _ =>
-      true
+          if dy != 0 then {
+            setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
+          }
+        }
+      case MouseClickEvent(button, action, _, _) =>
+        button match {
+          case MouseButton.Left  => leftMouseButtonTimer.enabled = action != MouseAction.Release
+          case MouseButton.Right => rightMouseButtonTimer.enabled = action != MouseAction.Release
+          case _                 =>
+        }
+      case _ =>
+    true
+  }
 
-  private def setSelectedItemSlot(itemSlot: Int): Unit =
+  private def setSelectedItemSlot(itemSlot: Int): Unit = {
     player.selectedItemSlot = itemSlot
     updateBlockInHandRendererContent()
     toolbar.setSelectedIndex(itemSlot)
+  }
 
-  private def updateBlockInHandRendererContent(): Unit =
+  private def updateBlockInHandRendererContent(): Unit = {
     blockInHandRenderer.updateContent(1.5f, -0.9f, Seq(player.blockInHand))
+  }
 
-  private def setPaused(paused: Boolean): Unit =
-    if isPaused != paused
-    then
-      isPaused = paused
-      setMouseCursorInvisible(!paused && moveWithMouse)
+  private def setPaused(paused: Boolean): Unit = {
+    if isPaused == paused then {
+      return
+    }
 
-  private def setMouseCursorInvisible(invisible: Boolean): Unit =
+    isPaused = paused
+    setMouseCursorInvisible(!paused && moveWithMouse)
+  }
+
+  private def setMouseCursorInvisible(invisible: Boolean): Unit = {
     import GameScene.Event.*
     eventHandler.notify(if invisible then CursorCaptured else CursorReleased)
+  }
 
-  override def windowResized(width: Int, height: Int): Unit =
+  override def windowResized(width: Int, height: Int): Unit = {
     val aspectRatio = width.toFloat / height
     camera.proj.aspect = aspectRatio
     camera.updateProjMatrix()
@@ -234,11 +261,13 @@ class GameScene(
     toolbar.setWindowAspectRatio(aspectRatio)
 
     crosshairShader.setWindowAspectRatio(aspectRatio)
+  }
 
-  override def frameBufferResized(width: Int, height: Int): Unit =
+  override def frameBufferResized(width: Int, height: Int): Unit = {
     worldRenderer.frameBufferResized(width, height)
+  }
 
-  override def render(transformation: GUITransformation)(using RenderContext): Unit =
+  override def render(transformation: GUITransformation)(using RenderContext): Unit = {
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()
@@ -246,18 +275,25 @@ class GameScene(
     blockInHandRenderer.render(transformation)
     toolbar.render(transformation)
 
-    if debugOverlay != null
-    then debugOverlay.render(transformation)
+    if debugOverlay != null then {
+      debugOverlay.render(transformation)
+    }
 
-    for s <- overlays do s.render(transformation)
+    for s <- overlays do {
+      s.render(transformation)
+    }
+  }
 
-  private def renderCrosshair(): Unit =
-    if !isPaused && !isInPopup && moveWithMouse
-    then
-      crosshairShader.enable()
-      crosshairRenderer.render(crosshairVAO)
+  private def renderCrosshair(): Unit = {
+    if isPaused || isInPopup || !moveWithMouse then {
+      return
+    }
 
-  private def playerEffectiveViscosity: Double =
+    crosshairShader.enable()
+    crosshairRenderer.render(crosshairVAO)
+  }
+
+  private def playerEffectiveViscosity: Double = {
     player.bounds
       .cover(CylCoords(player.position))
       .map(c => c -> world.getBlock(c))
@@ -271,8 +307,9 @@ class GameScene(
         ) * b.blockType.viscosity.toSI
       )
       .sum
+  }
 
-  private def playerVolumeSubmergedInWater: Double =
+  private def playerVolumeSubmergedInWater: Double = {
     val solidBounds = player.bounds.scaledRadially(0.7)
     solidBounds
       .cover(CylCoords(player.position))
@@ -287,124 +324,157 @@ class GameScene(
         )
       )
       .sum
+  }
 
-  override def tick(ctx: TickContext): Unit =
-    if net.shouldLogout then eventHandler.notify(GameScene.Event.GameQuit)
-    else
-      try
-        val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
-        if world.getChunk(playerCoords.getChunkRelWorld).isDefined
-        then
-          val maxSpeed = playerInputHandler.maxSpeed
-          if !isPaused && !isInPopup then
-            playerInputHandler.tick(
-              if moveWithMouse then ctx.mouseMovement else new Vector2f,
-              maxSpeed,
-              playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
-            )
-          if !isPaused then playerPhysicsHandler.tick(maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
+  override def tick(ctx: TickContext): Unit = {
+    if net.shouldLogout then {
+      eventHandler.notify(GameScene.Event.GameQuit)
+      return
+    }
 
-        camera.setPositionAndRotation(player.position, player.rotation)
-        camera.updateCoords()
-        camera.updateViewMatrix()
+    try {
+      val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
-        updateBlockInHandRendererContent()
+      if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
+        val maxSpeed = playerInputHandler.determineMaxSpeed
+        if !isPaused && !isInPopup then {
+          val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
+          val isInFluid = playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
 
-        selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
-
-        if (rightMouseButtonTimer.tick()) {
-          if !net.isHosting then net.notifyServer(NetworkPacket.PlayerRightClicked)
-          performRightMouseClick()
-        }
-        if (leftMouseButtonTimer.tick()) {
-          if !net.isHosting then net.notifyServer(NetworkPacket.PlayerLeftClicked)
-          performLeftMouseClick()
+          playerInputHandler.tick(player, mouseMovement, maxSpeed, isInFluid)
         }
 
-        world.tick(camera)
-        worldRenderer.tick(camera, world.renderDistance)
+        if !isPaused then {
+          playerPhysicsHandler.tick(player, maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
+        }
+      }
 
-        if debugOverlay != null
-        then
-          debugOverlay.updateContent(
-            DebugOverlay.Content.fromCamera(
-              camera,
-              viewDistance,
-              worldRenderer.regularChunkBufferFragmentation,
-              worldRenderer.transmissiveChunkBufferFragmentation
-            )
-          )
+      camera.setPositionAndRotation(player.position, player.rotation)
+      camera.updateCoords()
+      camera.updateViewMatrix()
 
-        for s <- overlays do s.tick(ctx)
-      catch
-        case e: ZMQException => println(e)
-        case e               => throw e
+      updateBlockInHandRendererContent()
+
+      selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
+
+      if rightMouseButtonTimer.tick() then {
+        if !net.isHosting then {
+          net.notifyServer(NetworkPacket.PlayerRightClicked)
+        }
+        performRightMouseClick()
+      }
+      if leftMouseButtonTimer.tick() then {
+        if !net.isHosting then {
+          net.notifyServer(NetworkPacket.PlayerLeftClicked)
+        }
+        performLeftMouseClick()
+      }
+
+      world.tick(camera)
+      worldRenderer.tick(camera, world.renderDistance)
+
+      if debugOverlay != null then {
+        val regularFragmentation = worldRenderer.regularChunkBufferFragmentation
+        val transmissiveFragmentation = worldRenderer.transmissiveChunkBufferFragmentation
+
+        debugOverlay.updateContent(
+          DebugOverlay.Content.fromCamera(camera, viewDistance, regularFragmentation, transmissiveFragmentation)
+        )
+      }
+
+      for s <- overlays do {
+        s.tick(ctx)
+      }
+    } catch {
+      case e: ZMQException => println(e)
+      case e               => throw e
+    }
+  }
 
   private def updatedMousePicker(
       windowSize: WindowSize,
       mouse: MousePosition
-  ): Option[(BlockState, BlockRelWorld, Option[Int])] =
-    if isPaused || isInPopup
-    then None
-    else
-      val screenCoords =
-        if moveWithMouse
-        then new Vector2f(0, 0)
-        else mouse.normalizedScreenCoords(windowSize.logicalSize)
+  ): Option[(BlockState, BlockRelWorld, Option[Int])] = {
+    if isPaused || isInPopup then {
+      return None
+    }
 
-      // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
-      for
-        ray <- Ray.fromScreen(camera, screenCoords)
-        hit <- mousePicker.trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      yield (world.getBlock(hit._1), hit._1, hit._2)
+    val screenCoords =
+      if moveWithMouse then {
+        new Vector2f(0, 0)
+      } else {
+        mouse.normalizedScreenCoords(windowSize.logicalSize)
+      }
 
-  def performLeftMouseClick(): Unit =
-    selectedBlockAndSide match
+    // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
+    for
+      ray <- Ray.fromScreen(camera, screenCoords)
+      hit <- mousePicker.trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+    yield (world.getBlock(hit._1), hit._1, hit._2)
+  }
+
+  def performLeftMouseClick(): Unit = {
+    selectedBlockAndSide match {
       case Some((state, coords, _)) =>
-        if state.blockType != Block.Air
-        then world.removeBlock(coords)
+        if state.blockType != Block.Air then {
+          world.removeBlock(coords)
+        }
       case _ =>
+    }
+  }
 
-  def performRightMouseClick(): Unit =
-    selectedBlockAndSide match
+  def performRightMouseClick(): Unit = {
+    selectedBlockAndSide match {
       case Some((state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
 
-        state.blockType match
+        state.blockType match {
           case Block.Tnt => explode(coords)
           case _         => tryPlacingBlockAt(coordsInFront)
+        }
       case _ =>
+    }
+  }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit =
-    if !world.getBlock(coords).blockType.isSolid
-    then
-      val blockType = player.blockInHand
-      val state = new BlockState(blockType)
+  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
+    if world.getBlock(coords).blockType.isSolid then {
+      return
+    }
 
-      val collides = world.collisionDetector.collides(
-        blockType.bounds(state.metadata),
-        BlockCoords(coords).toCylCoords,
-        player.bounds,
-        CylCoords(camera.position)
-      )
+    val blockType = player.blockInHand
+    val state = new BlockState(blockType)
 
-      if !collides
-      then world.setBlock(coords, state)
+    val collides = world.collisionDetector.collides(
+      blockType.bounds(state.metadata),
+      BlockCoords(coords).toCylCoords,
+      player.bounds,
+      CylCoords(camera.position)
+    )
 
-  private def explode(coords: BlockRelWorld): Unit =
-    for dy <- -1 to 1 do
-      for offset <- NeighborOffsets.all do
+    if !collides then {
+      world.setBlock(coords, state)
+    }
+  }
+
+  private def explode(coords: BlockRelWorld): Unit = {
+    for dy <- -1 to 1 do {
+      for offset <- NeighborOffsets.all do {
         val c = coords.offset(offset).offset(0, dy, 0)
         world.setBlock(c, BlockState.Air)
+      }
+    }
 
     world.setBlock(coords, BlockState.Air)
+  }
 
-  override def unload(): Unit =
+  override def unload(): Unit = {
     setMouseCursorInvisible(false)
 
     saveWorldInfo()
 
-    for s <- overlays do s.unload()
+    for s <- overlays do {
+      s.unload()
+    }
 
     world.unload()
     worldRenderer.unload()
@@ -413,18 +483,21 @@ class GameScene(
     toolbar.unload()
     blockInHandRenderer.unload()
 
-    if debugOverlay != null
-    then debugOverlay.unload()
+    if debugOverlay != null then {
+      debugOverlay.unload()
+    }
 
     net.unload()
+  }
 
   private def viewDistance: Double = world.renderDistance
 
-  private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer =
+  private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer = {
     val renderer = GuiBlockRenderer(1, 1)(blockTextureIndices)
     renderer.setViewMatrix(makeBlockInHandViewMatrix)
     renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
     renderer
+  }
 
   private def makeCrosshairVAO: VAO = VAO
     .builder()
@@ -434,37 +507,43 @@ class GameScene(
     )
     .finish(4)
 
-  private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar =
+  private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar = {
     val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
 
     val toolbar = new Toolbar(location, player.inventory)(blockTextureIndices)
     toolbar.setSelectedIndex(player.selectedItemSlot)
     toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
     toolbar
+  }
 
-  private def makeCameraProjection(windowSize: WindowSize) =
-    val far = world.size.worldSize match
+  private def makeCameraProjection(windowSize: WindowSize) = {
+    val far = world.size.worldSize match {
       case 0 => 100000f
       case 1 => 10000f
       case _ => 1000f
+    }
 
     new CameraProjection(70f, windowSize.logicalAspectRatio, 0.02f, far)
+  }
 
-  private def makeBlockInHandViewMatrix =
+  private def makeBlockInHandViewMatrix = {
     new Matrix4f()
       .translate(0, 0, -2f)
       .rotateZ(-3.1415f / 12)
       .rotateX(3.1415f / 6)
       .translate(0, -0.25f, 0)
+  }
 
-  private def makePlayer(playerNbt: Nbt.MapTag): Player =
-    if playerNbt != null
-    then Player.fromNBT(playerNbt)
-    else
+  private def makePlayer(playerNbt: Nbt.MapTag): Player = {
+    if playerNbt != null then {
+      Player.fromNBT(playerNbt)
+    } else {
       val startX = (math.random() * 100 - 50).toInt
       val startZ = (math.random() * 100 - 50).toInt
       val startY = world.getHeight(startX, startZ) + 4
       Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
+    }
+  }
 
   private def makeBlockSpecs() = Map(
     "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
@@ -495,8 +574,10 @@ class GameScene(
     "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
   )
 
-  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec]) =
+  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec]) = {
     val textures = blockSpecs.values.map(_.textures)
     val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
     val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
     blockLoader.load(squareTextureNames, triTextureNames)
+  }
+}
