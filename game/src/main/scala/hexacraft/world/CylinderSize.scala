@@ -6,7 +6,8 @@ package hexacraft.world
   * @param worldSize
   *   the size exponent, <b>max-value: 20</b>
   */
-case class CylinderSize(worldSize: Int) extends AnyVal:
+case class CylinderSize(worldSize: Int) extends AnyVal {
+
   /** The number of chunks around the cylinder */
   def ringSize: Int = 1 << worldSize
 
@@ -29,10 +30,13 @@ case class CylinderSize(worldSize: Int) extends AnyVal:
     * <code>totalSize</code>.
     */
   def circumference: Double = totalSize * CylinderSize.y60
+}
 
-object CylinderSize:
+object CylinderSize {
   val y60: Double = Math.sqrt(3) / 2
 
-  def apply(worldSize: Int): CylinderSize =
+  def apply(worldSize: Int): CylinderSize = {
     require(worldSize >= 0 && worldSize <= 20)
     new CylinderSize(worldSize)
+  }
+}

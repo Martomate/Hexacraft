@@ -45,28 +45,32 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       val c2c = c2.getBlockRelChunk
       val isAboveChunk = y == 16 && (x & ~15 | z & ~15) == 0
 
-      chunkCache.getChunk(c2.getChunkRelWorld) match
+      chunkCache.getChunk(c2.getChunkRelWorld) match {
         case null =>
           if isAboveChunk && shouldEnqueueSunlight(c2c.offset(0, -1, 0), chunk)
-          then
+          then {
             chunk.lighting.setSunlight(c2c.offset(0, -1, 0), 15)
             queueSun15 += ((c2c.offset(0, -1, 0), chunk))
+          }
         case neigh =>
-          if neigh.lighting.getTorchlight(c2c) > 1
-          then queueTorch += ((c2c, neigh))
+          if neigh.lighting.getTorchlight(c2c) > 1 then {
+            queueTorch += ((c2c, neigh))
+          }
 
-          if isAboveChunk && shouldEnqueueSunlight(c2c, neigh)
-          then
+          if isAboveChunk && shouldEnqueueSunlight(c2c, neigh) then {
             neigh.lighting.setSunlight(c2c, 15)
             queueSun15 += ((c2c, neigh))
+          }
 
           val lightHere = neigh.lighting.getSunlight(c2c)
-          if lightHere > 0 && lightHere < 15
-          then queueSunFromNeighbor += ((c2c, neigh))
+          if lightHere > 0 && lightHere < 15 then {
+            queueSunFromNeighbor += ((c2c, neigh))
+          }
+      }
     }
 
-    for (s <- -1 to 16) {
-      for (t <- -1 to 16) {
+    for s <- -1 to 16 do {
+      for t <- -1 to 16 do {
         handleEdge(-1, s, t)
         handleEdge(16, s, t)
         handleEdge(s, -1, t)
@@ -114,21 +118,22 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       chunksNeedingRenderUpdate += chunk
 
-      for (s <- NeighborOffsets.indices) {
+      for s <- NeighborOffsets.indices do {
         val c2w = here.globalNeighbor(s, chunk.coords)
         val c2 = c2w.getBlockRelChunk
         val neigh = chunkCache.getChunk(c2w.getChunkRelWorld)
-        if (neigh != null) {
+        if neigh != null then {
           val thisLevel = neigh.lighting.getTorchlight(c2)
-          if (thisLevel != 0) {
-            if (thisLevel < level) {
+          if thisLevel != 0 then {
+            if thisLevel < level then {
               queue += ((c2, neigh, thisLevel))
               neigh.lighting.setTorchlight(c2, 0)
             } else {
               lightQueue += ((c2, neigh))
             }
-          } else
+          } else {
             chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
+          }
         }
       }
     }
@@ -143,26 +148,27 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
-    while (queue.nonEmpty) {
+    while queue.nonEmpty do {
       val (here, chunk, level) = queue.dequeue()
 
       chunksNeedingRenderUpdate += chunk
 
-      for (s <- NeighborOffsets.indices) {
+      for s <- NeighborOffsets.indices do {
         val c2w = here.globalNeighbor(s, chunk.coords)
         val c2 = c2w.getBlockRelChunk
         val neigh = chunkCache.getChunk(c2w.getChunkRelWorld)
-        if (neigh != null) {
+        if neigh != null then {
           val thisLevel = neigh.lighting.getSunlight(c2)
-          if (thisLevel != 0) {
-            if (thisLevel < level || (s == 1 && level == 15)) {
+          if thisLevel != 0 then {
+            if thisLevel < level || (s == 1 && level == 15) then {
               queue += ((c2, neigh, thisLevel))
               neigh.lighting.setSunlight(c2, 0)
             } else {
               lightQueue += ((c2, neigh))
             }
-          } else
+          } else {
             chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
+          }
         }
       }
     }
@@ -179,23 +185,24 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       val nextLevel = chunk.lighting.getTorchlight(here) - 1
 
-      if (nextLevel > 0) {
+      if nextLevel > 0 then {
         chunksNeedingRenderUpdate += chunk
 
-        for (s <- NeighborOffsets.indices) {
+        for s <- NeighborOffsets.indices do {
           val c2w = here.globalNeighbor(s, chunk.coords)
           val c2 = c2w.getBlockRelChunk
           val neigh = chunkCache.getChunk(c2w.getChunkRelWorld)
-          if (neigh != null) {
+          if neigh != null then {
             val block = neigh.getBlock(c2)
-            if (!block.blockType.isCovering(block.metadata, oppositeSide(s))) {
+            if !block.blockType.isCovering(block.metadata, oppositeSide(s)) then {
               val thisTLevel = neigh.lighting.getTorchlight(c2)
-              if (thisTLevel < nextLevel) {
+              if thisTLevel < nextLevel then {
                 neigh.lighting.setTorchlight(c2, nextLevel)
                 queue += ((c2, neigh))
               }
-            } else
+            } else {
               chunksNeedingRenderUpdate += neigh // the if-case above gets handled later since it's in the queue
+            }
           }
         }
       }
@@ -207,18 +214,18 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
   private def propagateSunlight(queue: mutable.Queue[(BlockRelChunk, Chunk)]): Unit = {
     val chunksNeedingRenderUpdate = mutable.HashSet.empty[Chunk]
 
-    if (queue.nonEmpty) {
+    if queue.nonEmpty then {
       val chunksToProcess = mutable.Map.empty[Chunk, mutable.Queue[Int]]
-      while (queue.nonEmpty) {
+      while queue.nonEmpty do {
         val (here, chunk) = queue.dequeue()
         chunksToProcess.getOrElseUpdate(chunk, mutable.Queue.empty).enqueue(here.value)
         chunksNeedingRenderUpdate += chunk
       }
-      while (chunksToProcess.nonEmpty) {
+      while chunksToProcess.nonEmpty do {
         val chunk = chunksToProcess.head._1
         val thisQueue = chunksToProcess.remove(chunk).get
         val map = propagateSunlightInChunk(chunk, thisQueue)
-        for (ch <- map.keysIterator) {
+        for ch <- map.keysIterator do {
           chunksToProcess.getOrElseUpdate(ch, mutable.Queue.empty).enqueueAll(map(ch))
           chunksNeedingRenderUpdate += ch
         }
@@ -235,33 +242,33 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
     val neighborMap: mutable.Map[Chunk, mutable.ArrayBuffer[Int]] = mutable.Map.empty
     val inQueue: java.util.BitSet = new java.util.BitSet(16 * 16 * 16)
 
-    while (queue.nonEmpty) {
+    while queue.nonEmpty do {
       val hereValue = queue.dequeue()
       val here = BlockRelChunk(hereValue)
       inQueue.clear(hereValue)
 
       val nextLevel = chunk.lighting.getSunlight(here) - 1
 
-      if (nextLevel > 0) {
+      if nextLevel > 0 then {
         var s = 0
-        while (s < 8) { // done as an optimization
-          if (here.isOnChunkEdge(s)) {
+        while s < 8 do { // done as an optimization
+          if here.isOnChunkEdge(s) then {
             val c2w = here.globalNeighbor(s, chunk.coords)
             val crw = c2w.getChunkRelWorld
             val c2 = c2w.getBlockRelChunk
             val neigh = chunkCache.getChunk(crw)
-            if (neigh != null) {
+            if neigh != null then {
               val otherSide = oppositeSide(s)
 
               // The neighboring chunk edge might be in light. This line ensures that it is indeed render-updated.
               if (!neighborMap.contains(neigh)) neighborMap.put(neigh, mutable.ArrayBuffer.empty)
 
               val bl = neigh.getBlock(c2)
-              if (!bl.blockType.isCovering(bl.metadata, otherSide)) {
+              if !bl.blockType.isCovering(bl.metadata, otherSide) then {
                 val thisSLevel = neigh.lighting.getSunlight(c2)
-                val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
+                val nextS = if nextLevel == 14 && s == 1 then nextLevel + 1 else nextLevel
 
-                if (thisSLevel < nextS) {
+                if thisSLevel < nextS then {
                   neigh.lighting.setSunlight(c2, nextS)
                   neighborMap(neigh).append(c2.value)
                 }
@@ -272,13 +279,13 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
             val otherSide = oppositeSide(s)
 
             val bl = chunk.getBlock(c2)
-            if (!bl.blockType.isCovering(bl.metadata, otherSide)) {
+            if !bl.blockType.isCovering(bl.metadata, otherSide) then {
               val thisSLevel = chunk.lighting.getSunlight(c2)
-              val nextS = if (nextLevel == 14 && s == 1) nextLevel + 1 else nextLevel
-              if (thisSLevel < nextS) {
+              val nextS = if nextLevel == 14 && s == 1 then nextLevel + 1 else nextLevel
+              if thisSLevel < nextS then {
                 chunk.lighting.setSunlight(c2, nextS)
 
-                if (!inQueue.get(c2.value)) {
+                if !inQueue.get(c2.value) then {
                   inQueue.set(c2.value)
                   queue += c2.value
                 }

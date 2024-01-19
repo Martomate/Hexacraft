@@ -5,25 +5,32 @@ import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import org.joml.{Matrix4f, Vector3f}
 
 class SkyShader {
-  private val config = ShaderConfig("sky").withAttribs("position")
+  private val config = ShaderConfig("sky").withInputs("position")
   private val shader = Shader.from(config)
 
-  def setInverseProjectionMatrix(matrix: Matrix4f): Unit =
+  def setInverseProjectionMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("invProjMatr", matrix)
+  }
 
-  def setInverseViewMatrix(matrix: Matrix4f): Unit =
+  def setInverseViewMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("invViewMatr", matrix)
+  }
 
-  def setSunPosition(sun: Vector3f): Unit =
+  def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
 
-  def enable(): Unit = shader.activate()
+  def enable(): Unit = {
+    shader.activate()
+  }
 
-  def free(): Unit = shader.free()
+  def free(): Unit = {
+    shader.free()
+  }
 }
 
 object SkyVao {
-  def create: VAO =
+  def create: VAO = {
     VAO
       .builder()
       .addVertexVbo(4)(
@@ -31,4 +38,5 @@ object SkyVao {
         _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
       )
       .finish(4)
+  }
 }

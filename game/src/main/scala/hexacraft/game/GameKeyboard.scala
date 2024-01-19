@@ -2,11 +2,12 @@ package hexacraft.game
 
 import hexacraft.infra.window.{KeyboardKey, Window}
 
-trait GameKeyboard:
+trait GameKeyboard {
   def keyIsPressed(key: GameKeyboard.Key): Boolean
+}
 
-object GameKeyboard:
-  enum Key:
+object GameKeyboard {
+  enum Key {
     case MoveForward
     case MoveBackward
     case MoveLeft
@@ -27,11 +28,12 @@ object GameKeyboard:
     case MoveSuperFast
 
     case ResetRotation
+  }
 
-  class GlfwKeyboard(window: Window) extends GameKeyboard:
-    def keyIsPressed(key: GameKeyboard.Key): Boolean =
+  class GlfwKeyboard(window: Window) extends GameKeyboard {
+    def keyIsPressed(key: GameKeyboard.Key): Boolean = {
       import GameKeyboard.Key.*
-      key match
+      key match {
         case MoveForward   => window.isKeyPressed(KeyboardKey.Letter('W'))
         case MoveBackward  => window.isKeyPressed(KeyboardKey.Letter('S'))
         case MoveRight     => window.isKeyPressed(KeyboardKey.Letter('D'))
@@ -48,3 +50,7 @@ object GameKeyboard:
         case MoveFast      => window.isKeyPressed(KeyboardKey.LeftAlt)
         case MoveSuperFast => window.isKeyPressed(KeyboardKey.RightControl)
         case ResetRotation => window.isKeyPressed(KeyboardKey.Delete) && window.isKeyPressed(KeyboardKey.Letter('R'))
+      }
+    }
+  }
+}

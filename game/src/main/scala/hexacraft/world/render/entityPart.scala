@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
 
 class EntityShader(isSide: Boolean) {
   private val config = ShaderConfig("entity_part")
-    .withAttribs(
+    .withInputs(
       "position",
       "texCoords",
       "normal",
@@ -31,34 +31,45 @@ class EntityShader(isSide: Boolean) {
 
   private val shader = Shader.from(config)
 
-  def setTotalSize(totalSize: Int): Unit =
+  def setTotalSize(totalSize: Int): Unit = {
     shader.setUniform1i("totalSize", totalSize)
+  }
 
-  def setSunPosition(sun: Vector3f): Unit =
+  def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
 
-  def setCameraPosition(cam: Vector3d): Unit =
+  def setCameraPosition(cam: Vector3d): Unit = {
     shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
+  }
 
-  def setProjectionMatrix(matrix: Matrix4f): Unit =
+  def setProjectionMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("projMatrix", matrix)
+  }
 
-  def setViewMatrix(matrix: Matrix4f): Unit =
+  def setViewMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("viewMatrix", matrix)
+  }
 
-  def setSide(side: Int): Unit =
+  def setSide(side: Int): Unit = {
     shader.setUniform1i("side", side)
+  }
 
-  def setTextureSize(texSize: Int): Unit =
+  def setTextureSize(texSize: Int): Unit = {
     shader.setUniform1i("texSize", texSize)
+  }
 
-  def enable(): Unit = shader.activate()
+  def enable(): Unit = {
+    shader.activate()
+  }
 
-  def free(): Unit = shader.free()
+  def free(): Unit = {
+    shader.free()
+  }
 }
 
 object EntityPartVao {
-  def forSide(side: Int): VAO =
+  def forSide(side: Int): VAO = {
     VAO
       .builder()
       .addVertexVbo(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
@@ -77,6 +88,7 @@ object EntityPartVao {
           .floats(12, 1)
       )
       .finish(BlockRenderer.verticesPerInstance(side), 0)
+  }
 }
 
 case class EntityDataForShader(model: EntityModel, parts: Seq[EntityPartDataForShader])
@@ -88,7 +100,7 @@ case class EntityPartDataForShader(
     blockTex: Int,
     brightness: Float
 ) {
-  def fill(buf: ByteBuffer): Unit =
+  def fill(buf: ByteBuffer): Unit = {
     modelMatrix.get(buf)
     buf.position(buf.position() + 16 * 4)
     buf.putInt(texOffset._1)
@@ -97,21 +109,22 @@ case class EntityPartDataForShader(
     buf.putInt(texSize._2)
     buf.putInt(blockTex)
     buf.putFloat(brightness)
+  }
 }
 
 object EntityRenderDataFactory {
   def getEntityRenderData(entities: Iterable[Entity], side: Int, world: BlocksInWorld)(using
       CylinderSize
-  ): Iterable[EntityDataForShader] =
+  ): Iterable[EntityDataForShader] = {
     val chunkCache = new ChunkCache(world)
 
     val tr = new Matrix4f
 
-    for ent <- entities if ent.model.isDefined yield
+    for ent <- entities if ent.model.isDefined yield {
       val baseT = ent.transform.transform
       val model = ent.model.get
 
-      val parts = for part <- model.parts yield
+      val parts = for part <- model.parts yield {
         baseT.mul(part.transform, tr)
 
         val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
@@ -122,9 +135,11 @@ object EntityRenderDataFactory {
         val partChunk = chunkCache.getChunk(cCoords)
 
         val brightness: Float =
-          if partChunk != null
-          then partChunk.lighting.getBrightness(coords.getBlockRelChunk)
-          else 0
+          if partChunk != null then {
+            partChunk.lighting.getBrightness(coords.getBlockRelChunk)
+          } else {
+            0
+          }
 
         EntityPartDataForShader(
           modelMatrix = new Matrix4f(tr),
@@ -133,7 +148,9 @@ object EntityRenderDataFactory {
           blockTex = part.texture(side),
           brightness
         )
+      }
 
       EntityDataForShader(model, parts)
-
+    }
+  }
 }

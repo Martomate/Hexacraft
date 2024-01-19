@@ -22,9 +22,13 @@ class PerlinNoise3D(random: Random) { // Apparently SimplexNoise exists in joml
 
   private def grad(hash: Int, x: Double, y: Double, z: Double): Double = {
     val h = hash & 15
-    val u = if (h < 8) x else y
-    val v = if (h < 4) y else if (h == 12 || h == 14) x else z
-    (if ((h & 1) == 0) u else -u) + (if ((h & 2) == 0) v else -v)
+    val u = if h < 8 then x else y
+    val v = if h < 4 then y else if h == 12 || h == 14 then x else z
+
+    val gu = if (h & 1) == 0 then u else -u
+    val gv = if (h & 2) == 0 then v else -v
+
+    gu + gv
   }
 
   private def fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)

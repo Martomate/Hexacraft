@@ -19,7 +19,9 @@ object TextureSingle {
     OpenGL.glBindTexture(TextureTarget.Texture2D, TextureId.none)
   }
 
-  def getTexture(name: String): TextureSingle = textures.getOrElse(name, new TextureSingle(name))
+  def getTexture(name: String): TextureSingle = {
+    textures.getOrElse(name, new TextureSingle(name))
+  }
 }
 
 class TextureSingle(val name: String) extends Resource {
@@ -45,12 +47,14 @@ class TextureSingle(val name: String) extends Resource {
     texHeight = height
     val pix = image.getRGB(0, 0, width, height, null, 0, width)
     val buf = BufferUtils.createByteBuffer(pix.length * 4)
-    for (i <- 0 until pix.size)
-      buf
-        .put((pix(i) >> 16).toByte)
-        .put((pix(i) >> 8).toByte)
-        .put((pix(i) >> 0).toByte)
-        .put((pix(i) >> 24).toByte)
+
+    for i <- 0 until pix.size do {
+      buf.put((pix(i) >> 16).toByte)
+      buf.put((pix(i) >> 8).toByte)
+      buf.put((pix(i) >> 0).toByte)
+      buf.put((pix(i) >> 24).toByte)
+    }
+
     buf.flip
     texID = OpenGL.glGenTextures()
     bind()
@@ -73,14 +77,16 @@ class TextureSingle(val name: String) extends Resource {
   }
 
   def bind(): Unit = {
-    if (TextureSingle.boundTexture != this) {
+    if TextureSingle.boundTexture != this then {
       TextureSingle.boundTexture = this
       OpenGL.glBindTexture(TextureTarget.Texture2D, texID)
     }
   }
 
   def unload(): Unit = {
-    if (TextureSingle.boundTexture == this) TextureSingle.unbind()
+    if TextureSingle.boundTexture == this then {
+      TextureSingle.unbind()
+    }
     OpenGL.glDeleteTextures(texID)
   }
 }
@@ -98,8 +104,11 @@ object TextureArray {
   def getTextureArray(name: String): TextureArray = textures(name)
 
   def registerTextureArray(name: String, texSize: Int, images: Seq[PixelArray]): TextureArray = {
-    if (!textures.contains(name)) new TextureArray(name, texSize, images)
-    else textures(name)
+    if !textures.contains(name) then {
+      new TextureArray(name, texSize, images)
+    } else {
+      textures(name)
+    }
   }
 }
 
@@ -118,10 +127,10 @@ class TextureArray(
     val height = texSize
     val width = texSize * images.length
     val buf = BufferUtils.createByteBuffer(height * width * 4)
-    for (image <- images) {
+    for image <- images do {
       val pix = image.pixels
-      for (j <- 0 until texSize) {
-        for (i <- 0 until texSize) {
+      for j <- 0 until texSize do {
+        for i <- 0 until texSize do {
           val idx = i + j * texSize
           buf.put((pix(idx) >> 16).toByte)
           buf.put((pix(idx) >> 8).toByte)
@@ -168,14 +177,16 @@ class TextureArray(
   }
 
   def bind(): Unit = {
-    if (TextureArray.boundTextureArray != this) {
+    if TextureArray.boundTextureArray != this then {
       TextureArray.boundTextureArray = this
       OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2DArray, texID)
     }
   }
 
   def unload(): Unit = {
-    if (TextureArray.boundTextureArray == this) TextureArray.unbind()
+    if TextureArray.boundTextureArray == this then {
+      TextureArray.unbind()
+    }
     OpenGL.glDeleteTextures(texID)
   }
 }

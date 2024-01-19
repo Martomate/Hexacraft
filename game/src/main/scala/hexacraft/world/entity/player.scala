@@ -15,22 +15,24 @@ class PlayerEntityModel(
     val rightLeg: BasicEntityPart,
     val leftLeg: BasicEntityPart,
     val textureName: String
-) extends EntityModel:
+) extends EntityModel {
   override val parts: Seq[EntityPart] = Seq(head, leftBodyHalf, rightBodyHalf, rightArm, leftArm, rightLeg, leftLeg)
 
   private val animation = new PlayerAnimation(this)
 
-  override def tick(): Unit = animation.tick()
+  override def tick(): Unit = {
+    animation.tick()
+  }
 
-  override def texture: TextureSingle =
-    TextureSingle.getTexture(
-      "textures/entities/" + textureName
-    )
+  override def texture: TextureSingle = {
+    TextureSingle.getTexture("textures/entities/" + textureName)
+  }
+}
 
-class PlayerAnimation(model: PlayerEntityModel):
+class PlayerAnimation(model: PlayerEntityModel) {
   private var time = 0f
 
-  def tick(): Unit =
+  def tick(): Unit = {
     time += 1f / 60
 
     val phase = time * 2 * math.Pi
@@ -40,15 +42,19 @@ class PlayerAnimation(model: PlayerEntityModel):
 
     model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
     model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+  }
+}
 
-object PlayerEntityModel:
-  private def makeHexBox(r: Int, b: Float, h: Int): HexBox =
+object PlayerEntityModel {
+  private def makeHexBox(r: Int, b: Float, h: Int): HexBox = {
     HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+  }
 
-  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset =
+  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset = {
     BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
+  }
 
-  def create(textureName: String): PlayerEntityModel =
+  def create(textureName: String): PlayerEntityModel = {
     val legLength = 48
     val legRadius = 8
     val bodyLength = 40
@@ -88,3 +94,5 @@ object PlayerEntityModel:
       leftLeg = BasicEntityPart(legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0)),
       textureName
     )
+  }
+}

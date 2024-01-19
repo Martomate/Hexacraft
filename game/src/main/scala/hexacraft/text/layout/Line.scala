@@ -10,13 +10,18 @@ class Line(spaceWidth: Double, val maxWidth: Double) {
 
   def words: Seq[Word] = _words.toSeq
 
-  def attemptToAddWord(word: Word): Boolean =
+  def attemptToAddWord(word: Word): Boolean = {
     var additionalWidth: Double = word.getWordWidth
-    if _words.nonEmpty then additionalWidth += spaceWidth
+    if _words.nonEmpty then {
+      additionalWidth += spaceWidth
+    }
 
-    if _width + additionalWidth <= maxWidth then
+    if _width + additionalWidth <= maxWidth then {
       _words += word
       _width += additionalWidth
       true
-    else false
+    } else {
+      false
+    }
+  }
 }

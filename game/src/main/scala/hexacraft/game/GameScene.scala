@@ -125,7 +125,7 @@ class GameScene(
     worldRenderer.onProjMatrixChanged(camera)
   }
 
-  private def handleKeyPress(key: KeyboardKey): Unit = key match
+  private def handleKeyPress(key: KeyboardKey): Unit = key match {
     case KeyboardKey.Letter('B') =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
 
@@ -172,7 +172,9 @@ class GameScene(
     case KeyboardKey.Function(7) =>
       setDebugScreenVisible(debugOverlay == null)
     case KeyboardKey.Digit(digit) =>
-      if digit > 0 then setSelectedItemSlot(digit - 1)
+      if digit > 0 then {
+        setSelectedItemSlot(digit - 1)
+      }
     case KeyboardKey.Letter('P') =>
       world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "player").unwrap())
     case KeyboardKey.Letter('L') =>
@@ -180,6 +182,7 @@ class GameScene(
     case KeyboardKey.Letter('K') =>
       world.removeAllEntities()
     case _ =>
+  }
 
   private def setDebugScreenVisible(visible: Boolean): Unit = {
     if visible then {
@@ -205,7 +208,7 @@ class GameScene(
     }
 
     import Event.*
-    event match
+    event match {
       case KeyEvent(key, _, action, _) =>
         if action == KeyAction.Press then {
           handleKeyPress(key)
@@ -224,6 +227,7 @@ class GameScene(
           case _                 =>
         }
       case _ =>
+    }
     true
   }
 

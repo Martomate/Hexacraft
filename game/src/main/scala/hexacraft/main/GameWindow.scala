@@ -3,6 +3,8 @@ package hexacraft.main
 import hexacraft.gui.WindowSize
 import hexacraft.infra.window.CursorMode
 
-trait GameWindow:
+trait GameWindow {
   def windowSize: WindowSize
+
   def setCursorMode(cursorMode: CursorMode): Unit
+}

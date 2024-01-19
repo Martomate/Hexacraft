@@ -18,9 +18,8 @@ class WorldRenderer(
     world: BlocksInWorld,
     blockTextureIndices: Map[String, IndexedSeq[Int]],
     initialFrameBufferSize: Vector2ic
-)(using
-    CylinderSize
-):
+)(using CylinderSize) {
+
   private val skyShader = new SkyShader()
   private val entityShader = new EntityShader(isSide = false)
   private val entitySideShader = new EntityShader(isSide = true)
@@ -51,35 +50,51 @@ class WorldRenderer(
   private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
 
   private val players = ArrayBuffer.empty[Entity]
-  def addPlayer(player: Entity): Unit = players += player
-  def removePlayer(player: Entity): Unit = players -= player
+
+  def addPlayer(player: Entity): Unit = {
+    players += player
+  }
+
+  def removePlayer(player: Entity): Unit = {
+    players -= player
+  }
 
   def regularChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.regularChunkBufferFragmentation
+
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
 
-  def tick(camera: Camera, renderDistance: Double): Unit =
-    if chunkRenderUpdateQueueReorderingTimer.tick() then chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
+  def tick(camera: Camera, renderDistance: Double): Unit = {
+    if chunkRenderUpdateQueueReorderingTimer.tick() then {
+      chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
+    }
 
     var numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
 
-    while numUpdatesToPerform > 0 do
-      chunkRenderUpdateQueue.pop() match
+    while numUpdatesToPerform > 0 do {
+      chunkRenderUpdateQueue.pop() match {
         case Some(coords) =>
-          world.getChunk(coords) match
+          world.getChunk(coords) match {
             case Some(chunk) =>
-              chunkHandler.setChunkRenderData(coords, ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
+              val renderData = ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
+              chunkHandler.setChunkRenderData(coords, renderData)
               numUpdatesToPerform -= 1
             case None =>
-        case None => numUpdatesToPerform = 0
+          }
+        case None =>
+          numUpdatesToPerform = 0
+      }
+    }
+  }
 
-  def onTotalSizeChanged(totalSize: Int): Unit =
+  def onTotalSizeChanged(totalSize: Int): Unit = {
     chunkHandler.onTotalSizeChanged(totalSize)
 
     entityShader.setTotalSize(totalSize)
     entitySideShader.setTotalSize(totalSize)
     selectedBlockShader.setTotalSize(totalSize)
+  }
 
-  def onProjMatrixChanged(camera: Camera): Unit =
+  def onProjMatrixChanged(camera: Camera): Unit = {
     chunkHandler.onProjMatrixChanged(camera)
 
     entityShader.setProjectionMatrix(camera.proj.matrix)
@@ -89,19 +104,22 @@ class WorldRenderer(
     skyShader.setInverseProjectionMatrix(camera.proj.invMatrix)
 
     worldCombinerShader.setClipPlanes(camera.proj.near, camera.proj.far)
+  }
 
   def render(
       camera: Camera,
       sun: Vector3f,
       selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])]
-  ): Unit =
-    // Update the 'selectedBlockVAO' if needed
-    if currentlySelectedBlockAndSide != selectedBlockAndSide
-    then
+  ): Unit = {
+    if currentlySelectedBlockAndSide != selectedBlockAndSide then {
       currentlySelectedBlockAndSide = selectedBlockAndSide
-      selectedBlockAndSide match
-        case Some((state, coords, Some(_))) => selectedBlockVao.setSelectedBlock(coords, state)
-        case _                              =>
+
+      selectedBlockAndSide match {
+        case Some((state, coords, Some(_))) =>
+          selectedBlockVao.setSelectedBlock(coords, state)
+        case _ =>
+      }
+    }
 
     // Step 1: Render everything to a FrameBuffer
     mainFrameBuffer.bind()
@@ -117,11 +135,12 @@ class WorldRenderer(
     chunkHandler.render(camera, sun)
     renderEntities(camera, sun)
 
-    if selectedBlockAndSide.flatMap(_._3).isDefined then
+    if selectedBlockAndSide.flatMap(_._3).isDefined then {
       selectedBlockShader.setViewMatrix(camera.view.matrix)
       selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()
       selectedBlockRenderer.render(selectedBlockVao.vao, 1)
+    }
 
     mainFrameBuffer.unbind()
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
@@ -139,9 +158,10 @@ class WorldRenderer(
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+  }
 
-  def onWorldEvent(event: World.Event): Unit =
-    event match
+  def onWorldEvent(event: World.Event): Unit = {
+    event match {
       case World.Event.ChunkAdded(coords) =>
         chunksToRender.add(coords)
       case World.Event.ChunkRemoved(coords) =>
@@ -149,13 +169,16 @@ class WorldRenderer(
         chunkHandler.clearChunkRenderData(coords)
       case World.Event.ChunkNeedsRenderUpdate(coords) =>
         chunkRenderUpdateQueue.insert(coords)
+    }
+  }
 
-  def frameBufferResized(width: Int, height: Int): Unit =
+  def frameBufferResized(width: Int, height: Int): Unit = {
     val newFrameBuffer = MainFrameBuffer.fromSize(width, height)
     mainFrameBuffer.unload()
     mainFrameBuffer = newFrameBuffer
+  }
 
-  def unload(): Unit =
+  def unload(): Unit = {
     skyVao.free()
     skyShader.free()
     selectedBlockVao.free()
@@ -165,11 +188,14 @@ class WorldRenderer(
     entityShader.free()
     entitySideShader.free()
 
-    for r <- entityRenderers do r.unload()
+    for r <- entityRenderers do {
+      r.unload()
+    }
     chunkHandler.unload()
     mainFrameBuffer.unload()
+  }
 
-  private def renderEntities(camera: Camera, sun: Vector3f): Unit =
+  private def renderEntities(camera: Camera, sun: Vector3f): Unit = {
     entityShader.setViewMatrix(camera.view.matrix)
     entityShader.setCameraPosition(camera.position)
     entityShader.setSunPosition(sun)
@@ -178,24 +204,26 @@ class WorldRenderer(
     entitySideShader.setCameraPosition(camera.position)
     entitySideShader.setSunPosition(sun)
 
-    for side <- 0 until 8 do
+    for side <- 0 until 8 do {
       val sh = if side < 2 then entityShader else entitySideShader
       sh.enable()
       sh.setSide(side)
 
       val entityDataList: mutable.ArrayBuffer[EntityDataForShader] = ArrayBuffer.empty
-      for
+      for {
         c <- chunksToRender
         ch <- world.getChunk(c)
-      do
+      } do {
         val entities = ch.entities
-        if entities.nonEmpty then
+        if entities.nonEmpty then {
           val data = EntityRenderDataFactory.getEntityRenderData(entities, side, world)
           entityDataList ++= data
+        }
+      }
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
-      for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do
+      for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do {
         val data = partLists.flatMap(_.parts)
 
         entityRenderers(side).setInstanceData(data.size): buf =>
@@ -204,3 +232,7 @@ class WorldRenderer(
         texture.bind()
         sh.setTextureSize(texture.width)
         entityRenderers(side).render()
+      }
+    }
+  }
+}

@@ -14,22 +14,24 @@ class SheepEntityModel(
     val backRightLeg: BasicEntityPart,
     val backLeftLeg: BasicEntityPart,
     val textureName: String
-) extends EntityModel:
+) extends EntityModel {
   override val parts: Seq[EntityPart] = Seq(head, body, frontRightLeg, frontLeftLeg, backRightLeg, backLeftLeg)
 
   private val animation = new SheepAnimation(this)
 
-  override def tick(): Unit = animation.tick()
+  override def tick(): Unit = {
+    animation.tick()
+  }
 
-  override def texture: TextureSingle =
-    TextureSingle.getTexture(
-      "textures/entities/" + textureName
-    )
+  override def texture: TextureSingle = {
+    TextureSingle.getTexture("textures/entities/" + textureName)
+  }
+}
 
-class SheepAnimation(model: SheepEntityModel):
+class SheepAnimation(model: SheepEntityModel) {
   var time = 0f
 
-  def tick(): Unit =
+  def tick(): Unit = {
     time += 1f / 60
 
     val phase = time * 2 * math.Pi
@@ -39,15 +41,19 @@ class SheepAnimation(model: SheepEntityModel):
 
     model.backRightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
     model.backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+  }
+}
 
-object SheepEntityModel:
-  private def makeHexBox(r: Int, b: Float, h: Int): HexBox =
+object SheepEntityModel {
+  private def makeHexBox(r: Int, b: Float, h: Int): HexBox = {
     HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+  }
 
-  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset =
+  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset = {
     BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
+  }
 
-  def create(textureName: String): SheepEntityModel =
+  def create(textureName: String): SheepEntityModel = {
     val legLength = 32
     val legRadius = 6
     val bodyLength = 48
@@ -93,3 +99,5 @@ object SheepEntityModel:
       backLeftLeg = BasicEntityPart(legBounds, backLeftLegPos, Vector3f(pi, 0, 0), (0, 0)),
       textureName
     )
+  }
+}

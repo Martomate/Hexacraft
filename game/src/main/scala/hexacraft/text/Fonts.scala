@@ -12,18 +12,19 @@ object Fonts {
   loadFont("Verdana", "font/Verdana")
 
   def loadFont(name: String, path: String): Font = {
-    if (fonts contains name) fonts(name)
-    else {
-      val atlas = TextureSingle.getTexture(path).id
-
-      val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
-      val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
-      val metaData = FontMetaData.fromFntFile(FntFile.fromLines(metaDataLines))
-
-      val f = Font(atlas, metaData)
-      fonts(name) = f
-      f
+    if fonts contains name then {
+      return fonts(name)
     }
+
+    val atlas = TextureSingle.getTexture(path).id
+
+    val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
+    val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
+    val metaData = FontMetaData.fromFntFile(FntFile.fromLines(metaDataLines))
+
+    val f = Font(atlas, metaData)
+    fonts(name) = f
+    f
   }
 
   def get(name: String): Option[Font] = fonts.get(name)

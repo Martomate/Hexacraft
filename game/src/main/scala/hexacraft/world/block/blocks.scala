@@ -9,10 +9,11 @@ object Block {
   private val blocks = new Array[Block](maxBlocks)
   def byId(id: Byte): Block = blocks(id)
 
-  def register[B <: Block](block: B): B =
+  def register[B <: Block](block: B): B = {
     require(blocks(block.id) == null)
     blocks(block.id) = block
     block
+  }
 
   val Air = register(new BlockAir)
   val Stone = register(new Block(1, "stone", "Stone"))
@@ -50,9 +51,10 @@ class Block(val id: Byte, val name: String, val displayName: String) {
 
   val behaviour: Option[BlockBehaviour] = None
 
-  override def equals(o: Any): Boolean = o match
+  override def equals(o: Any): Boolean = o match {
     case other: Block => id == other.id
     case _            => false
+  }
 
   override def toString: String = displayName
 }

@@ -11,55 +11,72 @@ import java.util.stream.Stream as JavaStream
 import scala.collection.immutable.ArraySeq
 
 object FileSystem {
-  def create(): FileSystem = new FileSystem(RealFiles)
+  def create(): FileSystem = {
+    new FileSystem(RealFiles)
+  }
 
-  def createNull(existingFiles: Map[Path, Array[Byte]] = Map.empty): FileSystem =
+  def createNull(existingFiles: Map[Path, Array[Byte]] = Map.empty): FileSystem = {
     new FileSystem(new NullFiles(existingFiles))
+  }
 
   case class FileWrittenEvent(path: Path, bytes: ArraySeq[Byte])
 
-  enum Error:
+  enum Error {
     case FileNotFound
+  }
 }
 
 class FileSystem private (files: FilesWrapper) {
   private val dispatcher = new EventDispatcher[FileSystem.FileWrittenEvent]()
-  def trackWrites(): TrackerWithStorage[FileSystem.FileWrittenEvent] =
+  def trackWrites(): TrackerWithStorage[FileSystem.FileWrittenEvent] = {
     val tracker = Tracker.withStorage[FileSystem.FileWrittenEvent]
     this.dispatcher.track(tracker)
     tracker
+  }
 
-  def writeBytes(path: Path, bytes: Array[Byte]): Unit =
+  def writeBytes(path: Path, bytes: Array[Byte]): Unit = {
     this.dispatcher.notify(FileSystem.FileWrittenEvent(path, ArraySeq.unsafeWrapArray(bytes)))
 
     this.files.createDirectories(path.getParent)
     val stream = this.files.newOutputStream(path)
-    try
+    try {
       stream.write(bytes)
       stream.flush()
-    finally stream.close()
+    } finally {
+      stream.close()
+    }
+  }
 
-  def readAllBytes(path: Path): Result[Array[Byte], FileSystem.Error] =
+  def readAllBytes(path: Path): Result[Array[Byte], FileSystem.Error] = {
     var stream: InputStream = null
-    try
+    try {
       stream = this.files.newInputStream(path)
       val bytes = stream.readAllBytes()
       Ok(bytes)
-    catch
+    } catch {
       case _: NoSuchFileException => Err(FileSystem.Error.FileNotFound)
       case e                      => throw e
-    finally if stream != null then stream.close()
+    } finally {
+      if stream != null then {
+        stream.close()
+      }
+    }
+  }
 
-  def exists(path: Path): Boolean = this.files.exists(path)
+  def exists(path: Path): Boolean = {
+    this.files.exists(path)
+  }
 
-  def listFiles(path: Path): Seq[Path] =
+  def listFiles(path: Path): Seq[Path] = {
     this.files
       .list(path)
       .toArray[Path](n => new Array(n))
       .toSeq
+  }
 
-  def lastModified(path: Path): Instant =
+  def lastModified(path: Path): Instant = {
     this.files.getLastModifiedTime(path).toInstant
+  }
 }
 
 trait FilesWrapper {
@@ -81,24 +98,35 @@ object RealFiles extends FilesWrapper {
 }
 
 class NullFiles(files: Map[Path, Array[Byte]]) extends FilesWrapper {
-  override def exists(path: Path): Boolean = files.contains(path)
+  override def exists(path: Path): Boolean = {
+    files.contains(path)
+  }
 
-  override def list(dir: Path): JavaStream[Path] =
+  override def list(dir: Path): JavaStream[Path] = {
     val b = JavaStream.builder[Path]()
 
-    for
-      p <- files.keys
-      if p.getParent == dir
-    do b.add(p)
+    for p <- files.keys do {
+      if p.getParent == dir then {
+        b.add(p)
+      }
+    }
 
     b.build()
+  }
 
-  override def getLastModifiedTime(path: Path): FileTime = FileTime.fromMillis(0)
+  override def getLastModifiedTime(path: Path): FileTime = {
+    FileTime.fromMillis(0)
+  }
 
-  override def createDirectories(path: Path): Path = path
+  override def createDirectories(path: Path): Path = {
+    path
+  }
 
-  override def newInputStream(path: Path): InputStream = new ByteArrayInputStream(
-    files.getOrElse(path, Array.empty)
-  )
-  override def newOutputStream(path: Path): OutputStream = new ByteArrayOutputStream()
+  override def newInputStream(path: Path): InputStream = {
+    new ByteArrayInputStream(files.getOrElse(path, Array.empty))
+  }
+
+  override def newOutputStream(path: Path): OutputStream = {
+    new ByteArrayOutputStream()
+  }
 }

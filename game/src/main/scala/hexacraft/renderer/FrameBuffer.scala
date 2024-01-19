@@ -15,5 +15,7 @@ class FrameBuffer(val width: Int, val height: Int) {
     OpenGL.glBindFramebuffer(OpenGL.FrameBufferTarget.Regular, OpenGL.FrameBufferId.none)
   }
 
-  def unload(): Unit = OpenGL.glDeleteFramebuffer(fbID)
+  def unload(): Unit = {
+    OpenGL.glDeleteFramebuffer(fbID)
+  }
 }

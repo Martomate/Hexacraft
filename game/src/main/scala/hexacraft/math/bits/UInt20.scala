@@ -8,5 +8,7 @@ object UInt20 {
   inline def truncate(inline i: Int): UInt20 = UInt20(i)
   inline def truncate(inline i: Long): UInt20 = UInt20(i.toInt)
 
-  extension (i: UInt20) inline def toInt: Int = i
+  extension (i: UInt20) {
+    inline def toInt: Int = i
+  }
 }

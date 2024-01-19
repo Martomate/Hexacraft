@@ -27,9 +27,10 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
 
   def requestClose(): Unit = glfw.glfwSetWindowShouldClose(id.toLong, true)
 
-  def close(): Unit =
+  def close(): Unit = {
     glfw.glfwFreeCallbacks(id.toLong)
     glfw.glfwDestroyWindow(id.toLong)
+  }
 
   def makeContextCurrent(): Unit = glfw.glfwMakeContextCurrent(id.toLong)
 
@@ -41,19 +42,22 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
 
   def isKeyPressed(key: KeyboardKey): Boolean = glfw.glfwGetKey(id.toLong, key.toGlfw) == GLFW.GLFW_PRESS
 
-  def setCursorMode(mode: CursorMode): Unit =
+  def setCursorMode(mode: CursorMode): Unit = {
     glfw.glfwSetInputMode(id.toLong, GLFW.GLFW_CURSOR, mode.toGlfw)
+  }
 
   def swapBuffers(): Unit = glfw.glfwSwapBuffers(id.toLong)
 
-  def enterFullscreenMode(monitor: Monitor): Unit =
+  def enterFullscreenMode(monitor: Monitor): Unit = {
     val mode = monitor.videoMode
     glfw.glfwSetWindowMonitor(id.toLong, monitor.id.toLong, 0, 0, mode.width, mode.height, mode.refreshRate)
+  }
 
-  def enterWindowedMode(x: Int, y: Int, width: Int, height: Int): Unit =
+  def enterWindowedMode(x: Int, y: Int, width: Int, height: Int): Unit = {
     glfw.glfwSetWindowMonitor(id.toLong, 0, x, y, width, height, GLFW.GLFW_DONT_CARE)
+  }
 
-  def setKeyCallback(callback: CallbackEvent.KeyPressed => Unit): Unit =
+  def setKeyCallback(callback: CallbackEvent.KeyPressed => Unit): Unit = {
     glfw.glfwSetKeyCallback(
       id.toLong,
       (_, key, scancode, action, mods) =>
@@ -67,14 +71,16 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
           )
         )
     )
+  }
 
-  def setCharCallback(callback: CallbackEvent.CharTyped => Unit): Unit =
+  def setCharCallback(callback: CallbackEvent.CharTyped => Unit): Unit = {
     glfw.glfwSetCharCallback(
       id.toLong,
       (_, character) => callback(CallbackEvent.CharTyped(this, character))
     )
+  }
 
-  def setMouseButtonCallback(callback: CallbackEvent.MouseClicked => Unit): Unit =
+  def setMouseButtonCallback(callback: CallbackEvent.MouseClicked => Unit): Unit = {
     glfw.glfwSetMouseButtonCallback(
       id.toLong,
       (_, button, action, mods) =>
@@ -87,22 +93,26 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
           )
         )
     )
+  }
 
-  def setWindowSizeCallback(callback: CallbackEvent.WindowResized => Unit): Unit =
+  def setWindowSizeCallback(callback: CallbackEvent.WindowResized => Unit): Unit = {
     glfw.glfwSetWindowSizeCallback(
       id.toLong,
       (_, width, height) => callback(CallbackEvent.WindowResized(this, width, height))
     )
+  }
 
-  def setFramebufferSizeCallback(callback: CallbackEvent.FramebufferResized => Unit): Unit =
+  def setFrameBufferSizeCallback(callback: CallbackEvent.FrameBufferResized => Unit): Unit = {
     glfw.glfwSetFramebufferSizeCallback(
       id.toLong,
-      (_, width, height) => callback(CallbackEvent.FramebufferResized(this, width, height))
+      (_, width, height) => callback(CallbackEvent.FrameBufferResized(this, width, height))
     )
+  }
 
-  def setScrollCallback(callback: CallbackEvent.MouseScrolled => Unit): Unit =
+  def setScrollCallback(callback: CallbackEvent.MouseScrolled => Unit): Unit = {
     glfw.glfwSetScrollCallback(
       id.toLong,
       (_, dx, dy) => callback(CallbackEvent.MouseScrolled(this, dx, dy))
     )
+  }
 }

@@ -22,18 +22,21 @@ object FntFile {
 
   case class CharLine(id: Int, x: Int, y: Int, width: Int, height: Int, xOffset: Int, yOffset: Int, xAdvance: Int)
 
-  trait LineParser[L]:
+  trait LineParser[L] {
     def from(values: Map[String, String]): L
+  }
 
-  given LineParser[InfoLine] = values =>
+  given LineParser[InfoLine] = values => {
     val ints = values("padding").split(",").toSeq.map(_.toInt)
     val padding = CharacterPadding(ints(0), ints(1), ints(2), ints(3))
     InfoLine(padding)
+  }
 
-  given LineParser[CommonLine] = values =>
+  given LineParser[CommonLine] = values => {
     CommonLine(lineHeight = values("lineHeight").toInt, scaleW = values("scaleW").toInt)
+  }
 
-  given LineParser[CharLine] = values =>
+  given LineParser[CharLine] = values => {
     CharLine(
       id = values("id").toInt,
       x = values("x").toInt,
@@ -44,27 +47,33 @@ object FntFile {
       yOffset = values("yoffset").toInt,
       xAdvance = values("xadvance").toInt
     )
+  }
 
-  def fromLines(lines: Seq[String]): FntFile =
+  def fromLines(lines: Seq[String]): FntFile = {
     var infoLine: InfoLine = null
     var commonLine: CommonLine = null
     val charLines = mutable.ArrayBuffer.empty[CharLine]
 
-    for line <- lines do
-      line.split(' ').toSeq match
+    for line <- lines do {
+      line.split(' ').toSeq match {
         case lineType +: props =>
           val values: mutable.Map[String, String] = mutable.HashMap.empty
 
-          for part <- props do
+          for part <- props do {
             val valuePairs: Array[String] = part.split("=")
             if (valuePairs.length == 2) values.put(valuePairs(0), valuePairs(1))
+          }
 
-          lineType match
+          lineType match {
             case "info"   => infoLine = summon[LineParser[InfoLine]].from(values.toMap)
             case "common" => commonLine = summon[LineParser[CommonLine]].from(values.toMap)
             case "char"   => charLines += summon[LineParser[CharLine]].from(values.toMap)
             case _        =>
+          }
         case _ =>
+      }
+    }
 
     FntFile(infoLine, commonLine, charLines.toSeq)
+  }
 }

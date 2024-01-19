@@ -21,14 +21,18 @@ object BlockTextureLoader {
       val dir = FileUtils.getResourceFile("textures/blocks/").get
       val files = FileUtils.listFilesInResource(dir).toArray[String](len => new Array(len))
 
-      for name <- squareTextureNames ++ triTextureNames do
-        if !files.contains(name) then throw new IllegalArgumentException(s"unknown image: $name")
+      for name <- squareTextureNames ++ triTextureNames do {
+        if !files.contains(name) then {
+          throw new IllegalArgumentException(s"unknown image: $name")
+        }
+      }
 
-      for (fileName, isTriImage) <- squareTextureNames.map((_, false)) ++ triTextureNames.map((_, true)) do
+      for (fileName, isTriImage) <- squareTextureNames.map((_, false)) ++ triTextureNames.map((_, true)) do {
         val lastDot = fileName.lastIndexOf('.')
         val name = fileName.substring(0, lastDot)
         nameToIdx += name -> images.size
         images ++= loadImages(new URL(dir, fileName), isTriImage)
+      }
 
       LoadedImages(images.toSeq, nameToIdx.toMap)
     }
@@ -38,7 +42,9 @@ object BlockTextureLoader {
       val w = image.getWidth
       val h = image.getHeight
       val numImages = w / h
-      for i <- 0 until numImages yield PixelArray(image.getRGB(i * h, 0, h, h, null, 0, h), isTriImage)
+      for i <- 0 until numImages yield {
+        PixelArray(image.getRGB(i * h, 0, h, h, null, 0, h), isTriImage)
+      }
     }
   }
 

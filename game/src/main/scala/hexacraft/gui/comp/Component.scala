@@ -1,6 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext, WindowSize}
+import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
 import hexacraft.text.{Fonts, Text, TextMaster}
@@ -8,23 +8,28 @@ import hexacraft.text.font.Font
 
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
-abstract class Component:
+abstract class Component {
   private val textMaster = new TextMaster()
 
   protected def addText(text: Text): Unit = textMaster.loadText(text)
+
   protected def removeText(text: Text): Unit = textMaster.removeText(text)
 
   def tick(ctx: TickContext): Unit = ()
 
-  def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+  def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
+  }
 
   def handleEvent(event: Event): Boolean = false
 
-  def unload(): Unit = textMaster.unload()
+  def unload(): Unit = {
+    textMaster.unload()
+  }
+}
 
-object Component:
+object Component {
   private val rectVAO: VAO = VAO
     .builder()
     .addVertexVbo(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
@@ -42,22 +47,23 @@ object Component:
 
   def drawImage(
       location: LocationInfo,
-      xoffset: Float,
-      yoffset: Float,
+      xOffset: Float,
+      yOffset: Float,
       image: TextureSingle,
       windowAspectRatio: Float
-  ): Unit =
+  ): Unit = {
     imageShader.enable()
     image.bind()
 
     imageShader.setTransformationMatrix(
       new Matrix4f()
-        .translate(location.x + xoffset, location.y + yoffset, 0)
+        .translate(location.x + xOffset, location.y + yOffset, 0)
         .scale(location.w, location.h, 1)
     )
 
     imageShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render(rectVAO)
+  }
 
   def drawRect(
       location: LocationInfo,
@@ -65,7 +71,7 @@ object Component:
       yoffset: Float,
       color: Vector4f,
       windowAspectRatio: Float
-  ): Unit =
+  ): Unit = {
     colorShader.enable()
 
     colorShader.setTransformationMatrix(
@@ -77,6 +83,7 @@ object Component:
 
     colorShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render(rectVAO)
+  }
 
   def drawFancyRect(
       location: LocationInfo,
@@ -85,7 +92,7 @@ object Component:
       color: Vector4f,
       windowAspectRatio: Float,
       inverted: Boolean = false
-  ): Unit =
+  ): Unit = {
     fancyRectShader.enable()
 
     fancyRectShader.setTransformationMatrix(
@@ -98,6 +105,7 @@ object Component:
 
     fancyRectShader.setWindowAspectRatio(windowAspectRatio)
     Component.rectRenderer.render(rectVAO)
+  }
 
   def makeText(
       text: String,
@@ -105,11 +113,15 @@ object Component:
       textSize: Float,
       centered: Boolean = true,
       shadow: Boolean = false
-  ): Text =
+  ): Text = {
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
     val guiText = Text(text, textSize, Component.font, position, location.w, centered, shadow)
 
-    if shadow then guiText.setShadowColor(0.3f, 0.3f, 0.3f)
+    if shadow then {
+      guiText.setShadowColor(0.3f, 0.3f, 0.3f)
+    }
     guiText.setColor(0.9f, 0.9f, 0.9f)
 
     guiText
+  }
+}

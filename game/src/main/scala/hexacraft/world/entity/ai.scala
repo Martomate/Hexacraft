@@ -14,17 +14,20 @@ trait EntityAI {
       velocity: VelocityComponent,
       entityBoundingBox: HexBox
   ): Unit
-  def acceleration(): Vector3dc
+  def acceleration: Vector3dc
   def toNBT: Nbt.MapTag
 }
 
-class SimpleAIInput(using CylinderSize):
-  def blockInFront(world: BlocksInWorld, position: CylCoords, rotation: Vector3d, dist: Double): Block =
+class SimpleAIInput(using CylinderSize) {
+  def blockInFront(world: BlocksInWorld, position: CylCoords, rotation: Vector3d, dist: Double): Block = {
     world.getBlock(blockInFrontCoords(position, rotation, dist)).blockType
+  }
 
-  private def blockInFrontCoords(position: CylCoords, rotation: Vector3d, dist: Double): BlockRelWorld =
+  private def blockInFrontCoords(position: CylCoords, rotation: Vector3d, dist: Double): BlockRelWorld = {
     val coords = position.offset(dist * math.cos(rotation.y), 0, dist * -math.sin(rotation.y))
     CoordUtils.getEnclosingBlock(coords.toBlockCoords)._1
+  }
+}
 
 class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private val movingForce = new Vector3d
@@ -48,7 +51,7 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
 
     movingForce.set(0)
 
-    if (distSq < speed * speed || timeout == 0) {
+    if distSq < speed * speed || timeout == 0 then {
       // new goal
       val angle = math.random() * 2 * math.Pi
       val targetX = transform.position.x + reach * math.cos(angle)
@@ -66,7 +69,7 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
           entityBoundingBox.radius + speed * 4
         )
 
-      if (blockInFront != Block.Air && velocity.velocity.y == 0) {
+      if blockInFront != Block.Air && velocity.velocity.y == 0 then {
         movingForce.y = 3.5
       }
       val angle = transform.position.angleXZ(target)
@@ -86,7 +89,7 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
     }*/
   }
 
-  override def acceleration(): Vector3dc = movingForce
+  override def acceleration: Vector3dc = movingForce
 
   override def toNBT: Nbt.MapTag = Nbt.makeMap(
     "type" -> Nbt.StringTag("simple"),
@@ -96,7 +99,7 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
   )
 }
 
-object SimpleWalkAI:
+object SimpleWalkAI {
   def create(using CylinderSize): SimpleWalkAI = new SimpleWalkAI
 
   def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SimpleWalkAI = {
@@ -109,3 +112,4 @@ object SimpleWalkAI:
     ai.timeout = target
     ai
   }
+}

@@ -6,11 +6,13 @@ case class Segment(start: Int, length: Int) {
   require(start >= 0, "'start' has to be non-negative")
   require(length > 0, "'length' has to be positive")
 
-  def contains(inner: Segment): Boolean =
+  def contains(inner: Segment): Boolean = {
     inner.start >= start && inner.start + inner.length <= start + length
+  }
 
-  def overlaps(other: Segment): Boolean =
+  def overlaps(other: Segment): Boolean = {
     other.start < start + length && other.start + other.length > start
+  }
 }
 
 class SegmentSet extends mutable.Iterable[Segment] {
@@ -51,8 +53,12 @@ class SegmentSet extends mutable.Iterable[Segment] {
         val len2 = other.length - len1 - seg.length
 
         _remove(other)
-        if (len1 > 0) _add(Segment(other.start, len1))
-        if (len2 > 0) _add(Segment(other.start + other.length - len2, len2))
+        if len1 > 0 then {
+          _add(Segment(other.start, len1))
+        }
+        if len2 > 0 then {
+          _add(Segment(other.start + other.length - len2, len2))
+        }
 
         true
       case None =>
@@ -78,11 +84,15 @@ class KeyedSegmentSet[T] extends SegmentSet {
   private var currentKey: T = _
 
   private val invMapOrder: Ordering[Segment] = { (s1, s2) =>
-    if (s2.contains(s1)) 0
-    else {
+    if s2.contains(s1) then {
+      0
+    } else {
       val res = s1.start - s2.start
-      if (res != 0) res
-      else res + s1.length - s2.length
+      if res != 0 then {
+        res
+      } else {
+        res + s1.length - s2.length
+      }
     }
   }
 
@@ -97,12 +107,16 @@ class KeyedSegmentSet[T] extends SegmentSet {
 
   override protected def _remove(seg: Segment): Unit = {
     super._remove(seg)
-    invMap.remove(seg) match
+    invMap.remove(seg) match {
       case Some(key) =>
         val newCount = segmentsPerKey.getOrElse(key, 0) - 1
-        if newCount < 1 then segmentsPerKey -= key
-        else segmentsPerKey(key) = newCount
+        if newCount < 1 then {
+          segmentsPerKey -= key
+        } else {
+          segmentsPerKey(key) = newCount
+        }
       case None =>
+    }
   }
 
   def add(key: T, segment: Segment): Unit = {
@@ -139,11 +153,13 @@ class DenseKeyedSegmentStack[K] {
 
   def fragmentation: Float = allSegments.segmentCount.toFloat / allSegments.keyCount
 
-  def hasMapping(key: K): Boolean =
+  def hasMapping(key: K): Boolean = {
     contentMap.get(key).exists(_.totalLength != 0)
+  }
 
-  def totalLengthForChunk(key: K): Int =
+  def totalLengthForChunk(key: K): Int = {
     contentMap.get(key).map(_.totalLength).getOrElse(0)
+  }
 
   /** Creates a new segment on top of the stack and labels it with the given key */
   def push(key: K, numBytes: Int): Segment = {
@@ -181,9 +197,15 @@ class DenseKeyedSegmentStack[K] {
     contentMap.get(key).exists(_.remove(segment))
   }
 
-  def segments(key: K): Iterable[Segment] =
+  def segments(key: K): Iterable[Segment] = {
     contentMap.getOrElse(key, Iterable.empty)
+  }
 
-  def lastSegment: Option[(K, Segment)] =
-    if allSegments.totalLength > 0 then Some(allSegments.lastKeyAndSegment) else None
+  def lastSegment: Option[(K, Segment)] = {
+    if allSegments.totalLength > 0 then {
+      Some(allSegments.lastKeyAndSegment)
+    } else {
+      None
+    }
+  }
 }

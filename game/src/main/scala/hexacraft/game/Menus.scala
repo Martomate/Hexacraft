@@ -33,11 +33,11 @@ object Menus {
       val io = new NbtIO(fs)
 
       val existingName =
-        for
+        for {
           (_, tag) <- io.loadTag(nbtFile.toFile)
           general <- tag.getMap("general")
           name <- general.getString("name")
-        yield name
+        } yield name
 
       WorldInfo(saveFile, existingName.getOrElse(saveFile.getName))
     }
@@ -46,11 +46,12 @@ object Menus {
   case class WorldInfo(saveFile: File, name: String)
 
   object MainMenu {
-    enum Event:
+    enum Event {
       case Play
       case Multiplayer
       case Settings
       case Quit
+    }
   }
 
   class MainMenu(multiplayerEnabled: Boolean)(onEvent: MainMenu.Event => Unit) extends MenuScene {
@@ -59,8 +60,9 @@ object Menus {
     addComponent(new Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
     addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent(Event.Play)))
 
-    if multiplayerEnabled then
+    if multiplayerEnabled then {
       addComponent(Button("Multiplayer", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(onEvent(Event.Multiplayer)))
+    }
 
     addComponent(
       Button("Settings", LocationInfo.from16x9(0.4f, if multiplayerEnabled then 0.25f else 0.4f, 0.2f, 0.1f))(
@@ -71,9 +73,10 @@ object Menus {
   }
 
   object HostWorldChooserMenu {
-    enum Event:
+    enum Event {
       case Host(worldInfo: WorldInfo)
       case GoBack
+    }
   }
 
   class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: HostWorldChooserMenu.Event => Unit)
@@ -85,8 +88,7 @@ object Menus {
 
     private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
 
-    for (f, i) <- getWorlds.zipWithIndex
-    do
+    for (f, i) <- getWorlds.zipWithIndex do {
       scrollPane.addComponent(
         Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
           onEvent(Event.Host(f))
@@ -95,26 +97,30 @@ object Menus {
           //  If this is not done in a certain time period the server will be deregistered from the server registry
         }
       )
+    }
     addComponent(scrollPane)
 
     addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent(Event.GoBack)))
 
-    private def getWorlds: Seq[WorldInfo] =
+    private def getWorlds: Seq[WorldInfo] = {
       val baseFolder = new File(saveFolder, "saves")
-      if baseFolder.exists() then
+      if baseFolder.exists() then {
         baseFolder
           .listFiles()
           .filter(f => new File(f, "world.dat").exists())
           .map(saveFile => WorldInfo.fromFile(saveFile, fs))
           .toSeq
-      else Seq.empty[WorldInfo]
-
+      } else {
+        Seq.empty[WorldInfo]
+      }
+    }
   }
 
   object JoinWorldChooserMenu {
-    enum Event:
+    enum Event {
       case Join(address: String, port: Int)
       case GoBack
+    }
 
     private case class OnlineWorldInfo(id: Long, name: String, description: String)
 
@@ -133,36 +139,40 @@ object Menus {
 
     updateServerList()
 
-    private def updateServerList(): Unit =
-      for (f, i) <- getWorlds.zipWithIndex
-      do
+    private def updateServerList(): Unit = {
+      for (f, i) <- getWorlds.zipWithIndex do {
         scrollPane.addComponent(
           Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
             val connectionDetails = loadOnlineWorld(f.id)
             onEvent(Event.Join(connectionDetails.address, connectionDetails.port))
           }
         )
+      }
+    }
 
-    private def getWorlds: Seq[OnlineWorldInfo] =
+    private def getWorlds: Seq[OnlineWorldInfo] = {
       Seq(
         OnlineWorldInfo(new Random().nextLong(), "Test Online World", "Welcome to my test world!"),
         OnlineWorldInfo(new Random().nextLong(), "Another Online World", "Free bitcakes!")
       )
+    }
 
-    private def loadOnlineWorld(id: Long): OnlineWorldConnectionDetails =
+    private def loadOnlineWorld(id: Long): OnlineWorldConnectionDetails = {
       // TODO: connect to the server registry to get this information
       OnlineWorldConnectionDetails(
         "localhost",
         1234,
         System.currentTimeMillis() + 10
       )
+    }
   }
 
   object MultiplayerMenu {
-    enum Event:
+    enum Event {
       case Join
       case Host
       case GoBack
+    }
   }
 
   class MultiplayerMenu(onEvent: MultiplayerMenu.Event => Unit) extends MenuScene {
@@ -184,10 +194,11 @@ object Menus {
   }
 
   object WorldChooserMenu {
-    enum Event:
+    enum Event {
       case StartGame(saveDir: File, settings: WorldSettings)
       case CreateNewWorld
       case GoBack
+    }
   }
 
   class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: WorldChooserMenu.Event => Unit) extends MenuScene {
@@ -210,8 +221,10 @@ object Menus {
       val scrollPaneLocation = LocationInfo.from16x9(0.3f, 0.25f, 0.4f, 0.575f).expand(0.025f * 2)
       val scrollPane = new ScrollPane(scrollPaneLocation, 0.025f * 2)
 
-      val buttons = for ((f, i) <- getWorlds.zipWithIndex) yield makeWorldButton(f, i)
-      for (b <- buttons) scrollPane.addComponent(b)
+      val buttons = for (f, i) <- getWorlds.zipWithIndex yield makeWorldButton(f, i)
+      for b <- buttons do {
+        scrollPane.addComponent(b)
+      }
 
       scrollPane
     }
@@ -226,17 +239,16 @@ object Menus {
 
     private def getWorlds: Seq[WorldInfo] = {
       val baseFolder = new File(saveFolder, "saves")
-      if (fs.exists(baseFolder.toPath)) {
-        for (saveFile <- saveFoldersSortedBy(baseFolder, p => -fs.lastModified(p).toEpochMilli))
-          yield WorldInfo.fromFile(saveFile.toFile, fs)
+      if fs.exists(baseFolder.toPath) then {
+        for saveFile <- saveFoldersSortedBy(baseFolder, p => -fs.lastModified(p).toEpochMilli) yield {
+          WorldInfo.fromFile(saveFile.toFile, fs)
+        }
       } else {
         Seq.empty[WorldInfo]
       }
     }
 
-    private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: Path => S)(using
-        Ordering[S]
-    ): Seq[Path] = {
+    private def saveFoldersSortedBy[S](baseFolder: File, sortFunc: Path => S)(using Ordering[S]): Seq[Path] = {
       fs.listFiles(baseFolder.toPath)
         .map(worldFolder => (worldFolder, worldFolder.resolve("world.dat")))
         .filter(t => fs.exists(t._2))
@@ -246,9 +258,10 @@ object Menus {
   }
 
   object NewWorldMenu {
-    enum Event:
+    enum Event {
       case StartGame(saveDir: File, settings: WorldSettings)
       case GoBack
+    }
   }
 
   class NewWorldMenu(saveFolder: File)(onEvent: NewWorldMenu.Event => Unit) extends MenuScene {
@@ -300,23 +313,23 @@ object Menus {
     private def uniqueFile(baseFolder: File, fileName: String): File = {
       var file: File = null
       var count = 0
-      while
+      while {
         count += 1
-        val name = if (count == 1) fileName else fileName + " " + count
+        val name = if count == 1 then fileName else fileName + " " + count
         file = new File(baseFolder, name)
         file.exists()
-      do ()
+      } do ()
 
       file
     }
 
     private def cleanupFileName(fileName: String): String = {
-      def charValid(c: Char): Boolean =
+      def charValid(c: Char): Boolean = {
         c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == ' '
+      }
 
-      val name = fileName.map(c => if (charValid(c)) c else '_').trim
-      if (name.nonEmpty) name else "New World"
+      val name = fileName.map(c => if charValid(c) then c else '_').trim
+      if name.nonEmpty then name else "New World"
     }
   }
-
 }

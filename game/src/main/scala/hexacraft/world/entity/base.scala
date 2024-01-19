@@ -35,7 +35,7 @@ class Entity(val typeName: String, private val components: Seq[EntityComponent] 
     .find(_.isInstanceOf[AiComponent])
     .map(_.asInstanceOf[AiComponent].ai)
 
-  def toNBT: Nbt.MapTag =
+  def toNBT: Nbt.MapTag = {
     Nbt
       .makeMap(
         "type" -> Nbt.StringTag(typeName),
@@ -44,21 +44,23 @@ class Entity(val typeName: String, private val components: Seq[EntityComponent] 
         "rotation" -> Nbt.makeVectorTag(transform.rotation)
       )
       .withOptionalField("ai", ai.map(_.toNBT))
+  }
 }
 
-object EntityFactory:
+object EntityFactory {
   val playerBounds = new HexBox(0.2f, 0, 1.75f)
   private val sheepBounds = new HexBox(0.4f, 0, 0.75f)
 
-  def atStartPos(pos: CylCoords, entityType: String)(using CylinderSize): Result[Entity, String] =
+  def atStartPos(pos: CylCoords, entityType: String)(using CylinderSize): Result[Entity, String] = {
     fromNbt(Nbt.makeMap("type" -> Nbt.StringTag(entityType))).map: e =>
       e.transform.position = pos
       e
+  }
 
-  def fromNbt(tag: Nbt.MapTag)(using CylinderSize): Result[Entity, String] =
+  def fromNbt(tag: Nbt.MapTag)(using CylinderSize): Result[Entity, String] = {
     val entType = tag.getString("type", "")
 
-    entType match
+    entType match {
       case "player" =>
         val components = Seq(
           TransformComponent.fromNBT(tag),
@@ -80,3 +82,6 @@ object EntityFactory:
         Ok(Entity("sheep", components))
 
       case _ => Err(s"Entity-type '$entType' not found")
+    }
+  }
+}

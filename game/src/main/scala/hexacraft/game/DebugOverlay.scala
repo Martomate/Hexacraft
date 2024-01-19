@@ -26,7 +26,7 @@ object DebugOverlay {
         viewDistance: Double,
         regularChunkBufferFragmentation: IndexedSeq[Float],
         transmissiveChunkBufferFragmentation: IndexedSeq[Float]
-    )(using CylinderSize): Content =
+    )(using CylinderSize): Content = {
       Content(
         CylCoords(camera.position),
         camera.blockCoords.getChunkRelWorld,
@@ -35,6 +35,7 @@ object DebugOverlay {
         regularChunkBufferFragmentation,
         transmissiveChunkBufferFragmentation
       )
+    }
   }
 }
 
@@ -67,7 +68,7 @@ class DebugOverlay {
   addDebugText("fragmentation.opaque", "fragmentation (opaque)")
   addDebugText("fragmentation.transmissive", "fragmentation (transmissive)")
 
-  private def addLabel(text: String): Unit =
+  private def addLabel(text: String): Unit = {
     yOff += 0.02f
 
     val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.2f, 0.05f)
@@ -76,8 +77,9 @@ class DebugOverlay {
     texts += guiText
 
     yOff += 0.03f
+  }
 
-  private def addDebugText(id: String, display: String): Unit =
+  private def addDebugText(id: String, display: String): Unit = {
     val location = LocationInfo.from16x9(0.01f, 0.95f - yOff, 0.5f, 0.05f)
     val guiText = Component.makeText("", location, 2, centered = false, shadow = true)
     textMaster.loadText(guiText)
@@ -87,11 +89,13 @@ class DebugOverlay {
     textValueMap += id -> guiText
 
     yOff += 0.03f
+  }
 
-  private def setValue(name: String, value: Any): Unit =
+  private def setValue(name: String, value: Any): Unit = {
     textValueMap(name).setText(textDisplayMap(name) + ": " + value)
+  }
 
-  def updateContent(info: DebugOverlay.Content): Unit =
+  def updateContent(info: DebugOverlay.Content): Unit = {
     setValue("p.x", info.cameraPosition.x.toFloat)
     setValue("p.y", info.cameraPosition.y.toFloat)
     setValue("p.z", info.cameraPosition.z.toFloat)
@@ -113,11 +117,15 @@ class DebugOverlay {
       "fragmentation.transmissive",
       info.transmissiveChunkBufferFragmentation.sortBy(-_).map(v => f"$v%.2f").mkString(" ")
     )
+  }
 
-  def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+  def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     texts.foreach(t => t.setPosition(-context.windowAspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
     textMaster.render(transformation.x, transformation.y)
+  }
 
-  def unload(): Unit = textMaster.unload()
+  def unload(): Unit = {
+    textMaster.unload()
+  }
 }

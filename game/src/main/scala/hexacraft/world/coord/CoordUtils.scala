@@ -19,13 +19,21 @@ object CoordUtils {
       val zp = zz + 0.5 * xx
       val wp = zp - xp
 
-      if (xp > 0.5) findBlockPos(xInt + 1, zInt)
-      else if (xp < -0.5) findBlockPos(xInt - 1, zInt)
-      else if (zp > 0.5) findBlockPos(xInt, zInt + 1)
-      else if (zp < -0.5) findBlockPos(xInt, zInt - 1)
-      else if (wp > 0.5) findBlockPos(xInt - 1, zInt + 1)
-      else if (wp < -0.5) findBlockPos(xInt + 1, zInt - 1)
-      else (xInt, zInt)
+      if xp > 0.5 then {
+        findBlockPos(xInt + 1, zInt)
+      } else if xp < -0.5 then {
+        findBlockPos(xInt - 1, zInt)
+      } else if zp > 0.5 then {
+        findBlockPos(xInt, zInt + 1)
+      } else if zp < -0.5 then {
+        findBlockPos(xInt, zInt - 1)
+      } else if wp > 0.5 then {
+        findBlockPos(xInt - 1, zInt + 1)
+      } else if wp < -0.5 then {
+        findBlockPos(xInt + 1, zInt - 1)
+      } else {
+        (xInt, zInt)
+      }
     }
 
     val (xInt, zInt) = findBlockPos(math.round(x).toInt, math.round(z).toInt)
@@ -37,16 +45,19 @@ object CoordUtils {
     (BlockRelWorld(xInt, yInt, zInt), BlockCoords.Offset(xx, y - yInt, zz))
   }
 
-  def approximateIntCoords(coords: BlockCoords)(using CylinderSize): BlockRelWorld =
+  def approximateIntCoords(coords: BlockCoords)(using CylinderSize): BlockRelWorld = {
     val X = math.round(coords.x).toInt
     val Y = math.round(coords.y).toInt
     val Z = math.round(coords.z).toInt
     BlockRelWorld(X, Y, Z)
+  }
 
-  def approximateChunkCoords(coords: CylCoords)(using CylinderSize): ChunkRelWorld =
+  def approximateChunkCoords(coords: CylCoords)(using CylinderSize): ChunkRelWorld = {
     approximateIntCoords(coords.toBlockCoords).getChunkRelWorld
+  }
 
-  def vectorToOffset(vec: Vector3d): Offset =
+  def vectorToOffset(vec: Vector3d): Offset = {
     val blockCoords = CylCoords.Offset(vec).toBlockCoordsOffset
     Offset(blockCoords.x.round.toInt, blockCoords.y.round.toInt, blockCoords.z.round.toInt)
+  }
 }

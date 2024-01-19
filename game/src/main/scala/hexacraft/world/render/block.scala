@@ -15,7 +15,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class BlockShader(isSide: Boolean) {
   private val config = ShaderConfig("block")
-    .withAttribs(
+    .withInputs(
       "position",
       "texCoords",
       "normal",
@@ -30,36 +30,59 @@ class BlockShader(isSide: Boolean) {
 
   private val shader = Shader.from(config)
 
-  def setTotalSize(totalSize: Int): Unit =
+  def setTotalSize(totalSize: Int): Unit = {
     shader.setUniform1i("totalSize", totalSize)
+  }
 
-  def setSunPosition(sun: Vector3f): Unit =
+  def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
 
-  def setCameraPosition(cam: Vector3d): Unit =
+  def setCameraPosition(cam: Vector3d): Unit = {
     shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
+  }
 
-  def setProjectionMatrix(matrix: Matrix4f): Unit =
+  def setProjectionMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("projMatrix", matrix)
+  }
 
-  def setViewMatrix(matrix: Matrix4f): Unit =
+  def setViewMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("viewMatrix", matrix)
+  }
 
-  def setSide(side: Int): Unit =
+  def setSide(side: Int): Unit = {
     shader.setUniform1i("side", side)
+  }
 
-  def enable(): Unit = shader.activate()
+  def enable(): Unit = {
+    shader.activate()
+  }
 
-  def free(): Unit = shader.free()
+  def free(): Unit = {
+    shader.free()
+  }
 }
 
 object BlockVao {
-  private def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2
-  private def brightnessesPerInstance(side: Int): Int = if side < 2 then 7 else 4
+  private def verticesPerInstance(side: Int): Int = {
+    if side < 2 then {
+      3 * 6
+    } else {
+      3 * 2
+    }
+  }
+
+  private def brightnessesPerInstance(side: Int): Int = {
+    if side < 2 then {
+      7
+    } else {
+      4
+    }
+  }
 
   def bytesPerInstance(side: Int): Int = (5 + BlockVao.brightnessesPerInstance(side)) * 4
 
-  def forSide(side: Int)(maxInstances: Int): VAO =
+  def forSide(side: Int)(maxInstances: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerInstance(side)
     val brightnessesPerInstance = BlockVao.brightnessesPerInstance(side)
 
@@ -80,10 +103,17 @@ object BlockVao {
           .floatsArray(8, 1)(brightnessesPerInstance)
       )
       .finish(verticesPerInstance, maxInstances)
+  }
 }
 
 object BlockVboData:
-  private def blockSideStride(side: Int): Int = if (side < 2) (5 + 7) * 4 else (5 + 4) * 4
+  private def blockSideStride(side: Int): Int = {
+    if side < 2 then {
+      (5 + 7) * 4
+    } else {
+      (5 + 4) * 4
+    }
+  }
 
   def fromChunk(
       chunkCoords: ChunkRelWorld,
@@ -91,14 +121,14 @@ object BlockVboData:
       world: BlocksInWorld,
       transmissiveBlocks: Boolean,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
-  )(using CylinderSize): IndexedSeq[ByteBuffer] =
+  )(using CylinderSize): IndexedSeq[ByteBuffer] = {
     val chunkCache = new ChunkCache(world)
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
     val sideBrightness = Array.ofDim[Float](8, 16 * 16 * 16)
     val sidesCount = Array.ofDim[Int](8)
 
-    for s <- 0 until 8 do
+    for s <- 0 until 8 do {
       val shouldRender = sidesToRender(s)
       val shouldRenderTop = sidesToRender(0)
       val brightness = sideBrightness(s)
@@ -106,47 +136,56 @@ object BlockVboData:
 
       var i1 = 0
       val i1Lim = blocks.length
-      while i1 < i1Lim do
+      while i1 < i1Lim do {
         val state = blocks(i1)
         val c = state.coords
         val b = state.block
 
-        if b.blockType.canBeRendered then
-          if !transmissiveBlocks && !b.blockType.isTransmissive then
+        if b.blockType.canBeRendered then {
+          if !transmissiveBlocks && !b.blockType.isTransmissive then {
             val c2w = c.globalNeighbor(s, chunkCoords)
             val c2 = c2w.getBlockRelChunk
             val crw = c2w.getChunkRelWorld
             val neigh = chunkCache.getChunk(crw)
 
-            if neigh != null then
+            if neigh != null then {
               val bs = neigh.getBlock(c2)
 
-              if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then
+              if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then {
                 brightness(c.value) = neigh.lighting.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
 
                 // render the top side
-                if s > 1 && !b.blockType.isCovering(b.metadata, s) then
+                if s > 1 && !b.blockType.isCovering(b.metadata, s) then {
                   shouldRenderTop.set(c.value)
                   sidesCount(0) += 1
-          else if transmissiveBlocks && b.blockType.isTransmissive then
+                }
+              }
+            }
+          } else if transmissiveBlocks && b.blockType.isTransmissive then {
             val c2w = c.globalNeighbor(s, chunkCoords)
             val c2 = c2w.getBlockRelChunk
             val crw = c2w.getChunkRelWorld
             val neigh = chunkCache.getChunk(crw)
 
-            if neigh != null then
+            if neigh != null then {
               val bs = neigh.getBlock(c2)
 
-              if b != bs then
+              if b != bs then {
                 brightness(c.value) = neigh.lighting.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
+              }
+            }
+          }
+        }
 
         i1 += 1
+      }
+    }
 
-    val blocksBuffers = for (side <- 0 until 8) yield
+    val blocksBuffers = for side <- 0 until 8 yield {
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * blockSideStride(side))
@@ -155,16 +194,19 @@ object BlockVboData:
         val cc = coords.getChunkRelWorld
         val bc = coords.getBlockRelChunk
 
-        Option(chunkCache.getChunk(cc)) match
+        Option(chunkCache.getChunk(cc)) match {
           case Some(ch) => ch.lighting.getBrightness(bc)
           case None     => 0
+        }
       }
 
       populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf, blockTextureIndices)
       buf.flip()
       buf
+    }
 
     blocksBuffers
+  }
 
   private def populateBuffer(
       chunkCoords: ChunkRelWorld,
@@ -174,17 +216,17 @@ object BlockVboData:
       brightness: BlockRelWorld => Float,
       buf: ByteBuffer,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
-  )(using CylinderSize): Unit =
-    val verticesPerInstance = if (side < 2) 7 else 4
+  )(using CylinderSize): Unit = {
+    val verticesPerInstance = if side < 2 then 7 else 4
 
     var i1 = 0
     val i1Lim = blocks.length
-    while i1 < i1Lim do
+    while i1 < i1Lim do {
       val lbs = blocks(i1)
       val localCoords = lbs.coords
       val block = lbs.block
 
-      if shouldRender.get(localCoords.value) then
+      if shouldRender.get(localCoords.value) then {
         val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
         buf.putInt(worldCoords.x)
         buf.putInt(worldCoords.y)
@@ -195,14 +237,14 @@ object BlockVboData:
         buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0
-        while i2 < verticesPerInstance do
+        while i2 < verticesPerInstance do {
           // all the blocks adjacent to this vertex (on the given side)
           val b = new ArrayBuffer[Offset](3)
           b += Offset(0, 0, 0)
 
-          side match
+          side match {
             case 0 | 1 =>
-              i2 match
+              i2 match {
                 case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
                 case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
                 case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
@@ -210,12 +252,15 @@ object BlockVboData:
                 case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
                 case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
                 case _ => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+              }
             case _ =>
-              i2 match
+              i2 match {
                 case 0 => b += Offset(0, 1, 0)
                 case 1 => b += Offset(0, 1, 0)
                 case 2 => b += Offset(0, -1, 0)
                 case _ => b += Offset(0, -1, 0)
+              }
+          }
 
           val globalBCoords = localCoords.globalNeighbor(side, chunkCoords)
 
@@ -223,17 +268,28 @@ object BlockVboData:
           var brCount = 0
           var bIdx = 0
           val bLen = b.length
-          while bIdx < bLen do
+          while bIdx < bLen do {
             val br = brightness(globalBCoords.offset(b(bIdx)))
-            if br != 0 then
+            if br != 0 then {
               brSum += br
               brCount += 1
+            }
             bIdx += 1
+          }
 
           buf.putFloat(if brCount == 0 then brightness(globalBCoords) else brSum / brCount)
           i2 += 1
+        }
+      }
 
       i1 += 1
+    }
+  }
 
-  private def oppositeSide(s: Int): Int =
-    if s < 2 then 1 - s else (s - 2 + 3) % 3 + 2
+  private def oppositeSide(s: Int): Int = {
+    if s < 2 then {
+      1 - s
+    } else {
+      (s - 2 + 3) % 3 + 2
+    }
+  }

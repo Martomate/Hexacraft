@@ -5,17 +5,21 @@ import hexacraft.math.Range2D
 import org.joml.Math.biLerp
 
 case class Data2D(sizeX: Int, sizeY: Int, values: Array[Double]) {
-  def apply(x: Int, y: Int): Double =
+  def apply(x: Int, y: Int): Double = {
     values(x + y * sizeX)
+  }
 }
 
 object Data2D {
-  def evaluate(indices: Range2D, fn: (Int, Int) => Double): Data2D =
+  def evaluate(indices: Range2D, fn: (Int, Int) => Double): Data2D = {
     val Range2D(xs, ys) = indices
-    val values = for (y <- ys; x <- xs) yield fn(x, y)
+    val values = for (y <- ys; x <- xs) yield {
+      fn(x, y)
+    }
     Data2D(xs.length, ys.length, values.toArray)
+  }
 
-  def interpolate(scaleX: Int, scaleY: Int, data: Data2D): Data2D =
+  def interpolate(scaleX: Int, scaleY: Int, data: Data2D): Data2D = {
     val xs = 0 until (data.sizeX - 1) * scaleX
     val ys = 0 until (data.sizeY - 1) * scaleY
 
@@ -37,5 +41,5 @@ object Data2D {
         )
       }
     )
-
+  }
 }

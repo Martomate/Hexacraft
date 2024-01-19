@@ -2,6 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
+
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 
 class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
@@ -15,7 +16,9 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
   updateViewMatrix()
   updateProjMatrix()
 
-  def setPosition(vec: Vector3d): Unit = setPosition(vec.x, vec.y, vec.z)
+  def setPosition(vec: Vector3d): Unit = {
+    setPosition(vec.x, vec.y, vec.z)
+  }
 
   def setPosition(x: Double, y: Double, z: Double): Unit = {
     position.x = x
@@ -28,7 +31,9 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
     setRotation(rotation.x.toFloat, rotation.y.toFloat, rotation.z.toFloat)
   }
 
-  def setRotation(vec: Vector3f): Unit = setRotation(vec.x, vec.y, vec.z)
+  def setRotation(vec: Vector3f): Unit = {
+    setRotation(vec.x, vec.y, vec.z)
+  }
 
   def setRotation(x: Float, y: Float, z: Float): Unit = {
     rotation.x = x

@@ -8,15 +8,17 @@ import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
-class BlockRenderer(vao: VAO, gpuState: GpuState):
+class BlockRenderer(vao: VAO, gpuState: GpuState) {
   private var usedInstances: Int = 0
 
   private val instanceVbo = vao.vbos(1)
   private val renderer: InstancedRenderer = InstancedRenderer(OpenGL.PrimitiveMode.Triangles, gpuState)
 
-  def render(): Unit = renderer.render(vao, usedInstances)
+  def render(): Unit = {
+    renderer.render(vao, usedInstances)
+  }
 
-  def setInstanceData(maxInstances: Int)(dataFiller: ByteBuffer => Unit): Unit =
+  def setInstanceData(maxInstances: Int)(dataFiller: ByteBuffer => Unit): Unit = {
     val buf = BufferUtils.createByteBuffer(maxInstances * instanceVbo.stride)
     dataFiller(buf)
 
@@ -26,14 +28,20 @@ class BlockRenderer(vao: VAO, gpuState: GpuState):
 
     buf.flip()
     instanceVbo.fill(0, buf)
+  }
 
-  private def ensureCapacity(instances: Int): Unit =
-    if instances > instanceVbo.capacity
-    then instanceVbo.resize((instances * 1.1f).toInt)
+  private def ensureCapacity(instances: Int): Unit = {
+    if instances > instanceVbo.capacity then {
+      instanceVbo.resize((instances * 1.1f).toInt)
+    }
+  }
 
-  def unload(): Unit = vao.free()
+  def unload(): Unit = {
+    vao.free()
+  }
+}
 
-object BlockRenderer:
+object BlockRenderer {
   case class BlockVertexData(
       position: Vector3f,
       texCoords: Vector2f,
@@ -74,40 +82,47 @@ object BlockRenderer:
 
   def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2
 
-  def setupBlockVBO(s: Int): Seq[BlockVertexData] =
-    if s < 2
-    then setupBlockVboForTopOrBottom(s)
-    else setupBlockVboForSide(s)
+  def setupBlockVBO(s: Int): Seq[BlockVertexData] = {
+    if s < 2 then {
+      setupBlockVboForTopOrBottom(s)
+    } else {
+      setupBlockVboForSide(s)
+    }
+  }
 
-  private def setupBlockVboForTopOrBottom(s: Int): Seq[BlockVertexData] =
+  private def setupBlockVboForTopOrBottom(s: Int): Seq[BlockVertexData] = {
     val ints = topBottomVertexIndices
     val texCoords = topBottomTex
 
-    for i <- 0 until verticesPerInstance(s) yield
+    for i <- 0 until verticesPerInstance(s) yield {
       val cornerIdx = if s == 1 then i else verticesPerInstance(s) - 1 - i
       val a = ints(cornerIdx)
       val faceIndex = if s == 1 then i / 3 else (verticesPerInstance(s) - 1 - i) / 3
 
       val (x, z) =
-        if a == 6 then (0f, 0f)
-        else
+        if a == 6 then {
+          (0f, 0f)
+        } else {
           val v = a * Math.PI / 3
           (Math.cos(v).toFloat, Math.sin(v).toFloat)
+        }
 
       val pos = new Vector3f(x, 1f - s, z)
       val tex = texCoords(cornerIdx)
       val norm = new Vector3f(0, 1f - 2f * s, 0)
 
       BlockVertexData(pos, tex, norm, a, faceIndex)
+    }
+  }
 
-  private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] =
+  private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] = {
     val ints = sideVertexIndices
 
     val nv = ((s - 1) % 6 - 0.5) * Math.PI / 3
     val nx = Math.cos(nv).toFloat
     val nz = Math.sin(nv).toFloat
 
-    for i <- 0 until verticesPerInstance(s) yield
+    for i <- 0 until verticesPerInstance(s) yield {
       val a = ints(i)
       val v = (s - 2 + a % 2) % 6 * Math.PI / 3
       val x = Math.cos(v).toFloat
@@ -118,3 +133,6 @@ object BlockRenderer:
       val norm = new Vector3f(nx, 0, nz)
 
       BlockVertexData(pos, tex, norm, a, 0)
+    }
+  }
+}

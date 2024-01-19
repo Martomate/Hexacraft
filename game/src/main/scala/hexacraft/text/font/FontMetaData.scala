@@ -9,17 +9,24 @@ class FontMetaData(private val characters: Map[Int, Character], val lineHeight: 
 
   def getCharacter(ascii: Int): Character = characters.getOrElse(ascii, null)
 
-  def atLineHeight(lineHeight: Double): FontMetaData =
+  def atLineHeight(lineHeight: Double): FontMetaData = {
     val scaledChars = characters.view.mapValues(_.withScaledScreenBounds(lineHeight / this.lineHeight)).toMap
     new FontMetaData(scaledChars, lineHeight)
+  }
 }
 
 object FontMetaData {
   private val DesiredPadding: Int = 3
 
-  extension (ch: CharLine)
+  extension (ch: CharLine) {
+
     /** Converts the character from 'pixel-space' to 'screen-space' (with a line height of 1) */
-    def toCharacter(desiredPadding: Int, padding: CharacterPadding, lineHeightInImage: Int, imageSize: Int): Character =
+    def toCharacter(
+        desiredPadding: Int,
+        padding: CharacterPadding,
+        lineHeightInImage: Int,
+        imageSize: Int
+    ): Character = {
       val extraLeftPadding = padding.left - desiredPadding
       val extraTopPadding = padding.top - desiredPadding
 
@@ -44,8 +51,10 @@ object FontMetaData {
           (ch.xAdvance - padding.horizontal) / pixelsPerLine
         )
       )
+    }
+  }
 
-  def fromFntFile(contents: FntFile): FontMetaData =
+  def fromFntFile(contents: FntFile): FontMetaData = {
     val desiredPadding = FontMetaData.DesiredPadding
     val padding = contents.info.padding
     val fontLineHeight = contents.common.lineHeight
@@ -53,9 +62,13 @@ object FontMetaData {
 
     val characters: mutable.Map[Int, Character] = mutable.HashMap.empty
 
-    for ch <- contents.chars do
+    for ch <- contents.chars do {
       val c = ch.toCharacter(desiredPadding, padding, fontLineHeight, imageSize)
-      if c != null then characters.put(c.id, c)
+      if c != null then {
+        characters.put(c.id, c)
+      }
+    }
 
     new FontMetaData(characters.toMap, lineHeight = 1)
+  }
 }

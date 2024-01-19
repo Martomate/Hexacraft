@@ -3,7 +3,7 @@ package hexacraft.infra.window
 import org.lwjgl.glfw.GLFW
 
 object WindowErrorReason {
-  def fromGlfw(code: Int): WindowErrorReason = code match
+  def fromGlfw(code: Int): WindowErrorReason = code match {
     case GLFW.GLFW_NOT_INITIALIZED       => WindowErrorReason.NotInitialized
     case GLFW.GLFW_NO_CURRENT_CONTEXT    => WindowErrorReason.NoCurrentContext
     case GLFW.GLFW_INVALID_ENUM          => WindowErrorReason.InvalidEnum
@@ -19,9 +19,10 @@ object WindowErrorReason {
     case GLFW.GLFW_FEATURE_UNIMPLEMENTED => WindowErrorReason.FeatureUnimplemented
     case GLFW.GLFW_PLATFORM_UNAVAILABLE  => WindowErrorReason.PlatformUnavailable
     case _                               => WindowErrorReason.Unknown(code)
+  }
 }
 
-enum WindowErrorReason:
+enum WindowErrorReason {
   case NotInitialized
   case NoCurrentContext
   case InvalidEnum
@@ -37,3 +38,4 @@ enum WindowErrorReason:
   case FeatureUnimplemented
   case PlatformUnavailable
   case Unknown(code: Int)
+}

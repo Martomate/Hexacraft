@@ -12,19 +12,21 @@ import java.nio.{ByteBuffer, FloatBuffer}
 import scala.annotation.targetName
 
 object OpenGL {
-  enum Event:
+  enum Event {
     case ShaderLoaded(shaderId: ShaderId, shaderType: ShaderType, source: String)
     case ShaderUnloaded(shaderId: ShaderId)
     case ProgramCreated(programId: ProgramId)
     case ProgramDeleted(programId: ProgramId)
+  }
 
   private var gl: GLWrapper = RealGL
 
   private val dispatcher = new EventDispatcher[Event]
   def trackEvents(tracker: Tracker[Event]): Unit = dispatcher.track(tracker)
 
-  def _enterTestMode(): Unit =
+  def _enterTestMode(): Unit = {
     gl = new StubGL
+  }
 
   // ---- Implementation ----
 
@@ -35,17 +37,22 @@ object OpenGL {
     case TessControl
     case TessEvaluation
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case ShaderType.Vertex         => GL20.GL_VERTEX_SHADER
       case ShaderType.Fragment       => GL20.GL_FRAGMENT_SHADER
       case ShaderType.Geometry       => GL32.GL_GEOMETRY_SHADER
       case ShaderType.TessControl    => GL40.GL_TESS_CONTROL_SHADER
       case ShaderType.TessEvaluation => GL40.GL_TESS_EVALUATION_SHADER
+    }
   }
 
-  def createCapabilities(): Unit = gl.createCapabilities()
+  def createCapabilities(): Unit = {
+    gl.createCapabilities()
+  }
 
-  def hasDebugExtension: Boolean = gl.getCapabilities.GL_KHR_debug
+  def hasDebugExtension: Boolean = {
+    gl.getCapabilities.GL_KHR_debug
+  }
 
   // Shaders
 
@@ -55,24 +62,27 @@ object OpenGL {
   }
   case class ShaderCompilationError(message: String)
 
-  def loadShader(shaderType: ShaderType, shaderSource: String): Result[ShaderId, ShaderCompilationError] =
+  def loadShader(shaderType: ShaderType, shaderSource: String): Result[ShaderId, ShaderCompilationError] = {
     val shaderId = gl.glCreateShader(shaderType.toGL)
     gl.glShaderSource(shaderId, shaderSource)
     gl.glCompileShader(shaderId)
 
-    if gl.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS) != GL11.GL_TRUE then
+    if gl.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS) != GL11.GL_TRUE then {
       val maxLen = math.max(gl.glGetShaderi(shaderId, GL20.GL_INFO_LOG_LENGTH), 256)
       val errorMessage = gl.glGetShaderInfoLog(shaderId, maxLen)
 
       gl.glDeleteShader(shaderId)
       Err(ShaderCompilationError(errorMessage))
-    else
+    } else {
       dispatcher.notify(Event.ShaderLoaded(shaderId, shaderType, shaderSource))
       Ok(shaderId)
+    }
+  }
 
-  def unloadShader(shader: ShaderId): Unit =
+  def unloadShader(shader: ShaderId): Unit = {
     gl.glDeleteShader(shader)
     dispatcher.notify(Event.ShaderUnloaded(shader))
+  }
 
   // Programs
 
@@ -85,64 +95,84 @@ object OpenGL {
 
   opaque type UniformLocation = Int
   object UniformLocation {
-    extension (loc: UniformLocation) def exists: Boolean = loc != -1
+    extension (loc: UniformLocation) {
+      def exists: Boolean = loc != -1
+    }
   }
 
-  def createProgram(): ProgramId =
+  def createProgram(): ProgramId = {
     val id = gl.glCreateProgram()
     dispatcher.notify(Event.ProgramCreated(id))
     id
+  }
 
-  def glUseProgram(program: ProgramId): Unit = gl.glUseProgram(program)
+  def glUseProgram(program: ProgramId): Unit = {
+    gl.glUseProgram(program)
+  }
 
-  def linkProgram(programId: ProgramId): Result[Unit, String] =
+  def linkProgram(programId: ProgramId): Result[Unit, String] = {
     gl.glLinkProgram(programId)
 
-    if gl.glGetProgrami(programId, GL20.GL_LINK_STATUS) != GL11.GL_TRUE then
+    if gl.glGetProgrami(programId, GL20.GL_LINK_STATUS) != GL11.GL_TRUE then {
       val maxLen = math.max(gl.glGetProgrami(programId, GL20.GL_INFO_LOG_LENGTH), 256)
       val errorMessage = gl.glGetProgramInfoLog(programId, maxLen)
 
-      Err(errorMessage)
-    else Ok(())
+      return Err(errorMessage)
+    }
 
-  def deleteProgram(id: ProgramId): Unit =
+    Ok(())
+  }
+
+  def deleteProgram(id: ProgramId): Unit = {
     gl.glDeleteProgram(id)
     dispatcher.notify(Event.ProgramDeleted(id))
+  }
 
-  def glAttachShader(program: ProgramId, shader: ShaderId): Unit =
+  def glAttachShader(program: ProgramId, shader: ShaderId): Unit = {
     gl.glAttachShader(program, shader)
+  }
 
-  def glDetachShader(program: ProgramId, shader: ShaderId): Unit =
+  def glDetachShader(program: ProgramId, shader: ShaderId): Unit = {
     gl.glDetachShader(program, shader)
+  }
 
-  def glGetUniformLocation(program: ProgramId, name: String): UniformLocation =
+  def glGetUniformLocation(program: ProgramId, name: String): UniformLocation = {
     gl.glGetUniformLocation(program, name)
+  }
 
-  def glGetAttribLocation(program: ProgramId, name: String): Int =
+  def glGetAttribLocation(program: ProgramId, name: String): Int = {
     gl.glGetAttribLocation(program, name)
+  }
 
-  def glBindAttribLocation(program: ProgramId, index: Int, name: String): Unit =
+  def glBindAttribLocation(program: ProgramId, index: Int, name: String): Unit = {
     gl.glBindAttribLocation(program, index, name)
+  }
 
   // Uniforms
 
-  def glUniform1i(location: UniformLocation, v0: Int): Unit =
+  def glUniform1i(location: UniformLocation, v0: Int): Unit = {
     gl.glUniform1i(location, v0)
+  }
 
-  def glUniform1f(location: UniformLocation, v0: Float): Unit =
+  def glUniform1f(location: UniformLocation, v0: Float): Unit = {
     gl.glUniform1f(location, v0)
+  }
 
-  def glUniform2f(location: UniformLocation, v0: Float, v1: Float): Unit =
+  def glUniform2f(location: UniformLocation, v0: Float, v1: Float): Unit = {
     gl.glUniform2f(location, v0, v1)
+  }
 
-  def glUniform3f(location: UniformLocation, v0: Float, v1: Float, v2: Float): Unit =
+  def glUniform3f(location: UniformLocation, v0: Float, v1: Float, v2: Float): Unit = {
     gl.glUniform3f(location, v0, v1, v2)
+  }
 
-  def glUniform4f(location: UniformLocation, v0: Float, v1: Float, v2: Float, v3: Float): Unit =
+  def glUniform4f(location: UniformLocation, v0: Float, v1: Float, v2: Float, v3: Float): Unit = {
     gl.glUniform4f(location, v0, v1, v2, v3)
+  }
 
-  def glUniformMatrix4fv(location: UniformLocation, transpose: Boolean, value: FloatBuffer): Unit =
+  def glUniformMatrix4fv(location: UniformLocation, transpose: Boolean, value: FloatBuffer): Unit = {
     gl.glUniformMatrix4fv(location, transpose, value)
+  }
 
   // Frame buffers
 
@@ -154,34 +184,45 @@ object OpenGL {
   enum FrameBufferTarget {
     case Regular
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case Regular => GL30.GL_FRAMEBUFFER
+    }
   }
 
   enum FrameBufferAttachment {
     case ColorAttachment(index: Int)
     case DepthAttachment
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case FrameBufferAttachment.ColorAttachment(index) => GL30.GL_COLOR_ATTACHMENT0 + index
       case FrameBufferAttachment.DepthAttachment        => GL30.GL_DEPTH_ATTACHMENT
+    }
   }
 
-  def glGenFramebuffer(): FrameBufferId = gl.glGenFramebuffers()
+  def glGenFramebuffer(): FrameBufferId = {
+    gl.glGenFramebuffers()
+  }
 
-  def glBindFramebuffer(target: FrameBufferTarget, framebuffer: FrameBufferId): Unit =
+  def glBindFramebuffer(target: FrameBufferTarget, framebuffer: FrameBufferId): Unit = {
     gl.glBindFramebuffer(target.toGL, framebuffer)
+  }
 
-  def glDrawBuffer(buf: FrameBufferAttachment): Unit = gl.glDrawBuffer(buf.toGL)
+  def glDrawBuffer(buf: FrameBufferAttachment): Unit = {
+    gl.glDrawBuffer(buf.toGL)
+  }
 
   def glFramebufferTexture(
       target: FrameBufferTarget,
       attachment: FrameBufferAttachment,
       texture: TextureId,
       level: Int
-  ): Unit = gl.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
+  ): Unit = {
+    gl.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
+  }
 
-  def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = gl.glDeleteFramebuffers(framebuffer)
+  def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = {
+    gl.glDeleteFramebuffers(framebuffer)
+  }
 
   // Drawing
 
@@ -191,18 +232,21 @@ object OpenGL {
     case Triangles
     case TriangleStrip
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case PrimitiveMode.Lines         => GL11.GL_LINES
       case PrimitiveMode.LineStrip     => GL11.GL_LINE_STRIP
       case PrimitiveMode.Triangles     => GL11.GL_TRIANGLES
       case PrimitiveMode.TriangleStrip => GL11.GL_TRIANGLE_STRIP
+    }
   }
 
-  def glDrawArrays(mode: PrimitiveMode, first: Int, count: Int): Unit =
+  def glDrawArrays(mode: PrimitiveMode, first: Int, count: Int): Unit = {
     gl.glDrawArrays(mode.toGL, first, count)
+  }
 
-  def glDrawArraysInstanced(mode: PrimitiveMode, first: Int, count: Int, primcount: Int): Unit =
+  def glDrawArraysInstanced(mode: PrimitiveMode, first: Int, count: Int, primcount: Int): Unit = {
     gl.glDrawArraysInstanced(mode.toGL, first, count, primcount)
+  }
 
   // Textures
 
@@ -215,42 +259,49 @@ object OpenGL {
     case Texture2D
     case Texture2DArray
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TextureTarget.Texture2D      => GL11.GL_TEXTURE_2D
       case TextureTarget.Texture2DArray => GL30.GL_TEXTURE_2D_ARRAY
+    }
   }
 
   enum TextureInternalFormat {
     case Rgba
     case DepthComponent32
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TextureInternalFormat.Rgba             => GL11.GL_RGBA
       case TextureInternalFormat.DepthComponent32 => GL14.GL_DEPTH_COMPONENT32
+    }
   }
 
   enum TexelDataFormat {
     case Rgba
     case DepthComponent
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TexelDataFormat.Rgba           => GL11.GL_RGBA
       case TexelDataFormat.DepthComponent => GL11.GL_DEPTH_COMPONENT
+    }
   }
 
   enum TexelDataType {
     case UnsignedByte
     case Float
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TexelDataType.UnsignedByte => GL11.GL_UNSIGNED_BYTE
       case TexelDataType.Float        => GL11.GL_FLOAT
+    }
   }
 
-  def glGenTextures(): TextureId = gl.glGenTextures()
+  def glGenTextures(): TextureId = {
+    gl.glGenTextures()
+  }
 
-  def glBindTexture(target: TextureTarget, texture: TextureId): Unit =
+  def glBindTexture(target: TextureTarget, texture: TextureId): Unit = {
     gl.glBindTexture(target.toGL, texture)
+  }
 
   def glTexImage2D(
       target: TextureTarget,
@@ -262,7 +313,7 @@ object OpenGL {
       format: TexelDataFormat,
       texelDataType: TexelDataType,
       pixels: ByteBuffer
-  ): Unit =
+  ): Unit = {
     gl.glTexImage2D(
       target.toGL,
       level,
@@ -274,6 +325,7 @@ object OpenGL {
       texelDataType.toGL,
       pixels
     )
+  }
 
   def glTexImage2D(
       target: TextureTarget,
@@ -285,7 +337,7 @@ object OpenGL {
       format: TexelDataFormat,
       texelDataType: TexelDataType,
       pixels: FloatBuffer
-  ): Unit =
+  ): Unit = {
     gl.glTexImage2D(
       target.toGL,
       level,
@@ -297,6 +349,7 @@ object OpenGL {
       texelDataType.toGL,
       pixels
     )
+  }
 
   def glTexImage3D(
       target: TextureTarget,
@@ -309,7 +362,7 @@ object OpenGL {
       format: TexelDataFormat,
       texelDataType: TexelDataType,
       pixels: ByteBuffer
-  ): Unit =
+  ): Unit = {
     gl.glTexImage3D(
       target.toGL,
       level,
@@ -322,14 +375,16 @@ object OpenGL {
       texelDataType.toGL,
       pixels
     )
+  }
 
   enum TexMagFilter {
     case Linear
     case Nearest
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TexMagFilter.Linear  => GL11.GL_LINEAR
       case TexMagFilter.Nearest => GL11.GL_NEAREST
+    }
   }
 
   enum TexMinFilter {
@@ -340,13 +395,14 @@ object OpenGL {
     case NearestMipmapLinear
     case LinearMipmapLinear
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TexMinFilter.Linear               => GL11.GL_LINEAR
       case TexMinFilter.Nearest              => GL11.GL_NEAREST
       case TexMinFilter.NearestMipmapNearest => GL11.GL_NEAREST_MIPMAP_NEAREST
       case TexMinFilter.LinearMipmapNearest  => GL11.GL_LINEAR_MIPMAP_NEAREST
       case TexMinFilter.NearestMipmapLinear  => GL11.GL_NEAREST_MIPMAP_LINEAR
       case TexMinFilter.LinearMipmapLinear   => GL11.GL_LINEAR_MIPMAP_LINEAR
+    }
   }
 
   enum TexWrap {
@@ -355,11 +411,12 @@ object OpenGL {
     case MirroredRepeat
     case Repeat
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case TexWrap.ClampToEdge    => GL12.GL_CLAMP_TO_EDGE
       case TexWrap.ClampToBorder  => GL13.GL_CLAMP_TO_BORDER
       case TexWrap.MirroredRepeat => GL14.GL_MIRRORED_REPEAT
       case TexWrap.Repeat         => GL11.GL_REPEAT
+    }
   }
 
   enum TexIntParameter {
@@ -369,31 +426,40 @@ object OpenGL {
     case TextureWrapT(wrap: TexWrap)
     case TextureWrapR(wrap: TexWrap)
 
-    def toGL: (Int, Int) = this match
+    def toGL: (Int, Int) = this match {
       case TexIntParameter.MagFilter(filter)  => (GL11.GL_TEXTURE_MAG_FILTER, filter.toGL)
       case TexIntParameter.MinFilter(filter)  => (GL11.GL_TEXTURE_MIN_FILTER, filter.toGL)
       case TexIntParameter.TextureWrapS(wrap) => (GL11.GL_TEXTURE_WRAP_S, wrap.toGL)
       case TexIntParameter.TextureWrapT(wrap) => (GL11.GL_TEXTURE_WRAP_T, wrap.toGL)
       case TexIntParameter.TextureWrapR(wrap) => (GL12.GL_TEXTURE_WRAP_R, wrap.toGL)
+    }
   }
 
-  def glTexParameteri(target: TextureTarget, p: TexIntParameter): Unit =
+  def glTexParameteri(target: TextureTarget, p: TexIntParameter): Unit = {
     val (pname, param) = p.toGL
     gl.glTexParameteri(target.toGL, pname, param)
+  }
 
-  def glGenerateMipmap(target: TextureTarget): Unit = gl.glGenerateMipmap(target.toGL)
+  def glGenerateMipmap(target: TextureTarget): Unit = {
+    gl.glGenerateMipmap(target.toGL)
+  }
 
   opaque type TextureSlot = Int
   object TextureSlot {
-    def ofSlot(slot: Int): TextureSlot =
+    def ofSlot(slot: Int): TextureSlot = {
       require(slot >= 0)
       require(slot < 32)
       GL13.GL_TEXTURE0 + slot
+    }
   }
 
-  def glActiveTexture(textureSlot: TextureSlot): Unit = gl.glActiveTexture(textureSlot)
+  def glActiveTexture(textureSlot: TextureSlot): Unit = {
+    gl.glActiveTexture(textureSlot)
+  }
 
-  def glDeleteTextures(texture: TextureId): Unit = gl.glDeleteTextures(texture)
+  def glDeleteTextures(texture: TextureId): Unit = {
+    gl.glDeleteTextures(texture)
+  }
 
   // Vertex arrays
 
@@ -402,11 +468,17 @@ object OpenGL {
     def none: VertexArrayId = 0
   }
 
-  def glGenVertexArrays(): VertexArrayId = gl.glGenVertexArrays()
+  def glGenVertexArrays(): VertexArrayId = {
+    gl.glGenVertexArrays()
+  }
 
-  def glBindVertexArray(array: VertexArrayId): Unit = gl.glBindVertexArray(array)
+  def glBindVertexArray(array: VertexArrayId): Unit = {
+    gl.glBindVertexArray(array)
+  }
 
-  def glDeleteVertexArrays(array: VertexArrayId): Unit = gl.glDeleteVertexArrays(array)
+  def glDeleteVertexArrays(array: VertexArrayId): Unit = {
+    gl.glDeleteVertexArrays(array)
+  }
 
   // Vertex buffers
 
@@ -417,31 +489,38 @@ object OpenGL {
     case CopyReadBuffer
     case CopyWriteBuffer
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case VertexBufferTarget.ArrayBuffer     => GL15.GL_ARRAY_BUFFER
       case VertexBufferTarget.CopyReadBuffer  => GL31.GL_COPY_READ_BUFFER
       case VertexBufferTarget.CopyWriteBuffer => GL31.GL_COPY_WRITE_BUFFER
+    }
   }
 
   enum VboUsage {
     case StaticDraw
     case DynamicDraw
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case VboUsage.StaticDraw  => GL15.GL_STATIC_DRAW
       case VboUsage.DynamicDraw => GL15.GL_DYNAMIC_DRAW
+    }
   }
 
-  def glGenBuffers(): VertexBufferId = gl.glGenBuffers()
+  def glGenBuffers(): VertexBufferId = {
+    gl.glGenBuffers()
+  }
 
-  def glBindBuffer(target: VertexBufferTarget, buffer: VertexBufferId): Unit =
+  def glBindBuffer(target: VertexBufferTarget, buffer: VertexBufferId): Unit = {
     gl.glBindBuffer(target.toGL, buffer)
+  }
 
-  def glBufferData(target: VertexBufferTarget, size: Long, usage: VboUsage): Unit =
+  def glBufferData(target: VertexBufferTarget, size: Long, usage: VboUsage): Unit = {
     gl.glBufferData(target.toGL, size, usage.toGL)
+  }
 
-  def glBufferSubData(target: VertexBufferTarget, offset: Long, data: ByteBuffer): Unit =
+  def glBufferSubData(target: VertexBufferTarget, offset: Long, data: ByteBuffer): Unit = {
     gl.glBufferSubData(target.toGL, offset, data)
+  }
 
   def glCopyBufferSubData(
       readTarget: VertexBufferTarget,
@@ -449,28 +528,36 @@ object OpenGL {
       readOffset: Long,
       writeOffset: Long,
       size: Long
-  ): Unit = gl.glCopyBufferSubData(readTarget.toGL, writeTarget.toGL, readOffset, writeOffset, size)
+  ): Unit = {
+    gl.glCopyBufferSubData(readTarget.toGL, writeTarget.toGL, readOffset, writeOffset, size)
+  }
 
-  def glDeleteBuffers(buffer: VertexBufferId): Unit = gl.glDeleteBuffers(buffer)
+  def glDeleteBuffers(buffer: VertexBufferId): Unit = {
+    gl.glDeleteBuffers(buffer)
+  }
 
   // Vertex attributes
 
-  def glEnableVertexAttribArray(index: Int): Unit = gl.glEnableVertexAttribArray(index)
+  def glEnableVertexAttribArray(index: Int): Unit = {
+    gl.glEnableVertexAttribArray(index)
+  }
 
   enum VertexAttributeDataType {
     case Int
     case Float
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case VertexAttributeDataType.Int   => GL11.GL_INT
       case VertexAttributeDataType.Float => GL11.GL_FLOAT
+    }
   }
 
   enum VertexIntAttributeDataType {
     case Int
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case VertexIntAttributeDataType.Int => GL11.GL_INT
+    }
   }
 
   def glVertexAttribPointer(
@@ -480,7 +567,9 @@ object OpenGL {
       normalized: Boolean,
       stride: Int,
       pointer: Long
-  ): Unit = gl.glVertexAttribPointer(index, size, dataType.toGL, normalized, stride, pointer)
+  ): Unit = {
+    gl.glVertexAttribPointer(index, size, dataType.toGL, normalized, stride, pointer)
+  }
 
   def glVertexAttribIPointer(
       index: Int,
@@ -488,9 +577,13 @@ object OpenGL {
       dataType: VertexIntAttributeDataType,
       stride: Int,
       pointer: Long
-  ): Unit = gl.glVertexAttribIPointer(index, size, dataType.toGL, stride, pointer)
+  ): Unit = {
+    gl.glVertexAttribIPointer(index, size, dataType.toGL, stride, pointer)
+  }
 
-  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = gl.glVertexAttribDivisor(index, divisor)
+  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = {
+    gl.glVertexAttribDivisor(index, divisor)
+  }
 
   // Misc
 
@@ -502,29 +595,32 @@ object OpenGL {
     case DebugOutput
     case MultiSample
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case State.Blend       => GL11.GL_BLEND
       case State.DepthTest   => GL11.GL_DEPTH_TEST
       case State.ScissorTest => GL11.GL_SCISSOR_TEST
       case State.CullFace    => GL11.GL_CULL_FACE
       case State.DebugOutput => GL43.GL_DEBUG_OUTPUT
       case State.MultiSample => GL13.GL_MULTISAMPLE
+    }
   }
 
   enum BlendFactor {
     case SrcAlpha
     case OneMinusSrcAlpha
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case BlendFactor.SrcAlpha         => GL11.GL_SRC_ALPHA
       case BlendFactor.OneMinusSrcAlpha => GL11.GL_ONE_MINUS_SRC_ALPHA
+    }
   }
 
   enum DepthFunc {
     case LessThanOrEqual
 
-    def toGL: Int = this match
+    def toGL: Int = this match {
       case LessThanOrEqual => GL11.GL_LEQUAL
+    }
   }
 
   opaque type ClearMask = Int
@@ -538,20 +634,33 @@ object OpenGL {
       def |(r: ClearMask): ClearMask = l | r
   }
 
-  def glEnable(target: State): Unit = gl.glEnable(target.toGL)
+  def glEnable(target: State): Unit = {
+    gl.glEnable(target.toGL)
+  }
 
-  def glDisable(target: State): Unit = gl.glDisable(target.toGL)
+  def glDisable(target: State): Unit = {
+    gl.glDisable(target.toGL)
+  }
 
-  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = gl.glViewport(x, y, width, height)
+  def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = {
+    gl.glViewport(x, y, width, height)
+  }
 
-  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = gl.glScissor(x, y, width, height)
+  def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = {
+    gl.glScissor(x, y, width, height)
+  }
 
-  def glBlendFunc(sfactor: BlendFactor, dfactor: BlendFactor): Unit =
+  def glBlendFunc(sfactor: BlendFactor, dfactor: BlendFactor): Unit = {
     gl.glBlendFunc(sfactor.toGL, dfactor.toGL)
+  }
 
-  def glDepthFunc(func: DepthFunc): Unit = gl.glDepthFunc(func.toGL)
+  def glDepthFunc(func: DepthFunc): Unit = {
+    gl.glDepthFunc(func.toGL)
+  }
 
-  def glClear(mask: ClearMask): Unit = gl.glClear(mask)
+  def glClear(mask: ClearMask): Unit = {
+    gl.glClear(mask)
+  }
 
   def glGetError(): Option[Int] =
     val e = gl.glGetError()
@@ -571,7 +680,7 @@ object OpenGL {
     }
 
     object MessageSource {
-      def fromGL(code: Int): MessageSource = code match
+      def fromGL(code: Int): MessageSource = code match {
         case GL43.GL_DEBUG_SOURCE_API             => MessageSource.Api
         case GL43.GL_DEBUG_SOURCE_WINDOW_SYSTEM   => MessageSource.WindowSystem
         case GL43.GL_DEBUG_SOURCE_SHADER_COMPILER => MessageSource.ShaderCompiler
@@ -579,6 +688,7 @@ object OpenGL {
         case GL43.GL_DEBUG_SOURCE_APPLICATION     => MessageSource.Application
         case GL43.GL_DEBUG_SOURCE_OTHER           => MessageSource.Other
         case _                                    => MessageSource.Unknown(code)
+      }
     }
 
     enum MessageType {
@@ -595,7 +705,7 @@ object OpenGL {
     }
 
     object MessageType {
-      def fromGL(code: Int): MessageType = code match
+      def fromGL(code: Int): MessageType = code match {
         case GL43.GL_DEBUG_TYPE_ERROR               => MessageType.Error
         case GL43.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR => MessageType.DeprecatedBehavior
         case GL43.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  => MessageType.UndefinedBehavior
@@ -606,6 +716,7 @@ object OpenGL {
         case GL43.GL_DEBUG_TYPE_POP_GROUP           => MessageType.PopGroup
         case GL43.GL_DEBUG_TYPE_OTHER               => MessageType.Other
         case _                                      => MessageType.Unknown(code)
+      }
     }
 
     enum MessageSeverity {
@@ -617,12 +728,13 @@ object OpenGL {
     }
 
     object MessageSeverity {
-      def fromGL(code: Int): MessageSeverity = code match
+      def fromGL(code: Int): MessageSeverity = code match {
         case GL43.GL_DEBUG_SEVERITY_HIGH         => MessageSeverity.High
         case GL43.GL_DEBUG_SEVERITY_MEDIUM       => MessageSeverity.Medium
         case GL43.GL_DEBUG_SEVERITY_LOW          => MessageSeverity.Low
         case GL43.GL_DEBUG_SEVERITY_NOTIFICATION => MessageSeverity.Notification
         case _                                   => MessageSeverity.Unknown(code)
+      }
     }
 
     case class Message(
@@ -635,26 +747,30 @@ object OpenGL {
     )
 
     object Message {
-      def fromGL(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long): Message =
+      def fromGL(source: Int, debugType: Int, id: Int, severity: Int, message: String, userParam: Long): Message = {
         val messageSource = MessageSource.fromGL(source)
         val messageType = MessageType.fromGL(debugType)
         val messageSeverity = MessageSeverity.fromGL(severity)
         Message(messageSource, messageType, id, messageSeverity, message, userParam)
+      }
     }
   }
 
-  def glDebugMessageCallback(callback: Debug.Message => Unit, userParam: Long): Unit =
+  def glDebugMessageCallback(callback: Debug.Message => Unit, userParam: Long): Unit = {
     val glCallback: GLDebugMessageCallbackI = (source, debugType, id, severity, length, messageAddress, userParam) => {
       val message =
-        if length < 0
-        then MemoryUtil.memASCII(messageAddress)
-        else MemoryUtil.memASCII(messageAddress, length)
+        if length < 0 then {
+          MemoryUtil.memASCII(messageAddress)
+        } else {
+          MemoryUtil.memASCII(messageAddress, length)
+        }
 
       val debugMessage = Debug.Message.fromGL(source, debugType, id, severity, message, userParam)
 
       callback(debugMessage)
     }
     gl.glDebugMessageCallback(glCallback, userParam)
+  }
 }
 
 // ---- Wrappers and stubs ----

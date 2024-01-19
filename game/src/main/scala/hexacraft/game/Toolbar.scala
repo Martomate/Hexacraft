@@ -33,15 +33,18 @@ class Toolbar(location: LocationInfo, private var inventory: Inventory)(
 
   updateRendererContent()
 
-  def setWindowAspectRatio(aspectRatio: Float): Unit =
+  def setWindowAspectRatio(aspectRatio: Float): Unit = {
     guiBlockRenderer.setWindowAspectRatio(aspectRatio)
+  }
 
-  def onInventoryUpdated(inventory: Inventory): Unit =
+  def onInventoryUpdated(inventory: Inventory): Unit = {
     this.inventory = inventory
     updateRendererContent()
+  }
 
-  private def updateRendererContent(): Unit =
+  private def updateRendererContent(): Unit = {
     guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f, (0 until 9).map(i => inventory(i)))
+  }
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)

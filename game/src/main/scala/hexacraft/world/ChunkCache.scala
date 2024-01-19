@@ -17,10 +17,11 @@ class ChunkCache(world: BlocksInWorld) {
   }
 
   def getChunk(coords: ChunkRelWorld): Chunk = {
-    if (lastChunkCoords.isEmpty || coords != lastChunkCoords.get) {
+    if lastChunkCoords.isEmpty || coords != lastChunkCoords.get then {
       lastChunkCoords = Some(coords)
       lastChunk = cache.getOrNull(coords.value)
-      if (lastChunk == null) {
+
+      if lastChunk == null then {
         val newValue = world.getChunk(coords).orNull
         lastChunk = newValue
         cache(coords.value) = newValue

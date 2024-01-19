@@ -47,15 +47,21 @@ class HugeTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenSt
         randomlyDivideInterval(crossSectionBottom - crossSectionTop + 1, 0.1f, length).map(_.round)
 
       logs ++= PillarGenerator(length).generate(start, logBlock)
-      for (i <- 0 until crossSectionTop - 1)
+      for i <- 0 until crossSectionTop - 1 do {
         logs ++= PillarGenerator(length).generate(reorderedNeighbors(i), logBlock)
+      }
 
-      for ((r, h) <- neighborRoots.zip(neighborHeights))
+      for (r, h) <- neighborRoots.zip(neighborHeights) do {
         logs ++= PillarGenerator(h).generate(r, logBlock)
+      }
     }
 
     private def randomlyDivideInterval(parts: Int, randomness: Float, length: Int): Seq[Float] = {
-      val dists = for (_ <- 1 to parts) yield 1.0f + randomness * (rand.nextFloat() * 2 - 1)
+      val dists =
+        for _ <- 1 to parts yield {
+          1.0f + randomness * (rand.nextFloat() * 2 - 1)
+        }
+
       val acc = dists.scanLeft(0.0f)(_ + _).drop(1)
       val totalDist = acc.last
       acc.map(_ / totalDist * length).dropRight(1)
@@ -68,14 +74,12 @@ class HugeTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenSt
         flatnessBottom: Float,
         flatnessTop: Float
     ): Unit = {
-      val blobGen =
-        BlobGenerator(rand, (size * 40 + 1).toInt, irregularity, flatnessBottom, flatnessTop)
+      val blobGen = BlobGenerator(rand, (size * 40 + 1).toInt, irregularity, flatnessBottom, flatnessTop)
       leaves ++= blobGen.generate(center, leavesBlock)
     }
 
     def blocks: Seq[BlockSpec] = (leaves ++ logs).toSeq
   }
-
 }
 
 class TallTreeGenStrategy(height: Int)(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
@@ -89,10 +93,13 @@ class TallTreeGenStrategy(height: Int)(logBlock: Block, leavesBlock: Block) exte
 }
 
 class ShortTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
-  override def blocks(rand: Random): Seq[BlockSpec] =
-    PlatformGenerator(1).generate(0, 6, 0, leavesBlock) ++
-      PlatformGenerator(2).generate(0, 7, 0, leavesBlock) ++
-      PlatformGenerator(1).generate(0, 8, 0, leavesBlock) ++
-      PlatformGenerator(0).generate(0, 9, 0, leavesBlock) ++
+  override def blocks(rand: Random): Seq[BlockSpec] = {
+    Seq(
+      PlatformGenerator(1).generate(0, 6, 0, leavesBlock),
+      PlatformGenerator(2).generate(0, 7, 0, leavesBlock),
+      PlatformGenerator(1).generate(0, 8, 0, leavesBlock),
+      PlatformGenerator(0).generate(0, 9, 0, leavesBlock),
       PillarGenerator(9).generate(0, 0, 0, logBlock)
+    ).reduce(_ ++ _)
+  }
 }

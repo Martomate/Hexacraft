@@ -18,9 +18,10 @@ import hexacraft.world.WorldSettings
 import java.io.File
 
 object MainRouter {
-  enum Event:
+  enum Event {
     case SceneChanged(newScene: Scene)
     case QuitRequested
+  }
 }
 
 class MainRouter(
@@ -31,9 +32,11 @@ class MainRouter(
     kb: GameKeyboard
 )(eventListener: Tracker[MainRouter.Event]) {
 
-  def route(sceneRoute: SceneRoute): Unit = eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
+  def route(sceneRoute: SceneRoute): Unit = {
+    eventListener.notify(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
+  }
 
-  private def createScene(sceneRoute: SceneRoute): Scene = sceneRoute match
+  private def createScene(sceneRoute: SceneRoute): Scene = sceneRoute match {
     case SceneRoute.Main =>
       import Menus.MainMenu.Event.*
 
@@ -91,10 +94,13 @@ class MainRouter(
 
     case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
       val client = if serverLocation != null then GameClient(serverLocation._1, serverLocation._2) else null
+
       val worldProvider =
-        if isHosting
-        then WorldProviderFromFile(saveDir, settings, fs)
-        else RemoteWorldProvider(client)
+        if isHosting then {
+          WorldProviderFromFile(saveDir, settings, fs)
+        } else {
+          RemoteWorldProvider(client)
+        }
 
       val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
       GameScene(networkHandler, kb, BlockTextureLoader.instance, window.windowSize):
@@ -105,4 +111,5 @@ class MainRouter(
           window.setCursorMode(CursorMode.Disabled)
         case GameScene.Event.CursorReleased =>
           window.setCursorMode(CursorMode.Normal)
+  }
 }

@@ -10,8 +10,9 @@ class TextMaster {
   private val texts = mutable.HashMap.empty[Font, ArrayBuffer[Text]]
   private val renderer = new FontRenderer()
 
-  def setWindowAspectRatio(aspectRatio: Float): Unit =
+  def setWindowAspectRatio(aspectRatio: Float): Unit = {
     renderer.setWindowAspectRatio(aspectRatio)
+  }
 
   def render(xoffset: Float, yoffset: Float): Unit = {
     renderer.render(texts, xoffset, yoffset)
@@ -27,7 +28,7 @@ class TextMaster {
   def removeText(text: Text): Unit = {
     val textBatch = texts(text.font)
     textBatch -= text
-    if (textBatch.isEmpty) {
+    if textBatch.isEmpty then {
       texts -= text.font
       // TODO: remove VAO
     }
@@ -37,7 +38,7 @@ class TextMaster {
     for {
       font <- texts.keys
       text <- texts(font)
-    } {
+    } do {
       text.unload()
     }
     texts.clear()

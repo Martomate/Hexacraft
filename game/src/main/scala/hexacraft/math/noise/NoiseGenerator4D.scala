@@ -11,9 +11,15 @@ class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
   def genNoise(x: Double, y: Double, z: Double, w: Double): Double = {
     var amp = 1d
     var result = 0d
-    for (n <- noiseGens) {
+    for n <- noiseGens do {
       val mult = scale / amp
-      result += amp * n.noise(x * mult, y * mult, z * mult, w * mult)
+      val noise = n.noise(
+        x * mult,
+        y * mult,
+        z * mult,
+        w * mult
+      )
+      result += amp * noise
       amp /= 2
     }
     result
@@ -21,6 +27,11 @@ class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
 
   def genNoiseFromCyl(c: CylCoords)(using cylSize: CylinderSize): Double = {
     val angle = c.z / cylSize.radius
-    genNoise(c.x, c.y, math.sin(angle) * cylSize.radius, math.cos(angle) * cylSize.radius)
+    genNoise(
+      c.x,
+      c.y,
+      math.sin(angle) * cylSize.radius,
+      math.cos(angle) * cylSize.radius
+    )
   }
 }

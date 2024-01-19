@@ -3,6 +3,7 @@ package hexacraft.gui.comp
 import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
 import hexacraft.infra.window.{KeyAction, KeyboardKey}
 import hexacraft.text.Text
+
 import org.joml.{Vector3f, Vector4f}
 
 class TextField(
@@ -10,7 +11,7 @@ class TextField(
     initText: String = "",
     centered: Boolean = true,
     maxFontSize: Float = 4f
-) extends Component:
+) extends Component {
   private val bgColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
   private val textColor = new Vector3f(1.0f)
 
@@ -24,18 +25,21 @@ class TextField(
   addText(contentText)
   setText(initText)
 
-  def setText(newText: String): Unit =
+  def setText(newText: String): Unit = {
     val prevText = text
     val prevFontSize = contentText.fontSize
 
-    try contentText.setTextAndFitSize(newText, maxFontSize)
-    catch
+    try {
+      contentText.setTextAndFitSize(newText, maxFontSize)
+    } catch {
       case _: Exception =>
         println(s"$newText contains unsupported characters")
         contentText.setTextAndFitSize(prevText, prevFontSize)
+    }
 
-    if cursorTextVisible
-    then removeText(cursorText)
+    if cursorTextVisible then {
+      removeText(cursorText)
+    }
 
     val fontSize = contentText.fontSize
     val newCursorTextX =
@@ -45,31 +49,37 @@ class TextField(
     cursorText.setPosition(newCursorTextX, newCursorTextY)
     cursorText.setFontSize(fontSize * 1.1f)
 
-    if (cursorTextVisible) addText(cursorText)
+    if cursorTextVisible then {
+      addText(cursorText)
+    }
+  }
 
   def text: String = contentText.text
 
-  override def tick(ctx: TickContext): Unit =
-    if focused
-    then
-      if time % 30 == 0
-      then
+  override def tick(ctx: TickContext): Unit = {
+    if focused then {
+      if time % 30 == 0 then {
         time = 0
 
-        if cursorTextVisible
-        then removeText(cursorText)
-        else addText(cursorText)
+        if cursorTextVisible then {
+          removeText(cursorText)
+        } else {
+          addText(cursorText)
+        }
 
         cursorTextVisible = !cursorTextVisible
+      }
       time += 1
-    else
+    } else {
       time = 0
-      if cursorTextVisible
-      then
+      if cursorTextVisible then {
         removeText(cursorText)
         cursorTextVisible = false
+      }
+    }
+  }
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit =
+  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     Component.drawFancyRect(
       location,
       transformation.x,
@@ -79,28 +89,33 @@ class TextField(
       inverted = true
     )
     super.render(transformation)
+  }
 
-  override def handleEvent(event: Event): Boolean =
+  override def handleEvent(event: Event): Boolean = {
     import Event.*
     var captureEvent = false
-    event match
+    event match {
       case CharEvent(character) if focused =>
         setText(text + character.toChar)
         captureEvent = true
       case KeyEvent(KeyboardKey.Backspace, _, KeyAction.Press, _) =>
-        if focused && text.nonEmpty
-        then setText(text.substring(0, text.length - 1))
+        if focused && text.nonEmpty then {
+          setText(text.substring(0, text.length - 1))
+        }
       case MouseClickEvent(_, _, _, mousePos) =>
         focused = location.containsPoint(mousePos)
       case _ =>
+    }
     captureEvent
+  }
 
-  private def makeContentText() =
+  private def makeContentText() = {
     Component
       .makeText(initText, location, maxFontSize, centered)
       .setColor(textColor.x, textColor.y, textColor.z)
+  }
 
-  private def makeCursorText() =
+  private def makeCursorText() = {
     val textLocation = LocationInfo(
       location.x + location.w / 2f - maxFontSize * 0.002f,
       location.y + maxFontSize * 0.002f,
@@ -111,3 +126,5 @@ class TextField(
     Component
       .makeText("|", textLocation, maxFontSize * 1.1f, centered = false)
       .setColor(textColor.x, textColor.y, textColor.z)
+  }
+}

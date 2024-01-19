@@ -6,12 +6,25 @@ import hexacraft.world.CylinderSize
 import org.joml.Vector2d
 
 case class Offset(dx: Int, dy: Int, dz: Int) {
-  def +(other: Offset): Offset = Offset(dx + other.dx, dy + other.dy, dz + other.dz)
+  def +(other: Offset): Offset = {
+    Offset(
+      dx + other.dx,
+      dy + other.dy,
+      dz + other.dz
+    )
+  }
 
-  def -(other: Offset): Offset = Offset(dx - other.dx, dy - other.dy, dz - other.dz)
+  def -(other: Offset): Offset = {
+    Offset(
+      dx - other.dx,
+      dy - other.dy,
+      dz - other.dz
+    )
+  }
 
-  def manhattanDistance: Int =
+  def manhattanDistance: Int = {
     math.abs(dy) + math.max(math.max(math.abs(dx), math.abs(dz)), math.abs(dx + dz))
+  }
 }
 
 object NeighborOffsets {
@@ -48,44 +61,52 @@ case class BlockRelChunk(value: Int) extends AnyVal { // xyz
   def offset(off: Offset): BlockRelChunk = offset(off.dx, off.dy, off.dz)
   def offset(x: Int, y: Int, z: Int): BlockRelChunk = BlockRelChunk(cx + x, cy + y, cz + z)
 
-  def isOnChunkEdge(side: Int): Boolean =
+  def isOnChunkEdge(side: Int): Boolean = {
     val off = NeighborOffsets(side)
     val xx = cx + off.dx
     val yy = cy + off.dy
     val zz = cz + off.dz
     (xx & ~15 | yy & ~15 | zz & ~15) != 0
+  }
 
-  def neighbor(side: Int): BlockRelChunk =
+  def neighbor(side: Int): BlockRelChunk = {
     val off = NeighborOffsets(side)
     val xx = cx + off.dx
     val yy = cy + off.dy
     val zz = cz + off.dz
     BlockRelChunk(xx, yy, zz)
+  }
 
-  def globalNeighbor(side: Int, chunk: ChunkRelWorld)(using CylinderSize): BlockRelWorld =
+  def globalNeighbor(side: Int, chunk: ChunkRelWorld)(using CylinderSize): BlockRelWorld = {
     val off = NeighborOffsets(side)
     val xx = cx + off.dx
     val yy = cy + off.dy
     val zz = cz + off.dz
     BlockRelWorld(xx, yy, zz, chunk)
+  }
 
   override def toString: String = s"($cx, $cy, $cz)"
 }
 
 object BlockRelWorld {
-  def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int)(using cylSize: CylinderSize): BlockRelWorld =
-    BlockRelWorld(
-      (X & 0xfffff) << 44L | (Z & cylSize.ringSizeMask) << 24 | (Y & 0xfff) << 12 | (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)
-    )
+  def apply(X: Long, Y: Int, Z: Long, x: Int, y: Int, z: Int)(using cylSize: CylinderSize): BlockRelWorld = {
+    val chunk = (X & 0xfffff) << 32L | (Z & cylSize.ringSizeMask) << 12L | (Y & 0xfff)
+    val block = (x & 0xf) << 8 | (y & 0xf) << 4 | (z & 0xf)
 
-  def apply(x: Int, y: Int, z: Int)(using CylinderSize): BlockRelWorld =
+    BlockRelWorld(chunk << 12 | block)
+  }
+
+  def apply(x: Int, y: Int, z: Int)(using CylinderSize): BlockRelWorld = {
     BlockRelWorld(x >> 4, y >> 4, z >> 4, x & 15, y & 15, z & 15)
+  }
 
-  def fromChunk(block: BlockRelChunk, chunk: ChunkRelWorld): BlockRelWorld =
+  def fromChunk(block: BlockRelChunk, chunk: ChunkRelWorld): BlockRelWorld = {
     BlockRelWorld(chunk.value << 12 | block.value)
+  }
 
-  def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld)(using CylinderSize): BlockRelWorld =
+  def apply(i: Int, j: Int, k: Int, chunk: ChunkRelWorld)(using CylinderSize): BlockRelWorld = {
     BlockRelWorld(chunk.X.toInt * 16 + i, chunk.Y.toInt * 16 + j, chunk.Z.toInt * 16 + k)
+  }
 }
 
 case class BlockRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYYxyz
@@ -138,23 +159,30 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
   def neighbors(using CylinderSize): Seq[ChunkRelWorld] =
     ChunkRelWorld.neighborOffsets.map(offset)
 
-  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] =
-    for
+  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] = {
+    for {
       y <- -radius to radius
       z <- -radius to radius
       x <- -radius to radius
-    yield offset(x, y, z)
+    } yield {
+      offset(x, y, z)
+    }
+  }
 
   def offset(t: Offset)(using CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
-  def offset(dx: Int, dy: Int, dz: Int)(using CylinderSize): ChunkRelWorld =
-    ChunkRelWorld(X.toInt + dx, Y.toInt + dy, Z.toInt + dz)
+  def offset(dx: Int, dy: Int, dz: Int)(using CylinderSize): ChunkRelWorld = ChunkRelWorld(
+    X.toInt + dx,
+    Y.toInt + dy,
+    Z.toInt + dz
+  )
 
   override def toString: String = s"(${X.toInt}, ${Y.toInt}, ${Z.toInt})"
 }
 
 object ColumnRelWorld {
-  def apply(X: Long, Z: Int)(using cylSize: CylinderSize): ColumnRelWorld =
+  def apply(X: Long, Z: Int)(using cylSize: CylinderSize): ColumnRelWorld = {
     ColumnRelWorld((X & 0xfffff) << 20 | (Z & cylSize.ringSizeMask))
+  }
 }
 
 case class ColumnRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZ
@@ -163,10 +191,11 @@ case class ColumnRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZ
 
   def offset(x: Int, z: Int)(using CylinderSize): ColumnRelWorld = ColumnRelWorld(X.toInt + x, Z.toInt + z)
 
-  def distSq(origin: Vector2d)(using cylSize: CylinderSize): Double =
+  def distSq(origin: Vector2d)(using cylSize: CylinderSize): Double = {
     val dx = this.X.toInt - origin.x + 0.5
     val dz1 = math.abs(this.Z.toInt - origin.y + 0.5 + dx * 0.5f)
     val dz2 = math.abs(dz1 - cylSize.ringSize)
     val dz = math.min(dz1, dz2)
     dx * dx + dz * dz
+  }
 }

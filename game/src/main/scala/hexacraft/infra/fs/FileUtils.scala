@@ -7,18 +7,18 @@ import java.nio.file.{Files, Paths}
 import java.util.jar.JarFile
 import scala.collection.mutable
 
-object FileUtils:
-  def getResourceFile(path: String): Option[URL] =
+object FileUtils {
+  def getResourceFile(path: String): Option[URL] = {
     Option(getClass.getResource("/" + path))
+  }
 
-  def listFilesInResource(path: URL): java.util.stream.Stream[String] =
-    if path.toURI.getScheme.equalsIgnoreCase("file")
-    then
+  def listFilesInResource(path: URL): java.util.stream.Stream[String] = {
+    if path.toURI.getScheme.equalsIgnoreCase("file") then {
       Files
         .list(Paths.get(path.toURI))
         .filter(p => Files.isRegularFile(p))
         .map(_.getFileName.toString)
-    else
+    } else {
       val pathStr =
         java.net.URLDecoder.decode(path.getPath.substring(5), StandardCharsets.UTF_8.name())
       val jarSepIndex = pathStr.indexOf('!')
@@ -30,10 +30,14 @@ object FileUtils:
         .filter(_.startsWith(query))
         .map[String](_.substring(query.length))
         .filter(n => n.nonEmpty && n.indexOf('/') == -1)
+    }
+  }
 
-  def getBufferedReader(url: URL): BufferedReader = new BufferedReader(new InputStreamReader(url.openStream()))
+  def getBufferedReader(url: URL): BufferedReader = {
+    new BufferedReader(new InputStreamReader(url.openStream()))
+  }
 
-  def readLinesFromUrl(url: URL): Seq[String] =
+  def readLinesFromUrl(url: URL): Seq[String] = {
     val lines = mutable.ArrayBuffer.empty[String]
 
     val reader = getBufferedReader(url)
@@ -41,3 +45,5 @@ object FileUtils:
     reader.close()
 
     lines.toSeq
+  }
+}

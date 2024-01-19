@@ -6,12 +6,19 @@ import java.io.{ByteArrayOutputStream, File, PrintStream}
 import java.time.OffsetDateTime
 
 class MainErrorLogger(saveToFile: Boolean, saveFolder: File, fs: FileSystem) {
-  def log(e: Throwable): Unit = if saveToFile then logToFile(e) else logToConsole(e)
+  def log(e: Throwable): Unit = {
+    if saveToFile then {
+      logToFile(e)
+    } else {
+      logToConsole(e)
+    }
+  }
 
-  private def logToConsole(e: Throwable): Unit =
+  private def logToConsole(e: Throwable): Unit = {
     e.printStackTrace()
+  }
 
-  private def logToFile(e: Throwable): Unit =
+  private def logToFile(e: Throwable): Unit = {
     val byteStream = new ByteArrayOutputStream()
     e.printStackTrace(new PrintStream(byteStream))
 
@@ -23,9 +30,11 @@ class MainErrorLogger(saveToFile: Boolean, saveFolder: File, fs: FileSystem) {
     System.err.println(
       s"The program has crashed. The crash report can be found in: ${logFile.getAbsolutePath}"
     )
+  }
 }
 
 object MainErrorLogger {
-  def create(saveToFile: Boolean, saveFolder: File): MainErrorLogger =
+  def create(saveToFile: Boolean, saveFolder: File): MainErrorLogger = {
     MainErrorLogger(saveToFile, saveFolder, FileSystem.create())
+  }
 }

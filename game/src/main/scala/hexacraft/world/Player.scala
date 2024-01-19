@@ -17,15 +17,14 @@ class Player(var inventory: Inventory) {
   def blockInHand: Block = inventory(selectedItemSlot) // TODO: temporary, make inventory system
 
   def toNBT: Nbt.MapTag = {
-    Nbt
-      .makeMap(
-        "position" -> Nbt.makeVectorTag(position),
-        "rotation" -> Nbt.makeVectorTag(rotation),
-        "velocity" -> Nbt.makeVectorTag(velocity),
-        "flying" -> Nbt.ByteTag(flying),
-        "selectedItemSlot" -> Nbt.ShortTag(selectedItemSlot.toShort),
-        "inventory" -> inventory.toNBT
-      )
+    Nbt.makeMap(
+      "position" -> Nbt.makeVectorTag(position),
+      "rotation" -> Nbt.makeVectorTag(rotation),
+      "velocity" -> Nbt.makeVectorTag(velocity),
+      "flying" -> Nbt.ByteTag(flying),
+      "selectedItemSlot" -> Nbt.ShortTag(selectedItemSlot.toShort),
+      "inventory" -> inventory.toNBT
+    )
   }
 }
 
@@ -42,9 +41,10 @@ object Player {
 
   def fromNBT(tag: Nbt.MapTag): Player = {
     val inventory =
-      tag.getMap("inventory") match
+      tag.getMap("inventory") match {
         case Some(tag) => Inventory.fromNBT(tag)
         case None      => Inventory.default
+      }
 
     val player = new Player(inventory)
 

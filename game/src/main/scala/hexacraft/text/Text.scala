@@ -30,28 +30,34 @@ class Text(
 
   def vertexCount: Int = _vertexCount
 
-  def setFontSize(fontSize: Float): Text =
-    if this.fontSize != fontSize then
+  def setFontSize(fontSize: Float): Text = {
+    if this.fontSize != fontSize then {
       this.fontSize = fontSize
       update()
+    }
     this
+  }
 
-  def setText(text: String): Text =
-    if this.text != text then
+  def setText(text: String): Text = {
+    if this.text != text then {
       this.text = text
       update()
+    }
     this
+  }
 
-  def setTextAndFitSize(text: String, startSize: Float): Text =
+  def setTextAndFitSize(text: String, startSize: Float): Text = {
     this.text = text
     this.fontSize = startSize
     update()
-    while numberOfLines > 1 do // TODO: refactor so the loop variable is incremented here
+    while numberOfLines > 1 do { // TODO: refactor so the loop variable is incremented here
       this.fontSize *= 0.8f
       update()
+    }
     this
+  }
 
-  private def update(): Unit =
+  private def update(): Unit = {
     val metaData = font.getMetaData(Text.BaseLineHeight * fontSize)
 
     val lines = LineBreaker(maxLineLength).layout(text, metaData)
@@ -63,6 +69,7 @@ class Text(
 
     val vao: VAO = TextMaster.loadVAO(data.vertexPositions, data.textureCoords)
     setMeshInfo(vao, data.getVertexCount)
+  }
 
   def color: Vector3f = _color
   def shadowColor: Vector3f = _shadowColor
@@ -76,31 +83,41 @@ class Text(
     * @param b
     *   blue value, between 0 and 1.
     */
-  def setColor(r: Float, g: Float, b: Float): Text =
+  def setColor(r: Float, g: Float, b: Float): Text = {
     _color.set(r, g, b)
     this
+  }
 
-  def setShadowColor(r: Float, g: Float, b: Float): Text =
+  def setShadowColor(r: Float, g: Float, b: Float): Text = {
     _shadowColor.set(r, g, b)
     this
+  }
 
   def getLineWidth(line: Int): Double = lineWidths(line)
 
-  def setPosition(x: Float, y: Float): Text =
+  def setPosition(x: Float, y: Float): Text = {
     position.x = x
     position.y = y
     this
+  }
 
-  def offsetPosition(dx: Float, dy: Float): Text =
+  def offsetPosition(dx: Float, dy: Float): Text = {
     setPosition(position.x + dx, position.y + dy)
+  }
 
   def getMesh: OpenGL.VertexArrayId = textMeshVao.id
 
-  private def setMeshInfo(vao: VAO, verticesCount: Int): Unit =
-    if textMeshVao ne vao then
-      if textMeshVao != null then textMeshVao.free()
+  private def setMeshInfo(vao: VAO, verticesCount: Int): Unit = {
+    if textMeshVao ne vao then {
+      if textMeshVao != null then {
+        textMeshVao.free()
+      }
       this.textMeshVao = vao
+    }
     this._vertexCount = verticesCount
+  }
 
-  def unload(): Unit = textMeshVao.free()
+  def unload(): Unit = {
+    textMeshVao.free()
+  }
 }

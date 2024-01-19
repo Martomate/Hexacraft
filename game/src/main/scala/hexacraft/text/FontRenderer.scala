@@ -14,20 +14,21 @@ object FontRenderer {
 class FontRenderer {
   private val shader = FontRenderer.shader
 
-  def setWindowAspectRatio(aspectRatio: Float): Unit =
+  def setWindowAspectRatio(aspectRatio: Float): Unit = {
     shader.setWindowAspectRatio(aspectRatio)
+  }
 
   def render(
       texts: mutable.HashMap[Font, ArrayBuffer[Text]],
-      xoffset: Float,
-      yoffset: Float
+      xOffset: Float,
+      yOffset: Float
   ): Unit = {
     prepare()
-    for (font <- texts.keys) {
+    for font <- texts.keys do {
       OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
       OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, font.textureAtlas)
-      for (text <- texts(font)) {
-        renderText(text, xoffset, yoffset)
+      for text <- texts(font) do {
+        renderText(text, xOffset, yOffset)
       }
     }
     endRendering()
@@ -42,19 +43,20 @@ class FontRenderer {
     VAO.unbindVAO()
   }
 
-  private def renderText(text: Text, xoffset: Float, yoffset: Float): Unit = {
+  private def renderText(text: Text, xOffset: Float, yOffset: Float): Unit = {
     OpenGL.glBindVertexArray(text.getMesh)
 
-    if text.hasShadow then
+    if text.hasShadow then {
       shader.setColor(text.shadowColor)
       shader.setTranslation(
-        text.position.x + xoffset + 0.001f * (2 + text.fontSize * 0.5f),
-        text.position.y + yoffset + -0.001f * (2 + text.fontSize * 0.5f)
+        text.position.x + xOffset + 0.001f * (2 + text.fontSize * 0.5f),
+        text.position.y + yOffset + -0.001f * (2 + text.fontSize * 0.5f)
       )
       OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
+    }
 
     shader.setColor(text.color)
-    shader.setTranslation(text.position.x + xoffset, text.position.y + yoffset)
+    shader.setTranslation(text.position.x + xOffset, text.position.y + yOffset)
     OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
   }
 

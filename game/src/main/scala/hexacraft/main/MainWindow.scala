@@ -15,12 +15,13 @@ import org.joml.Vector2i
 import java.io.File
 import scala.collection.mutable
 
-class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
+class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
   private val fs = FileSystem.create()
 
   private val multiplayerEnabled = isDebug
 
   private var _windowSize = WindowSize(Vector2i(960, 540), Vector2i(0, 0)) // Initialized in initWindow
+
   def windowSize: WindowSize = _windowSize
 
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
@@ -37,48 +38,52 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
   private var scene: Scene = _
   private var nextScene: Scene = _
 
-  override def setCursorMode(cursorMode: CursorMode): Unit =
+  override def setCursorMode(cursorMode: CursorMode): Unit = {
     window.setCursorMode(cursorMode)
     resetMousePos()
+  }
 
-  private def resetMousePos(): Unit =
+  private def resetMousePos(): Unit = {
     val (cx, cy) = window.cursorPosition
     mouse.skipNextMouseMovedUpdate()
     mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
     mouse.skipNextMouseMovedUpdate()
+  }
 
-  private def loop(): Unit =
+  private def loop(): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
 
-    while !window.shouldClose
-    do
+    while !window.shouldClose do {
       val currentTime = System.nanoTime
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
 
-      if nextScene != null then
+      if nextScene != null then {
         setScene(nextScene)
         nextScene = null
+      }
 
-      for (_ <- 0 until delta)
+      for _ <- 0 until delta do {
         tick()
         ticks += 1
         titleTicker += 1
-        if ticks % 60 == 0
-        then
+        if ticks % 60 == 0 then {
           fps = frames
           vsyncManager.handleVsync(fps)
           World.shouldChillChunkLoader = fps < 20
           frames = 0
+        }
         prevTime += 1e9.toLong / 60
+      }
 
       OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
       render()
 
-      OpenGL.glGetError() match
+      OpenGL.glGetError() match {
         case Some(error) => println("OpenGL error: " + error)
         case None        =>
+      }
 
       frames += 1
 
@@ -88,25 +93,32 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
       window.swapBuffers()
 
       if titleTicker > 10
-      then
+      then {
         titleTicker = 0
         window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format)
+      }
 
       // Put occurred events into event queue
       windowSystem.runEventCallbacks()
 
       // Process events in event queue
-      while callbackQueue.nonEmpty
-      do processCallbackEvent(callbackQueue.dequeue())
+      while callbackQueue.nonEmpty do {
+        processCallbackEvent(callbackQueue.dequeue())
+      }
+    }
+  }
 
-  private def processCallbackEvent(event: CallbackEvent): Unit = event match
+  private def processCallbackEvent(event: CallbackEvent): Unit = event match {
     case CallbackEvent.KeyPressed(window, key, scancode, action, mods) =>
       val keyIsPressed = action == KeyAction.Press
 
       if keyIsPressed
-      then
+      then {
         if key == KeyboardKey.Function(11)
-        then toggleFullscreen()
+        then {
+          toggleFullscreen()
+        }
+      }
 
       scene.handleEvent(Event.KeyEvent(key, scancode, action, mods))
 
@@ -125,31 +137,40 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
 
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
-      then
+      then {
         if w != _windowSize.logicalSize.x || h != _windowSize.logicalSize.y
-        then scene.windowResized(w, h)
+        then {
+          scene.windowResized(w, h)
+        }
 
         _windowSize = WindowSize(Vector2i(w, h), _windowSize.physicalSize)
         resetMousePos()
+      }
 
-    case CallbackEvent.FramebufferResized(_, w, h) =>
+    case CallbackEvent.FrameBufferResized(_, w, h) =>
       if w > 0 && h > 0
-      then
+      then {
         if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y
-        then
+        then {
           OpenGL.glViewport(0, 0, w, h)
           scene.frameBufferResized(w, h)
+        }
 
         _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(w, h))
+      }
+  }
 
-  private def handleDebugEvent(debugMessage: OpenGL.Debug.Message): Unit =
+  private def handleDebugEvent(debugMessage: OpenGL.Debug.Message): Unit = {
     val OpenGL.Debug.Message(source, debugType, _, severity, message, _) = debugMessage
     val messageStr = s"[${severity.toString}] [${debugType.toString}] [${source.toString}] - $message"
     System.err.println(s"OpenGL debug: $messageStr")
+  }
 
-  private def onUpdateVsync(vsync: Boolean): Unit = windowSystem.setVsync(vsync)
+  private def onUpdateVsync(vsync: Boolean): Unit = {
+    windowSystem.setVsync(vsync)
+  }
 
-  private def render(): Unit =
+  private def render(): Unit = {
     scene.render(GUITransformation(0, 0))(using
       RenderContext(
         this._windowSize.logicalAspectRatio,
@@ -158,8 +179,9 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
       )
     )
     VAO.unbindVAO()
+  }
 
-  private def tick(): Unit =
+  private def tick(): Unit = {
     val (cx, cy) = window.cursorPosition
     mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
 
@@ -170,42 +192,51 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
         previousMousePosition = mouse.previousPos
       )
     )
+  }
 
-  private def setScene(newScene: Scene): Unit =
-    if scene != null then scene.unload()
+  private def setScene(newScene: Scene): Unit = {
+    if scene != null then {
+      scene.unload()
+    }
     scene = newScene
+  }
 
-  private def makeSceneRouter(): MainRouter =
+  private def makeSceneRouter(): MainRouter = {
     MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard):
       case MainRouter.Event.SceneChanged(newScene) => nextScene = newScene
       case MainRouter.Event.QuitRequested          => tryQuit()
+  }
 
-  def run(): Unit =
+  def run(): Unit = {
     initGL()
 
-    try
+    try {
       val router = makeSceneRouter()
       router.route(SceneRoute.Main)
 
       resetMousePos()
       loop()
-    finally
+    } finally {
       destroy()
 
       window.close()
       windowSystem.shutdown()
+    }
+  }
 
-  private def toggleFullscreen(): Unit =
+  private def toggleFullscreen(): Unit = {
     fullscreenManager.toggleFullscreen()
     mouse.skipNextMouseMovedUpdate()
+  }
 
-  private def createWindowSystem(): WindowSystem =
+  private def createWindowSystem(): WindowSystem = {
     val windowSystem = WindowSystem.create()
     windowSystem.setErrorCallback(e => System.err.println(s"[LWJGL] ${e.reason} error: ${e.description}"))
     windowSystem.initialize()
     windowSystem
+  }
 
-  private def initWindow(width: Int, height: Int): Window =
+  private def initWindow(width: Int, height: Int): Window = {
     val openglSettings = WindowSettings.Opengl(3, 3, isDebug)
     val windowSettings = WindowSettings(width, height, "Hexacraft", openglSettings, resizable = true, samples = 1)
 
@@ -222,7 +253,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
     window.setMouseButtonCallback(callbackQueue.enqueue)
     window.setWindowSizeCallback(callbackQueue.enqueue)
     window.setScrollCallback(callbackQueue.enqueue)
-    window.setFramebufferSizeCallback(callbackQueue.enqueue)
+    window.setFrameBufferSizeCallback(callbackQueue.enqueue)
 
     centerWindow(window)
 
@@ -230,29 +261,40 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow:
     windowSystem.setVsync(vsyncManager.isVsync)
     window.show()
     window
+  }
 
-  private def centerWindow(window: Window): Unit =
+  private def centerWindow(window: Window): Unit = {
     val (windowWidth, windowHeight) = window.size
     val mode = windowSystem.primaryMonitor.videoMode
     window.moveTo((mode.width - windowWidth) / 2, (mode.height - windowHeight) / 2)
+  }
 
-  private def initGL(): Unit =
+  private def initGL(): Unit = {
     OpenGL.createCapabilities()
 
-//  OpenGL.glEnable(OpenGL.State.MultiSample)
+    //  OpenGL.glEnable(OpenGL.State.MultiSample)
     OpenGL.glEnable(OpenGL.State.DepthTest)
     OpenGL.glDepthFunc(OpenGL.DepthFunc.LessThanOrEqual)
     OpenGL.glEnable(OpenGL.State.CullFace)
 
-    if isDebug && OpenGL.hasDebugExtension
-    then
+    if isDebug && OpenGL.hasDebugExtension then {
       OpenGL.glEnable(OpenGL.State.DebugOutput)
       OpenGL.glDebugMessageCallback(handleDebugEvent, 0L)
+    }
+  }
 
-  private def tryQuit(): Unit = window.requestClose()
+  private def tryQuit(): Unit = {
+    window.requestClose()
+  }
 
-  private def destroy(): Unit =
-    if scene != null then scene.unload()
-    if nextScene != null then nextScene.unload()
+  private def destroy(): Unit = {
+    if scene != null then {
+      scene.unload()
+    }
+    if nextScene != null then {
+      nextScene.unload()
+    }
 
     Resource.freeAllResources()
+  }
+}

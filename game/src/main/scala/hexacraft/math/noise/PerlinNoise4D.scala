@@ -35,7 +35,13 @@ class PerlinNoise4D(random: Random) { // Apparently SimplexNoise exists in joml
 
   private def grad(hash: Int, x: Double, y: Double, z: Double, w: Double): Double = {
     val h = hash & 31
-    grad4(h * 4 + 0) * x + grad4(h * 4 + 1) * y + grad4(h * 4 + 2) * z + grad4(h * 4 + 3) * w
+
+    val gx = grad4(h * 4 + 0) * x
+    val gy = grad4(h * 4 + 1) * y
+    val gz = grad4(h * 4 + 2) * z
+    val gw = grad4(h * 4 + 3) * w
+
+    gx + gy + gz + gw
   }
 
   private def fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)

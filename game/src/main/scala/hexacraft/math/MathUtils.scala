@@ -1,41 +1,64 @@
 package hexacraft.math
 
 object MathUtils:
-  def fitZ(z: Double, circumference: Double): Double =
+  def fitZ(z: Double, circumference: Double): Double = {
     val zz = z % circumference
-    if zz < 0
-    then zz + circumference
-    else zz
+
+    if zz < 0 then {
+      zz + circumference
+    } else {
+      zz
+    }
+  }
 
   /** @return x or (x - C) depending on which one is closest to 0 on the modulo circle */
-  def absmin(x: Double, circumference: Double): Double =
+  def absmin(x: Double, circumference: Double): Double = {
     fitZ(x + circumference / 2, circumference) - circumference / 2
+  }
 
   /** Linear interpolation with `t` ranging from 0 to 1 */
-  def lerp(start: Float, end: Float, t: Float): Float =
+  def lerp(start: Float, end: Float, t: Float): Float = {
     start + (end - start) * t
+  }
 
   /** Remaps the range [`loIn`, `hiIn`] to [`loOut`, `hiOut`] sampled at `t` */
-  def remap(loIn: Float, hiIn: Float, loOut: Float, hiOut: Float, t: Float): Float =
+  def remap(loIn: Float, hiIn: Float, loOut: Float, hiOut: Float, t: Float): Float = {
     lerp(loOut, hiOut, (t - loIn) / (hiIn - loIn))
+  }
 
   /** @return `value` unless it is lower than `lo` or higher than `hi` */
-  def clamp(value: Float, lo: Float, hi: Float): Float =
-    if value < lo then lo
-    else if value > hi then hi
-    else value
+  def clamp(value: Float, lo: Float, hi: Float): Float = {
+    if value < lo then {
+      lo
+    } else if value > hi then {
+      hi
+    } else {
+      value
+    }
+  }
 
   /** @return `value` unless it is lower than `lo` or higher than `hi` */
-  def clamp(value: Double, lo: Double, hi: Double): Double =
-    if value < lo then lo
-    else if value > hi then hi
-    else value
+  def clamp(value: Double, lo: Double, hi: Double): Double = {
+    if value < lo then {
+      lo
+    } else if value > hi then {
+      hi
+    } else {
+      value
+    }
+  }
 
-  def oppositeSide(s: Int): Int =
-    if (s < 2) 1 - s else (s - 2 + 3) % 6 + 2
+  def oppositeSide(s: Int): Int = {
+    if s < 2 then {
+      1 - s
+    } else {
+      (s - 2 + 3) % 6 + 2
+    }
+  }
 
   def smoothstep(x: Float): Float = smoothstep(x.toDouble).toFloat
 
-  def smoothstep(x: Double): Double =
+  def smoothstep(x: Double): Double = {
     val t = clamp(x, 0, 1)
     clamp((3 - 2 * t) * t * t, 0, 1)
+  }

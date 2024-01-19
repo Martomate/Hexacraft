@@ -102,7 +102,8 @@ class RayTracer(camera: Camera, maxDistance: Double)(using CylinderSize) {
           val points = PointHexagon.fromHexBox(boundingBox, hitBlockCoords, camera)
           ray.intersectsPolygon(points, side)
         })
-      case _ => false
+      case _ =>
+        false
     }
   }
 }
@@ -113,7 +114,9 @@ class Ray(val v: Vector3d) {
     * true if the ray goes to the right of the line from `up` to `down` in a reference frame where
     * `up` is directly above `down` (i.e. possibly rotated)
     */
-  def toTheRight(down: Vector3d, up: Vector3d): Boolean = down.dot(up.cross(v, new Vector3d)) <= 0
+  def toTheRight(down: Vector3d, up: Vector3d): Boolean = {
+    down.dot(up.cross(v, new Vector3d)) <= 0
+  }
 
   def intersectsPolygon(points: PointHexagon, side: Int): Boolean = {
     val rightSeq = side match {
@@ -136,7 +139,9 @@ class Ray(val v: Vector3d) {
     allElementsSame(rightSeq)
   }
 
-  private def allElementsSame(seq: IndexedSeq[Boolean]) = !seq.exists(_ != seq(0))
+  private def allElementsSame(seq: IndexedSeq[Boolean]) = {
+    !seq.exists(_ != seq(0))
+  }
 }
 
 object Ray {

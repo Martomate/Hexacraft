@@ -6,5 +6,6 @@ case class TickContext(
     windowSize: WindowSize,
     currentMousePosition: MousePosition,
     previousMousePosition: MousePosition
-):
+) {
   def mouseMovement: Vector2f = currentMousePosition.pos.sub(previousMousePosition.pos, new Vector2f)
+}

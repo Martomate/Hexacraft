@@ -7,7 +7,8 @@ object Int12 {
   inline def truncate(inline i: Int): Int12 = Int12(i)
   inline def truncate(inline i: Long): Int12 = Int12(i.toInt)
 
-  extension (i: Int12)
+  extension (i: Int12) {
     inline def toInt: Int = i << 20 >> 20
     inline def repr: UInt12 = UInt12(i)
+  }
 }
