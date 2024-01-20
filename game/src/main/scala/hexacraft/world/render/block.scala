@@ -243,7 +243,17 @@ object BlockVboData:
           b += Offset(0, 0, 0)
 
           side match {
-            case 0 | 1 =>
+            case 0 =>
+              i2 match {
+                case 3 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+                case 2 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+                case 1 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+                case 0 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+                case 5 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+                case 4 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+                case _ => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+              }
+            case 1 =>
               i2 match {
                 case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
                 case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)

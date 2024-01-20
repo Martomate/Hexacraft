@@ -95,16 +95,21 @@ object BlockRenderer {
     val texCoords = topBottomTex
 
     for i <- 0 until verticesPerInstance(s) yield {
-      val cornerIdx = if s == 1 then i else verticesPerInstance(s) - 1 - i
+      val cornerIdx = i
       val a = ints(cornerIdx)
-      val faceIndex = if s == 1 then i / 3 else (verticesPerInstance(s) - 1 - i) / 3
+      val faceIndex = i / 3
 
       val (x, z) =
         if a == 6 then {
           (0f, 0f)
         } else {
           val v = a * Math.PI / 3
-          (Math.cos(v).toFloat, Math.sin(v).toFloat)
+          var cos = Math.cos(v).toFloat
+          val sin = Math.sin(v).toFloat
+          if s == 0 then {
+            cos = -cos
+          }
+          (cos, sin)
         }
 
       val pos = new Vector3f(x, 1f - s, z)
