@@ -23,8 +23,7 @@ class BlockShader(isSide: Boolean) {
       "faceIndex",
       "blockPos",
       "blockTex",
-      "blockHeight",
-      "brightness"
+      "heightAndBrightness"
     )
     .withDefines("isSide" -> (if isSide then "1" else "0"))
 
@@ -72,7 +71,7 @@ object BlockVao {
     }
   }
 
-  private def brightnessesPerInstance(side: Int): Int = {
+  private def cornersPerInstance(side: Int): Int = {
     if side < 2 then {
       7
     } else {
@@ -80,11 +79,11 @@ object BlockVao {
     }
   }
 
-  def bytesPerInstance(side: Int): Int = (5 + BlockVao.brightnessesPerInstance(side)) * 4
+  def bytesPerInstance(side: Int): Int = (5 + BlockVao.cornersPerInstance(side)) * 4
 
   def forSide(side: Int)(maxInstances: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerInstance(side)
-    val brightnessesPerInstance = BlockVao.brightnessesPerInstance(side)
+    val cornersPerInstance = BlockVao.cornersPerInstance(side)
 
     VAO
       .builder()
@@ -99,8 +98,7 @@ object BlockVao {
       .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
         _.ints(5, 3)
           .ints(6, 1)
-          .floats(7, 1)
-          .floatsArray(8, 1)(brightnessesPerInstance)
+          .floatsArray(7, 2)(cornersPerInstance)
       )
       .finish(verticesPerInstance, maxInstances)
   }
@@ -109,9 +107,9 @@ object BlockVao {
 object BlockVboData:
   private def blockSideStride(side: Int): Int = {
     if side < 2 then {
-      (5 + 7) * 4
+      (5 + 7 * 2) * 4
     } else {
-      (5 + 4) * 4
+      (5 + 4 * 2) * 4
     }
   }
 
@@ -234,10 +232,11 @@ object BlockVboData:
 
         val blockType = block.blockType
         buf.putInt(blockTextureIndices(blockType.name)(side))
-        buf.putFloat(blockType.blockHeight(block.metadata))
 
         var i2 = 0
         while i2 < verticesPerInstance do {
+          buf.putFloat(blockType.blockHeight(block.metadata)) // TODO: join vertices for water blocks
+
           // all the blocks adjacent to this vertex (on the given side)
           val b = new ArrayBuffer[Offset](3)
           b += Offset(0, 0, 0)

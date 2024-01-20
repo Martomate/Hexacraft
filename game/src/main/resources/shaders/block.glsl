@@ -12,12 +12,11 @@ in int faceIndex; // for top and bottom (0 to 5)
 // Per instance
 in ivec3 blockPos;
 in int blockTex;
-in float blockHeight;
 
 #if isSide
-in float brightness[4];
+in vec2 heightAndBrightness[4];
 #else
-in float brightness[7];
+in vec2 heightAndBrightness[7];
 #endif
 
 struct FragInFlat {
@@ -47,6 +46,9 @@ void main() {
 
 	mat4 matrix = projMatrix * viewMatrix;
 
+	float blockHeight = heightAndBrightness[vertexIndex].x;
+	float brightness = heightAndBrightness[vertexIndex].y;
+
 	vec3 pos = vec3(blockPos.x * 1.5 + position.x, blockPos.y + position.y * blockHeight, (blockPos.x + 2 * blockPos.z) + position.z / y60) / 2;
 	pos.z -= cam.z / y60;
 	float mult = exp((pos.y - cam.y) / radius);
@@ -71,7 +73,7 @@ void main() {
 	fragIn.mult = mult;
 	fragInFlat.blockTex = blockTex;
 	fragInFlat.faceIndex = faceIndex;
-	fragIn.brightness = brightness[vertexIndex];
+	fragIn.brightness = brightness;
 }
 
 #pragma shader frag
