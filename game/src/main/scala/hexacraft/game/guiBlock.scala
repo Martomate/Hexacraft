@@ -17,7 +17,13 @@ object GuiBlockRenderer {
 class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureIndices: Map[String, IndexedSeq[Int]]) {
   private val guiBlockRenderers =
     for s <- 0 until 8 yield {
-      BlockRenderer(GuiBlockVao.forSide(s), GpuState.of(OpenGL.State.DepthTest -> false))
+      BlockRenderer(
+        GuiBlockVao.forSide(s),
+        GpuState.of(
+          OpenGL.State.DepthTest -> false,
+          OpenGL.State.Blend -> true
+        )
+      )
     }
 
   private val guiBlockShader = GuiBlockRenderer.guiBlockShader

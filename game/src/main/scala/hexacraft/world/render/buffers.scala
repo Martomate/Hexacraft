@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{InstancedRenderer, VAO, VBO}
+import hexacraft.renderer.{GpuState, InstancedRenderer, VAO, VBO}
 import hexacraft.util.Segment
 
 import java.nio.ByteBuffer
@@ -104,10 +104,14 @@ trait RenderBuffer[B <: RenderBuffer[B]] {
 }
 
 object VaoRenderBuffer {
-  class Allocator(side: Int) extends RenderBuffer.Allocator[VaoRenderBuffer] {
+  class Allocator(side: Int, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
     override def allocate(instances: Int): VaoRenderBuffer = {
       val vao = BlockVao.forSide(side)(instances)
-      new VaoRenderBuffer(vao, vao.vbos(1), new InstancedRenderer(OpenGL.PrimitiveMode.Triangles))
+      new VaoRenderBuffer(
+        vao,
+        vao.vbos(1),
+        new InstancedRenderer(OpenGL.PrimitiveMode.Triangles, gpuState)
+      )
     }
 
     override def copy(from: VaoRenderBuffer, to: VaoRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {

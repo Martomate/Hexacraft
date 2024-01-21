@@ -1,13 +1,14 @@
 package hexacraft.world.render
 
+import hexacraft.renderer.GpuState
 import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer
 
-class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader) {
+class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader, gpuState: GpuState) {
 
   private def bufferHandlerMaker(s: Int): BufferHandler[_] =
-    new BufferHandler(1000000, BlockVao.bytesPerInstance(s), VaoRenderBuffer.Allocator(s))
+    new BufferHandler(1000000, BlockVao.bytesPerInstance(s), VaoRenderBuffer.Allocator(s, gpuState))
 
   private val sideHandlers: IndexedSeq[RenderAspectHandler] =
     IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))
