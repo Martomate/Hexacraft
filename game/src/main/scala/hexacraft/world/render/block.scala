@@ -3,6 +3,7 @@ package hexacraft.world.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
@@ -170,7 +171,7 @@ object BlockVboData:
             if neigh != null then {
               val bs = neigh.getBlock(c2)
 
-              if b != bs then {
+              if b != bs && (s < 2 || bs.blockType != Block.Water) then {
                 brightness(c.value) = neigh.lighting.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
@@ -188,6 +189,16 @@ object BlockVboData:
       val brightness = sideBrightness(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * blockSideStride(side))
 
+      val blockAtFn = (coords: BlockRelWorld) => {
+        val cc = coords.getChunkRelWorld
+        val bc = coords.getBlockRelChunk
+
+        Option(chunkCache.getChunk(cc)) match {
+          case Some(ch) => ch.getBlock(bc)
+          case None     => BlockState.Air
+        }
+      }
+
       val brightnessFn = (coords: BlockRelWorld) => {
         val cc = coords.getChunkRelWorld
         val bc = coords.getBlockRelChunk
@@ -198,7 +209,7 @@ object BlockVboData:
         }
       }
 
-      populateBuffer(chunkCoords, blocks, side, shouldRender, brightnessFn, buf, blockTextureIndices)
+      populateBuffer(chunkCoords, blocks, side, shouldRender, blockAtFn, brightnessFn, buf, blockTextureIndices)
       buf.flip()
       buf
     }
@@ -211,6 +222,7 @@ object BlockVboData:
       blocks: Array[LocalBlockState],
       side: Int,
       shouldRender: java.util.BitSet,
+      blockAt: BlockRelWorld => BlockState,
       brightness: BlockRelWorld => Float,
       buf: ByteBuffer,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
@@ -235,7 +247,54 @@ object BlockVboData:
 
         var i2 = 0
         while i2 < verticesPerInstance do {
-          buf.putFloat(blockType.blockHeight(block.metadata)) // TODO: join vertices for water blocks
+          if blockType == Block.Water then {
+            val corner = side match {
+              case 0 =>
+                i2 match {
+                  case 3 => 0
+                  case 2 => 1
+                  case 1 => 2
+                  case 0 => 3
+                  case 5 => 4
+                  case 4 => 5
+                  case 6 => 6
+                }
+              case 1 => i2
+              case s => s - 2
+            }
+
+            val b = new ArrayBuffer[Offset](3)
+            b += Offset(0, 0, 0)
+
+            corner match {
+              case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+              case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+              case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+              case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+              case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+              case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+              case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+            }
+
+            val globalBCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
+
+            var hSum = 0f
+            var hCount = 0
+            var bIdx1 = 0
+            val bLen1 = b.length
+            while bIdx1 < bLen1 do {
+              val bs = blockAt(globalBCoords.offset(b(bIdx1)))
+              if bs.blockType == Block.Water then {
+                hSum += bs.blockType.blockHeight(bs.metadata)
+                hCount += 1
+              }
+              bIdx1 += 1
+            }
+
+            buf.putFloat(hSum / hCount)
+          } else {
+            buf.putFloat(blockType.blockHeight(block.metadata))
+          }
 
           // all the blocks adjacent to this vertex (on the given side)
           val b = new ArrayBuffer[Offset](3)
@@ -250,7 +309,7 @@ object BlockVboData:
                 case 0 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
                 case 5 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
                 case 4 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
-                case _ => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+                case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
               }
             case 1 =>
               i2 match {
@@ -260,14 +319,14 @@ object BlockVboData:
                 case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
                 case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
                 case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
-                case _ => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+                case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
               }
             case _ =>
               i2 match {
                 case 0 => b += Offset(0, 1, 0)
                 case 1 => b += Offset(0, 1, 0)
                 case 2 => b += Offset(0, -1, 0)
-                case _ => b += Offset(0, -1, 0)
+                case 3 => b += Offset(0, -1, 0)
               }
           }
 
