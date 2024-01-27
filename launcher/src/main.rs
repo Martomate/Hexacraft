@@ -7,7 +7,9 @@ use bevy::{
     winit::WinitSettings,
 };
 use futures_lite::future;
+use platform_dirs::AppDirs;
 use serde::Deserialize;
+use std::{fs, io::Cursor};
 
 fn main() {
     App::new()
@@ -70,6 +72,7 @@ struct VersionButton;
 
 enum HttpTaskResponse {
     FetchGameVersions(Vec<GameVersion>),
+    FetchGame(String, Vec<u8>),
 }
 
 #[derive(Component)]
@@ -83,11 +86,19 @@ fn handle_http_tasks(
     for (entity, mut task) in &mut http_tasks {
         if let Some(res) = block_on(future::poll_once(&mut task.0)) {
             match res {
-                Ok(res) => match res {
-                    HttpTaskResponse::FetchGameVersions(versions) => {
-                        main_state.available_versions = Some(versions)
-                    }
-                },
+                Ok(HttpTaskResponse::FetchGameVersions(versions)) => {
+                    main_state.available_versions = Some(versions)
+                }
+                Ok(HttpTaskResponse::FetchGame(version_name, data)) => {
+                    println!("Downloaded {} bytes", data.len());
+                    let dirs = AppDirs::new(Some("Hexacraft"), false).unwrap();
+                    let cache_dir = dirs.cache_dir;
+
+                    let game_dir = cache_dir.join("versions").join(version_name);
+                    fs::create_dir_all(&game_dir).unwrap();
+
+                    zip_extract::extract(Cursor::new(data), &game_dir, false).unwrap();
+                }
                 Err(err) => println!("Failed to make http request: {}", err),
             }
             commands.entity(entity).despawn();
@@ -98,7 +109,8 @@ fn handle_http_tasks(
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<MainState>) {
     let task_pool = IoTaskPool::get();
     let entity = commands.spawn_empty().id();
-    let task: Task<anyhow::Result<_>> = task_pool.spawn(async {
+
+    let task = HttpTask(task_pool.spawn(async {
         let url = "https://martomate.com/api/hexacraft/versions";
 
         let response = ureq::get(url).call()?;
@@ -106,8 +118,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
 
         let versions = serde_json::from_str::<Vec<GameVersion>>(&body)?;
         Ok(HttpTaskResponse::FetchGameVersions(versions))
-    });
-    commands.entity(entity).insert(HttpTask(task));
+    }));
+    commands.entity(entity).insert(task);
 
     commands.spawn(Camera2dBundle::default());
 
@@ -314,6 +326,7 @@ fn button_system(
 }
 
 fn perform_actions(
+    mut commands: Commands,
     mut action_event_reader: EventReader<Action>,
     mut q_version_selector: Query<&mut Visibility, With<VersionSelector>>,
     q_version_button: Query<&Children, With<VersionButton>>,
@@ -322,7 +335,33 @@ fn perform_actions(
 ) {
     for action in &mut action_event_reader.read() {
         match action {
-            Action::Play => println!("Play pressed!"),
+            Action::Play => {
+                if let Some(ref versions) = state.available_versions {
+                    let game_version = match state.selected_version {
+                        Some(ref s) => versions.iter().find(|&v| v.name == *s),
+                        None => versions.last(),
+                    };
+                    if let Some(game_version) = game_version {
+                        let version_name = game_version.name.clone();
+                        let url = game_version.url.clone();
+
+                        let task_pool = IoTaskPool::get();
+                        let entity = commands.spawn_empty().id();
+
+                        let task = HttpTask(task_pool.spawn(async move {
+                            let response = ureq::get(&url).call()?;
+
+                            let mut buffer = Vec::new();
+                            response.into_reader().read_to_end(&mut buffer)?;
+
+                            Ok(HttpTaskResponse::FetchGame(version_name, buffer))
+                        }));
+                        commands.entity(entity).insert(task);
+                    }
+                } else {
+                    println!("Version list is not available yet. Maybe you don't have an internet connection?")
+                }
+            }
             Action::SelectVersion(version) => {
                 state.selected_version = Some(version.clone());
 
