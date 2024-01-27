@@ -24,7 +24,7 @@ class BlockShader(isSide: Boolean) {
       "faceIndex",
       "blockPos",
       "blockTex",
-      "heightAndBrightness"
+      "vertexData"
     )
     .withDefines("isSide" -> (if isSide then "1" else "0"))
 

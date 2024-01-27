@@ -2,6 +2,12 @@
 #define PI 3.141592653589793
 #define y60 0.866025403784439
 
+#if isSide
+const int NUM_VERTICES = 4;
+#else
+const int NUM_VERTICES = 7;
+#endif
+
 // Per vertex
 in vec3 position;
 in vec2 texCoords;
@@ -12,12 +18,7 @@ in int faceIndex; // for top and bottom (0 to 5)
 // Per instance
 in ivec3 blockPos;
 in int blockTex;
-
-#if isSide
-in vec2 heightAndBrightness[4];
-#else
-in vec2 heightAndBrightness[7];
-#endif
+in vec2 vertexData[NUM_VERTICES]; // blockHeight, brightness
 
 struct FragInFlat {
 	int blockTex;
@@ -46,8 +47,9 @@ void main() {
 
 	mat4 matrix = projMatrix * viewMatrix;
 
-	float blockHeight = heightAndBrightness[vertexIndex].x;
-	float brightness = heightAndBrightness[vertexIndex].y;
+	vec2 vertexData = vertexData[vertexIndex];
+	float blockHeight = vertexData.x;
+	float brightness = vertexData.y;
 
 	vec3 pos = vec3(blockPos.x * 1.5 + position.x, blockPos.y + position.y * blockHeight, (blockPos.x + 2 * blockPos.z) + position.z / y60) / 2;
 	pos.z -= cam.z / y60;
