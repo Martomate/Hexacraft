@@ -634,6 +634,10 @@ object OpenGL {
       def |(r: ClearMask): ClearMask = l | r
   }
 
+  def glIsEnabled(target: State): Boolean = {
+    gl.glIsEnabled(target.toGL)
+  }
+
   def glEnable(target: State): Unit = {
     gl.glEnable(target.toGL)
   }
@@ -896,6 +900,7 @@ trait GLWrapper {
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit
   def glDisable(target: Int): Unit
   def glEnable(target: Int): Unit
+  def glIsEnabled(target: Int): Boolean
 
   def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit
 }
@@ -1030,6 +1035,7 @@ class StubGL extends GLWrapper {
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = ()
   def glDisable(target: Int): Unit = ()
   def glEnable(target: Int): Unit = ()
+  def glIsEnabled(target: Int): Boolean = false
 
   def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit = ()
 }
@@ -1158,6 +1164,7 @@ object RealGL extends GLWrapper {
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glViewport(x, y, width, height)
   def glDisable(target: Int): Unit = GL11.glDisable(target)
   def glEnable(target: Int): Unit = GL11.glEnable(target)
+  def glIsEnabled(target: Int): Boolean = GL11.glIsEnabled(target)
 
   def glDebugMessageCallback(callback: GLDebugMessageCallbackI, userParam: Long): Unit =
     GL43.glDebugMessageCallback(callback, userParam)
