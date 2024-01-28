@@ -2,7 +2,7 @@ package hexacraft.world
 
 import hexacraft.world.block.*
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, Offset, SkewCylCoords}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CylCoords, SkewCylCoords}
 
 import munit.FunSuite
 import org.joml.Vector3d
@@ -27,38 +27,15 @@ class CollisionDetectorTest extends FunSuite {
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, box1.top - box2.bottom - 0.001f, 0).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, box1.top - box2.bottom + 0.001f, 0).toCylCoords
-      )
-    )
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, box1.bottom - box2.top + 0.001f, 0).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, box1.bottom - box2.top - 0.001f, 0).toCylCoords
-      )
-    )
+    val pos2a = pos.toSkewCylCoords.offset(0, box1.top - box2.bottom - 0.001f, 0).toCylCoords
+    val pos2b = pos.toSkewCylCoords.offset(0, box1.top - box2.bottom + 0.001f, 0).toCylCoords
+    val pos2c = pos.toSkewCylCoords.offset(0, box1.bottom - box2.top + 0.001f, 0).toCylCoords
+    val pos2d = pos.toSkewCylCoords.offset(0, box1.bottom - box2.top - 0.001f, 0).toCylCoords
+
+    assert(detector.collides(box1, pos, box2, pos2a))
+    assert(!detector.collides(box1, pos, box2, pos2b))
+    assert(detector.collides(box1, pos, box2, pos2c))
+    assert(!detector.collides(box1, pos, box2, pos2d))
   }
 
   test("collides should work in the z-direction") {
@@ -66,38 +43,17 @@ class CollisionDetectorTest extends FunSuite {
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius - 0.001).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, 0, box1.smallRadius + box2.smallRadius + 0.001f).toCylCoords
-      )
-    )
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius + 0.001f).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(0, 0, -box1.smallRadius - box2.smallRadius - 0.001f).toCylCoords
-      )
-    )
+    val d = box1.smallRadius + box2.smallRadius
+
+    val pos2a = pos.toSkewCylCoords.offset(0, 0, d - 0.001).toCylCoords
+    val pos2b = pos.toSkewCylCoords.offset(0, 0, d + 0.001f).toCylCoords
+    val pos2c = pos.toSkewCylCoords.offset(0, 0, -d + 0.001f).toCylCoords
+    val pos2d = pos.toSkewCylCoords.offset(0, 0, -d - 0.001f).toCylCoords
+
+    assert(detector.collides(box1, pos, box2, pos2a))
+    assert(!detector.collides(box1, pos, box2, pos2b))
+    assert(detector.collides(box1, pos, box2, pos2c))
+    assert(!detector.collides(box1, pos, box2, pos2d))
   }
 
   test("collides should work in the x-direction") {
@@ -105,38 +61,17 @@ class CollisionDetectorTest extends FunSuite {
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius - 0.001, 0, 0).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(box1.smallRadius + box2.smallRadius + 0.001f, 0, 0).toCylCoords
-      )
-    )
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius + 0.001f, 0, 0).toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords.offset(-box1.smallRadius - box2.smallRadius - 0.001f, 0, 0).toCylCoords
-      )
-    )
+    val d = box1.smallRadius + box2.smallRadius
+
+    val pos2a = pos.toSkewCylCoords.offset(d - 0.001, 0, 0).toCylCoords
+    val pos2b = pos.toSkewCylCoords.offset(d + 0.001f, 0, 0).toCylCoords
+    val pos2c = pos.toSkewCylCoords.offset(-d + 0.001f, 0, 0).toCylCoords
+    val pos2d = pos.toSkewCylCoords.offset(-d - 0.001f, 0, 0).toCylCoords
+
+    assert(detector.collides(box1, pos, box2, pos2a))
+    assert(!detector.collides(box1, pos, box2, pos2b))
+    assert(detector.collides(box1, pos, box2, pos2c))
+    assert(!detector.collides(box1, pos, box2, pos2d))
   }
 
   test("collides should work in the w-direction") {
@@ -144,62 +79,17 @@ class CollisionDetectorTest extends FunSuite {
     val world = FakeBlocksInWorld.empty(provider)
     val detector = new CollisionDetector(world)
 
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords
-          .offset(
-            box1.smallRadius + box2.smallRadius - 0.001,
-            0,
-            -(box1.smallRadius + box2.smallRadius - 0.001)
-          )
-          .toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords
-          .offset(
-            box1.smallRadius + box2.smallRadius + 0.001f,
-            0,
-            -(box1.smallRadius + box2.smallRadius + 0.001f)
-          )
-          .toCylCoords
-      )
-    )
-    assert(
-      detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords
-          .offset(
-            -box1.smallRadius - box2.smallRadius + 0.001f,
-            0,
-            -(-box1.smallRadius - box2.smallRadius + 0.001f)
-          )
-          .toCylCoords
-      )
-    )
-    assert(
-      !detector.collides(
-        box1,
-        pos,
-        box2,
-        pos.toSkewCylCoords
-          .offset(
-            -box1.smallRadius - box2.smallRadius - 0.001f,
-            0,
-            -(-box1.smallRadius - box2.smallRadius - 0.001f)
-          )
-          .toCylCoords
-      )
-    )
+    val d = box1.smallRadius + box2.smallRadius
+
+    val pos2a = pos.toSkewCylCoords.offset(d - 0.001, 0, -(d - 0.001)).toCylCoords
+    val pos2b = pos.toSkewCylCoords.offset(d + 0.001f, 0, -(d + 0.001f)).toCylCoords
+    val pos2c = pos.toSkewCylCoords.offset(-d + 0.001f, 0, -(-d + 0.001f)).toCylCoords
+    val pos2d = pos.toSkewCylCoords.offset(-d - 0.001f, 0, -(-d - 0.001f)).toCylCoords
+
+    assert(detector.collides(box1, pos, box2, pos2a))
+    assert(!detector.collides(box1, pos, box2, pos2b))
+    assert(detector.collides(box1, pos, box2, pos2c))
+    assert(!detector.collides(box1, pos, box2, pos2d))
   }
 
   def checkCollision(
@@ -227,16 +117,19 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should do nothing if velocity is 0") {
+    val coords = BlockRelWorld(17, -48, 3)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map(coords -> BlockState.Air)
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(17, -48, 3)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
     // Check for collision
+    val detector = new CollisionDetector(world)
     assertEquals(
       detector.positionAndVelocityAfterCollision(
         box1,
@@ -248,17 +141,17 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should do nothing if inside a block") {
+    val coords = BlockRelWorld(17, -48, 3)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map(coords -> BlockState(Block.Dirt))
+    )
     val detector = new CollisionDetector(world)
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(17, -48, 3)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
-
-    // Place a block
-    chunk.setBlock(coords.getBlockRelChunk, BlockState(Block.Dirt))
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
     // Check for collision (it should not move)
     val position = BlockCoords(coords).toSkewCylCoords
@@ -285,44 +178,50 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should add velocity to position if there is no collision") {
+    val coords = BlockRelWorld(1, -7, 7)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map.from(
+        for {
+          dz <- -1 to 1
+          dy <- -1 to 1
+          dx <- -1 to 1
+        } yield coords.offset(dx, dy, dz) -> BlockState.Air
+      )
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(1, -7, 7)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
-
-    // Clear the surrounding blocks
-    for {
-      dz <- -1 to 1
-      dy <- -1 to 1
-      dx <- -1 to 1
-    } chunk.setBlock(coords.offset(dx, dy, dz).getBlockRelChunk, BlockState.Air)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
     // Check for collision
     val box = new HexBox(0.15f, 0.1f, 0.3f)
     val velocity = BlockCoords.Offset(0.2, 0.39, 0.71).toSkewCylCoordsOffset
+    val detector = new CollisionDetector(world)
+
     checkCollision(detector, box, BlockCoords(coords).toSkewCylCoords, velocity, None)
   }
 
   test("positionAndVelocityAfterCollision should work in the x-direction") {
+    val coords = BlockRelWorld(5, 7, 9)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map.from(
+        (-1 to 3).map: dx =>
+          val b = dx match
+            case -1 | 3 => BlockState(Block.Dirt)
+            case _      => BlockState.Air
+          coords.offset(dx, 0, 0) -> b
+      )
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
-    // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(3, 0, 0)).getBlockRelChunk, BlockState(Block.Dirt))
-    for (off <- Seq(0, 1, 2).map(dx => Offset(dx, 0, 0)))
-      chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(-1, 0, 0)).getBlockRelChunk, BlockState(Block.Dirt))
-
+    val detector = new CollisionDetector(world)
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
     // Check for collision forward
@@ -354,21 +253,24 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should work in the y-direction") {
+    val coords = BlockRelWorld(5, 7, 9)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map.from(
+        (-1 to 3).map: dy =>
+          val b = dy match
+            case -1 | 3 => BlockState(Block.Dirt)
+            case _      => BlockState.Air
+          coords.offset(0, dy, 0) -> b
+      )
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
-    // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(0, 3, 0)).getBlockRelChunk, BlockState(Block.Dirt))
-    for (off <- Seq(0, 1, 2).map(dy => Offset(0, dy, 0)))
-      chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(0, -1, 0)).getBlockRelChunk, BlockState(Block.Dirt))
-
+    val detector = new CollisionDetector(world)
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
     // Check for collision up
@@ -402,21 +304,24 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should work in the z-direction") {
+    val coords = BlockRelWorld(5, 7, 9)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map.from(
+        (-1 to 3).map: dz =>
+          val b = dz match
+            case -1 | 3 => BlockState(Block.Dirt)
+            case _      => BlockState.Air
+          coords.offset(0, 0, dz) -> b
+      )
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
-    // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(0, 0, 3)).getBlockRelChunk, BlockState(Block.Dirt))
-    for (off <- Seq(0, 1, 2).map(dz => Offset(0, 0, dz)))
-      chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(0, 0, -1)).getBlockRelChunk, BlockState(Block.Dirt))
-
+    val detector = new CollisionDetector(world)
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
     // Check for collision forward
@@ -448,21 +353,24 @@ class CollisionDetectorTest extends FunSuite {
   }
 
   test("positionAndVelocityAfterCollision should work in the w-direction") {
+    val coords = BlockRelWorld(5, 7, 9)
+
     val provider = new FakeWorldProvider(37)
-    val world = FakeBlocksInWorld.empty(provider)
-    val detector = new CollisionDetector(world)
+    val world = FakeBlocksInWorld.withBlocks(
+      provider,
+      Map.from(
+        (-1 to 3).map: dw =>
+          val b = dw match
+            case -1 | 3 => BlockState(Block.Dirt)
+            case _      => BlockState.Air
+          coords.offset(dw, 0, -dw) -> b
+      )
+    )
 
     // Ensure the chunk is loaded
-    val coords = BlockRelWorld(5, 7, 9)
-    val chunk = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
-    world.provideColumn(coords.getColumnRelWorld).setChunk(chunk)
+    assert(world.getChunk(coords.getChunkRelWorld).isDefined)
 
-    // Set blocks: Dirt, 3 Air, Dirt
-    chunk.setBlock(coords.offset(Offset(3, 0, -3)).getBlockRelChunk, BlockState(Block.Dirt))
-    for (off <- Seq(0, 1, 2).map(dw => Offset(dw, 0, -dw)))
-      chunk.setBlock(coords.offset(off).getBlockRelChunk, BlockState.Air)
-    chunk.setBlock(coords.offset(Offset(-1, 0, 1)).getBlockRelChunk, BlockState(Block.Dirt))
-
+    val detector = new CollisionDetector(world)
     val box = new HexBox(0.15f, 0.1f, 0.3f)
 
     // Check for collision forward

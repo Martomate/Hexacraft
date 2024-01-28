@@ -1,7 +1,8 @@
 package hexacraft.world
 
+import hexacraft.math.bits.Int12
 import hexacraft.util.*
-import hexacraft.world.block.{BlockRepository, BlockState}
+import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
@@ -82,7 +83,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   }
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
-    columns.get(coords.getColumnRelWorld.value).flatMap(_.getChunk(coords.Y))
+    columns.get(coords.getColumnRelWorld.value).flatMap(_.chunks.get(coords.Y.repr.toInt))
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -131,7 +132,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   def removeAllEntities(): Unit = {
     for {
       col <- columns.values
-      ch <- col.allChunks
+      ch <- col.chunks.values
       e <- ch.entities.toSeq
     } do {
       ch.removeEntity(e)
@@ -149,7 +150,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   def setChunk(ch: Chunk): Unit = {
     val col = ensureColumnExists(ch.coords.getColumnRelWorld)
-    col.setChunk(ch)
+    setChunkAndUpdateHeightmap(col, ch)
 
     dispatcher.notify(World.Event.ChunkAdded(ch.coords))
 
@@ -157,7 +158,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     if ch.modCount != savedChunkModCounts.getOrElse(ch.coords, -1L) then {
       worldProvider.saveChunkData(ch.toNbt, ch.coords)
       savedChunkModCounts(ch.coords) = ch.modCount
-      col.updateHeightmapAfterChunkUpdate(ch)
+      updateHeightmapAfterChunkUpdate(col, ch)
     }
 
     ch.initLightingIfNeeded(lightPropagator)
@@ -179,9 +180,74 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     }
   }
 
+  private def updateHeightmapAfterChunkUpdate(col: ChunkColumn, chunk: Chunk)(using CylinderSize): Unit = {
+    val chunkCoords = chunk.coords
+    for {
+      cx <- 0 until 16
+      cz <- 0 until 16
+    } do {
+      val blockCoords = BlockRelChunk(cx, 15, cz)
+      updateHeightmapAfterBlockUpdate(
+        col,
+        BlockRelWorld.fromChunk(blockCoords, chunkCoords),
+        chunk.getBlock(blockCoords)
+      )
+    }
+  }
+
+  private def updateHeightmapAfterBlockUpdate(col: ChunkColumn, coords: BlockRelWorld, now: BlockState): Unit = {
+    val height = col.terrainHeight(coords.cx, coords.cz)
+
+    if coords.y >= height then {
+      if now.blockType != Block.Air then {
+        col.heightMap(coords.cx)(coords.cz) = coords.y.toShort
+      } else {
+        col.heightMap(coords.cx)(coords.cz) = LazyList
+          .range((height - 1).toShort, Short.MinValue, -1.toShort)
+          .map(y =>
+            col.chunks
+              .get(Int12.truncate(y >> 4).repr.toInt)
+              .map(chunk => (y, chunk.getBlock(BlockRelChunk(coords.cx, y & 0xf, coords.cz))))
+              .orNull
+          )
+          .takeWhile(_ != null) // stop searching if the chunk is not loaded
+          .collectFirst({ case (y, block) if block.blockType != Block.Air => y })
+          .getOrElse(Short.MinValue)
+      }
+    }
+  }
+
+  private def updateHeightmapAfterChunkReplaced(col: ChunkColumn, chunk: Chunk): Unit = {
+    val yy = chunk.coords.Y.toInt * 16
+    for x <- 0 until 16 do {
+      for z <- 0 until 16 do {
+        val height = col.heightMap(x)(z)
+
+        val highestBlockY = (yy + 15 to yy by -1)
+          .filter(_ > height)
+          .find(y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Block.Air)
+
+        highestBlockY match {
+          case Some(h) => col.heightMap(x)(z) = h.toShort
+          case None    =>
+        }
+      }
+    }
+  }
+
+  private def setChunkAndUpdateHeightmap(col: ChunkColumn, chunk: Chunk): Unit = {
+    val chunkCoords = chunk.coords
+
+    col.chunks.put(chunkCoords.Y.repr.toInt, chunk) match {
+      case Some(`chunk`)  => // the chunk is not new so nothing needs to be done
+      case Some(oldChunk) => updateHeightmapAfterChunkReplaced(col, chunk)
+      case None           => updateHeightmapAfterChunkReplaced(col, chunk)
+    }
+  }
+
   def removeChunk(ch: ChunkRelWorld): Unit = {
     for col <- columns.get(ch.getColumnRelWorld.value) do {
-      for removedChunk <- col.removeChunk(ch.Y) do {
+      for removedChunk <- col.chunks.remove(ch.Y.repr.toInt) do {
         dispatcher.notify(World.Event.ChunkRemoved(removedChunk.coords))
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(removedChunk.coords, -1L) then {
@@ -191,7 +257,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
         requestRenderUpdateForNeighborChunks(ch)
       }
 
-      if col.isEmpty then {
+      if col.chunks.isEmpty then {
         columns.remove(col.coords.value)
         worldProvider.saveColumnData(col.toNBT, col.coords)
       }
@@ -218,7 +284,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
     for {
       col <- columns.values
-      ch <- col.allChunks
+      ch <- col.chunks.values
     } do {
       ch.optimizeStorage()
       tickEntities(ch.entities)
@@ -265,7 +331,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private def performEntityRelocation(): Unit = {
     val entList = for {
       col <- columns.values
-      ch <- col.allChunks
+      ch <- col.chunks.values
       ent <- ch.entities
     } yield (ch, ent, chunkOfEntity(ent))
 
@@ -316,7 +382,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   def unload(): Unit = {
     blockUpdateTimer.enabled = false
     for col <- columns.values do {
-      for ch <- col.allChunks do {
+      for ch <- col.chunks.values do {
         if ch.modCount != savedChunkModCounts.getOrElse(ch.coords, -1L) then {
           worldProvider.saveChunkData(ch.toNbt, ch.coords)
         }
@@ -349,7 +415,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     }
 
     for col <- columns.get(coords.getColumnRelWorld.value) do {
-      col.updateHeightmapAfterBlockUpdate(coords, block)
+      updateHeightmapAfterBlockUpdate(col, coords, block)
     }
 
     val cCoords = coords.getChunkRelWorld

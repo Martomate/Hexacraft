@@ -10,7 +10,7 @@ object ChunkStorage {
   case class NbtData(blocks: Array[Byte], metadata: Array[Byte])
 }
 
-abstract class ChunkStorage {
+sealed abstract class ChunkStorage {
   def blockType(coords: BlockRelChunk): Block
 
   def getBlock(coords: BlockRelChunk): BlockState
@@ -27,7 +27,7 @@ abstract class ChunkStorage {
 
 case class LocalBlockState(coords: BlockRelChunk, block: BlockState)
 
-class DenseChunkStorage extends ChunkStorage {
+final class DenseChunkStorage extends ChunkStorage {
   private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)
   private val metadata = SmartArray.withByteArray(16 * 16 * 16, 0)
   private var _numBlocks = 0
@@ -107,7 +107,7 @@ object DenseChunkStorage {
   }
 }
 
-class SparseChunkStorage extends ChunkStorage {
+final class SparseChunkStorage extends ChunkStorage {
   private val blocks = mutable.LongMap.withDefault[BlockState](_ => BlockState.Air)
 
   def blockType(coords: BlockRelChunk): Block = blocks(coords.value.toShort).blockType
