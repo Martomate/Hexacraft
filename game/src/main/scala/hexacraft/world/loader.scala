@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 class ChunkLoader(
     chunkFactory: ChunkRelWorld => Chunk,
@@ -28,9 +29,9 @@ class ChunkLoader(
   }
 
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
-  private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[ChunkRelWorld]] = mutable.Map.empty
+  private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
-  def tick(origin: PosAndDir, shouldLoadSlowly: Boolean): (Seq[Chunk], Seq[ChunkRelWorld]) = {
+  def tick(origin: PosAndDir, shouldLoadSlowly: Boolean): (Seq[(ChunkRelWorld, Chunk)], Seq[ChunkRelWorld]) = {
     prioritizer.tick(origin)
 
     val (maxLoad, maxUnload) = if shouldLoadSlowly then (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
@@ -49,18 +50,39 @@ class ChunkLoader(
       if chunksUnloading.size < maxUnload then {
         prioritizer.popChunkToRemove() match {
           case Some(coords) =>
-            chunksUnloading(coords) = Future:
-              chunkUnloader(coords)
-              coords
+            chunksUnloading(coords) = Future(chunkUnloader(coords))
           case None =>
         }
       }
     }
 
-    val chunksToAdd = chunksLoading.values.flatMap(_.value).flatMap(_.toOption).toSeq
-    val chunksToRemove = chunksUnloading.values.flatMap(_.value).flatMap(_.toOption).toSeq
+    val chunksToAdd = mutable.ArrayBuffer.empty[(ChunkRelWorld, Chunk)]
+    for (chunkCoords, futureChunk) <- chunksLoading do {
+      futureChunk.value match {
+        case None => // future is not ready yet
+        case Some(result) =>
+          result match {
+            case Failure(_) => // TODO: handle error
+            case Success(chunk) =>
+              chunksToAdd += chunkCoords -> chunk
+          }
+      }
+    }
 
-    (chunksToAdd, chunksToRemove)
+    val chunksToRemove = mutable.ArrayBuffer.empty[ChunkRelWorld]
+    for (chunkCoords, future) <- chunksUnloading do {
+      future.value match {
+        case None => // future is not ready yet
+        case Some(result) =>
+          result match {
+            case Failure(_) => // TODO: handle error
+            case Success(_) =>
+              chunksToRemove += chunkCoords
+          }
+      }
+    }
+
+    (chunksToAdd.toSeq, chunksToRemove.toSeq)
   }
 
   def onWorldEvent(event: World.Event): Unit = {

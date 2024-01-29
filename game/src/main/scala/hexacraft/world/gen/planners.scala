@@ -11,8 +11,8 @@ import scala.collection.mutable
 import scala.util.Random
 
 trait WorldFeaturePlanner {
-  def decorate(chunk: Chunk): Unit
-  def plan(coords: ChunkRelWorld): Unit
+  def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit
+  def plan(chunkCoords: ChunkRelWorld): Unit
 }
 
 class PlannedWorldChange {
@@ -45,9 +45,9 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
 
   private val maxTreesPerChunk = 5
 
-  override def decorate(chunk: Chunk): Unit = {
+  override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     for {
-      ch <- plannedChanges.remove(chunk.coords)
+      ch <- plannedChanges.remove(chunkCoords)
       LocalBlockState(c, b) <- ch
     } do {
       chunk.setBlock(c, b)
@@ -134,9 +134,9 @@ class EntityGroupPlanner(world: BlocksInWorld, entityFactory: CylCoords => Entit
 
   private val maxEntitiesPerGroup = 7
 
-  override def decorate(chunk: Chunk): Unit = {
+  override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     for {
-      entities <- plannedEntities.get(chunk.coords)
+      entities <- plannedEntities.get(chunkCoords)
       entity <- entities
     } do {
       chunk.addEntity(entity)

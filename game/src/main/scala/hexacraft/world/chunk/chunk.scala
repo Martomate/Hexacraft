@@ -12,27 +12,27 @@ import com.martomate.nbt.Nbt
 import scala.collection.mutable
 
 object Chunk {
-  def fromNbt(coords: ChunkRelWorld, loadedTag: Nbt.MapTag)(using CylinderSize): Chunk = {
-    new Chunk(coords, ChunkData.fromNBT(loadedTag))
+  def fromNbt(loadedTag: Nbt.MapTag)(using CylinderSize): Chunk = {
+    new Chunk(ChunkData.fromNBT(loadedTag))
   }
 
   def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) = {
     val column = world.provideColumn(coords.getColumnRelWorld)
-    new Chunk(coords, generator.generateChunk(coords, column))
+    new Chunk(generator.generateChunk(coords, column))
   }
 }
 
-class Chunk private (val coords: ChunkRelWorld, chunkData: ChunkData)(using CylinderSize) {
+class Chunk private (chunkData: ChunkData)(using CylinderSize) {
   private var _modCount: Long = 0L
 
   def modCount: Long = _modCount
 
   val lighting: ChunkLighting = new ChunkLighting
 
-  def initLightingIfNeeded(lightPropagator: LightPropagator): Unit = {
+  def initLightingIfNeeded(coords: ChunkRelWorld, lightPropagator: LightPropagator): Unit = {
     if !lighting.initialized then {
       lighting.setInitialized()
-      lightPropagator.initBrightnesses(this)
+      lightPropagator.initBrightnesses(coords, this)
     }
   }
 

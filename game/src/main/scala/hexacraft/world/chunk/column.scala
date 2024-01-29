@@ -1,7 +1,6 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.noise.Data2D
-import hexacraft.world.coord.ColumnRelWorld
 
 import com.martomate.nbt.Nbt
 
@@ -47,7 +46,6 @@ trait ChunkColumnTerrain {
 
 object ChunkColumn {
   def create(
-      coords: ColumnRelWorld,
       generatedHeightMap: ChunkColumnHeightMap,
       columnData: Option[ChunkColumnData]
   ): ChunkColumn = {
@@ -55,12 +53,11 @@ object ChunkColumn {
       .flatMap(_.heightMap)
       .getOrElse(ChunkColumnHeightMap.from((x, z) => generatedHeightMap(x)(z)))
 
-    new ChunkColumn(coords, generatedHeightMap, heightMap)
+    new ChunkColumn(generatedHeightMap, heightMap)
   }
 }
 
 class ChunkColumn private (
-    val coords: ColumnRelWorld,
     generatedHeightMap: ChunkColumnHeightMap,
     val heightMap: ChunkColumnHeightMap
 ) extends ChunkColumnTerrain {

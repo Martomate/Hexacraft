@@ -1,6 +1,7 @@
 package hexacraft.world
 
 import hexacraft.world.chunk.Chunk
+import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.entity.EntityFactory
 import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
@@ -10,10 +11,10 @@ class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(using CylinderSize) {
     new EntityGroupPlanner(world, pos => EntityFactory.atStartPos(pos, "sheep").unwrap(), mainSeed)
   )
 
-  def decorate(chunk: Chunk): Unit = {
+  def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     if !chunk.isDecorated then {
       for p <- planners do {
-        p.decorate(chunk)
+        p.decorate(chunkCoords, chunk)
       }
       chunk.setDecorated()
     }

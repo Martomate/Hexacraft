@@ -30,7 +30,6 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
       cols(coords)
     } else {
       val col = ChunkColumn.create(
-        coords,
         ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
         provider.loadColumnData(coords).map(ChunkColumnData.fromNbt)
       )
@@ -45,9 +44,9 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
 
   override def toString: String = {
     val sb = new mutable.StringBuilder
-    for ch <- chunks.values do {
+    for (cCoords, ch) <- chunks do {
       val blocksStr = ch.blocks.map(s => s"${s.coords} -> ${s.block.blockType.displayName}").mkString(", ")
-      sb.append(ch.coords).append(": ").append(blocksStr).append("\n")
+      sb.append(cCoords).append(": ").append(blocksStr).append("\n")
     }
     sb.toString
   }
