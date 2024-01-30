@@ -2,7 +2,7 @@ package hexacraft.world.gen
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
+import hexacraft.world.chunk.{Chunk, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
 import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy, TreeGenStrategy}
@@ -68,24 +68,19 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
   def plan(coords: ChunkRelWorld): Unit = {
     if !chunksPlanned(coords) then {
       val column = world.provideColumn(coords.getColumnRelWorld)
+      val terrainHeight = column.originalTerrainHeight
+
       val locations = treeLocations(coords)
+      val allowBig = locations.size == 1
+
       for (cx, cz) <- locations do {
-        attemptTreeGenerationAt(coords, column, cx, cz, locations.size == 1)
+        val yy = terrainHeight.getHeight(cx, cz)
+
+        if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
+          generateTree(coords, cx, cz, yy, allowBig)
+        }
       }
       chunksPlanned(coords) = true
-    }
-  }
-
-  private def attemptTreeGenerationAt(
-      coords: ChunkRelWorld,
-      column: ChunkColumnTerrain,
-      cx: Int,
-      cz: Int,
-      allowBig: Boolean
-  ): Unit = {
-    val yy = column.originalTerrainHeight(cx, cz)
-    if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
-      generateTree(coords, cx, cz, yy, allowBig)
     }
   }
 
@@ -160,7 +155,7 @@ class EntityGroupPlanner(world: BlocksInWorld, entityFactory: CylCoords => Entit
       val column = world.provideColumn(coords.getColumnRelWorld)
       val cx = rand.nextInt(16)
       val cz = rand.nextInt(16)
-      val y = column.terrainHeight(cx, cz)
+      val y = column.terrainHeight.getHeight(cx, cz)
       if y >= coords.Y.toInt * 16 && y < (coords.Y.toInt + 1) * 16 then {
         val groundCoords = BlockCoords(BlockRelWorld(cx, y & 15, cz, coords)).toCylCoords
         val entityStartPos = groundCoords.offset(0, 0.001f, 0)

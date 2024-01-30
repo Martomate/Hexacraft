@@ -1,14 +1,14 @@
 package hexacraft.world
 
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.{Chunk, ChunkColumn, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.mutable
 
 class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize) extends BlocksInWorld {
   private val worldGenerator = new WorldGenerator(provider.getWorldInfo.gen)
-  private var cols: Map[ColumnRelWorld, ChunkColumn] = Map.empty
+  private var cols: Map[ColumnRelWorld, ChunkColumnTerrain] = Map.empty
   private var chunks: Map[ChunkRelWorld, Chunk] = Map.empty
 
   override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
@@ -29,7 +29,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     if cols.contains(coords) then {
       cols(coords)
     } else {
-      val col = ChunkColumn.create(
+      val col = ChunkColumnTerrain.create(
         ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
         provider.loadColumnData(coords).map(ChunkColumnData.fromNbt)
       )

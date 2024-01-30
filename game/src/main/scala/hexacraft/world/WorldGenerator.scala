@@ -56,7 +56,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
       k <- 0 until 16
     } do {
       val noise = blockNoise(i, j, k)
-      val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight(i, k)
+      val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight.getHeight(i, k)
       val limit = limitForBlockNoise(yToGo)
       if noise > limit then {
         storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
