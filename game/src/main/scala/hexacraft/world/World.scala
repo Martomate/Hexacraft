@@ -9,8 +9,11 @@ import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 
 import com.martomate.nbt.Nbt
 
+import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 object World {
   private val ticksBetweenBlockUpdates = 5
@@ -27,6 +30,9 @@ object World {
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
   given size: CylinderSize = worldInfo.worldSize
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  private val backgroundTasks: mutable.ArrayBuffer[Future[Unit]] = mutable.ArrayBuffer.empty
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed)
@@ -156,7 +162,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
     worldPlanner.decorate(chunkCoords, ch)
     if ch.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-      worldProvider.saveChunkData(ch.toNbt, chunkCoords)
+      val chunkNbt = ch.toNbt
+      backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))
       savedChunkModCounts(chunkCoords) = ch.modCount
       updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
     }
@@ -260,7 +267,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
         dispatcher.notify(World.Event.ChunkRemoved(chunkCoords))
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-          worldProvider.saveChunkData(removedChunk.toNbt, chunkCoords)
+          val removedChunkNbt = removedChunk.toNbt
+          backgroundTasks += Future(worldProvider.saveChunkData(removedChunkNbt, chunkCoords))
           savedChunkModCounts -= chunkCoords
         }
         requestRenderUpdateForNeighborChunks(chunkCoords)
@@ -268,7 +276,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
       if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
         columns.remove(columnCoords.value)
-        saveColumn(columnCoords, col)
+        backgroundTasks += Future(saveColumn(columnCoords, col))
       }
     }
   }
@@ -394,16 +402,23 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       val chunkCoords = ChunkRelWorld(chunkKey)
 
       if chunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-        worldProvider.saveChunkData(chunk.toNbt, chunkCoords)
+        val chunkNbt = chunk.toNbt
+        backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))
       }
     }
 
+    chunks.clear()
+
     for (columnKey, column) <- columns do {
-      saveColumn(ColumnRelWorld(columnKey), column)
+      backgroundTasks += Future(saveColumn(ColumnRelWorld(columnKey), column))
     }
 
-    chunks.clear()
     columns.clear()
+
+    for t <- backgroundTasks do {
+      Await.result(t, Duration(10, TimeUnit.SECONDS))
+    }
+
     chunkLoader.unload()
   }
 
