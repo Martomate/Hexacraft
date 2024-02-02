@@ -10,13 +10,8 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-class ChunkLoader(chunkFactory: ChunkRelWorld => Chunk, chunkUnloader: ChunkRelWorld => Unit)(using CylinderSize) {
+class ChunkLoader(using CylinderSize) {
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  private val LoadsPerTick = 1
-  private val UnloadsPerTick = 2
-  private val MaxChunksToLoad = 4
-  private val MaxChunksToUnload = 4
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double = {
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -25,32 +20,18 @@ class ChunkLoader(chunkFactory: ChunkRelWorld => Chunk, chunkUnloader: ChunkRelW
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
-  def startLoadingSomeChunks(prioritizer: ChunkLoadingPrioritizer, slow: Boolean): Unit = {
-    val maxLoad = if slow then 1 else MaxChunksToLoad
-
-    for _ <- 1 to LoadsPerTick do {
-      if chunksLoading.size < maxLoad then {
-        prioritizer.popChunkToLoad() match {
-          case Some(coords) =>
-            chunksLoading(coords) = Future(chunkFactory(coords))
-          case None =>
-        }
-      }
-    }
+  def canLoadChunk(maxQueueLength: Int): Boolean = {
+    chunksLoading.size < maxQueueLength
+  }
+  def canUnloadChunk(maxQueueLength: Int): Boolean = {
+    chunksUnloading.size < maxQueueLength
   }
 
-  def startUnloadingSomeChunks(prioritizer: ChunkLoadingPrioritizer, slow: Boolean): Unit = {
-    val maxUnload = if slow then 1 else MaxChunksToUnload
-
-    for _ <- 1 to UnloadsPerTick do {
-      if chunksUnloading.size < maxUnload then {
-        prioritizer.popChunkToRemove() match {
-          case Some(coords) =>
-            chunksUnloading(coords) = Future(chunkUnloader(coords))
-          case None =>
-        }
-      }
-    }
+  def startLoadingChunk(coords: ChunkRelWorld, loadChunk: () => Chunk): Unit = {
+    chunksLoading(coords) = Future(loadChunk())
+  }
+  def startUnloadingChunk(coords: ChunkRelWorld, unloadChunk: () => Unit): Unit = {
+    chunksUnloading(coords) = Future(unloadChunk())
   }
 
   def chunksFinishedLoading: Seq[(ChunkRelWorld, Chunk)] = {

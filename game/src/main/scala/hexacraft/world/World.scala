@@ -48,7 +48,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   private val chunkLoadingPrioritizer = new ChunkLoadingPrioritizer(renderDistance)
-  private val chunkLoader: ChunkLoader = makeChunkLoader()
+  private val chunkLoader: ChunkLoader = new ChunkLoader
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
@@ -62,29 +62,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   trackEvents(worldPlanner.onWorldEvent _)
   trackEvents(chunkLoader.onWorldEvent _)
-
-  private def makeChunkLoader(): ChunkLoader = {
-    val chunkFactory = (coords: ChunkRelWorld) => {
-      val (chunk, isNew) =
-        worldProvider.loadChunkData(coords) match {
-          case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
-          case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
-        }
-      savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
-      chunk
-    }
-
-    val chunkUnloader = (coords: ChunkRelWorld) => {
-      for chunk <- getChunk(coords) do {
-        if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
-          worldProvider.saveChunkData(chunk.toNbt, coords)
-        }
-        savedChunkModCounts -= coords
-      }
-    }
-
-    new ChunkLoader(chunkFactory, chunkUnloader)
-  }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
@@ -283,17 +260,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   }
 
   def tick(camera: Camera): Unit = {
-    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
-
-    chunkLoader.startLoadingSomeChunks(chunkLoadingPrioritizer, World.shouldChillChunkLoader)
-    chunkLoader.startUnloadingSomeChunks(chunkLoadingPrioritizer, World.shouldChillChunkLoader)
-
-    for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
-      setChunk(chunkCoords, chunk)
-    }
-    for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
-      removeChunk(chunkCoords)
-    }
+    performChunkLoading(camera)
 
     if blockUpdateTimer.tick() then {
       performBlockUpdates()
@@ -305,6 +272,63 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     for ch <- chunks.values do {
       ch.optimizeStorage()
       tickEntities(ch.entities)
+    }
+  }
+
+  private def performChunkLoading(camera: Camera): Unit = {
+    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
+
+    val chunksToLoadPerTick = 1
+    val chunksToUnloadPerTick = 2
+
+    for _ <- 1 to chunksToLoadPerTick do {
+      val maxQueueLength = if World.shouldChillChunkLoader then 1 else 4
+      if chunkLoader.canLoadChunk(maxQueueLength) then {
+        chunkLoadingPrioritizer.popChunkToLoad() match {
+          case Some(coords) =>
+            chunkLoader.startLoadingChunk(
+              coords,
+              () => {
+                val (chunk, isNew) =
+                  worldProvider.loadChunkData(coords) match {
+                    case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
+                    case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
+                  }
+                savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
+                chunk
+              }
+            )
+          case None =>
+        }
+      }
+    }
+
+    for _ <- 1 to chunksToUnloadPerTick do {
+      val maxQueueLength = if World.shouldChillChunkLoader then 2 else 6
+      if chunkLoader.canUnloadChunk(maxQueueLength) then {
+        chunkLoadingPrioritizer.popChunkToRemove() match {
+          case Some(coords) =>
+            chunkLoader.startUnloadingChunk(
+              coords,
+              () => {
+                for chunk <- getChunk(coords) do {
+                  if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
+                    worldProvider.saveChunkData(chunk.toNbt, coords)
+                  }
+                  savedChunkModCounts -= coords
+                }
+              }
+            )
+          case None =>
+        }
+      }
+    }
+
+    for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
+      setChunk(chunkCoords, chunk)
+    }
+    for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
+      removeChunk(chunkCoords)
     }
   }
 
