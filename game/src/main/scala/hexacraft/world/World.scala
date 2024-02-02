@@ -47,6 +47,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
+  private val chunkLoadingPrioritizer = new ChunkLoadingPrioritizer(renderDistance)
   private val chunkLoader: ChunkLoader = makeChunkLoader()
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
@@ -82,7 +83,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       }
     }
 
-    new ChunkLoader(chunkFactory, chunkUnloader, renderDistance)
+    new ChunkLoader(chunkFactory, chunkUnloader)
   }
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
@@ -282,13 +283,15 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   }
 
   def tick(camera: Camera): Unit = {
-    val (chunksToAdd, chunksToRemove) =
-      chunkLoader.tick(PosAndDir.fromCameraView(camera.view), World.shouldChillChunkLoader)
+    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
 
-    for (chunkCoords, chunk) <- chunksToAdd do {
+    chunkLoader.startLoadingSomeChunks(chunkLoadingPrioritizer, World.shouldChillChunkLoader)
+    chunkLoader.startUnloadingSomeChunks(chunkLoadingPrioritizer, World.shouldChillChunkLoader)
+
+    for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
       setChunk(chunkCoords, chunk)
     }
-    for chunkCoords <- chunksToRemove do {
+    for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
       removeChunk(chunkCoords)
     }
 

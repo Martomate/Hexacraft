@@ -10,19 +10,13 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-class ChunkLoader(
-    chunkFactory: ChunkRelWorld => Chunk,
-    chunkUnloader: ChunkRelWorld => Unit,
-    maxDist: Double
-)(using CylinderSize) {
+class ChunkLoader(chunkFactory: ChunkRelWorld => Chunk, chunkUnloader: ChunkRelWorld => Unit)(using CylinderSize) {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val LoadsPerTick = 1
   private val UnloadsPerTick = 2
   private val MaxChunksToLoad = 4
   private val MaxChunksToUnload = 4
-
-  private val prioritizer = new ChunkLoadingPrioritizer(maxDist)
 
   private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double = {
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
@@ -31,10 +25,8 @@ class ChunkLoader(
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
-  def tick(origin: PosAndDir, shouldLoadSlowly: Boolean): (Seq[(ChunkRelWorld, Chunk)], Seq[ChunkRelWorld]) = {
-    prioritizer.tick(origin)
-
-    val (maxLoad, maxUnload) = if shouldLoadSlowly then (1, 1) else (MaxChunksToLoad, MaxChunksToUnload)
+  def startLoadingSomeChunks(prioritizer: ChunkLoadingPrioritizer, slow: Boolean): Unit = {
+    val maxLoad = if slow then 1 else MaxChunksToLoad
 
     for _ <- 1 to LoadsPerTick do {
       if chunksLoading.size < maxLoad then {
@@ -45,6 +37,10 @@ class ChunkLoader(
         }
       }
     }
+  }
+
+  def startUnloadingSomeChunks(prioritizer: ChunkLoadingPrioritizer, slow: Boolean): Unit = {
+    val maxUnload = if slow then 1 else MaxChunksToUnload
 
     for _ <- 1 to UnloadsPerTick do {
       if chunksUnloading.size < maxUnload then {
@@ -55,7 +51,9 @@ class ChunkLoader(
         }
       }
     }
+  }
 
+  def chunksFinishedLoading: Seq[(ChunkRelWorld, Chunk)] = {
     val chunksToAdd = mutable.ArrayBuffer.empty[(ChunkRelWorld, Chunk)]
     for (chunkCoords, futureChunk) <- chunksLoading do {
       futureChunk.value match {
@@ -68,7 +66,10 @@ class ChunkLoader(
           }
       }
     }
+    chunksToAdd.toSeq
+  }
 
+  def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
     val chunksToRemove = mutable.ArrayBuffer.empty[ChunkRelWorld]
     for (chunkCoords, future) <- chunksUnloading do {
       future.value match {
@@ -81,8 +82,7 @@ class ChunkLoader(
           }
       }
     }
-
-    (chunksToAdd.toSeq, chunksToRemove.toSeq)
+    chunksToRemove.toSeq
   }
 
   def onWorldEvent(event: World.Event): Unit = {
