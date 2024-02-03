@@ -63,9 +63,9 @@ class NbtTest extends FunSuite {
   private val stringCTag = Nbt.makeMap("tag" -> Nbt.StringTag("42.42424242424242D"))
   private val compCTag = Nbt.makeMap("tag" -> Nbt.makeMap("tag" -> Nbt.ByteTag(42.toByte)))
   private val byteArr = Seq(42, 13, 42, -42).map(_.toByte).toArray
-  private val byteArrCTag = Nbt.makeMap("tag" -> Nbt.ByteArrayTag(byteArr))
+  private val byteArrCTag = Nbt.makeMap("tag" -> Nbt.ByteArrayTag.of(byteArr))
   private val shortArr = Seq(4242, 1313, 4242, -4242).map(_.toShort).toArray
-  private val shortArrCTag = Nbt.makeMap("tag" -> Nbt.ShortArrayTag(shortArr))
+  private val shortArrCTag = Nbt.makeMap("tag" -> Nbt.ShortArrayTag.of(shortArr))
   private val listCTag = Nbt.makeMap("tag" -> Nbt.ListTag(Seq(Nbt.StringTag("a"), Nbt.StringTag("bcd"))))
 
   testGet("getBoolean", _.getBoolean, booleanCTag, true, false)

@@ -90,14 +90,12 @@ object DenseChunkStorage {
     result
   }
 
-  def fromNBT(blocks: Array[Byte], metadata: Option[Array[Byte]]): DenseChunkStorage = {
+  def create(blocks: Array[Byte], metadata: Array[Byte]): DenseChunkStorage = {
     val storage = new DenseChunkStorage
-
-    val meta = metadata.map(_.apply).getOrElse(_ => 0)
 
     for i <- storage.blockTypes.indices do {
       storage.blockTypes(i) = blocks(i)
-      storage.metadata(i) = meta(i)
+      storage.metadata(i) = metadata(i)
       if storage.blockTypes(i) != 0 then {
         storage._numBlocks += 1
       }

@@ -9,6 +9,7 @@ import hexacraft.world.entity.{Entity, EntityFactory}
 
 import com.martomate.nbt.Nbt
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 object Chunk {
@@ -97,8 +98,8 @@ class ChunkData(
     val storageNbt = storage.toNBT
 
     Nbt.makeMap(
-      "blocks" -> Nbt.ByteArrayTag(storageNbt.blocks),
-      "metadata" -> Nbt.ByteArrayTag(storageNbt.metadata),
+      "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
+      "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
       "entities" -> Nbt.ListTag(entities.map(e => e.toNBT).toSeq),
       "isDecorated" -> Nbt.ByteTag(isDecorated)
     )
@@ -111,10 +112,14 @@ object ChunkData {
   }
 
   def fromNBT(nbt: Nbt.MapTag)(using CylinderSize): ChunkData = {
-    val storage = nbt.getByteArray("blocks") match {
+    val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
       case Some(blocks) =>
-        val meta = nbt.getByteArray("metadata")
-        DenseChunkStorage.fromNBT(blocks.toArray, meta.map(_.toArray))
+        val meta = nbt
+          .getByteArray("metadata")
+          .map(_.unsafeArray)
+          .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
+
+        DenseChunkStorage.create(blocks, meta)
       case None =>
         SparseChunkStorage.empty
     }

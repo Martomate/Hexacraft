@@ -22,7 +22,7 @@ object ChunkColumnData {
       Nbt.emptyMap.withOptionalField(
         "heightMap",
         col.heightMap.map(heightMap =>
-          Nbt.ShortArrayTag(ArraySeq.tabulate(16 * 16)(i => heightMap.getHeight(i >> 4, i & 0xf)))
+          Nbt.ShortArrayTag.of(Array.tabulate(16 * 16)(i => heightMap.getHeight(i >> 4, i & 0xf)))
         )
       )
     }

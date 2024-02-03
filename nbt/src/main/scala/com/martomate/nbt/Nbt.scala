@@ -27,17 +27,20 @@ object Nbt {
 
   case class StringTag(v: String) extends Nbt
 
-  case class ByteArrayTag(vs: ArraySeq[Byte]) extends Nbt
+  case class ByteArrayTag(vs: ArraySeq.ofByte) extends Nbt
   object ByteArrayTag {
-    def apply(arr: Array[Byte]): ByteArrayTag = ByteArrayTag(ArraySeq.unsafeWrapArray(arr))
+    inline def of(arr: Array[Byte]): ByteArrayTag = ByteArrayTag(ArraySeq.ofByte(arr))
   }
 
-  case class ShortArrayTag(vs: ArraySeq[Short]) extends Nbt
+  case class ShortArrayTag(vs: ArraySeq.ofShort) extends Nbt
   object ShortArrayTag {
-    def apply(arr: Array[Short]): ShortArrayTag = ShortArrayTag(ArraySeq.unsafeWrapArray(arr))
+    inline def of(arr: Array[Short]): ShortArrayTag = ShortArrayTag(ArraySeq.ofShort(arr))
   }
 
-  case class IntArrayTag(vs: ArraySeq[Int]) extends Nbt
+  case class IntArrayTag(vs: ArraySeq.ofInt) extends Nbt
+  object IntArrayTag {
+    inline def of(arr: Array[Int]): IntArrayTag = IntArrayTag(ArraySeq.ofInt(arr))
+  }
 
   case class ListTag[T <: Nbt](vs: Seq[T]) extends Nbt
 
@@ -90,10 +93,10 @@ object Nbt {
         case Some(Nbt.MapTag(vs)) => Some(Nbt.MapTag(vs))
         case _                    => None
 
-    def getByteArray(name: String): Option[ArraySeq[Byte]] =
+    def getByteArray(name: String): Option[ArraySeq.ofByte] =
       getTag(name).map(tag => tag.asInstanceOf[Nbt.ByteArrayTag].vs)
 
-    def getShortArray(name: String): Option[ArraySeq[Short]] =
+    def getShortArray(name: String): Option[ArraySeq.ofShort] =
       getTag(name).map(tag => tag.asInstanceOf[Nbt.ShortArrayTag].vs)
 
     def setVector(vector: Vector3d): Vector3d =
@@ -161,9 +164,9 @@ object Nbt {
       case t: nbt.FloatTag      => Nbt.FloatTag(t.getValue)
       case t: nbt.DoubleTag     => Nbt.DoubleTag(t.getValue)
       case t: nbt.StringTag     => Nbt.StringTag(t.getValue)
-      case t: nbt.ByteArrayTag  => Nbt.ByteArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
-      case t: nbt.ShortArrayTag => Nbt.ShortArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
-      case t: nbt.IntArrayTag   => Nbt.IntArrayTag(ArraySeq.unsafeWrapArray(t.getValue))
+      case t: nbt.ByteArrayTag  => Nbt.ByteArrayTag.of(t.getValue)
+      case t: nbt.ShortArrayTag => Nbt.ShortArrayTag.of(t.getValue)
+      case t: nbt.IntArrayTag   => Nbt.IntArrayTag.of(t.getValue)
       case t: nbt.ListTag[_] =>
         Nbt.ListTag(
           t.getValue
