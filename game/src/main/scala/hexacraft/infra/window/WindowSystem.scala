@@ -1,7 +1,5 @@
 package hexacraft.infra.window
 
-import hexacraft.util.PointerWrapper
-
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
@@ -66,6 +64,7 @@ class WindowSystem(glfw: GlfwWrapper) {
     glfw.glfwDefaultWindowHints()
     glfw.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE)
     glfw.glfwWindowHint(GLFW.GLFW_RESIZABLE, glfwResizable)
+    glfw.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, GLFW.GLFW_FALSE)
     glfw.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, settings.opengl.majorVersion)
     glfw.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, settings.opengl.minorVersion)
     glfw.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE)
@@ -109,6 +108,7 @@ trait GlfwWrapper {
   def glfwSetCharCallback(window: Long, callback: GLFWCharCallbackI): Unit
   def glfwSetMouseButtonCallback(window: Long, callback: GLFWMouseButtonCallbackI): Unit
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit
+  def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit
   def glfwSetScrollCallback(window: Long, callback: GLFWScrollCallbackI): Unit
   def glfwGetKey(window: Long, key: Int): Int
@@ -192,6 +192,10 @@ object RealGlfw extends GlfwWrapper {
 
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit = {
     GLFW.glfwSetWindowSizeCallback(window, callback)
+  }
+
+  def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit = {
+    GLFW.glfwSetWindowFocusCallback(window, callback)
   }
 
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit = {
@@ -307,6 +311,7 @@ class NullGlfw extends GlfwWrapper {
   def glfwSetCharCallback(window: Long, callback: GLFWCharCallbackI): Unit = ()
   def glfwSetMouseButtonCallback(window: Long, callback: GLFWMouseButtonCallbackI): Unit = ()
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit = ()
+  def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit = ()
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit = ()
   def glfwSetScrollCallback(window: Long, callback: GLFWScrollCallbackI): Unit = ()
   def glfwGetKey(window: Long, key: Int): Int = GLFW.GLFW_RELEASE

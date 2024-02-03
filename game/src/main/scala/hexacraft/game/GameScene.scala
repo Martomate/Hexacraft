@@ -125,6 +125,22 @@ class GameScene(
     worldRenderer.onProjMatrixChanged(camera)
   }
 
+  private def pauseGame(): Unit = {
+    import PauseMenu.Event.*
+
+    pauseMenu = PauseMenu:
+      case Unpause =>
+        overlays -= pauseMenu
+        pauseMenu.unload()
+        pauseMenu = null
+        setPaused(false)
+      case QuitGame =>
+        eventHandler.notify(GameScene.Event.GameQuit)
+
+    overlays += pauseMenu
+    setPaused(true)
+  }
+
   private def handleKeyPress(key: KeyboardKey): Unit = key match {
     case KeyboardKey.Letter('B') =>
       val newCoords = camera.blockCoords.offset(0, -4, 0)
@@ -133,18 +149,7 @@ class GameScene(
         world.setBlock(newCoords, new BlockState(player.blockInHand))
       }
     case KeyboardKey.Escape =>
-      import PauseMenu.Event.*
-
-      pauseMenu = PauseMenu:
-        case Unpause =>
-          overlays -= pauseMenu
-          pauseMenu.unload()
-          pauseMenu = null
-          setPaused(false)
-        case QuitGame => eventHandler.notify(GameScene.Event.GameQuit)
-
-      overlays += pauseMenu
-      setPaused(true)
+      pauseGame()
     case KeyboardKey.Letter('E') =>
       import InventoryBox.Event.*
 
@@ -253,6 +258,14 @@ class GameScene(
   private def setMouseCursorInvisible(invisible: Boolean): Unit = {
     import GameScene.Event.*
     eventHandler.notify(if invisible then CursorCaptured else CursorReleased)
+  }
+
+  override def windowFocusChanged(focused: Boolean): Unit = {
+    if !focused then {
+      if !isPaused then {
+        pauseGame()
+      }
+    }
   }
 
   override def windowResized(width: Int, height: Int): Unit = {

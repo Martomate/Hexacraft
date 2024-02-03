@@ -6,5 +6,6 @@ enum CallbackEvent {
   case MouseClicked(window: Window, button: MouseButton, action: MouseAction, mods: KeyMods)
   case MouseScrolled(window: Window, xOffset: Double, yOffset: Double)
   case WindowResized(window: Window, w: Int, h: Int)
+  case WindowFocusChanged(window: Window, focused: Boolean)
   case FrameBufferResized(window: Window, w: Int, h: Int)
 }

@@ -102,6 +102,13 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
     )
   }
 
+  def setWindowFocusCallback(callback: CallbackEvent.WindowFocusChanged => Unit): Unit = {
+    glfw.glfwSetWindowFocusCallback(
+      id.toLong,
+      (_, focused) => callback(CallbackEvent.WindowFocusChanged(this, focused))
+    )
+  }
+
   def setFrameBufferSizeCallback(callback: CallbackEvent.FrameBufferResized => Unit): Unit = {
     glfw.glfwSetFramebufferSizeCallback(
       id.toLong,

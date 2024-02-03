@@ -147,6 +147,9 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
         resetMousePos()
       }
 
+    case CallbackEvent.WindowFocusChanged(_, focused) =>
+      scene.windowFocusChanged(focused)
+
     case CallbackEvent.FrameBufferResized(_, w, h) =>
       if w > 0 && h > 0
       then {
@@ -252,6 +255,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
     window.setCharCallback(callbackQueue.enqueue)
     window.setMouseButtonCallback(callbackQueue.enqueue)
     window.setWindowSizeCallback(callbackQueue.enqueue)
+    window.setWindowFocusCallback(callbackQueue.enqueue)
     window.setScrollCallback(callbackQueue.enqueue)
     window.setFrameBufferSizeCallback(callbackQueue.enqueue)
 
