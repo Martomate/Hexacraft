@@ -2,6 +2,7 @@ package hexacraft.main
 
 import hexacraft.game.*
 import hexacraft.gui.{Event, Scene}
+import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
@@ -21,7 +22,7 @@ class MainRouterTest extends FunSuite {
 
   def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())(tracker)
 
     router.route(route)
 
@@ -36,7 +37,7 @@ class MainRouterTest extends FunSuite {
       munit.Location
   ): Seq[MainRouter.Event] =
     val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null)(tracker)
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())(tracker)
 
     router.route(route)
 

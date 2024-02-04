@@ -1,6 +1,7 @@
 package hexacraft.game
 
 import hexacraft.gui.{Event, WindowSize}
+import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.util.Tracker
@@ -21,7 +22,13 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    new GameScene(NetworkHandler(true, false, worldProvider, null), _ => false, textureLoader, windowSize)(_ => ())
+    new GameScene(
+      NetworkHandler(true, false, worldProvider, null),
+      _ => false,
+      textureLoader,
+      windowSize,
+      AudioSystem.createNull()
+    )(_ => ())
       .unload()
 
     val tracker = Tracker.withStorage[OpenGL.Event]
@@ -29,7 +36,13 @@ class GameSceneTest extends FunSuite {
 
     // Load and unload the game again
     val gameScene =
-      new GameScene(NetworkHandler(true, false, worldProvider, null), _ => false, textureLoader, windowSize)(_ => ())
+      new GameScene(
+        NetworkHandler(true, false, worldProvider, null),
+        _ => false,
+        textureLoader,
+        windowSize,
+        AudioSystem.createNull()
+      )(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -55,10 +68,9 @@ class GameSceneTest extends FunSuite {
         NetworkHandler(true, false, worldProvider, null),
         _ => false,
         new FakeBlockTextureLoader,
-        windowSize
-      )(
-        gameSceneTracker
-      )
+        windowSize,
+        AudioSystem.createNull()
+      )(gameSceneTracker)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 

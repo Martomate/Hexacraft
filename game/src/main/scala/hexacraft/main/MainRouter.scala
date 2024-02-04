@@ -10,6 +10,7 @@ import hexacraft.game.{
   WorldProviderFromFile
 }
 import hexacraft.gui.Scene
+import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
 import hexacraft.infra.window.CursorMode
 import hexacraft.util.Tracker
@@ -29,7 +30,8 @@ class MainRouter(
     multiplayerEnabled: Boolean,
     fs: FileSystem,
     window: GameWindow,
-    kb: GameKeyboard
+    kb: GameKeyboard,
+    audioSystem: AudioSystem
 )(eventListener: Tracker[MainRouter.Event]) {
 
   def route(sceneRoute: SceneRoute): Unit = {
@@ -103,7 +105,7 @@ class MainRouter(
         }
 
       val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
-      GameScene(networkHandler, kb, BlockTextureLoader.instance, window.windowSize):
+      GameScene(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem):
         case GameScene.Event.GameQuit =>
           route(SceneRoute.Main)
           System.gc()
