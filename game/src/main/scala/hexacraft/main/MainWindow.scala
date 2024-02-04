@@ -11,8 +11,10 @@ import hexacraft.util.{Resource, Result}
 import hexacraft.world.World
 
 import org.joml.Vector2i
+import org.lwjgl.openal.{AL, ALC, ALC10}
 
 import java.io.File
+import java.nio.{ByteBuffer, IntBuffer}
 import scala.collection.mutable
 
 class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
@@ -212,6 +214,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
 
   def run(): Unit = {
     initGL()
+    initAudioSystem()
 
     try {
       val router = makeSceneRouter()
@@ -285,6 +288,22 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
       OpenGL.glEnable(OpenGL.State.DebugOutput)
       OpenGL.glDebugMessageCallback(handleDebugEvent, 0L)
     }
+  }
+
+  private def initAudioSystem(): Unit = {
+    val device = ALC10.alcOpenDevice(null.asInstanceOf[ByteBuffer])
+    if device == 0L then {
+      throw new IllegalStateException("Failed to open the default OpenAL device")
+    }
+    val deviceCaps = ALC.createCapabilities(device)
+
+    val context = ALC10.alcCreateContext(device, null.asInstanceOf[IntBuffer])
+    if context == 0L then {
+      throw new IllegalStateException("Failed to create OpenAL context")
+    }
+    ALC10.alcMakeContextCurrent(context)
+
+    AL.createCapabilities(deviceCaps)
   }
 
   private def tryQuit(): Unit = {

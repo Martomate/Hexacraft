@@ -2,7 +2,7 @@ package hexacraft.game
 
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
-import hexacraft.infra.fs.BlockTextureLoader
+import hexacraft.infra.fs.{BlockTextureLoader, FileUtils}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
@@ -16,8 +16,12 @@ import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3f}
+import org.lwjgl.openal.AL10
+import org.lwjgl.stb.{STBVorbis, STBVorbisInfo}
+import org.lwjgl.system.{MemoryStack, MemoryUtil}
 import org.zeromq.ZMQException
 
+import java.nio.{ByteBuffer, ShortBuffer}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -97,6 +101,11 @@ class GameScene(
   private var debugOverlay: DebugOverlay = _
   private var pauseMenu: PauseMenu = _
   private var inventoryScene: InventoryBox = _
+
+  private val soundSources = mutable.ArrayBuffer.empty[Int]
+
+  private val placeBlockSoundBuffer = loadSoundBuffer("sounds/place_block.ogg")
+  private val destroyBlockSoundBuffer = loadSoundBuffer("sounds/place_block.ogg")
 
   setUniforms(initialWindowSize.logicalAspectRatio)
   setUseMouse(true)
@@ -349,6 +358,8 @@ class GameScene(
       return
     }
 
+    updateSoundListener()
+
     try {
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
@@ -408,6 +419,14 @@ class GameScene(
     }
   }
 
+  private def updateSoundListener(): Unit = {
+    val pos = CylCoords(camera.position)
+    val at = camera.view.invMatrix.transformDirection(Vector3f(0, 0, -1))
+    val up = camera.view.invMatrix.transformDirection(Vector3f(0, 1, 0))
+    AL10.alListener3f(AL10.AL_POSITION, pos.x.toFloat, pos.y.toFloat, pos.z.toFloat)
+    AL10.alListenerfv(AL10.AL_ORIENTATION, Array(at.x, at.y, at.z, up.x, up.y, up.z))
+  }
+
   private def updatedMousePicker(
       windowSize: WindowSize,
       mouse: MousePosition
@@ -435,6 +454,13 @@ class GameScene(
       case Some((state, coords, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
+
+          val sourceId = AL10.alGenSources()
+          val sourcePos = BlockCoords(coords).toCylCoords
+          AL10.alSourcei(sourceId, AL10.AL_BUFFER, destroyBlockSoundBuffer)
+          AL10.alSource3f(sourceId, AL10.AL_POSITION, sourcePos.x.toFloat, sourcePos.y.toFloat, sourcePos.z.toFloat)
+          AL10.alSourcePlay(sourceId)
+          soundSources += sourceId
         }
       case _ =>
     }
@@ -470,6 +496,13 @@ class GameScene(
 
     if !collides then {
       world.setBlock(coords, state)
+
+      val sourceId = AL10.alGenSources()
+      val sourcePos = BlockCoords(coords).toCylCoords
+      AL10.alSourcei(sourceId, AL10.AL_BUFFER, placeBlockSoundBuffer)
+      AL10.alSource3f(sourceId, AL10.AL_POSITION, sourcePos.x.toFloat, sourcePos.y.toFloat, sourcePos.z.toFloat)
+      AL10.alSourcePlay(sourceId)
+      soundSources += sourceId
     }
   }
 
@@ -597,4 +630,42 @@ class GameScene(
     val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
     blockLoader.load(squareTextureNames, triTextureNames)
   }
+
+  private def loadSoundBuffer(filename: String) = {
+    val bytes = FileUtils.readBytesFromUrl(FileUtils.getResourceFile(filename).get)
+    val data = ByteBuffer.allocateDirect(bytes.length)
+    data.put(bytes)
+    data.flip()
+
+    val (info, buf) = readVorbis(data)
+
+    val bufferId = AL10.alGenBuffers()
+    AL10.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, buf, 44100)
+
+    bufferId
+  }
+
+  private def readVorbis(data: ByteBuffer): (STBVorbisInfo, ShortBuffer) = {
+    val stack = MemoryStack.stackPush
+    try {
+      val error = stack.mallocInt(1)
+      val decoder = STBVorbis.stb_vorbis_open_memory(data, error, null)
+      if decoder == 0L then {
+        throw new RuntimeException("Failed to open Ogg Vorbis file. Error: " + error.get(0))
+      }
+      val info = STBVorbisInfo.create()
+      STBVorbis.stb_vorbis_get_info(decoder, info)
+      val channels = info.channels
+      val lengthSamples = STBVorbis.stb_vorbis_stream_length_in_samples(decoder)
+      val pcm = MemoryUtil.memAllocShort(lengthSamples)
+      pcm.limit(STBVorbis.stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels)
+      STBVorbis.stb_vorbis_close(decoder)
+      (info, pcm)
+    } finally {
+      if stack != null then {
+        stack.close()
+      }
+    }
+  }
+
 }

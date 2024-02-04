@@ -46,4 +46,13 @@ object FileUtils {
 
     lines.toSeq
   }
+
+  def readBytesFromUrl(url: URL): Array[Byte] = {
+    val stream = url.openStream()
+    try {
+      stream.readAllBytes()
+    } finally {
+      stream.close()
+    }
+  }
 }

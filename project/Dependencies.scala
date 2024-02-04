@@ -20,12 +20,16 @@ object Dependencies {
     Seq(
       "org.lwjgl" % "lwjgl" % versions.lwjgl,
       "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl,
-      "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl
+      "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl,
+      "org.lwjgl" % "lwjgl-openal" % versions.lwjgl,
+      "org.lwjgl" % "lwjgl-stb" % versions.lwjgl
     ) ++ platforms.flatMap(platform =>
       Seq(
         "org.lwjgl" % "lwjgl" % versions.lwjgl classifier platform,
         "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl classifier platform,
-        "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl classifier platform
+        "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl classifier platform,
+        "org.lwjgl" % "lwjgl-openal" % versions.lwjgl classifier platform,
+        "org.lwjgl" % "lwjgl-stb" % versions.lwjgl classifier platform
       )
     )
   }
