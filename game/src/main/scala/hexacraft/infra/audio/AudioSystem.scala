@@ -1,6 +1,8 @@
 package hexacraft.infra.audio
 
+import hexacraft.infra.audio.AudioSystem.Event
 import hexacraft.infra.fs.FileUtils
+import hexacraft.util.{EventDispatcher, Tracker}
 
 import org.joml.Vector3f
 import org.lwjgl.openal.{AL, AL10, ALC, ALC10, ALCapabilities, ALCCapabilities}
@@ -13,9 +15,17 @@ object AudioSystem {
   def create(): AudioSystem = new AudioSystem(new RealAL)
 
   def createNull(): AudioSystem = new AudioSystem(new NullAL)
+
+  enum Event {
+    case Initialized
+    case StartedPlaying
+  }
 }
 
 class AudioSystem(al: ALWrapper) {
+  private val dispatcher = new EventDispatcher[Event]
+  def trackEvents(tracker: Tracker[Event]): Unit = dispatcher.track(tracker)
+
   def init(): Unit = {
     val device = al.alcOpenDevice(null.asInstanceOf[ByteBuffer])
     if device == 0L then {
@@ -30,6 +40,8 @@ class AudioSystem(al: ALWrapper) {
     al.alcMakeContextCurrent(context)
 
     al.createCapabilities(deviceCaps)
+
+    dispatcher.notify(AudioSystem.Event.Initialized)
   }
 
   def setListenerPosition(pos: Vector3f): Unit = {
@@ -52,6 +64,8 @@ class AudioSystem(al: ALWrapper) {
 
   def startPlayingSound(sourceId: Int): Unit = {
     al.alSourcePlay(sourceId)
+
+    dispatcher.notify(AudioSystem.Event.StartedPlaying)
   }
 
   def loadSoundBuffer(filename: String) = {

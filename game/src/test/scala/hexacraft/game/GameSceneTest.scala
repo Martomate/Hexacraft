@@ -1,6 +1,7 @@
 package hexacraft.game
 
-import hexacraft.gui.{Event, WindowSize}
+import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
+import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
@@ -8,7 +9,7 @@ import hexacraft.util.Tracker
 import hexacraft.world.{CylinderSize, FakeBlockTextureLoader, FakeWorldProvider}
 
 import munit.FunSuite
-import org.joml.Vector2i
+import org.joml.{Vector2f, Vector2i}
 
 class GameSceneTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
@@ -22,27 +23,19 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    new GameScene(
-      NetworkHandler(true, false, worldProvider, null),
-      _ => false,
-      textureLoader,
-      windowSize,
-      AudioSystem.createNull()
-    )(_ => ())
-      .unload()
+    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    val keyboard: GameKeyboard = _ => false
+    val audioSystem = AudioSystem.createNull()
 
+    val gameScene1 = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    gameScene1.unload()
+
+    // Start listening to OpenGL events
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene =
-      new GameScene(
-        NetworkHandler(true, false, worldProvider, null),
-        _ => false,
-        textureLoader,
-        windowSize,
-        AudioSystem.createNull()
-      )(_ => ())
+    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -60,17 +53,14 @@ class GameSceneTest extends FunSuite {
   test("GameScene emits QuitGame event when quit-button is pressed in pause menu") {
     OpenGL._enterTestMode()
 
-    val gameSceneTracker = Tracker.withStorage[GameScene.Event]
-
     val worldProvider = new FakeWorldProvider(123L)
-    val gameScene =
-      new GameScene(
-        NetworkHandler(true, false, worldProvider, null),
-        _ => false,
-        new FakeBlockTextureLoader,
-        windowSize,
-        AudioSystem.createNull()
-      )(gameSceneTracker)
+    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    val keyboard: GameKeyboard = _ => false
+    val textureLoader = new FakeBlockTextureLoader
+    val audioSystem = AudioSystem.createNull()
+
+    val gameSceneTracker = Tracker.withStorage[GameScene.Event]
+    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(gameSceneTracker)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 
@@ -85,5 +75,90 @@ class GameSceneTest extends FunSuite {
         GameScene.Event.GameQuit // when the "Back to Menu" button is pressed
       )
     )
+  }
+
+  test("GameScene plays a sound when the player breaks a block") {
+    OpenGL._enterTestMode()
+
+    val worldProvider = new FakeWorldProvider(123L)
+    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    val keyboard: GameKeyboard = _ => false
+    val textureLoader = new FakeBlockTextureLoader
+    val audioSystem = AudioSystem.createNull()
+
+    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+
+    gameScene.player.flying = false
+
+    // ensure player is in the middle of the spawn chunk
+    gameScene.player.position.y = 4 // each block is 0.5 high
+
+    // look down
+    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+
+    // ensure the spawn chunk gets loaded
+    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+
+    // place block below feet
+    gameScene.handleEvent(KeyEvent(KeyboardKey.Letter('B'), 0, KeyAction.Press, KeyMods.none))
+    gameScene.tick(tickContext)
+
+    // start listening for audio events
+    val audioTracker = Tracker.withStorage[AudioSystem.Event]
+    audioSystem.trackEvents(audioTracker)
+
+    // break block
+    gameScene.handleEvent(MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, (0, 0)))
+    gameScene.tick(tickContext)
+
+    // the sound should have started playing
+    assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
+  }
+
+  test("GameScene plays a sound when the player places a block") {
+    OpenGL._enterTestMode()
+
+    val worldProvider = new FakeWorldProvider(123L)
+    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    val keyboard: GameKeyboard = _ => false
+    val textureLoader = new FakeBlockTextureLoader
+    val audioSystem = AudioSystem.createNull()
+
+    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+
+    gameScene.player.flying = false
+
+    // ensure player is in the middle of the spawn chunk, and far from the ground
+    gameScene.player.position.y = 128 + 4 // each block is 0.5 high
+
+    // look down
+    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+
+    // ensure the spawn chunk gets loaded
+    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+
+    // place block below feet
+    gameScene.handleEvent(KeyEvent(KeyboardKey.Letter('B'), 0, KeyAction.Press, KeyMods.none))
+    gameScene.tick(tickContext)
+
+    // start listening for audio events
+    val audioTracker = Tracker.withStorage[AudioSystem.Event]
+    audioSystem.trackEvents(audioTracker)
+
+    // move so the block can be placed
+    gameScene.player.position.y += 1
+
+    // place block
+    gameScene.handleEvent(MouseClickEvent(MouseButton.Right, MouseAction.Press, KeyMods.none, (0, 0)))
+    gameScene.tick(tickContext)
+
+    // the sound should have started playing
+    assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
   }
 }
