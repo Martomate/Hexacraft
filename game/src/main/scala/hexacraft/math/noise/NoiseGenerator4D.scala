@@ -1,8 +1,5 @@
 package hexacraft.math.noise
 
-import hexacraft.world.CylinderSize
-import hexacraft.world.coord.CylCoords
-
 import java.util.Random
 
 class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
@@ -25,13 +22,13 @@ class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
     result
   }
 
-  def genNoiseFromCyl(c: CylCoords)(using cylSize: CylinderSize): Double = {
-    val angle = c.z / cylSize.radius
+  def genWrappedNoise(x: Double, y: Double, z: Double, radius: Double): Double = {
+    val angle = z / radius
     genNoise(
-      c.x,
-      c.y,
-      math.sin(angle) * cylSize.radius,
-      math.cos(angle) * cylSize.radius
+      x,
+      y,
+      math.sin(angle) * radius,
+      math.cos(angle) * radius
     )
   }
 }

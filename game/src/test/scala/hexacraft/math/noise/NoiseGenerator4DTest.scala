@@ -49,7 +49,7 @@ class NoiseGenerator4DTest extends FunSuite {
     assert(values.toSet.size > 1)
   }
 
-  test("genNoiseFromCyl should be correct") {
+  test("genWrappedNoise should be correct") {
     val rand = new Random
     val gen = makeGen(rand.nextLong)
 
@@ -60,7 +60,7 @@ class NoiseGenerator4DTest extends FunSuite {
       val cyl = CylCoords(nextDouble(rand, scale), nextDouble(rand, scale), nextDouble(rand, scale))
       val angle = cyl.z / size.radius
 
-      val noiseFromCyl = gen.genNoiseFromCyl(cyl)
+      val noiseFromCyl = gen.genWrappedNoise(cyl.x, cyl.y, cyl.z, size.radius)
       val expectedNoise = gen.genNoise(cyl.x, cyl.y, math.sin(angle) * size.radius, math.cos(angle) * size.radius)
 
       assertEquals(noiseFromCyl, expectedNoise)

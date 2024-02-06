@@ -8,7 +8,7 @@ import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnR
 
 import java.util.Random
 
-class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
+class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: CylinderSize) {
   private val random = new Random(worldGenSettings.seed)
 
   private val blockGenerator =
@@ -30,25 +30,26 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using CylinderSize) {
     WorldGenerator.makeHeightmapInterpolator(coords, terrainHeight)
   }
 
-  def getBlockInterpolator(coords: ChunkRelWorld): Data3D = {
-    WorldGenerator.makeBlockInterpolator(coords, blockNoise)
-  }
-
   private def blockNoise(x: Int, y: Int, z: Int) = {
     val c = BlockCoords(x, y, z).toCylCoords
-    blockGenerator.genNoiseFromCyl(c) + blockDensityGenerator.genNoiseFromCyl(c) * 0.4
+    val radius = cylSize.radius
+    val n1 = blockGenerator.genWrappedNoise(c.x, c.y, c.z, radius)
+    val n2 = blockDensityGenerator.genWrappedNoise(c.x, c.y, c.z, radius)
+    n1 + n2 * 0.4
   }
 
   private def terrainHeight(x: Int, z: Int) = {
     val c = BlockCoords(x, 0, z).toCylCoords
-    val height = biomeHeightGenerator.genNoiseFromCylXZ(c)
-    val heightVariation = biomeHeightVariationGenerator.genNoiseFromCylXZ(c)
-    heightMapGenerator.genNoiseFromCylXZ(c) * heightVariation * 100 + height * 100
+    val radius = cylSize.radius
+    val biomeHeight = biomeHeightGenerator.genWrappedNoise(c.x, c.z, radius)
+    val heightVariation = biomeHeightVariationGenerator.genWrappedNoise(c.x, c.z, radius)
+    val heightMap = heightMapGenerator.genWrappedNoise(c.x, c.z, radius)
+    heightMap * heightVariation * 100 + biomeHeight * 100
   }
 
   def generateChunk(coords: ChunkRelWorld, column: ChunkColumnTerrain): ChunkData = {
     val storage: ChunkStorage = new DenseChunkStorage
-    val blockNoise = this.getBlockInterpolator(coords)
+    val blockNoise = WorldGenerator.makeBlockInterpolator(coords, this.blockNoise)
 
     for {
       i <- 0 until 16
