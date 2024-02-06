@@ -16,10 +16,13 @@ import org.joml.Vector2i
 import java.io.File
 import scala.collection.mutable
 
-class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
-  private val fs = FileSystem.create()
-  private val audioSystem = AudioSystem.create()
-
+class MainWindow(
+    isDebug: Boolean,
+    saveFolder: File,
+    fs: FileSystem,
+    audioSystem: AudioSystem,
+    windowSystem: WindowSystem
+) extends GameWindow {
   private val multiplayerEnabled = isDebug
 
   private var _windowSize = WindowSize(Vector2i(960, 540), Vector2i(0, 0)) // Initialized in initWindow
@@ -29,7 +32,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
   private val callbackQueue = mutable.Queue.empty[CallbackEvent]
   private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
 
-  private val windowSystem = createWindowSystem()
+  setupWindowSystem(windowSystem)
   private val window: Window = initWindow(_windowSize.logicalSize.x, _windowSize.logicalSize.y)
 
   private val fullscreenManager = new FullscreenManager(window, windowSystem)
@@ -235,8 +238,7 @@ class MainWindow(isDebug: Boolean, saveFolder: File) extends GameWindow {
     mouse.skipNextMouseMovedUpdate()
   }
 
-  private def createWindowSystem(): WindowSystem = {
-    val windowSystem = WindowSystem.create()
+  private def setupWindowSystem(windowSystem: WindowSystem): WindowSystem = {
     windowSystem.setErrorCallback(e => System.err.println(s"[LWJGL] ${e.reason} error: ${e.description}"))
     windowSystem.initialize()
     windowSystem

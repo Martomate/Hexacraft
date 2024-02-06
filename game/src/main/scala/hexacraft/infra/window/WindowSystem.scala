@@ -1,5 +1,7 @@
 package hexacraft.infra.window
 
+import hexacraft.util.{EventDispatcher, Tracker}
+
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
@@ -8,10 +10,22 @@ import scala.collection.mutable
 
 object WindowSystem {
   def create(): WindowSystem = new WindowSystem(RealGlfw)
-  def createNull(): WindowSystem = new WindowSystem(new NullGlfw)
+  def createNull(config: NullConfig = NullConfig()): WindowSystem = new WindowSystem(new NullGlfw(config))
+
+  case class NullConfig(
+      shouldClose: Boolean = false
+  )
+
+  enum Event {
+    case Initialized
+    case WindowCreated(width: Int, height: Int)
+  }
 }
 
 class WindowSystem(glfw: GlfwWrapper) {
+  private val dispatcher = new EventDispatcher[WindowSystem.Event]
+  def trackEvents(tracker: Tracker[WindowSystem.Event]): Unit = dispatcher.track(tracker)
+
   def shutdown(): Unit = {
     glfw.glfwTerminate()
     glfw.glfwSetErrorCallback(null).free()
@@ -21,6 +35,8 @@ class WindowSystem(glfw: GlfwWrapper) {
   def initialize(): Unit = {
     if !glfw.glfwInit()
     then throw new IllegalStateException("Unable to initialize GLFW")
+
+    dispatcher.notify(WindowSystem.Event.Initialized)
   }
 
   def setErrorCallback(callback: ErrorEvent => Unit): Unit = {
@@ -75,6 +91,8 @@ class WindowSystem(glfw: GlfwWrapper) {
     // Create the window
     val id = glfw.glfwCreateWindow(settings.width, settings.height, settings.title, 0, 0)
     if id != 0 then {
+      dispatcher.notify(WindowSystem.Event.WindowCreated(settings.width, settings.height))
+
       Some(new Window(Window.Id(id), glfw))
     } else {
       None
@@ -289,7 +307,9 @@ object RealGlfw extends GlfwWrapper {
   }
 }
 
-class NullGlfw extends GlfwWrapper {
+class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
+  private var errorCallback: GLFWErrorCallback = _
+
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
@@ -297,7 +317,7 @@ class NullGlfw extends GlfwWrapper {
   def glfwGetCursorPos(window: Long, xpos: Array[Double], ypos: Array[Double]): Unit = ()
   def glfwGetMonitors(): PointerBuffer = PointerBuffer.allocateDirect(0)
   def glfwGetPrimaryMonitor(): Long = 123
-  def glfwGetVideoMode(monitor: Long): VideoMode = null
+  def glfwGetVideoMode(monitor: Long): VideoMode = VideoMode(2345, 1234, 10, 8, 6, 40)
   def glfwSetWindowMonitor(
       window: Long,
       monitor: Long,
@@ -316,14 +336,18 @@ class NullGlfw extends GlfwWrapper {
   def glfwSetScrollCallback(window: Long, callback: GLFWScrollCallbackI): Unit = ()
   def glfwGetKey(window: Long, key: Int): Int = GLFW.GLFW_RELEASE
   def glfwSetInputMode(window: Long, mode: Int, value: Int): Unit = ()
-  def glfwWindowShouldClose(window: Long): Boolean = false
+  def glfwWindowShouldClose(window: Long): Boolean = config.shouldClose
   def glfwSwapBuffers(window: Long): Unit = ()
   def glfwSetWindowTitle(window: Long, title: String): Unit = ()
   def glfwPollEvents(): Unit = ()
   def glfwSwapInterval(interval: Int): Unit = ()
   def glfwDestroyWindow(window: Long): Unit = ()
   def glfwTerminate(): Unit = ()
-  def glfwSetErrorCallback(callback: GLFWErrorCallbackI): GLFWErrorCallback = null
+  def glfwSetErrorCallback(callback: GLFWErrorCallbackI): GLFWErrorCallback = {
+    val r = errorCallback
+    errorCallback = if callback == null then null else GLFWErrorCallback.create(callback)
+    r
+  }
   def glfwInit(): Boolean = true
   def glfwMakeContextCurrent(window: Long): Unit = ()
   def glfwShowWindow(window: Long): Unit = ()

@@ -1,7 +1,9 @@
 package hexacraft.main
 
+import hexacraft.infra.audio.AudioSystem
+import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.os.OSUtils
-
+import hexacraft.infra.window.WindowSystem
 import org.lwjgl.system.Configuration
 
 import java.io.File
@@ -17,7 +19,11 @@ object Main {
 
     val errorHandler = MainErrorLogger.create(!isDebug, saveFolder)
 
-    val window = new MainWindow(isDebug, saveFolder)
+    val fs = FileSystem.create()
+    val audioSystem = AudioSystem.create()
+    val windowSystem = WindowSystem.create()
+
+    val window = new MainWindow(isDebug, saveFolder, fs, audioSystem, windowSystem)
     try {
       window.run()
     } catch {

@@ -180,20 +180,20 @@ class RealAL extends ALWrapper {
 }
 
 class NullAL extends ALWrapper {
-  def alcOpenDevice(deviceSpecifier: ByteBuffer): Long = 0L
+  def alcOpenDevice(deviceSpecifier: ByteBuffer): Long = 1L
   def createCapabilities(device: Long): ALCCapabilities = null
-  def alcCreateContext(device: Long, attrList: IntBuffer): Long = 0L
+  def alcCreateContext(device: Long, attrList: IntBuffer): Long = 1L
   def alcMakeContextCurrent(context: Long): Boolean = false
   def createCapabilities(alcCaps: ALCCapabilities): ALCapabilities = null
 
   def alListener3f(paramName: Int, value1: Float, value2: Float, value3: Float): Unit = ()
   def alListenerfv(paramName: Int, values: Array[Float]): Unit = ()
 
-  def alGenSources(): Int = 0
+  def alGenSources(): Int = 1
   def alSourcei(source: Int, param: Int, value: Int): Unit = ()
   def alSource3f(source: Int, param: Int, v1: Float, v2: Float, v3: Float): Unit = ()
   def alSourcePlay(source: Int): Unit = ()
 
-  def alGenBuffers(): Int = 0
+  def alGenBuffers(): Int = 1
   def alBufferData(bufferName: Int, format: Int, data: ShortBuffer, frequency: Int): Unit = ()
 }
