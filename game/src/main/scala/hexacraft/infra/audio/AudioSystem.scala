@@ -1,7 +1,7 @@
 package hexacraft.infra.audio
 
 import hexacraft.infra.audio.AudioSystem.Event
-import hexacraft.infra.fs.FileUtils
+import hexacraft.infra.fs.Bundle
 import hexacraft.util.{EventDispatcher, Tracker}
 
 import org.joml.Vector3f
@@ -69,7 +69,7 @@ class AudioSystem(al: ALWrapper) {
   }
 
   def loadSoundBuffer(filename: String) = {
-    val bytes = FileUtils.readBytesFromUrl(FileUtils.getResourceFile(filename).get)
+    val bytes = Bundle.locate(filename).get.readBytes()
     val data = ByteBuffer.allocateDirect(bytes.length)
     data.put(bytes)
     data.flip()

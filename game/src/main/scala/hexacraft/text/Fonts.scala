@@ -1,6 +1,6 @@
 package hexacraft.text
 
-import hexacraft.infra.fs.FileUtils
+import hexacraft.infra.fs.Bundle
 import hexacraft.renderer.TextureSingle
 import hexacraft.text.font.{FntFile, Font, FontMetaData}
 
@@ -18,8 +18,7 @@ object Fonts {
 
     val atlas = TextureSingle.getTexture(path).id
 
-    val metaDataFile = FileUtils.getResourceFile(path + ".fnt").get
-    val metaDataLines = FileUtils.readLinesFromUrl(metaDataFile)
+    val metaDataLines = Bundle.locate(s"$path.fnt").get.readLines()
     val metaData = FontMetaData.fromFntFile(FntFile.fromLines(metaDataLines))
 
     val f = Font(atlas, metaData)

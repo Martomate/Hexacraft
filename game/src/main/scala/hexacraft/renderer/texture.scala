@@ -1,6 +1,6 @@
 package hexacraft.renderer
 
-import hexacraft.infra.fs.FileUtils
+import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.*
 import hexacraft.util.Resource
@@ -40,7 +40,7 @@ class TextureSingle(val name: String) extends Resource {
   load()
 
   def load(): Unit = {
-    val image = ImageIO.read(FileUtils.getResourceFile(name + ".png").get)
+    val image = Bundle.locate(s"$name.png").get.readImage()
     val width = image.getWidth
     val height = image.getHeight
     texWidth = width

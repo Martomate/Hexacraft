@@ -2,8 +2,7 @@ package hexacraft.infra.fs
 
 import hexacraft.renderer.PixelArray
 
-import java.net.URL
-import javax.imageio.ImageIO
+import java.awt.image.BufferedImage
 import scala.collection.mutable
 
 trait BlockTextureLoader {
@@ -18,27 +17,17 @@ object BlockTextureLoader {
       val nameToIdx = mutable.Map.empty[String, Int]
       val images = mutable.ArrayBuffer.empty[PixelArray]
 
-      val dir = FileUtils.getResourceFile("textures/blocks/").get
-      val files = FileUtils.listFilesInResource(dir).toArray[String](len => new Array(len))
-
-      for name <- squareTextureNames ++ triTextureNames do {
-        if !files.contains(name) then {
-          throw new IllegalArgumentException(s"unknown image: $name")
-        }
-      }
-
       for (fileName, isTriImage) <- squareTextureNames.map((_, false)) ++ triTextureNames.map((_, true)) do {
         val lastDot = fileName.lastIndexOf('.')
         val name = fileName.substring(0, lastDot)
         nameToIdx += name -> images.size
-        images ++= loadImages(new URL(dir, fileName), isTriImage)
+        images ++= loadImages(Bundle.locate(s"textures/blocks/$fileName").get.readImage(), isTriImage)
       }
 
       LoadedImages(images.toSeq, nameToIdx.toMap)
     }
 
-    private def loadImages(file: URL, isTriImage: Boolean): Seq[PixelArray] = {
-      val image = ImageIO.read(file)
+    private def loadImages(image: BufferedImage, isTriImage: Boolean): Seq[PixelArray] = {
       val w = image.getWidth
       val h = image.getHeight
       val numImages = w / h

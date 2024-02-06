@@ -1,6 +1,6 @@
 package hexacraft.renderer
 
-import hexacraft.infra.fs.FileUtils
+import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.util.{Resource, Result}
 import hexacraft.util.Result.{Err, Ok}
@@ -188,9 +188,9 @@ class ShaderBuilder {
     val source = new mutable.StringBuilder()
 
     try {
-      val reader = FileUtils.getBufferedReader(FileUtils.getResourceFile(prefix + path).get)
-      reader.lines.forEach(line => source.append(line).append('\n'))
-      reader.close()
+      for line <- Bundle.locate(prefix + path).get.readLines() do {
+        source.append(line).append('\n')
+      }
     } catch {
       case e: Exception =>
         throw new IOException("Could not load shader at " + (prefix + path), e)
