@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.util.Segment
-import hexacraft.world.render.{BufferHandler, RenderBuffer}
+
 import munit.FunSuite
 
 import java.nio.ByteBuffer
@@ -13,7 +13,7 @@ class BufferHandlerTest extends FunSuite {
   private val BufferSize: Int = BytesPerInstance * InstancesPerBuffer
 
   test("set should request a new buffer with correct size if needed") {
-    val allocator = new LocalRenderBuffer.Allocator
+    val allocator = new LocalRenderBuffer.Allocator(_ => new LocalRenderBuffer(BufferSize))
     val handler = new BufferHandler(4, BytesPerInstance, allocator)
 
     handler.set(Segment(0, 3), rampBuffer(0, 3))
@@ -22,7 +22,7 @@ class BufferHandlerTest extends FunSuite {
   }
 
   test("set should complain if the data has smaller length than the segment") {
-    val allocator = new LocalRenderBuffer.Allocator
+    val allocator = new LocalRenderBuffer.Allocator(_ => new LocalRenderBuffer(BufferSize))
     val handler = new BufferHandler[LocalRenderBuffer](4, BytesPerInstance, allocator)
 
     intercept[IllegalArgumentException](handler.set(Segment(1, 3), simpleBuffer(3, 2)))
@@ -76,30 +76,38 @@ class BufferHandlerTest extends FunSuite {
     buf
 
   def rampBuffer(start: Int, len: Int): ByteBuffer = filledBuffer(start, len)(_.toByte)
+}
 
-  private object LocalRenderBuffer {
-    class Allocator(
-        mkBuffer: Int => LocalRenderBuffer = _ => new LocalRenderBuffer(BufferSize)
-    ) extends RenderBuffer.Allocator[LocalRenderBuffer] {
-      val instancesRequested: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
+object LocalRenderBuffer {
+  class Allocator(mkBuffer: Int => LocalRenderBuffer) extends RenderBuffer.Allocator[LocalRenderBuffer] {
+    val instancesRequested: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
 
-      override def allocate(instances: Int): LocalRenderBuffer =
-        instancesRequested += instances
-        mkBuffer(instances)
+    override def allocate(instances: Int): LocalRenderBuffer = {
+      instancesRequested += instances
+      mkBuffer(instances)
+    }
 
-      override def copy(from: LocalRenderBuffer, to: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit =
-        from.localBuffer.position(fromIdx).limit(fromIdx + len)
-        to.localBuffer.position(toIdx)
-        to.localBuffer.put(from.localBuffer)
+    override def copy(from: LocalRenderBuffer, to: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {
+      val temp = ByteBuffer.allocate(len)
+
+      from.localBuffer.position(fromIdx).limit(fromIdx + len)
+      temp.put(from.localBuffer)
+
+      temp.flip()
+      to.localBuffer.position(toIdx).put(temp)
     }
   }
+}
 
-  private class LocalRenderBuffer(size: Int) extends RenderBuffer[LocalRenderBuffer] {
-    val localBuffer: ByteBuffer = ByteBuffer.allocate(size)
-    var unloadCount = 0
+class LocalRenderBuffer(size: Int) extends RenderBuffer[LocalRenderBuffer] {
+  val localBuffer: ByteBuffer = ByteBuffer.allocate(size)
+  var unloadCount = 0
 
-    override def set(start: Int, buf: ByteBuffer): Unit = localBuffer.position(start).put(buf)
-    override def render(length: Int): Unit = ???
-    override def unload(): Unit = unloadCount += 1
+  override def set(start: Int, buf: ByteBuffer): Unit = {
+    localBuffer.position(start).put(buf)
   }
+
+  override def render(length: Int): Unit = ???
+
+  override def unload(): Unit = unloadCount += 1
 }

@@ -42,18 +42,22 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
     val oldLen = memorySegments.totalLengthForChunk(coords)
     val newLen = data.remaining()
 
-    if oldLen == newLen then {
+    if oldLen == newLen then { // The new data fits perfectly in the allocated space
+      // overwrite the old data with the new data
       for s <- memorySegments.segments(coords) do {
         bufferHandler.set(s, data)
       }
-    } else if oldLen < newLen then {
+    } else if oldLen < newLen then { // The new data takes more space than the old data
+      // overwrite the old data with as much of the new data as possible
       for s <- memorySegments.segments(coords) do {
         bufferHandler.set(s, data)
       }
+      // append the rest of the data at the end of the buffer
       appendData(coords, data)
-    } else {
+    } else { // The new data takes less space than the old data
       val leftOver: SegmentSet = new SegmentSet
 
+      // overwrite the first segments that can be completely filled with the new data
       for s <- memorySegments.segments(coords) do {
         if data.remaining() >= s.length then {
           bufferHandler.set(s, data)
@@ -62,6 +66,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
         }
       }
 
+      // overwrite the rest of the new data into part of an existing segment
       val splitSeg = leftOver.firstSegment()
       if data.remaining() > 0 then {
         val first = Segment(splitSeg.start, data.remaining())
@@ -69,6 +74,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
         leftOver.remove(first)
       }
 
+      // remove the space used by the old data but not needed by the new data (by moving data from the end of buffer)
       removeData(coords, leftOver)
     }
   }
@@ -79,7 +85,7 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       val (lastChunk, lastSeg) = memorySegments.lastSegment.get
       if coords == lastChunk then {
         // remove it
-        memorySegments.pop(coords, lastRem) // TODO: this line crashed one time, not sure why
+        memorySegments.pop(coords, lastRem) // TODO: this line has crashed multiple times, not sure why
         segments.remove(lastRem)
       } else {
         // move data

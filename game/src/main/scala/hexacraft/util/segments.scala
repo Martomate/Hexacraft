@@ -43,8 +43,8 @@ class SegmentSet extends mutable.Iterable[Segment] {
     _add(seg)
   }
 
-  /** segment [a, b] has to either exist as [a, b] or be part of a bigger existing segment [c, d], c
-    * <= a, d >= b
+  /** segment `[a, b]` has to either exist as `[a, b]`
+    * or be part of a bigger existing segment `[c, d]` where `c <= a` and `d >= b`
     */
   def remove(seg: Segment): Boolean = {
     containedInSegments(seg) match {
