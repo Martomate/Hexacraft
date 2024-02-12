@@ -111,5 +111,38 @@ class SegmentSetTest extends FunSuite {
     assertEquals(set.iterator.toSeq, Seq(Segment(2, 4), Segment(12, 1), Segment(16, 2)))
   }
 
+  test("cut can split segments") {
+    val set = make
+    set.add(Segment(0, 1))
+    set.add(Segment(2, 4))
+    set.add(Segment(12, 1))
+
+    val (before, after) = set.cut(3)
+    assertEquals(before.toSeq, Seq(Segment(0, 1), Segment(2, 2)))
+    assertEquals(after.toSeq, Seq(Segment(4, 2), Segment(12, 1)))
+  }
+
+  test("cut works at the beginning") {
+    val set = make
+    set.add(Segment(0, 1))
+    set.add(Segment(2, 4))
+    set.add(Segment(12, 1))
+
+    val (before, after) = set.cut(0)
+    assertEquals(before.toSeq, Seq())
+    assertEquals(after.toSeq, Seq(Segment(0, 1), Segment(2, 4), Segment(12, 1)))
+  }
+
+  test("cut works at the end") {
+    val set = make
+    set.add(Segment(0, 1))
+    set.add(Segment(2, 4))
+    set.add(Segment(12, 1))
+
+    val (before, after) = set.cut(6)
+    assertEquals(before.toSeq, Seq(Segment(0, 1), Segment(2, 4), Segment(12, 1)))
+    assertEquals(after.toSeq, Seq())
+  }
+
   def make: SegmentSet = new SegmentSet
 }

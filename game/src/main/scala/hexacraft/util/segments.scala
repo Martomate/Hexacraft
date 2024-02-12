@@ -47,7 +47,7 @@ class SegmentSet extends mutable.Iterable[Segment] {
     * or be part of a bigger existing segment `[c, d]` where `c <= a` and `d >= b`
     */
   def remove(seg: Segment): Boolean = {
-    containedInSegments(seg) match {
+    segmentsContain.get(seg) match {
       case Some(other) =>
         val len1 = seg.start - other.start
         val len2 = other.length - len1 - seg.length
@@ -66,8 +66,25 @@ class SegmentSet extends mutable.Iterable[Segment] {
     }
   }
 
-  private def containedInSegments(seg: Segment): Option[Segment] = {
-    segmentsContain.get(seg)
+  def cut(n: Int): (SegmentSet, SegmentSet) = {
+    val before = new SegmentSet
+    val after = new SegmentSet
+
+    var start = 0
+    for s <- this do {
+      if start + s.length <= n then {
+        before.add(s)
+      } else if start >= n then {
+        after.add(s)
+      } else {
+        val l = n - start
+        before.add(Segment(s.start, l))
+        after.add(Segment(s.start + l, s.length - l))
+      }
+      start += s.length
+    }
+
+    (before, after)
   }
 
   def totalLength: Int = _totalLength
@@ -77,6 +94,14 @@ class SegmentSet extends mutable.Iterable[Segment] {
   def firstSegment(): Segment = segments.firstKey
   def lastSegment(): Segment = segments.last
   def segmentCount: Int = segments.size
+
+  override def clone(): SegmentSet = {
+    val res = new SegmentSet
+    for s <- this do {
+      res._add(s)
+    }
+    res
+  }
 }
 
 // TODO: make thread-safe, or rewrite it
@@ -197,8 +222,11 @@ class DenseKeyedSegmentStack[K] {
     contentMap.get(key).exists(_.remove(segment))
   }
 
-  def segments(key: K): Iterable[Segment] = {
-    contentMap.getOrElse(key, Iterable.empty)
+  def segments(key: K): SegmentSet = {
+    contentMap.get(key) match {
+      case Some(segments) => segments.clone()
+      case None           => new SegmentSet
+    }
   }
 
   def lastSegment: Option[(K, Segment)] = {

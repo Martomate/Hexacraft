@@ -23,7 +23,11 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   }
 
   def clearChunkContent(coords: ChunkRelWorld): Unit = {
-    removeChunk(coords)
+    removeData(coords, memorySegments.segments(coords))
+  }
+
+  def unload(): Unit = {
+    bufferHandler.unload()
   }
 
   private def appendData(coords: ChunkRelWorld, data: ByteBuffer): Unit = {
@@ -55,27 +59,15 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       // append the rest of the data at the end of the buffer
       appendData(coords, data)
     } else { // The new data takes less space than the old data
-      val leftOver: SegmentSet = new SegmentSet
+      val (before, after) = memorySegments.segments(coords).cut(newLen)
 
-      // overwrite the first segments that can be completely filled with the new data
-      for s <- memorySegments.segments(coords) do {
-        if data.remaining() >= s.length then {
-          bufferHandler.set(s, data)
-        } else {
-          leftOver.add(s)
-        }
-      }
-
-      // overwrite the rest of the new data into part of an existing segment
-      val splitSeg = leftOver.firstSegment()
-      if data.remaining() > 0 then {
-        val first = Segment(splitSeg.start, data.remaining())
-        bufferHandler.set(first, data)
-        leftOver.remove(first)
+      // overwrite the old data with the new data
+      for s <- before do {
+        bufferHandler.set(s, data)
       }
 
       // remove the space used by the old data but not needed by the new data (by moving data from the end of buffer)
-      removeData(coords, leftOver)
+      removeData(coords, after)
     }
   }
 
@@ -102,17 +94,5 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
         segments.remove(holeSegment)
       }
     }
-  }
-
-  private def removeChunk(coords: ChunkRelWorld): Unit = {
-    val segments = new SegmentSet
-    for s <- memorySegments.segments(coords) do {
-      segments.add(s)
-    }
-    removeData(coords, segments)
-  }
-
-  def unload(): Unit = {
-    bufferHandler.unload()
   }
 }
