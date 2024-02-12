@@ -30,11 +30,11 @@ class WorldRenderer(
 
   private val skyVao: VAO = SkyVao.create
   private val skyRenderer =
-    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.of(OpenGL.State.DepthTest -> false))
+    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
 
   private val worldCombinerVao: VAO = WorldCombinerVao.create
   private val worldCombinerRenderer =
-    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.of(OpenGL.State.DepthTest -> false))
+    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
 
   private val selectedBlockVao = SelectedBlockVao.create
   private val selectedBlockRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)

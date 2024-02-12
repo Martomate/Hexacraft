@@ -19,10 +19,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
     for s <- 0 until 8 yield {
       BlockRenderer(
         GuiBlockVao.forSide(s),
-        GpuState.of(
-          OpenGL.State.DepthTest -> false,
-          OpenGL.State.Blend -> true
-        )
+        GpuState.build(_.blend(true).depthTest(false))
       )
     }
 

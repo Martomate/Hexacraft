@@ -1,6 +1,5 @@
 package hexacraft.world.render
 
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray}
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.chunk.LocalBlockState
@@ -41,18 +40,12 @@ class ChunkRenderHandler {
   private val regularBlockHexagonHandler = new HexagonRenderHandler(
     blockShader,
     blockSideShader,
-    GpuState.of(
-      OpenGL.State.CullFace -> true,
-      OpenGL.State.Blend -> false
-    )
+    GpuState.build(_.blend(false).cullFace(true))
   )
   private val transmissiveBlockHexagonHandler = new HexagonRenderHandler(
     blockShader,
     blockSideShader,
-    GpuState.of(
-      OpenGL.State.Blend -> true,
-      OpenGL.State.CullFace -> false
-    )
+    GpuState.build(_.blend(true).cullFace(false))
   )
 
   def regularChunkBufferFragmentation: IndexedSeq[Float] = regularBlockHexagonHandler.fragmentation

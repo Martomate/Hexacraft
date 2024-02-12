@@ -48,7 +48,7 @@ class GameScene(
   private val crosshairShader = new CrosshairShader()
   private val crosshairVAO: VAO = makeCrosshairVAO
   private val crosshairRenderer: Renderer =
-    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.of(OpenGL.State.DepthTest -> false))
+    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.build(_.depthTest(false)))
 
   private val worldInfo = net.worldProvider.getWorldInfo
   private val world = World(net.worldProvider, worldInfo)

@@ -36,7 +36,7 @@ object Component {
     .finish(4)
   private val rectRenderer = new Renderer(
     OpenGL.PrimitiveMode.TriangleStrip,
-    GpuState.of(OpenGL.State.Blend -> true, OpenGL.State.DepthTest -> false)
+    GpuState.build(_.blend(true).depthTest(false))
   )
 
   val font: Font = Fonts.get("Verdana").get
