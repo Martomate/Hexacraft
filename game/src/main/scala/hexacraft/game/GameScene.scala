@@ -56,26 +56,15 @@ class GameScene(
   given CylinderSize = world.size
 
   val player: Player = makePlayer(worldInfo.player)
+  private val otherPlayer: Entity = makeOtherPlayer()
 
   private val overlays = mutable.ArrayBuffer.empty[Component]
-
-  private val otherPlayer: Entity =
-    Entity(
-      null,
-      Seq(
-        TransformComponent(CylCoords(player.position)),
-        VelocityComponent(),
-        BoundsComponent(EntityFactory.playerBounds),
-        ModelComponent(PlayerEntityModel.create("player"))
-      )
-    )
 
   private val worldRenderer: WorldRenderer =
     new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
   world.trackEvents(worldRenderer.onWorldEvent _)
 
   // worldRenderer.addPlayer(otherPlayer)
-  otherPlayer.transform.position = otherPlayer.transform.position.offset(-2, -2, -1)
 
   val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
 
@@ -100,10 +89,12 @@ class GameScene(
   private var pauseMenu: PauseMenu = _
   private var inventoryScene: InventoryBox = _
 
-  private val soundSources = mutable.ArrayBuffer.empty[Int]
-
   private val placeBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
   private val destroyBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
+  private val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
+  private val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
+
+  private val walkSoundTimer = TickableTimer(20, initEnabled = false)
 
   setUniforms(initialWindowSize.logicalAspectRatio)
   setUseMouse(true)
@@ -120,6 +111,18 @@ class GameScene(
     if net.isHosting then {
       net.worldProvider.saveWorldData(worldTag)
     }
+  }
+
+  private def makeOtherPlayer() = {
+    Entity(
+      null,
+      Seq(
+        TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
+        VelocityComponent(),
+        BoundsComponent(EntityFactory.playerBounds),
+        ModelComponent(PlayerEntityModel.create("player"))
+      )
+    )
   }
 
   private def setUniforms(windowAspectRatio: Float): Unit = {
@@ -372,7 +375,17 @@ class GameScene(
 
         if !isPaused then {
           playerPhysicsHandler.tick(player, maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
+
+          walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
         }
+      }
+
+      if walkSoundTimer.tick() then {
+        val sound = if math.random() < 0.5 then walkSoundBuffer1 else walkSoundBuffer2
+
+        val sourceId = audioSystem.createSoundSource(sound)
+        audioSystem.setSoundSourcePosition(sourceId, CylCoords(player.position).toVector3f)
+        audioSystem.startPlayingSound(sourceId)
       }
 
       camera.setPositionAndRotation(player.position, player.rotation)
@@ -457,7 +470,6 @@ class GameScene(
           val sourceId = audioSystem.createSoundSource(destroyBlockSoundBuffer)
           audioSystem.setSoundSourcePosition(sourceId, BlockCoords(coords).toCylCoords.toVector3f)
           audioSystem.startPlayingSound(sourceId)
-          soundSources += sourceId
         }
       case _ =>
     }
@@ -497,7 +509,6 @@ class GameScene(
       val sourceId = audioSystem.createSoundSource(placeBlockSoundBuffer)
       audioSystem.setSoundSourcePosition(sourceId, BlockCoords(coords).toCylCoords.toVector3f)
       audioSystem.startPlayingSound(sourceId)
-      soundSources += sourceId
     }
   }
 

@@ -23,6 +23,9 @@ object AudioSystem {
 }
 
 class AudioSystem(al: ALWrapper) {
+  opaque type SourceId = Int
+  opaque type BufferId = Int
+
   private val dispatcher = new EventDispatcher[Event]
   def trackEvents(tracker: Tracker[Event]): Unit = dispatcher.track(tracker)
 
@@ -52,23 +55,23 @@ class AudioSystem(al: ALWrapper) {
     al.alListenerfv(AL10.AL_ORIENTATION, Array(at.x, at.y, at.z, up.x, up.y, up.z))
   }
 
-  def createSoundSource(bufferId: Int): Int = {
+  def createSoundSource(bufferId: BufferId): SourceId = {
     val sourceId = al.alGenSources()
     al.alSourcei(sourceId, AL10.AL_BUFFER, bufferId)
     sourceId
   }
 
-  def setSoundSourcePosition(sourceId: Int, pos: Vector3f): Unit = {
+  def setSoundSourcePosition(sourceId: SourceId, pos: Vector3f): Unit = {
     al.alSource3f(sourceId, AL10.AL_POSITION, pos.x, pos.y, pos.z)
   }
 
-  def startPlayingSound(sourceId: Int): Unit = {
+  def startPlayingSound(sourceId: SourceId): Unit = {
     al.alSourcePlay(sourceId)
 
     dispatcher.notify(AudioSystem.Event.StartedPlaying)
   }
 
-  def loadSoundBuffer(filename: String) = {
+  def loadSoundBuffer(filename: String): BufferId = {
     val bytes = Bundle.locate(filename).get.readBytes()
     val data = ByteBuffer.allocateDirect(bytes.length)
     data.put(bytes)
