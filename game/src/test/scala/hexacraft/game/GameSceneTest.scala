@@ -27,7 +27,7 @@ class GameSceneTest extends FunSuite {
     val keyboard: GameKeyboard = _ => false
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene1 = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val gameScene1 = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
     gameScene1.unload()
 
     // Start listening to OpenGL events
@@ -35,7 +35,7 @@ class GameSceneTest extends FunSuite {
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -60,7 +60,7 @@ class GameSceneTest extends FunSuite {
     val audioSystem = AudioSystem.createNull()
 
     val gameSceneTracker = Tracker.withStorage[GameScene.Event]
-    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(gameSceneTracker)
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(gameSceneTracker)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 
@@ -86,7 +86,7 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
 
     gameScene.player.flying = false
 
@@ -127,7 +127,7 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene = new GameScene(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
 
     gameScene.player.flying = false
 

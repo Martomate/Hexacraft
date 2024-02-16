@@ -23,97 +23,200 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object GameScene {
-  enum Event:
+  enum Event {
     case GameQuit
     case CursorCaptured
     case CursorReleased
-}
-
-class GameScene(
-    net: NetworkHandler,
-    keyboard: GameKeyboard,
-    blockLoader: BlockTextureLoader,
-    initialWindowSize: WindowSize,
-    audioSystem: AudioSystem
-)(eventHandler: Tracker[GameScene.Event])
-    extends Scene {
-
-  private val blockSpecs = makeBlockSpecs()
-  private val blockTextureMapping = loadBlockTextures(blockSpecs)
-  private val blockTextureIndices: Map[String, IndexedSeq[Int]] =
-    blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
-
-  TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
-
-  private val crosshairShader = new CrosshairShader()
-  private val crosshairVAO: VAO = makeCrosshairVAO
-  private val crosshairRenderer: Renderer =
-    new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.build(_.depthTest(false)))
-
-  private val worldInfo = net.worldProvider.getWorldInfo
-  private val world = World(net.worldProvider, worldInfo)
-
-  given CylinderSize = world.size
-
-  val player: Player = makePlayer(worldInfo.player)
-  private val otherPlayer: Entity = makeOtherPlayer()
-
-  private val overlays = mutable.ArrayBuffer.empty[Component]
-
-  private val worldRenderer: WorldRenderer =
-    new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
-  world.trackEvents(worldRenderer.onWorldEvent _)
-
-  // worldRenderer.addPlayer(otherPlayer)
-
-  val camera: Camera = new Camera(makeCameraProjection(initialWindowSize))
-
-  private val mousePicker: RayTracer = new RayTracer(camera, 7)
-  private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard)
-  private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
-
-  private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
-
-  private val toolbar: Toolbar = makeToolbar(player, initialWindowSize)
-  private val blockInHandRenderer: GuiBlockRenderer = makeBlockInHandRenderer(world, camera)
-  updateBlockInHandRendererContent()
-
-  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
-  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
-
-  private var moveWithMouse: Boolean = false
-  private var isPaused: Boolean = false
-  private var isInPopup: Boolean = false
-
-  private var debugOverlay: DebugOverlay = _
-  private var pauseMenu: PauseMenu = _
-  private var inventoryScene: InventoryBox = _
-
-  private val placeBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
-  private val destroyBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
-  private val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
-  private val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
-
-  private val walkSoundTimer = TickableTimer(20, initEnabled = false)
-
-  setUniforms(initialWindowSize.logicalAspectRatio)
-  setUseMouse(true)
-
-  saveWorldInfo()
-
-  if net.isHosting then {
-    Thread(() => net.runServer(this)).start()
   }
-  net.runClient()
 
-  private def saveWorldInfo(): Unit = {
-    val worldTag = worldInfo.copy(player = player.toNBT).toNBT
+  def create(
+      net: NetworkHandler,
+      keyboard: GameKeyboard,
+      blockLoader: BlockTextureLoader,
+      initialWindowSize: WindowSize,
+      audioSystem: AudioSystem
+  )(eventHandler: Tracker[GameScene.Event]): GameScene = {
+
+    val blockSpecs = makeBlockSpecs()
+    val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
+    val blockTextureIndices: Map[String, IndexedSeq[Int]] =
+      blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
+
+    TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
+
+    val crosshairShader = new CrosshairShader()
+    val crosshairVAO: VAO = makeCrosshairVAO
+    val crosshairRenderer: Renderer =
+      new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.build(_.depthTest(false)))
+
+    val worldInfo = net.worldProvider.getWorldInfo
+    val world = World(net.worldProvider, worldInfo)
+
+    given CylinderSize = world.size
+
+    val player: Player = makePlayer(worldInfo.player, world)
+    val otherPlayer: Entity = makeOtherPlayer(player)
+
+    val worldRenderer: WorldRenderer =
+      new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
+    world.trackEvents(worldRenderer.onWorldEvent _)
+
+    // worldRenderer.addPlayer(otherPlayer)
+
+    val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
+
+    val mousePicker: RayTracer = new RayTracer(camera, 7)
+    val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard)
+    val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
+
+    val toolbar: Toolbar = makeToolbar(player, initialWindowSize, blockTextureIndices)
+    val blockInHandRenderer: GuiBlockRenderer =
+      makeBlockInHandRenderer(world, camera, blockTextureIndices, initialWindowSize)
+
+    val placeBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
+    val destroyBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
+    val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
+    val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
+
+    val s = new GameScene(
+      net,
+      audioSystem,
+      eventHandler,
+      blockTextureIndices,
+      crosshairShader,
+      crosshairVAO,
+      crosshairRenderer,
+      worldInfo,
+      world,
+      player,
+      otherPlayer,
+      worldRenderer,
+      camera,
+      mousePicker,
+      playerInputHandler,
+      playerPhysicsHandler,
+      toolbar,
+      blockInHandRenderer,
+      placeBlockSoundBuffer,
+      destroyBlockSoundBuffer,
+      walkSoundBuffer1,
+      walkSoundBuffer2
+    )
+
+    s.updateBlockInHandRendererContent()
+    s.setUniforms(initialWindowSize.logicalAspectRatio)
+    s.setUseMouse(true)
+    s.saveWorldInfo()
+
     if net.isHosting then {
-      net.worldProvider.saveWorldData(worldTag)
+      Thread(() => net.runServer(s)).start()
+    }
+    net.runClient()
+
+    s
+  }
+
+  private def makeBlockInHandRenderer(
+      world: World,
+      camera: Camera,
+      blockTextureIndices: Map[String, IndexedSeq[Int]],
+      initialWindowSize: WindowSize
+  ): GuiBlockRenderer = {
+    val renderer = GuiBlockRenderer(1, 1)(blockTextureIndices)
+    renderer.setViewMatrix(makeBlockInHandViewMatrix)
+    renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
+    renderer
+  }
+
+  private def makeCrosshairVAO: VAO = VAO
+    .builder()
+    .addVertexVbo(4)(
+      _.floats(0, 2),
+      _.fillFloats(0, Seq(0, 0.03f, 0, -0.03f, -0.03f, 0, 0.03f, 0))
+    )
+    .finish(4)
+
+  private def makeToolbar(
+      player: Player,
+      windowSize: WindowSize,
+      blockTextureIndices: Map[String, IndexedSeq[Int]]
+  ): Toolbar = {
+    val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
+
+    val toolbar = new Toolbar(location, player.inventory)(blockTextureIndices)
+    toolbar.setSelectedIndex(player.selectedItemSlot)
+    toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
+    toolbar
+  }
+
+  private def makeCameraProjection(windowSize: WindowSize, worldSize: Int) = {
+    val far = worldSize match {
+      case 0 => 100000f
+      case 1 => 10000f
+      case _ => 1000f
+    }
+
+    new CameraProjection(70f, windowSize.logicalAspectRatio, 0.02f, far)
+  }
+
+  private def makeBlockInHandViewMatrix = {
+    new Matrix4f()
+      .translate(0, 0, -2f)
+      .rotateZ(-3.1415f / 12)
+      .rotateX(3.1415f / 6)
+      .translate(0, -0.25f, 0)
+  }
+
+  private def makePlayer(playerNbt: Nbt.MapTag, world: World): Player = {
+    given CylinderSize = world.size
+
+    if playerNbt != null then {
+      Player.fromNBT(playerNbt)
+    } else {
+      val startX = (math.random() * 100 - 50).toInt
+      val startZ = (math.random() * 100 - 50).toInt
+      val startY = world.getHeight(startX, startZ) + 4
+      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
     }
   }
 
-  private def makeOtherPlayer() = {
+  private def makeBlockSpecs() = Map(
+    "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
+    "grass" -> BlockSpec(Textures.basic("grassSide").withTop("grassTop").withBottom("dirt")),
+    "dirt" -> BlockSpec(Textures.basic("dirt")),
+    "sand" -> BlockSpec(Textures.basic("sand")),
+    "water" -> BlockSpec(Textures.basic("water")),
+    "log" -> BlockSpec(
+      Textures
+        .basic("logSide")
+        .withTop("log", Offsets(0, 1, 2, 0, 1, 2))
+        .withBottom("log", Offsets(0, 1, 2, 0, 1, 2))
+    ),
+    "leaves" -> BlockSpec(Textures.basic("leaves")),
+    "planks" -> BlockSpec(
+      Textures
+        .basic("planks_side")
+        .withTop("planks_top", Offsets(0, 1, 0, 1, 0, 1))
+        .withBottom("planks_top", Offsets(0, 1, 0, 1, 0, 1))
+    ),
+    "log_birch" -> BlockSpec(
+      Textures
+        .basic("logSide_birch")
+        .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
+        .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
+    ),
+    "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
+    "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
+  )
+
+  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec], blockLoader: BlockTextureLoader) = {
+    val textures = blockSpecs.values.map(_.textures)
+    val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
+    val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
+    blockLoader.load(squareTextureNames, triTextureNames)
+  }
+
+  private def makeOtherPlayer(player: Player)(using CylinderSize) = {
     Entity(
       null,
       Seq(
@@ -123,6 +226,55 @@ class GameScene(
         ModelComponent(PlayerEntityModel.create("player"))
       )
     )
+  }
+}
+
+class GameScene private (
+    net: NetworkHandler,
+    audioSystem: AudioSystem,
+    eventHandler: Tracker[GameScene.Event],
+    blockTextureIndices: Map[String, IndexedSeq[Int]],
+    crosshairShader: CrosshairShader,
+    crosshairVAO: VAO,
+    crosshairRenderer: Renderer,
+    worldInfo: WorldInfo,
+    world: World,
+    val player: Player,
+    otherPlayer: Entity,
+    worldRenderer: WorldRenderer,
+    val camera: Camera,
+    mousePicker: RayTracer,
+    playerInputHandler: PlayerInputHandler,
+    playerPhysicsHandler: PlayerPhysicsHandler,
+    toolbar: Toolbar,
+    blockInHandRenderer: GuiBlockRenderer,
+    placeBlockSoundBuffer: AudioSystem.BufferId,
+    destroyBlockSoundBuffer: AudioSystem.BufferId,
+    walkSoundBuffer1: AudioSystem.BufferId,
+    walkSoundBuffer2: AudioSystem.BufferId
+)(using CylinderSize)
+    extends Scene {
+
+  private var moveWithMouse: Boolean = false
+  private var isPaused: Boolean = false
+  private var isInPopup: Boolean = false
+
+  private var debugOverlay: DebugOverlay = _
+  private var pauseMenu: PauseMenu = _
+  private var inventoryScene: InventoryBox = _
+
+  private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
+  private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
+
+  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
+  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
+  private val walkSoundTimer: TickableTimer = TickableTimer(20, initEnabled = false)
+
+  private def saveWorldInfo(): Unit = {
+    val worldTag = worldInfo.copy(player = player.toNBT).toNBT
+    if net.isHosting then {
+      net.worldProvider.saveWorldData(worldTag)
+    }
   }
 
   private def setUniforms(windowAspectRatio: Float): Unit = {
@@ -547,93 +699,4 @@ class GameScene(
   }
 
   private def viewDistance: Double = world.renderDistance
-
-  private def makeBlockInHandRenderer(world: World, camera: Camera): GuiBlockRenderer = {
-    val renderer = GuiBlockRenderer(1, 1)(blockTextureIndices)
-    renderer.setViewMatrix(makeBlockInHandViewMatrix)
-    renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
-    renderer
-  }
-
-  private def makeCrosshairVAO: VAO = VAO
-    .builder()
-    .addVertexVbo(4)(
-      _.floats(0, 2),
-      _.fillFloats(0, Seq(0, 0.03f, 0, -0.03f, -0.03f, 0, 0.03f, 0))
-    )
-    .finish(4)
-
-  private def makeToolbar(player: Player, windowSize: WindowSize): Toolbar = {
-    val location = LocationInfo(-4.5f * 0.2f, -0.83f - 0.095f, 2 * 0.9f, 2 * 0.095f)
-
-    val toolbar = new Toolbar(location, player.inventory)(blockTextureIndices)
-    toolbar.setSelectedIndex(player.selectedItemSlot)
-    toolbar.setWindowAspectRatio(windowSize.logicalAspectRatio)
-    toolbar
-  }
-
-  private def makeCameraProjection(windowSize: WindowSize) = {
-    val far = world.size.worldSize match {
-      case 0 => 100000f
-      case 1 => 10000f
-      case _ => 1000f
-    }
-
-    new CameraProjection(70f, windowSize.logicalAspectRatio, 0.02f, far)
-  }
-
-  private def makeBlockInHandViewMatrix = {
-    new Matrix4f()
-      .translate(0, 0, -2f)
-      .rotateZ(-3.1415f / 12)
-      .rotateX(3.1415f / 6)
-      .translate(0, -0.25f, 0)
-  }
-
-  private def makePlayer(playerNbt: Nbt.MapTag): Player = {
-    if playerNbt != null then {
-      Player.fromNBT(playerNbt)
-    } else {
-      val startX = (math.random() * 100 - 50).toInt
-      val startZ = (math.random() * 100 - 50).toInt
-      val startY = world.getHeight(startX, startZ) + 4
-      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
-    }
-  }
-
-  private def makeBlockSpecs() = Map(
-    "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
-    "grass" -> BlockSpec(Textures.basic("grassSide").withTop("grassTop").withBottom("dirt")),
-    "dirt" -> BlockSpec(Textures.basic("dirt")),
-    "sand" -> BlockSpec(Textures.basic("sand")),
-    "water" -> BlockSpec(Textures.basic("water")),
-    "log" -> BlockSpec(
-      Textures
-        .basic("logSide")
-        .withTop("log", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves" -> BlockSpec(Textures.basic("leaves")),
-    "planks" -> BlockSpec(
-      Textures
-        .basic("planks_side")
-        .withTop("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-        .withBottom("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-    ),
-    "log_birch" -> BlockSpec(
-      Textures
-        .basic("logSide_birch")
-        .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
-    "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
-  )
-
-  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec]) = {
-    val textures = blockSpecs.values.map(_.textures)
-    val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
-    val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
-    blockLoader.load(squareTextureNames, triTextureNames)
-  }
 }

@@ -1,6 +1,5 @@
 package hexacraft.infra.audio
 
-import hexacraft.infra.audio.AudioSystem.Event
 import hexacraft.infra.fs.Bundle
 import hexacraft.util.{EventDispatcher, Tracker}
 
@@ -20,11 +19,29 @@ object AudioSystem {
     case Initialized
     case StartedPlaying
   }
+
+  opaque type SourceId <: AnyVal = Int
+  opaque type BufferId <: AnyVal = Int
+
+  object SourceId {
+    private[AudioSystem] def fromInt(id: Int): SourceId = id
+
+    extension (id: SourceId) {
+      private[AudioSystem] def toInt: Int = id
+    }
+  }
+
+  object BufferId {
+    private[AudioSystem] def fromInt(id: Int): BufferId = id
+
+    extension (id: BufferId) {
+      private[AudioSystem] def toInt: Int = id
+    }
+  }
 }
 
 class AudioSystem(al: ALWrapper) {
-  opaque type SourceId = Int
-  opaque type BufferId = Int
+  import AudioSystem.*
 
   private val dispatcher = new EventDispatcher[Event]
   def trackEvents(tracker: Tracker[Event]): Unit = dispatcher.track(tracker)
@@ -57,16 +74,16 @@ class AudioSystem(al: ALWrapper) {
 
   def createSoundSource(bufferId: BufferId): SourceId = {
     val sourceId = al.alGenSources()
-    al.alSourcei(sourceId, AL10.AL_BUFFER, bufferId)
-    sourceId
+    al.alSourcei(sourceId, AL10.AL_BUFFER, bufferId.toInt)
+    SourceId.fromInt(sourceId)
   }
 
   def setSoundSourcePosition(sourceId: SourceId, pos: Vector3f): Unit = {
-    al.alSource3f(sourceId, AL10.AL_POSITION, pos.x, pos.y, pos.z)
+    al.alSource3f(sourceId.toInt, AL10.AL_POSITION, pos.x, pos.y, pos.z)
   }
 
   def startPlayingSound(sourceId: SourceId): Unit = {
-    al.alSourcePlay(sourceId)
+    al.alSourcePlay(sourceId.toInt)
 
     dispatcher.notify(AudioSystem.Event.StartedPlaying)
   }
@@ -82,7 +99,7 @@ class AudioSystem(al: ALWrapper) {
     val bufferId = al.alGenBuffers()
     al.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, buf, 44100)
 
-    bufferId
+    BufferId.fromInt(bufferId)
   }
 
   private def readVorbis(data: ByteBuffer): (STBVorbisInfo, ShortBuffer) = {

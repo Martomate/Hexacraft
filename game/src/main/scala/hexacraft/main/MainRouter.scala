@@ -105,7 +105,7 @@ class MainRouter(
         }
 
       val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
-      GameScene(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem):
+      GameScene.create(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem):
         case GameScene.Event.GameQuit =>
           route(SceneRoute.Main)
           System.gc()
