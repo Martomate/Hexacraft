@@ -1,13 +1,13 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig, VAO}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO, VertexData}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
-import org.joml.{Matrix4f, Vector3d, Vector3f}
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f, Vector3i}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
@@ -89,12 +89,12 @@ object BlockVao {
     VAO
       .builder()
       .addVertexVbo(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
-        _.floats(0, 3)
+        _.ints(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
           .ints(4, 1),
-        _.fill(0, BlockRenderer.setupBlockVBO(side))
+        _.fill(0, AdvancedBlockRenderer.setupBlockVBO(side))
       )
       .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
         _.ints(5, 3)
@@ -105,7 +105,111 @@ object BlockVao {
   }
 }
 
-object BlockVboData:
+object AdvancedBlockRenderer {
+  case class BlockVertexData(
+      position: Vector3i,
+      texCoords: Vector2f,
+      normal: Vector3f,
+      vertexIndex: Int,
+      faceIndex: Int
+  ) extends VertexData {
+
+    override def bytesPerVertex: Int = (3 + 2 + 3 + 1 + 1) * 4
+
+    override def fill(buf: ByteBuffer): Unit = {
+      buf.putInt(position.x)
+      buf.putInt(position.y)
+      buf.putInt(position.z)
+
+      buf.putFloat(texCoords.x)
+      buf.putFloat(texCoords.y)
+
+      buf.putFloat(normal.x)
+      buf.putFloat(normal.y)
+      buf.putFloat(normal.z)
+
+      buf.putInt(vertexIndex)
+      buf.putInt(faceIndex)
+    }
+  }
+
+  private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
+  private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
+
+  def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2
+
+  def setupBlockVBO(s: Int): Seq[BlockVertexData] = {
+    if s < 2 then {
+      setupBlockVboForTopOrBottom(s)
+    } else {
+      setupBlockVboForSide(s)
+    }
+  }
+
+  private def setupBlockVboForTopOrBottom(s: Int): Seq[BlockVertexData] = {
+    val ints = topBottomVertexIndices
+
+    for i <- 0 until verticesPerInstance(s) yield {
+      val cornerIdx = i
+      val a = ints(cornerIdx)
+      val faceIndex = i / 3
+
+      val (x, z) =
+        if a == 6 then {
+          (0, 0)
+        } else {
+          val (x, z) = a match {
+            case 0 => (2, 0)
+            case 1 => (1, 1)
+            case 2 => (-1, 1)
+            case 3 => (-2, 0)
+            case 4 => (-1, -1)
+            case 5 => (1, -1)
+          }
+          if s == 0 then (-x, z) else (x, z)
+        }
+
+      val pos = new Vector3i(x, 1 - s, z)
+      val tex = cornerIdx % 3 match {
+        case 0 => new Vector2f(0.5f, 1)
+        case 1 => new Vector2f(0, 0)
+        case 2 => new Vector2f(1, 0)
+      }
+      val norm = new Vector3f(0, 1f - 2f * s, 0)
+
+      BlockVertexData(pos, tex, norm, a, faceIndex)
+    }
+  }
+
+  private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] = {
+    val ints = sideVertexIndices
+
+    val nv = (s - 2 + 0.5) * Math.PI / 3
+    val nx = Math.cos(nv).toFloat
+    val nz = Math.sin(nv).toFloat
+
+    for i <- 0 until verticesPerInstance(s) yield {
+      val a = ints(i)
+      val v = (s - 2 + a % 2) % 6
+      val (x, z) = v match {
+        case 0 => (2, 0)
+        case 1 => (1, 1)
+        case 2 => (-1, 1)
+        case 3 => (-2, 0)
+        case 4 => (-1, -1)
+        case 5 => (1, -1)
+      }
+
+      val pos = new Vector3i(x, 1 - a / 2, z)
+      val tex = new Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
+      val norm = new Vector3f(nx, 0, nz)
+
+      BlockVertexData(pos, tex, norm, a, 0)
+    }
+  }
+}
+
+object BlockVboData {
   private def blockSideStride(side: Int): Int = {
     if side < 2 then {
       (5 + 7 * 2) * 4
@@ -238,9 +342,9 @@ object BlockVboData:
 
       if shouldRender.get(localCoords.value) then {
         val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
-        buf.putInt(worldCoords.x)
+        buf.putInt(worldCoords.x * 3)
         buf.putInt(worldCoords.y)
-        buf.putInt(worldCoords.z)
+        buf.putInt(worldCoords.z * 2 + worldCoords.x)
 
         val blockType = block.blockType
         buf.putInt(blockTextureIndices(blockType.name)(side))
@@ -361,3 +465,4 @@ object BlockVboData:
       (s - 2 + 3) % 3 + 2
     }
   }
+}

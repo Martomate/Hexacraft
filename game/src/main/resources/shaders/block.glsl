@@ -9,7 +9,7 @@ const int NUM_VERTICES = 7;
 #endif
 
 // Per vertex
-in vec3 position;
+in ivec3 position;
 in vec2 texCoords;
 in vec3 normal;
 in int vertexIndex;
@@ -51,7 +51,7 @@ void main() {
 	float blockHeight = vertexData.x;
 	float brightness = vertexData.y;
 
-	vec3 pos = vec3(blockPos.x * 1.5 + position.x, blockPos.y + position.y * blockHeight, (blockPos.x + 2 * blockPos.z) + position.z / y60) / 2;
+	vec3 pos = vec3((blockPos.x + position.x) * 0.5, blockPos.y + position.y * blockHeight, blockPos.z + position.z) / 2;
 	pos.z -= cam.z / y60;
 	float mult = exp((pos.y - cam.y) / radius);
 	float v = pos.z * angleHalfHexagon;
