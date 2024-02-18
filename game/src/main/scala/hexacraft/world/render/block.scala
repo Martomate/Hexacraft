@@ -19,9 +19,9 @@ class BlockShader(isSide: Boolean) {
     .withInputs(
       "position",
       "texCoords",
-      "normal",
       "vertexIndex",
       "faceIndex",
+      "normal",
       "blockPos",
       "blockTex",
       "vertexData"
@@ -80,7 +80,7 @@ object BlockVao {
     }
   }
 
-  def bytesPerInstance(side: Int): Int = (5 + BlockVao.cornersPerInstance(side)) * 4
+  def bytesPerInstance(side: Int): Int = (7 + 2 * BlockVao.cornersPerInstance(side)) * 4
 
   def forSide(side: Int)(maxInstances: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerInstance(side)
@@ -91,13 +91,13 @@ object BlockVao {
       .addVertexVbo(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
         _.ints(0, 3)
           .floats(1, 2)
-          .floats(2, 3)
-          .ints(3, 1)
-          .ints(4, 1),
+          .ints(2, 1)
+          .ints(3, 1),
         _.fill(0, AdvancedBlockRenderer.setupBlockVBO(side))
       )
       .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
-        _.ints(5, 3)
+        _.floats(4, 3)
+          .ints(5, 3)
           .ints(6, 1)
           .floatsArray(7, 2)(cornersPerInstance)
       )
@@ -109,12 +109,11 @@ object AdvancedBlockRenderer {
   case class BlockVertexData(
       position: Vector3i,
       texCoords: Vector2f,
-      normal: Vector3f,
       vertexIndex: Int,
       faceIndex: Int
   ) extends VertexData {
 
-    override def bytesPerVertex: Int = (3 + 2 + 3 + 1 + 1) * 4
+    override def bytesPerVertex: Int = (3 + 2 + 1 + 1) * 4
 
     override def fill(buf: ByteBuffer): Unit = {
       buf.putInt(position.x)
@@ -123,10 +122,6 @@ object AdvancedBlockRenderer {
 
       buf.putFloat(texCoords.x)
       buf.putFloat(texCoords.y)
-
-      buf.putFloat(normal.x)
-      buf.putFloat(normal.y)
-      buf.putFloat(normal.z)
 
       buf.putInt(vertexIndex)
       buf.putInt(faceIndex)
@@ -175,18 +170,13 @@ object AdvancedBlockRenderer {
         case 1 => new Vector2f(0, 0)
         case 2 => new Vector2f(1, 0)
       }
-      val norm = new Vector3f(0, 1f - 2f * s, 0)
 
-      BlockVertexData(pos, tex, norm, a, faceIndex)
+      BlockVertexData(pos, tex, a, faceIndex)
     }
   }
 
   private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] = {
     val ints = sideVertexIndices
-
-    val nv = (s - 2 + 0.5) * Math.PI / 3
-    val nx = Math.cos(nv).toFloat
-    val nz = Math.sin(nv).toFloat
 
     for i <- 0 until verticesPerInstance(s) yield {
       val a = ints(i)
@@ -202,9 +192,8 @@ object AdvancedBlockRenderer {
 
       val pos = new Vector3i(x, 1 - a / 2, z)
       val tex = new Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
-      val norm = new Vector3f(nx, 0, nz)
 
-      BlockVertexData(pos, tex, norm, a, 0)
+      BlockVertexData(pos, tex, a, 0)
     }
   }
 }
@@ -212,11 +201,23 @@ object AdvancedBlockRenderer {
 object BlockVboData {
   private def blockSideStride(side: Int): Int = {
     if side < 2 then {
-      (5 + 7 * 2) * 4
+      (7 + 7 * 2) * 4
     } else {
-      (5 + 4 * 2) * 4
+      (7 + 4 * 2) * 4
     }
   }
+
+  private val normals =
+    for s <- 0 until 8 yield {
+      if s < 2 then {
+        new Vector3f(0, 1f - 2f * s, 0)
+      } else {
+        val nv = ((s - 1) % 6 - 0.5) * Math.PI / 3
+        val nx = Math.cos(nv).toFloat
+        val nz = Math.sin(nv).toFloat
+        new Vector3f(nx, 0, nz)
+      }
+    }
 
   def fromChunk(
       chunkCoords: ChunkRelWorld,
@@ -341,6 +342,12 @@ object BlockVboData {
       val block = lbs.block
 
       if shouldRender.get(localCoords.value) then {
+        // TODO: replace instanced rendering with regular triangles, and put the data into the buffer here
+        val normal = normals(side)
+        buf.putFloat(normal.x)
+        buf.putFloat(normal.y)
+        buf.putFloat(normal.z)
+
         val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
         buf.putInt(worldCoords.x * 3)
         buf.putInt(worldCoords.y)

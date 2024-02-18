@@ -11,11 +11,11 @@ const int NUM_VERTICES = 7;
 // Per vertex
 in ivec3 position;
 in vec2 texCoords;
-in vec3 normal;
 in int vertexIndex;
 in int faceIndex; // for top and bottom (0 to 5)
 
 // Per instance
+in vec3 normal;
 in ivec3 blockPos;
 in int blockTex;
 in vec2 vertexData[NUM_VERTICES]; // blockHeight, brightness
