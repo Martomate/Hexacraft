@@ -5,8 +5,8 @@
 in ivec3 position;
 in int texIndex;
 in vec3 normal;
+in float brightness;
 in vec2 texCoords;
-in vec2 vertexData; // blockHeight, brightness
 
 struct FragInFlat {
 	int texIndex;
@@ -34,10 +34,7 @@ void main() {
 
 	mat4 matrix = projMatrix * viewMatrix;
 
-	float blockHeight = vertexData.x;
-	float brightness = vertexData.y;
-
-	vec3 pos = vec3(position.x * 0.5, position.y * blockHeight, position.z) / 2;
+	vec3 pos = vec3(position.x * 0.5, position.y / 32.0 / 6.0, position.z) / 2;
 	pos.z -= cam.z / y60;
 	float mult = exp((pos.y - cam.y) / radius);
 	float v = pos.z * angleHalfHexagon;
@@ -55,9 +52,6 @@ void main() {
 	// Here 'mult' is used for correct texturing since block sides are not square
 	fragIn.texCoords = vec2(texCoords.x, texCoords.y) * mult;
 
-#if isSide
-	fragIn.texCoords.y *= blockHeight;// TODO: The blockHeight has to use exp() or something...
-#endif
 	fragIn.mult = mult;
 	fragInFlat.texIndex = texIndex;
 	fragIn.brightness = brightness;

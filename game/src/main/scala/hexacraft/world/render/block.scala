@@ -20,8 +20,8 @@ class BlockShader(isSide: Boolean) {
       "position",
       "texIndex",
       "normal",
-      "texCoords",
-      "vertexData"
+      "brightness",
+      "texCoords"
     )
     .withDefines("isSide" -> (if isSide then "1" else "0"))
 
@@ -69,7 +69,7 @@ object BlockVao {
     }
   }
 
-  def bytesPerVertex(side: Int): Int = (4 + 7) * 4
+  def bytesPerVertex(side: Int): Int = (4 + 6) * 4
 
   def forSide(side: Int)(maxVertices: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerBlock(side)
@@ -80,7 +80,7 @@ object BlockVao {
         _.ints(0, 3)
           .ints(1, 1)
           .floats(2, 3)
-          .floats(3, 2)
+          .floats(3, 1)
           .floats(4, 2)
       )
       .finish(maxVertices)
@@ -236,13 +236,14 @@ object BlockVboData {
         val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
         val blockTex = blockTextureIndices(block.blockType.name)(side)
 
-        val vertexData = Array.ofDim[Vector2f](7)
+        val cornerHeights = Array.ofDim[Float](7)
+        val cornerBrightnesses = Array.ofDim[Float](7)
+
         var cornerIdx = 0
         while cornerIdx < verticesPerInstance do {
-          vertexData(cornerIdx) = Vector2f(
-            calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side),
-            calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
-          )
+          cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side)
+          cornerBrightnesses(cornerIdx) = calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
+
           cornerIdx += 1
         }
 
@@ -273,8 +274,11 @@ object BlockVboData {
               case 2 => new Vector2f(1, 0)
             }
 
+            val height = cornerHeights(a)
+            val brightness = cornerBrightnesses(a)
+
             buf.putInt(worldCoords.x * 3 + x)
-            buf.putInt(worldCoords.y + 1 - side)
+            buf.putInt(worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt)
             buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
             buf.putInt((blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15))
@@ -283,12 +287,10 @@ object BlockVboData {
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
 
+            buf.putFloat(brightness)
+
             buf.putFloat(tex.x)
             buf.putFloat(tex.y)
-
-            val data = vertexData(a)
-            buf.putFloat(data.x)
-            buf.putFloat(data.y)
           }
         } else {
           for i <- 0 until 2 * 3 do {
@@ -306,8 +308,11 @@ object BlockVboData {
               case 5 => (1, -1)
             }
 
+            val height = cornerHeights(a)
+            val brightness = cornerBrightnesses(a)
+
             buf.putInt(worldCoords.x * 3 + x)
-            buf.putInt(worldCoords.y + 1 - a / 2)
+            buf.putInt(worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt)
             buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
             buf.putInt(blockTex & 0xfff)
@@ -316,12 +321,10 @@ object BlockVboData {
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
 
+            buf.putFloat(brightness)
+
             buf.putFloat((1 - a % 2).toFloat)
             buf.putFloat((a / 2).toFloat)
-
-            val data = vertexData(a)
-            buf.putFloat(data.x)
-            buf.putFloat(data.y)
           }
         }
       }
