@@ -3,15 +3,13 @@
 #define y60 0.866025403784439
 
 in ivec3 position;
-in vec2 texCoords;
-in int faceIndex; // for top and bottom (0 to 5)
+in int texIndex;
 in vec3 normal;
-in int blockTex;
+in vec2 texCoords;
 in vec2 vertexData; // blockHeight, brightness
 
 struct FragInFlat {
-	int blockTex;
-	int faceIndex;
+	int texIndex;
 };
 
 struct FragIn {
@@ -61,8 +59,7 @@ void main() {
 	fragIn.texCoords.y *= blockHeight;// TODO: The blockHeight has to use exp() or something...
 #endif
 	fragIn.mult = mult;
-	fragInFlat.blockTex = blockTex;
-	fragInFlat.faceIndex = faceIndex;
+	fragInFlat.texIndex = texIndex;
 	fragIn.brightness = brightness;
 }
 
@@ -70,8 +67,7 @@ void main() {
 #define y60 0.866025403784439
 
 struct FragInFlat {
-	int blockTex;
-	int faceIndex;
+	int texIndex;
 };
 
 struct FragIn {
@@ -93,24 +89,19 @@ uniform vec3 sun;
 
 void main() {
 	float texSizef = float(texSize);
-	int texDepth = fragInFlat.blockTex & 0xfff;
 	vec2 texCoords = vec2(fragIn.texCoords.x / fragIn.mult, fragIn.texCoords.y / fragIn.mult);
 
 #if isSide
-	color = texture(texSampler, vec3(texCoords, texDepth));
+	color = texture(texSampler, vec3(texCoords, fragInFlat.texIndex));
 #else
 	float yy = 1 - texCoords.y;
 	float xx = texCoords.x + texCoords.y * 0.5;
 	vec3 cc = vec3(xx, yy, 2 - xx - yy); // this is 1 - barycentric coords
 
-	int ss = fragInFlat.faceIndex;
-
 	float factor = cc.y;
 	int xInt = int(cc.x*texSizef);
 	int zInt = int(cc.z*texSizef);
 	float px = (xInt-zInt) / factor / texSizef;
-
-	int texOffset = (fragInFlat.blockTex >> (4 * (5 - ss)) & 0xffff) >> 12 & 15; // blockTex: 11112222333344445555 + 12 bits
 
 	vec2 tex = vec2(min(1 + px, 1), min(1 - px, 1)) * factor * texSizef;
 	int texX = clamp(int(tex.x), 0, texSize - 1);
@@ -118,7 +109,7 @@ void main() {
 	ivec2 stCoords = ivec2(int(tex.x), int(tex.y));
 	color = textureGrad(
 		texSampler,
-		vec3(vec2(stCoords) / texSizef, texDepth + texOffset),
+		vec3(vec2(stCoords) / texSizef, fragInFlat.texIndex),
 		dFdx(fragIn.texCoords / fragIn.mult),
 		dFdy(fragIn.texCoords / fragIn.mult));
 #endif

@@ -18,10 +18,9 @@ class BlockShader(isSide: Boolean) {
   private val config = ShaderConfig("block")
     .withInputs(
       "position",
-      "texCoords",
-      "faceIndex",
+      "texIndex",
       "normal",
-      "blockTex",
+      "texCoords",
       "vertexData"
     )
     .withDefines("isSide" -> (if isSide then "1" else "0"))
@@ -70,7 +69,7 @@ object BlockVao {
     }
   }
 
-  def bytesPerVertex(side: Int): Int = (6 + 4 + 2) * 4
+  def bytesPerVertex(side: Int): Int = (4 + 7) * 4
 
   def forSide(side: Int)(maxVertices: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerBlock(side)
@@ -79,11 +78,10 @@ object BlockVao {
       .builder()
       .addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
         _.ints(0, 3)
-          .floats(1, 2)
-          .ints(2, 1)
-          .floats(3, 3)
-          .ints(4, 1)
-          .floats(5, 2)
+          .ints(1, 1)
+          .floats(2, 3)
+          .floats(3, 2)
+          .floats(4, 2)
       )
       .finish(maxVertices)
   }
@@ -279,16 +277,14 @@ object BlockVboData {
             buf.putInt(worldCoords.y + 1 - side)
             buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
-            buf.putFloat(tex.x)
-            buf.putFloat(tex.y)
-
-            buf.putInt(faceIndex)
+            buf.putInt((blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15))
 
             buf.putFloat(normal.x)
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
 
-            buf.putInt(blockTex)
+            buf.putFloat(tex.x)
+            buf.putFloat(tex.y)
 
             val data = vertexData(a)
             buf.putFloat(data.x)
@@ -314,16 +310,14 @@ object BlockVboData {
             buf.putInt(worldCoords.y + 1 - a / 2)
             buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
-            buf.putFloat((1 - a % 2).toFloat)
-            buf.putFloat((a / 2).toFloat)
-
-            buf.putInt(0)
+            buf.putInt(blockTex & 0xfff)
 
             buf.putFloat(normal.x)
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
 
-            buf.putInt(blockTex)
+            buf.putFloat((1 - a % 2).toFloat)
+            buf.putFloat((a / 2).toFloat)
 
             val data = vertexData(a)
             buf.putFloat(data.x)
