@@ -344,125 +344,143 @@ object BlockVboData {
       if shouldRender.get(localCoords.value) then {
         // TODO: replace instanced rendering with regular triangles, and put the data into the buffer here
         val normal = normals(side)
+        val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
+        val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
+
         buf.putFloat(normal.x)
         buf.putFloat(normal.y)
         buf.putFloat(normal.z)
 
-        val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
         buf.putInt(worldCoords.x * 3)
         buf.putInt(worldCoords.y)
         buf.putInt(worldCoords.z * 2 + worldCoords.x)
 
-        val blockType = block.blockType
-        buf.putInt(blockTextureIndices(blockType.name)(side))
+        buf.putInt(blockTextureIndices(block.blockType.name)(side))
 
-        var i2 = 0
-        while i2 < verticesPerInstance do {
-          if blockType == Block.Water then {
-            val corner = side match {
-              case 0 =>
-                i2 match {
-                  case 3 => 0
-                  case 2 => 1
-                  case 1 => 2
-                  case 0 => 3
-                  case 5 => 4
-                  case 4 => 5
-                  case 6 => 6
-                }
-              case 1 => i2
-              case s => s - 2
-            }
+        var cornerIdx = 0
+        while cornerIdx < verticesPerInstance do {
+          val cornerHeight = calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side)
+          val cornerBrightness = calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
 
-            val b = new ArrayBuffer[Offset](3)
-            b += Offset(0, 0, 0)
+          buf.putFloat(cornerHeight)
+          buf.putFloat(cornerBrightness)
 
-            corner match {
-              case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
-              case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
-              case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
-              case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
-              case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
-              case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
-              case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
-            }
-
-            val globalBCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
-
-            var hSum = 0f
-            var hCount = 0
-            var bIdx1 = 0
-            val bLen1 = b.length
-            while bIdx1 < bLen1 do {
-              val bs = blockAt(globalBCoords.offset(b(bIdx1)))
-              if bs.blockType == Block.Water then {
-                hSum += bs.blockType.blockHeight(bs.metadata)
-                hCount += 1
-              }
-              bIdx1 += 1
-            }
-
-            buf.putFloat(hSum / hCount)
-          } else {
-            buf.putFloat(blockType.blockHeight(block.metadata))
-          }
-
-          // all the blocks adjacent to this vertex (on the given side)
-          val b = new ArrayBuffer[Offset](3)
-          b += Offset(0, 0, 0)
-
-          side match {
-            case 0 =>
-              i2 match {
-                case 3 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
-                case 2 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
-                case 1 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
-                case 0 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
-                case 5 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
-                case 4 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
-                case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
-              }
-            case 1 =>
-              i2 match {
-                case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
-                case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
-                case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
-                case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
-                case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
-                case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
-                case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
-              }
-            case _ =>
-              i2 match {
-                case 0 => b += Offset(0, 1, 0)
-                case 1 => b += Offset(0, 1, 0)
-                case 2 => b += Offset(0, -1, 0)
-                case 3 => b += Offset(0, -1, 0)
-              }
-          }
-
-          val globalBCoords = localCoords.globalNeighbor(side, chunkCoords)
-
-          var brSum = 0f
-          var brCount = 0
-          var bIdx = 0
-          val bLen = b.length
-          while bIdx < bLen do {
-            val br = brightness(globalBCoords.offset(b(bIdx)))
-            if br != 0 then {
-              brSum += br
-              brCount += 1
-            }
-            bIdx += 1
-          }
-
-          buf.putFloat(if brCount == 0 then brightness(globalBCoords) else brSum / brCount)
-          i2 += 1
+          cornerIdx += 1
         }
       }
 
       i1 += 1
     }
+  }
+
+  private def calculateCornerHeight(
+      block: BlockState,
+      blockCoords: BlockRelWorld,
+      blockAt: BlockRelWorld => BlockState,
+      cornerIdx: Int,
+      side: Int
+  )(using CylinderSize) = {
+    if block.blockType == Block.Water then {
+      val corner = side match {
+        case 0 =>
+          cornerIdx match {
+            case 3 => 0
+            case 2 => 1
+            case 1 => 2
+            case 0 => 3
+            case 5 => 4
+            case 4 => 5
+            case 6 => 6
+          }
+        case 1 => cornerIdx
+        case s => s - 2
+      }
+
+      val b = new ArrayBuffer[Offset](3)
+      b += Offset(0, 0, 0)
+
+      corner match {
+        case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+        case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+        case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+        case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+        case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+        case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+        case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+      }
+
+      var hSum = 0f
+      var hCount = 0
+      var bIdx1 = 0
+      val bLen1 = b.length
+      while bIdx1 < bLen1 do {
+        val bs = blockAt(blockCoords.offset(b(bIdx1)))
+        if bs.blockType == Block.Water then {
+          hSum += bs.blockType.blockHeight(bs.metadata)
+          hCount += 1
+        }
+        bIdx1 += 1
+      }
+
+      hSum / hCount
+    } else {
+      block.blockType.blockHeight(block.metadata)
+    }
+  }
+
+  private def calculateCornerBrightness(
+      neighborBlockCoords: BlockRelWorld,
+      brightness: BlockRelWorld => Float,
+      cornerIdx: Int,
+      side: Int
+  )(using CylinderSize) = {
+    // all the blocks adjacent to this vertex (on the given side)
+    val b = new ArrayBuffer[Offset](3)
+    b += Offset(0, 0, 0)
+
+    side match {
+      case 0 =>
+        cornerIdx match {
+          case 3 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+          case 2 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+          case 1 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+          case 0 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+          case 5 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+          case 4 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+          case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+        }
+      case 1 =>
+        cornerIdx match {
+          case 0 => b += Offset(1, 0, 0); b += Offset(1, 0, -1)
+          case 1 => b += Offset(0, 0, 1); b += Offset(1, 0, 0)
+          case 2 => b += Offset(-1, 0, 1); b += Offset(0, 0, 1)
+          case 3 => b += Offset(-1, 0, 0); b += Offset(-1, 0, 1)
+          case 4 => b += Offset(0, 0, -1); b += Offset(-1, 0, 0)
+          case 5 => b += Offset(1, 0, -1); b += Offset(0, 0, -1)
+          case 6 => b += Offset(0, 0, 0); b += Offset(0, 0, 0) // extra point at the center
+        }
+      case _ =>
+        cornerIdx match {
+          case 0 => b += Offset(0, 1, 0)
+          case 1 => b += Offset(0, 1, 0)
+          case 2 => b += Offset(0, -1, 0)
+          case 3 => b += Offset(0, -1, 0)
+        }
+    }
+
+    var brSum = 0f
+    var brCount = 0
+    var bIdx = 0
+    val bLen = b.length
+    while bIdx < bLen do {
+      val br = brightness(neighborBlockCoords.offset(b(bIdx)))
+      if br != 0 then {
+        brSum += br
+        brCount += 1
+      }
+      bIdx += 1
+    }
+    if brCount == 0 then brightness(neighborBlockCoords) else brSum / brCount
   }
 
   private def oppositeSide(s: Int): Int = {
