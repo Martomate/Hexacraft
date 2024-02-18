@@ -87,7 +87,7 @@ object EntityPartVao {
           .ints(11, 1)
           .floats(12, 1)
       )
-      .finish(BlockRenderer.verticesPerInstance(side), 0)
+      .finish(BlockRenderer.verticesPerInstance(side))
   }
 }
 

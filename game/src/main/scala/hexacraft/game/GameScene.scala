@@ -469,7 +469,7 @@ class GameScene private (
     }
 
     crosshairShader.enable()
-    crosshairRenderer.render(crosshairVAO)
+    crosshairRenderer.render(crosshairVAO, crosshairVAO.maxCount)
   }
 
   private def playerEffectiveViscosity: Double = {

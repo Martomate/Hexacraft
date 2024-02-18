@@ -3,10 +3,10 @@ package hexacraft.renderer
 import hexacraft.infra.gpu.OpenGL
 
 class Renderer(mode: OpenGL.PrimitiveMode, gpuState: GpuState = GpuState()) {
-  def render(vao: VAO): Unit = {
+  def render(vao: VAO, count: Int): Unit = {
     val changedState = gpuState.set()
     vao.bind()
-    OpenGL.glDrawArrays(mode, 0, vao.maxCount)
+    OpenGL.glDrawArrays(mode, 0, count)
     changedState.unset()
   }
 }

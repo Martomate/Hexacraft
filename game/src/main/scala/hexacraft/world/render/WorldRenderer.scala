@@ -129,7 +129,7 @@ class WorldRenderer(
     skyShader.setInverseViewMatrix(camera.view.invMatrix)
     skyShader.setSunPosition(sun)
     skyShader.enable()
-    skyRenderer.render(skyVao)
+    skyRenderer.render(skyVao, skyVao.maxCount)
 
     // World content
     chunkHandler.render(camera, sun)
@@ -152,7 +152,7 @@ class WorldRenderer(
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
-    worldCombinerRenderer.render(worldCombinerVao)
+    worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
 
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)

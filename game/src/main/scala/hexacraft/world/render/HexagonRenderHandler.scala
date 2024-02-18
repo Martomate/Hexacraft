@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
 class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader, gpuState: GpuState) {
 
   private def bufferHandlerMaker(s: Int): BufferHandler[_] =
-    new BufferHandler(1000000, BlockVao.bytesPerInstance(s), VaoRenderBuffer.Allocator(s, gpuState))
+    new BufferHandler(100000 * 3, BlockVao.bytesPerVertex(s), VaoRenderBuffer.Allocator(s, gpuState))
 
   private val sideHandlers: IndexedSeq[RenderAspectHandler] =
     IndexedSeq.tabulate(8)(s => new RenderAspectHandler(bufferHandlerMaker(s)))

@@ -53,7 +53,7 @@ object VAO {
       vboTemplates
     }
 
-    def finish(maxCount: Int, maxPrimCount: Int = 1): VAO = {
+    def finish(maxCount: Int): VAO = {
       val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
       OpenGL.glBindVertexArray(vaoID)
 
@@ -70,12 +70,12 @@ object VAO {
         vbos += vbo
       }
 
-      new VAO(vaoID, maxCount, maxPrimCount, vbos.toSeq)
+      new VAO(vaoID, maxCount, vbos.toSeq)
     }
   }
 }
 
-class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val maxPrimCount: Int, val vbos: Seq[VBO]) extends Resource {
+class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val vbos: Seq[VBO]) extends Resource {
   def bind(): Unit = {
     if VAO.boundVAO != this then {
       VAO.boundVAO = this

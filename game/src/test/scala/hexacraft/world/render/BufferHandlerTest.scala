@@ -18,7 +18,7 @@ class BufferHandlerTest extends FunSuite {
 
     handler.set(Segment(0, 3), rampBuffer(0, 3))
 
-    assertEquals(allocator.instancesRequested.toSeq, Seq(InstancesPerBuffer))
+    assertEquals(allocator.verticesRequested.toSeq, Seq(InstancesPerBuffer))
   }
 
   test("set should complain if the data has smaller length than the segment") {
@@ -80,11 +80,11 @@ class BufferHandlerTest extends FunSuite {
 
 object LocalRenderBuffer {
   class Allocator(mkBuffer: Int => LocalRenderBuffer) extends RenderBuffer.Allocator[LocalRenderBuffer] {
-    val instancesRequested: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
+    val verticesRequested: ArrayBuffer[Int] = ArrayBuffer.empty[Int]
 
-    override def allocate(instances: Int): LocalRenderBuffer = {
-      instancesRequested += instances
-      mkBuffer(instances)
+    override def allocate(numVertices: Int): LocalRenderBuffer = {
+      verticesRequested += numVertices
+      mkBuffer(numVertices)
     }
 
     override def copy(from: LocalRenderBuffer, to: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {

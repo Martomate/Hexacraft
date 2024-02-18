@@ -1,18 +1,18 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, InstancedRenderer, VAO, VBO}
+import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
 import hexacraft.util.Segment
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 class BufferHandler[T <: RenderBuffer[T]](
-    instancesPerBuffer: Int,
-    bytesPerInstance: Int,
+    verticesPerBuffer: Int,
+    bytesPerVertex: Int,
     bufferAllocator: RenderBuffer.Allocator[T]
 ) {
-  private val bufSize: Int = bytesPerInstance * instancesPerBuffer
+  private val bufSize: Int = verticesPerBuffer * bytesPerVertex
 
   private val buffers: ArrayBuffer[T] = ArrayBuffer.empty
 
@@ -30,7 +30,7 @@ class BufferHandler[T <: RenderBuffer[T]](
       left -= amt
 
       if i >= buffers.length then {
-        val buf = bufferAllocator.allocate(instancesPerBuffer)
+        val buf = bufferAllocator.allocate(verticesPerBuffer)
         buffers += buf
       }
 
@@ -89,7 +89,7 @@ class BufferHandler[T <: RenderBuffer[T]](
 
 object RenderBuffer {
   trait Allocator[T <: RenderBuffer[T]] {
-    def allocate(instances: Int): T
+    def allocate(numVertices: Int): T
 
     def copy(from: T, to: T, fromIdx: Int, toIdx: Int, len: Int): Unit
   }
@@ -105,12 +105,12 @@ trait RenderBuffer[B <: RenderBuffer[B]] {
 
 object VaoRenderBuffer {
   class Allocator(side: Int, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
-    override def allocate(instances: Int): VaoRenderBuffer = {
-      val vao = BlockVao.forSide(side)(instances)
+    override def allocate(numVertices: Int): VaoRenderBuffer = {
+      val vao = BlockVao.forSide(side)(numVertices)
       new VaoRenderBuffer(
         vao,
-        vao.vbos(1),
-        new InstancedRenderer(OpenGL.PrimitiveMode.Triangles, gpuState)
+        vao.vbos(0),
+        new Renderer(OpenGL.PrimitiveMode.Triangles, gpuState)
       )
     }
 
@@ -120,7 +120,7 @@ object VaoRenderBuffer {
   }
 }
 
-class VaoRenderBuffer(vao: VAO, val vboToFill: VBO, renderer: InstancedRenderer) extends RenderBuffer[VaoRenderBuffer] {
+class VaoRenderBuffer(vao: VAO, val vboToFill: VBO, renderer: Renderer) extends RenderBuffer[VaoRenderBuffer] {
   override def set(start: Int, buf: ByteBuffer): Unit = {
     val vbo = vboToFill
     vbo.fill(start / vbo.stride, buf)

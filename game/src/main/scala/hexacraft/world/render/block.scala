@@ -1,13 +1,13 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig, VAO, VertexData}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
-import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f, Vector3i}
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
@@ -19,7 +19,6 @@ class BlockShader(isSide: Boolean) {
     .withInputs(
       "position",
       "texCoords",
-      "vertexIndex",
       "faceIndex",
       "normal",
       "blockPos",
@@ -64,7 +63,7 @@ class BlockShader(isSide: Boolean) {
 }
 
 object BlockVao {
-  private def verticesPerInstance(side: Int): Int = {
+  private[render] def verticesPerBlock(side: Int): Int = {
     if side < 2 then {
       3 * 6
     } else {
@@ -72,140 +71,33 @@ object BlockVao {
     }
   }
 
-  private def cornersPerInstance(side: Int): Int = {
-    if side < 2 then {
-      7
-    } else {
-      4
-    }
-  }
+  def bytesPerVertex(side: Int): Int = (6 + 7 + 2) * 4
 
-  def bytesPerInstance(side: Int): Int = (7 + 2 * BlockVao.cornersPerInstance(side)) * 4
-
-  def forSide(side: Int)(maxInstances: Int): VAO = {
-    val verticesPerInstance = BlockVao.verticesPerInstance(side)
-    val cornersPerInstance = BlockVao.cornersPerInstance(side)
+  def forSide(side: Int)(maxVertices: Int): VAO = {
+    val verticesPerInstance = BlockVao.verticesPerBlock(side)
 
     VAO
       .builder()
-      .addVertexVbo(verticesPerInstance, OpenGL.VboUsage.StaticDraw)(
+      .addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
         _.ints(0, 3)
           .floats(1, 2)
           .ints(2, 1)
-          .ints(3, 1),
-        _.fill(0, AdvancedBlockRenderer.setupBlockVBO(side))
+          .floats(3, 3)
+          .ints(4, 3)
+          .ints(5, 1)
+          .floats(6, 2)
       )
-      .addInstanceVbo(maxInstances, OpenGL.VboUsage.DynamicDraw)(
-        _.floats(4, 3)
-          .ints(5, 3)
-          .ints(6, 1)
-          .floatsArray(7, 2)(cornersPerInstance)
-      )
-      .finish(verticesPerInstance, maxInstances)
+      .finish(maxVertices)
   }
 }
 
 object AdvancedBlockRenderer {
-  case class BlockVertexData(
-      position: Vector3i,
-      texCoords: Vector2f,
-      vertexIndex: Int,
-      faceIndex: Int
-  ) extends VertexData {
-
-    override def bytesPerVertex: Int = (3 + 2 + 1 + 1) * 4
-
-    override def fill(buf: ByteBuffer): Unit = {
-      buf.putInt(position.x)
-      buf.putInt(position.y)
-      buf.putInt(position.z)
-
-      buf.putFloat(texCoords.x)
-      buf.putFloat(texCoords.y)
-
-      buf.putInt(vertexIndex)
-      buf.putInt(faceIndex)
-    }
-  }
-
-  private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
-  private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
-
-  def verticesPerInstance(side: Int): Int = if side < 2 then 3 * 6 else 3 * 2
-
-  def setupBlockVBO(s: Int): Seq[BlockVertexData] = {
-    if s < 2 then {
-      setupBlockVboForTopOrBottom(s)
-    } else {
-      setupBlockVboForSide(s)
-    }
-  }
-
-  private def setupBlockVboForTopOrBottom(s: Int): Seq[BlockVertexData] = {
-    val ints = topBottomVertexIndices
-
-    for i <- 0 until verticesPerInstance(s) yield {
-      val cornerIdx = i
-      val a = ints(cornerIdx)
-      val faceIndex = i / 3
-
-      val (x, z) =
-        if a == 6 then {
-          (0, 0)
-        } else {
-          val (x, z) = a match {
-            case 0 => (2, 0)
-            case 1 => (1, 1)
-            case 2 => (-1, 1)
-            case 3 => (-2, 0)
-            case 4 => (-1, -1)
-            case 5 => (1, -1)
-          }
-          if s == 0 then (-x, z) else (x, z)
-        }
-
-      val pos = new Vector3i(x, 1 - s, z)
-      val tex = cornerIdx % 3 match {
-        case 0 => new Vector2f(0.5f, 1)
-        case 1 => new Vector2f(0, 0)
-        case 2 => new Vector2f(1, 0)
-      }
-
-      BlockVertexData(pos, tex, a, faceIndex)
-    }
-  }
-
-  private def setupBlockVboForSide(s: Int): Seq[BlockVertexData] = {
-    val ints = sideVertexIndices
-
-    for i <- 0 until verticesPerInstance(s) yield {
-      val a = ints(i)
-      val v = (s - 2 + a % 2) % 6
-      val (x, z) = v match {
-        case 0 => (2, 0)
-        case 1 => (1, 1)
-        case 2 => (-1, 1)
-        case 3 => (-2, 0)
-        case 4 => (-1, -1)
-        case 5 => (1, -1)
-      }
-
-      val pos = new Vector3i(x, 1 - a / 2, z)
-      val tex = new Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
-
-      BlockVertexData(pos, tex, a, 0)
-    }
-  }
+  private[render] val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
+  private[render] val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
 }
 
 object BlockVboData {
-  private def blockSideStride(side: Int): Int = {
-    if side < 2 then {
-      (7 + 7 * 2) * 4
-    } else {
-      (7 + 4 * 2) * 4
-    }
-  }
+  private def blockSideStride(side: Int): Int = BlockVao.bytesPerVertex(side)
 
   private val normals =
     for s <- 0 until 8 yield {
@@ -292,7 +184,6 @@ object BlockVboData {
     val blocksBuffers = for side <- 0 until 8 yield {
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
-      val buf = BufferUtils.createByteBuffer(sidesCount(side) * blockSideStride(side))
 
       val blockAtFn = (coords: BlockRelWorld) => {
         val cc = coords.getChunkRelWorld
@@ -314,6 +205,8 @@ object BlockVboData {
         }
       }
 
+      val bytesPerBlock = BlockVao.bytesPerVertex(side) * BlockVao.verticesPerBlock(side)
+      val buf = BufferUtils.createByteBuffer(sidesCount(side) * bytesPerBlock)
       populateBuffer(chunkCoords, blocks, side, shouldRender, blockAtFn, brightnessFn, buf, blockTextureIndices)
       buf.flip()
       buf
@@ -342,30 +235,110 @@ object BlockVboData {
       val block = lbs.block
 
       if shouldRender.get(localCoords.value) then {
-        // TODO: replace instanced rendering with regular triangles, and put the data into the buffer here
         val normal = normals(side)
         val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
         val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
+        val blockTex = blockTextureIndices(block.blockType.name)(side)
 
-        buf.putFloat(normal.x)
-        buf.putFloat(normal.y)
-        buf.putFloat(normal.z)
-
-        buf.putInt(worldCoords.x * 3)
-        buf.putInt(worldCoords.y)
-        buf.putInt(worldCoords.z * 2 + worldCoords.x)
-
-        buf.putInt(blockTextureIndices(block.blockType.name)(side))
-
+        val vertexData = Array.ofDim[Vector2f](7)
         var cornerIdx = 0
         while cornerIdx < verticesPerInstance do {
-          val cornerHeight = calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side)
-          val cornerBrightness = calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
-
-          buf.putFloat(cornerHeight)
-          buf.putFloat(cornerBrightness)
-
+          vertexData(cornerIdx) = Vector2f(
+            calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side),
+            calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
+          )
           cornerIdx += 1
+        }
+
+        if side < 2 then {
+          for i <- 0 until 6 * 3 do {
+            val faceIndex = i / 3
+            val vertexId = i % 3
+            val a = AdvancedBlockRenderer.topBottomVertexIndices(i)
+
+            val (x, z) =
+              if a == 6 then {
+                (0, 0)
+              } else {
+                val (x, z) = a match {
+                  case 0 => (2, 0)
+                  case 1 => (1, 1)
+                  case 2 => (-1, 1)
+                  case 3 => (-2, 0)
+                  case 4 => (-1, -1)
+                  case 5 => (1, -1)
+                }
+                if side == 0 then (-x, z) else (x, z)
+              }
+
+            val tex = vertexId match {
+              case 0 => new Vector2f(0.5f, 1)
+              case 1 => new Vector2f(0, 0)
+              case 2 => new Vector2f(1, 0)
+            }
+
+            buf.putInt(x)
+            buf.putInt(1 - side)
+            buf.putInt(z)
+
+            buf.putFloat(tex.x)
+            buf.putFloat(tex.y)
+
+            buf.putInt(faceIndex)
+
+            buf.putFloat(normal.x)
+            buf.putFloat(normal.y)
+            buf.putFloat(normal.z)
+
+            buf.putInt(worldCoords.x * 3)
+            buf.putInt(worldCoords.y)
+            buf.putInt(worldCoords.z * 2 + worldCoords.x)
+
+            buf.putInt(blockTex)
+
+            val data = vertexData(a)
+            buf.putFloat(data.x)
+            buf.putFloat(data.y)
+          }
+        } else {
+          for i <- 0 until 2 * 3 do {
+            val faceIndex = i / 3
+            val vertexId = i % 3
+            val a = AdvancedBlockRenderer.sideVertexIndices(i)
+
+            val v = (side - 2 + a % 2) % 6
+            val (x, z) = v match {
+              case 0 => (2, 0)
+              case 1 => (1, 1)
+              case 2 => (-1, 1)
+              case 3 => (-2, 0)
+              case 4 => (-1, -1)
+              case 5 => (1, -1)
+            }
+
+            buf.putInt(x)
+            buf.putInt(1 - a / 2)
+            buf.putInt(z)
+
+            buf.putFloat((1 - a % 2).toFloat)
+            buf.putFloat((a / 2).toFloat)
+
+            buf.putInt(0)
+
+            buf.putFloat(normal.x)
+            buf.putFloat(normal.y)
+            buf.putFloat(normal.z)
+
+            buf.putInt(worldCoords.x * 3)
+            buf.putInt(worldCoords.y)
+            buf.putInt(worldCoords.z * 2 + worldCoords.x)
+
+            buf.putInt(blockTex)
+
+            val data = vertexData(a)
+            buf.putFloat(data.x)
+            buf.putFloat(data.y)
+          }
         }
       }
 

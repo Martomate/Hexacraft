@@ -62,7 +62,7 @@ object Component {
     )
 
     imageShader.setWindowAspectRatio(windowAspectRatio)
-    Component.rectRenderer.render(rectVAO)
+    Component.rectRenderer.render(rectVAO, rectVAO.maxCount)
   }
 
   def drawRect(
@@ -82,7 +82,7 @@ object Component {
     colorShader.setColor(color)
 
     colorShader.setWindowAspectRatio(windowAspectRatio)
-    Component.rectRenderer.render(rectVAO)
+    Component.rectRenderer.render(rectVAO, rectVAO.maxCount)
   }
 
   def drawFancyRect(
@@ -104,7 +104,7 @@ object Component {
     fancyRectShader.setInverted(inverted)
 
     fancyRectShader.setWindowAspectRatio(windowAspectRatio)
-    Component.rectRenderer.render(rectVAO)
+    Component.rectRenderer.render(rectVAO, rectVAO.maxCount)
   }
 
   def makeText(

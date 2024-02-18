@@ -140,6 +140,6 @@ object GuiBlockVao {
           .floats(7, 1)
           .floats(8, 1)
       )
-      .finish(BlockRenderer.verticesPerInstance(side), 0)
+      .finish(BlockRenderer.verticesPerInstance(side))
   }
 }
