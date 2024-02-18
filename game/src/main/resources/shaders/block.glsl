@@ -6,7 +6,6 @@ in ivec3 position;
 in vec2 texCoords;
 in int faceIndex; // for top and bottom (0 to 5)
 in vec3 normal;
-in ivec3 blockPos;
 in int blockTex;
 in vec2 vertexData; // blockHeight, brightness
 
@@ -40,7 +39,7 @@ void main() {
 	float blockHeight = vertexData.x;
 	float brightness = vertexData.y;
 
-	vec3 pos = vec3((blockPos.x + position.x) * 0.5, blockPos.y + position.y * blockHeight, blockPos.z + position.z) / 2;
+	vec3 pos = vec3(position.x * 0.5, position.y * blockHeight, position.z) / 2;
 	pos.z -= cam.z / y60;
 	float mult = exp((pos.y - cam.y) / radius);
 	float v = pos.z * angleHalfHexagon;

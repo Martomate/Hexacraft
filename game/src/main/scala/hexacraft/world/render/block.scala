@@ -21,7 +21,6 @@ class BlockShader(isSide: Boolean) {
       "texCoords",
       "faceIndex",
       "normal",
-      "blockPos",
       "blockTex",
       "vertexData"
     )
@@ -71,7 +70,7 @@ object BlockVao {
     }
   }
 
-  def bytesPerVertex(side: Int): Int = (6 + 7 + 2) * 4
+  def bytesPerVertex(side: Int): Int = (6 + 4 + 2) * 4
 
   def forSide(side: Int)(maxVertices: Int): VAO = {
     val verticesPerInstance = BlockVao.verticesPerBlock(side)
@@ -83,9 +82,8 @@ object BlockVao {
           .floats(1, 2)
           .ints(2, 1)
           .floats(3, 3)
-          .ints(4, 3)
-          .ints(5, 1)
-          .floats(6, 2)
+          .ints(4, 1)
+          .floats(5, 2)
       )
       .finish(maxVertices)
   }
@@ -277,9 +275,9 @@ object BlockVboData {
               case 2 => new Vector2f(1, 0)
             }
 
-            buf.putInt(x)
-            buf.putInt(1 - side)
-            buf.putInt(z)
+            buf.putInt(worldCoords.x * 3 + x)
+            buf.putInt(worldCoords.y + 1 - side)
+            buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
             buf.putFloat(tex.x)
             buf.putFloat(tex.y)
@@ -289,10 +287,6 @@ object BlockVboData {
             buf.putFloat(normal.x)
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
-
-            buf.putInt(worldCoords.x * 3)
-            buf.putInt(worldCoords.y)
-            buf.putInt(worldCoords.z * 2 + worldCoords.x)
 
             buf.putInt(blockTex)
 
@@ -316,9 +310,9 @@ object BlockVboData {
               case 5 => (1, -1)
             }
 
-            buf.putInt(x)
-            buf.putInt(1 - a / 2)
-            buf.putInt(z)
+            buf.putInt(worldCoords.x * 3 + x)
+            buf.putInt(worldCoords.y + 1 - a / 2)
+            buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
 
             buf.putFloat((1 - a % 2).toFloat)
             buf.putFloat((a / 2).toFloat)
@@ -328,10 +322,6 @@ object BlockVboData {
             buf.putFloat(normal.x)
             buf.putFloat(normal.y)
             buf.putFloat(normal.z)
-
-            buf.putInt(worldCoords.x * 3)
-            buf.putInt(worldCoords.y)
-            buf.putInt(worldCoords.z * 2 + worldCoords.x)
 
             buf.putInt(blockTex)
 
