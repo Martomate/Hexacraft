@@ -15,15 +15,19 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
   }
 
   def setChunkContent(coords: ChunkRelWorld, content: ByteBuffer): Unit = {
-    if memorySegments.hasMapping(coords) then {
-      updateChunk(coords, content)
-    } else {
-      addNewChunk(coords, content)
+    memorySegments.synchronized {
+      if memorySegments.hasMapping(coords) then {
+        updateChunk(coords, content)
+      } else {
+        addNewChunk(coords, content)
+      }
     }
   }
 
   def clearChunkContent(coords: ChunkRelWorld): Unit = {
-    removeData(coords, memorySegments.segments(coords))
+    memorySegments.synchronized {
+      removeData(coords, memorySegments.segments(coords))
+    }
   }
 
   def unload(): Unit = {
@@ -77,7 +81,10 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
       val (lastChunk, lastSeg) = memorySegments.lastSegment.get
       if coords == lastChunk then {
         // remove it
-        memorySegments.pop(coords, lastRem) // TODO: this line has crashed multiple times, not sure why
+        memorySegments.pop(coords, lastRem)
+        // TODO: the line above has crashed multiple times, not sure why
+        //  EDIT: just added synchronization blocks further up, let's hope it solves it
+
         segments.remove(lastRem)
       } else {
         // move data
