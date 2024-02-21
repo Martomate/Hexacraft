@@ -4,14 +4,11 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.os.OSUtils
 import hexacraft.infra.window.WindowSystem
-import org.lwjgl.system.Configuration
 
 import java.io.File
 
 object Main {
   def main(args: Array[String]): Unit = {
-    setNativesFolder()
-
     val isDebugStr = System.getProperty("hexacraft.debug")
     val isDebug = isDebugStr != null && isDebugStr == "true"
 
@@ -30,18 +27,6 @@ object Main {
       case t: Throwable =>
         errorHandler.log(t)
         System.exit(1)
-    }
-  }
-
-  private def setNativesFolder(): Unit = {
-    var file = new File("lib/natives")
-
-    if !file.exists then {
-      file = new File(OSUtils.nativesPath)
-    }
-
-    if file.exists then {
-      Configuration.LIBRARY_PATH.set(file.getAbsolutePath)
     }
   }
 }
