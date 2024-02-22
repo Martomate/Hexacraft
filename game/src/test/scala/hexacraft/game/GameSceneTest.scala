@@ -6,7 +6,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.util.Tracker
-import hexacraft.world.{CylinderSize, FakeBlockTextureLoader, FakeWorldProvider}
+import hexacraft.world.{CylinderSize, FakeWorldProvider}
 
 import munit.FunSuite
 import org.joml.{Vector2f, Vector2i}

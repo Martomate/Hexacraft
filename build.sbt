@@ -19,8 +19,14 @@ val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ 
 
 lazy val hexacraft = project
   .in(file("."))
-  .aggregate(nbt, game)
-  .dependsOn(nbt, game)
+  .aggregate(common, nbt, window, audio, fs, gpu, system, game)
+
+lazy val common = project
+  .in(file("common"))
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= Seq(Joml) :+ MUnit
+  )
 
 lazy val nbt = project
   .in(file("nbt"))
@@ -29,9 +35,49 @@ lazy val nbt = project
     libraryDependencies ++= Seq(Joml, FlowNbt) :+ MUnit
   )
 
+lazy val window = project
+  .in(file("window"))
+  .dependsOn(common)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= lwjglDependencies :+ MUnit
+  )
+
+lazy val audio = project
+  .in(file("audio"))
+  .dependsOn(common, fs)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= lwjglDependencies :+ MUnit
+  )
+
+lazy val fs = project
+  .in(file("fs"))
+  .dependsOn(common, nbt)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= Seq() :+ MUnit
+  )
+
+lazy val gpu = project
+  .in(file("gpu"))
+  .dependsOn(common)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= lwjglDependencies :+ MUnit
+  )
+
+lazy val system = project
+  .in(file("system"))
+  .dependsOn(common)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= lwjglDependencies :+ MUnit
+  )
+
 lazy val game = project
   .in(file("game"))
-  .dependsOn(nbt)
+  .dependsOn(common, nbt, window, audio, fs, gpu, system)
   .settings(commonSettings*)
   .settings( // General
     javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)

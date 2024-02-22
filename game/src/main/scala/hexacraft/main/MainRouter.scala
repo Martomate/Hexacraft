@@ -1,17 +1,9 @@
 package hexacraft.main
 
-import hexacraft.game.{
-  GameClient,
-  GameKeyboard,
-  GameScene,
-  Menus,
-  NetworkHandler,
-  RemoteWorldProvider,
-  WorldProviderFromFile
-}
+import hexacraft.game.{BlockTextureLoader, GameClient, GameKeyboard, GameScene, Menus, NetworkHandler, RemoteWorldProvider, WorldProviderFromFile}
 import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
-import hexacraft.infra.fs.{BlockTextureLoader, FileSystem}
+import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.CursorMode
 import hexacraft.util.Tracker
 import hexacraft.world.WorldSettings

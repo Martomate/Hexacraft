@@ -1,7 +1,5 @@
 package hexacraft.renderer
 
-import hexacraft.infra.gpu.OpenGL
-
 import munit.FunSuite
 
 class VboLayoutTest extends FunSuite {
