@@ -12,6 +12,7 @@ import com.martomate.nbt.Nbt
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
@@ -363,9 +364,11 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
 
   private def performBlockUpdates(): Unit = {
-    val blocksToUpdateLen = blocksToUpdate.size
-    for _ <- 0 until blocksToUpdateLen do {
-      val c = blocksToUpdate.dequeue()
+    val blocksToUpdateNow = ArrayBuffer.empty[BlockRelWorld]
+    while !blocksToUpdate.isEmpty do {
+      blocksToUpdateNow += blocksToUpdate.dequeue()
+    }
+    for c <- blocksToUpdateNow do {
       val block = getBlock(c).blockType
       block.behaviour.foreach(_.onUpdated(c, block, this))
     }
@@ -481,20 +484,19 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       handleLightingOnSetBlock(cCoords, c, bCoords, block)
 
       requestRenderUpdate(cCoords)
-      requestBlockUpdate(BlockRelWorld.fromChunk(bCoords, cCoords))
+      requestBlockUpdate(coords)
 
-      for i <- 0 until 8 do {
-        val off = ChunkRelWorld.neighborOffsets(i)
-        val c2 = bCoords.offset(off)
+      for s <- 0 until 8 do {
+        val neighCoords = bCoords.globalNeighbor(s, cCoords)
+        val neighChunkCoords = neighCoords.getChunkRelWorld
 
-        if isInNeighborChunk(off) then {
-          val nCoords = cCoords.offset(NeighborOffsets(i))
-          for n <- getChunk(nCoords) do {
-            requestRenderUpdate(nCoords)
-            requestBlockUpdate(BlockRelWorld.fromChunk(c2, nCoords))
+        if neighChunkCoords != cCoords then {
+          for n <- getChunk(neighChunkCoords) do {
+            requestRenderUpdate(neighChunkCoords)
+            requestBlockUpdate(neighCoords)
           }
         } else {
-          requestBlockUpdate(BlockRelWorld.fromChunk(c2, cCoords))
+          requestBlockUpdate(neighCoords)
         }
       }
     }

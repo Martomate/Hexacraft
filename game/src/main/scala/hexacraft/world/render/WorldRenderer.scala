@@ -68,7 +68,7 @@ class WorldRenderer(
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
 
-    var numUpdatesToPerform = if chunkRenderUpdateQueue.length > 10 then 4 else 1
+    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 4)
 
     while numUpdatesToPerform > 0 do {
       chunkRenderUpdateQueue.pop() match {
