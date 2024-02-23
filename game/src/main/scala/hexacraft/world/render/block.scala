@@ -164,7 +164,13 @@ object BlockVboData {
             if neigh != null then {
               val bs = neigh.getBlock(c2)
 
-              if b != bs && (s == 0 || !bs.blockType.isSolid) && (s < 2 || bs.blockType != Block.Water) then {
+              val shouldRenderSide = if bs.blockType == Block.Water then {
+                b != bs && s < 2 && b.blockType != Block.Water
+              } else {
+                b != bs && (s == 0 || !bs.blockType.isSolid)
+              }
+
+              if shouldRenderSide then {
                 brightness(c.value) = neigh.lighting.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
