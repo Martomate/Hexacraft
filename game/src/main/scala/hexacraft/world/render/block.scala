@@ -377,9 +377,16 @@ object BlockVboData {
 
       var hSum = 0f
       var hCount = 0
+      var shouldBeMax = false
+
       var bIdx1 = 0
       val bLen1 = b.length
       while bIdx1 < bLen1 do {
+        val above = blockAt(blockCoords.offset(b(bIdx1)).offset(0, 1, 0))
+        if above.blockType == Block.Water then {
+          shouldBeMax = true
+        }
+
         val bs = blockAt(blockCoords.offset(b(bIdx1)))
         if bs.blockType == Block.Water then {
           hSum += bs.blockType.blockHeight(bs.metadata)
@@ -388,7 +395,7 @@ object BlockVboData {
         bIdx1 += 1
       }
 
-      hSum / hCount
+      if shouldBeMax then 1.0f else hSum / hCount
     } else {
       block.blockType.blockHeight(block.metadata)
     }
