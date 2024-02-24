@@ -37,6 +37,10 @@ class RootArchTest extends FunSuite {
     Packages("org.lwjgl.openal..").assertOnlyUsedIn("hexacraft.infra.audio")
   }
 
+  test("Stb library should only be used in OpenAL wrapper") {
+    Packages("org.lwjgl.stb..").assertOnlyUsedIn("hexacraft.infra.audio")
+  }
+
   // TODO: reduce package dependencies and update this test accordingly
   test("packages should not depend on too many other packages") {
     val root = "root"
@@ -90,7 +94,7 @@ class RootArchTest extends FunSuite {
         _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Physics, Util, World, JOML, Nbt, ZeroMQ)
       )
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Util, JOML))
-      .where(Infra, _.mayOnlyAccessLayers(Math, Renderer, Util, World, JOML, WrappedLibs, LWJGL, Nbt))
+      .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Renderer, Util, World, JOML))
       .where(Math, _.mayOnlyAccessLayers(Util, JOML))
       .where(Physics, _.mayOnlyAccessLayers(Util, JOML))

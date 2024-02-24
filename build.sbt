@@ -40,7 +40,7 @@ lazy val window = project
   .dependsOn(common)
   .settings(commonSettings*)
   .settings(
-    libraryDependencies ++= lwjglDependencies :+ MUnit
+    libraryDependencies ++= LwjglGlfw :+ MUnit
   )
 
 lazy val audio = project
@@ -48,7 +48,7 @@ lazy val audio = project
   .dependsOn(common, fs)
   .settings(commonSettings*)
   .settings(
-    libraryDependencies ++= lwjglDependencies :+ MUnit
+    libraryDependencies ++= LwjglOpenAL ++ LwjglStb :+ MUnit
   )
 
 lazy val fs = project
@@ -64,7 +64,7 @@ lazy val gpu = project
   .dependsOn(common)
   .settings(commonSettings*)
   .settings(
-    libraryDependencies ++= lwjglDependencies :+ MUnit
+    libraryDependencies ++= LwjglOpenGL :+ MUnit
   )
 
 lazy val system = project
@@ -72,7 +72,7 @@ lazy val system = project
   .dependsOn(common)
   .settings(commonSettings*)
   .settings(
-    libraryDependencies ++= lwjglDependencies :+ MUnit
+    libraryDependencies ++= Seq() :+ MUnit
   )
 
 lazy val game = project
@@ -83,7 +83,7 @@ lazy val game = project
     javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)
   )
   .settings( // Dependencies
-    libraryDependencies ++= lwjglDependencies ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito) ++ ArchUnit
+    libraryDependencies ++= LwjglSystem ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito) ++ ArchUnit
   )
   .enablePlugins(PackPlugin)
   .settings( // Packaging (using sbt-pack)

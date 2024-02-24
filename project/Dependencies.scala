@@ -7,7 +7,7 @@ object Dependencies {
     val zeromq = "0.5.4"
   }
 
-  lazy val lwjglDependencies = {
+  def lwjglDependency(name: String) = {
     val platforms = Seq(
       "natives-windows",
       "natives-windows-arm64",
@@ -17,22 +17,16 @@ object Dependencies {
       "natives-macos-arm64"
     )
 
-    Seq(
-      "org.lwjgl" % "lwjgl" % versions.lwjgl,
-      "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl,
-      "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl,
-      "org.lwjgl" % "lwjgl-openal" % versions.lwjgl,
-      "org.lwjgl" % "lwjgl-stb" % versions.lwjgl
-    ) ++ platforms.flatMap(platform =>
-      Seq(
-        "org.lwjgl" % "lwjgl" % versions.lwjgl classifier platform,
-        "org.lwjgl" % "lwjgl-glfw" % versions.lwjgl classifier platform,
-        "org.lwjgl" % "lwjgl-opengl" % versions.lwjgl classifier platform,
-        "org.lwjgl" % "lwjgl-openal" % versions.lwjgl classifier platform,
-        "org.lwjgl" % "lwjgl-stb" % versions.lwjgl classifier platform
-      )
-    )
+    val base = "org.lwjgl" % name % versions.lwjgl
+    val natives = platforms.map(p => "org.lwjgl" % name % versions.lwjgl classifier p)
+    base +: natives
   }
+
+  lazy val LwjglSystem = lwjglDependency("lwjgl")
+  lazy val LwjglGlfw = lwjglDependency("lwjgl-glfw")
+  lazy val LwjglOpenGL = lwjglDependency("lwjgl-opengl")
+  lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
+  lazy val LwjglStb = lwjglDependency("lwjgl-stb")
 
   lazy val Joml = "org.joml" % "joml" % versions.joml
   lazy val FlowNbt = "com.flowpowered" % "flow-nbt" % "1.0.0"
