@@ -17,6 +17,9 @@ jobs:
         uses: coursier/setup-action@v1
         with:
           jvm: "adoptium:1.17"
+      - name: Build
+        run: sbt coverage "Test / compile"
+        shell: bash
       - name: Run tests
         run: sbt coverage test
         shell: bash
