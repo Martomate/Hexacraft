@@ -24,7 +24,7 @@ class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(using CylinderSize) {
     event match {
       case World.Event.ChunkAdded(coords) =>
         for {
-          ch <- coords.extendedNeighbors(1)
+          ch <- coords.extendedNeighbors(4)
           p <- planners
         } do {
           p.plan(ch)
