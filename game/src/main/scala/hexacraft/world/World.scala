@@ -61,9 +61,6 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     dispatcher.track(tracker)
   }
 
-  trackEvents(worldPlanner.onWorldEvent _)
-  trackEvents(chunkLoader.onWorldEvent _)
-
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
   }
@@ -137,9 +134,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     val col = ensureColumnExists(chunkCoords.getColumnRelWorld)
     setChunkAndUpdateHeightmap(col, chunkCoords, ch)
 
-    dispatcher.notify(World.Event.ChunkAdded(chunkCoords))
-
+    worldPlanner.prepare(chunkCoords)
     worldPlanner.decorate(chunkCoords, ch)
+
     if ch.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
       val chunkNbt = ch.toNbt
       backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))
@@ -238,12 +235,14 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     }
   }
 
-  def removeChunk(chunkCoords: ChunkRelWorld): Unit = {
+  def removeChunk(chunkCoords: ChunkRelWorld): Boolean = {
     val columnCoords = chunkCoords.getColumnRelWorld
+
+    var chunkWasRemoved = false
 
     for col <- columns.get(columnCoords.value) do {
       for removedChunk <- chunks.remove(chunkCoords.value) do {
-        dispatcher.notify(World.Event.ChunkRemoved(chunkCoords))
+        chunkWasRemoved = true
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
           val removedChunkNbt = removedChunk.toNbt
@@ -258,6 +257,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
         backgroundTasks += Future(saveColumn(columnCoords, col))
       }
     }
+
+    chunkWasRemoved
   }
 
   def tick(camera: Camera): Unit = {
@@ -327,9 +328,15 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
     for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
       setChunk(chunkCoords, chunk)
+
+      dispatcher.notify(World.Event.ChunkAdded(chunkCoords))
     }
     for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
-      removeChunk(chunkCoords)
+      val chunkWasRemoved = removeChunk(chunkCoords)
+
+      if chunkWasRemoved then {
+        dispatcher.notify(World.Event.ChunkRemoved(chunkCoords))
+      }
     }
   }
 

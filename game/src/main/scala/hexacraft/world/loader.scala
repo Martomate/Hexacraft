@@ -47,7 +47,11 @@ class ChunkLoader(using CylinderSize) {
           }
       }
     }
-    chunksToAdd.toSeq
+    val finishedChunks = chunksToAdd.toSeq
+    for (coords, _) <- finishedChunks do {
+      chunksLoading -= coords
+    }
+    finishedChunks
   }
 
   def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
@@ -63,15 +67,11 @@ class ChunkLoader(using CylinderSize) {
           }
       }
     }
-    chunksToRemove.toSeq
-  }
-
-  def onWorldEvent(event: World.Event): Unit = {
-    event match {
-      case World.Event.ChunkAdded(coords)   => chunksLoading -= coords
-      case World.Event.ChunkRemoved(coords) => chunksUnloading -= coords
-      case _                                =>
+    val finishedChunks = chunksToRemove.toSeq
+    for coords <- finishedChunks do {
+      chunksUnloading -= coords
     }
+    finishedChunks
   }
 
   def unload(): Unit = {
