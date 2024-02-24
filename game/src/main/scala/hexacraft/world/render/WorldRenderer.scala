@@ -4,6 +4,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
+import hexacraft.world.World.WorldTickResult
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
@@ -63,7 +64,18 @@ class WorldRenderer(
 
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
 
-  def tick(camera: Camera, renderDistance: Double): Unit = {
+  def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
+    for coords <- worldTickResult.chunksAdded do {
+      chunksToRender.add(coords)
+    }
+    for coords <- worldTickResult.chunksRemoved do {
+      chunksToRender.remove(coords)
+      chunkHandler.clearChunkRenderData(coords)
+    }
+    for coords <- worldTickResult.chunksNeedingRenderUpdate do {
+      chunkRenderUpdateQueue.insert(coords)
+    }
+
     if chunkRenderUpdateQueueReorderingTimer.tick() then {
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
@@ -158,18 +170,6 @@ class WorldRenderer(
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-  }
-
-  def onWorldEvent(event: World.Event): Unit = {
-    event match {
-      case World.Event.ChunkAdded(coords) =>
-        chunksToRender.add(coords)
-      case World.Event.ChunkRemoved(coords) =>
-        chunksToRender.remove(coords)
-        chunkHandler.clearChunkRenderData(coords)
-      case World.Event.ChunkNeedsRenderUpdate(coords) =>
-        chunkRenderUpdateQueue.insert(coords)
-    }
   }
 
   def frameBufferResized(width: Int, height: Int): Unit = {

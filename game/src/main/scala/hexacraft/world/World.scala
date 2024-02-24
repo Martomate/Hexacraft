@@ -2,6 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.bits.Int12
 import hexacraft.util.*
+import hexacraft.world.World.WorldTickResult
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
@@ -22,11 +23,11 @@ object World {
 
   var shouldChillChunkLoader = false
 
-  enum Event {
-    case ChunkAdded(coords: ChunkRelWorld)
-    case ChunkRemoved(coords: ChunkRelWorld)
-    case ChunkNeedsRenderUpdate(coords: ChunkRelWorld)
-  }
+  class WorldTickResult(
+      val chunksAdded: Seq[ChunkRelWorld],
+      val chunksRemoved: Seq[ChunkRelWorld],
+      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld]
+  )
 }
 
 class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
@@ -55,11 +56,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   private val savedChunkModCounts = mutable.Map.empty[ChunkRelWorld, Long]
 
-  private val dispatcher = new EventDispatcher[World.Event]
-
-  def trackEvents(tracker: Tracker[World.Event]): Unit = {
-    dispatcher.track(tracker)
-  }
+  private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
@@ -261,8 +258,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     chunkWasRemoved
   }
 
-  def tick(camera: Camera): Unit = {
-    performChunkLoading(camera)
+  def tick(camera: Camera): WorldTickResult = {
+    val (chunksAdded, chunksRemoved) = performChunkLoading(camera)
 
     if blockUpdateTimer.tick() then {
       performBlockUpdates()
@@ -275,9 +272,14 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       ch.optimizeStorage()
       tickEntities(ch.entities)
     }
+
+    val r = chunksNeedingRenderUpdate.toSeq
+    chunksNeedingRenderUpdate.clear()
+
+    new WorldTickResult(chunksAdded, chunksRemoved, r)
   }
 
-  private def performChunkLoading(camera: Camera): Unit = {
+  private def performChunkLoading(camera: Camera): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
     chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
 
     val chunksToLoadPerTick = 1
@@ -326,18 +328,23 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       }
     }
 
+    val chunksAdded = mutable.ArrayBuffer.empty[ChunkRelWorld]
+    val chunksRemoved = mutable.ArrayBuffer.empty[ChunkRelWorld]
+
     for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
       setChunk(chunkCoords, chunk)
 
-      dispatcher.notify(World.Event.ChunkAdded(chunkCoords))
+      chunksAdded += chunkCoords
     }
     for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
       val chunkWasRemoved = removeChunk(chunkCoords)
 
       if chunkWasRemoved then {
-        dispatcher.notify(World.Event.ChunkRemoved(chunkCoords))
+        chunksRemoved += chunkCoords
       }
     }
+
+    (chunksAdded.toSeq, chunksRemoved.toSeq)
   }
 
   private def saveColumn(columnCoords: ColumnRelWorld, col: ChunkColumnTerrain): Unit = {
@@ -429,7 +436,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   }
 
   private def requestRenderUpdate(chunkCoords: ChunkRelWorld): Unit = {
-    dispatcher.notify(World.Event.ChunkNeedsRenderUpdate(chunkCoords))
+    chunksNeedingRenderUpdate += chunkCoords
   }
 
   def unload(): Unit = {

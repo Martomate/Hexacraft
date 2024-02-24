@@ -56,9 +56,7 @@ object GameScene {
     val player: Player = makePlayer(worldInfo.player, world)
     val otherPlayer: Entity = makeOtherPlayer(player)
 
-    val worldRenderer: WorldRenderer =
-      new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
-    world.trackEvents(worldRenderer.onWorldEvent _)
+    val worldRenderer: WorldRenderer = new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
 
     // worldRenderer.addPlayer(otherPlayer)
 
@@ -560,8 +558,8 @@ class GameScene private (
         performLeftMouseClick()
       }
 
-      world.tick(camera)
-      worldRenderer.tick(camera, world.renderDistance)
+      val worldTickResult = world.tick(camera)
+      worldRenderer.tick(camera, world.renderDistance, worldTickResult)
 
       if debugOverlay != null then {
         val regularFragmentation = worldRenderer.regularChunkBufferFragmentation
