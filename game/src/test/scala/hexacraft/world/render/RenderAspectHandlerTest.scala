@@ -17,20 +17,19 @@ class RenderAspectHandlerTest extends FunSuite {
     val renderHandler = new RenderAspectHandler(bufferHandler)
 
     val coords = ChunkRelWorld(11, 12, 13)
-    renderHandler.setChunkContent(coords, ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6)))
+    renderHandler.update(Nil, Seq(coords -> ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0, 0)
     )
 
-    renderHandler.setChunkContent(coords, ByteBuffer.wrap(Array(9, 8, 7, 6, 5, 4)))
+    renderHandler.update(Nil, Seq(coords -> ByteBuffer.wrap(Array(9, 8, 7, 6, 5, 4))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](9, 8, 7, 6, 5, 4, 0, 0, 0, 0, 0, 0)
     )
 
-    renderHandler.clearChunkContent(coords)
-    renderHandler.setChunkContent(coords, ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6)))
+    renderHandler.update(Seq(coords), Seq(coords -> ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0, 0)
@@ -49,26 +48,26 @@ class RenderAspectHandlerTest extends FunSuite {
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(1, 1, 1, 1, 1, 1)))
-    renderHandler.setChunkContent(coords2, ByteBuffer.wrap(Array(2, 2, 2, 2, 2, 2)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(1, 1, 1, 1, 1, 1))))
+    renderHandler.update(Nil, Seq(coords2 -> ByteBuffer.wrap(Array(2, 2, 2, 2, 2, 2))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2)
     )
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(9, 8, 7, 6, 5, 4)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(9, 8, 7, 6, 5, 4))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](9, 8, 7, 6, 5, 4, 2, 2, 2, 2, 2, 2)
     )
 
-    renderHandler.clearChunkContent(coords1)
+    renderHandler.update(Seq(coords1), Nil)
     assertEquals(
       buffer.localBuffer.array().toSeq.take(6),
       Seq[Byte](2, 2, 2, 2, 2, 2)
     )
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6)
@@ -87,20 +86,20 @@ class RenderAspectHandlerTest extends FunSuite {
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(11, 12, 13, 14, 15, 16)))
-    renderHandler.setChunkContent(coords2, ByteBuffer.wrap(Array(21, 22, 23, 24, 25, 26)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(11, 12, 13, 14, 15, 16))))
+    renderHandler.update(Nil, Seq(coords2 -> ByteBuffer.wrap(Array(21, 22, 23, 24, 25, 26))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26)
     )
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(19, 18, 17)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(19, 18, 17))))
     assertEquals(
       buffer.localBuffer.array().toSeq.take(9),
       Seq[Byte](19, 18, 17, 24, 25, 26, 21, 22, 23)
     )
 
-    renderHandler.setChunkContent(coords2, ByteBuffer.wrap(Array(29, 28, 27)))
+    renderHandler.update(Nil, Seq(coords2 -> ByteBuffer.wrap(Array(29, 28, 27))))
     assertEquals(
       buffer.localBuffer.array().toSeq.take(6),
       Seq[Byte](19, 18, 17, 29, 28, 27)
@@ -116,20 +115,20 @@ class RenderAspectHandlerTest extends FunSuite {
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(11, 12, 13)))
-    renderHandler.setChunkContent(coords2, ByteBuffer.wrap(Array(21, 22, 23, 24, 25, 26)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(11, 12, 13))))
+    renderHandler.update(Nil, Seq(coords2 -> ByteBuffer.wrap(Array(21, 22, 23, 24, 25, 26))))
     assertEquals(
       buffer.localBuffer.array().toSeq.take(9),
       Seq[Byte](11, 12, 13, 21, 22, 23, 24, 25, 26)
     )
 
-    renderHandler.setChunkContent(coords1, ByteBuffer.wrap(Array(19, 18, 17, 16, 15, 14)))
+    renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(19, 18, 17, 16, 15, 14))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
       Seq[Byte](19, 18, 17, 21, 22, 23, 24, 25, 26, 16, 15, 14)
     )
 
-    renderHandler.clearChunkContent(coords1)
+    renderHandler.update(Seq(coords1), Nil)
     assertEquals(
       buffer.localBuffer.array().toSeq.take(6),
       Seq[Byte](24, 25, 26, 21, 22, 23)

@@ -14,19 +14,22 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
     bufferHandler.render(memorySegments.length)
   }
 
-  def setChunkContent(coords: ChunkRelWorld, content: ByteBuffer): Unit = {
+  def update(
+      chunksToClear: Seq[ChunkRelWorld],
+      chunksToUpdate: Seq[(ChunkRelWorld, ByteBuffer)]
+  ): Unit = {
     memorySegments.synchronized {
-      if memorySegments.hasMapping(coords) then {
-        updateChunk(coords, content)
-      } else {
-        addNewChunk(coords, content)
+      // TODO: perform the operations below in batches or all at once
+      for coords <- chunksToClear do {
+        removeData(coords, memorySegments.segments(coords))
       }
-    }
-  }
-
-  def clearChunkContent(coords: ChunkRelWorld): Unit = {
-    memorySegments.synchronized {
-      removeData(coords, memorySegments.segments(coords))
+      for (coords, content) <- chunksToUpdate do {
+        if memorySegments.hasMapping(coords) then {
+          updateChunk(coords, content)
+        } else {
+          addNewChunk(coords, content)
+        }
+      }
     }
   }
 

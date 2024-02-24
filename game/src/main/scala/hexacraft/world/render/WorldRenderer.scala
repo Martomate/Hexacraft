@@ -65,13 +65,9 @@ class WorldRenderer(
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
-    for coords <- worldTickResult.chunksAdded do {
-      chunksToRender.add(coords)
-    }
-    for coords <- worldTickResult.chunksRemoved do {
-      chunksToRender.remove(coords)
-      chunkHandler.clearChunkRenderData(coords)
-    }
+    chunksToRender ++= worldTickResult.chunksAdded
+    chunksToRender --= worldTickResult.chunksRemoved
+
     for coords <- worldTickResult.chunksNeedingRenderUpdate do {
       chunkRenderUpdateQueue.insert(coords)
     }
@@ -80,15 +76,19 @@ class WorldRenderer(
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
 
-    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 4)
+    val updatedChunkData = mutable.ArrayBuffer.empty[(ChunkRelWorld, ChunkRenderData)]
+    for coords <- worldTickResult.chunksRemoved do {
+      updatedChunkData += coords -> ChunkRenderData.empty
+    }
 
+    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 4)
     while numUpdatesToPerform > 0 do {
       chunkRenderUpdateQueue.pop() match {
         case Some(coords) =>
           world.getChunk(coords) match {
             case Some(chunk) =>
               val renderData = ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
-              chunkHandler.setChunkRenderData(coords, renderData)
+              updatedChunkData += coords -> renderData
               numUpdatesToPerform -= 1
             case None =>
           }
@@ -96,6 +96,8 @@ class WorldRenderer(
           numUpdatesToPerform = 0
       }
     }
+
+    chunkHandler.update(updatedChunkData.toSeq)
   }
 
   def onTotalSizeChanged(totalSize: Int): Unit = {

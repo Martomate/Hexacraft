@@ -15,6 +15,8 @@ class ChunkRenderData(
 )
 
 object ChunkRenderData {
+  def empty: ChunkRenderData = new ChunkRenderData(None, None)
+
   def apply(
       coords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
@@ -76,21 +78,22 @@ class ChunkRenderHandler {
     transmissiveBlockHexagonHandler.render()
   }
 
-  def setChunkRenderData(coords: ChunkRelWorld, data: ChunkRenderData): Unit = {
-    data.opaqueBlocks match {
-      case Some(content) => regularBlockHexagonHandler.setChunkContent(coords, content)
-      case None          => regularBlockHexagonHandler.clearChunkContent(coords)
-    }
+  def update(chunks: Seq[(ChunkRelWorld, ChunkRenderData)]): Unit = {
+    val opaqueData = chunks.partitionMap((coords, data) =>
+      data.opaqueBlocks match {
+        case Some(content) => Right((coords, content))
+        case None          => Left(coords)
+      }
+    )
+    regularBlockHexagonHandler.update(opaqueData._1, opaqueData._2)
 
-    data.transmissiveBlocks match {
-      case Some(content) => transmissiveBlockHexagonHandler.setChunkContent(coords, content)
-      case None          => transmissiveBlockHexagonHandler.clearChunkContent(coords)
-    }
-  }
-
-  def clearChunkRenderData(coords: ChunkRelWorld): Unit = {
-    regularBlockHexagonHandler.clearChunkContent(coords)
-    transmissiveBlockHexagonHandler.clearChunkContent(coords)
+    val transmissiveData = chunks.partitionMap((coords, data) =>
+      data.transmissiveBlocks match {
+        case Some(content) => Right((coords, content))
+        case None          => Left(coords)
+      }
+    )
+    transmissiveBlockHexagonHandler.update(transmissiveData._1, transmissiveData._2)
   }
 
   def unload(): Unit = {

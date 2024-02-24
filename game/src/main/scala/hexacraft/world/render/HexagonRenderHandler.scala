@@ -24,15 +24,12 @@ class HexagonRenderHandler(topShader: BlockShader, sideShader: BlockShader, gpuS
     }
   }
 
-  def setChunkContent(coords: ChunkRelWorld, content: IndexedSeq[ByteBuffer]): Unit = {
+  def update(
+      chunksToClear: Seq[ChunkRelWorld],
+      chunksToUpdate: Seq[(ChunkRelWorld, IndexedSeq[ByteBuffer])]
+  ): Unit = {
     for s <- 0 until 8 do {
-      sideHandlers(s).setChunkContent(coords, content(s))
-    }
-  }
-
-  def clearChunkContent(coords: ChunkRelWorld): Unit = {
-    for s <- 0 until 8 do {
-      sideHandlers(s).clearChunkContent(coords)
+      sideHandlers(s).update(chunksToClear, chunksToUpdate.map((c, data) => c -> data(s)))
     }
   }
 
