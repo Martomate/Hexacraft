@@ -12,7 +12,8 @@ import hexacraft.world.World.WorldTickResult
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, EntityModel}
+
 import org.joml.{Vector2ic, Vector3f}
 
 import scala.collection.mutable
@@ -214,7 +215,7 @@ class WorldRenderer(
       sh.enable()
       sh.setSide(side)
 
-      val entityDataList: mutable.ArrayBuffer[EntityDataForShader] = ArrayBuffer.empty
+      val entityDataList: mutable.ArrayBuffer[(EntityModel, Seq[EntityPartDataForShader])] = ArrayBuffer.empty
       for {
         c <- chunksToRender
         ch <- world.getChunk(c)
@@ -228,8 +229,8 @@ class WorldRenderer(
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
-      for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do {
-        val data = partLists.flatMap(_.parts)
+      for (texture, partLists) <- entityDataList.groupBy(_._1.texture) do {
+        val data = partLists.flatMap(_._2)
 
         entityRenderers(side).setInstanceData(data.size): buf =>
           data.foreach(_.fill(buf))

@@ -8,31 +8,10 @@ import org.joml.{Matrix4f, Vector4f}
 
 import java.nio.ByteBuffer
 
-case class EntityDataForShader(model: EntityModel, parts: Seq[EntityPartDataForShader])
-
-case class EntityPartDataForShader(
-    modelMatrix: Matrix4f,
-    texOffset: (Int, Int),
-    texSize: (Int, Int),
-    blockTex: Int,
-    brightness: Float
-) {
-  def fill(buf: ByteBuffer): Unit = {
-    modelMatrix.get(buf)
-    buf.position(buf.position() + 16 * 4)
-    buf.putInt(texOffset._1)
-    buf.putInt(texOffset._2)
-    buf.putInt(texSize._1)
-    buf.putInt(texSize._2)
-    buf.putInt(blockTex)
-    buf.putFloat(brightness)
-  }
-}
-
 object EntityRenderDataFactory {
   def getEntityRenderData(entities: Iterable[Entity], side: Int, world: BlocksInWorld)(using
       CylinderSize
-  ): Iterable[EntityDataForShader] = {
+  ): Iterable[(EntityModel, Seq[EntityPartDataForShader])] = {
     val chunkCache = new ChunkCache(world)
 
     val tr = new Matrix4f
@@ -67,7 +46,7 @@ object EntityRenderDataFactory {
         )
       }
 
-      EntityDataForShader(model, parts)
+      (model, parts)
     }
   }
 }
