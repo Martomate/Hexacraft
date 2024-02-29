@@ -1,11 +1,16 @@
 package hexacraft.shaders.world_combiner
 
 import hexacraft.infra.gpu.OpenGL
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 class WorldCombinerShader {
-  private val config = ShaderConfig("world_combiner/world_combiner").withInputs("position")
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "world_combiner/vert.glsl")
+      .withStage(Fragment, "world_combiner/frag.glsl")
+      .withInputs("position")
+  )
 
   shader.setUniform1i("worldColorTexture", 0)
   shader.setUniform1i("worldDepthTexture", 1)

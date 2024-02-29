@@ -1,12 +1,17 @@
 package hexacraft.shaders.font
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.Vector3f
 
 class FontShader {
-  private val config = ShaderConfig("font/font").withInputs("position", "textureCoords")
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "font/vert.glsl")
+      .withStage(Fragment, "font/frag.glsl")
+      .withInputs("position", "textureCoords")
+  )
 
   def setWindowAspectRatio(aspectRatio: Float): Unit = {
     shader.setUniform1f("windowAspectRatio", aspectRatio)

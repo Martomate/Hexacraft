@@ -1,12 +1,17 @@
 package hexacraft.shaders.color
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector4f}
 
 class ColorShader {
-  private val config = ShaderConfig("color/color").withInputs("position")
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "color/vert.glsl")
+      .withStage(Fragment, "color/frag.glsl")
+      .withInputs("position")
+  )
 
   def setTransformationMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("transformationMatrix", matrix)

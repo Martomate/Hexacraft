@@ -2,6 +2,7 @@ package hexacraft.renderer
 
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
+import hexacraft.infra.gpu.OpenGL.ShaderType
 import hexacraft.util.{Resource, Result}
 import hexacraft.util.Result.{Err, Ok}
 
@@ -34,7 +35,7 @@ class Shader private (config: ShaderConfig) extends Resource {
   protected def load(): Unit = {
     shaderID = new ShaderBuilder()
       .setDefines(config.defines)
-      .loadAll(config.fileName + ".glsl")
+      .loadAll(config.fileNames)
       .bindAttribs(config.inputs: _*)
       .attachAll()
       .linkAndFinish()
@@ -133,8 +134,8 @@ class Shader private (config: ShaderConfig) extends Resource {
 }
 
 object ShaderConfig {
-  def apply(fileName: String): ShaderConfig = {
-    ShaderConfig(fileName, Nil, Nil)
+  def apply(): ShaderConfig = {
+    ShaderConfig(Map.empty, Nil, Nil)
   }
 }
 
@@ -145,7 +146,12 @@ object ShaderConfig {
   * @param defines
   * A list of #define statements to include in the beginning of the shader file
   */
-case class ShaderConfig(fileName: String, inputs: Seq[String], defines: Seq[(String, String)]) {
+case class ShaderConfig(
+    fileNames: Map[OpenGL.ShaderType, String],
+    inputs: Seq[String],
+    defines: Seq[(String, String)]
+) {
+  def withStage(stage: ShaderType, path: String): ShaderConfig = copy(fileNames = fileNames + (stage -> path))
 
   /** a.k.a. "attributes" */
   def withInputs(inputs: String*): ShaderConfig = copy(inputs = inputs)
@@ -197,6 +203,21 @@ class ShaderBuilder {
     }
 
     source.toString
+  }
+
+  def loadAll(paths: Map[OpenGL.ShaderType, String]): ShaderBuilder = {
+    for (shaderType, path) <- paths do {
+      val source = loadSource(path)
+
+      OpenGL.loadShader(shaderType, header + source) match {
+        case Ok(shaderId) =>
+          shaders.put(shaderType, shaderId)
+        case Err(e) =>
+          System.err.println(s"Shader '$path' failed to compile:\n${e.message}")
+      }
+    }
+
+    this
   }
 
   def loadAll(path: String): ShaderBuilder = {

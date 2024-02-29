@@ -1,25 +1,28 @@
 package hexacraft.shaders.gui_block
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.Matrix4f
 
 class GuiBlockShader(isSide: Boolean) {
-  private val config = ShaderConfig("gui_block/gui_block")
-    .withInputs(
-      "position",
-      "texCoords",
-      "normal",
-      "vertexIndex",
-      "faceIndex",
-      "blockPos",
-      "blockTex",
-      "blockHeight",
-      "brightness"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "gui_block/vert.glsl")
+      .withStage(Fragment, "gui_block/frag.glsl")
+      .withInputs(
+        "position",
+        "texCoords",
+        "normal",
+        "vertexIndex",
+        "faceIndex",
+        "blockPos",
+        "blockTex",
+        "blockHeight",
+        "brightness"
+      )
+      .withDefines("isSide" -> (if isSide then "1" else "0"))
+  )
 
   def setWindowAspectRatio(aspectRatio: Float): Unit = {
     shader.setUniform1f("windowAspectRatio", aspectRatio)

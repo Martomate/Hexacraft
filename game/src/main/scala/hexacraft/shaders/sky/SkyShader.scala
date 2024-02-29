@@ -1,12 +1,17 @@
 package hexacraft.shaders.sky
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3f}
 
 class SkyShader {
-  private val config = ShaderConfig("sky/sky").withInputs("position")
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "sky/vert.glsl")
+      .withStage(Fragment, "sky/frag.glsl")
+      .withInputs("position")
+  )
 
   def setInverseProjectionMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("invProjMatr", matrix)

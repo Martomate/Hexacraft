@@ -1,14 +1,17 @@
 package hexacraft.shaders.selected_block
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3d}
 
 class SelectedBlockShader {
-  private val config = ShaderConfig("selected_block/selected_block")
-    .withInputs("position", "blockPos", "color", "blockHeight")
-
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "selected_block/vert.glsl")
+      .withStage(Fragment, "selected_block/frag.glsl")
+      .withInputs("position", "blockPos", "color", "blockHeight")
+  )
 
   def setTotalSize(totalSize: Int): Unit = {
     shader.setUniform1i("totalSize", totalSize)

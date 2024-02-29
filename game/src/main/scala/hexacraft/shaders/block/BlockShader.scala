@@ -1,21 +1,18 @@
 package hexacraft.shaders.block
 
+import hexacraft.infra.gpu.OpenGL.ShaderType
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 class BlockShader(isSide: Boolean) {
-  private val config = ShaderConfig("block/block")
-    .withInputs(
-      "position",
-      "texIndex",
-      "normal",
-      "brightness",
-      "texCoords"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(ShaderType.Vertex, "block/vert.glsl")
+      .withStage(ShaderType.Fragment, "block/frag.glsl")
+      .withInputs("position", "texIndex", "normal", "brightness", "texCoords")
+      .withDefines("isSide" -> (if isSide then "1" else "0"))
+  )
 
   def setTotalSize(totalSize: Int): Unit = {
     shader.setUniform1i("totalSize", totalSize)

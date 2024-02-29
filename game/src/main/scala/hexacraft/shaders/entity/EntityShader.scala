@@ -1,29 +1,32 @@
 package hexacraft.shaders.entity
 
+import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 class EntityShader(isSide: Boolean) {
-  private val config = ShaderConfig("entity/entity_part")
-    .withInputs(
-      "position",
-      "texCoords",
-      "normal",
-      "vertexIndex",
-      "faceIndex",
-      "modelMatrix",
-      "",
-      "",
-      "",
-      "texOffset",
-      "texDim",
-      "blockTex",
-      "brightness"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
+  private val shader = Shader.from(
+    ShaderConfig()
+      .withStage(Vertex, "entity/vert.glsl")
+      .withStage(Fragment, "entity/frag.glsl")
+      .withInputs(
+        "position",
+        "texCoords",
+        "normal",
+        "vertexIndex",
+        "faceIndex",
+        "modelMatrix",
+        "",
+        "",
+        "",
+        "texOffset",
+        "texDim",
+        "blockTex",
+        "brightness"
+      )
+      .withDefines("isSide" -> (if isSide then "1" else "0"))
+  )
 
   def setTotalSize(totalSize: Int): Unit = {
     shader.setUniform1i("totalSize", totalSize)
