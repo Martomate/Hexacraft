@@ -1,9 +1,9 @@
-package hexacraft.game
+package hexacraft.shaders.crosshair
 
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 class CrosshairShader {
-  private val config = ShaderConfig("crosshair").withInputs("position")
+  private val config = ShaderConfig("crosshair/crosshair").withInputs("position")
   private val shader = Shader.from(config)
 
   def setWindowAspectRatio(aspectRatio: Float): Unit = {

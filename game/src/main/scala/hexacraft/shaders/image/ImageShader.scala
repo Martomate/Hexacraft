@@ -1,11 +1,11 @@
-package hexacraft.gui.comp
+package hexacraft.shaders.image
 
 import hexacraft.renderer.{Shader, ShaderConfig}
 
-import org.joml.{Matrix4f, Vector4f}
+import org.joml.Matrix4f
 
-class ColorShader {
-  private val config = ShaderConfig("color").withInputs("position")
+class ImageShader {
+  private val config = ShaderConfig("image/image").withInputs("position")
   private val shader = Shader.from(config)
 
   def setTransformationMatrix(matrix: Matrix4f): Unit = {
@@ -14,10 +14,6 @@ class ColorShader {
 
   def setWindowAspectRatio(aspectRatio: Float): Unit = {
     shader.setUniform1f("windowAspectRatio", aspectRatio)
-  }
-
-  def setColor(color: Vector4f): Unit = {
-    shader.setUniform4f("col", color)
   }
 
   def enable(): Unit = {

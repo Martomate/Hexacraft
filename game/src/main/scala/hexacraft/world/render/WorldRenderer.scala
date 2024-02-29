@@ -2,6 +2,10 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
+import hexacraft.shaders.entity.{EntityPartVao, EntityShader}
+import hexacraft.shaders.selected_block.{SelectedBlockShader, SelectedBlockVao}
+import hexacraft.shaders.sky.{SkyShader, SkyVao}
+import hexacraft.shaders.world_combiner.{WorldCombinerShader, WorldCombinerVao}
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
 import hexacraft.world.World.WorldTickResult
@@ -9,7 +13,6 @@ import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.Entity
-
 import org.joml.{Vector2ic, Vector3f}
 
 import scala.collection.mutable

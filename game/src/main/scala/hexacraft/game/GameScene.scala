@@ -13,8 +13,8 @@ import hexacraft.world.block.BlockSpec.{Offsets, Textures}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 import hexacraft.world.render.WorldRenderer
-
 import com.martomate.nbt.Nbt
+import hexacraft.shaders.crosshair.CrosshairShader
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 import org.zeromq.ZMQException
 

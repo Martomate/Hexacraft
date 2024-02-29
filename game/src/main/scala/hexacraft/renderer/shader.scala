@@ -156,7 +156,7 @@ case class ShaderConfig(fileName: String, inputs: Seq[String], defines: Seq[(Str
 class ShaderBuilder {
   private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
   private val programID = OpenGL.createProgram()
-  private var prefix = "shaders/"
+  private var prefix = "hexacraft/shaders/"
   private var definesText = ""
 
   def setPrefix(newPrefix: String): ShaderBuilder = {

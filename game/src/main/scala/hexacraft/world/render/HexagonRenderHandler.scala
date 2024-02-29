@@ -1,6 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.GpuState
+import hexacraft.shaders.block.{BlockShader, BlockVao}
 import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer

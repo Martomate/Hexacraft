@@ -1,98 +1,22 @@
 package hexacraft.world.render
 
-import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig, VAO}
+import hexacraft.shaders.block.BlockVao
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
-import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
+import org.joml.{Vector2f, Vector3f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 import java.util
 import scala.collection.mutable.ArrayBuffer
 
-class BlockShader(isSide: Boolean) {
-  private val config = ShaderConfig("block")
-    .withInputs(
-      "position",
-      "texIndex",
-      "normal",
-      "brightness",
-      "texCoords"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
-
-  def setTotalSize(totalSize: Int): Unit = {
-    shader.setUniform1i("totalSize", totalSize)
-  }
-
-  def setSunPosition(sun: Vector3f): Unit = {
-    shader.setUniform3f("sun", sun.x, sun.y, sun.z)
-  }
-
-  def setCameraPosition(cam: Vector3d): Unit = {
-    shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
-  }
-
-  def setProjectionMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("projMatrix", matrix)
-  }
-
-  def setViewMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("viewMatrix", matrix)
-  }
-
-  def setSide(side: Int): Unit = {
-    shader.setUniform1i("side", side)
-  }
-
-  def enable(): Unit = {
-    shader.activate()
-  }
-
-  def free(): Unit = {
-    shader.free()
-  }
-}
-
-object BlockVao {
-  private[render] def verticesPerBlock(side: Int): Int = {
-    if side < 2 then {
-      3 * 6
-    } else {
-      3 * 2
-    }
-  }
-
-  def bytesPerVertex(side: Int): Int = (4 + 6) * 4
-
-  def forSide(side: Int)(maxVertices: Int): VAO = {
-    val verticesPerInstance = BlockVao.verticesPerBlock(side)
-
-    VAO
-      .builder()
-      .addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
-        _.ints(0, 3)
-          .ints(1, 1)
-          .floats(2, 3)
-          .floats(3, 1)
-          .floats(4, 2)
-      )
-      .finish(maxVertices)
-  }
-}
-
-object AdvancedBlockRenderer {
-  private[render] val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
-  private[render] val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
-}
-
 object BlockVboData {
+  private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
+  private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
+
   private def blockSideStride(side: Int): Int = BlockVao.bytesPerVertex(side)
 
   private val normals =
@@ -257,7 +181,7 @@ object BlockVboData {
           for i <- 0 until 6 * 3 do {
             val faceIndex = i / 3
             val vertexId = i % 3
-            val a = AdvancedBlockRenderer.topBottomVertexIndices(i)
+            val a = topBottomVertexIndices(i)
 
             val (x, z) =
               if a == 6 then {
@@ -302,7 +226,7 @@ object BlockVboData {
           for i <- 0 until 2 * 3 do {
             val faceIndex = i / 3
             val vertexId = i % 3
-            val a = AdvancedBlockRenderer.sideVertexIndices(i)
+            val a = sideVertexIndices(i)
 
             val v = (side - 2 + a % 2) % 6
             val (x, z) = v match {

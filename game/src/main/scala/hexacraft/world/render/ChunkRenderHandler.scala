@@ -1,10 +1,10 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.{GpuState, TextureArray}
+import hexacraft.shaders.block.BlockShader
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.ChunkRelWorld
-
 import org.joml.Vector3f
 
 import java.nio.ByteBuffer

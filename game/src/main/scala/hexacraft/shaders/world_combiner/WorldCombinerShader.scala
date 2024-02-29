@@ -1,10 +1,10 @@
-package hexacraft.world.render
+package hexacraft.shaders.world_combiner
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig, VAO}
+import hexacraft.renderer.{Shader, ShaderConfig}
 
 class WorldCombinerShader {
-  private val config = ShaderConfig("world_combiner").withInputs("position")
+  private val config = ShaderConfig("world_combiner/world_combiner").withInputs("position")
   private val shader = Shader.from(config)
 
   shader.setUniform1i("worldColorTexture", 0)
@@ -24,17 +24,5 @@ class WorldCombinerShader {
 
   def free(): Unit = {
     shader.free()
-  }
-}
-
-object WorldCombinerVao {
-  def create: VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(4)(
-        _.floats(0, 2),
-        _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
-      )
-      .finish(4)
   }
 }

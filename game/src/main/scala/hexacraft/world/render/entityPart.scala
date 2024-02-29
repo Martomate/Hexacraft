@@ -1,95 +1,12 @@
 package hexacraft.world.render
 
-import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
 
-import org.joml.{Matrix4f, Vector3d, Vector3f, Vector4f}
+import org.joml.{Matrix4f, Vector4f}
 
 import java.nio.ByteBuffer
-
-class EntityShader(isSide: Boolean) {
-  private val config = ShaderConfig("entity_part")
-    .withInputs(
-      "position",
-      "texCoords",
-      "normal",
-      "vertexIndex",
-      "faceIndex",
-      "modelMatrix",
-      "",
-      "",
-      "",
-      "texOffset",
-      "texDim",
-      "blockTex",
-      "brightness"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
-
-  def setTotalSize(totalSize: Int): Unit = {
-    shader.setUniform1i("totalSize", totalSize)
-  }
-
-  def setSunPosition(sun: Vector3f): Unit = {
-    shader.setUniform3f("sun", sun.x, sun.y, sun.z)
-  }
-
-  def setCameraPosition(cam: Vector3d): Unit = {
-    shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
-  }
-
-  def setProjectionMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("projMatrix", matrix)
-  }
-
-  def setViewMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("viewMatrix", matrix)
-  }
-
-  def setSide(side: Int): Unit = {
-    shader.setUniform1i("side", side)
-  }
-
-  def setTextureSize(texSize: Int): Unit = {
-    shader.setUniform1i("texSize", texSize)
-  }
-
-  def enable(): Unit = {
-    shader.activate()
-  }
-
-  def free(): Unit = {
-    shader.free()
-  }
-}
-
-object EntityPartVao {
-  def forSide(side: Int): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
-        _.floats(0, 3)
-          .floats(1, 2)
-          .floats(2, 3)
-          .ints(3, 1)
-          .ints(4, 1),
-        _.fill(0, BlockRenderer.setupBlockVBO(side))
-      )
-      .addInstanceVbo(0, OpenGL.VboUsage.DynamicDraw)(
-        _.floatsArray(5, 4)(4)
-          .ints(9, 2)
-          .ints(10, 2)
-          .ints(11, 1)
-          .floats(12, 1)
-      )
-      .finish(BlockRenderer.verticesPerInstance(side))
-  }
-}
 
 case class EntityDataForShader(model: EntityModel, parts: Seq[EntityPartDataForShader])
 

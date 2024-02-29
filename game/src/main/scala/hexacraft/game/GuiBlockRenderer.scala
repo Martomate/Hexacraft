@@ -1,8 +1,8 @@
 package hexacraft.game
 
 import hexacraft.gui.comp.GUITransformation
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
+import hexacraft.shaders.gui_block.{GuiBlockShader, GuiBlockVao}
 import hexacraft.world.CameraProjection
 import hexacraft.world.block.Block
 import hexacraft.world.render.BlockRenderer
@@ -81,65 +81,5 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
     for r <- guiBlockRenderers do {
       r.unload()
     }
-  }
-}
-
-class GuiBlockShader(isSide: Boolean) {
-  private val config = ShaderConfig("gui_block")
-    .withInputs(
-      "position",
-      "texCoords",
-      "normal",
-      "vertexIndex",
-      "faceIndex",
-      "blockPos",
-      "blockTex",
-      "blockHeight",
-      "brightness"
-    )
-    .withDefines("isSide" -> (if isSide then "1" else "0"))
-
-  private val shader = Shader.from(config)
-
-  def setWindowAspectRatio(aspectRatio: Float): Unit = {
-    shader.setUniform1f("windowAspectRatio", aspectRatio)
-  }
-
-  def setProjectionMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("projMatrix", matrix)
-  }
-
-  def setViewMatrix(matrix: Matrix4f): Unit = {
-    shader.setUniformMat4("viewMatrix", matrix)
-  }
-
-  def setSide(side: Int): Unit = {
-    shader.setUniform1i("side", side)
-  }
-
-  def enable(): Unit = {
-    shader.activate()
-  }
-}
-
-object GuiBlockVao {
-  def forSide(side: Int): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(BlockRenderer.verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
-        _.floats(0, 3)
-          .floats(1, 2)
-          .floats(2, 3)
-          .ints(3, 1)
-          .ints(4, 1),
-        _.fill(0, BlockRenderer.setupBlockVBO(side))
-      )
-      .addInstanceVbo(0, OpenGL.VboUsage.DynamicDraw)(
-        _.floats(5, 2)
-          .ints(6, 1)
-          .floats(7, 1)
-          .floats(8, 1)
-      )
-      .finish(BlockRenderer.verticesPerInstance(side))
   }
 }

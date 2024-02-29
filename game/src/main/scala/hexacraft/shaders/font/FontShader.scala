@@ -1,11 +1,11 @@
-package hexacraft.text
+package hexacraft.shaders.font
 
 import hexacraft.renderer.{Shader, ShaderConfig}
 
 import org.joml.Vector3f
 
 class FontShader {
-  private val config = ShaderConfig("font").withInputs("position", "textureCoords")
+  private val config = ShaderConfig("font/font").withInputs("position", "textureCoords")
   private val shader = Shader.from(config)
 
   def setWindowAspectRatio(aspectRatio: Float): Unit = {
