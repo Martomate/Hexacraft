@@ -1,7 +1,7 @@
 package hexacraft.shaders.font
 
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
-import hexacraft.renderer.{Shader, ShaderConfig}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
 import org.joml.Vector3f
 
@@ -27,5 +27,15 @@ class FontShader {
 
   def enable(): Unit = {
     shader.activate()
+  }
+}
+
+object FontShader {
+  def createVao(vertexPositions: Seq[Float], textureCoords: Seq[Float]): VAO = {
+    VAO
+      .builder()
+      .addVertexVbo(vertexPositions.length)(_.floats(0, 2), _.fillFloats(0, vertexPositions))
+      .addVertexVbo(textureCoords.length)(_.floats(1, 2), _.fillFloats(0, textureCoords))
+      .finish(vertexPositions.length)
   }
 }

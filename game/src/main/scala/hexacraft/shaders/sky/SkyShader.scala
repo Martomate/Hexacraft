@@ -1,7 +1,8 @@
 package hexacraft.shaders.sky
 
+import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
-import hexacraft.renderer.{Shader, ShaderConfig}
+import hexacraft.renderer.{GpuState, Renderer, Shader, ShaderConfig, VAO}
 
 import org.joml.{Matrix4f, Vector3f}
 
@@ -32,4 +33,18 @@ class SkyShader {
   def free(): Unit = {
     shader.free()
   }
+}
+
+object SkyShader {
+  def createVao(): VAO = {
+    VAO
+      .builder()
+      .addVertexVbo(4)(
+        _.floats(0, 2),
+        _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
+      )
+      .finish(4)
+  }
+
+  def createRenderer(): Renderer = new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
 }

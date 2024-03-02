@@ -1,6 +1,5 @@
 package hexacraft.text
 
-import hexacraft.renderer.VAO
 import hexacraft.text.font.Font
 
 import scala.collection.mutable
@@ -42,15 +41,5 @@ class TextMaster {
       text.unload()
     }
     texts.clear()
-  }
-}
-
-object TextMaster {
-  def loadVAO(vertexPositions: Seq[Float], textureCoords: Seq[Float]): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(vertexPositions.length)(_.floats(0, 2), _.fillFloats(0, vertexPositions))
-      .addVertexVbo(textureCoords.length)(_.floats(1, 2), _.fillFloats(0, textureCoords))
-      .finish(vertexPositions.length)
   }
 }

@@ -1,17 +1,16 @@
 package hexacraft.world.render
 
+import hexacraft.shaders.entity.EntityShader
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Matrix4f, Vector4f}
 
-import java.nio.ByteBuffer
-
 object EntityRenderDataFactory {
   def getEntityRenderData(entities: Iterable[Entity], side: Int, world: BlocksInWorld)(using
       CylinderSize
-  ): Iterable[(EntityModel, Seq[EntityPartDataForShader])] = {
+  ): Iterable[(EntityModel, Seq[EntityShader.InstanceData])] = {
     val chunkCache = new ChunkCache(world)
 
     val tr = new Matrix4f
@@ -37,7 +36,7 @@ object EntityRenderDataFactory {
             0
           }
 
-        EntityPartDataForShader(
+        EntityShader.InstanceData(
           modelMatrix = new Matrix4f(tr),
           texOffset = part.textureOffset(side),
           texSize = part.textureSize(side),

@@ -1,9 +1,12 @@
 package hexacraft.shaders.block
 
+import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType
-import hexacraft.renderer.{Shader, ShaderConfig}
+import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
-import org.joml.{Matrix4f, Vector3d, Vector3f}
+import org.joml.*
+
+import java.nio.ByteBuffer
 
 class BlockShader(isSide: Boolean) {
   private val shader = Shader.from(
@@ -44,5 +47,57 @@ class BlockShader(isSide: Boolean) {
 
   def free(): Unit = {
     shader.free()
+  }
+}
+
+object BlockShader {
+  def createVao(side: Int, maxVertices: Int): VAO = {
+    val verticesPerInstance = verticesPerBlock(side)
+
+    VAO
+      .builder()
+      .addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
+        _.ints(0, 3)
+          .ints(1, 1)
+          .floats(2, 3)
+          .floats(3, 1)
+          .floats(4, 2)
+      )
+      .finish(maxVertices)
+  }
+
+  def verticesPerBlock(side: Int): Int = {
+    if side < 2 then {
+      3 * 6
+    } else {
+      3 * 2
+    }
+  }
+
+  def bytesPerVertex(side: Int): Int = (4 + 6) * 4
+
+  class BlockVertexData(
+      position: Vector3i,
+      texIndex: Int,
+      normal: Vector3f,
+      brightness: Float,
+      texCoords: Vector2f
+  ) {
+    def fill(buf: ByteBuffer): Unit = {
+      buf.putInt(position.x)
+      buf.putInt(position.y)
+      buf.putInt(position.z)
+
+      buf.putInt(texIndex)
+
+      buf.putFloat(normal.x)
+      buf.putFloat(normal.y)
+      buf.putFloat(normal.z)
+
+      buf.putFloat(brightness)
+
+      buf.putFloat(texCoords.x)
+      buf.putFloat(texCoords.y)
+    }
   }
 }

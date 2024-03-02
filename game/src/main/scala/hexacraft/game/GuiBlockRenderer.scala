@@ -2,12 +2,14 @@ package hexacraft.game
 
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.renderer.*
-import hexacraft.shaders.gui_block.{GuiBlockShader, GuiBlockVao}
+import hexacraft.shaders.gui_block.GuiBlockShader
 import hexacraft.world.CameraProjection
 import hexacraft.world.block.Block
 import hexacraft.world.render.BlockRenderer
 
-import org.joml.Matrix4f
+import org.joml.{Matrix4f, Vector2f}
+
+import scala.collection.mutable
 
 object GuiBlockRenderer {
   private val guiBlockShader = new GuiBlockShader(isSide = false)
@@ -18,7 +20,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
   private val guiBlockRenderers =
     for s <- 0 until 8 yield {
       BlockRenderer(
-        GuiBlockVao.forSide(s),
+        GuiBlockShader.createVao(s),
         GpuState.build(_.blend(true).depthTest(false))
       )
     }
@@ -61,19 +63,21 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
 
   def updateContent(xOff: Float, yOff: Float, blocks: Seq[Block]): Unit = {
     for side <- 0 until 8 do {
-      guiBlockRenderers(side).setInstanceData(9 * 9): buf =>
-        for y <- 0 until h do {
-          for x <- 0 until w do {
-            val blockToDraw = blocks(x + y * w)
-            if blockToDraw.canBeRendered then {
-              buf.putFloat(x * separation + xOff)
-              buf.putFloat(y * separation + yOff)
-              buf.putInt(blockTextureIndices(blockToDraw.name)(side))
-              buf.putFloat(1)
-              buf.putFloat(1)
-            }
+      val data = new mutable.ArrayBuffer[GuiBlockShader.InstanceData](h * w)
+
+      for y <- 0 until h do {
+        for x <- 0 until w do {
+          val blockToDraw = blocks(x + y * w)
+          if blockToDraw.canBeRendered then {
+            val blockPos = Vector2f(x * separation + xOff, y * separation + yOff)
+            val blockTex = blockTextureIndices(blockToDraw.name)(side)
+            data += GuiBlockShader.InstanceData(blockPos, blockTex, 1, 1)
           }
         }
+      }
+
+      guiBlockRenderers(side).setInstanceData(data.size): buf =>
+        data.foreach(_.fill(buf))
     }
   }
 

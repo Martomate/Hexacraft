@@ -1,23 +1,25 @@
 package hexacraft.world.render
 
-import hexacraft.shaders.block.BlockVao
+import hexacraft.shaders.block.BlockShader
+import hexacraft.shaders.block.BlockShader.BlockVertexData
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, Offset}
 
-import org.joml.{Vector2f, Vector3f}
+import org.joml.{Vector2f, Vector3f, Vector3i}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 import java.util
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object BlockVboData {
   private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
   private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
 
-  private def blockSideStride(side: Int): Int = BlockVao.bytesPerVertex(side)
+  private def blockSideStride(side: Int): Int = BlockShader.bytesPerVertex(side)
 
   private val normals =
     for s <- 0 until 8 yield {
@@ -131,9 +133,15 @@ object BlockVboData {
         }
       }
 
-      val bytesPerBlock = BlockVao.bytesPerVertex(side) * BlockVao.verticesPerBlock(side)
+      val vertices =
+        calculateVertexData(chunkCoords, blocks, side, shouldRender, blockAtFn, brightnessFn, blockTextureIndices)
+
+      val bytesPerBlock = BlockShader.bytesPerVertex(side) * BlockShader.verticesPerBlock(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * bytesPerBlock)
-      populateBuffer(chunkCoords, blocks, side, shouldRender, blockAtFn, brightnessFn, buf, blockTextureIndices)
+      for v <- vertices do {
+        v.fill(buf)
+      }
+
       buf.flip()
       buf
     }
@@ -141,22 +149,20 @@ object BlockVboData {
     blocksBuffers
   }
 
-  private def populateBuffer(
+  private def calculateVertexData(
       chunkCoords: ChunkRelWorld,
       blocks: Array[LocalBlockState],
       side: Int,
       shouldRender: java.util.BitSet,
       blockAt: BlockRelWorld => BlockState,
       brightness: BlockRelWorld => Float,
-      buf: ByteBuffer,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
-  )(using CylinderSize): Unit = {
-    val verticesPerInstance = if side < 2 then 7 else 4
+  )(using CylinderSize): Seq[BlockVertexData] = {
+    val cornersPerBlock = if side < 2 then 7 else 4
 
-    var i1 = 0
-    val i1Lim = blocks.length
-    while i1 < i1Lim do {
-      val lbs = blocks(i1)
+    val vertices = new mutable.ArrayBuffer[BlockVertexData](blocks.length)
+
+    for lbs <- blocks do {
       val localCoords = lbs.coords
       val block = lbs.block
 
@@ -169,12 +175,9 @@ object BlockVboData {
         val cornerHeights = Array.ofDim[Float](7)
         val cornerBrightnesses = Array.ofDim[Float](7)
 
-        var cornerIdx = 0
-        while cornerIdx < verticesPerInstance do {
+        for cornerIdx <- 0 until cornersPerBlock do {
           cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAt, cornerIdx, side)
           cornerBrightnesses(cornerIdx) = calculateCornerBrightness(neighborWorldCoords, brightness, cornerIdx, side)
-
-          cornerIdx += 1
         }
 
         if side < 2 then {
@@ -207,20 +210,14 @@ object BlockVboData {
             val height = cornerHeights(a)
             val brightness = cornerBrightnesses(a)
 
-            buf.putInt(worldCoords.x * 3 + x)
-            buf.putInt(worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt)
-            buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
+            val pos = Vector3i(
+              worldCoords.x * 3 + x,
+              worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt,
+              worldCoords.z * 2 + worldCoords.x + z
+            )
+            val texIndex = (blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15)
 
-            buf.putInt((blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15))
-
-            buf.putFloat(normal.x)
-            buf.putFloat(normal.y)
-            buf.putFloat(normal.z)
-
-            buf.putFloat(brightness)
-
-            buf.putFloat(tex.x)
-            buf.putFloat(tex.y)
+            vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
           }
         } else {
           for i <- 0 until 2 * 3 do {
@@ -241,26 +238,21 @@ object BlockVboData {
             val height = cornerHeights(a)
             val brightness = cornerBrightnesses(a)
 
-            buf.putInt(worldCoords.x * 3 + x)
-            buf.putInt(worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt)
-            buf.putInt(worldCoords.z * 2 + worldCoords.x + z)
+            val pos = Vector3i(
+              worldCoords.x * 3 + x,
+              worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt,
+              worldCoords.z * 2 + worldCoords.x + z
+            )
+            val texIndex = blockTex & 0xfff
+            val tex = Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
 
-            buf.putInt(blockTex & 0xfff)
-
-            buf.putFloat(normal.x)
-            buf.putFloat(normal.y)
-            buf.putFloat(normal.z)
-
-            buf.putFloat(brightness)
-
-            buf.putFloat((1 - a % 2).toFloat)
-            buf.putFloat((a / 2).toFloat)
+            vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
           }
         }
       }
-
-      i1 += 1
     }
+
+    vertices.toSeq
   }
 
   private def calculateCornerHeight(

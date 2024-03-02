@@ -2,6 +2,7 @@ package hexacraft.text
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.VAO
+import hexacraft.shaders.font.FontShader
 import hexacraft.text.font.Font
 import hexacraft.text.layout.LineBreaker
 
@@ -67,7 +68,7 @@ class Text(
 
     val data: TextMesh = TextMesh.fromLines(lines, centered, metaData)
 
-    val vao: VAO = TextMaster.loadVAO(data.vertexPositions, data.textureCoords)
+    val vao: VAO = FontShader.createVao(data.vertexPositions, data.textureCoords)
     setMeshInfo(vao, data.getVertexCount)
   }
 
