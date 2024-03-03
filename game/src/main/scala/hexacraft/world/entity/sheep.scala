@@ -19,8 +19,8 @@ class SheepEntityModel(
 
   private val animation = new SheepAnimation(this)
 
-  override def tick(): Unit = {
-    animation.tick()
+  override def tick(walking: Boolean): Unit = {
+    animation.tick(walking)
   }
 
   override def texture: TextureSingle = {
@@ -31,10 +31,12 @@ class SheepEntityModel(
 class SheepAnimation(model: SheepEntityModel) {
   var time = 0f
 
-  def tick(): Unit = {
-    time += 1f / 60
+  def tick(walking: Boolean): Unit = {
+    if walking || time % 30 != 0 then {
+      time += 1
+    }
 
-    val phase = time * 2 * math.Pi
+    val phase = time * (1f / 60) * 2 * math.Pi
 
     model.frontRightLeg.rotation.z = -0.5f * math.sin(phase).toFloat
     model.frontLeftLeg.rotation.z = 0.5f * math.sin(phase).toFloat
