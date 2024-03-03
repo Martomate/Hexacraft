@@ -2,7 +2,19 @@ package hexacraft.game
 
 import hexacraft.infra.window.{KeyboardKey, Window}
 
+import scala.collection.mutable
+
 trait GameKeyboard {
+  def pressedKeys: Seq[GameKeyboard.Key] = {
+    val pressed = mutable.ArrayBuffer.empty[GameKeyboard.Key]
+    for key <- GameKeyboard.Key.values do {
+      if keyIsPressed(key) then {
+        pressed += key
+      }
+    }
+    pressed.toSeq
+  }
+
   def keyIsPressed(key: GameKeyboard.Key): Boolean
 }
 

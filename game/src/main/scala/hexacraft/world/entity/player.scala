@@ -20,8 +20,8 @@ class PlayerEntityModel(
 
   private val animation = new PlayerAnimation(this)
 
-  override def tick(): Unit = {
-    animation.tick()
+  override def tick(walking: Boolean): Unit = {
+    animation.tick(walking)
   }
 
   override def texture: TextureSingle = {
@@ -30,12 +30,14 @@ class PlayerEntityModel(
 }
 
 class PlayerAnimation(model: PlayerEntityModel) {
-  private var time = 0f
+  private var time = 0
 
-  def tick(): Unit = {
-    time += 1f / 60
+  def tick(walking: Boolean): Unit = {
+    if walking || time % 30 != 0 then {
+      time += 1
+    }
 
-    val phase = time * 2 * math.Pi
+    val phase = time * (1f / 60) * 2 * math.Pi
 
     model.rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
     model.leftArm.rotation.z = 0.5f * math.sin(phase).toFloat

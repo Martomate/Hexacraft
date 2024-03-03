@@ -9,7 +9,7 @@ import org.joml.{Matrix4f, Vector3f}
 trait EntityModel {
   def parts: Seq[EntityPart]
   def texture: TextureSingle
-  def tick(): Unit
+  def tick(walking: Boolean): Unit
 }
 
 trait EntityPart {

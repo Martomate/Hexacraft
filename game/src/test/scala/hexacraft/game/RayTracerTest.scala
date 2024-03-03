@@ -36,7 +36,7 @@ class RayTracerTest extends FunSuite {
     val camera = new Camera(makeCameraProjection)
     camera.position.set(BlockCoords(location).offset(0, 0.5, 0).toCylCoords.toVector3d)
     camera.updateCoords()
-    camera.updateViewMatrix()
+    camera.updateViewMatrix(camera.view.position)
 
     // Create a ray
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
@@ -60,7 +60,7 @@ class RayTracerTest extends FunSuite {
     val camera = new Camera(makeCameraProjection)
     camera.position.set(BlockCoords(location).offset(0, 0.5, 0).toCylCoords.toVector3d)
     camera.updateCoords()
-    camera.updateViewMatrix()
+    camera.updateViewMatrix(camera.view.position)
 
     // Look outside of the screen
     assertEquals(Ray.fromScreen(camera, new Vector2f(1.2f, 0)), None)
@@ -85,7 +85,7 @@ class RayTracerTest extends FunSuite {
     camera.position.set(BlockCoords(0, 0.5, 0).toCylCoords.toVector3d)
     camera.rotation.set(0, math.Pi.toFloat, 0)
     camera.updateCoords()
-    camera.updateViewMatrix()
+    camera.updateViewMatrix(camera.view.position)
 
     // Create a ray
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get

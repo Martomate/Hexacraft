@@ -409,7 +409,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
     entityPhysicsSystem.update(e.transform, e.velocity, e.boundingBox)
 
-    e.model.foreach(_.tick())
+    e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)

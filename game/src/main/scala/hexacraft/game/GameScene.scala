@@ -53,16 +53,18 @@ object GameScene {
     given CylinderSize = world.size
 
     val player: Player = makePlayer(worldInfo.player, world)
-    val otherPlayer: Entity = makeOtherPlayer(player)
+    val otherPlayer: Player = makePlayer(worldInfo.player, world)
+    val otherPlayerEntity: Entity = makeOtherPlayer(player)
 
     val worldRenderer: WorldRenderer = new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
 
-    // worldRenderer.addPlayer(otherPlayer)
+    if net.isOnline then {
+      worldRenderer.addPlayer(otherPlayerEntity)
+    }
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
-    val mousePicker: RayTracer = new RayTracer(camera, 7)
-    val playerInputHandler: PlayerInputHandler = new PlayerInputHandler(keyboard)
+    val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
     val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
 
     val toolbar: Toolbar = makeToolbar(player, initialWindowSize, blockTextureIndices)
@@ -88,11 +90,12 @@ object GameScene {
       world,
       player,
       otherPlayer,
+      otherPlayerEntity,
       worldRenderer,
       camera,
-      mousePicker,
       playerInputHandler,
       playerPhysicsHandler,
+      keyboard,
       toolbar,
       blockInHandRenderer,
       placeBlockSoundBuffer,
@@ -230,12 +233,13 @@ class GameScene private (
     worldInfo: WorldInfo,
     world: World,
     val player: Player,
-    otherPlayer: Entity,
+    val otherPlayer: Player,
+    otherPlayerEntity: Entity,
     worldRenderer: WorldRenderer,
     val camera: Camera,
-    mousePicker: RayTracer,
     playerInputHandler: PlayerInputHandler,
     playerPhysicsHandler: PlayerPhysicsHandler,
+    keyboard: GameKeyboard,
     toolbar: Toolbar,
     blockInHandRenderer: GuiBlockRenderer,
     placeBlockSoundBuffer: AudioSystem.BufferId,
@@ -465,7 +469,7 @@ class GameScene private (
     crosshairRenderer.render(crosshairVAO, crosshairVAO.maxCount)
   }
 
-  private def playerEffectiveViscosity: Double = {
+  def playerEffectiveViscosity(player: Player): Double = {
     player.bounds
       .cover(CylCoords(player.position))
       .map(c => c -> world.getBlock(c))
@@ -481,7 +485,7 @@ class GameScene private (
       .sum
   }
 
-  private def playerVolumeSubmergedInWater: Double = {
+  private def playerVolumeSubmergedInWater(player: Player): Double = {
     val solidBounds = player.bounds.scaledRadially(0.7)
     solidBounds
       .cover(CylCoords(player.position))
@@ -510,17 +514,40 @@ class GameScene private (
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
-        val maxSpeed = playerInputHandler.determineMaxSpeed
+        val pressedKeys = keyboard.pressedKeys
+        val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
         if !isPaused && !isInPopup then {
           val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
-          val isInFluid = playerEffectiveViscosity > Block.Air.viscosity.toSI * 2
+          val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
 
-          playerInputHandler.tick(player, mouseMovement, maxSpeed, isInFluid)
+          playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
+          if !net.isHosting then {
+            net.notifyServer(NetworkPacket.PlayerMovedMouse(mouseMovement))
+            net.notifyServer(NetworkPacket.PlayerPressedKeys(pressedKeys))
+          }
+        } else {
+          if !net.isHosting then {
+            net.notifyServer(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
+            net.notifyServer(NetworkPacket.PlayerPressedKeys(Seq()))
+          }
         }
 
-        if !isPaused then {
-          playerPhysicsHandler.tick(player, maxSpeed, playerEffectiveViscosity, playerVolumeSubmergedInWater)
+        if !isPaused || net.isOnline then {
+          playerPhysicsHandler.tick(
+            player,
+            maxSpeed,
+            playerEffectiveViscosity(player),
+            playerVolumeSubmergedInWater(player)
+          )
+        }
+        playerPhysicsHandler.tick(
+          otherPlayer,
+          maxSpeed,
+          playerEffectiveViscosity(otherPlayer),
+          playerVolumeSubmergedInWater(otherPlayer)
+        )
 
+        if !isPaused then {
           walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
         }
       }
@@ -535,7 +562,7 @@ class GameScene private (
 
       camera.setPositionAndRotation(player.position, player.rotation)
       camera.updateCoords()
-      camera.updateViewMatrix()
+      camera.updateViewMatrix(camera.view.position)
 
       updateBlockInHandRendererContent()
 
@@ -545,14 +572,21 @@ class GameScene private (
         if !net.isHosting then {
           net.notifyServer(NetworkPacket.PlayerRightClicked)
         }
-        performRightMouseClick()
+        performRightMouseClick(true)
       }
       if leftMouseButtonTimer.tick() then {
         if !net.isHosting then {
           net.notifyServer(NetworkPacket.PlayerLeftClicked)
         }
-        performLeftMouseClick()
+        performLeftMouseClick(true)
       }
+
+      otherPlayerEntity.transform.position = CylCoords(otherPlayer.position)
+        .offset(0, otherPlayer.bounds.bottom.toDouble, 0)
+      otherPlayerEntity.transform.rotation.set(0, math.Pi * 0.5 - otherPlayer.rotation.y, 0)
+      otherPlayerEntity.velocity.velocity.set(otherPlayer.velocity)
+
+      otherPlayerEntity.model.foreach(_.tick(otherPlayerEntity.velocity.velocity.lengthSquared() > 0.1))
 
       val worldTickResult = world.tick(camera)
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
@@ -602,12 +636,25 @@ class GameScene private (
     // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
     for
       ray <- Ray.fromScreen(camera, screenCoords)
-      hit <- mousePicker.trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      hit <- new RayTracer(camera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
     yield (world.getBlock(hit._1), hit._1, hit._2)
   }
 
-  def performLeftMouseClick(): Unit = {
-    selectedBlockAndSide match {
+  def performLeftMouseClick(localPlayer: Boolean): Unit = {
+    val blockAndSide =
+      if localPlayer then selectedBlockAndSide
+      else {
+        val otherCamera = Camera(camera.proj)
+        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
+        otherCamera.updateCoords()
+        otherCamera.updateViewMatrix(camera.view.position)
+        for
+          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
+          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+        yield (world.getBlock(hit._1), hit._1, hit._2)
+      }
+
+    blockAndSide match {
       case Some((state, coords, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
@@ -620,20 +667,33 @@ class GameScene private (
     }
   }
 
-  def performRightMouseClick(): Unit = {
-    selectedBlockAndSide match {
+  def performRightMouseClick(localPlayer: Boolean): Unit = {
+    val blockAndSide =
+      if localPlayer then selectedBlockAndSide
+      else {
+        val otherCamera = Camera(camera.proj)
+        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
+        otherCamera.updateCoords()
+        otherCamera.updateViewMatrix(camera.view.position)
+        for
+          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
+          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+        yield (world.getBlock(hit._1), hit._1, hit._2)
+      }
+
+    blockAndSide match {
       case Some((state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront)
+          case _         => tryPlacingBlockAt(coordsInFront, if localPlayer then player else otherPlayer)
         }
       case _ =>
     }
   }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld): Unit = {
+  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
     if world.getBlock(coords).blockType.isSolid then {
       return
     }

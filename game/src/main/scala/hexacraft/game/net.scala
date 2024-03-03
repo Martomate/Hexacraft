@@ -1,8 +1,10 @@
 package hexacraft.game
 
 import hexacraft.world.{WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.world.block.Block
 
 import com.martomate.nbt.Nbt
+import org.joml.Vector2f
 import org.zeromq.{SocketType, ZContext, ZMonitor, ZMQ, ZMQException}
 import zmq.ZError
 
@@ -14,6 +16,8 @@ enum NetworkPacket {
   case GetState(path: String)
   case PlayerRightClicked
   case PlayerLeftClicked
+  case PlayerMovedMouse(distance: Vector2f)
+  case PlayerPressedKeys(keys: Seq[GameKeyboard.Key])
 }
 
 object NetworkPacket {
@@ -28,6 +32,14 @@ object NetworkPacket {
       PlayerRightClicked
     } else if message == "left_mouse_clicked" then {
       PlayerLeftClicked
+    } else if message.startsWith("mouse_moved ") then {
+      val args = message.substring(12).split(' ')
+      val dx = args(0).toFloat
+      val dy = args(1).toFloat
+      PlayerMovedMouse(new Vector2f(dx, dy))
+    } else if message.startsWith("keys_pressed ") then {
+      val keys = message.substring(13).split(' ').toSeq.filter(_ != "").map(s => GameKeyboard.Key.valueOf(s))
+      PlayerPressedKeys(keys)
     } else {
       val bytesHex = bytes.map(b => Integer.toHexString(b & 0xff)).mkString("Array(", ", ", ")")
       throw new IllegalArgumentException(s"unknown packet type (message: '$message', raw: $bytesHex)")
@@ -37,10 +49,12 @@ object NetworkPacket {
   extension (p: NetworkPacket) {
     def serialize(charset: Charset): Array[Byte] =
       val str = p match {
-        case NetworkPacket.GetWorldInfo       => "get_world_info"
-        case NetworkPacket.GetState(path)     => s"get_state $path"
-        case NetworkPacket.PlayerRightClicked => "right_mouse_clicked"
-        case NetworkPacket.PlayerLeftClicked  => "left_mouse_clicked"
+        case NetworkPacket.GetWorldInfo            => "get_world_info"
+        case NetworkPacket.GetState(path)          => s"get_state $path"
+        case NetworkPacket.PlayerRightClicked      => "right_mouse_clicked"
+        case NetworkPacket.PlayerLeftClicked       => "left_mouse_clicked"
+        case NetworkPacket.PlayerMovedMouse(dist)  => s"mouse_moved ${dist.x} ${dist.y}"
+        case NetworkPacket.PlayerPressedKeys(keys) => s"keys_pressed ${keys.mkString(" ")}"
       }
       str.getBytes(charset)
   }
@@ -221,12 +235,23 @@ class GameServer(worldProvider: WorldProvider, game: GameScene) {
       case GetState(path) =>
         Some(worldProvider.loadState(path).getOrElse(Nbt.emptyMap))
       case PlayerRightClicked =>
-        println("right click!")
-        game.performRightMouseClick()
+        game.performRightMouseClick(false)
         None
       case PlayerLeftClicked =>
-        println("left click!")
-        game.performLeftMouseClick()
+        game.performLeftMouseClick(false)
+        None
+      case PlayerMovedMouse(dist) =>
+        val rSpeed = 0.05
+        game.otherPlayer.rotation.y += dist.x * rSpeed * 0.05
+        game.otherPlayer.rotation.x -= dist.y * rSpeed * 0.05
+        None
+      case PlayerPressedKeys(keys) =>
+        val isInFluid = game.playerEffectiveViscosity(game.otherPlayer) > Block.Air.viscosity.toSI * 2
+
+        val playerInputHandler = PlayerInputHandler()
+        val maxSpeed = playerInputHandler.determineMaxSpeed(keys)
+        playerInputHandler.tick(game.otherPlayer, keys, Vector2f(), maxSpeed, isInFluid)
+
         None
     }
   }
@@ -238,7 +263,12 @@ class GameServer(worldProvider: WorldProvider, game: GameScene) {
   }
 }
 
-class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider, client: GameClient) {
+class NetworkHandler(
+    val isHosting: Boolean,
+    val isOnline: Boolean,
+    val worldProvider: WorldProvider,
+    client: GameClient
+) {
   private var server: GameServer = null.asInstanceOf[GameServer]
 
   def runServer(game: GameScene): Unit = if isOnline then {

@@ -12,7 +12,7 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
 
   var blockCoords: BlockRelWorld = BlockRelWorld(0)
 
-  updateViewMatrix()
+  updateViewMatrix(view.position)
   updateProjMatrix()
 
   def setPosition(vec: Vector3d): Unit = {
@@ -46,8 +46,8 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
     rotation.z += z
   }
 
-  def updateViewMatrix(): Unit = {
-    view.updateViewMatrix()
+  def updateViewMatrix(origin: Vector3d): Unit = {
+    view.updateViewMatrix(origin)
   }
 
   def updateProjMatrix(): Unit = {
@@ -83,8 +83,10 @@ class CameraView {
   val matrix = new Matrix4f
   val invMatrix = new Matrix4f
 
-  def updateViewMatrix(): Unit = {
+  def updateViewMatrix(origin: Vector3d): Unit = {
+    val pos = position.sub(origin, new Vector3d)
     matrix.identity()
+    matrix.translation(pos.x.toFloat, pos.y.toFloat, pos.z.toFloat)
     matrix.rotate(rotation.z, CameraView.unitZ)
     matrix.rotate(rotation.x, CameraView.unitX)
     matrix.rotate(rotation.y, CameraView.unitY)
