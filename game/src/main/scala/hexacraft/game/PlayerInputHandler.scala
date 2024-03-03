@@ -4,27 +4,34 @@ import hexacraft.world.Player
 
 import org.joml.{Vector2fc, Vector3d, Vector3dc}
 
-class PlayerInputHandler(keyboard: GameKeyboard):
-  def determineMaxSpeed: Double = {
+class PlayerInputHandler:
+  def determineMaxSpeed(pressedKeys: Seq[GameKeyboard.Key]): Double = {
     import GameKeyboard.Key.*
 
-    if keyboard.keyIsPressed(MoveSlowly) then {
+    if pressedKeys.contains(MoveSlowly) then {
       0.075
-    } else if keyboard.keyIsPressed(MoveFast) then {
+    } else if pressedKeys.contains(MoveFast) then {
       12.0
-    } else if keyboard.keyIsPressed(MoveSuperFast) then {
+    } else if pressedKeys.contains(MoveSuperFast) then {
       120.0
     } else {
       4.3
     }
   }
 
-  def tick(player: Player, mouseMovement: Vector2fc, maxSpeed: Double, isInFluid: Boolean): Unit = {
-    updateVelocity(player.velocity, player.rotation, player.flying, maxSpeed, isInFluid)
-    updateRotation(player.rotation, mouseMovement, 0.05)
+  def tick(
+      player: Player,
+      pressedKeys: Seq[GameKeyboard.Key],
+      mouseMovement: Vector2fc,
+      maxSpeed: Double,
+      isInFluid: Boolean
+  ): Unit = {
+    updateVelocity(pressedKeys, player.velocity, player.rotation, player.flying, maxSpeed, isInFluid)
+    updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
   }
 
   private def updateVelocity(
+      pressedKeys: Seq[GameKeyboard.Key],
       velocity: Vector3d,
       rotation: Vector3dc,
       isFlying: Boolean,
@@ -40,27 +47,27 @@ class PlayerInputHandler(keyboard: GameKeyboard):
     val cosMove = Math.cos(rotation.y) * maxSpeed * 0.5
     val sinMove = Math.sin(rotation.y) * maxSpeed * 0.5
 
-    if keyboard.keyIsPressed(MoveForward) then {
+    if pressedKeys.contains(MoveForward) then {
       velocity.z -= cosMove
       velocity.x += sinMove
     }
 
-    if keyboard.keyIsPressed(MoveBackward) then {
+    if pressedKeys.contains(MoveBackward) then {
       velocity.z += cosMove
       velocity.x -= sinMove
     }
 
-    if keyboard.keyIsPressed(MoveRight) then {
+    if pressedKeys.contains(MoveRight) then {
       velocity.x += cosMove
       velocity.z += sinMove
     }
 
-    if keyboard.keyIsPressed(MoveLeft) then {
+    if pressedKeys.contains(MoveLeft) then {
       velocity.x -= cosMove
       velocity.z -= sinMove
     }
 
-    if keyboard.keyIsPressed(Jump) then {
+    if pressedKeys.contains(Jump) then {
       if isFlying then {
         velocity.y = maxSpeed
       } else if velocity.y == 0 then {
@@ -70,7 +77,7 @@ class PlayerInputHandler(keyboard: GameKeyboard):
       }
     }
 
-    if keyboard.keyIsPressed(Sneak) then {
+    if pressedKeys.contains(Sneak) then {
       if isFlying then {
         velocity.y = -maxSpeed
       } else if isInFluid then {
@@ -79,28 +86,33 @@ class PlayerInputHandler(keyboard: GameKeyboard):
     }
   }
 
-  private def updateRotation(rotation: Vector3d, mouseMovement: Vector2fc, rSpeed: Float): Unit = {
+  private def updateRotation(
+      pressedKeys: Seq[GameKeyboard.Key],
+      rotation: Vector3d,
+      mouseMovement: Vector2fc,
+      rSpeed: Float
+  ): Unit = {
     import GameKeyboard.Key.*
 
-    if keyboard.keyIsPressed(LookUp) then {
+    if pressedKeys.contains(LookUp) then {
       rotation.x -= rSpeed
     }
-    if keyboard.keyIsPressed(LookDown) then {
+    if pressedKeys.contains(LookDown) then {
       rotation.x += rSpeed
     }
-    if keyboard.keyIsPressed(LookLeft) then {
+    if pressedKeys.contains(LookLeft) then {
       rotation.y -= rSpeed
     }
-    if keyboard.keyIsPressed(LookRight) then {
+    if pressedKeys.contains(LookRight) then {
       rotation.y += rSpeed
     }
-    if keyboard.keyIsPressed(TurnHeadLeft) then {
+    if pressedKeys.contains(TurnHeadLeft) then {
       rotation.z -= rSpeed
     }
-    if keyboard.keyIsPressed(TurnHeadRight) then {
+    if pressedKeys.contains(TurnHeadRight) then {
       rotation.z += rSpeed
     }
-    if keyboard.keyIsPressed(ResetRotation) then {
+    if pressedKeys.contains(ResetRotation) then {
       rotation.set(0, 0, 0)
     }
 
