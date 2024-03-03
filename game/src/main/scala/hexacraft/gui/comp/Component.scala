@@ -3,9 +3,11 @@ package hexacraft.gui.comp
 import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.*
+import hexacraft.shaders.color.ColorShader
+import hexacraft.shaders.fancy_rect.FancyRectShader
+import hexacraft.shaders.image.ImageShader
 import hexacraft.text.{Fonts, Text, TextMaster}
 import hexacraft.text.font.Font
-
 import org.joml.{Matrix4f, Vector2f, Vector4f}
 
 abstract class Component {

@@ -2,6 +2,7 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
+import hexacraft.shaders.block.BlockShader
 import hexacraft.util.Segment
 
 import java.nio.ByteBuffer
@@ -106,7 +107,7 @@ trait RenderBuffer[B <: RenderBuffer[B]] {
 object VaoRenderBuffer {
   class Allocator(side: Int, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
     override def allocate(numVertices: Int): VaoRenderBuffer = {
-      val vao = BlockVao.forSide(side)(numVertices)
+      val vao = BlockShader.createVao(side, numVertices)
       new VaoRenderBuffer(
         vao,
         vao.vbos(0),

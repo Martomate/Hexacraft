@@ -6,6 +6,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
+import hexacraft.shaders.crosshair.CrosshairShader
 import hexacraft.util.{TickableTimer, Tracker}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
@@ -44,9 +45,8 @@ object GameScene {
     TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
 
     val crosshairShader = new CrosshairShader()
-    val crosshairVAO: VAO = makeCrosshairVAO
-    val crosshairRenderer: Renderer =
-      new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.build(_.depthTest(false)))
+    val crosshairVAO: VAO = CrosshairShader.createVao()
+    val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
     val worldInfo = net.worldProvider.getWorldInfo
     val world = World(net.worldProvider, worldInfo)
@@ -124,14 +124,6 @@ object GameScene {
     renderer.setWindowAspectRatio(initialWindowSize.logicalAspectRatio)
     renderer
   }
-
-  private def makeCrosshairVAO: VAO = VAO
-    .builder()
-    .addVertexVbo(4)(
-      _.floats(0, 2),
-      _.fillFloats(0, Seq(0, 0.03f, 0, -0.03f, -0.03f, 0, 0.03f, 0))
-    )
-    .finish(4)
 
   private def makeToolbar(
       player: Player,

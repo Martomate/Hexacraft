@@ -15,7 +15,7 @@ class ShaderBuilderTest extends FunSuite {
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
-    new ShaderBuilder().loadAll("block.glsl")
+    new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
 
     val shaderTypes = tracker.events.collect:
       case ShaderLoaded(_, shaderType, _) => shaderType
@@ -29,7 +29,7 @@ class ShaderBuilderTest extends FunSuite {
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
-    new ShaderBuilder().loadAll("block.glsl")
+    new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
 
     val shaderSources = tracker.events.collect:
       case ShaderLoaded(_, _, source) => source.takeWhile(_ != '\n')
@@ -44,7 +44,7 @@ class ShaderBuilderTest extends FunSuite {
     val unloadTracker = Tracker.withStorage[OpenGL.Event]
 
     OpenGL.trackEvents(loadTracker)
-    val builder = new ShaderBuilder().loadAll("block.glsl")
+    val builder = new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
     val loadedShaderIds = loadTracker.events.collect:
       case ShaderLoaded(shaderId, _, _) => shaderId
 

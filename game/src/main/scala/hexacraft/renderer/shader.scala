@@ -2,6 +2,7 @@ package hexacraft.renderer
 
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
+import hexacraft.infra.gpu.OpenGL.ShaderType
 import hexacraft.util.{Resource, Result}
 import hexacraft.util.Result.{Err, Ok}
 
@@ -34,7 +35,7 @@ class Shader private (config: ShaderConfig) extends Resource {
   protected def load(): Unit = {
     shaderID = new ShaderBuilder()
       .setDefines(config.defines)
-      .loadAll(config.fileName + ".glsl")
+      .loadAll(config.fileNames)
       .bindAttribs(config.inputs: _*)
       .attachAll()
       .linkAndFinish()
@@ -133,19 +134,24 @@ class Shader private (config: ShaderConfig) extends Resource {
 }
 
 object ShaderConfig {
-  def apply(fileName: String): ShaderConfig = {
-    ShaderConfig(fileName, Nil, Nil)
+  def apply(): ShaderConfig = {
+    ShaderConfig(Map.empty, Nil, Nil)
   }
 }
 
-/** @param fileName
-  * The name of the shader file. Default is the same as `name`
+/** @param fileNames
+  * The names of the shader files for each shader stage
   * @param inputs
   * A list of all inputs to the first shader stage. Note: matrices take several spots
   * @param defines
   * A list of #define statements to include in the beginning of the shader file
   */
-case class ShaderConfig(fileName: String, inputs: Seq[String], defines: Seq[(String, String)]) {
+case class ShaderConfig(
+    fileNames: Map[OpenGL.ShaderType, String],
+    inputs: Seq[String],
+    defines: Seq[(String, String)]
+) {
+  def withStage(stage: ShaderType, path: String): ShaderConfig = copy(fileNames = fileNames + (stage -> path))
 
   /** a.k.a. "attributes" */
   def withInputs(inputs: String*): ShaderConfig = copy(inputs = inputs)
@@ -156,7 +162,7 @@ case class ShaderConfig(fileName: String, inputs: Seq[String], defines: Seq[(Str
 class ShaderBuilder {
   private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
   private val programID = OpenGL.createProgram()
-  private var prefix = "shaders/"
+  private var prefix = "hexacraft/shaders/"
   private var definesText = ""
 
   def setPrefix(newPrefix: String): ShaderBuilder = {
@@ -167,19 +173,6 @@ class ShaderBuilder {
   def setDefines(defines: Seq[(String, String)]): ShaderBuilder = {
     definesText = defines.map(d => s"#define ${d._1} ${d._2}\n").mkString
     this
-  }
-
-  private def getShaderType(shaderType: String): Option[OpenGL.ShaderType] = {
-    import OpenGL.ShaderType
-
-    shaderType match {
-      case "vs" | "vert" => Some(ShaderType.Vertex)
-      case "fs" | "frag" => Some(ShaderType.Fragment)
-      case "gs" | "geom" => Some(ShaderType.Geometry)
-      case "tc"          => Some(ShaderType.TessControl)
-      case "te"          => Some(ShaderType.TessEvaluation)
-      case _             => None
-    }
   }
 
   private def header: String = s"#version 330 core\n\n$definesText"
@@ -199,50 +192,19 @@ class ShaderBuilder {
     source.toString
   }
 
-  def loadAll(path: String): ShaderBuilder = {
-    val s = loadSource(path)
-    val stages = extractShaderStages(s)
+  def loadAll(paths: Map[OpenGL.ShaderType, String]): ShaderBuilder = {
+    for (shaderType, path) <- paths do {
+      val source = loadSource(path)
 
-    val (validStages, invalidStageErrors) = Result.split(stages.toSeq)
-
-    for stageError <- invalidStageErrors do {
-      System.err.println(s"Shader file $path contained an invalid shader stage: $stageError")
-    }
-
-    for (shaderType, source) <- validStages do {
       OpenGL.loadShader(shaderType, header + source) match {
-        case Ok(shaderId) => shaders.put(shaderType, shaderId)
+        case Ok(shaderId) =>
+          shaders.put(shaderType, shaderId)
         case Err(e) =>
-          val errorMessage =
-            s"${nameOfShaderType(shaderType)} failed to compile (file: $path).\nError log:\n${e.message}"
-          System.err.println(errorMessage)
+          System.err.println(s"Shader '$path' failed to compile:\n${e.message}")
       }
     }
 
     this
-  }
-
-  private def extractShaderStages(s: String) = {
-    for part <- s.split("#pragma shader ") if part.nonEmpty yield {
-      val newLineIdx = part.indexOf('\n')
-      val shaderTypeName = part.substring(0, newLineIdx)
-      val source = part.substring(newLineIdx + 1)
-
-      getShaderType(shaderTypeName) match {
-        case Some(shaderType) => Ok(shaderType, source)
-        case None             => Err("Shader type '" + shaderTypeName + "' not supported")
-      }
-    }
-  }
-
-  private def nameOfShaderType(shaderType: OpenGL.ShaderType) = {
-    import OpenGL.ShaderType.*
-
-    shaderType match {
-      case Vertex   => "Vertex shader"
-      case Fragment => "Fragment shader"
-      case _        => "Shader"
-    }
   }
 
   def bindAttribs(attribs: String*): ShaderBuilder = {

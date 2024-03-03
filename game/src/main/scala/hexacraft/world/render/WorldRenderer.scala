@@ -1,16 +1,21 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, InstancedRenderer, Renderer, VAO}
+import hexacraft.renderer.{GpuState, InstancedRenderer, VAO}
+import hexacraft.shaders.entity.EntityShader
+import hexacraft.shaders.selected_block.SelectedBlockShader
+import hexacraft.shaders.sky.SkyShader
+import hexacraft.shaders.world_combiner.WorldCombinerShader
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
 import hexacraft.world.World.WorldTickResult
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Vector2ic, Vector3f}
+import org.lwjgl.BufferUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -29,23 +34,21 @@ class WorldRenderer(
 
   private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
 
-  private val skyVao: VAO = SkyVao.create
-  private val skyRenderer =
-    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
+  private val skyVao: VAO = SkyShader.createVao()
+  private val skyRenderer = SkyShader.createRenderer()
 
-  private val worldCombinerVao: VAO = WorldCombinerVao.create
-  private val worldCombinerRenderer =
-    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
+  private val worldCombinerVao: VAO = WorldCombinerShader.createVao()
+  private val worldCombinerRenderer = WorldCombinerShader.createRenderer()
 
-  private val selectedBlockVao = SelectedBlockVao.create
-  private val selectedBlockRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)
+  private val selectedBlockVao = SelectedBlockShader.createVao()
+  private val selectedBlockRenderer = SelectedBlockShader.createRenderer()
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFrameBufferSize.x, initialFrameBufferSize.y)
 
   private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
   private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
-  private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityPartVao.forSide(s), GpuState())
+  private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
 
   private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
   private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
@@ -130,7 +133,10 @@ class WorldRenderer(
 
       selectedBlockAndSide match {
         case Some((state, coords, Some(_))) =>
-          selectedBlockVao.setSelectedBlock(coords, state)
+          val buf = BufferUtils.createByteBuffer(7 * 4)
+          SelectedBlockShader.InstanceData(coords, state).fill(buf)
+          buf.flip()
+          selectedBlockVao.vbos(1).fill(0, buf)
         case _ =>
       }
     }
@@ -153,7 +159,7 @@ class WorldRenderer(
       selectedBlockShader.setViewMatrix(camera.view.matrix)
       selectedBlockShader.setCameraPosition(camera.position)
       selectedBlockShader.enable()
-      selectedBlockRenderer.render(selectedBlockVao.vao, 1)
+      selectedBlockRenderer.render(selectedBlockVao, 1)
     }
 
     mainFrameBuffer.unbind()
@@ -211,7 +217,7 @@ class WorldRenderer(
       sh.enable()
       sh.setSide(side)
 
-      val entityDataList: mutable.ArrayBuffer[EntityDataForShader] = ArrayBuffer.empty
+      val entityDataList: mutable.ArrayBuffer[(EntityModel, Seq[EntityShader.InstanceData])] = ArrayBuffer.empty
       for {
         c <- chunksToRender
         ch <- world.getChunk(c)
@@ -225,8 +231,8 @@ class WorldRenderer(
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
-      for (texture, partLists) <- entityDataList.groupBy(_.model.texture) do {
-        val data = partLists.flatMap(_.parts)
+      for (texture, partLists) <- entityDataList.groupBy(_._1.texture) do {
+        val data = partLists.flatMap(_._2)
 
         entityRenderers(side).setInstanceData(data.size): buf =>
           data.foreach(_.fill(buf))
