@@ -28,7 +28,7 @@ class NbtIOTest extends FunSuite {
         stream.readAllBytes()
       finally stream.close()
 
-  test("tags can be saved".ignore) {
+  test("tags can be saved") {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
     val nbtIO = new NbtIO(fs)
@@ -43,7 +43,7 @@ class NbtIOTest extends FunSuite {
     assertEquals(tracker.events, Seq(FileSystem.FileWrittenEvent(file.toPath, compressedBytes)))
   }
 
-  test("tags can be loaded".ignore) {
+  test("tags can be loaded") {
     val path = Path.of("world.dat")
     val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
 
