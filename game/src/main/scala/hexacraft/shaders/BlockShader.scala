@@ -1,9 +1,8 @@
-package hexacraft.shaders.block
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
-
 import org.joml.*
 
 import java.nio.ByteBuffer

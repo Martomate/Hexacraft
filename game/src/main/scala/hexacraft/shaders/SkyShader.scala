@@ -1,9 +1,8 @@
-package hexacraft.shaders.sky
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
-import hexacraft.renderer.{GpuState, Renderer, Shader, ShaderConfig, VAO}
-
+import hexacraft.renderer.*
 import org.joml.{Matrix4f, Vector3f}
 
 class SkyShader {

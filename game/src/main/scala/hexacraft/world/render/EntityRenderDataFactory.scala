@@ -1,6 +1,6 @@
 package hexacraft.world.render
 
-import hexacraft.shaders.entity.EntityShader
+import hexacraft.shaders.EntityShader
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}

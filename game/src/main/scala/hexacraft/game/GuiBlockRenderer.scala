@@ -2,7 +2,7 @@ package hexacraft.game
 
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.renderer.*
-import hexacraft.shaders.gui_block.GuiBlockShader
+import hexacraft.shaders.GuiBlockShader
 import hexacraft.world.CameraProjection
 import hexacraft.world.block.Block
 import hexacraft.world.render.BlockRenderer

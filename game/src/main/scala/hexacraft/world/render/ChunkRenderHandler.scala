@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
 import hexacraft.renderer.{GpuState, TextureArray}
-import hexacraft.shaders.block.BlockShader
+import hexacraft.shaders.BlockShader
 import hexacraft.world.Camera
 import hexacraft.world.coord.ChunkRelWorld
 

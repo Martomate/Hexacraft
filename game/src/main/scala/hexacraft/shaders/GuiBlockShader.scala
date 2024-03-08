@@ -1,9 +1,8 @@
-package hexacraft.shaders.gui_block
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig, VAO, VertexData}
-
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 
 import java.nio.ByteBuffer

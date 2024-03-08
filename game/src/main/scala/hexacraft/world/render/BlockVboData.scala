@@ -1,7 +1,7 @@
 package hexacraft.world.render
 
-import hexacraft.shaders.block.BlockShader
-import hexacraft.shaders.block.BlockShader.BlockVertexData
+import hexacraft.shaders.BlockShader.BlockVertexData
+import hexacraft.shaders.BlockShader
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState

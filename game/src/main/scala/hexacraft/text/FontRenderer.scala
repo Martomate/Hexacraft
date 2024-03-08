@@ -2,7 +2,7 @@ package hexacraft.text
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{TextureSingle, VAO}
-import hexacraft.shaders.font.FontShader
+import hexacraft.shaders.FontShader
 import hexacraft.text.font.Font
 
 import scala.collection.mutable

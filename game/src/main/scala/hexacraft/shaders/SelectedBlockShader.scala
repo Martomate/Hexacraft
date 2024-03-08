@@ -1,11 +1,10 @@
-package hexacraft.shaders.selected_block
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{InstancedRenderer, Shader, ShaderConfig, VAO}
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelWorld, CylCoords}
-
 import org.joml.{Matrix4f, Vector3d}
 
 import java.nio.ByteBuffer

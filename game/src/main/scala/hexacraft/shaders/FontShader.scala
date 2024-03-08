@@ -1,8 +1,7 @@
-package hexacraft.shaders.font
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
-
 import org.joml.Vector3f
 
 class FontShader {

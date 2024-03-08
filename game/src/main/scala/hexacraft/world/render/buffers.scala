@@ -2,7 +2,7 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
-import hexacraft.shaders.block.BlockShader
+import hexacraft.shaders.BlockShader
 import hexacraft.util.Segment
 
 import java.nio.ByteBuffer

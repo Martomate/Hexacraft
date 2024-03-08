@@ -1,8 +1,7 @@
-package hexacraft.shaders.color
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig}
-
 import org.joml.{Matrix4f, Vector4f}
 
 class ColorShader {

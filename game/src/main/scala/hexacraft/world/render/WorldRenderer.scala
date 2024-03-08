@@ -2,10 +2,7 @@ package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, InstancedRenderer, VAO}
-import hexacraft.shaders.entity.EntityShader
-import hexacraft.shaders.selected_block.SelectedBlockShader
-import hexacraft.shaders.sky.SkyShader
-import hexacraft.shaders.world_combiner.WorldCombinerShader
+import hexacraft.shaders.{EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
 import hexacraft.world.World.WorldTickResult

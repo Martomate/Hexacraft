@@ -1,8 +1,8 @@
-package hexacraft.shaders.crosshair
+package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
-import hexacraft.renderer.{GpuState, Renderer, Shader, ShaderConfig, VAO}
+import hexacraft.renderer.*
 
 class CrosshairShader {
   private val shader = Shader.from(
