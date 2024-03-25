@@ -22,31 +22,29 @@ object FntFile {
 
   case class CharLine(id: Int, x: Int, y: Int, width: Int, height: Int, xOffset: Int, yOffset: Int, xAdvance: Int)
 
-  trait LineParser[L] {
-    def from(values: Map[String, String]): L
-  }
+  private class LineParser(values: Map[String, String]) {
+    def info: InfoLine = {
+      val Seq(t, l, b, r) = values("padding").split(",").toSeq.map(_.toInt)
+      val padding = CharacterPadding(t, l, b, r)
+      InfoLine(padding)
+    }
 
-  given LineParser[InfoLine] = values => {
-    val ints = values("padding").split(",").toSeq.map(_.toInt)
-    val padding = CharacterPadding(ints(0), ints(1), ints(2), ints(3))
-    InfoLine(padding)
-  }
+    def common: CommonLine = {
+      CommonLine(lineHeight = values("lineHeight").toInt, scaleW = values("scaleW").toInt)
+    }
 
-  given LineParser[CommonLine] = values => {
-    CommonLine(lineHeight = values("lineHeight").toInt, scaleW = values("scaleW").toInt)
-  }
-
-  given LineParser[CharLine] = values => {
-    CharLine(
-      id = values("id").toInt,
-      x = values("x").toInt,
-      y = values("y").toInt,
-      width = values("width").toInt,
-      height = values("height").toInt,
-      xOffset = values("xoffset").toInt,
-      yOffset = values("yoffset").toInt,
-      xAdvance = values("xadvance").toInt
-    )
+    def char: CharLine = {
+      CharLine(
+        id = values("id").toInt,
+        x = values("x").toInt,
+        y = values("y").toInt,
+        width = values("width").toInt,
+        height = values("height").toInt,
+        xOffset = values("xoffset").toInt,
+        yOffset = values("yoffset").toInt,
+        xAdvance = values("xadvance").toInt
+      )
+    }
   }
 
   def fromLines(lines: Seq[String]): FntFile = {
@@ -64,10 +62,12 @@ object FntFile {
             if (valuePairs.length == 2) values.put(valuePairs(0), valuePairs(1))
           }
 
+          val parser = LineParser(values.toMap)
+
           lineType match {
-            case "info"   => infoLine = summon[LineParser[InfoLine]].from(values.toMap)
-            case "common" => commonLine = summon[LineParser[CommonLine]].from(values.toMap)
-            case "char"   => charLines += summon[LineParser[CharLine]].from(values.toMap)
+            case "info"   => infoLine = parser.info
+            case "common" => commonLine = parser.common
+            case "char"   => charLines += parser.char
             case _        =>
           }
         case _ =>
