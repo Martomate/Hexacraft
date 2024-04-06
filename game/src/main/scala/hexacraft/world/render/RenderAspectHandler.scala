@@ -5,10 +5,12 @@ import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer
 
-class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
+class RenderAspectHandler(bufferHandler: BufferHandler[?]) {
   private val memorySegments: DenseKeyedSegmentStack[ChunkRelWorld] = new DenseKeyedSegmentStack
 
   def fragmentation: Float = memorySegments.fragmentation
+
+  def isEmpty: Boolean = memorySegments.lastSegment.isEmpty
 
   def render(): Unit = {
     bufferHandler.render(memorySegments.length)
@@ -50,24 +52,29 @@ class RenderAspectHandler(bufferHandler: BufferHandler[_]) {
     val segments = memorySegments.segments(tempCoords)
     while segments.totalLength > 0 do {
       val (lastChunk, lastSeg) = memorySegments.lastSegment.get
+      val totalEnd = lastSeg.start + lastSeg.length
+      val lastHole = segments.lastSegment()
+      val lastHoleEnd = lastHole.start + lastHole.length
+      val endLength = totalEnd - lastHoleEnd
 
-      if tempCoords == lastChunk then {
-        val lastRem = segments.lastSegment()
-        memorySegments.pop(tempCoords, lastRem)
-        segments.remove(lastRem)
+      if endLength == 0 then {
+        segments.remove(lastHole)
+        memorySegments.pop(tempCoords, lastHole)
       } else {
-        val firstRem = segments.firstSegment()
-        val len = math.min(firstRem.length, lastSeg.length)
+        val firstHole = segments.firstSegment()
+        val maxCopyLen = math.min(endLength, firstHole.length)
 
-        val dataSegment = Segment(lastSeg.start + lastSeg.length - len, len)
-        val holeSegment = Segment(firstRem.start, len)
+        bufferHandler.copy(totalEnd - maxCopyLen, firstHole.start, maxCopyLen)
+        segments.remove(Segment(firstHole.start, maxCopyLen))
 
-        // TODO: merge segments from different chunks at the end of the buffers so more can be moved at once
-        bufferHandler.copy(dataSegment.start, holeSegment.start, len)
-
-        memorySegments.pop(lastChunk, dataSegment)
-        memorySegments.relabel(tempCoords, lastChunk, holeSegment)
-        segments.remove(holeSegment)
+        var lengthLeft = maxCopyLen
+        while lengthLeft > 0 do {
+          val (c, s) = memorySegments.lastSegment.get
+          val l = Math.min(s.length, lengthLeft)
+          memorySegments.pop(c, Segment(s.start + s.length - l, l))
+          memorySegments.relabel(tempCoords, c, Segment(firstHole.start + lengthLeft - l, l))
+          lengthLeft -= l
+        }
       }
     }
   }

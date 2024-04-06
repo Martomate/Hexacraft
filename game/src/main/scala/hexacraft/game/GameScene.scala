@@ -3,9 +3,9 @@ package hexacraft.game
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
+import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{TickableTimer, Tracker}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
@@ -15,7 +15,6 @@ import hexacraft.world.entity.*
 import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
-import hexacraft.shaders.CrosshairShader
 import org.joml.{Matrix4f, Vector2f, Vector3f}
 import org.zeromq.ZMQException
 
