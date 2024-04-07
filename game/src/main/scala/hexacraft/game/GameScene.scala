@@ -6,7 +6,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{TickableTimer, Tracker}
+import hexacraft.util.{EventDispatcher, TickableTimer, Tracker}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.block.BlockSpec.{Offsets, Textures}
@@ -247,9 +247,7 @@ class GameScene private (
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
 
-  private var debugOverlay: DebugOverlay = _
-  private var pauseMenu: PauseMenu = _
-  private var inventoryScene: InventoryBox = _
+  private var debugOverlay: Option[DebugOverlay] = None
 
   private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
@@ -278,14 +276,17 @@ class GameScene private (
   private def pauseGame(): Unit = {
     import PauseMenu.Event.*
 
-    pauseMenu = PauseMenu:
+    val rx = EventDispatcher[PauseMenu.Event]()
+    val pauseMenu = PauseMenu(e => rx.notify(e))
+
+    rx.track({
       case Unpause =>
         overlays -= pauseMenu
         pauseMenu.unload()
-        pauseMenu = null
         setPaused(false)
       case QuitGame =>
         eventHandler.notify(GameScene.Event.GameQuit)
+    })
 
     overlays += pauseMenu
     setPaused(true)
@@ -304,21 +305,23 @@ class GameScene private (
       import InventoryBox.Event.*
 
       if !isPaused then {
-        setUseMouse(false)
-        isInPopup = true
+        val rx = EventDispatcher[InventoryBox.Event]()
+        val inventoryScene = InventoryBox(player.inventory, blockTextureIndices)(e => rx.notify(e))
 
-        inventoryScene = InventoryBox(player.inventory, blockTextureIndices):
+        rx.track({
           case BoxClosed =>
             overlays -= inventoryScene
             inventoryScene.unload()
-            inventoryScene = null
             isInPopup = false
             setUseMouse(true)
           case InventoryUpdated(inv) =>
             player.inventory = inv
             toolbar.onInventoryUpdated(inv)
+        })
 
         overlays += inventoryScene
+        isInPopup = true
+        setUseMouse(false)
       }
     case KeyboardKey.Letter('M') =>
       setUseMouse(!moveWithMouse)
@@ -341,14 +344,14 @@ class GameScene private (
 
   private def setDebugScreenVisible(visible: Boolean): Unit = {
     if visible then {
-      if debugOverlay == null then {
-        debugOverlay = new DebugOverlay
+      if debugOverlay.isEmpty then {
+        debugOverlay = Some(new DebugOverlay)
       }
     } else {
-      if debugOverlay != null then {
-        debugOverlay.unload()
+      if debugOverlay.isDefined then {
+        debugOverlay.get.unload()
       }
-      debugOverlay = null
+      debugOverlay = None
     }
   }
 
@@ -442,8 +445,8 @@ class GameScene private (
     blockInHandRenderer.render(transformation)
     toolbar.render(transformation)
 
-    if debugOverlay != null then {
-      debugOverlay.render(transformation)
+    if debugOverlay.isDefined then {
+      debugOverlay.get.render(transformation)
     }
 
     for s <- overlays do {
@@ -552,11 +555,11 @@ class GameScene private (
       val worldTickResult = world.tick(camera)
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
 
-      if debugOverlay != null then {
+      if debugOverlay.isDefined then {
         val regularFragmentation = worldRenderer.regularChunkBufferFragmentation
         val transmissiveFragmentation = worldRenderer.transmissiveChunkBufferFragmentation
 
-        debugOverlay.updateContent(
+        debugOverlay.get.updateContent(
           DebugOverlay.Content.fromCamera(camera, viewDistance, regularFragmentation, transmissiveFragmentation)
         )
       }
@@ -679,8 +682,8 @@ class GameScene private (
     toolbar.unload()
     blockInHandRenderer.unload()
 
-    if debugOverlay != null then {
-      debugOverlay.unload()
+    if debugOverlay.isDefined then {
+      debugOverlay.get.unload()
     }
 
     net.unload()
