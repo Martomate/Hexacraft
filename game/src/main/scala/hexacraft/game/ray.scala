@@ -69,8 +69,9 @@ class RayTracer(camera: Camera, maxDistance: Double)(using CylinderSize) {
       case Some(block) if block.blockType != Block.Air =>
         (0 until 8).exists(side => {
           val boundingBox = block.blockType.bounds(block.metadata)
-          val points = PointHexagon.fromHexBox(boundingBox, hitBlockCoords, camera)
-          ray.intersectsPolygon(points, BlockFace.fromInt(side))
+          PointHexagon
+            .fromHexBox(boundingBox, hitBlockCoords, camera)
+            .intersectsFace(ray, BlockFace.fromInt(side))
         })
       case _ =>
         false
@@ -104,44 +105,6 @@ class Ray(val v: Vector3d) {
     */
   def toTheRight(down: Vector3d, up: Vector3d): Boolean = {
     down.dot(up.cross(v, new Vector3d)) <= 0
-  }
-
-  def intersectsPolygon(points: PointHexagon, side: BlockFace): Boolean = {
-    val rightSeq = side match {
-      case BlockFace.Top =>
-        for index <- 0 until 6 yield {
-          val a = points.up(index)
-          val b = points.up((index + 1) % 6)
-          this.toTheRight(a, b)
-        }
-      case BlockFace.Bottom =>
-        for index <- 0 until 6 yield {
-          val a = points.down(index)
-          val b = points.down((index + 1) % 6)
-          this.toTheRight(a, b)
-        }
-      case BlockFace.Side(s) =>
-        val order = Seq(0, 1, 3, 2)
-
-        for index <- 0 until 4 yield {
-          val aIdx = (order(index) % 2 + s) % 6
-          val bIdx = (order((index + 1) % 4) % 2 + s) % 6
-
-          val aUp = order(index) / 2 == 0
-          val bUp = order((index + 1) % 4) / 2 == 0
-
-          val PA = if aUp then points.up(aIdx) else points.down(aIdx)
-          val PB = if bUp then points.up(bIdx) else points.down(bIdx)
-
-          this.toTheRight(PA, PB)
-        }
-    }
-
-    allElementsSame(rightSeq)
-  }
-
-  private def allElementsSame(seq: IndexedSeq[Boolean]) = {
-    !seq.exists(_ != seq(0))
   }
 }
 
@@ -209,6 +172,39 @@ class PointHexagon(val up: Array[Vector3d], val down: Array[Vector3d]) {
     }
 
     (index, region)
+  }
+
+  def intersectsFace(ray: Ray, face: BlockFace): Boolean = {
+    val rightSeq = face match {
+      case BlockFace.Top    => (0 until 6).map(index => ray.toTheRight(this.up(index), this.up(index.inc)))
+      case BlockFace.Bottom => (0 until 6).map(index => ray.toTheRight(this.down(index), this.down(index.inc)))
+      case BlockFace.Side(s) =>
+        val order = Seq(0, 1, 3, 2)
+
+        for index <- 0 until 4 yield {
+          // index around the square
+          val ai = order(index)
+          val bi = order((index + 1) % 4)
+
+          // index around the hexagon
+          val aIdx = (ai % 2 + s) % 6
+          val bIdx = (bi % 2 + s) % 6
+
+          // whether to use the up or down hexagon
+          val aUp = ai / 2 == 0
+          val bUp = bi / 2 == 0
+
+          val PA = if aUp then this.up(aIdx) else this.down(aIdx)
+          val PB = if bUp then this.up(bIdx) else this.down(bIdx)
+
+          ray.toTheRight(PA, PB)
+        }
+    }
+
+    // the ray intersects if it's either to the right or to the left of all the edges (depending on the winding)
+    val reference = rightSeq(0)
+    val allTheSame = rightSeq.forall(_ == reference)
+    allTheSame
   }
 
   def normal(index: Slice, region: Region): Vector3d = {
