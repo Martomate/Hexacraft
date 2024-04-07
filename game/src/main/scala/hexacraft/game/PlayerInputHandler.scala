@@ -108,9 +108,9 @@ class PlayerInputHandler(keyboard: GameKeyboard):
     rotation.x -= mouseMovement.y * rSpeed * 0.05
 
     if rotation.x < -math.Pi / 2 then {
-      rotation.x += (math.Pi * 2)
+      rotation.x = (-math.Pi / 2).toFloat
     } else if rotation.x > math.Pi / 2 then {
-      rotation.x -= (math.Pi * 2)
+      rotation.x = (math.Pi / 2).toFloat
     }
 
     if rotation.y < 0 then {
