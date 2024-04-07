@@ -140,15 +140,6 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
       return (box.pos.toVector3d, new Vector3d)
     }
 
-    resultAfterCollisionImpl(box, minDist, reflectionDir, ttl)
-  }
-
-  private def resultAfterCollisionImpl(
-      box: MovingBox,
-      minDist: Double,
-      reflectionDir: Int,
-      ttl: Int
-  ): (Vector3d, Vector3d) = {
     val normal = reflDirsCyl(reflectionDir).toVector3d.normalize()
     val newPos = box.pos.offset(box.velocity.x * minDist, box.velocity.y * minDist, box.velocity.z * minDist)
     val vel = box.velocity.toVector3d.mul(1 - minDist)
