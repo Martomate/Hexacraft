@@ -4,9 +4,9 @@ object OSUtils {
   def os: OS = {
     val osStr = System.getProperty("os.name").toLowerCase()
 
-    if osStr startsWith "win" then {
+    if osStr.startsWith("win") then {
       Windows
-    } else if (osStr startsWith "mac") || (osStr startsWith "darwin") then {
+    } else if osStr.startsWith("mac") || osStr.startsWith("darwin") then {
       Mac
     } else {
       Linux

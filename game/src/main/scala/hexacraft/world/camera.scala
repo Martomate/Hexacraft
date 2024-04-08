@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.math.MathUtils
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
+import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
 
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
 
@@ -10,8 +10,7 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
   def position: Vector3d = view.position
   def rotation: Vector3f = view.rotation
 
-  var blockCoords: BlockRelWorld = _
-  var placeInBlock: BlockCoords.Offset = _
+  var blockCoords: BlockRelWorld = BlockRelWorld(0)
 
   updateViewMatrix()
   updateProjMatrix()
@@ -58,7 +57,6 @@ class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
   def updateCoords(): Unit = {
     val temp = CoordUtils.getEnclosingBlock(CylCoords(position).toBlockCoords)
     blockCoords = temp._1
-    placeInBlock = temp._2
   }
 }
 
@@ -74,9 +72,9 @@ class CameraProjection(var fov: Float, var aspect: Float, val near: Float, val f
 }
 
 object CameraView {
-  val unitX: Vector3fc = new Vector3f(1, 0, 0)
-  val unitY: Vector3fc = new Vector3f(0, 1, 0)
-  val unitZ: Vector3fc = new Vector3f(0, 0, 1)
+  private val unitX: Vector3fc = new Vector3f(1, 0, 0)
+  private val unitY: Vector3fc = new Vector3f(0, 1, 0)
+  private val unitZ: Vector3fc = new Vector3f(0, 0, 1)
 }
 
 class CameraView {

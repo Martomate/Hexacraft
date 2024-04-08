@@ -3,7 +3,7 @@ package hexacraft.math.noise
 import java.util.Random
 
 class NoiseGenerator3D(random: Random, val numOctaves: Int, val scale: Double) {
-  private[this] val noiseGens = Seq.fill(numOctaves)(PerlinNoise3D(random))
+  private val noiseGens = Seq.fill(numOctaves)(PerlinNoise3D(random))
 
   def genNoise(x: Double, y: Double, z: Double): Double = {
     var amp = 1d

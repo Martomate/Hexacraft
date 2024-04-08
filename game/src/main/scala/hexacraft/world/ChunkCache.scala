@@ -8,7 +8,7 @@ import scala.collection.mutable
 class ChunkCache(world: BlocksInWorld) {
   private val cache: mutable.LongMap[Chunk] = mutable.LongMap.empty
   private var lastChunkCoords: Option[ChunkRelWorld] = None
-  private var lastChunk: Chunk = _
+  private var lastChunk: Chunk = null.asInstanceOf[Chunk]
 
   def clearCache(): Unit = {
     cache.clear()

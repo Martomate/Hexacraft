@@ -12,7 +12,7 @@ import javax.imageio.ImageIO
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
 
-  private var boundTexture: TextureSingle = _
+  private var boundTexture: TextureSingle = null.asInstanceOf[TextureSingle]
 
   def unbind(): Unit = {
     TextureSingle.boundTexture = null
@@ -94,7 +94,7 @@ class TextureSingle(val name: String) extends Resource {
 object TextureArray {
   private val textures = collection.mutable.Map.empty[String, TextureArray]
 
-  private var boundTextureArray: TextureArray = _
+  private var boundTextureArray: TextureArray = null.asInstanceOf[TextureArray]
 
   def unbind(): Unit = {
     TextureArray.boundTextureArray = null

@@ -308,7 +308,7 @@ object RealGlfw extends GlfwWrapper {
 }
 
 class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
-  private var errorCallback: GLFWErrorCallback = _
+  private var errorCallback: GLFWErrorCallback = null.asInstanceOf[GLFWErrorCallback]
 
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()

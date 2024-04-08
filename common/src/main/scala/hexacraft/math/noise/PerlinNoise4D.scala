@@ -21,7 +21,7 @@ class PerlinNoise4D(random: Random) { // Apparently SimplexNoise exists in joml
   )
   // format: on
 
-  private[this] val perm = {
+  private val perm = {
     val arr = (0 until 256).toArray
     shuffleArray(arr, random)
     arr ++ arr

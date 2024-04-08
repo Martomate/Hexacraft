@@ -3,7 +3,7 @@ package hexacraft.util
 import scala.collection.mutable
 
 class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Array[T]) extends mutable.IndexedSeq[T] {
-  private var arr: Array[T] = _
+  private var arr: Array[T] = null.asInstanceOf[Array[T]]
 
   def apply(idx: Int): T = {
     if arr != null then {

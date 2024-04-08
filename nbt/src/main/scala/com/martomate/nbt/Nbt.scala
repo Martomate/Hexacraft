@@ -153,7 +153,7 @@ object Nbt {
         case Some(value) => MapTag(tag.vs + (name -> value))
         case None        => tag
 
-  def convertTag(tag: Tag[_]): Nbt =
+  private def convertTag(tag: Tag[?]): Nbt =
     import com.flowpowered.nbt
 
     tag match

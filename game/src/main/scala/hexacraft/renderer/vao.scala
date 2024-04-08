@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 object VAO {
-  private var boundVAO: VAO = _
+  private var boundVAO: VAO = null.asInstanceOf[VAO]
 
   def unbindVAO(): Unit = {
     boundVAO = null
@@ -92,7 +92,7 @@ class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val vbos: Seq[VBO]) e
 }
 
 object VBO {
-  private var boundVBO: VBO = _
+  private var boundVBO: VBO = null.asInstanceOf[VBO]
 
   def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
     import OpenGL.VertexBufferTarget.*

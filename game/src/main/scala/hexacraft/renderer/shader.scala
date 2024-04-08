@@ -13,7 +13,7 @@ import java.io.IOException
 import scala.collection.mutable
 
 object Shader {
-  private var activeShader: Shader = _
+  private var activeShader: Shader = null.asInstanceOf[Shader]
 
   private val matrixBuffer = BufferUtils.createFloatBuffer(16)
 
@@ -36,7 +36,7 @@ class Shader private (config: ShaderConfig) extends Resource {
     shaderID = new ShaderBuilder()
       .setDefines(config.defines)
       .loadAll(config.fileNames)
-      .bindAttribs(config.inputs: _*)
+      .bindAttribs(config.inputs*)
       .attachAll()
       .linkAndFinish()
 

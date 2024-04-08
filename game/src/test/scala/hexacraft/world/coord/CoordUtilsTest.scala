@@ -1,13 +1,14 @@
 package hexacraft.world.coord
 
 import hexacraft.world.CylinderSize
+
 import munit.FunSuite
 
 class CoordUtilsTest extends FunSuite {
   given cylSize: CylinderSize = CylinderSize(4)
 
   test("approximateIntCoords should return the input when it's integers") {
-    val f = CoordUtils.approximateIntCoords _
+    val f = CoordUtils.approximateIntCoords
     assertEquals(f(BlockCoords(0, 0, 0)), BlockRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(0, 0, cylSize.totalSize)), BlockRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(20, 0, 0)), BlockRelWorld(20, 0, 0))
@@ -19,7 +20,7 @@ class CoordUtilsTest extends FunSuite {
   }
 
   test("approximateIntCoords should round to the closest integer") {
-    val f = CoordUtils.approximateIntCoords _
+    val f = CoordUtils.approximateIntCoords
     assertEquals(f(BlockCoords(0.2, 0, 0)), BlockRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(19.5, 0, 0)), BlockRelWorld(20, 0, 0))
     assertEquals(f(BlockCoords(0, 20.4, 0)), BlockRelWorld(0, 20, 0))
@@ -34,7 +35,7 @@ class CoordUtilsTest extends FunSuite {
   }
 
   test("approximateChunkCoords should return the input when it's on chunk corner") {
-    val f = CoordUtils.approximateChunkCoords _
+    val f = CoordUtils.approximateChunkCoords
     assertEquals(f(BlockCoords(0, 0, 0).toCylCoords), ChunkRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(0, 0, cylSize.totalSize).toCylCoords), ChunkRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(20 * 16, 0, 0).toCylCoords), ChunkRelWorld(20, 0, 0))
@@ -46,7 +47,7 @@ class CoordUtilsTest extends FunSuite {
   }
 
   test("approximateChunkCoords should floor the input to it's chunk corner") {
-    val f = CoordUtils.approximateChunkCoords _
+    val f = CoordUtils.approximateChunkCoords
     assertEquals(f(BlockCoords(0 + 5, 0 + 2, 0 + 15).toCylCoords), ChunkRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(0 + 14, 0 + 1, cylSize.totalSize + 9).toCylCoords), ChunkRelWorld(0, 0, 0))
     assertEquals(f(BlockCoords(20 * 16 + 15, 0 + 5, 0 + 4).toCylCoords), ChunkRelWorld(20, 0, 0))

@@ -16,9 +16,9 @@ class ScrollPane(
   private var xOffset: Float = 0
   private var yOffset: Float = 0
 
-  private val components: ArrayBuffer[Component with Boundable] = ArrayBuffer.empty
+  private val components: ArrayBuffer[Component & Boundable] = ArrayBuffer.empty
 
-  def addComponent(comp: Component with Boundable): Unit = components.append(comp)
+  def addComponent(comp: Component & Boundable): Unit = components.append(comp)
 
   override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
     Component.drawRect(

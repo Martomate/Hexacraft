@@ -93,7 +93,7 @@ object ChunkLoadingPrioritizer {
 class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
   private var origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0))
   private val edge = new ChunkLoadingEdge
-  edge.trackEvents(this.onChunkEdgeEvent _)
+  edge.trackEvents(e => this.onChunkEdgeEvent(e))
 
   private val furthestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => distSq(origin, c))
   private val closestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => -distSq(origin, c))

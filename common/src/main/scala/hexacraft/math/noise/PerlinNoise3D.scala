@@ -8,7 +8,7 @@ import java.util.Random
 
 // Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
 class PerlinNoise3D(random: Random) { // Apparently SimplexNoise exists in joml
-  private[this] val perm = {
+  private val perm = {
     val arr = (0 until 256).toArray
     shuffleArray(arr, random)
     arr ++ arr

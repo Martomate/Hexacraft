@@ -75,7 +75,7 @@ class GameClient(serverIp: String, serverPort: Int) {
   private var _shouldLogout = false
   def shouldLogout: Boolean = _shouldLogout
 
-  private var monitoringThread: Thread = _
+  private var monitoringThread: Thread = null.asInstanceOf[Thread]
 
   def runMonitoring(): Unit = {
     if monitoringThread != null then {
@@ -157,7 +157,7 @@ class GameClient(serverIp: String, serverPort: Int) {
 }
 
 class GameServer(worldProvider: WorldProvider, game: GameScene) {
-  private var serverThread: Thread = _
+  private var serverThread: Thread = null.asInstanceOf[Thread]
 
   def run(): Unit = {
     if serverThread != null then {
@@ -239,7 +239,7 @@ class GameServer(worldProvider: WorldProvider, game: GameScene) {
 }
 
 class NetworkHandler(val isHosting: Boolean, isOnline: Boolean, val worldProvider: WorldProvider, client: GameClient) {
-  private var server: GameServer = _
+  private var server: GameServer = null.asInstanceOf[GameServer]
 
   def runServer(game: GameScene): Unit = if isOnline then {
     server = GameServer(worldProvider, game)

@@ -28,11 +28,11 @@ object ArchUnitHelpers {
     }
 
     def layer(name: String, packageIdentifiers: String*): LayeredArchitecture = {
-      arch.layer(name).definedBy(packageIdentifiers: _*)
+      arch.layer(name).definedBy(packageIdentifiers*)
     }
 
     def optionalLayer(name: String, packageIdentifiers: String*): LayeredArchitecture = {
-      arch.optionalLayer(name).definedBy(packageIdentifiers: _*)
+      arch.optionalLayer(name).definedBy(packageIdentifiers*)
     }
 
     def where(name: String, check: LayerDependencyCheck): LayeredArchitecture = {

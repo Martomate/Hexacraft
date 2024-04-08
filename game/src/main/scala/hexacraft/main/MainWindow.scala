@@ -40,8 +40,8 @@ class MainWindow(
   private val mouse: GameMouse = new GameMouse
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
-  private var scene: Scene = _
-  private var nextScene: Scene = _
+  private var scene: Option[Scene] = None
+  private var nextScene: Option[Scene] = None
 
   override def setCursorMode(cursorMode: CursorMode): Unit = {
     window.setCursorMode(cursorMode)
@@ -64,9 +64,9 @@ class MainWindow(
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
 
-      if nextScene != null then {
-        setScene(nextScene)
-        nextScene = null
+      if nextScene.isDefined then {
+        setScene(nextScene.get)
+        nextScene = None
       }
 
       for _ <- 0 until delta do {
@@ -125,27 +125,37 @@ class MainWindow(
         }
       }
 
-      scene.handleEvent(Event.KeyEvent(key, scancode, action, mods))
+      if scene.isDefined then {
+        scene.get.handleEvent(Event.KeyEvent(key, scancode, action, mods))
+      }
 
     case CallbackEvent.CharTyped(_, character) =>
-      scene.handleEvent(Event.CharEvent(character))
+      if scene.isDefined then {
+        scene.get.handleEvent(Event.CharEvent(character))
+      }
 
     case CallbackEvent.MouseClicked(_, button, action, mods) =>
       val normalizedMousePos = mouse.currentPos.heightNormalizedPos(windowSize.logicalSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
-      scene.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
+      if scene.isDefined then {
+        scene.get.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
+      }
 
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
       val normalizedMousePos = mouse.currentPos.heightNormalizedPos(windowSize.logicalSize)
       val mousePos = (normalizedMousePos.x, normalizedMousePos.y)
-      scene.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat, mousePos))
+      if scene.isDefined then {
+        scene.get.handleEvent(Event.ScrollEvent(xOff.toFloat, yOff.toFloat, mousePos))
+      }
 
     case CallbackEvent.WindowResized(_, w, h) =>
       if w > 0 && h > 0
       then {
         if w != _windowSize.logicalSize.x || h != _windowSize.logicalSize.y
         then {
-          scene.windowResized(w, h)
+          if scene.isDefined then {
+            scene.get.windowResized(w, h)
+          }
         }
 
         _windowSize = WindowSize(Vector2i(w, h), _windowSize.physicalSize)
@@ -153,7 +163,9 @@ class MainWindow(
       }
 
     case CallbackEvent.WindowFocusChanged(_, focused) =>
-      scene.windowFocusChanged(focused)
+      if scene.isDefined then {
+        scene.get.windowFocusChanged(focused)
+      }
 
     case CallbackEvent.FrameBufferResized(_, w, h) =>
       if w > 0 && h > 0
@@ -161,7 +173,9 @@ class MainWindow(
         if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y
         then {
           OpenGL.glViewport(0, 0, w, h)
-          scene.frameBufferResized(w, h)
+          if scene.isDefined then {
+            scene.get.frameBufferResized(w, h)
+          }
         }
 
         _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(w, h))
@@ -179,13 +193,15 @@ class MainWindow(
   }
 
   private def render(): Unit = {
-    scene.render(GUITransformation(0, 0))(using
-      RenderContext(
-        this._windowSize.logicalAspectRatio,
-        this._windowSize.physicalSize,
-        mouse.currentPos.heightNormalizedPos(this.windowSize.logicalSize)
+    if scene.isDefined then {
+      scene.get.render(GUITransformation(0, 0))(using
+        RenderContext(
+          this._windowSize.logicalAspectRatio,
+          this._windowSize.physicalSize,
+          mouse.currentPos.heightNormalizedPos(this.windowSize.logicalSize)
+        )
       )
-    )
+    }
     VAO.unbindVAO()
   }
 
@@ -193,25 +209,27 @@ class MainWindow(
     val (cx, cy) = window.cursorPosition
     mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
 
-    scene.tick(
-      TickContext(
-        windowSize = _windowSize,
-        currentMousePosition = mouse.currentPos,
-        previousMousePosition = mouse.previousPos
+    if scene.isDefined then {
+      scene.get.tick(
+        TickContext(
+          windowSize = _windowSize,
+          currentMousePosition = mouse.currentPos,
+          previousMousePosition = mouse.previousPos
+        )
       )
-    )
+    }
   }
 
   private def setScene(newScene: Scene): Unit = {
-    if scene != null then {
-      scene.unload()
+    if scene.isDefined then {
+      scene.get.unload()
     }
-    scene = newScene
+    scene = Some(newScene)
   }
 
   private def makeSceneRouter(): MainRouter = {
     MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem):
-      case MainRouter.Event.SceneChanged(newScene) => nextScene = newScene
+      case MainRouter.Event.SceneChanged(newScene) => nextScene = Some(newScene)
       case MainRouter.Event.QuitRequested          => tryQuit()
   }
 
@@ -297,11 +315,11 @@ class MainWindow(
   }
 
   private def destroy(): Unit = {
-    if scene != null then {
-      scene.unload()
+    if scene.isDefined then {
+      scene.get.unload()
     }
-    if nextScene != null then {
-      nextScene.unload()
+    if nextScene.isDefined then {
+      nextScene.get.unload()
     }
 
     Resource.freeAllResources()

@@ -21,7 +21,7 @@ class Text(
     val centered: Boolean,
     val hasShadow: Boolean
 ) {
-  private var textMeshVao: VAO = _
+  private var textMeshVao: VAO = null.asInstanceOf[VAO]
   private var _vertexCount: Int = 0
   private val _color: Vector3f = new Vector3f(0f, 0f, 0f)
   private val _shadowColor: Vector3f = new Vector3f(0f, 0f, 0f)
