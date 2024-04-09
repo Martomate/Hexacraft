@@ -5,7 +5,7 @@ import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
-import hexacraft.util.Tracker
+import hexacraft.util.{Channel, Tracker}
 import hexacraft.world.{CylinderSize, FakeWorldProvider}
 
 import munit.FunSuite
@@ -27,7 +27,8 @@ class GameSceneTest extends FunSuite {
     val keyboard: GameKeyboard = _ => false
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene1 = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val (tx, _) = Channel[GameScene.Event]()
+    val gameScene1 = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(tx)
     gameScene1.unload()
 
     // Start listening to OpenGL events
@@ -35,7 +36,7 @@ class GameSceneTest extends FunSuite {
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(tx)
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -59,8 +60,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val gameSceneTracker = Tracker.withStorage[GameScene.Event]
-    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(gameSceneTracker)
+    val (tx, rx) = Channel[GameScene.Event]()
+    val gameSceneTracker = Tracker.fromRx(rx)
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(tx)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
 
@@ -86,7 +88,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val (tx, rx) = Channel[GameScene.Event]()
+    val gameSceneTracker = Tracker.fromRx(rx)
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(tx)
 
     gameScene.player.flying = false
 
@@ -127,7 +131,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(_ => ())
+    val (tx, rx) = Channel[GameScene.Event]()
+    val gameSceneTracker = Tracker.fromRx(rx)
+    val gameScene = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)(tx)
 
     gameScene.player.flying = false
 

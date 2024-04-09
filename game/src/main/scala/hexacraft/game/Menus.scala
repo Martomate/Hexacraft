@@ -4,6 +4,7 @@ import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.{Button, Component, GUITransformation, Label, ScrollPane, SubComponents, TextField}
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.renderer.TextureSingle
+import hexacraft.util.Channel
 import hexacraft.world.WorldSettings
 
 import com.martomate.nbt.Nbt
@@ -54,22 +55,24 @@ object Menus {
     }
   }
 
-  class MainMenu(multiplayerEnabled: Boolean)(onEvent: MainMenu.Event => Unit) extends MenuScene {
+  class MainMenu(multiplayerEnabled: Boolean)(onEvent: Channel.Sender[MainMenu.Event]) extends MenuScene {
     import MainMenu.Event
 
     addComponent(new Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
-    addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent(Event.Play)))
+    addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent.send(Event.Play)))
 
     if multiplayerEnabled then {
-      addComponent(Button("Multiplayer", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(onEvent(Event.Multiplayer)))
+      addComponent(
+        Button("Multiplayer", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(onEvent.send(Event.Multiplayer))
+      )
     }
 
     addComponent(
       Button("Settings", LocationInfo.from16x9(0.4f, if multiplayerEnabled then 0.25f else 0.4f, 0.2f, 0.1f))(
-        onEvent(Event.Settings)
+        onEvent.send(Event.Settings)
       )
     )
-    addComponent(Button("Quit", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f))(onEvent(Event.Quit)))
+    addComponent(Button("Quit", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f))(onEvent.send(Event.Quit)))
   }
 
   object HostWorldChooserMenu {
@@ -79,7 +82,7 @@ object Menus {
     }
   }
 
-  class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: HostWorldChooserMenu.Event => Unit)
+  class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: Channel.Sender[HostWorldChooserMenu.Event])
       extends MenuScene {
 
     import HostWorldChooserMenu.Event
@@ -91,7 +94,7 @@ object Menus {
     for (f, i) <- getWorlds.zipWithIndex do {
       scrollPane.addComponent(
         Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
-          onEvent(Event.Host(f))
+          onEvent.send(Event.Host(f))
           // TODO: the network manager should repeatedly connect to the server registry.
           //  This will be blocking until a client wants to connect or after a timeout
           //  If this is not done in a certain time period the server will be deregistered from the server registry
@@ -100,7 +103,7 @@ object Menus {
     }
     addComponent(scrollPane)
 
-    addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent(Event.GoBack)))
+    addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent.send(Event.GoBack)))
 
     private def getWorlds: Seq[WorldInfo] = {
       val baseFolder = new File(saveFolder, "saves")
@@ -127,7 +130,7 @@ object Menus {
     private case class OnlineWorldConnectionDetails(address: String, port: Int, time: Long)
   }
 
-  class JoinWorldChooserMenu(onEvent: JoinWorldChooserMenu.Event => Unit) extends MenuScene {
+  class JoinWorldChooserMenu(onEvent: Channel.Sender[JoinWorldChooserMenu.Event]) extends MenuScene {
 
     import JoinWorldChooserMenu.*
 
@@ -135,7 +138,7 @@ object Menus {
     private val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
     addComponent(scrollPane)
 
-    addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent(Event.GoBack)))
+    addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(onEvent.send(Event.GoBack)))
 
     updateServerList()
 
@@ -144,7 +147,7 @@ object Menus {
         scrollPane.addComponent(
           Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
             val connectionDetails = loadOnlineWorld(f.id)
-            onEvent(Event.Join(connectionDetails.address, connectionDetails.port))
+            onEvent.send(Event.Join(connectionDetails.address, connectionDetails.port))
           }
         )
       }
@@ -175,13 +178,13 @@ object Menus {
     }
   }
 
-  class MultiplayerMenu(onEvent: MultiplayerMenu.Event => Unit) extends MenuScene {
+  class MultiplayerMenu(onEvent: Channel.Sender[MultiplayerMenu.Event]) extends MenuScene {
     import MultiplayerMenu.Event
 
     addComponent(new Label("Multiplayer", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
-    addComponent(Button("Join", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent(Event.Join)))
-    addComponent(Button("Host", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(onEvent(Event.Host)))
-    addComponent(Button("Back", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f))(onEvent(Event.GoBack)))
+    addComponent(Button("Join", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(onEvent.send(Event.Join)))
+    addComponent(Button("Host", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(onEvent.send(Event.Host)))
+    addComponent(Button("Back", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f))(onEvent.send(Event.GoBack)))
   }
 
   class SettingsMenu(onBack: () => Unit) extends MenuScene {
@@ -201,7 +204,8 @@ object Menus {
     }
   }
 
-  class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: WorldChooserMenu.Event => Unit) extends MenuScene {
+  class WorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: Channel.Sender[WorldChooserMenu.Event])
+      extends MenuScene {
     import WorldChooserMenu.Event
 
     addComponent(
@@ -211,10 +215,10 @@ object Menus {
     addComponent(makeScrollPane)
 
     addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
-      onEvent(Event.GoBack)
+      onEvent.send(Event.GoBack)
     })
     addComponent(Button("New world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f)) {
-      onEvent(Event.CreateNewWorld)
+      onEvent.send(Event.CreateNewWorld)
     })
 
     private def makeScrollPane: ScrollPane = {
@@ -233,7 +237,7 @@ object Menus {
       val buttonLocation = LocationInfo.from16x9(0.3f, 0.75f - 0.1f * listIndex, 0.4f, 0.075f)
 
       Button(world.name, buttonLocation) {
-        onEvent(Event.StartGame(world.saveFile, WorldSettings.none))
+        onEvent.send(Event.StartGame(world.saveFile, WorldSettings.none))
       }
     }
 
@@ -264,7 +268,7 @@ object Menus {
     }
   }
 
-  class NewWorldMenu(saveFolder: File)(onEvent: NewWorldMenu.Event => Unit) extends MenuScene {
+  class NewWorldMenu(saveFolder: File)(onEvent: Channel.Sender[NewWorldMenu.Event]) extends MenuScene {
     import NewWorldMenu.Event
 
     addComponent(
@@ -290,7 +294,7 @@ object Menus {
     addComponent(seedTF)
 
     addComponent(Button("Cancel", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
-      onEvent(Event.GoBack)
+      onEvent.send(Event.GoBack)
     })
     addComponent(Button("Create world", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(createWorld()))
 
@@ -303,7 +307,7 @@ object Menus {
           .filter(_.nonEmpty)
           .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
 
-        onEvent(Event.StartGame(file, WorldSettings(Some(nameTF.text), size, seed)))
+        onEvent.send(Event.StartGame(file, WorldSettings(Some(nameTF.text), size, seed)))
       } catch {
         case _: Exception =>
         // TODO: complain about the input

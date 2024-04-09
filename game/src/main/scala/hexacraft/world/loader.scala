@@ -1,8 +1,8 @@
 package hexacraft.world
 
-import hexacraft.util.{EventDispatcher, TickableTimer, Tracker}
+import hexacraft.util.{Channel, TickableTimer}
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils, CylCoords}
+import hexacraft.world.coord.*
 
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable
@@ -92,8 +92,7 @@ object ChunkLoadingPrioritizer {
 
 class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
   private var origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0))
-  private val edge = new ChunkLoadingEdge
-  edge.trackEvents(e => this.onChunkEdgeEvent(e))
+  private val edge = makeChunkLoadingEdge()
 
   private val furthestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => distSq(origin, c))
   private val closestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => -distSq(origin, c))
@@ -170,19 +169,24 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     chunk
   }
 
-  private def onChunkEdgeEvent(event: ChunkLoadingEdge.Event): Unit = {
-    import ChunkLoadingEdge.Event.*
+  private def makeChunkLoadingEdge(): ChunkLoadingEdge = {
+    import ChunkLoadingEdge.Event
 
-    event match {
-      case ChunkOnEdge(chunk, onEdge) =>
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
+
+    rx.onEvent {
+      case Event.ChunkOnEdge(chunk, onEdge) =>
         if onEdge then {
-          removableChunks += chunk
+          this.removableChunks += chunk
         }
-      case ChunkLoadable(chunk, loadable) =>
+      case Event.ChunkLoadable(chunk, loadable) =>
         if loadable then {
-          addableChunks += chunk
+          this.addableChunks += chunk
         }
     }
+
+    edge
   }
 }
 
@@ -193,15 +197,10 @@ object ChunkLoadingEdge {
   }
 }
 
-class ChunkLoadingEdge(using CylinderSize) {
+class ChunkLoadingEdge(dispatcher: Channel.Sender[ChunkLoadingEdge.Event])(using CylinderSize) {
   private val chunksLoaded: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksEdge: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val chunksLoadable: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
-
-  private val dispatcher = new EventDispatcher[ChunkLoadingEdge.Event]
-  def trackEvents(tracker: Tracker[ChunkLoadingEdge.Event]): Unit = {
-    dispatcher.track(tracker)
-  }
 
   def isLoaded(chunk: ChunkRelWorld): Boolean = chunksLoaded.contains(chunk)
 
@@ -250,14 +249,14 @@ class ChunkLoadingEdge(using CylinderSize) {
   private def setOnEdge(chunk: ChunkRelWorld, onEdge: Boolean): Unit = {
     if chunksEdge.contains(chunk) != onEdge then {
       chunksEdge(chunk) = onEdge
-      dispatcher.notify(ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge))
+      dispatcher.send(ChunkLoadingEdge.Event.ChunkOnEdge(chunk, onEdge))
     }
   }
 
   private def setLoadable(chunk: ChunkRelWorld, loadable: Boolean): Unit = {
     if chunksLoadable.contains(chunk) != loadable then {
       chunksLoadable(chunk) = loadable
-      dispatcher.notify(ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable))
+      dispatcher.send(ChunkLoadingEdge.Event.ChunkLoadable(chunk, loadable))
     }
   }
 }

@@ -6,7 +6,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.*
 import hexacraft.renderer.*
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{EventDispatcher, TickableTimer, Tracker}
+import hexacraft.util.{Channel, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.block.BlockSpec.{Offsets, Textures}
@@ -34,7 +34,7 @@ object GameScene {
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem
-  )(eventHandler: Tracker[GameScene.Event]): GameScene = {
+  )(eventHandler: Channel.Sender[GameScene.Event]): GameScene = {
 
     val blockSpecs = makeBlockSpecs()
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
@@ -220,7 +220,7 @@ object GameScene {
 class GameScene private (
     net: NetworkHandler,
     audioSystem: AudioSystem,
-    eventHandler: Tracker[GameScene.Event],
+    eventHandler: Channel.Sender[GameScene.Event],
     blockTextureIndices: Map[String, IndexedSeq[Int]],
     crosshairShader: CrosshairShader,
     crosshairVAO: VAO,
@@ -276,16 +276,16 @@ class GameScene private (
   private def pauseGame(): Unit = {
     import PauseMenu.Event.*
 
-    val rx = EventDispatcher[PauseMenu.Event]()
-    val pauseMenu = PauseMenu(e => rx.notify(e))
+    val (tx, rx) = Channel[PauseMenu.Event]()
+    val pauseMenu = PauseMenu(tx)
 
-    rx.track({
+    rx.onEvent({
       case Unpause =>
         overlays -= pauseMenu
         pauseMenu.unload()
         setPaused(false)
       case QuitGame =>
-        eventHandler.notify(GameScene.Event.GameQuit)
+        eventHandler.send(GameScene.Event.GameQuit)
     })
 
     overlays += pauseMenu
@@ -305,10 +305,10 @@ class GameScene private (
       import InventoryBox.Event.*
 
       if !isPaused then {
-        val rx = EventDispatcher[InventoryBox.Event]()
-        val inventoryScene = InventoryBox(player.inventory, blockTextureIndices)(e => rx.notify(e))
+        val (tx, rx) = Channel[InventoryBox.Event]()
+        val inventoryScene = InventoryBox(player.inventory, blockTextureIndices)(tx)
 
-        rx.track({
+        rx.onEvent({
           case BoxClosed =>
             overlays -= inventoryScene
             inventoryScene.unload()
@@ -410,7 +410,7 @@ class GameScene private (
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit = {
     import GameScene.Event.*
-    eventHandler.notify(if invisible then CursorCaptured else CursorReleased)
+    eventHandler.send(if invisible then CursorCaptured else CursorReleased)
   }
 
   override def windowFocusChanged(focused: Boolean): Unit = {
@@ -498,7 +498,7 @@ class GameScene private (
 
   override def tick(ctx: TickContext): Unit = {
     if net.shouldLogout then {
-      eventHandler.notify(GameScene.Event.GameQuit)
+      eventHandler.send(GameScene.Event.GameQuit)
       return
     }
 
@@ -560,7 +560,7 @@ class GameScene private (
         val transmissiveFragmentation = worldRenderer.transmissiveChunkBufferFragmentation
 
         debugOverlay.get.updateContent(
-          DebugOverlay.Content.fromCamera(camera, viewDistance, regularFragmentation, transmissiveFragmentation)
+          DebugOverlay.Content.fromCamera(camera, world.renderDistance, regularFragmentation, transmissiveFragmentation)
         )
       }
 
@@ -688,6 +688,4 @@ class GameScene private (
 
     net.unload()
   }
-
-  private def viewDistance: Double = world.renderDistance
 }

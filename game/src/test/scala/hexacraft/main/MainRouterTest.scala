@@ -7,7 +7,7 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
-import hexacraft.util.Tracker
+import hexacraft.util.{Channel, Tracker}
 import hexacraft.world.WorldSettings
 
 import com.martomate.nbt.Nbt
@@ -21,8 +21,9 @@ class MainRouterTest extends FunSuite {
   private val saveDirPath = Path.of("abc")
 
   def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene =
-    val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())(tracker)
+    val (tx, rx) = Channel[MainRouter.Event]()
+    val tracker = Tracker.fromRx(rx)
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())(tx)
 
     router.route(route)
 
@@ -36,8 +37,9 @@ class MainRouterTest extends FunSuite {
   def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
       munit.Location
   ): Seq[MainRouter.Event] =
-    val tracker = Tracker.withStorage[MainRouter.Event]
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())(tracker)
+    val (tx, rx) = Channel[MainRouter.Event]()
+    val tracker = Tracker.fromRx(rx)
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())(tx)
 
     router.route(route)
 

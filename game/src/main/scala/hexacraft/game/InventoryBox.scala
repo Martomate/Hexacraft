@@ -3,7 +3,7 @@ package hexacraft.game
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
-import hexacraft.util.Tracker
+import hexacraft.util.{Channel, Tracker}
 import hexacraft.world.Inventory
 import hexacraft.world.block.Block
 
@@ -16,7 +16,7 @@ object InventoryBox {
   }
 
   def apply(currentInventory: Inventory, blockTextureIndices: Map[String, IndexedSeq[Int]])(
-      eventHandler: Tracker[Event]
+      eventHandler: Channel.Sender[Event]
   ): InventoryBox = {
     val gridRenderer = new GuiBlockRenderer(9, 4)(blockTextureIndices)
     gridRenderer.setViewMatrix(makeTiltedBlockViewMatrix)
@@ -42,7 +42,7 @@ class InventoryBox private (
     private var inventory: Inventory,
     gridRenderer: GuiBlockRenderer,
     floatingBlockRenderer: GuiBlockRenderer,
-    eventHandler: Tracker[InventoryBox.Event]
+    eventHandler: Channel.Sender[InventoryBox.Event]
 ) extends Component {
 
   private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
@@ -80,7 +80,7 @@ class InventoryBox private (
         key match {
           case KeyboardKey.Escape | KeyboardKey.Letter('E') =>
             handleFloatingBlock()
-            eventHandler.notify(InventoryBox.Event.BoxClosed)
+            eventHandler.send(InventoryBox.Event.BoxClosed)
           case _ =>
         }
       case MouseClickEvent(_, MouseAction.Release, _, mousePos) if location.containsPoint(mousePos) =>
@@ -88,7 +88,7 @@ class InventoryBox private (
           case Some(hover) =>
             val newFloatingBlock = Some(inventory(hover)).filter(_ != Block.Air)
             inventory = inventory.updated(hover, floatingBlock.getOrElse(Block.Air))
-            eventHandler.notify(InventoryBox.Event.InventoryUpdated(inventory))
+            eventHandler.send(InventoryBox.Event.InventoryUpdated(inventory))
             updateRendererContent()
             floatingBlock = newFloatingBlock
           case None =>
@@ -105,7 +105,7 @@ class InventoryBox private (
         inventory.firstEmptySlot match {
           case Some(slot) =>
             inventory = inventory.updated(slot, block)
-            eventHandler.notify(InventoryBox.Event.InventoryUpdated(inventory))
+            eventHandler.send(InventoryBox.Event.InventoryUpdated(inventory))
             updateRendererContent()
           case None => // TODO: drop the block because the inventory is full
         }

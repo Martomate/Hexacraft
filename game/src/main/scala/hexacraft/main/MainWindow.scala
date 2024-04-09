@@ -8,7 +8,7 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
-import hexacraft.util.{Resource, Result}
+import hexacraft.util.{Channel, Resource, Result}
 import hexacraft.world.World
 
 import org.joml.Vector2i
@@ -228,9 +228,17 @@ class MainWindow(
   }
 
   private def makeSceneRouter(): MainRouter = {
-    MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem):
-      case MainRouter.Event.SceneChanged(newScene) => nextScene = Some(newScene)
-      case MainRouter.Event.QuitRequested          => tryQuit()
+    import MainRouter.Event
+
+    val (tx, rx) = Channel[Event]()
+    val router = MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem)(tx)
+
+    rx.onEvent {
+      case Event.SceneChanged(newScene) => nextScene = Some(newScene)
+      case Event.QuitRequested          => tryQuit()
+    }
+
+    router
   }
 
   def run(): Unit = {
