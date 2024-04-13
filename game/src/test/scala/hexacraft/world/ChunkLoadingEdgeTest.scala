@@ -1,8 +1,8 @@
 package hexacraft.world
 
-import hexacraft.util.Tracker
-import hexacraft.world.{ChunkLoadingEdge, CylinderSize}
+import hexacraft.util.{Channel, Tracker}
 import hexacraft.world.coord.ChunkRelWorld
+
 import munit.FunSuite
 import org.scalatestplus.mockito.MockitoSugar
 
@@ -10,21 +10,24 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   given CylinderSize = CylinderSize(4)
 
   test("isLoaded should be false in the beginning") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     assert(!edge.isLoaded(ChunkRelWorld(2, 4, 3)))
     assert(!edge.isLoaded(ChunkRelWorld(0, 0, 0)))
     assert(!edge.isLoaded(ChunkRelWorld(2, 4, 3)))
     assert(!edge.isLoaded(ChunkRelWorld(2, -4, -3)))
   }
   test("isLoaded should return true after loading") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     assert(!edge.isLoaded(ChunkRelWorld(2, 4, 3)))
     edge.loadChunk(ChunkRelWorld(2, 4, 3))
     assert(!edge.isLoaded(ChunkRelWorld(0, 0, 0)))
     assert(edge.isLoaded(ChunkRelWorld(2, 4, 3)))
   }
   test("isLoaded should return false after unloading") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     assert(!edge.isLoaded(ChunkRelWorld(2, 4, 3)))
     edge.loadChunk(ChunkRelWorld(2, 4, 3))
     edge.unloadChunk(ChunkRelWorld(2, 4, 3))
@@ -32,12 +35,14 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("onEdge should be false in the beginning") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     assert(!edge.onEdge(ChunkRelWorld(5, 6, 4)))
     assert(!edge.onEdge(ChunkRelWorld(0, 0, 0)))
   }
   test("onEdge should be true for the neighbors after adding one block and it's neighbors") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     val coords = ChunkRelWorld(4, 6, 5)
 
     edge.loadChunk(coords)
@@ -49,7 +54,8 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
       assert(edge.onEdge(n))
   }
   test("onEdge should be false after removing the last block") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     val coords = ChunkRelWorld(4, 6, 5)
     edge.loadChunk(coords)
     for (n <- coords.neighbors)
@@ -67,13 +73,15 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("canLoad should be false in the beginning") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     assert(!edge.canLoad(ChunkRelWorld(8, 2, 5)))
     assert(!edge.canLoad(ChunkRelWorld(0, 0, 0)))
   }
 
   test("canLoad should be true for the neighbors after adding one block") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     val coords = ChunkRelWorld(4, 6, 5)
 
     edge.loadChunk(coords)
@@ -84,7 +92,8 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("canLoad should be false after loading the chunk") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     val first = ChunkRelWorld(4, 6, 4)
     val coords = ChunkRelWorld(4, 6, 5)
 
@@ -95,7 +104,8 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("canLoad should be true after removing a block") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     val first = ChunkRelWorld(4, 6, 4)
     val coords = ChunkRelWorld(4, 6, 5)
 
@@ -107,7 +117,8 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("canLoad should be false after removing the last block") {
-    val edge = new ChunkLoadingEdge
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
     edge.loadChunk(ChunkRelWorld(0, 0, 0))
     edge.loadChunk(ChunkRelWorld(2, 5, 4))
     edge.loadChunk(ChunkRelWorld(2, -2, 7))
@@ -127,10 +138,10 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
     import hexacraft.world.ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
-    val edge = new ChunkLoadingEdge
 
-    val tracker = Tracker.withStorage[Event]
-    edge.trackEvents(tracker)
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val tracker = Tracker.fromRx(rx)
+    val edge = new ChunkLoadingEdge(tx)
 
     edge.loadChunk(coords)
 
@@ -143,12 +154,14 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
     import hexacraft.world.ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
-    val edge = new ChunkLoadingEdge
+
+    val (tx, rx) = Channel[ChunkLoadingEdge.Event]()
+    val edge = new ChunkLoadingEdge(tx)
 
     edge.loadChunk(coords)
 
-    val tracker = Tracker.withStorage[Event]
-    edge.trackEvents(tracker)
+    rx.clearBuffer()
+    val tracker = Tracker.fromRx(rx)
 
     edge.unloadChunk(coords)
 

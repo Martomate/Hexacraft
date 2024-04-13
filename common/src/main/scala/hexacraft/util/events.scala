@@ -65,6 +65,10 @@ object Channel {
 
       this.listener = Some(f)
     }
+
+    def clearBuffer(): Unit = {
+      q.clear()
+    }
   }
 
   class Sender[E] private[Channel] {
