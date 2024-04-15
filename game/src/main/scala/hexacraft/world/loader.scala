@@ -1,88 +1,9 @@
 package hexacraft.world
 
 import hexacraft.util.{Channel, TickableTimer}
-import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.*
 
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
-
-class ChunkLoader(using CylinderSize) {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  private def distSqFunc(p: PosAndDir, c: ChunkRelWorld): Double = {
-    p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
-  }
-
-  private val chunksLoading: mutable.Map[ChunkRelWorld, Future[Chunk]] = mutable.Map.empty
-  private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
-
-  def canLoadChunk(maxQueueLength: Int): Boolean = {
-    chunksLoading.size < maxQueueLength
-  }
-  def canUnloadChunk(maxQueueLength: Int): Boolean = {
-    chunksUnloading.size < maxQueueLength
-  }
-
-  def startLoadingChunk(coords: ChunkRelWorld, loadChunk: () => Chunk): Unit = {
-    chunksLoading(coords) = Future(loadChunk())
-  }
-  def startUnloadingChunk(coords: ChunkRelWorld, unloadChunk: () => Unit): Unit = {
-    chunksUnloading(coords) = Future(unloadChunk())
-  }
-
-  def chunksFinishedLoading: Seq[(ChunkRelWorld, Chunk)] = {
-    val chunksToAdd = mutable.ArrayBuffer.empty[(ChunkRelWorld, Chunk)]
-    for (chunkCoords, futureChunk) <- chunksLoading do {
-      futureChunk.value match {
-        case None => // future is not ready yet
-        case Some(result) =>
-          result match {
-            case Failure(_) => // TODO: handle error
-            case Success(chunk) =>
-              chunksToAdd += chunkCoords -> chunk
-          }
-      }
-    }
-    val finishedChunks = chunksToAdd.toSeq
-    for (coords, _) <- finishedChunks do {
-      chunksLoading -= coords
-    }
-    finishedChunks
-  }
-
-  def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
-    val chunksToRemove = mutable.ArrayBuffer.empty[ChunkRelWorld]
-    for (chunkCoords, future) <- chunksUnloading do {
-      future.value match {
-        case None => // future is not ready yet
-        case Some(result) =>
-          result match {
-            case Failure(_) => // TODO: handle error
-            case Success(_) =>
-              chunksToRemove += chunkCoords
-          }
-      }
-    }
-    val finishedChunks = chunksToRemove.toSeq
-    for coords <- finishedChunks do {
-      chunksUnloading -= coords
-    }
-    finishedChunks
-  }
-
-  def unload(): Unit = {
-    for f <- chunksLoading.values do {
-      Await.result(f, Duration(10, TimeUnit.SECONDS))
-    }
-    for f <- chunksUnloading.values do {
-      Await.result(f, Duration(10, TimeUnit.SECONDS))
-    }
-  }
-}
 
 object ChunkLoadingPrioritizer {
   def distSq(p: PosAndDir, c: ChunkRelWorld)(using CylinderSize): Double = {

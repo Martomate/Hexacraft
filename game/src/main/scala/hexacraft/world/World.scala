@@ -16,6 +16,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 object World {
   private val ticksBetweenBlockUpdates = 5
@@ -50,7 +51,9 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
 
   private val chunkLoadingPrioritizer = new ChunkLoadingPrioritizer(renderDistance)
-  private val chunkLoader: ChunkLoader = new ChunkLoader
+
+  private val chunksLoading: mutable.Map[ChunkRelWorld, Future[(Chunk, Boolean)]] = mutable.Map.empty
+  private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
   private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
 
@@ -282,47 +285,39 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
   private def performChunkLoading(camera: Camera): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
     chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
 
-    val chunksToLoadPerTick = 1
-    val chunksToUnloadPerTick = 2
+    val chunksToLoadPerTick = 4
+    val chunksToUnloadPerTick = 6
 
     for _ <- 1 to chunksToLoadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 1 else 4
-      if chunkLoader.canLoadChunk(maxQueueLength) then {
+      val maxQueueLength = if World.shouldChillChunkLoader then 1 else 8
+      if chunksLoading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToLoad() match {
           case Some(coords) =>
-            chunkLoader.startLoadingChunk(
-              coords,
-              () => {
-                val (chunk, isNew) =
-                  worldProvider.loadChunkData(coords) match {
-                    case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
-                    case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
-                  }
-                savedChunkModCounts(coords) = if isNew then -1L else chunk.modCount
-                chunk
-              }
-            )
+            chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
+              case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
+              case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
+            }
           case None =>
         }
       }
     }
 
     for _ <- 1 to chunksToUnloadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 2 else 6
-      if chunkLoader.canUnloadChunk(maxQueueLength) then {
+      val maxQueueLength = if World.shouldChillChunkLoader then 2 else 10
+      if chunksUnloading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToRemove() match {
           case Some(coords) =>
-            chunkLoader.startUnloadingChunk(
-              coords,
-              () => {
-                for chunk <- getChunk(coords) do {
-                  if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
-                    worldProvider.saveChunkData(chunk.toNbt, coords)
-                  }
-                  savedChunkModCounts -= coords
+            getChunk(coords) match {
+              case Some(chunk) =>
+                if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
+                  savedChunkModCounts(coords) = chunk.modCount
+
+                  chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunk.toNbt, coords))
+                } else { // The chunk has not changed, so no need to save it to disk, but still unload it
+                  chunksUnloading(coords) = Future.successful(())
                 }
-              }
-            )
+              case None =>
+            }
           case None =>
         }
       }
@@ -331,12 +326,14 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     val chunksAdded = mutable.ArrayBuffer.empty[ChunkRelWorld]
     val chunksRemoved = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
-    for (chunkCoords, chunk) <- chunkLoader.chunksFinishedLoading do {
+    for (chunkCoords, chunk, isNew) <- chunksFinishedLoading do {
+      savedChunkModCounts(chunkCoords) = if isNew then -1L else chunk.modCount
+
       setChunk(chunkCoords, chunk)
 
       chunksAdded += chunkCoords
     }
-    for chunkCoords <- chunkLoader.chunksFinishedUnloading do {
+    for chunkCoords <- chunksFinishedUnloading do {
       val chunkWasRemoved = removeChunk(chunkCoords)
 
       if chunkWasRemoved then {
@@ -345,6 +342,46 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     }
 
     (chunksAdded.toSeq, chunksRemoved.toSeq)
+  }
+
+  private def chunksFinishedLoading: Seq[(ChunkRelWorld, Chunk, Boolean)] = {
+    val chunksToAdd = mutable.ArrayBuffer.empty[(ChunkRelWorld, Chunk, Boolean)]
+    for (chunkCoords, futureChunk) <- chunksLoading do {
+      futureChunk.value match {
+        case None => // future is not ready yet
+        case Some(result) =>
+          result match {
+            case Failure(_) => // TODO: handle error
+            case Success((chunk, isNew)) =>
+              chunksToAdd += ((chunkCoords, chunk, isNew))
+          }
+      }
+    }
+    val finishedChunks = chunksToAdd.toSeq
+    for (coords, _, _) <- finishedChunks do {
+      chunksLoading -= coords
+    }
+    finishedChunks
+  }
+
+  private def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
+    val chunksToRemove = mutable.ArrayBuffer.empty[ChunkRelWorld]
+    for (chunkCoords, future) <- chunksUnloading do {
+      future.value match {
+        case None => // future is not ready yet
+        case Some(result) =>
+          result match {
+            case Failure(_) => // TODO: handle error
+            case Success(_) =>
+              chunksToRemove += chunkCoords
+          }
+      }
+    }
+    val finishedChunks = chunksToRemove.toSeq
+    for coords <- finishedChunks do {
+      chunksUnloading -= coords
+    }
+    finishedChunks
   }
 
   private def saveColumn(columnCoords: ColumnRelWorld, col: ChunkColumnTerrain): Unit = {
@@ -463,7 +500,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       Await.result(t, Duration(10, TimeUnit.SECONDS))
     }
 
-    chunkLoader.unload()
+    for f <- chunksLoading.values do {
+      Await.result(f, Duration(10, TimeUnit.SECONDS))
+    }
+    for f <- chunksUnloading.values do {
+      Await.result(f, Duration(10, TimeUnit.SECONDS))
+    }
   }
 
   private def requestBlockUpdate(coords: BlockRelWorld): Unit = {
