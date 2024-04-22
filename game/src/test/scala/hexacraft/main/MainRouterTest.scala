@@ -7,7 +7,7 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
-import hexacraft.util.{Channel, Tracker}
+import hexacraft.util.Tracker
 import hexacraft.world.WorldSettings
 
 import com.martomate.nbt.Nbt
@@ -20,53 +20,50 @@ class MainRouterTest extends FunSuite {
 
   private val saveDirPath = Path.of("abc")
 
-  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene =
-    val (tx, rx) = Channel[MainRouter.Event]()
-    val tracker = Tracker.fromRx(rx)
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())(tx)
-
-    router.route(route)
-
-    assertEquals(tracker.events.size, 1)
-    val scene = tracker.events.collectFirst:
-      case MainRouter.Event.SceneChanged(s) => s
-
-    assert(scene.isDefined)
-    scene.get
+  def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene = {
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())
+    val (s, _) = router.route(route)
+    s
+  }
 
   def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
       munit.Location
-  ): Seq[MainRouter.Event] =
-    val (tx, rx) = Channel[MainRouter.Event]()
-    val tracker = Tracker.fromRx(rx)
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())(tx)
+  ): MainRouter.Event = {
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())
 
-    router.route(route)
+    val (s, rx) = router.route(route)
+    val tracker = Tracker.fromRx(rx)
+
+    for e <- events do {
+      s.handleEvent(e)
+    }
 
     assertEquals(tracker.events.size, 1)
-    val scene1 = tracker.events.head.asInstanceOf[MainRouter.Event.SceneChanged].newScene
-
-    for e <- events do scene1.handleEvent(e)
-
-    assertEquals(tracker.events.size, 2)
-    tracker.events.drop(1)
+    tracker.events.head
+  }
 
   def performRouteAndClick(route: SceneRoute, clickAt: (Float, Float), fs: FileSystem = FileSystem.createNull())(using
       munit.Location
-  ): Seq[MainRouter.Event] =
+  ): MainRouter.Event = {
     val events = Seq(
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Release, KeyMods.none, clickAt)
     )
 
     performRouteAndSendEvents(route, events, fs)
+  }
 
-  def assertSingleScene(events: Seq[MainRouter.Event], sceneIsOk: Scene => Boolean): Unit =
+  def assertSingleScene(events: Seq[MainRouter.Event], sceneIsOk: SceneRoute => Boolean): Unit = {
     val scene = events.collectFirst:
-      case MainRouter.Event.SceneChanged(s) => s
+      case MainRouter.Event.ChangeScene(s) => s
 
     assert(scene.isDefined)
     assert(sceneIsOk(scene.get))
+  }
+
+  def assertSceneChange(event: MainRouter.Event, sceneRoute: SceneRoute): Unit = {
+    assertEquals(event, MainRouter.Event.ChangeScene(sceneRoute))
+  }
 
   def testMainMenu(): Unit = {
     test("Main routes to MainMenu") {
@@ -75,23 +72,23 @@ class MainRouterTest extends FunSuite {
     }
 
     test("Main with click on Play routes to WorldChooserMenu") {
-      val events = performRouteAndClick(SceneRoute.Main, (0, 0.2f))
-      assertSingleScene(events, _.isInstanceOf[Menus.WorldChooserMenu])
+      val event = performRouteAndClick(SceneRoute.Main, (0, 0.2f))
+      assertSceneChange(event, SceneRoute.WorldChooser)
     }
 
     test("Main with click on Multiplayer routes to MultiplayerMenu") {
-      val events = performRouteAndClick(SceneRoute.Main, (0, -0.1f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MultiplayerMenu])
+      val event = performRouteAndClick(SceneRoute.Main, (0, -0.1f))
+      assertSceneChange(event, SceneRoute.Multiplayer)
     }
 
     test("Main with click on Settings routes to SettingsMenu") {
-      val events = performRouteAndClick(SceneRoute.Main, (0, -0.4f))
-      assertSingleScene(events, _.isInstanceOf[Menus.SettingsMenu])
+      val event = performRouteAndClick(SceneRoute.Main, (0, -0.4f))
+      assertSceneChange(event, SceneRoute.Settings)
     }
 
     test("Main with click on Quit causes a QuitRequest") {
-      val events = performRouteAndClick(SceneRoute.Main, (0, -0.8f))
-      assertEquals(events, Seq(MainRouter.Event.QuitRequested))
+      val event = performRouteAndClick(SceneRoute.Main, (0, -0.8f))
+      assertEquals(event, MainRouter.Event.QuitRequested)
     }
   }
 
@@ -102,13 +99,13 @@ class MainRouterTest extends FunSuite {
     }
 
     test("WorldChooser with click on Back to menu routes to MainMenu") {
-      val events = performRouteAndClick(SceneRoute.WorldChooser, (-0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MainMenu])
+      val event = performRouteAndClick(SceneRoute.WorldChooser, (-0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.Main)
     }
 
     test("WorldChooser with click on New world routes to NewWorldMenu") {
-      val events = performRouteAndClick(SceneRoute.WorldChooser, (0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.NewWorldMenu])
+      val event = performRouteAndClick(SceneRoute.WorldChooser, (0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.NewWorld)
     }
 
     test("WorldChooser with click on one of the worlds routes to GameScene".ignore) {
@@ -121,8 +118,8 @@ class MainRouterTest extends FunSuite {
         )
       )
 
-      val events = performRouteAndClick(SceneRoute.WorldChooser, (0, 0.6f), fs)
-      assertSingleScene(events, _.isInstanceOf[GameScene])
+      val event = performRouteAndClick(SceneRoute.WorldChooser, (0, 0.6f), fs)
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, WorldSettings(None, None, None), true, false, null))
     }
   }
 
@@ -133,8 +130,8 @@ class MainRouterTest extends FunSuite {
     }
 
     test("NewWorld with click on Cancel routes to WorldChooserMenu") {
-      val events = performRouteAndClick(SceneRoute.NewWorld, (-0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.WorldChooserMenu])
+      val event = performRouteAndClick(SceneRoute.NewWorld, (-0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.WorldChooser)
     }
 
     test("NewWorld with click on Create world routes to GameScene".ignore) {
@@ -147,8 +144,8 @@ class MainRouterTest extends FunSuite {
         )
       )
 
-      val events = performRouteAndClick(SceneRoute.NewWorld, (0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[GameScene])
+      val event = performRouteAndClick(SceneRoute.NewWorld, (0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, WorldSettings(None, None, None), true, false, null))
     }
   }
 
@@ -159,18 +156,18 @@ class MainRouterTest extends FunSuite {
     }
 
     test("Multiplayer with click on Join routes to JoinWorldChooserMenu") {
-      val events = performRouteAndClick(SceneRoute.Multiplayer, (0, 0.2f))
-      assertSingleScene(events, _.isInstanceOf[Menus.JoinWorldChooserMenu])
+      val event = performRouteAndClick(SceneRoute.Multiplayer, (0, 0.2f))
+      assertSceneChange(event, SceneRoute.JoinWorld)
     }
 
     test("Multiplayer with click on Host routes to HostWorldChooserMenu") {
-      val events = performRouteAndClick(SceneRoute.Multiplayer, (0, -0.1f))
-      assertSingleScene(events, _.isInstanceOf[Menus.HostWorldChooserMenu])
+      val event = performRouteAndClick(SceneRoute.Multiplayer, (0, -0.1f))
+      assertSceneChange(event, SceneRoute.HostWorld)
     }
 
     test("Multiplayer with click on Back routes to MainMenu") {
-      val events = performRouteAndClick(SceneRoute.Multiplayer, (0, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MainMenu])
+      val event = performRouteAndClick(SceneRoute.Multiplayer, (0, -0.8f))
+      assertSceneChange(event, SceneRoute.Main)
     }
   }
 
@@ -181,8 +178,8 @@ class MainRouterTest extends FunSuite {
     }
 
     test("JoinWorld with click on Back routes to MultiplayerMenu") {
-      val events = performRouteAndClick(SceneRoute.JoinWorld, (-0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MultiplayerMenu])
+      val event = performRouteAndClick(SceneRoute.JoinWorld, (-0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.Multiplayer)
     }
   }
 
@@ -193,8 +190,8 @@ class MainRouterTest extends FunSuite {
     }
 
     test("HostWorld with click on Back routes to MultiplayerMenu") {
-      val events = performRouteAndClick(SceneRoute.HostWorld, (-0.1f, -0.8f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MultiplayerMenu])
+      val event = performRouteAndClick(SceneRoute.HostWorld, (-0.1f, -0.8f))
+      assertSceneChange(event, SceneRoute.Multiplayer)
     }
   }
 
@@ -205,8 +202,8 @@ class MainRouterTest extends FunSuite {
     }
 
     test("Settings with click on Back routes to MainMenu") {
-      val events = performRouteAndClick(SceneRoute.Settings, (0, -0.4f))
-      assertSingleScene(events, _.isInstanceOf[Menus.MainMenu])
+      val event = performRouteAndClick(SceneRoute.Settings, (0, -0.4f))
+      assertSceneChange(event, SceneRoute.Main)
     }
   }
 
@@ -219,7 +216,7 @@ class MainRouterTest extends FunSuite {
     test("Game with Escape key and click on Back to menu routes to MainMenu".ignore) {
       val clickAt = (0f, -0.4f)
 
-      val events = performRouteAndSendEvents(
+      val event = performRouteAndSendEvents(
         SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null),
         Seq(
           Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none),
@@ -228,7 +225,7 @@ class MainRouterTest extends FunSuite {
         ),
         FileSystem.createNull()
       )
-      assertSingleScene(events, _.isInstanceOf[Menus.MainMenu])
+      assertSceneChange(event, SceneRoute.Main)
     }
   }
 

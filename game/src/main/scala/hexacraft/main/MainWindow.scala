@@ -8,7 +8,7 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
-import hexacraft.util.{Channel, Resource, Result}
+import hexacraft.util.{Resource, Result}
 import hexacraft.world.World
 
 import org.joml.Vector2i
@@ -41,7 +41,9 @@ class MainWindow(
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
   private var scene: Option[Scene] = None
-  private var nextScene: Option[Scene] = None
+  private var nextScene: Option[SceneRoute] = None
+
+  private val router = makeSceneRouter()
 
   override def setCursorMode(cursorMode: CursorMode): Unit = {
     window.setCursorMode(cursorMode)
@@ -55,6 +57,22 @@ class MainWindow(
     mouse.skipNextMouseMovedUpdate()
   }
 
+  private def switchSceneIfNeeded(): Unit = {
+    if nextScene.isDefined then {
+      val (s, rx) = router.route(nextScene.get)
+      nextScene = None
+
+      rx.onEvent {
+        case MainRouter.Event.ChangeScene(newRoute) =>
+          nextScene = Some(newRoute)
+        case MainRouter.Event.QuitRequested =>
+          window.requestClose()
+      }
+
+      setScene(s)
+    }
+  }
+
   private def loop(): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
@@ -64,10 +82,7 @@ class MainWindow(
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
 
-      if nextScene.isDefined then {
-        setScene(nextScene.get)
-        nextScene = None
-      }
+      switchSceneIfNeeded()
 
       for _ <- 0 until delta do {
         tick()
@@ -228,27 +243,16 @@ class MainWindow(
   }
 
   private def makeSceneRouter(): MainRouter = {
-    import MainRouter.Event
-
-    val (tx, rx) = Channel[Event]()
-    val router = MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem)(tx)
-
-    rx.onEvent {
-      case Event.SceneChanged(newScene) => nextScene = Some(newScene)
-      case Event.QuitRequested          => tryQuit()
-    }
-
-    router
+    MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem)
   }
 
   def run(): Unit = {
     initGL()
     audioSystem.init()
 
-    try {
-      val router = makeSceneRouter()
-      router.route(SceneRoute.Main)
+    nextScene = Some(SceneRoute.Main)
 
+    try {
       resetMousePos()
       loop()
     } finally {
@@ -318,16 +322,9 @@ class MainWindow(
     }
   }
 
-  private def tryQuit(): Unit = {
-    window.requestClose()
-  }
-
   private def destroy(): Unit = {
     if scene.isDefined then {
       scene.get.unload()
-    }
-    if nextScene.isDefined then {
-      nextScene.get.unload()
     }
 
     Resource.freeAllResources()

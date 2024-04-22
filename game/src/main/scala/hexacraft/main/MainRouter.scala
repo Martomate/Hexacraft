@@ -13,7 +13,7 @@ import java.io.File
 
 object MainRouter {
   enum Event {
-    case SceneChanged(newScene: Scene)
+    case ChangeScene(route: SceneRoute)
     case QuitRequested
   }
 }
@@ -25,13 +25,26 @@ class MainRouter(
     window: GameWindow,
     kb: GameKeyboard,
     audioSystem: AudioSystem
-)(eventListener: Channel.Sender[MainRouter.Event]) {
+) {
 
-  def route(sceneRoute: SceneRoute): Unit = {
-    eventListener.send(MainRouter.Event.SceneChanged(createScene(sceneRoute)))
+  def route(sceneRoute: SceneRoute): (Scene, Channel.Receiver[MainRouter.Event]) = {
+    import MainRouter.Event
+
+    val (tx, rx) = Channel[Event]()
+    val scene = createScene(
+      sceneRoute,
+      r => tx.send(Event.ChangeScene(r)),
+      () => tx.send(Event.QuitRequested)
+    )
+
+    (scene, rx)
   }
 
-  private def createScene(sceneRoute: SceneRoute): Scene = sceneRoute match {
+  private def createScene(
+      sceneRoute: SceneRoute,
+      route: SceneRoute => Unit,
+      requestQuit: () => Unit
+  ): Scene = sceneRoute match {
     case SceneRoute.Main =>
       import Menus.MainMenu.Event
 
@@ -41,7 +54,7 @@ class MainRouter(
         case Event.Play        => route(SceneRoute.WorldChooser)
         case Event.Multiplayer => route(SceneRoute.Multiplayer)
         case Event.Settings    => route(SceneRoute.Settings)
-        case Event.Quit        => eventListener.send(MainRouter.Event.QuitRequested)
+        case Event.Quit        => requestQuit()
       }
 
       scene
