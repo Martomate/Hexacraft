@@ -2,6 +2,7 @@ package hexacraft.util
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 trait Tracker[E] {
   def notify(event: E): Unit
@@ -84,5 +85,12 @@ object Channel {
     val tx = new Sender[E]
     tx.rx = rx
     (tx, rx)
+  }
+
+  inline def wrap[E] = [T] =>
+    (wrapFn: Sender[E] => T) => {
+      val (tx, rx) = Channel[E]()
+      val value = wrapFn(tx)
+      (value, rx)
   }
 }

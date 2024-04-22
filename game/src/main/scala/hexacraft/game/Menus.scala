@@ -80,6 +80,10 @@ object Menus {
       case Host(worldInfo: WorldInfo)
       case GoBack
     }
+
+    def create(saveFolder: File, fs: FileSystem): (HostWorldChooserMenu, Channel.Receiver[Event]) = {
+      Channel.wrap[Event](tx => new HostWorldChooserMenu(saveFolder, fs)(tx))
+    }
   }
 
   class HostWorldChooserMenu(saveFolder: File, fs: FileSystem)(onEvent: Channel.Sender[HostWorldChooserMenu.Event])

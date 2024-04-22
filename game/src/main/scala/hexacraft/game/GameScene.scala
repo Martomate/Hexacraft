@@ -34,7 +34,7 @@ object GameScene {
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem
-  )(eventHandler: Channel.Sender[GameScene.Event]): GameScene = {
+  ): (GameScene, Channel.Receiver[GameScene.Event]) = {
 
     val blockSpecs = makeBlockSpecs()
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
@@ -74,10 +74,12 @@ object GameScene {
     val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
     val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
 
+    val (tx, rx) = Channel[GameScene.Event]()
+
     val s = new GameScene(
       net,
       audioSystem,
-      eventHandler,
+      tx,
       blockTextureIndices,
       crosshairShader,
       crosshairVAO,
@@ -109,7 +111,7 @@ object GameScene {
     }
     net.runClient()
 
-    s
+    (s, rx)
   }
 
   private def makeBlockInHandRenderer(
@@ -279,14 +281,14 @@ class GameScene private (
     val (tx, rx) = Channel[PauseMenu.Event]()
     val pauseMenu = PauseMenu(tx)
 
-    rx.onEvent({
+    rx.onEvent {
       case Unpause =>
         overlays -= pauseMenu
         pauseMenu.unload()
         setPaused(false)
       case QuitGame =>
         eventHandler.send(GameScene.Event.GameQuit)
-    })
+    }
 
     overlays += pauseMenu
     setPaused(true)
@@ -308,7 +310,7 @@ class GameScene private (
         val (tx, rx) = Channel[InventoryBox.Event]()
         val inventoryScene = InventoryBox(player.inventory, blockTextureIndices)(tx)
 
-        rx.onEvent({
+        rx.onEvent {
           case BoxClosed =>
             overlays -= inventoryScene
             inventoryScene.unload()
@@ -317,7 +319,7 @@ class GameScene private (
           case InventoryUpdated(inv) =>
             player.inventory = inv
             toolbar.onInventoryUpdated(inv)
-        })
+        }
 
         overlays += inventoryScene
         isInPopup = true

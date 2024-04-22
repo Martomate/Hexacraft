@@ -1,6 +1,7 @@
 package hexacraft.main
 
 import hexacraft.game.*
+import hexacraft.game.Menus.JoinWorldChooserMenu
 import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
@@ -34,8 +35,7 @@ class MainRouter(
     case SceneRoute.Main =>
       import Menus.MainMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.MainMenu(multiplayerEnabled)(tx)
+      val (scene, rx) = Channel.wrap[Event](tx => Menus.MainMenu(multiplayerEnabled)(tx))
 
       rx.onEvent {
         case Event.Play        => route(SceneRoute.WorldChooser)
@@ -49,8 +49,7 @@ class MainRouter(
     case SceneRoute.WorldChooser =>
       import Menus.WorldChooserMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.WorldChooserMenu(saveFolder, fs)(tx)
+      val (scene, rx) = Channel.wrap[Event](tx => Menus.WorldChooserMenu(saveFolder, fs)(tx))
 
       rx.onEvent {
         case Event.StartGame(saveDir, settings) =>
@@ -64,8 +63,7 @@ class MainRouter(
     case SceneRoute.NewWorld =>
       import Menus.NewWorldMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.NewWorldMenu(saveFolder)(tx)
+      val (scene, rx) = Channel.wrap[Event](tx => Menus.NewWorldMenu(saveFolder)(tx))
 
       rx.onEvent {
         case Event.StartGame(saveDir, settings) =>
@@ -78,8 +76,7 @@ class MainRouter(
     case SceneRoute.Multiplayer =>
       import Menus.MultiplayerMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.MultiplayerMenu(tx)
+      val (scene, rx) = Channel.wrap[Event](tx => Menus.MultiplayerMenu(tx))
 
       rx.onEvent {
         case Event.Join   => route(SceneRoute.JoinWorld)
@@ -92,8 +89,7 @@ class MainRouter(
     case SceneRoute.JoinWorld =>
       import Menus.JoinWorldChooserMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.JoinWorldChooserMenu(tx)
+      val (scene, rx) = Channel.wrap[Event](tx => new Menus.JoinWorldChooserMenu(tx))
 
       rx.onEvent {
         case Event.Join(address, port) =>
@@ -107,8 +103,7 @@ class MainRouter(
     case SceneRoute.HostWorld =>
       import Menus.HostWorldChooserMenu.Event
 
-      val (tx, rx) = Channel[Event]()
-      val scene = Menus.HostWorldChooserMenu(saveFolder, fs)(tx)
+      val (scene, rx) = Menus.HostWorldChooserMenu.create(saveFolder, fs)
 
       rx.onEvent {
         case Event.Host(f) =>
@@ -133,8 +128,8 @@ class MainRouter(
         }
 
       val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
-      val (tx, rx) = Channel[GameScene.Event]()
-      val scene = GameScene.create(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem)(tx)
+      val (scene, rx) =
+        GameScene.create(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem)
 
       rx.onEvent {
         case GameScene.Event.GameQuit =>
