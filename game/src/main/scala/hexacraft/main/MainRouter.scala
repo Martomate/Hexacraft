@@ -35,7 +35,7 @@ class MainRouter(
     case SceneRoute.Main =>
       import Menus.MainMenu.Event
 
-      val (scene, rx) = Channel.wrap[Event](tx => Menus.MainMenu(multiplayerEnabled)(tx))
+      val (scene, rx) = Menus.MainMenu.create(multiplayerEnabled)
 
       rx.onEvent {
         case Event.Play        => route(SceneRoute.WorldChooser)
@@ -49,7 +49,7 @@ class MainRouter(
     case SceneRoute.WorldChooser =>
       import Menus.WorldChooserMenu.Event
 
-      val (scene, rx) = Channel.wrap[Event](tx => Menus.WorldChooserMenu(saveFolder, fs)(tx))
+      val (scene, rx) = Menus.WorldChooserMenu.create(saveFolder, fs)
 
       rx.onEvent {
         case Event.StartGame(saveDir, settings) =>
@@ -63,7 +63,7 @@ class MainRouter(
     case SceneRoute.NewWorld =>
       import Menus.NewWorldMenu.Event
 
-      val (scene, rx) = Channel.wrap[Event](tx => Menus.NewWorldMenu(saveFolder)(tx))
+      val (scene, rx) = Menus.NewWorldMenu.create(saveFolder)
 
       rx.onEvent {
         case Event.StartGame(saveDir, settings) =>
@@ -76,7 +76,7 @@ class MainRouter(
     case SceneRoute.Multiplayer =>
       import Menus.MultiplayerMenu.Event
 
-      val (scene, rx) = Channel.wrap[Event](tx => Menus.MultiplayerMenu(tx))
+      val (scene, rx) = Menus.MultiplayerMenu.create()
 
       rx.onEvent {
         case Event.Join   => route(SceneRoute.JoinWorld)
@@ -89,7 +89,7 @@ class MainRouter(
     case SceneRoute.JoinWorld =>
       import Menus.JoinWorldChooserMenu.Event
 
-      val (scene, rx) = Channel.wrap[Event](tx => new Menus.JoinWorldChooserMenu(tx))
+      val (scene, rx) = Menus.JoinWorldChooserMenu.create()
 
       rx.onEvent {
         case Event.Join(address, port) =>
