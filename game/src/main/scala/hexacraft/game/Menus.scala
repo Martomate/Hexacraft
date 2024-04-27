@@ -109,19 +109,6 @@ object Menus {
       (menu, rx)
     }
 
-    private def getWorlds(saveFolder: File, fs: FileSystem): Seq[WorldInfo] = {
-      val baseFolder = new File(saveFolder, "saves")
-      if baseFolder.exists() then {
-        baseFolder
-          .listFiles()
-          .filter(f => new File(f, "world.dat").exists())
-          .map(saveFile => WorldInfo.fromFile(saveFile, fs))
-          .toSeq
-      } else {
-        Seq.empty[WorldInfo]
-      }
-    }
-
     private def makeScrollPane(worlds: Seq[WorldInfo], tx: Channel.Sender[Event]) = {
       val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
 
@@ -247,27 +234,6 @@ object Menus {
       (menu, rx)
     }
 
-    private def getWorlds(saveFolder: File, fs: FileSystem): Seq[WorldInfo] = {
-      val baseFolder = new File(saveFolder, "saves")
-      if fs.exists(baseFolder.toPath) then {
-        for saveFile <- saveFoldersSortedBy(fs, baseFolder, p => -fs.lastModified(p).toEpochMilli) yield {
-          WorldInfo.fromFile(saveFile.toFile, fs)
-        }
-      } else {
-        Seq.empty[WorldInfo]
-      }
-    }
-
-    private def saveFoldersSortedBy[S](fs: FileSystem, baseFolder: File, sortFunc: Path => S)(using
-        Ordering[S]
-    ): Seq[Path] = {
-      fs.listFiles(baseFolder.toPath)
-        .map(worldFolder => (worldFolder, worldFolder.resolve("world.dat")))
-        .filter(t => fs.exists(t._2))
-        .sortBy(t => sortFunc(t._2))
-        .map(_._1)
-    }
-
     private def makeScrollPane(worlds: Seq[WorldInfo], tx: Channel.Sender[Event]): ScrollPane = {
       val scrollPaneLocation = LocationInfo.from16x9(0.3f, 0.25f, 0.4f, 0.575f).expand(0.025f * 2)
       val scrollPane = new ScrollPane(scrollPaneLocation, 0.025f * 2)
@@ -287,6 +253,27 @@ object Menus {
         tx.send(Event.StartGame(world.saveFile, WorldSettings.none))
       }
     }
+  }
+
+  private def getWorlds(saveFolder: File, fs: FileSystem): Seq[WorldInfo] = {
+    val baseFolder = new File(saveFolder, "saves")
+    if fs.exists(baseFolder.toPath) then {
+      for saveFile <- saveFoldersSortedBy(fs, baseFolder, p => -fs.lastModified(p).toEpochMilli) yield {
+        WorldInfo.fromFile(saveFile.toFile, fs)
+      }
+    } else {
+      Seq.empty[WorldInfo]
+    }
+  }
+
+  private def saveFoldersSortedBy[S](fs: FileSystem, baseFolder: File, sortFunc: Path => S)(using
+      Ordering[S]
+  ): Seq[Path] = {
+    fs.listFiles(baseFolder.toPath)
+      .map(worldFolder => (worldFolder, worldFolder.resolve("world.dat")))
+      .filter(t => fs.exists(t._2))
+      .sortBy(t => sortFunc(t._2))
+      .map(_._1)
   }
 
   object NewWorldMenu {
