@@ -7,14 +7,14 @@ import munit.FunSuite
 
 import java.nio.ByteBuffer
 
-class RenderAspectHandlerTest extends FunSuite {
+class BlockFaceBatchRendererTest extends FunSuite {
   given CylinderSize = CylinderSize(4)
 
   test("it works for one chunk") {
     val buffer = LocalRenderBuffer(3 * 4)
     val bufferAllocator = LocalRenderBuffer.Allocator(_ => buffer)
     val bufferHandler = new BufferHandler(4, 3, bufferAllocator)
-    val renderHandler = new RenderAspectHandler(bufferHandler)
+    val renderHandler = new BlockFaceBatchRenderer(bufferHandler)
 
     val coords = ChunkRelWorld(11, 12, 13)
     renderHandler.update(Nil, Seq(coords -> ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6))))
@@ -43,7 +43,7 @@ class RenderAspectHandlerTest extends FunSuite {
     val buffer = LocalRenderBuffer(3 * 4)
     val bufferAllocator = LocalRenderBuffer.Allocator(_ => buffer)
     val bufferHandler = new BufferHandler(4, 3, bufferAllocator)
-    val renderHandler = new RenderAspectHandler(bufferHandler)
+    val renderHandler = new BlockFaceBatchRenderer(bufferHandler)
 
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)
@@ -81,7 +81,7 @@ class RenderAspectHandlerTest extends FunSuite {
     val buffer = LocalRenderBuffer(3 * 4)
     val bufferAllocator = LocalRenderBuffer.Allocator(_ => buffer)
     val bufferHandler = new BufferHandler(4, 3, bufferAllocator)
-    val renderHandler = new RenderAspectHandler(bufferHandler)
+    val renderHandler = new BlockFaceBatchRenderer(bufferHandler)
 
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)
@@ -110,7 +110,7 @@ class RenderAspectHandlerTest extends FunSuite {
     val buffer = LocalRenderBuffer(3 * 4)
     val bufferAllocator = LocalRenderBuffer.Allocator(_ => buffer)
     val bufferHandler = new BufferHandler(4, 3, bufferAllocator)
-    val renderHandler = new RenderAspectHandler(bufferHandler)
+    val renderHandler = new BlockFaceBatchRenderer(bufferHandler)
 
     val coords1 = ChunkRelWorld(11, 12, 13)
     val coords2 = ChunkRelWorld(23, 22, 21)

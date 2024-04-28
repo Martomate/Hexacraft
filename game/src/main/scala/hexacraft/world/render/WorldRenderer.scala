@@ -1,8 +1,8 @@
 package hexacraft.world.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, InstancedRenderer, VAO}
-import hexacraft.shaders.{EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
+import hexacraft.renderer.{GpuState, TextureArray, VAO}
+import hexacraft.shaders.{BlockShader, EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
 import hexacraft.world.World.WorldTickResult
@@ -14,6 +14,7 @@ import hexacraft.world.entity.{Entity, EntityModel}
 import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
 
+import java.nio.ByteBuffer
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -29,7 +30,17 @@ class WorldRenderer(
   private val selectedBlockShader = new SelectedBlockShader()
   private val worldCombinerShader = new WorldCombinerShader()
 
-  private val chunkHandler: ChunkRenderHandler = new ChunkRenderHandler
+  private val blockShader = new BlockShader(isSide = false)
+  private val blockSideShader = new BlockShader(isSide = true)
+  private val blockTexture = TextureArray.getTextureArray("blocks")
+
+  private val solidBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
+  private val transmissiveBlockGpuState = GpuState.build(_.blend(true).cullFace(false))
+
+  private val solidBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
+    IndexedSeq.tabulate(8)(s => new mutable.LongMap())
+  private val transmissiveBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
+    IndexedSeq.tabulate(8)(s => new mutable.LongMap())
 
   private val skyVao: VAO = SkyShader.createVao()
   private val skyRenderer = SkyShader.createRenderer()
@@ -60,9 +71,11 @@ class WorldRenderer(
     players -= player
   }
 
-  def regularChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.regularChunkBufferFragmentation
+  def regularChunkBufferFragmentation: IndexedSeq[Float] =
+    solidBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
-  def transmissiveChunkBufferFragmentation: IndexedSeq[Float] = chunkHandler.transmissiveChunkBufferFragmentation
+  def transmissiveChunkBufferFragmentation: IndexedSeq[Float] =
+    transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
     chunksToRender ++= worldTickResult.chunksAdded
@@ -97,11 +110,12 @@ class WorldRenderer(
       }
     }
 
-    chunkHandler.update(updatedChunkData.toSeq)
+    updateBlockData(updatedChunkData.toSeq)
   }
 
   def onTotalSizeChanged(totalSize: Int): Unit = {
-    chunkHandler.onTotalSizeChanged(totalSize)
+    blockShader.setTotalSize(totalSize)
+    blockSideShader.setTotalSize(totalSize)
 
     entityShader.setTotalSize(totalSize)
     entitySideShader.setTotalSize(totalSize)
@@ -109,7 +123,8 @@ class WorldRenderer(
   }
 
   def onProjMatrixChanged(camera: Camera): Unit = {
-    chunkHandler.onProjMatrixChanged(camera)
+    blockShader.setProjectionMatrix(camera.proj.matrix)
+    blockSideShader.setProjectionMatrix(camera.proj.matrix)
 
     entityShader.setProjectionMatrix(camera.proj.matrix)
     entitySideShader.setProjectionMatrix(camera.proj.matrix)
@@ -143,20 +158,14 @@ class WorldRenderer(
 
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
-    skyShader.setInverseViewMatrix(camera.view.invMatrix)
-    skyShader.setSunPosition(sun)
-    skyShader.enable()
-    skyRenderer.render(skyVao, skyVao.maxCount)
+    renderSky(camera, sun)
 
     // World content
-    chunkHandler.render(camera, sun)
+    renderBlocks(camera, sun)
     renderEntities(camera, sun)
 
     if selectedBlockAndSide.flatMap(_._3).isDefined then {
-      selectedBlockShader.setViewMatrix(camera.view.matrix)
-      selectedBlockShader.setCameraPosition(camera.position)
-      selectedBlockShader.enable()
-      selectedBlockRenderer.render(selectedBlockVao, 1)
+      renderSelectedBlock(camera, selectedBlockAndSide)
     }
 
     mainFrameBuffer.unbind()
@@ -177,27 +186,116 @@ class WorldRenderer(
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
   }
 
+  private def renderSky(camera: Camera, sun: Vector3f): Unit = {
+    skyShader.setInverseViewMatrix(camera.view.invMatrix)
+    skyShader.setSunPosition(sun)
+    skyShader.enable()
+    skyRenderer.render(skyVao, skyVao.maxCount)
+  }
+
+  private def renderSelectedBlock(
+      camera: Camera,
+      selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])]
+  ): Unit = {
+    selectedBlockShader.setViewMatrix(camera.view.matrix)
+    selectedBlockShader.setCameraPosition(camera.position)
+    selectedBlockShader.enable()
+    selectedBlockRenderer.render(selectedBlockVao, 1)
+  }
+
+  private def renderBlocks(camera: Camera, sun: Vector3f): Unit = {
+    blockShader.setViewMatrix(camera.view.matrix)
+    blockShader.setCameraPosition(camera.position)
+    blockShader.setSunPosition(sun)
+
+    blockSideShader.setViewMatrix(camera.view.matrix)
+    blockSideShader.setCameraPosition(camera.position)
+    blockSideShader.setSunPosition(sun)
+
+    blockTexture.bind()
+    renderBlocks()
+  }
+
+  private def updateBlockData(chunks: Seq[(ChunkRelWorld, ChunkRenderData)]): Unit = {
+    val opaqueData = chunks.partitionMap((coords, data) =>
+      data.opaqueBlocks match {
+        case Some(content) => Right((coords, content))
+        case None          => Left(coords)
+      }
+    )
+    updateBlockData(opaqueData._1, opaqueData._2, transmissive = false)
+
+    val transmissiveData = chunks.partitionMap((coords, data) =>
+      data.transmissiveBlocks match {
+        case Some(content) => Right((coords, content))
+        case None          => Left(coords)
+      }
+    )
+    updateBlockData(transmissiveData._1, transmissiveData._2, transmissive = true)
+  }
+
+  private def renderBlocks(): Unit = {
+    for side <- 0 until 8 do {
+      val sh = if side < 2 then blockShader else blockSideShader
+      sh.enable()
+      sh.setSide(side)
+      for h <- solidBlockRenderers(side).values do {
+        h.render()
+      }
+    }
+
+    for side <- 0 until 8 do {
+      val sh = if side < 2 then blockShader else blockSideShader
+      sh.enable()
+      sh.setSide(side)
+      for h <- transmissiveBlockRenderers(side).values do {
+        h.render()
+      }
+    }
+  }
+
+  private def makeBufferHandler(s: Int, gpuState: GpuState): BufferHandler[?] =
+    new BufferHandler(100000 * 3, BlockShader.bytesPerVertex(s), VaoRenderBuffer.Allocator(s, gpuState))
+
+  private def updateBlockData(
+      chunksToClear: Seq[ChunkRelWorld],
+      chunksToUpdate: Seq[(ChunkRelWorld, IndexedSeq[ByteBuffer])],
+      transmissive: Boolean
+  ): Unit = {
+    val clear = chunksToClear.groupBy(c => chunkGroup(c))
+    val update = chunksToUpdate.groupBy((c, _) => chunkGroup(c))
+
+    val groups = (clear.keys ++ update.keys).toSet
+    val groupData = for g <- groups yield {
+      (g, clear.getOrElse(g, Seq()), update.getOrElse(g, Seq()))
+    }
+
+    val gpuState = if transmissive then transmissiveBlockGpuState else solidBlockGpuState
+
+    for s <- 0 until 8 do {
+      val batchRenderers = if transmissive then transmissiveBlockRenderers(s) else solidBlockRenderers(s)
+
+      for (g, clear, update) <- groupData do {
+        val r = batchRenderers.getOrElseUpdate(g, new BlockFaceBatchRenderer(makeBufferHandler(s, gpuState)))
+
+        r.update(clear, update.map((c, data) => c -> data(s)))
+
+        if r.isEmpty then {
+          r.unload()
+          batchRenderers.remove(g)
+        }
+      }
+    }
+  }
+
+  private def chunkGroup(c: ChunkRelWorld) = {
+    ChunkRelWorld(c.X.toInt & ~7, c.Y.toInt & ~7, c.Z.toInt & ~7).value
+  }
+
   def frameBufferResized(width: Int, height: Int): Unit = {
     val newFrameBuffer = MainFrameBuffer.fromSize(width, height)
     mainFrameBuffer.unload()
     mainFrameBuffer = newFrameBuffer
-  }
-
-  def unload(): Unit = {
-    skyVao.free()
-    skyShader.free()
-    selectedBlockVao.free()
-    selectedBlockShader.free()
-    worldCombinerVao.free()
-    worldCombinerShader.free()
-    entityShader.free()
-    entitySideShader.free()
-
-    for r <- entityRenderers do {
-      r.unload()
-    }
-    chunkHandler.unload()
-    mainFrameBuffer.unload()
   }
 
   private def renderEntities(camera: Camera, sun: Vector3f): Unit = {
@@ -239,5 +337,39 @@ class WorldRenderer(
         entityRenderers(side).render()
       }
     }
+  }
+
+  def unload(): Unit = {
+    skyVao.free()
+    skyShader.free()
+    selectedBlockVao.free()
+    selectedBlockShader.free()
+    worldCombinerVao.free()
+    worldCombinerShader.free()
+    entityShader.free()
+    entitySideShader.free()
+
+    for r <- entityRenderers do {
+      r.unload()
+    }
+
+    for rs <- solidBlockRenderers do {
+      for h <- rs.values do {
+        h.unload()
+      }
+      rs.clear()
+    }
+
+    for rs <- transmissiveBlockRenderers do {
+      for h <- rs.values do {
+        h.unload()
+      }
+      rs.clear()
+    }
+
+    blockShader.free()
+    blockSideShader.free()
+
+    mainFrameBuffer.unload()
   }
 }

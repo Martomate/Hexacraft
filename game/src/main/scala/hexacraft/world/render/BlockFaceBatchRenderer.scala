@@ -5,7 +5,7 @@ import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer
 
-class RenderAspectHandler(bufferHandler: BufferHandler[?]) {
+class BlockFaceBatchRenderer(bufferHandler: BufferHandler[?]) {
   private val memorySegments: DenseKeyedSegmentStack[ChunkRelWorld] = new DenseKeyedSegmentStack
 
   def fragmentation: Float = memorySegments.fragmentation
