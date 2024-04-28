@@ -330,7 +330,7 @@ class GameScene private (
     case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
     case KeyboardKey.Function(7) =>
-      setDebugScreenVisible(debugOverlay == null)
+      setDebugScreenVisible(debugOverlay.isEmpty)
     case KeyboardKey.Digit(digit) =>
       if digit > 0 then {
         setSelectedItemSlot(digit - 1)
