@@ -121,7 +121,7 @@ class MainRouter(
       rx.onEvent {
         case Event.Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
-          route(SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null))
+          route(SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, ("localhost", 1234)))
         case Event.GoBack => route(SceneRoute.Multiplayer)
       }
 
@@ -131,29 +131,71 @@ class MainRouter(
       new Menus.SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
-      val client = if serverLocation != null then GameClient(serverLocation._1, serverLocation._2) else null
+      if isOnline then {
+        val (serverHostname, serverPort) = serverLocation
+        val client = GameClient(serverHostname, serverPort)
 
-      val worldProvider =
-        if isHosting then {
-          WorldProviderFromFile(saveDir, settings, fs)
-        } else {
-          RemoteWorldProvider(client)
+        val serverGame = if isHosting then {
+          val serverWorldProvider = WorldProviderFromFile(saveDir, settings, fs)
+          val worldInfo = serverWorldProvider.getWorldInfo
+
+          val (sc, _) = GameScene.create(
+            worldInfo,
+            NetworkHandler.forServer(serverWorldProvider, serverPort),
+            // TODO: remove these from the server!
+            _ => false,
+            BlockTextureLoader.instance,
+            window.windowSize,
+            audioSystem,
+            None
+          )
+          Some(sc)
+        } else None
+
+        val (scene, rx) =
+          val worldProvider = RemoteWorldProvider(client)
+          val worldInfo = worldProvider.getWorldInfo
+
+          GameScene.create(
+            worldInfo,
+            NetworkHandler.forClient(worldProvider, client, serverPort),
+            kb,
+            BlockTextureLoader.instance,
+            window.windowSize,
+            audioSystem,
+            serverGame
+          )
+
+        rx.onEvent {
+          case GameScene.Event.GameQuit =>
+            route(SceneRoute.Main)
+            System.gc()
+          case GameScene.Event.CursorCaptured =>
+            window.setCursorMode(CursorMode.Disabled)
+          case GameScene.Event.CursorReleased =>
+            window.setCursorMode(CursorMode.Normal)
         }
 
-      val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
-      val (scene, rx) =
-        GameScene.create(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem)
+        scene
+      } else {
+        val worldProvider = WorldProviderFromFile(saveDir, settings, fs)
+        val worldInfo = worldProvider.getWorldInfo
+        val net = NetworkHandler.forOffline(worldProvider)
 
-      rx.onEvent {
-        case GameScene.Event.GameQuit =>
-          route(SceneRoute.Main)
-          System.gc()
-        case GameScene.Event.CursorCaptured =>
-          window.setCursorMode(CursorMode.Disabled)
-        case GameScene.Event.CursorReleased =>
-          window.setCursorMode(CursorMode.Normal)
+        val (scene, rx) =
+          GameScene.create(worldInfo, net, kb, BlockTextureLoader.instance, window.windowSize, audioSystem, None)
+
+        rx.onEvent {
+          case GameScene.Event.GameQuit =>
+            route(SceneRoute.Main)
+            System.gc()
+          case GameScene.Event.CursorCaptured =>
+            window.setCursorMode(CursorMode.Disabled)
+          case GameScene.Event.CursorReleased =>
+            window.setCursorMode(CursorMode.Normal)
+        }
+
+        scene
       }
-
-      scene
   }
 }

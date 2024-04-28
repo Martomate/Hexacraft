@@ -7,30 +7,15 @@ import com.martomate.nbt.Nbt
 trait WorldProvider {
   def getWorldInfo: WorldInfo
 
-  def loadState(path: String): Option[Nbt.MapTag]
-  def saveState(tag: Nbt.MapTag, name: String, path: String): Unit
+  def loadChunkData(coords: ChunkRelWorld): Option[Nbt.MapTag]
 
-  final def loadChunkData(coords: ChunkRelWorld): Option[Nbt.MapTag] = {
-    loadState("data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat")
-  }
+  def saveChunkData(tag: Nbt.MapTag, coords: ChunkRelWorld): Unit
 
-  final def saveChunkData(tag: Nbt.MapTag, coords: ChunkRelWorld): Unit = {
-    saveState(tag, "chunk", "data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat")
-  }
+  def loadColumnData(coords: ColumnRelWorld): Option[Nbt.MapTag]
 
-  final def loadColumnData(coords: ColumnRelWorld): Option[Nbt.MapTag] = {
-    loadState(s"data/${coords.value}/column.dat")
-  }
+  def saveColumnData(tag: Nbt.MapTag, coords: ColumnRelWorld): Unit
 
-  final def saveColumnData(tag: Nbt.MapTag, coords: ColumnRelWorld): Unit = {
-    saveState(tag, "column", s"data/${coords.value}/column.dat")
-  }
+  def loadWorldData(): Option[Nbt.MapTag]
 
-  final def loadWorldData(): Option[Nbt.MapTag] = {
-    loadState("world.dat")
-  }
-
-  final def saveWorldData(tag: Nbt.MapTag): Unit = {
-    saveState(tag, "world", "world.dat")
-  }
+  def saveWorldData(tag: Nbt.MapTag): Unit
 }

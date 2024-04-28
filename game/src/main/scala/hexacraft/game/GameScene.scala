@@ -1,5 +1,6 @@
 package hexacraft.game
 
+import hexacraft.game.ServerNetworkPacket.WorldInfoPacket
 import hexacraft.gui.*
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
@@ -29,11 +30,13 @@ object GameScene {
   }
 
   def create(
+      worldInfo: WorldInfo,
       net: NetworkHandler,
       keyboard: GameKeyboard,
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
-      audioSystem: AudioSystem
+      audioSystem: AudioSystem,
+      serverGame: Option[GameScene]
   ): (GameScene, Channel.Receiver[GameScene.Event]) = {
 
     val blockSpecs = makeBlockSpecs()
@@ -47,7 +50,6 @@ object GameScene {
     val crosshairVAO: VAO = CrosshairShader.createVao()
     val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
-    val worldInfo = net.worldProvider.getWorldInfo
     val world = World(net.worldProvider, worldInfo)
 
     given CylinderSize = world.size
@@ -101,7 +103,8 @@ object GameScene {
       placeBlockSoundBuffer,
       destroyBlockSoundBuffer,
       walkSoundBuffer1,
-      walkSoundBuffer2
+      walkSoundBuffer2,
+      serverGame
     )
 
     s.updateBlockInHandRendererContent()
@@ -245,7 +248,8 @@ class GameScene private (
     placeBlockSoundBuffer: AudioSystem.BufferId,
     destroyBlockSoundBuffer: AudioSystem.BufferId,
     walkSoundBuffer1: AudioSystem.BufferId,
-    walkSoundBuffer2: AudioSystem.BufferId
+    walkSoundBuffer2: AudioSystem.BufferId,
+    serverGame: Option[GameScene]
 )(using CylinderSize)
     extends Scene {
 
@@ -511,6 +515,33 @@ class GameScene private (
     updateSoundListener()
 
     try {
+      while {
+        net.tryReceiveMessagesFromServer() match {
+          case Some(message) =>
+            message match {
+              case ServerNetworkPacket.WorldInfoPacket(info)    => ???
+              case ServerNetworkPacket.ChunkData(coords, data)  => ???
+              case ServerNetworkPacket.ColumnData(coords, data) => ???
+              case ServerNetworkPacket.WorldData(data)          => ???
+              case ServerNetworkPacket.PlayerPosition(playerId, position) =>
+                if playerId == net.client.clientId then {
+                  this.player.position.set(position)
+                } else {
+                  this.otherPlayer.position.set(position)
+                }
+              case ServerNetworkPacket.PlayerRotation(playerId, rotation) =>
+                if playerId == net.client.clientId then {
+                  this.player.rotation.set(rotation)
+                } else {
+                  this.otherPlayer.rotation.set(rotation)
+                }
+            }
+            true
+          case None =>
+            false
+        }
+      } do {}
+
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
@@ -602,6 +633,10 @@ class GameScene private (
 
       for s <- overlays do {
         s.tick(ctx)
+      }
+
+      if serverGame.isDefined then {
+        serverGame.get.tick(ctx)
       }
     } catch {
       case e: ZMQException => println(e)
@@ -746,6 +781,10 @@ class GameScene private (
 
     if debugOverlay.isDefined then {
       debugOverlay.get.unload()
+    }
+
+    if serverGame.isDefined then {
+      serverGame.get.unload()
     }
 
     net.unload()
