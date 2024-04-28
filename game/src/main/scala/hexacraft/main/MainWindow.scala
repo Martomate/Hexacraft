@@ -41,7 +41,7 @@ class MainWindow(
   private val keyboard: GameKeyboard = new GameKeyboard.GlfwKeyboard(window)
 
   private var scene: Option[Scene] = None
-  private var nextScene: Option[SceneRoute] = None
+  private var nextScene: Option[SceneRoute] = Some(SceneRoute.Main)
 
   private val router = makeSceneRouter()
 
@@ -57,6 +57,10 @@ class MainWindow(
     mouse.skipNextMouseMovedUpdate()
   }
 
+  def setNextScene(scene: SceneRoute): Unit = {
+    this.nextScene = Some(scene)
+  }
+
   private def switchSceneIfNeeded(): Unit = {
     if nextScene.isDefined then {
       val (s, rx) = router.route(nextScene.get)
@@ -64,7 +68,7 @@ class MainWindow(
 
       rx.onEvent {
         case MainRouter.Event.ChangeScene(newRoute) =>
-          nextScene = Some(newRoute)
+          setNextScene(newRoute)
         case MainRouter.Event.QuitRequested =>
           window.requestClose()
       }
@@ -250,8 +254,6 @@ class MainWindow(
     initGL()
     audioSystem.init()
 
-    nextScene = Some(SceneRoute.Main)
-
     try {
       resetMousePos()
       loop()
@@ -314,6 +316,7 @@ class MainWindow(
     //  OpenGL.glEnable(OpenGL.State.MultiSample)
     OpenGL.glEnable(OpenGL.State.DepthTest)
     OpenGL.glDepthFunc(OpenGL.DepthFunc.LessThanOrEqual)
+    OpenGL.glBlendFunc(OpenGL.BlendFactor.SrcAlpha, OpenGL.BlendFactor.OneMinusSrcAlpha)
     OpenGL.glEnable(OpenGL.State.CullFace)
 
     if isDebug && OpenGL.hasDebugExtension then {
