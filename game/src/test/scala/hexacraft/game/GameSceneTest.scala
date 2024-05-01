@@ -23,11 +23,21 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene1, _) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene1, _) =
+      GameScene.createHostedGame(
+        "localhost",
+        1234,
+        false,
+        null,
+        keyboard,
+        textureLoader,
+        windowSize,
+        audioSystem,
+        worldProvider
+      )
     gameScene1.unload()
 
     // Start listening to OpenGL events
@@ -35,7 +45,17 @@ class GameSceneTest extends FunSuite {
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val (gameScene, _) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, _) = GameScene.createHostedGame(
+      "localhost",
+      1234,
+      false,
+      null,
+      keyboard,
+      textureLoader,
+      windowSize,
+      audioSystem,
+      worldProvider
+    )
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -54,12 +74,21 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.createHostedGame(
+      "localhost",
+      1234,
+      false,
+      null,
+      keyboard,
+      textureLoader,
+      windowSize,
+      audioSystem,
+      worldProvider
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
@@ -81,21 +110,30 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.createHostedGame(
+      "localhost",
+      1234,
+      false,
+      null,
+      keyboard,
+      textureLoader,
+      windowSize,
+      audioSystem,
+      worldProvider
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
-    gameScene.player.flying = false
+    gameScene.client.player.flying = false
 
     // ensure player is in the middle of the spawn chunk
-    gameScene.player.position.y = 4 // each block is 0.5 high
+    gameScene.client.player.position.y = 4 // each block is 0.5 high
 
     // look down
-    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+    gameScene.client.player.rotation.set(math.Pi / 2, 0, 0)
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
@@ -123,21 +161,30 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.createHostedGame(
+      "localhost",
+      1234,
+      false,
+      null,
+      keyboard,
+      textureLoader,
+      windowSize,
+      audioSystem,
+      worldProvider
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
-    gameScene.player.flying = false
+    gameScene.client.player.flying = false
 
     // ensure player is in the middle of the spawn chunk, and far from the ground
-    gameScene.player.position.y = 128 + 4 // each block is 0.5 high
+    gameScene.client.player.position.y = 128 + 4 // each block is 0.5 high
 
     // look down
-    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+    gameScene.client.player.rotation.set(math.Pi / 2, 0, 0)
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
@@ -154,7 +201,7 @@ class GameSceneTest extends FunSuite {
     audioSystem.trackEvents(audioTracker)
 
     // move so the block can be placed
-    gameScene.player.position.y += 1
+    gameScene.client.player.position.y += 1
 
     // place block
     gameScene.handleEvent(MouseClickEvent(MouseButton.Right, MouseAction.Press, KeyMods.none, (0, 0)))
