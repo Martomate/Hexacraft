@@ -131,18 +131,33 @@ class MainRouter(
       new Menus.SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
-      val client = if serverLocation != null then GameClient(serverLocation._1, serverLocation._2) else null
+      val (serverIp, serverPort) = if serverLocation != null then serverLocation else ("localhost", 1234)
 
-      val worldProvider =
-        if isHosting then {
-          WorldProviderFromFile(saveDir, settings, fs)
-        } else {
-          RemoteWorldProvider(client)
-        }
-
-      val networkHandler = NetworkHandler(isHosting, isOnline, worldProvider, client)
       val (scene, rx) =
-        GameScene.create(networkHandler, kb, BlockTextureLoader.instance, window.windowSize, audioSystem)
+        if isHosting then {
+          GameScene.createHostedGame(
+            serverIp,
+            serverPort,
+            isOnline,
+            null,
+            kb,
+            BlockTextureLoader.instance,
+            window.windowSize,
+            audioSystem,
+            WorldProviderFromFile(saveDir, settings, fs)
+          )
+        } else {
+          GameScene.createRemoteGame(
+            serverIp,
+            serverPort,
+            isOnline,
+            null,
+            kb,
+            BlockTextureLoader.instance,
+            window.windowSize,
+            audioSystem
+          )
+        }
 
       rx.onEvent {
         case GameScene.Event.GameQuit =>

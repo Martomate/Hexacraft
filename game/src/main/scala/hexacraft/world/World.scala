@@ -31,7 +31,7 @@ object World {
   )
 }
 
-class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
+class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
   given size: CylinderSize = worldInfo.worldSize
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -261,8 +261,8 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     chunkWasRemoved
   }
 
-  def tick(camera: Camera): WorldTickResult = {
-    val (chunksAdded, chunksRemoved) = performChunkLoading(camera)
+  def tick(cameras: Seq[Camera]): WorldTickResult = {
+    val (chunksAdded, chunksRemoved) = performChunkLoading(cameras)
 
     if blockUpdateTimer.tick() then {
       performBlockUpdates()
@@ -282,8 +282,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     new WorldTickResult(chunksAdded, chunksRemoved, r)
   }
 
-  private def performChunkLoading(camera: Camera): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
-    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
+  private def performChunkLoading(cameras: Seq[Camera]): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
+    if cameras.isEmpty then {
+      return (Nil, Nil)
+    }
+
+    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(cameras.head.view))
 
     val chunksToLoadPerTick = 4
     val chunksToUnloadPerTick = 6

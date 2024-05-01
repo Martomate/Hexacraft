@@ -15,7 +15,7 @@ class WorldTest extends FunSuite {
     val world = World(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
-    world.tick(camera)
+    world.tick(Seq(camera))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
 
@@ -67,9 +67,9 @@ class WorldTest extends FunSuite {
     assert(world.getChunk(cCoords).isEmpty)
 
     // Run the game a bit
-    world.tick(camera)
+    world.tick(Seq(camera))
     Thread.sleep(20)
-    world.tick(camera)
+    world.tick(Seq(camera))
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -87,9 +87,9 @@ class WorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords)).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(camera)
+    world.tick(Seq(camera))
     Thread.sleep(20)
-    world.tick(camera)
+    world.tick(Seq(camera))
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -98,9 +98,9 @@ class WorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords.offset(100, 0, 0))).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(camera)
+    world.tick(Seq(camera))
     Thread.sleep(20)
-    world.tick(camera)
+    world.tick(Seq(camera))
 
     // The chunk should be unloaded
     assert(world.getChunk(cCoords).isEmpty)
@@ -118,9 +118,9 @@ class WorldTest extends FunSuite {
 
     // Make sure the chunk is loaded
     camera.setPosition(entityPosition.toVector3d)
-    world.tick(camera)
+    world.tick(Seq(camera))
     Thread.sleep(20)
-    world.tick(camera)
+    world.tick(Seq(camera))
 
     val entity = Entity(
       "scorpion",
@@ -130,25 +130,25 @@ class WorldTest extends FunSuite {
     world.addEntity(entity)
 
     val pos1 = entity.transform.position
-    world.tick(camera)
+    world.tick(Seq(camera))
     val pos2 = entity.transform.position
     assertNotEquals(pos1, pos2)
 
     world.removeEntity(entity)
 
-    world.tick(camera)
+    world.tick(Seq(camera))
     val pos3 = entity.transform.position
     assertEquals(pos2, pos3)
 
     world.addEntity(entity)
 
-    world.tick(camera)
+    world.tick(Seq(camera))
     val pos4 = entity.transform.position
     assertNotEquals(pos3, pos4)
 
     world.removeAllEntities()
 
-    world.tick(camera)
+    world.tick(Seq(camera))
     val pos5 = entity.transform.position
     assertEquals(pos4, pos5)
   }
