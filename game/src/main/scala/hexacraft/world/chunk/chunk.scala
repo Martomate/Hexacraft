@@ -17,8 +17,9 @@ object Chunk {
     new Chunk(ChunkData.fromNBT(loadedTag))
   }
 
-  def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) = {
-    val column = world.provideColumn(coords.getColumnRelWorld)
+  def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
+      CylinderSize
+  ) = {
     new Chunk(generator.generateChunk(coords, column))
   }
 }

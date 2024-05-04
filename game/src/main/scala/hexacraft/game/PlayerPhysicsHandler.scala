@@ -1,11 +1,11 @@
 package hexacraft.game
 
 import hexacraft.physics.{Density, DragCoefficient, FluidDynamics, Viscosity}
-import hexacraft.world.{BlocksInWorld, CollisionDetector, HexBox, Player}
+import hexacraft.world.{CollisionDetector, HexBox, Player}
 
 import org.joml.Vector3d
 
-class PlayerPhysicsHandler(world: BlocksInWorld, collisionDetector: CollisionDetector) {
+class PlayerPhysicsHandler(collisionDetector: CollisionDetector) {
   def tick(player: Player, maxSpeed: Double, effectiveViscosity: Double, volumeSubmergedInWater: Double): Unit = {
     val velLen = math.hypot(player.velocity.x, player.velocity.z)
     if velLen > maxSpeed then {

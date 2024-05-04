@@ -6,7 +6,7 @@ import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.mutable
 
-class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize) extends BlocksInWorld {
+class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize) extends BlocksInWorldExtended {
   private val worldGenerator = new WorldGenerator(provider.getWorldInfo.gen)
   private var cols: Map[ColumnRelWorld, ChunkColumnTerrain] = Map.empty
   private var chunks: Map[ChunkRelWorld, Chunk] = Map.empty
@@ -62,13 +62,13 @@ object FakeBlocksInWorld {
   ): FakeBlocksInWorld = {
     val world = new FakeBlocksInWorld(provider)
     for coords -> block <- blocks do {
-      world.provideColumn(coords.getColumnRelWorld)
+      val col = world.provideColumn(coords.getColumnRelWorld)
 
       val chunkCoords = coords.getChunkRelWorld
       val chunk = world.chunks.get(chunkCoords) match {
         case Some(c) => c
         case None =>
-          val ch = Chunk.fromGenerator(coords.getChunkRelWorld, world, WorldGenerator(provider.getWorldInfo.gen))
+          val ch = Chunk.fromGenerator(coords.getChunkRelWorld, col, WorldGenerator(provider.getWorldInfo.gen))
           world.chunks += chunkCoords -> ch
           ch
       }

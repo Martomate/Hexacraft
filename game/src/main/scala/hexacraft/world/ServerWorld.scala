@@ -2,7 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.bits.Int12
 import hexacraft.util.*
-import hexacraft.world.World.WorldTickResult
+import hexacraft.world.ServerWorld.WorldTickResult
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
@@ -18,7 +18,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-object World {
+object ServerWorld {
   private val ticksBetweenBlockUpdates = 5
   private val ticksBetweenEntityRelocation = 120
 
@@ -31,7 +31,9 @@ object World {
   )
 }
 
-class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
+class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
+    extends BlockRepository
+    with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -293,13 +295,15 @@ class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends Bloc
     val chunksToUnloadPerTick = 6
 
     for _ <- 1 to chunksToLoadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 1 else 8
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 1 else 8
       if chunksLoading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToLoad() match {
           case Some(coords) =>
             chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
               case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
-              case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
+              case None =>
+                val column = provideColumn(coords.getColumnRelWorld)
+                (Chunk.fromGenerator(coords, column, worldGenerator), true)
             }
           case None =>
         }
@@ -307,7 +311,7 @@ class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends Bloc
     }
 
     for _ <- 1 to chunksToUnloadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 2 else 10
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 2 else 10
       if chunksUnloading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToRemove() match {
           case Some(coords) =>
@@ -416,7 +420,7 @@ class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends Bloc
     e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
+  private val blockUpdateTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenBlockUpdates)
 
   private def performBlockUpdates(): Unit = {
     val blocksToUpdateNow = ArrayBuffer.empty[BlockRelWorld]
@@ -429,7 +433,7 @@ class World(worldProvider: WorldProvider, val worldInfo: WorldInfo) extends Bloc
     }
   }
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenEntityRelocation)
 
   private def performEntityRelocation(): Unit = {
     val entList = for {
