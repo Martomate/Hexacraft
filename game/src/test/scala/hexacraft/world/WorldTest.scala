@@ -12,7 +12,7 @@ class WorldTest extends FunSuite {
 
   test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo)
+    val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     world.tick(Seq(camera))
@@ -21,7 +21,8 @@ class WorldTest extends FunSuite {
 
     // Set a chunk in the world
     assertEquals(world.getChunk(cCoords), None)
-    val chunk = Chunk.fromGenerator(cCoords, world, WorldGenerator(provider.getWorldInfo.gen))
+    val col = world.provideColumn(cCoords.getColumnRelWorld)
+    val chunk = Chunk.fromGenerator(cCoords, col, WorldGenerator(provider.getWorldInfo.gen))
     world.setChunk(cCoords, chunk)
     assertEquals(world.getChunk(cCoords), Some(chunk))
 
@@ -37,12 +38,13 @@ class WorldTest extends FunSuite {
 
   test("the world should decorate new chunks") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo)
+    val world = ServerWorld(provider, provider.getWorldInfo)
 
     val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
 
     // Set a chunk in the world
-    val chunk = Chunk.fromGenerator(chunkCoords, world, WorldGenerator(provider.getWorldInfo.gen))
+    val col = world.provideColumn(chunkCoords.getColumnRelWorld)
+    val chunk = Chunk.fromGenerator(chunkCoords, col, WorldGenerator(provider.getWorldInfo.gen))
     world.setChunk(chunkCoords, chunk)
 
     // The planner should have decorated the chunk
@@ -57,7 +59,7 @@ class WorldTest extends FunSuite {
 
   test("the world should load chunks close to the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo)
+    val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -80,7 +82,7 @@ class WorldTest extends FunSuite {
 
   test("the world should unload chunks far from the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo)
+    val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -111,7 +113,7 @@ class WorldTest extends FunSuite {
 
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
-    val world = World(provider, provider.getWorldInfo)
+    val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val entityPosition = CylCoords(1, 2, 3)

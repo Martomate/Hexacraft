@@ -5,7 +5,7 @@ import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.entity.EntityFactory
 import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
-class WorldPlanner(world: BlocksInWorld, mainSeed: Long)(using CylinderSize) {
+class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderSize) {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
     new EntityGroupPlanner(world, pos => EntityFactory.atStartPos(pos, "sheep").unwrap(), mainSeed)

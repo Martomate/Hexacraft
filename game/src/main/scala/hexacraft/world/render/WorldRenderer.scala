@@ -4,8 +4,8 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, VAO}
 import hexacraft.shaders.{BlockShader, EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
 import hexacraft.util.TickableTimer
-import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
-import hexacraft.world.World.WorldTickResult
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, ClientWorld}
+import hexacraft.world.ClientWorld.WorldTickResult
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}

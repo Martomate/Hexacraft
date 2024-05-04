@@ -3,6 +3,7 @@ package hexacraft.game
 import hexacraft.util.TickableTimer
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
@@ -15,7 +16,7 @@ import scala.collection.mutable
 
 object GameServer {
   def create(isOnline: Boolean, worldProvider: WorldProvider): GameServer = {
-    val world = new World(worldProvider, worldProvider.getWorldInfo)
+    val world = new ServerWorld(worldProvider, worldProvider.getWorldInfo)
 
     val server = new GameServer(isOnline, worldProvider, world)(using world.size)
 
@@ -25,7 +26,7 @@ object GameServer {
   }
 }
 
-class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: World)(using CylinderSize) {
+class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerWorld)(using CylinderSize) {
   private var serverThread: Thread = null.asInstanceOf[Thread]
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -35,7 +36,7 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: World)(
 
   private val collisionDetector: CollisionDetector = new CollisionDetector(world)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
-  private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, collisionDetector)
+  private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(collisionDetector)
 
   private def saveWorldInfo(): Unit = {
     val worldTag = world.worldInfo.copy(player = players.values.head._1.toNBT).toNBT
@@ -239,7 +240,7 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: World)(
             throw new ZMQException(serverSocket.errno())
           }
 
-          val packet = NetworkPacket.deserialize(bytes, ZMQ.CHARSET)
+          val packet = NetworkPacket.deserialize(bytes)
           handlePacket(clientId, packet, serverSocket) match {
             case Some(res) =>
               serverSocket.sendMore(identity)
@@ -283,13 +284,28 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: World)(
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
         Some(info.toNBT)
-      case GetState(path) =>
-        Some(worldProvider.loadState(path).getOrElse(Nbt.emptyMap))
+      case LoadChunkData(coords) =>
+        world.getChunk(coords) match {
+          case Some(chunk) => Some(chunk.toNbt)
+          case None        => Some(Nbt.emptyMap) // TODO: return None
+        }
+      case LoadColumnData(coords) =>
+        world.getColumn(coords) match {
+          case Some(column) => Some(ChunkColumnData(Some(column.terrainHeight)).toNBT)
+          case None         => Some(Nbt.emptyMap) // TODO: return None
+        }
+      case LoadWorldData =>
+        Some(world.worldInfo.toNBT)
+      case GetPlayerState =>
+        Some(player.toNBT)
       case PlayerRightClicked =>
         performRightMouseClick(player, playerCamera)
         None
       case PlayerLeftClicked =>
         performLeftMouseClick(player, playerCamera)
+        None
+      case PlayerToggledFlying =>
+        player.flying = !player.flying
         None
       case PlayerMovedMouse(dist) =>
         player.mouseMovement = dist
@@ -300,7 +316,7 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: World)(
     }
   }
 
-  private def makePlayer(world: World): Player = {
+  private def makePlayer(world: ServerWorld): Player = {
     given CylinderSize = world.size
 
     val startX = (math.random() * 100 - 50).toInt

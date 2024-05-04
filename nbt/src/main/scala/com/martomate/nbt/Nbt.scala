@@ -63,6 +63,11 @@ object Nbt {
         case Some(Nbt.LongTag(v)) => v
         case _                    => default
 
+    def getFloat(key: String, default: => Float): Float =
+      vs.get(key) match
+        case Some(Nbt.FloatTag(v)) => v
+        case _                     => default
+
     def getDouble(key: String, default: => Double): Double =
       vs.get(key) match
         case Some(Nbt.DoubleTag(v)) => v

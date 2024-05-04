@@ -1,11 +1,11 @@
 package hexacraft.world.gen
 
-import hexacraft.world.{BlocksInWorld, CylinderSize}
+import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, LocalBlockState}
+import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
-import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy, TreeGenStrategy}
+import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -39,7 +39,8 @@ object PlannedWorldChange {
 
 class WoodChoice(val log: Block, val leaves: Block)
 
-class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderSize) extends WorldFeaturePlanner {
+class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: CylinderSize)
+    extends WorldFeaturePlanner {
   private val plannedChanges: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
 
@@ -121,8 +122,9 @@ class TreePlanner(world: BlocksInWorld, mainSeed: Long)(using cylSize: CylinderS
   }
 }
 
-class EntityGroupPlanner(world: BlocksInWorld, entityFactory: CylCoords => Entity, mainSeed: Long)(using CylinderSize)
-    extends WorldFeaturePlanner {
+class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords => Entity, mainSeed: Long)(using
+    CylinderSize
+) extends WorldFeaturePlanner {
 
   private val plannedEntities: mutable.Map[ChunkRelWorld, Seq[Entity]] = mutable.Map.empty
   private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
@@ -142,17 +144,17 @@ class EntityGroupPlanner(world: BlocksInWorld, entityFactory: CylCoords => Entit
     if !chunksPlanned(coords) then {
       val rand = new Random(mainSeed ^ coords.value + 364453868)
       if rand.nextDouble() < 0.01 then {
-        plannedEntities(coords) = makePlan(rand, coords)
+        val column = world.provideColumn(coords.getColumnRelWorld)
+        plannedEntities(coords) = makePlan(rand, coords, column)
       }
       chunksPlanned += coords
     }
   }
 
-  private def makePlan(rand: Random, coords: ChunkRelWorld): Seq[Entity] = {
+  private def makePlan(rand: Random, coords: ChunkRelWorld, column: ChunkColumnTerrain): Seq[Entity] = {
     val thePlan = mutable.Buffer.empty[Entity]
     val count = rand.nextInt(maxEntitiesPerGroup) + 1
     for _ <- 0 until count do {
-      val column = world.provideColumn(coords.getColumnRelWorld)
       val cx = rand.nextInt(16)
       val cz = rand.nextInt(16)
       val y = column.terrainHeight.getHeight(cx, cz)

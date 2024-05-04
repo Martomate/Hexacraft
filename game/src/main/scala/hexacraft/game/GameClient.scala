@@ -11,16 +11,19 @@ import hexacraft.util.{Channel, TickableTimer}
 import hexacraft.world.{
   Camera,
   CameraProjection,
+  ChunkLoadingPrioritizer,
+  ClientWorld,
   CylinderSize,
   HexBox,
   Player,
-  World,
+  PosAndDir,
   WorldInfo,
   WorldProvider,
   WorldSettings
 }
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.block.BlockSpec.{Offsets, Textures}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
 import hexacraft.world.entity.{
   BoundsComponent,
@@ -34,7 +37,7 @@ import hexacraft.world.entity.{
 import hexacraft.world.render.WorldRenderer
 
 import com.martomate.nbt.Nbt
-import org.joml.{Matrix4f, Vector2f, Vector3f}
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*
 import zmq.ZError
 
@@ -73,6 +76,9 @@ object GameClient {
       WorldSettings.none
     )
 
+    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+    val player = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+
     val blockSpecs = makeBlockSpecs()
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
@@ -85,11 +91,10 @@ object GameClient {
     val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
     // TODO: get chunks from the server instead of generating the entire world
-    val world = World(new EmptyWorldProvider(worldInfo), worldInfo)
+    val world = ClientWorld(worldInfo)
 
     given CylinderSize = world.size
 
-    val player: Player = makePlayer(worldInfo.player, world)
     val otherPlayer: Player = makePlayer(worldInfo.player, world)
     val otherPlayerEntity: Entity = makeOtherPlayer(player)
 
@@ -102,7 +107,7 @@ object GameClient {
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
     val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
-    val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
+    val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world.collisionDetector)
 
     val toolbar: Toolbar = makeToolbar(player, initialWindowSize, blockTextureIndices)
     val blockInHandRenderer: GuiBlockRenderer =
@@ -151,7 +156,7 @@ object GameClient {
   }
 
   private def makeBlockInHandRenderer(
-      world: World,
+      world: ClientWorld,
       camera: Camera,
       blockTextureIndices: Map[String, IndexedSeq[Int]],
       initialWindowSize: WindowSize
@@ -193,7 +198,7 @@ object GameClient {
       .translate(0, -0.25f, 0)
   }
 
-  private def makePlayer(playerNbt: Nbt.MapTag, world: World): Player = {
+  private def makePlayer(playerNbt: Nbt.MapTag, world: ClientWorld): Player = {
     given CylinderSize = world.size
 
     if playerNbt != null then {
@@ -201,7 +206,7 @@ object GameClient {
     } else {
       val startX = (math.random() * 100 - 50).toInt
       val startZ = (math.random() * 100 - 50).toInt
-      val startY = world.getHeight(startX, startZ) + 4
+      val startY = world.getHeight(startX, startZ).getOrElse(50) + 4
       Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
     }
   }
@@ -264,7 +269,7 @@ class GameClient(
     crosshairShader: CrosshairShader,
     crosshairVAO: VAO,
     crosshairRenderer: Renderer,
-    world: World,
+    world: ClientWorld,
     val player: Player,
     val otherPlayer: Player,
     otherPlayerEntity: Entity,
@@ -357,6 +362,7 @@ class GameClient(
       setUseMouse(!moveWithMouse)
     case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
+      socket.sendPacket(NetworkPacket.PlayerToggledFlying)
     case KeyboardKey.Function(7) =>
       setDebugScreenVisible(debugOverlay.isEmpty)
     case KeyboardKey.Digit(digit) =>
@@ -529,13 +535,62 @@ class GameClient(
       .sum
   }
 
+  private val prio = ChunkLoadingPrioritizer(world.renderDistance)
+
   def tick(ctx: TickContext): Unit = {
     if socket.isDisconnected then {
       eventHandler.send(GameClient.Event.GameQuit)
       return
     }
 
+    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+    val syncedPlayer = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+    // println(syncedPlayer.position)
+    if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
+    player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
+    val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
+    if rotationDiff.y < -math.Pi then {
+      rotationDiff.y += math.Pi * 2
+    }
+    if rotationDiff.y > math.Pi then {
+      rotationDiff.y -= math.Pi * 2
+    }
+    player.rotation.add(rotationDiff.mul(0.1))
+    player.flying = syncedPlayer.flying
+
     updateSoundListener()
+
+    prio.tick(PosAndDir.fromCameraView(camera.view))
+    prio.nextAddableChunk match {
+      case Some(chunkCoords) =>
+        var success = true
+        val columnCoords = chunkCoords.getColumnRelWorld
+        if world.getColumn(columnCoords).isEmpty then {
+          val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
+          if columnNbt != Nbt.emptyMap then {
+            val column = ChunkColumnTerrain.create(
+              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+              Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
+            )
+            world.setColumn(columnCoords, column)
+          } else {
+            success = false
+          }
+        }
+        if success && world.getChunk(chunkCoords).isEmpty then {
+          val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
+          if chunkNbt != Nbt.emptyMap then {
+            val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
+            world.setChunk(chunkCoords, chunk)
+          } else {
+            success = false
+          }
+        }
+        if success then {
+          prio += chunkCoords
+        }
+      case None =>
+    }
 
     try {
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
@@ -823,11 +878,10 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   }
 
   def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
-    val message = packet.serialize(ZMQ.CHARSET)
+    val message = packet.serialize()
 
     if !socket.send(message) then {
       val err = socket.errno()
-      ZMQ.EVENT_ALL
       throw new ZMQException("Could not send message", err)
     }
   }
@@ -848,7 +902,7 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   }
 
   def sendPacketAndWait(packet: NetworkPacket): Nbt = {
-    val response = queryRaw(packet.serialize(ZMQ.CHARSET))
+    val response = queryRaw(packet.serialize())
     val (_, tag) = Nbt.fromBinary(response)
     tag
   }
