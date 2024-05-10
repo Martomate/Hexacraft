@@ -1,7 +1,6 @@
 package hexacraft.game
 
-import hexacraft.util.TickableTimer
-import hexacraft.world.*
+import hexacraft.world.{Camera, *}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.coord.*
@@ -15,10 +14,10 @@ import zmq.ZError
 import scala.collection.mutable
 
 object GameServer {
-  def create(isOnline: Boolean, worldProvider: WorldProvider): GameServer = {
+  def create(isOnline: Boolean, port: Int, worldProvider: WorldProvider): GameServer = {
     val world = new ServerWorld(worldProvider, worldProvider.getWorldInfo)
 
-    val server = new GameServer(isOnline, worldProvider, world)(using world.size)
+    val server = new GameServer(isOnline, port, worldProvider, world)(using world.size)
 
     Thread(() => server.run()).start()
 
@@ -26,20 +25,21 @@ object GameServer {
   }
 }
 
-class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerWorld)(using CylinderSize) {
+case class PlayerData(player: Player, entity: Entity, camera: Camera) {
+  val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
+}
+
+class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, world: ServerWorld)(using CylinderSize) {
   private var serverThread: Thread = null.asInstanceOf[Thread]
 
-  private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
-  private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
-
-  private val players: mutable.LongMap[(Player, Entity, Camera)] = mutable.LongMap.empty
+  private val players: mutable.LongMap[PlayerData] = mutable.LongMap.empty
 
   private val collisionDetector: CollisionDetector = new CollisionDetector(world)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
   private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(collisionDetector)
 
   private def saveWorldInfo(): Unit = {
-    val worldTag = world.worldInfo.copy(player = players.values.head._1.toNBT).toNBT
+    val worldTag = world.worldInfo.copy(player = players.values.head.player.toNBT).toNBT
     worldProvider.saveWorldData(worldTag)
   }
 
@@ -78,7 +78,8 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
 
   def tick(): Unit = {
     try {
-      for (playerId, (player, playerEntity, playerCamera)) <- players do {
+      for (playerId, p) <- players do {
+        val PlayerData(player, entity, camera) = p
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
@@ -101,26 +102,26 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
           )
         }
 
-        playerCamera.setPositionAndRotation(player.position, player.rotation)
-        playerCamera.updateCoords()
-        playerCamera.updateViewMatrix(playerCamera.view.position)
+        camera.setPositionAndRotation(player.position, player.rotation)
+        camera.updateCoords()
+        camera.updateViewMatrix(camera.view.position)
 
-        if rightMouseButtonTimer.tick() then {
-          performRightMouseClick(player, playerCamera)
-        }
-        if leftMouseButtonTimer.tick() then {
-          performLeftMouseClick(player, playerCamera)
-        }
-
-        playerEntity.transform.position = CylCoords(player.position)
+        entity.transform.position = CylCoords(player.position)
           .offset(0, player.bounds.bottom.toDouble, 0)
-        playerEntity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
-        playerEntity.velocity.velocity.set(player.velocity)
+        entity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
+        entity.velocity.velocity.set(player.velocity)
 
-        playerEntity.model.foreach(_.tick(playerEntity.velocity.velocity.lengthSquared() > 0.1))
+        entity.model.foreach(_.tick(entity.velocity.velocity.lengthSquared() > 0.1))
       }
 
-      world.tick(players.values.map(_._3).toSeq)
+      val tickResult = world.tick(players.values.map(_.camera).toSeq)
+
+      for coords <- tickResult.blocksUpdated do {
+        val blockState = world.getBlock(coords)
+        for p <- players.values do {
+          p.blockUpdatesWaitingToBeSent += coords -> blockState
+        }
+      }
     } catch {
       case e: ZMQException => println(e)
       case e               => throw e
@@ -142,8 +143,15 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
       case Some((state, coords, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
+          notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
         }
       case _ =>
+    }
+  }
+
+  private def notifyPlayersAboutBlockUpdate(coords: BlockRelWorld, blockState: BlockState): Unit = {
+    for (_, playerData) <- players do {
+      playerData.blockUpdatesWaitingToBeSent += coords -> blockState
     }
   }
 
@@ -187,6 +195,7 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
 
     if !collides then {
       world.setBlock(coords, state)
+      notifyPlayersAboutBlockUpdate(coords, state)
     }
   }
 
@@ -195,10 +204,12 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
       for offset <- NeighborOffsets.all do {
         val c = coords.offset(offset).offset(0, dy, 0)
         world.setBlock(c, BlockState.Air)
+        notifyPlayersAboutBlockUpdate(c, BlockState.Air)
       }
     }
 
     world.setBlock(coords, BlockState.Air)
+    notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
   }
 
   def unload(): Unit = {
@@ -223,11 +234,10 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
         serverSocket.setHeartbeatTtl(3000)
         serverSocket.setHeartbeatTimeout(3000)
 
-        val serverPort = 1234
-        if !serverSocket.bind(s"tcp://*:$serverPort") then {
+        if !serverSocket.bind(s"tcp://*:$port") then {
           throw new IllegalStateException("Server could not be bound")
         }
-        println(s"Running server on port $serverPort")
+        println(s"Running server on port $port")
 
         while !Thread.currentThread().isInterrupted do {
           val identity = serverSocket.recv(0)
@@ -259,15 +269,39 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
         throw e
     }
 
-    println(s"Stopping server")
+    println(s"Stopped server")
   }
 
   private def handlePacket(clientId: Long, packet: NetworkPacket, socket: ZMQ.Socket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
     if !players.contains(clientId) then {
-      val player = makePlayer(world)
-      val playerEntity = Entity(
+      if !isOnline && players.nonEmpty then {
+        return None // only one player may join an offline world
+      }
+
+      val player = if !isOnline then {
+        val playerNbt = worldProvider.getWorldInfo.player
+        if playerNbt != Nbt.emptyMap then {
+          Player.fromNBT(playerNbt)
+        } else {
+          makePlayer(world)
+        }
+      } else {
+        if players.isEmpty then {
+          // TODO: temporary solution
+          val playerNbt = worldProvider.getWorldInfo.player
+          if playerNbt != Nbt.emptyMap then {
+            Player.fromNBT(playerNbt)
+          } else {
+            makePlayer(world)
+          }
+        } else {
+          // TODO: load the player info from disk somehow
+          makePlayer(world)
+        }
+      }
+      val entity = Entity(
         null,
         Seq(
           TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
@@ -276,9 +310,11 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
           ModelComponent(PlayerEntityModel.create("player"))
         )
       )
-      players(clientId) = (player, playerEntity, new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f)))
+      val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
+      players(clientId) = PlayerData(player, entity, camera)
     }
-    val (player, _, playerCamera) = players(clientId)
+    val playerData = players(clientId)
+    val PlayerData(player, _, playerCamera) = playerData
 
     packet match {
       case GetWorldInfo =>
@@ -298,6 +334,19 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
         Some(world.worldInfo.toNBT)
       case GetPlayerState =>
         Some(player.toNBT)
+      case GetBlockUpdates =>
+        val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
+        playerData.blockUpdatesWaitingToBeSent.clear()
+
+        val updatesNbt =
+          for (coords, bs) <- updates
+          yield Nbt.makeMap(
+            "coords" -> Nbt.LongTag(coords.value),
+            "id" -> Nbt.ByteTag(bs.blockType.id),
+            "meta" -> Nbt.ByteTag(bs.metadata)
+          )
+
+        Some(Nbt.makeMap("updates" -> Nbt.ListTag(updatesNbt)))
       case PlayerRightClicked =>
         performRightMouseClick(player, playerCamera)
         None
@@ -306,6 +355,9 @@ class GameServer(isOnline: Boolean, worldProvider: WorldProvider, world: ServerW
         None
       case PlayerToggledFlying =>
         player.flying = !player.flying
+        None
+      case PlayerSetSelectedItemSlot(slot) =>
+        player.selectedItemSlot = slot
         None
       case PlayerMovedMouse(dist) =>
         player.mouseMovement = dist
