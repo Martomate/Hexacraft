@@ -411,7 +411,9 @@ class GameClient(
         if !isPaused && !isInPopup && moveWithMouse then {
           val dy = -math.signum(yOffset).toInt
           if dy != 0 then {
-            setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
+            val slot = (player.selectedItemSlot + dy + 9) % 9
+            setSelectedItemSlot(slot)
+            socket.sendPacket(NetworkPacket.PlayerSetSelectedItemSlot(slot.toShort))
           }
         }
       case MouseClickEvent(button, action, _, _) =>
@@ -557,6 +559,22 @@ class GameClient(
     }
     player.rotation.add(rotationDiff.mul(0.1))
     player.flying = syncedPlayer.flying
+
+    val blockUpdatesNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetBlockUpdates).asMap.get
+    val blockUpdatesNbtList = blockUpdatesNbtPacket.getList("updates").getOrElse(Seq()).map(_.asMap.get)
+    val blockUpdates =
+      for u <- blockUpdatesNbtList
+      yield {
+        val coords = BlockRelWorld(u.getLong("coords", -1))
+        val blockId = u.getByte("id", 0)
+        val blockMeta = u.getByte("meta", 0)
+        val blockState = BlockState(Block.byId(blockId), blockMeta)
+        (coords, blockState)
+      }
+
+    for (coords, blockState) <- blockUpdates do {
+      world.setBlock(coords, blockState)
+    }
 
     updateSoundListener()
 
@@ -826,13 +844,13 @@ class GameClient(
 }
 
 class GameClientSocket(serverIp: String, serverPort: Int) {
-  private val clientId = (new Random().nextInt(1000000) + 1000000).toString
-
   private val context = ZContext()
   context.setUncaughtExceptionHandler((thread, exc) => println(s"Uncaught exception: $exc"))
   context.setNotificationExceptionHandler((thread, exc) => println(s"Notification: $exc"))
 
   private val socket = context.createSocket(SocketType.DEALER)
+
+  private val clientId = (new Random().nextInt(1000000) + 1000000).toString
 
   socket.setIdentity(clientId.getBytes)
   socket.setSendTimeOut(3000)
@@ -857,23 +875,25 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
     monitor.add(ZMonitor.Event.ALL)
     monitor.verbose(false)
     monitor.start()
-    try {
-      while !Thread.interrupted() do {
+
+    while !context.isClosed do {
+      try {
         val event = monitor.nextEvent(100)
         if event != null then {
           if event.`type` == ZMonitor.Event.DISCONNECTED then {
             _disconnected = true
           }
         }
+      } catch {
+        case e: ZMQException =>
+          e.getErrorCode match {
+            case ZError.EINTR => // noop
+            case _            => throw e
+          }
+        case e => throw e
       }
-    } catch {
-      case e: ZMQException =>
-        e.getErrorCode match {
-          case ZError.EINTR => // noop
-          case _            => throw e
-        }
-      case e => throw e
     }
+
     monitor.close()
   }
 
@@ -909,8 +929,5 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
 
   def close(): Unit = {
     context.close()
-    if monitoringThread != null then {
-      monitoringThread.interrupt()
-    }
   }
 }

@@ -1,11 +1,11 @@
 package hexacraft.game
 
 import hexacraft.game.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
-import hexacraft.gui.*
+import hexacraft.gui.{Event, RenderContext, Scene, TickContext, WindowSize}
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.util.Channel
-import hexacraft.world.*
+import hexacraft.world.WorldProvider
 
 object GameScene {
   enum Event {
@@ -14,60 +14,30 @@ object GameScene {
     case CursorReleased
   }
 
-  def createHostedGame(
+  case class ClientParams(
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
-      worldInfo: WorldInfo,
       keyboard: GameKeyboard,
-      blockLoader: BlockTextureLoader,
-      initialWindowSize: WindowSize,
+      textureLoader: BlockTextureLoader,
       audioSystem: AudioSystem,
-      worldProvider: WorldProvider
-  ): (GameScene, Channel.Receiver[GameScene.Event]) = {
+      initialWindowSize: WindowSize
+  )
+  case class ServerParams(worldProvider: WorldProvider)
+
+  def create(c: ClientParams, serverParams: Option[ServerParams]): (GameScene, Channel.Receiver[GameScene.Event]) = {
     val (tx, rx) = Channel[GameScene.Event]()
 
-    val server = GameServer.create(isOnline, worldProvider)
+    val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldProvider))
 
-    val client: GameClient = createClient(serverIp, serverPort, isOnline, keyboard, audioSystem, initialWindowSize, tx)
-
-    (new GameScene(client, Some(server)), rx)
-  }
-
-  def createRemoteGame(
-      serverIp: String,
-      serverPort: Int,
-      isOnline: Boolean,
-      worldInfo: WorldInfo,
-      keyboard: GameKeyboard,
-      blockLoader: BlockTextureLoader,
-      initialWindowSize: WindowSize,
-      audioSystem: AudioSystem
-  ): (GameScene, Channel.Receiver[GameScene.Event]) = {
-    val (tx, rx) = Channel[Event]()
-
-    val client: GameClient = createClient(serverIp, serverPort, isOnline, keyboard, audioSystem, initialWindowSize, tx)
-
-    (new GameScene(client, None), rx)
-  }
-
-  private def createClient(
-      serverIp: String,
-      serverPort: Int,
-      isOnline: Boolean,
-      keyboard: GameKeyboard,
-      audioSystem: AudioSystem,
-      initialWindowSize: WindowSize,
-      tx: Channel.Sender[Event]
-  ): GameClient = {
     val (client, clientEvents) = GameClient.create(
-      serverIp,
-      serverPort,
-      isOnline,
-      keyboard,
-      BlockTextureLoader.instance,
-      initialWindowSize,
-      audioSystem
+      c.serverIp,
+      c.serverPort,
+      c.isOnline,
+      c.keyboard,
+      c.textureLoader,
+      c.initialWindowSize,
+      c.audioSystem
     )
 
     clientEvents.onEvent {
@@ -76,7 +46,7 @@ object GameScene {
       case GameClient.Event.CursorReleased => tx.send(CursorReleased)
     }
 
-    client
+    (new GameScene(client, server), rx)
   }
 }
 

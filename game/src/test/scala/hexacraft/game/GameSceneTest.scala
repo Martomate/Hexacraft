@@ -27,16 +27,9 @@ class GameSceneTest extends FunSuite {
     val audioSystem = AudioSystem.createNull()
 
     val (gameScene1, _) =
-      GameScene.createHostedGame(
-        "localhost",
-        1234,
-        false,
-        null,
-        keyboard,
-        textureLoader,
-        windowSize,
-        audioSystem,
-        worldProvider
+      GameScene.create(
+        GameScene.ClientParams("localhost", 19271, false, keyboard, textureLoader, audioSystem, windowSize),
+        Some(GameScene.ServerParams(worldProvider))
       )
     gameScene1.unload()
 
@@ -45,16 +38,9 @@ class GameSceneTest extends FunSuite {
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val (gameScene, _) = GameScene.createHostedGame(
-      "localhost",
-      1234,
-      false,
-      null,
-      keyboard,
-      textureLoader,
-      windowSize,
-      audioSystem,
-      worldProvider
+    val (gameScene, _) = GameScene.create(
+      GameScene.ClientParams("localhost", 19272, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
     )
     gameScene.unload()
 
@@ -78,16 +64,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.createHostedGame(
-      "localhost",
-      1234,
-      false,
-      null,
-      keyboard,
-      textureLoader,
-      windowSize,
-      audioSystem,
-      worldProvider
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19273, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
     )
     val gameSceneTracker = Tracker.fromRx(rx)
 
@@ -114,16 +93,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.createHostedGame(
-      "localhost",
-      1234,
-      false,
-      null,
-      keyboard,
-      textureLoader,
-      windowSize,
-      audioSystem,
-      worldProvider
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19274, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
     )
     val gameSceneTracker = Tracker.fromRx(rx)
 
@@ -165,16 +137,9 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.createHostedGame(
-      "localhost",
-      1234,
-      false,
-      null,
-      keyboard,
-      textureLoader,
-      windowSize,
-      audioSystem,
-      worldProvider
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19275, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
     )
     val gameSceneTracker = Tracker.fromRx(rx)
 

@@ -27,7 +27,8 @@ object ServerWorld {
   class WorldTickResult(
       val chunksAdded: Seq[ChunkRelWorld],
       val chunksRemoved: Seq[ChunkRelWorld],
-      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld]
+      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld],
+      val blocksUpdated: Seq[BlockRelWorld]
   )
 }
 
@@ -266,9 +267,9 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   def tick(cameras: Seq[Camera]): WorldTickResult = {
     val (chunksAdded, chunksRemoved) = performChunkLoading(cameras)
 
-    if blockUpdateTimer.tick() then {
+    val blocksUpdated = if blockUpdateTimer.tick() then {
       performBlockUpdates()
-    }
+    } else Seq.empty
     if relocateEntitiesTimer.tick() then {
       performEntityRelocation()
     }
@@ -281,7 +282,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
-    new WorldTickResult(chunksAdded, chunksRemoved, r)
+    new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated)
   }
 
   private def performChunkLoading(cameras: Seq[Camera]): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
@@ -422,15 +423,19 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenBlockUpdates)
 
-  private def performBlockUpdates(): Unit = {
+  private def performBlockUpdates(): Seq[BlockRelWorld] = {
+    val recordingWorld = RecordingBlockRepository(this)
+
     val blocksToUpdateNow = ArrayBuffer.empty[BlockRelWorld]
     while !blocksToUpdate.isEmpty do {
       blocksToUpdateNow += blocksToUpdate.dequeue()
     }
     for c <- blocksToUpdateNow do {
       val block = getBlock(c).blockType
-      block.behaviour.foreach(_.onUpdated(c, block, this))
+      block.behaviour.foreach(_.onUpdated(c, block, recordingWorld))
     }
+
+    recordingWorld.collectUpdates.distinct
   }
 
   private val relocateEntitiesTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenEntityRelocation)

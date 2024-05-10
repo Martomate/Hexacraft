@@ -7,7 +7,12 @@ import org.joml.Vector3d
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
 import scala.collection.immutable.{ArraySeq, ListMap}
 
-sealed trait Nbt
+sealed trait Nbt {
+  def asMap: Option[Nbt.MapTag] = this match {
+    case t: Nbt.MapTag => Some(t)
+    case _             => None
+  }
+}
 
 object Nbt {
   case class ByteTag(v: Byte) extends Nbt
