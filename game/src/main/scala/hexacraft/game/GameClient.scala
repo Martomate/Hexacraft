@@ -1,6 +1,7 @@
 package hexacraft.game
 
 import hexacraft.game
+import hexacraft.game.NetworkPacket.PlayerUpdatedInventory
 import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickContext, WindowSize}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
@@ -15,6 +16,7 @@ import hexacraft.world.{
   ClientWorld,
   CylinderSize,
   HexBox,
+  Inventory,
   Player,
   PosAndDir,
   WorldInfo,
@@ -328,12 +330,6 @@ class GameClient(
   }
 
   private def handleKeyPress(key: KeyboardKey): Unit = key match {
-    case KeyboardKey.Letter('B') =>
-      val newCoords = camera.blockCoords.offset(0, -4, 0)
-
-      if world.getBlock(newCoords).blockType == Block.Air then {
-        world.setBlock(newCoords, new BlockState(player.blockInHand))
-      }
     case KeyboardKey.Escape =>
       pauseGame()
     case KeyboardKey.Letter('E') =>
@@ -350,8 +346,10 @@ class GameClient(
             isInPopup = false
             setUseMouse(true)
           case InventoryUpdated(inv) =>
-            player.inventory = inv
-            toolbar.onInventoryUpdated(inv)
+            val invNbt = socket.sendPacketAndWait(PlayerUpdatedInventory(inv))
+            val serverInv = Inventory.fromNBT(invNbt.asMap.get)
+            player.inventory = serverInv
+            toolbar.onInventoryUpdated(serverInv)
         }
 
         overlays += inventoryScene
@@ -413,7 +411,6 @@ class GameClient(
           if dy != 0 then {
             val slot = (player.selectedItemSlot + dy + 9) % 9
             setSelectedItemSlot(slot)
-            socket.sendPacket(NetworkPacket.PlayerSetSelectedItemSlot(slot.toShort))
           }
         }
       case MouseClickEvent(button, action, _, _) =>
@@ -431,6 +428,7 @@ class GameClient(
     player.selectedItemSlot = itemSlot
     updateBlockInHandRendererContent()
     toolbar.setSelectedIndex(itemSlot)
+    socket.sendPacket(NetworkPacket.PlayerSetSelectedItemSlot(itemSlot.toShort))
   }
 
   private def updateBlockInHandRendererContent(): Unit = {
@@ -647,6 +645,9 @@ class GameClient(
         if !isPaused then {
           walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
         }
+      } else {
+        socket.sendPacket(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
+        socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
       }
 
       if walkSoundTimer.tick() then {
@@ -792,6 +793,10 @@ class GameClient(
     }
 
     val blockType = player.blockInHand
+    if blockType == Block.Air then {
+      return
+    }
+
     val state = new BlockState(blockType)
 
     val collides = world.collisionDetector.collides(

@@ -292,6 +292,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     val bCoords = coords.getBlockRelChunk
 
     for c <- getChunk(cCoords) do {
+      handleLightingOnSetBlock(cCoords, c, bCoords, block)
       requestRenderUpdate(cCoords)
 
       for s <- 0 until 8 do {
@@ -304,6 +305,19 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
           }
         }
       }
+    }
+  }
+
+  private def handleLightingOnSetBlock(
+      chunkCoords: ChunkRelWorld,
+      chunk: Chunk,
+      blockCoords: BlockRelChunk,
+      block: BlockState
+  ): Unit = {
+    lightPropagator.removeTorchlight(chunkCoords, chunk, blockCoords)
+    lightPropagator.removeSunlight(chunkCoords, chunk, blockCoords)
+    if block.blockType.lightEmitted != 0 then {
+      lightPropagator.addTorchlight(chunkCoords, chunk, blockCoords, block.blockType.lightEmitted)
     }
   }
 }
