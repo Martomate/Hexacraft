@@ -361,6 +361,9 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       case PlayerSetSelectedItemSlot(slot) =>
         player.selectedItemSlot = slot
         None
+      case PlayerUpdatedInventory(inv) =>
+        player.inventory = inv
+        Some(inv.toNBT)
       case PlayerMovedMouse(dist) =>
         playerData.mouseMovement = dist
         None
