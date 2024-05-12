@@ -1,11 +1,10 @@
 package hexacraft.world
 
-import hexacraft.game.GameKeyboard
 import hexacraft.world.block.Block
 import hexacraft.world.coord.CylCoords
 
 import com.martomate.nbt.Nbt
-import org.joml.{Vector2f, Vector3d}
+import org.joml.Vector3d
 
 class Player(var inventory: Inventory) {
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
@@ -14,8 +13,6 @@ class Player(var inventory: Inventory) {
   val rotation = new Vector3d
   var flying = false
   var selectedItemSlot: Int = 0
-  var pressedKeys: Seq[GameKeyboard.Key] = Seq.empty
-  var mouseMovement: Vector2f = new Vector2f
 
   def blockInHand: Block = inventory(selectedItemSlot) // TODO: temporary, make inventory system
 
