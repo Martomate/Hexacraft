@@ -152,7 +152,7 @@ object Nbt {
   extension (tag: Nbt.MapTag)
     def toCompoundTag(name: String): CompoundTag =
       val map = new CompoundMap()
-      tag.vs.foreach((n, t) => map.put(t.toRaw(n)))
+      tag.vs.foreach((n, t) => if t != null then map.put(t.toRaw(n)))
       new CompoundTag(name, map)
 
     def withField(name: String, value: Nbt): Nbt.MapTag =

@@ -26,6 +26,8 @@ object GameServer {
 }
 
 case class PlayerData(player: Player, entity: Entity, camera: Camera) {
+  var pressedKeys: Seq[GameKeyboard.Key] = Seq.empty
+  var mouseMovement: Vector2f = new Vector2f
   val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
 }
 
@@ -83,13 +85,13 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
-          val maxSpeed = playerInputHandler.determineMaxSpeed(player.pressedKeys)
+          val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
           val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
 
           playerInputHandler.tick(
             player,
-            player.pressedKeys,
-            player.mouseMovement,
+            p.pressedKeys,
+            p.mouseMovement,
             maxSpeed,
             isInFluid
           )
@@ -282,7 +284,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
 
       val player = if !isOnline then {
         val playerNbt = worldProvider.getWorldInfo.player
-        if playerNbt != Nbt.emptyMap then {
+        if playerNbt != null then {
           Player.fromNBT(playerNbt)
         } else {
           makePlayer(world)
@@ -291,7 +293,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         if players.isEmpty then {
           // TODO: temporary solution
           val playerNbt = worldProvider.getWorldInfo.player
-          if playerNbt != Nbt.emptyMap then {
+          if playerNbt != null then {
             Player.fromNBT(playerNbt)
           } else {
             makePlayer(world)
@@ -360,10 +362,10 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         player.selectedItemSlot = slot
         None
       case PlayerMovedMouse(dist) =>
-        player.mouseMovement = dist
+        playerData.mouseMovement = dist
         None
       case PlayerPressedKeys(keys) =>
-        player.pressedKeys = keys
+        playerData.pressedKeys = keys
         None
     }
   }
