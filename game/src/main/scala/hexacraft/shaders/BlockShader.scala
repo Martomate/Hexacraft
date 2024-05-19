@@ -3,6 +3,7 @@ package hexacraft.shaders
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
+
 import org.joml.*
 
 import java.nio.ByteBuffer
@@ -53,16 +54,15 @@ object BlockShader {
   def createVao(side: Int, maxVertices: Int): VAO = {
     val verticesPerInstance = verticesPerBlock(side)
 
-    VAO
-      .builder()
-      .addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
+    VAO.build(maxVertices)(
+      _.addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
         _.ints(0, 3)
           .ints(1, 1)
           .floats(2, 3)
           .floats(3, 1)
           .floats(4, 2)
       )
-      .finish(maxVertices)
+    )
   }
 
   def verticesPerBlock(side: Int): Int = {

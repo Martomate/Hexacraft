@@ -34,13 +34,12 @@ class WorldCombinerShader {
 
 object WorldCombinerShader {
   def createVao(): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(4)(
+    VAO.build(4)(
+      _.addVertexVbo(4)(
         _.floats(0, 2),
         _.fillFloats(0, Seq(-1, -1, 1, -1, -1, 1, 1, 1))
       )
-      .finish(4)
+    )
   }
 
   def createRenderer(): Renderer = new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))

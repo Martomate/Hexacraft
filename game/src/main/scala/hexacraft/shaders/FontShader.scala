@@ -2,6 +2,7 @@ package hexacraft.shaders
 
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
+
 import org.joml.Vector3f
 
 class FontShader {
@@ -31,10 +32,14 @@ class FontShader {
 
 object FontShader {
   def createVao(vertexPositions: Seq[Float], textureCoords: Seq[Float]): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(vertexPositions.length)(_.floats(0, 2), _.fillFloats(0, vertexPositions))
-      .addVertexVbo(textureCoords.length)(_.floats(1, 2), _.fillFloats(0, textureCoords))
-      .finish(vertexPositions.length)
+    VAO.build(vertexPositions.length)(
+      _.addVertexVbo(vertexPositions.length)(
+        _.floats(0, 2),
+        _.fillFloats(0, vertexPositions)
+      ).addVertexVbo(textureCoords.length)(
+        _.floats(1, 2),
+        _.fillFloats(0, textureCoords)
+      )
+    )
   }
 }

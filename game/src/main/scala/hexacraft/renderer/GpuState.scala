@@ -5,13 +5,24 @@ import hexacraft.infra.gpu.OpenGL
 import scala.collection.mutable
 
 object GpuState {
-  def build(f: Builder => Builder): GpuState = f(new Builder(Map.empty)).build()
+  def build(f: Builder => Builder): GpuState = {
+    val b = new Builder
+    f(b)
+    b.build()
+  }
 
-  class Builder private[GpuState] (states: Map[OpenGL.State, Boolean]) {
-    def blend(enabled: Boolean): Builder = Builder(states + (OpenGL.State.Blend -> enabled))
-    def depthTest(enabled: Boolean): Builder = Builder(states + (OpenGL.State.DepthTest -> enabled))
-    def cullFace(enabled: Boolean): Builder = Builder(states + (OpenGL.State.CullFace -> enabled))
-    def scissorTest(enabled: Boolean): Builder = Builder(states + (OpenGL.State.ScissorTest -> enabled))
+  class Builder private[GpuState] {
+    private val states: mutable.Map[OpenGL.State, Boolean] = mutable.Map.empty
+
+    def blend(enabled: Boolean): Builder = this.setState(OpenGL.State.Blend, enabled)
+    def depthTest(enabled: Boolean): Builder = this.setState(OpenGL.State.DepthTest, enabled)
+    def cullFace(enabled: Boolean): Builder = this.setState(OpenGL.State.CullFace, enabled)
+    def scissorTest(enabled: Boolean): Builder = this.setState(OpenGL.State.ScissorTest, enabled)
+
+    private def setState(key: OpenGL.State, value: Boolean): Builder = {
+      this.states(key) = value
+      this
+    }
 
     private[GpuState] def build(): GpuState = {
       val (enabled, disabled) = states.partition(_._2)

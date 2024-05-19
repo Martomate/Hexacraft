@@ -5,6 +5,7 @@ import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{InstancedRenderer, Shader, ShaderConfig, VAO}
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelWorld, CylCoords}
+
 import org.joml.{Matrix4f, Vector3d}
 
 import java.nio.ByteBuffer
@@ -58,16 +59,14 @@ object SelectedBlockShader {
       Seq(1, 3, 5).flatMap(fn)
     ).reduce(_ ++ _)
 
-    VAO
-      .builder()
-      .addVertexVbo(25)(
+    VAO.build(25)(
+      _.addVertexVbo(25)(
         _.floats(0, 3),
         _.fillFloats(0, vertexData)
-      )
-      .addInstanceVbo(1, OpenGL.VboUsage.DynamicDraw)(
+      ).addInstanceVbo(1, OpenGL.VboUsage.DynamicDraw)(
         _.ints(1, 3).floats(2, 3).floats(3, 1)
       )
-      .finish(25)
+    )
   }
 
   def createRenderer(): InstancedRenderer = new InstancedRenderer(OpenGL.PrimitiveMode.LineStrip)

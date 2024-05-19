@@ -31,10 +31,14 @@ abstract class Component {
 }
 
 object Component {
-  private val rectVAO: VAO = VAO
-    .builder()
-    .addVertexVbo(4)(_.floats(0, 2), _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1)))
-    .finish(4)
+  private val rectVAO: VAO =
+    VAO.build(4)(
+      _.addVertexVbo(4)(
+        _.floats(0, 2),
+        _.fillFloats(0, Seq(0, 0, 1, 0, 0, 1, 1, 1))
+      )
+    )
+
   private val rectRenderer = new Renderer(
     OpenGL.PrimitiveMode.TriangleStrip,
     GpuState.build(_.blend(true).depthTest(false))

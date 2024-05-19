@@ -11,7 +11,10 @@ class VboLayoutTest extends FunSuite {
 
   test("builder can add int attributes") {
     assertEquals(
-      VboLayout.builder().ints(0, 3).ints(1, 2).build(),
+      VboLayout.build(
+        _.ints(0, 3)
+          .ints(1, 2)
+      ),
       VboLayout(
         Seq(
           VboAttribute(0, 3, 4, VboAttribute.Format.Int),
@@ -23,7 +26,10 @@ class VboLayoutTest extends FunSuite {
 
   test("builder can add float attributes") {
     assertEquals(
-      VboLayout.builder().floats(0, 3).floats(1, 2).build(),
+      VboLayout.build(
+        _.floats(0, 3)
+          .floats(1, 2)
+      ),
       VboLayout(
         Seq(
           VboAttribute(0, 3, 4, VboAttribute.Format.Float),
@@ -35,7 +41,10 @@ class VboLayoutTest extends FunSuite {
 
   test("builder can add multi-slot float attributes") {
     assertEquals(
-      VboLayout.builder().floatsArray(0, 3)(2).floatsArray(2, 4)(1).build(),
+      VboLayout.build(
+        _.floatsArray(0, 3)(2)
+          .floatsArray(2, 4)(1)
+      ),
       VboLayout(
         Seq(
           VboAttribute(0, 3, 4, VboAttribute.Format.Float),

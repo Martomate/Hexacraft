@@ -27,13 +27,12 @@ class CrosshairShader {
 
 object CrosshairShader {
   def createVao(): VAO = {
-    VAO
-      .builder()
-      .addVertexVbo(4)(
+    VAO.build(4)(
+      _.addVertexVbo(4)(
         _.floats(0, 2),
         _.fillFloats(0, Seq(0, 0.03f, 0, -0.03f, -0.03f, 0, 0.03f, 0))
       )
-      .finish(4)
+    )
   }
 
   def createRenderer(): Renderer = new Renderer(OpenGL.PrimitiveMode.Lines, GpuState.build(_.depthTest(false)))

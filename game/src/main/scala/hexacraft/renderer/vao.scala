@@ -24,11 +24,15 @@ object VAO {
       fillVbo: VBO => Any
   )
 
-  opaque type Builder <: Any = ArrayBuffer[VboTemplate]
+  def build(maxCount: Int)(f: Builder => Any): VAO = {
+    val b = Builder()
+    f(b)
+    b.finish(maxCount)
+  }
 
-  def builder(): Builder = new ArrayBuffer(1)
+  class Builder private[VAO] {
+    private val vboTemplates: ArrayBuffer[VboTemplate] = new ArrayBuffer(1)
 
-  extension (vboTemplates: Builder) {
     def addVertexVbo(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw)(
         buildLayout: VboLayout.Builder => VboLayout.Builder,
         fillVbo: VBO => Any = _ => ()
@@ -47,19 +51,17 @@ object VAO {
         buildLayout: VboLayout.Builder => VboLayout.Builder,
         fillVbo: VBO => Any
     ): Builder = {
-      val layoutBuilder = VboLayout.builder()
-      buildLayout(layoutBuilder)
-      vboTemplates += VboTemplate(count, divisor, vboUsage, layoutBuilder.build(), fillVbo)
-      vboTemplates
+      this.vboTemplates += VboTemplate(count, divisor, vboUsage, VboLayout.build(buildLayout), fillVbo)
+      this
     }
 
-    def finish(maxCount: Int): VAO = {
+    private[VAO] def finish(maxCount: Int): VAO = {
       val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
       OpenGL.glBindVertexArray(vaoID)
 
       val vbos = ArrayBuffer.empty[VBO]
 
-      for VboTemplate(count, divisor, vboUsage, layout, fillVbo) <- vboTemplates do {
+      for VboTemplate(count, divisor, vboUsage, layout, fillVbo) <- this.vboTemplates do {
         val vboID: OpenGL.VertexBufferId = OpenGL.glGenBuffers()
         val vbo = new VBO(vboID, layout.stride, vboUsage)
 
@@ -181,27 +183,31 @@ case class VboLayout(attributes: Seq[VboAttribute]) {
 }
 
 object VboLayout {
-  opaque type Builder <: Any = ArrayBuffer[VboAttribute]
+  def build(f: Builder => Any): VboLayout = {
+    val b = Builder()
+    f(b)
+    b.build()
+  }
 
-  def builder(): Builder = ArrayBuffer.empty
+  class Builder private[VboLayout] {
+    private val attributes: ArrayBuffer[VboAttribute] = ArrayBuffer.empty
 
-  extension (channels: Builder) {
     def ints(index: Int, dims: Int): Builder = {
-      channels += VboAttribute(index, dims, 4, VboAttribute.Format.Int)
-      channels
+      this.attributes += VboAttribute(index, dims, 4, VboAttribute.Format.Int)
+      this
     }
 
     def floats(index: Int, dims: Int): Builder = {
-      channels += VboAttribute(index, dims, 4, VboAttribute.Format.Float)
-      channels
+      this.attributes += VboAttribute(index, dims, 4, VboAttribute.Format.Float)
+      this
     }
 
     def floatsArray(index: Int, dims: Int)(size: Int): Builder = {
-      for i <- 0 until size do channels.floats(index + i, dims)
-      channels
+      for i <- 0 until size do this.floats(index + i, dims)
+      this
     }
 
-    def build(): VboLayout = VboLayout(channels.toSeq)
+    private[VboLayout] def build(): VboLayout = VboLayout(this.attributes.toSeq)
   }
 }
 
