@@ -7,7 +7,8 @@ import hexacraft.util.Resource
 
 import org.lwjgl.BufferUtils
 
-import javax.imageio.ImageIO
+import java.awt.image.BufferedImage
+import java.nio.ByteBuffer
 
 object TextureSingle {
   private val textures = collection.mutable.Map.empty[String, TextureSingle]
@@ -20,32 +21,36 @@ object TextureSingle {
   }
 
   def getTexture(name: String): TextureSingle = {
-    textures.getOrElse(name, new TextureSingle(name))
+    textures.get(name) match {
+      case Some(tex) => tex
+      case None =>
+        val tex = loadTexture(name)
+        TextureSingle.textures += name -> tex
+        tex
+    }
   }
-}
 
-class TextureSingle(val name: String) extends Resource {
-  private var texID: TextureId = _
-  private var texWidth: Int = _
-  private var texHeight: Int = _
-
-  def id: TextureId = texID
-
-  def width: Int = texWidth
-
-  def height: Int = texHeight
-
-  TextureSingle.textures += name -> this
-
-  load()
-
-  def load(): Unit = {
+  private def loadTexture(name: String): TextureSingle = {
     val image = Bundle.locate(s"$name.png").get.readImage()
+
     val width = image.getWidth
     val height = image.getHeight
-    texWidth = width
-    texHeight = height
-    val pix = image.getRGB(0, 0, width, height, null, 0, width)
+    val buf = readRgbaPixels(image)
+
+    val texID = OpenGL.glGenTextures()
+    val tex = new TextureSingle(texID, width, height)
+
+    tex.bind()
+
+    tex.setPixels(buf)
+    tex.setFiltering(TexMinFilter.Linear, TexMagFilter.Nearest)
+    tex.setWrapping(TexWrap.ClampToEdge, TexWrap.ClampToEdge)
+
+    tex
+  }
+
+  private def readRgbaPixels(image: BufferedImage): ByteBuffer = {
+    val pix = image.getRGB(0, 0, image.getWidth, image.getHeight, null, 0, image.getWidth)
     val buf = BufferUtils.createByteBuffer(pix.length * 4)
 
     for i <- 0 until pix.size do {
@@ -56,8 +61,16 @@ class TextureSingle(val name: String) extends Resource {
     }
 
     buf.flip
-    texID = OpenGL.glGenTextures()
-    bind()
+    buf
+  }
+}
+
+class TextureSingle(val id: TextureId, val width: Int, val height: Int) extends Resource {
+
+  /** @note the texture must be bound */
+  def setPixels(rgbaPixels: ByteBuffer): Unit = {
+    require(rgbaPixels.remaining() == 4 * width * height, "wrong number of pixels")
+
     OpenGL.glTexImage2D(
       TextureTarget.Texture2D,
       0,
@@ -67,19 +80,26 @@ class TextureSingle(val name: String) extends Resource {
       0,
       TexelDataFormat.Rgba,
       TexelDataType.UnsignedByte,
-      buf
+      rgbaPixels
     )
+  }
 
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MinFilter(TexMinFilter.Linear))
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MagFilter(TexMagFilter.Nearest))
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapS(TexWrap.ClampToEdge))
-    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapT(TexWrap.ClampToEdge))
+  /** @note the texture must be bound */
+  def setFiltering(min: TexMinFilter, mag: TexMagFilter): Unit = {
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MinFilter(min))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MagFilter(mag))
+  }
+
+  /** @note the texture must be bound */
+  def setWrapping(s: TexWrap, t: TexWrap): Unit = {
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapS(s))
+    OpenGL.glTexParameteri(TextureTarget.Texture2D, TexIntParameter.TextureWrapT(t))
   }
 
   def bind(): Unit = {
     if TextureSingle.boundTexture != this then {
       TextureSingle.boundTexture = this
-      OpenGL.glBindTexture(TextureTarget.Texture2D, texID)
+      OpenGL.glBindTexture(TextureTarget.Texture2D, id)
     }
   }
 
@@ -87,7 +107,7 @@ class TextureSingle(val name: String) extends Resource {
     if TextureSingle.boundTexture == this then {
       TextureSingle.unbind()
     }
-    OpenGL.glDeleteTextures(texID)
+    OpenGL.glDeleteTextures(id)
   }
 }
 
@@ -105,75 +125,91 @@ object TextureArray {
 
   def registerTextureArray(name: String, texSize: Int, images: Seq[PixelArray]): TextureArray = {
     if !textures.contains(name) then {
-      new TextureArray(name, texSize, images)
+      val textureArray = loadTextureArray(texSize, images)
+      textures += name -> textureArray
+      textureArray
     } else {
       textures(name)
     }
   }
-}
 
-class TextureArray(
-    val name: String,
-    val texSize: Int,
-    images: Seq[PixelArray]
-) extends Resource {
-  private var texID: OpenGL.TextureId = _
-
-  TextureArray.textures += name -> this
-
-  load()
-
-  protected def load(): Unit = {
-    val height = texSize
+  private def loadTextureArray(texSize: Int, images: Seq[PixelArray]): TextureArray = {
     val width = texSize * images.length
-    val buf = BufferUtils.createByteBuffer(height * width * 4)
+    val height = texSize
+
+    val numTextures = width / texSize * height / texSize
+    val numBytes = height * width * 4
+
+    val buf = BufferUtils.createByteBuffer(numBytes)
     for image <- images do {
-      val pix = image.pixels
-      for j <- 0 until texSize do {
-        for i <- 0 until texSize do {
-          val idx = i + j * texSize
-          buf.put((pix(idx) >> 16).toByte)
-          buf.put((pix(idx) >> 8).toByte)
-          buf.put((pix(idx) >> 0).toByte)
-          buf.put((pix(idx) >> 24).toByte)
-        }
-      }
+      putRgbaPixels(image.pixels, texSize, buf)
     }
     buf.flip
-    texID = OpenGL.glGenTextures()
-    bind()
+
+    val texID = OpenGL.glGenTextures()
+    val tex = new TextureArray(texID, texSize, images)
+
+    tex.bind()
+
+    tex.setPixels(buf, numTextures)
+
+    tex.setFiltering(TexMinFilter.NearestMipmapLinear, TexMagFilter.Nearest)
+    tex.setWrapping(TexWrap.ClampToEdge, TexWrap.ClampToEdge)
+    tex.generateMipmaps() // TODO: generate mipmaps manually and take image.isTriImage into account
+
+    tex
+  }
+
+  private def putRgbaPixels(argbIntPixels: Array[Int], texSize: Int, dest: ByteBuffer): Unit = {
+    val pix = argbIntPixels
+
+    for j <- 0 until texSize do {
+      for i <- 0 until texSize do {
+        val idx = i + j * texSize
+        dest.put((pix(idx) >> 16).toByte)
+        dest.put((pix(idx) >> 8).toByte)
+        dest.put((pix(idx) >> 0).toByte)
+        dest.put((pix(idx) >> 24).toByte)
+      }
+    }
+  }
+}
+
+class TextureArray private (texID: OpenGL.TextureId, val texSize: Int, images: Seq[PixelArray]) extends Resource {
+
+  /** @note the texture must be bound */
+  def setPixels(rgbaPixels: ByteBuffer, numTextures: Int): Unit = {
+    require(rgbaPixels.remaining() == numTextures * 4 * texSize * texSize, "wrong number of pixels")
+
     OpenGL.glTexImage3D(
       OpenGL.TextureTarget.Texture2DArray,
       0,
       TextureInternalFormat.Rgba,
       texSize,
       texSize,
-      width / texSize * height / texSize,
+      numTextures,
       0,
       TexelDataFormat.Rgba,
       TexelDataType.UnsignedByte,
-      buf
+      rgbaPixels
     )
+  }
 
-    // TODO: generate mipmaps manually and take image.isTriImage into account
+  /** @note the texture must be bound */
+  def setFiltering(min: TexMinFilter, mag: TexMagFilter): Unit = {
+    OpenGL.glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.MinFilter(min))
+    OpenGL.glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.MagFilter(mag))
+  }
 
-    OpenGL.glTexParameteri(
-      OpenGL.TextureTarget.Texture2DArray,
-      OpenGL.TexIntParameter.MinFilter(OpenGL.TexMinFilter.NearestMipmapLinear)
-    )
-    OpenGL.glTexParameteri(
-      OpenGL.TextureTarget.Texture2DArray,
-      OpenGL.TexIntParameter.MagFilter(OpenGL.TexMagFilter.Nearest)
-    )
-    OpenGL.glTexParameteri(
-      OpenGL.TextureTarget.Texture2DArray,
-      OpenGL.TexIntParameter.TextureWrapS(OpenGL.TexWrap.ClampToEdge)
-    )
-    OpenGL.glTexParameteri(
-      OpenGL.TextureTarget.Texture2DArray,
-      OpenGL.TexIntParameter.TextureWrapT(OpenGL.TexWrap.ClampToEdge)
-    )
-    OpenGL.glGenerateMipmap(OpenGL.TextureTarget.Texture2DArray)
+  /** @note the texture must be bound */
+  def setWrapping(s: TexWrap, t: TexWrap): Unit = {
+    OpenGL.glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.TextureWrapS(s))
+    OpenGL.glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.TextureWrapT(t))
+  }
+
+  /** @note the texture must be bound */
+  def generateMipmaps(): Unit = {
+    OpenGL.glGenerateMipmap(TextureTarget.Texture2DArray)
   }
 
   def bind(): Unit = {
