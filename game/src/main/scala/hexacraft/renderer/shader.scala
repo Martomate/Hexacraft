@@ -2,15 +2,15 @@ package hexacraft.renderer
 
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.gpu.OpenGL.ShaderType
+import hexacraft.infra.gpu.OpenGL.{linkProgram, ShaderType}
 import hexacraft.util.{Resource, Result}
 import hexacraft.util.Result.{Err, Ok}
 
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 
-import java.io.IOException
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object Shader {
   private var activeShader: Shader = null.asInstanceOf[Shader]
@@ -22,27 +22,15 @@ object Shader {
     OpenGL.glUseProgram(OpenGL.ProgramId.none)
   }
 
-  def from(config: ShaderConfig): Shader = new Shader(config)
+  def from(config: ShaderConfig): Shader = {
+    val programId = ShaderLoader.tryLoad(config).unwrap()
+    Shader(programId)
+  }
 }
 
-class Shader private (config: ShaderConfig) extends Resource {
-  private var shaderID: OpenGL.ProgramId = OpenGL.ProgramId.none
+class Shader private (shaderID: OpenGL.ProgramId) extends Resource {
   private val uniformLocations = collection.mutable.Map.empty[String, OpenGL.UniformLocation]
   private val attributeLocations = collection.mutable.Map.empty[String, Int]
-
-  load()
-
-  protected def load(): Unit = {
-    shaderID = new ShaderBuilder()
-      .setDefines(config.defines)
-      .loadAll(config.fileNames)
-      .bindAttribs(config.inputs*)
-      .attachAll()
-      .linkAndFinish()
-
-    uniformLocations.clear()
-    attributeLocations.clear()
-  }
 
   private def getUniformLocation(name: String): OpenGL.UniformLocation = {
     uniformLocations.get(name) match {
@@ -129,7 +117,6 @@ class Shader private (config: ShaderConfig) extends Resource {
       Shader.unload()
     }
     OpenGL.deleteProgram(shaderID)
-    shaderID = OpenGL.ProgramId.none
   }
 }
 
@@ -159,82 +146,80 @@ case class ShaderConfig(
   def withDefines(defines: (String, String)*): ShaderConfig = copy(defines = defines)
 }
 
-class ShaderBuilder {
-  private val shaders = collection.mutable.Map.empty[OpenGL.ShaderType, OpenGL.ShaderId]
-  private val programID = OpenGL.createProgram()
-  private var prefix = "shaders/"
-  private var definesText = ""
-
-  def setPrefix(newPrefix: String): ShaderBuilder = {
-    prefix = newPrefix
-    this
+object ShaderLoader {
+  enum Error {
+    case FileNotFound(shaderType: ShaderType, path: String)
+    case FileNotReadable(shaderType: ShaderType, error: Throwable)
+    case CompilationFailed(shaderType: ShaderType, message: String)
+    case LinkingFailed(message: String)
   }
 
-  def setDefines(defines: Seq[(String, String)]): ShaderBuilder = {
-    definesText = defines.map(d => s"#define ${d._1} ${d._2}\n").mkString
-    this
-  }
+  def tryLoad(config: ShaderConfig): Result[OpenGL.ProgramId, Error] = {
+    val prelude = makePrelude(config.defines)
 
-  private def header: String = s"#version 330 core\n\n$definesText"
-
-  private def loadSource(path: String): String = {
-    val source = new mutable.StringBuilder()
-
-    try {
-      for line <- Bundle.locate(prefix + path).get.readLines() do {
-        source.append(line).append('\n')
+    for {
+      files <- Result.all(config.fileNames) { (shaderType, path) =>
+        findShader(path) match {
+          case Some(file) => Ok((shaderType, file))
+          case None       => Err(Error.FileNotFound(shaderType, path))
+        }
       }
-    } catch {
-      case e: Exception =>
-        throw new IOException("Could not load shader at " + (prefix + path), e)
-    }
-
-    source.toString
+      sources <- Result.all(files) { (shaderType, file) =>
+        readShaderFile(file, prelude) match {
+          case Success(source) => Ok((shaderType, source))
+          case Failure(e)      => Err(Error.FileNotReadable(shaderType, e))
+        }
+      }
+      shaderIds <- Result.all(sources) { (shaderType, source) =>
+        OpenGL.loadShader(shaderType, source) match {
+          case Ok(shaderId) => Ok(shaderId)
+          case Err(e)       => Err(Error.CompilationFailed(shaderType, e.message))
+        }
+      }
+      programId <- finish(shaderIds, config.inputs)
+    } yield programId
   }
 
-  def loadAll(paths: Map[OpenGL.ShaderType, String]): ShaderBuilder = {
-    for (shaderType, path) <- paths do {
-      val source = loadSource(path)
+  private def makePrelude(defines: Seq[(String, String)]): String = {
+    val s = new StringBuilder
 
-      OpenGL.loadShader(shaderType, header + source) match {
-        case Ok(shaderId) =>
-          shaders.put(shaderType, shaderId)
-        case Err(e) =>
-          System.err.println(s"Shader '$path' failed to compile:\n${e.message}")
+    s.append("#version 330 core\n")
+    for (name, value) <- defines do {
+      s.append(s"#define $name $value\n")
+    }
+    s.append("\n")
+
+    s.toString
+  }
+
+  private def findShader(path: String): Option[Bundle.Resource] = {
+    Bundle.locate(s"shaders/$path")
+  }
+
+  private def readShaderFile(file: Bundle.Resource, prelude: String): Try[String] = {
+    Try(file.readLines()).map(lines => prelude + lines.mkString("\n"))
+  }
+
+  private def finish(shaderIds: Seq[OpenGL.ShaderId], inputs: Seq[String]): Result[OpenGL.ProgramId, Error] = {
+    val programId = OpenGL.createProgram()
+
+    for i <- inputs.indices do {
+      if inputs(i) != "" then {
+        OpenGL.glBindAttribLocation(programId, i, inputs(i))
       }
     }
 
-    this
-  }
-
-  def bindAttribs(attribs: String*): ShaderBuilder = {
-    for i <- attribs.indices do {
-      if attribs(i) != "" then {
-        OpenGL.glBindAttribLocation(programID, i, attribs(i))
-      }
-    }
-    this
-  }
-
-  def attachAll(): ShaderBuilder = {
-    for i <- shaders.values do {
-      OpenGL.glAttachShader(programID, i)
-    }
-    this
-  }
-
-  def linkAndFinish(): OpenGL.ProgramId = {
-    OpenGL.linkProgram(programID) match {
-      case Err(errorMessage) =>
-        System.err.println("Link error: " + errorMessage)
-      case _ =>
+    for i <- shaderIds do {
+      OpenGL.glAttachShader(programId, i)
     }
 
-    for i <- shaders.values do {
-      OpenGL.glDetachShader(programID, i)
+    val linkResult = OpenGL.linkProgram(programId).mapErr(m => Error.LinkingFailed(m))
+
+    for i <- shaderIds do {
+      OpenGL.glDetachShader(programId, i)
       OpenGL.unloadShader(i)
     }
 
-    programID
+    linkResult.map(_ => programId)
   }
 }

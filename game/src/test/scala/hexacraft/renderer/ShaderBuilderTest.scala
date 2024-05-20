@@ -15,7 +15,7 @@ class ShaderBuilderTest extends FunSuite {
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
-    new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
+    ShaderLoader.tryLoad(ShaderConfig().withStage(Vertex, "block/vert.glsl").withStage(Fragment, "block/frag.glsl"))
 
     val shaderTypes = tracker.events.collect:
       case ShaderLoaded(_, shaderType, _) => shaderType
@@ -29,7 +29,7 @@ class ShaderBuilderTest extends FunSuite {
     val tracker = Tracker.withStorage[OpenGL.Event]
     OpenGL.trackEvents(tracker)
 
-    new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
+    ShaderLoader.tryLoad(ShaderConfig().withStage(Vertex, "block/vert.glsl").withStage(Fragment, "block/frag.glsl"))
 
     val shaderSources = tracker.events.collect:
       case ShaderLoaded(_, _, source) => source.takeWhile(_ != '\n')
@@ -40,18 +40,17 @@ class ShaderBuilderTest extends FunSuite {
   test("linkAndFinish unloads shaders after linking the program") {
     OpenGL._enterTestMode()
 
-    val loadTracker = Tracker.withStorage[OpenGL.Event]
-    val unloadTracker = Tracker.withStorage[OpenGL.Event]
+    val tracker = Tracker.withStorage[OpenGL.Event]
 
-    OpenGL.trackEvents(loadTracker)
-    val builder = new ShaderBuilder().loadAll(Map(Vertex -> "block/vert.glsl", Fragment -> "block/frag.glsl"))
-    val loadedShaderIds = loadTracker.events.collect:
+    OpenGL.trackEvents(tracker)
+    val builder =
+      ShaderLoader
+        .tryLoad(ShaderConfig().withStage(Vertex, "block/vert.glsl").withStage(Fragment, "block/frag.glsl"))
+        .unwrap()
+    val loadedShaderIds = tracker.events.collect:
       case ShaderLoaded(shaderId, _, _) => shaderId
 
-    OpenGL.trackEvents(unloadTracker)
-    builder.linkAndFinish()
-
-    val unloadedShaderIds = unloadTracker.events.collect:
+    val unloadedShaderIds = tracker.events.collect:
       case ShaderUnloaded(shaderId) => shaderId
 
     assertEquals(unloadedShaderIds.sorted, loadedShaderIds.sorted)

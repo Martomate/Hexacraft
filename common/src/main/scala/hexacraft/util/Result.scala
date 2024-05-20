@@ -1,5 +1,6 @@
 package hexacraft.util
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 sealed trait Result[+T, +E] {
@@ -10,6 +11,8 @@ sealed trait Result[+T, +E] {
   def unwrap(): T
 
   def unwrapErr(): E
+
+  def unwrapWith(f: E => Throwable): T
 
   def map[T2](f: T => T2): Result[T2, E]
 
@@ -28,6 +31,8 @@ object Result {
 
     def unwrap(): T = value
 
+    def unwrapWith(f: E => Throwable): T = value
+
     def unwrapErr(): E = throw new NoSuchElementException("Result was not Err")
 
     def map[T2](f: T => T2): Result[T2, E] = Ok(f(value))
@@ -42,7 +47,9 @@ object Result {
 
     def isErr: Boolean = true
 
-    def unwrap(): T = throw new NoSuchElementException("Result was not Ok")
+    def unwrap(): T = throw new RuntimeException(error.toString)
+
+    def unwrapWith(f: E => Throwable): T = throw f(error)
 
     def unwrapErr(): E = error
 
@@ -63,7 +70,16 @@ object Result {
     case None        => Err(())
   }
 
-  def split[T, E](results: Seq[Result[T, E]]): (Seq[T], Seq[E]) = {
+  def attempt[T](op: => T): Result[T, Throwable] = {
+    try {
+      val value = op
+      Ok(value)
+    } catch {
+      case t: Throwable => Err(t)
+    }
+  }
+
+  def split[T, E](results: Iterable[Result[T, E]]): (Seq[T], Seq[E]) = {
     val oks = ArrayBuffer.empty[T]
     val errs = ArrayBuffer.empty[E]
 
@@ -75,5 +91,20 @@ object Result {
     }
 
     (oks.toSeq, errs.toSeq)
+  }
+
+  def all[A, B, E](s: Iterable[A])(f: A => Result[B, E]): Result[Seq[B], E] = {
+    val values = new mutable.ArrayBuffer[B](s.size)
+
+    val it = s.iterator
+    while it.hasNext do {
+      val a = it.next
+      f(a) match {
+        case Ok(v)  => values += v
+        case Err(e) => return Err(e)
+      }
+    }
+
+    Ok(values.toSeq)
   }
 }
