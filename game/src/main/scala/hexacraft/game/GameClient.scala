@@ -9,40 +9,19 @@ import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.renderer.{Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, TickableTimer}
-import hexacraft.world.{
-  Camera,
-  CameraProjection,
-  ChunkLoadingPrioritizer,
-  ClientWorld,
-  CylinderSize,
-  HexBox,
-  Inventory,
-  Player,
-  PosAndDir,
-  WorldInfo,
-  WorldProvider,
-  WorldSettings
-}
+import hexacraft.world.{Camera, CameraProjection, ChunkLoadingPrioritizer, ClientWorld, CylinderSize, EntityEvent, HexBox, Inventory, Player, PosAndDir, WorldInfo, WorldProvider, WorldSettings}
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.block.BlockSpec.{Offsets, Textures}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
-import hexacraft.world.entity.{
-  BoundsComponent,
-  Entity,
-  EntityFactory,
-  ModelComponent,
-  PlayerEntityModel,
-  TransformComponent,
-  VelocityComponent
-}
+import hexacraft.world.entity.{BoundsComponent, Entity, EntityFactory, ModelComponent, PlayerEntityModel, TransformComponent, VelocityComponent}
 import hexacraft.world.render.WorldRenderer
-
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*
 import zmq.ZError
 
+import java.util.UUID
 import scala.collection.mutable
 import scala.util.Random
 
@@ -251,6 +230,7 @@ object GameClient {
 
   private def makeOtherPlayer(player: Player)(using CylinderSize) = {
     Entity(
+      UUID.randomUUID(),
       null,
       Seq(
         TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
@@ -368,11 +348,15 @@ class GameClient(
         setSelectedItemSlot(digit - 1)
       }
     case KeyboardKey.Letter('P') =>
-      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "player").unwrap())
+      val pos = CylCoords(player.position)
+      val spawnArgs = Seq("player", pos.x.toString, pos.y.toString, pos.z.toString)
+      socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
     case KeyboardKey.Letter('L') =>
-      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "sheep").unwrap())
+      val pos = CylCoords(player.position)
+      val spawnArgs = Seq("sheep", pos.x.toString, pos.y.toString, pos.z.toString)
+      socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
     case KeyboardKey.Letter('K') =>
-      world.removeAllEntities()
+      socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
     case _ =>
   }
 
@@ -574,6 +558,19 @@ class GameClient(
       world.setBlock(coords, blockState)
     }
 
+    val entityEventsNbt = socket.sendPacketAndWait(NetworkPacket.GetEntityStates).asMap.get
+    val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
+    val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
+    val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
+      val event = eventNbt.getString("type").get match {
+        case "spawned"   => EntityEvent.Spawned(eventNbt.getMap("data").get)
+        case "despawned" => EntityEvent.Despawned
+        case "position"  => EntityEvent.Position(CylCoords(eventNbt.setVector(new Vector3d)))
+      }
+
+      (UUID.fromString(id), event)
+    }
+
     updateSoundListener()
 
     prio.tick(PosAndDir.fromCameraView(camera.view))
@@ -682,7 +679,7 @@ class GameClient(
 
       otherPlayerEntity.model.foreach(_.tick(otherPlayerEntity.velocity.velocity.lengthSquared() > 0.1))
 
-      val worldTickResult = world.tick(Seq(camera))
+      val worldTickResult = world.tick(Seq(camera), entityEvents)
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
 
       if debugOverlay.isDefined then {

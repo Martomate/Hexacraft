@@ -1,5 +1,6 @@
 package hexacraft.world
 
+import EntityEvent.Despawned
 import hexacraft.math.bits.Int12
 import hexacraft.util.*
 import hexacraft.world.ServerWorld.WorldTickResult
@@ -10,6 +11,7 @@ import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 
 import com.martomate.nbt.Nbt
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -28,7 +30,8 @@ object ServerWorld {
       val chunksAdded: Seq[ChunkRelWorld],
       val chunksRemoved: Seq[ChunkRelWorld],
       val chunksNeedingRenderUpdate: Seq[ChunkRelWorld],
-      val blocksUpdated: Seq[BlockRelWorld]
+      val blocksUpdated: Seq[BlockRelWorld],
+      val entityEvents: Seq[(UUID, EntityEvent)]
   )
 }
 
@@ -64,12 +67,18 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
+  private val entityEventsSinceLastTick = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
+
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
   }
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
     chunks.get(coords.value)
+  }
+
+  def loadedChunks: Seq[ChunkRelWorld] = {
+    chunks.keys.map(c => ChunkRelWorld(c)).toSeq
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -103,15 +112,19 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   def addEntity(entity: Entity): Unit = {
     chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.addEntity(entity)
-      case None        =>
+      case Some(chunk) =>
+        chunk.addEntity(entity)
+        entityEventsSinceLastTick += entity.id -> EntityEvent.Spawned(entity.toNBT)
+      case None =>
     }
   }
 
   def removeEntity(entity: Entity): Unit = {
     chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.removeEntity(entity)
-      case None        =>
+      case Some(chunk) =>
+        chunk.removeEntity(entity)
+        entityEventsSinceLastTick += entity.id -> EntityEvent.Despawned
+      case None =>
     }
   }
 
@@ -121,6 +134,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       e <- ch.entities.toSeq
     } do {
       ch.removeEntity(e)
+      entityEventsSinceLastTick += e.id -> EntityEvent.Despawned
     }
   }
 
@@ -279,10 +293,22 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       tickEntities(ch.entities)
     }
 
+    val entityEvents = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
+    entityEvents ++= entityEventsSinceLastTick
+    entityEventsSinceLastTick.clear()
+
+    /*
+    for ch <- chunks.values do {
+      for e <- ch.entities do {
+        entityEvents += e.id -> EntityEvent.Position(e.transform.position)
+      }
+    }
+     */
+
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
-    new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated)
+    new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated, entityEvents.toSeq)
   }
 
   private def performChunkLoading(cameras: Seq[Camera]): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {

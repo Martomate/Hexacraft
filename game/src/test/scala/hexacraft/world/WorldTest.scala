@@ -7,6 +7,8 @@ import hexacraft.world.entity.{BoundsComponent, Entity, TransformComponent, Velo
 
 import munit.FunSuite
 
+import java.util.UUID
+
 class WorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
@@ -125,6 +127,7 @@ class WorldTest extends FunSuite {
     world.tick(Seq(camera))
 
     val entity = Entity(
+      UUID.randomUUID(),
       "scorpion",
       Seq(TransformComponent(entityPosition), VelocityComponent(), BoundsComponent(HexBox(0.5f, 0, 0.5f)))
     )

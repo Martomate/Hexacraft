@@ -1,12 +1,14 @@
 package hexacraft.world
 
 import hexacraft.math.bits.Int12
+import hexacraft.util.Result
 import hexacraft.world.ClientWorld.WorldTickResult
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, EntityFactory, EntityPhysicsSystem}
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -16,8 +18,6 @@ import scala.concurrent.duration.Duration
 
 object ClientWorld {
   class WorldTickResult(
-      val chunksAdded: Seq[ChunkRelWorld],
-      val chunksRemoved: Seq[ChunkRelWorld],
       val chunksNeedingRenderUpdate: Seq[ChunkRelWorld]
   )
 }
@@ -38,6 +38,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   val renderDistance: Double = 8 * CylinderSize.y60
 
   val collisionDetector = new CollisionDetector(this)
+  private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
@@ -45,6 +46,10 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
     chunks.get(coords.value)
+  }
+
+  def loadedChunks: Seq[ChunkRelWorld] = {
+    chunks.keys.map(c => ChunkRelWorld(c)).toSeq
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -72,17 +77,22 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     }
   }
 
-  def addEntity(entity: Entity): Unit = {
-    chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.addEntity(entity)
-      case None        =>
+  def addEntity(entity: Entity): Option[ChunkRelWorld] = {
+    val chunkCoords = chunkOfEntity(entity)
+    getChunk(chunkCoords) match {
+      case Some(chunk) =>
+        chunk.addEntity(entity)
+        Some(chunkCoords)
+      case None =>
+        None
     }
   }
 
   def removeEntity(entity: Entity): Unit = {
-    chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.removeEntity(entity)
-      case None        =>
+    chunks.values.find(_.entities.exists(_.id == entity.id)) match {
+      case Some(chunk) =>
+        chunk.removeEntity(entity)
+      case None =>
     }
   }
 
@@ -95,8 +105,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     }
   }
 
-  private def chunkOfEntity(entity: Entity): Option[Chunk] = {
-    getChunk(CoordUtils.approximateChunkCoords(entity.transform.position))
+  private def chunkOfEntity(entity: Entity): ChunkRelWorld = {
+    CoordUtils.approximateChunkCoords(entity.transform.position)
   }
 
   def getHeight(x: Int, z: Int): Option[Int] = {
@@ -200,6 +210,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     for col <- columns.get(columnCoords.value) do {
       for removedChunk <- chunks.remove(chunkCoords.value) do {
         chunkWasRemoved = true
+        requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
         requestRenderUpdateForNeighborChunks(chunkCoords)
       }
 
@@ -211,7 +222,54 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     chunkWasRemoved
   }
 
-  def tick(cameras: Seq[Camera]): WorldTickResult = {
+  def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
+    val allEntitiesById = mutable.HashMap.empty[UUID, (ChunkRelWorld, Entity)]
+    for (chunkCoordsValue, ch) <- chunks do {
+      val chunkCoords = ChunkRelWorld(chunkCoordsValue)
+      for e <- ch.entities do {
+        allEntitiesById(e.id) = (chunkCoords, e)
+      }
+    }
+
+    for (id, event) <- entityEvents do {
+      allEntitiesById.get(id) match {
+        case Some(ent) =>
+          val (c, e) = ent
+          event match {
+            case EntityEvent.Spawned(_) =>
+              println(s"Received spawn event for an entity that already exists (id: $id)")
+            case EntityEvent.Despawned =>
+              removeEntity(e)
+              allEntitiesById -= id
+              println(s"Client: despawned entity $id")
+            case EntityEvent.Position(pos) =>
+              e.transform.position = pos
+          }
+        case None =>
+          event match {
+            case EntityEvent.Spawned(data) =>
+              val spawnedEntity = for {
+                e <- EntityFactory
+                  .fromNbt(data)
+                  .mapErr(err => s"Could not create entity. Error: $err")
+                c <- Result
+                  .fromOption(addEntity(e))
+                  .mapErr(_ => s"Could not spawn entity because the chunk was not loaded")
+              } yield (c, e)
+
+              spawnedEntity match {
+                case Result.Ok((c, e)) =>
+                  allEntitiesById(id) = (c, e)
+                  println(s"Client: spawned entity $id")
+                case Result.Err(error) =>
+                  println(error)
+              }
+            case _ =>
+              println(s"Received entity event for an unknown entity (id: $id, event: $event)")
+          }
+      }
+    }
+
     for ch <- chunks.values do {
       ch.optimizeStorage()
       tickEntities(ch.entities)
@@ -220,7 +278,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
-    new WorldTickResult(Seq(), Seq(), r)
+    new WorldTickResult(r)
   }
 
   @tailrec // this is done for performance
@@ -232,8 +290,17 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   private def tickEntity(e: Entity): Unit = {
+    e.ai match {
+      case Some(ai) =>
+        ai.tick(this, e.transform, e.velocity, e.boundingBox)
+        e.velocity.velocity.add(ai.acceleration)
+      case None =>
+    }
+
     e.velocity.velocity.x *= 0.9
     e.velocity.velocity.z *= 0.9
+
+    entityPhysicsSystem.update(e.transform, e.velocity, e.boundingBox)
 
     e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
   }

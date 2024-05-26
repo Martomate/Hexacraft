@@ -19,6 +19,10 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     chunks.get(coords)
   }
 
+  def loadedChunks: Seq[ChunkRelWorld] = {
+    chunks.keys.toSeq
+  }
+
   override def getBlock(coords: BlockRelWorld): BlockState = {
     getChunk(coords.getChunkRelWorld)
       .map(_.getBlock(coords.getBlockRelChunk))

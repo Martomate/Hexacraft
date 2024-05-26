@@ -1,10 +1,15 @@
 package hexacraft.game
 
 import hexacraft.world.Inventory
-import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
 
 import com.martomate.nbt.Nbt
 import org.joml.Vector2f
+
+enum ServerCommand {
+  case SpawnEntity(entityName: String, position: CylCoords)
+  case KillAllEntities
+}
 
 enum NetworkPacket {
   case GetWorldInfo
@@ -13,6 +18,7 @@ enum NetworkPacket {
   case LoadWorldData
   case GetPlayerState
   case GetBlockUpdates
+  case GetEntityStates
   case PlayerRightClicked
   case PlayerLeftClicked
   case PlayerToggledFlying
@@ -20,6 +26,7 @@ enum NetworkPacket {
   case PlayerUpdatedInventory(inventory: Inventory)
   case PlayerMovedMouse(distance: Vector2f)
   case PlayerPressedKeys(keys: Seq[GameKeyboard.Key])
+  case RunCommand(command: String, args: Seq[String])
 }
 
 object NetworkPacket {
@@ -42,6 +49,8 @@ object NetworkPacket {
         NetworkPacket.GetPlayerState
       case "get_block_updates" =>
         NetworkPacket.GetBlockUpdates
+      case "get_entity_states" =>
+        NetworkPacket.GetEntityStates
       case "right_mouse_clicked" =>
         NetworkPacket.PlayerRightClicked
       case "left_mouse_clicked" =>
@@ -62,6 +71,11 @@ object NetworkPacket {
         val keyNames = root.getList("keys").get.map(_.asInstanceOf[Nbt.StringTag].v)
         val keys = keyNames.map(GameKeyboard.Key.valueOf)
         NetworkPacket.PlayerPressedKeys(keys)
+      case "run_command" =>
+        val commandNbt = root.getMap("command").get
+        val name = commandNbt.getString("name").get
+        val args = commandNbt.getList("args").get.map(_.asInstanceOf[Nbt.StringTag].v)
+        NetworkPacket.RunCommand(name, args)
       case _ =>
         throw new IllegalArgumentException(s"unknown packet type '$packetName'")
     }
@@ -76,6 +90,7 @@ object NetworkPacket {
         case NetworkPacket.LoadWorldData                => "load_world_data"
         case NetworkPacket.GetPlayerState               => "get_player_state"
         case NetworkPacket.GetBlockUpdates              => "get_block_updates"
+        case NetworkPacket.GetEntityStates              => "get_entity_states"
         case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
         case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
         case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
@@ -83,12 +98,13 @@ object NetworkPacket {
         case NetworkPacket.PlayerUpdatedInventory(_)    => "inventory_updated"
         case NetworkPacket.PlayerMovedMouse(_)          => "mouse_moved"
         case NetworkPacket.PlayerPressedKeys(_)         => "keys_pressed"
+        case NetworkPacket.RunCommand(_, _)             => "run_command"
       }
 
       val tag: Nbt.MapTag = p match {
         case NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData | NetworkPacket.PlayerRightClicked |
             NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState | NetworkPacket.PlayerToggledFlying |
-            NetworkPacket.GetBlockUpdates =>
+            NetworkPacket.GetBlockUpdates | NetworkPacket.GetEntityStates =>
           Nbt.emptyMap
 
         case NetworkPacket.LoadChunkData(coords) =>
@@ -115,6 +131,13 @@ object NetworkPacket {
         case NetworkPacket.PlayerPressedKeys(keys) =>
           Nbt.makeMap(
             "keys" -> Nbt.ListTag(keys.map(key => Nbt.StringTag(key.toString)))
+          )
+        case NetworkPacket.RunCommand(command, args) =>
+          Nbt.makeMap(
+            "command" -> Nbt.makeMap(
+              "name" -> Nbt.StringTag(command),
+              "args" -> Nbt.ListTag(args.map(arg => Nbt.StringTag(arg)))
+            )
           )
       }
 

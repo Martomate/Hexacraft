@@ -46,7 +46,9 @@ class Chunk private (chunkData: ChunkData)(using CylinderSize) {
   }
 
   def removeEntity(entity: Entity): Unit = {
+    println(s"Before: ${chunkData.entities.find(_.id == entity.id)}")
     chunkData.entities -= entity
+    println(s"After: ${chunkData.entities.find(_.id == entity.id)}")
     _modCount += 1
   }
 
