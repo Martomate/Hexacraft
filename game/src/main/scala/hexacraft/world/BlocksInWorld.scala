@@ -10,6 +10,8 @@ trait BlocksInWorld {
   def getChunk(coords: ChunkRelWorld): Option[Chunk]
 
   def getBlock(coords: BlockRelWorld): BlockState
+
+  def loadedChunks: Seq[ChunkRelWorld]
 }
 
 trait BlocksInWorldExtended extends BlocksInWorld {

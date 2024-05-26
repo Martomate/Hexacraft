@@ -1,6 +1,8 @@
 package hexacraft.game
 
-import hexacraft.world.{Camera, *}
+import hexacraft.util.Result
+import hexacraft.world.*
+import hexacraft.world.EntityEvent.Despawned
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.coord.*
@@ -11,6 +13,7 @@ import org.joml.Vector2f
 import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
 import zmq.ZError
 
+import java.util.UUID
 import scala.collection.mutable
 
 object GameServer {
@@ -29,6 +32,7 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
   var pressedKeys: Seq[GameKeyboard.Key] = Seq.empty
   var mouseMovement: Vector2f = new Vector2f
   val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
+  val entityEventsWaitingToBeSent: mutable.ArrayBuffer[(UUID, EntityEvent)] = mutable.ArrayBuffer.empty
 }
 
 class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, world: ServerWorld)(using CylinderSize) {
@@ -123,6 +127,10 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         for p <- players.values do {
           p.blockUpdatesWaitingToBeSent += coords -> blockState
         }
+      }
+
+      for p <- players.values do {
+        p.entityEventsWaitingToBeSent ++= tickResult.entityEvents
       }
     } catch {
       case e: ZMQException => println(e)
@@ -304,6 +312,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         }
       }
       val entity = Entity(
+        Entity.getNextId,
         null,
         Seq(
           TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
@@ -349,6 +358,29 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
           )
 
         Some(Nbt.makeMap("updates" -> Nbt.ListTag(updatesNbt)))
+      case GetEntityStates =>
+        val entityEvents = playerData.entityEventsWaitingToBeSent.toSeq
+        playerData.entityEventsWaitingToBeSent.clear()
+
+        val ids = entityEvents.map((id, _) => Nbt.StringTag(id.toString))
+
+        val events = for (_, e) <- entityEvents yield {
+          val name = e match {
+            case EntityEvent.Spawned(data) => "spawned"
+            case EntityEvent.Despawned     => "despawned"
+            case EntityEvent.Position(pos) => "position"
+          }
+
+          val extraFields: Seq[(String, Nbt)] = e match {
+            case EntityEvent.Spawned(data) => Seq("data" -> data)
+            case EntityEvent.Despawned     => Seq()
+            case EntityEvent.Position(pos) => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
+          }
+
+          Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))
+        }
+
+        Some(Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
       case PlayerRightClicked =>
         performRightMouseClick(player, playerCamera)
         None
@@ -369,6 +401,29 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         None
       case PlayerPressedKeys(keys) =>
         playerData.pressedKeys = keys
+        None
+      case RunCommand(command, args) =>
+        command match {
+          case "spawn" =>
+            if args.length != 4 then {
+              println(s"Wrong number of arguments to spawn command: ${args.length}")
+            }
+            val entityType = args.head
+            val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)
+
+            EntityFactory.atStartPos(Entity.getNextId, pos, entityType) match {
+              case Result.Ok(entity) =>
+                world.addEntity(entity)
+                println(s"Spawned entity of type $entityType at $pos")
+              case Result.Err(e) =>
+                println(s"Failed to spawn entity: $e")
+            }
+          case "kill" =>
+            world.removeAllEntities()
+            println(s"Removed all entities")
+          case _ =>
+            println(s"Received unknown command: $command")
+        }
         None
     }
   }
