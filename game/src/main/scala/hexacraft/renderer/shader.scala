@@ -3,14 +3,13 @@ package hexacraft.renderer
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.{linkProgram, ShaderType}
-import hexacraft.util.{Resource, Result}
-import hexacraft.util.Result.{Err, Ok}
+import hexacraft.util.{Batch, Resource, Result}
 
 import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 import org.lwjgl.BufferUtils
 
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object Shader {
   private var activeShader: Shader = null.asInstanceOf[Shader]
@@ -157,25 +156,24 @@ object ShaderLoader {
   def tryLoad(config: ShaderConfig): Result[OpenGL.ProgramId, Error] = {
     val prelude = makePrelude(config.defines)
 
+    val shaderIds = for {
+      (shaderType, path) <- Batch.of(config.fileNames.toSeq)
+
+      file <- Result
+        .fromOption(findShader(path))
+        .mapErr(_ => Error.FileNotFound(shaderType, path))
+
+      source <- Result
+        .fromTry(readShaderFile(file, prelude))
+        .mapErr(e => Error.FileNotReadable(shaderType, e))
+
+      shaderId <- OpenGL
+        .loadShader(shaderType, source)
+        .mapErr(e => Error.CompilationFailed(shaderType, e.message))
+    } yield shaderId
+
     for {
-      files <- Result.all(config.fileNames) { (shaderType, path) =>
-        findShader(path) match {
-          case Some(file) => Ok((shaderType, file))
-          case None       => Err(Error.FileNotFound(shaderType, path))
-        }
-      }
-      sources <- Result.all(files) { (shaderType, file) =>
-        readShaderFile(file, prelude) match {
-          case Success(source) => Ok((shaderType, source))
-          case Failure(e)      => Err(Error.FileNotReadable(shaderType, e))
-        }
-      }
-      shaderIds <- Result.all(sources) { (shaderType, source) =>
-        OpenGL.loadShader(shaderType, source) match {
-          case Ok(shaderId) => Ok(shaderId)
-          case Err(e)       => Err(Error.CompilationFailed(shaderType, e.message))
-        }
-      }
+      shaderIds <- shaderIds.toResult
       programId <- finish(shaderIds, config.inputs)
     } yield programId
   }

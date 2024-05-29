@@ -2,6 +2,7 @@ package hexacraft.util
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 sealed trait Result[+T, +E] {
   def isOk: Boolean
@@ -68,6 +69,11 @@ object Result {
   def fromOption[T](opt: Option[T]): Result[T, Unit] = opt match {
     case Some(value) => Ok(value)
     case None        => Err(())
+  }
+
+  def fromTry[T](t: Try[T]): Result[T, Throwable] = t match {
+    case Success(value) => Ok(value)
+    case Failure(e)     => Err(e)
   }
 
   def attempt[T](op: => T): Result[T, Throwable] = {
