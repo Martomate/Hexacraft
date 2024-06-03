@@ -72,7 +72,6 @@ object EntityFactory {
         val components = Seq(
           TransformComponent.fromNBT(tag),
           VelocityComponent.fromNBT(tag),
-          AiComponent.fromNBT(tag),
           BoundsComponent(playerBounds),
           ModelComponent(PlayerEntityModel.create("player"))
         )

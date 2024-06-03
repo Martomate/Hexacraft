@@ -1,8 +1,6 @@
 package hexacraft.client
 
-import hexacraft.game
 import hexacraft.game.*
-import hexacraft.game.NetworkPacket.PlayerUpdatedInventory
 import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickContext, WindowSize}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
@@ -12,18 +10,8 @@ import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
-import hexacraft.world.block.BlockSpec.{Offsets, Textures}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
-import hexacraft.world.entity.{
-  BoundsComponent,
-  Entity,
-  EntityFactory,
-  ModelComponent,
-  PlayerEntityModel,
-  TransformComponent,
-  VelocityComponent
-}
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -33,14 +21,6 @@ import zmq.ZError
 import java.util.UUID
 import scala.collection.mutable
 import scala.util.Random
-
-class EmptyWorldProvider(worldInfo: WorldInfo) extends WorldProvider {
-  override def getWorldInfo: WorldInfo = worldInfo
-
-  override def loadState(path: String): Option[Nbt.MapTag] = None
-
-  override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit = ()
-}
 
 object GameClient {
   enum Event {
@@ -69,7 +49,7 @@ object GameClient {
     val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
     val player = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
 
-    val blockSpecs = makeBlockSpecs()
+    val blockSpecs = BlockSpecs.default
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
@@ -85,14 +65,7 @@ object GameClient {
 
     given CylinderSize = world.size
 
-    val otherPlayer: Player = makePlayer(worldInfo.player, world)
-    val otherPlayerEntity: Entity = makeOtherPlayer(player)
-
     val worldRenderer: WorldRenderer = new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
-
-    if isOnline then {
-      worldRenderer.addPlayer(otherPlayerEntity)
-    }
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
@@ -121,8 +94,6 @@ object GameClient {
       crosshairRenderer,
       world,
       player,
-      otherPlayer,
-      otherPlayerEntity,
       worldRenderer,
       camera,
       playerInputHandler,
@@ -201,53 +172,11 @@ object GameClient {
     }
   }
 
-  private def makeBlockSpecs() = Map(
-    "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
-    "grass" -> BlockSpec(Textures.basic("grassSide").withTop("grassTop").withBottom("dirt")),
-    "dirt" -> BlockSpec(Textures.basic("dirt")),
-    "sand" -> BlockSpec(Textures.basic("sand")),
-    "water" -> BlockSpec(Textures.basic("water")),
-    "log" -> BlockSpec(
-      Textures
-        .basic("logSide")
-        .withTop("log", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves" -> BlockSpec(Textures.basic("leaves")),
-    "planks" -> BlockSpec(
-      Textures
-        .basic("planks_side")
-        .withTop("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-        .withBottom("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-    ),
-    "log_birch" -> BlockSpec(
-      Textures
-        .basic("logSide_birch")
-        .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
-    "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
-  )
-
   private def loadBlockTextures(blockSpecs: Map[String, BlockSpec], blockLoader: BlockTextureLoader) = {
     val textures = blockSpecs.values.map(_.textures)
     val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
     val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
     blockLoader.load(squareTextureNames, triTextureNames)
-  }
-
-  private def makeOtherPlayer(player: Player)(using CylinderSize) = {
-    Entity(
-      UUID.randomUUID(),
-      null,
-      Seq(
-        TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
-        VelocityComponent(),
-        BoundsComponent(EntityFactory.playerBounds),
-        ModelComponent(PlayerEntityModel.create("player"))
-      )
-    )
   }
 }
 
@@ -262,8 +191,6 @@ class GameClient(
     crosshairRenderer: Renderer,
     world: ClientWorld,
     val player: Player,
-    val otherPlayer: Player,
-    otherPlayerEntity: Entity,
     worldRenderer: WorldRenderer,
     val camera: Camera,
     playerInputHandler: PlayerInputHandler,
@@ -335,7 +262,7 @@ class GameClient(
             isInPopup = false
             setUseMouse(true)
           case InventoryUpdated(inv) =>
-            val invNbt = socket.sendPacketAndWait(PlayerUpdatedInventory(inv))
+            val invNbt = socket.sendPacketAndWait(NetworkPacket.PlayerUpdatedInventory(inv))
             val serverInv = Inventory.fromNBT(invNbt.asMap.get)
             player.inventory = serverInv
             toolbar.onInventoryUpdated(serverInv)
@@ -548,11 +475,12 @@ class GameClient(
     if rotationDiff.y > math.Pi then {
       rotationDiff.y -= math.Pi * 2
     }
-    player.rotation.add(rotationDiff.mul(0.1))
+//    player.rotation.add(rotationDiff.mul(0.1))
     player.flying = syncedPlayer.flying
 
-    val blockUpdatesNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetBlockUpdates).asMap.get
-    val blockUpdatesNbtList = blockUpdatesNbtPacket.getList("updates").getOrElse(Seq()).map(_.asMap.get)
+    val worldEventsNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetEvents).asMap.get
+
+    val blockUpdatesNbtList = worldEventsNbtPacket.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)
     val blockUpdates =
       for u <- blockUpdatesNbtList
       yield {
@@ -567,14 +495,16 @@ class GameClient(
       world.setBlock(coords, blockState)
     }
 
-    val entityEventsNbt = socket.sendPacketAndWait(NetworkPacket.GetEntityStates).asMap.get
+    val entityEventsNbt = worldEventsNbtPacket.getMap("entity_events").get
     val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
     val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
     val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
       val event = eventNbt.getString("type").get match {
         case "spawned"   => EntityEvent.Spawned(eventNbt.getMap("data").get)
         case "despawned" => EntityEvent.Despawned
-        case "position"  => EntityEvent.Position(CylCoords(eventNbt.setVector(new Vector3d)))
+        case "position"  => EntityEvent.Position(CylCoords(eventNbt.getMap("pos").get.setVector(new Vector3d)))
+        case "rotation"  => EntityEvent.Rotation(eventNbt.getMap("r").get.setVector(new Vector3d))
+        case "velocity"  => EntityEvent.Velocity(eventNbt.getMap("v").get.setVector(new Vector3d))
       }
 
       (UUID.fromString(id), event)
@@ -641,12 +571,6 @@ class GameClient(
             playerVolumeSubmergedInWater(player)
           )
         }
-        playerPhysicsHandler.tick(
-          otherPlayer,
-          maxSpeed,
-          playerEffectiveViscosity(otherPlayer),
-          playerVolumeSubmergedInWater(otherPlayer)
-        )
 
         if !isPaused then {
           walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
@@ -674,19 +598,12 @@ class GameClient(
 
       if rightMouseButtonTimer.tick() then {
         socket.sendPacket(NetworkPacket.PlayerRightClicked)
-        performRightMouseClick(true)
+        performRightMouseClick()
       }
       if leftMouseButtonTimer.tick() then {
         socket.sendPacket(NetworkPacket.PlayerLeftClicked)
-        performLeftMouseClick(true)
+        performLeftMouseClick()
       }
-
-      otherPlayerEntity.transform.position = CylCoords(otherPlayer.position)
-        .offset(0, otherPlayer.bounds.bottom.toDouble, 0)
-      otherPlayerEntity.transform.rotation.set(0, math.Pi * 0.5 - otherPlayer.rotation.y, 0)
-      otherPlayerEntity.velocity.velocity.set(otherPlayer.velocity)
-
-      otherPlayerEntity.model.foreach(_.tick(otherPlayerEntity.velocity.velocity.lengthSquared() > 0.1))
 
       val worldTickResult = world.tick(Seq(camera), entityEvents)
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
@@ -740,19 +657,8 @@ class GameClient(
     yield (world.getBlock(hit._1), hit._1, hit._2)
   }
 
-  def performLeftMouseClick(localPlayer: Boolean): Unit = {
-    val blockAndSide =
-      if localPlayer then selectedBlockAndSide
-      else {
-        val otherCamera = Camera(camera.proj)
-        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
-        otherCamera.updateCoords()
-        otherCamera.updateViewMatrix(camera.view.position)
-        for
-          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-        yield (world.getBlock(hit._1), hit._1, hit._2)
-      }
+  def performLeftMouseClick(): Unit = {
+    val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {
       case Some((state, coords, _)) =>
@@ -767,19 +673,8 @@ class GameClient(
     }
   }
 
-  def performRightMouseClick(localPlayer: Boolean): Unit = {
-    val blockAndSide =
-      if localPlayer then selectedBlockAndSide
-      else {
-        val otherCamera = Camera(camera.proj)
-        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
-        otherCamera.updateCoords()
-        otherCamera.updateViewMatrix(camera.view.position)
-        for
-          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-        yield (world.getBlock(hit._1), hit._1, hit._2)
-      }
+  def performRightMouseClick(): Unit = {
+    val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {
       case Some((state, coords, Some(side))) =>
@@ -787,7 +682,7 @@ class GameClient(
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, if localPlayer then player else otherPlayer)
+          case _         => tryPlacingBlockAt(coordsInFront, player)
         }
       case _ =>
     }

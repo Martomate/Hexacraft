@@ -17,8 +17,7 @@ enum NetworkPacket {
   case LoadColumnData(coords: ColumnRelWorld)
   case LoadWorldData
   case GetPlayerState
-  case GetBlockUpdates
-  case GetEntityStates
+  case GetEvents
   case PlayerRightClicked
   case PlayerLeftClicked
   case PlayerToggledFlying
@@ -47,10 +46,8 @@ object NetworkPacket {
         NetworkPacket.LoadWorldData
       case "get_player_state" =>
         NetworkPacket.GetPlayerState
-      case "get_block_updates" =>
-        NetworkPacket.GetBlockUpdates
-      case "get_entity_states" =>
-        NetworkPacket.GetEntityStates
+      case "get_events" =>
+        NetworkPacket.GetEvents
       case "right_mouse_clicked" =>
         NetworkPacket.PlayerRightClicked
       case "left_mouse_clicked" =>
@@ -89,8 +86,7 @@ object NetworkPacket {
         case NetworkPacket.LoadColumnData(_)            => "load_column_data"
         case NetworkPacket.LoadWorldData                => "load_world_data"
         case NetworkPacket.GetPlayerState               => "get_player_state"
-        case NetworkPacket.GetBlockUpdates              => "get_block_updates"
-        case NetworkPacket.GetEntityStates              => "get_entity_states"
+        case NetworkPacket.GetEvents                    => "get_events"
         case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
         case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
         case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
@@ -104,7 +100,7 @@ object NetworkPacket {
       val tag: Nbt.MapTag = p match {
         case NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData | NetworkPacket.PlayerRightClicked |
             NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState | NetworkPacket.PlayerToggledFlying |
-            NetworkPacket.GetBlockUpdates | NetworkPacket.GetEntityStates =>
+            NetworkPacket.GetEvents =>
           Nbt.emptyMap
 
         case NetworkPacket.LoadChunkData(coords) =>
