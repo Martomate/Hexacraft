@@ -1,13 +1,16 @@
-package hexacraft.game
+package hexacraft.main
 
+import hexacraft.game.{FakeBlockTextureLoader, GameKeyboard}
 import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
 import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.util.Tracker
-import hexacraft.world.{CylinderSize, FakeWorldProvider}
-
+import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player}
+import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.chunk.{ChunkData, SparseChunkStorage}
+import hexacraft.world.coord.BlockRelChunk
 import munit.FunSuite
 import org.joml.{Vector2f, Vector2i}
 
@@ -23,11 +26,14 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene1, _) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene1, _) =
+      GameScene.create(
+        GameScene.ClientParams("localhost", 19271, false, keyboard, textureLoader, audioSystem, windowSize),
+        Some(GameScene.ServerParams(worldProvider))
+      )
     gameScene1.unload()
 
     // Start listening to OpenGL events
@@ -35,7 +41,10 @@ class GameSceneTest extends FunSuite {
     OpenGL.trackEvents(tracker)
 
     // Load and unload the game again
-    val (gameScene, _) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, _) = GameScene.create(
+      GameScene.ClientParams("localhost", 19272, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
+    )
     gameScene.unload()
 
     val shadersAdded = tracker.events.collect:
@@ -54,12 +63,14 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19273, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
     gameScene.handleEvent(Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none))
@@ -80,22 +91,33 @@ class GameSceneTest extends FunSuite {
   test("GameScene plays a sound when the player breaks a block") {
     OpenGL._enterTestMode()
 
+    // Step 1: configure the server to host a world with a player looking at a block a few meters away
+
+    val storedPlayer = new Player(Inventory.default)
+    storedPlayer.flying = false
+    storedPlayer.position.set(0, 4, 0) // ensure player is in the middle of the spawn chunk (4 meters = 8 blocks)
+    storedPlayer.rotation.set(math.Pi / 2, 0, 0) // look down
+
+    val spawnChunkBlocks = new SparseChunkStorage
+    spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
+
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    worldProvider.setPlayer(storedPlayer.toNBT)
+    worldProvider.saveState(ChunkData.fromStorage(spawnChunkBlocks).toNBT, "chunk", "data/" + 0 + "/" + 0 + ".dat")
+
+    // Step 2: configure the client
+
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19274, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
-    gameScene.player.flying = false
-
-    // ensure player is in the middle of the spawn chunk
-    gameScene.player.position.y = 4 // each block is 0.5 high
-
-    // look down
-    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+    // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
@@ -103,9 +125,7 @@ class GameSceneTest extends FunSuite {
     Thread.sleep(20)
     gameScene.tick(tickContext)
 
-    // place block below feet
-    gameScene.handleEvent(KeyEvent(KeyboardKey.Letter('B'), 0, KeyAction.Press, KeyMods.none))
-    gameScene.tick(tickContext)
+    println(gameScene.client.player.position)
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
@@ -122,22 +142,33 @@ class GameSceneTest extends FunSuite {
   test("GameScene plays a sound when the player places a block") {
     OpenGL._enterTestMode()
 
+    // Step 1: configure the server to host a world with a player looking at a block a few meters away
+
+    val storedPlayer = new Player(Inventory.default)
+    storedPlayer.flying = false
+    storedPlayer.position.set(0, 4, 0) // ensure player is in the middle of the spawn chunk (4 meters = 8 blocks)
+    storedPlayer.rotation.set(math.Pi / 2, 0, 0) // look down
+
+    val spawnChunkBlocks = new SparseChunkStorage
+    spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
+
     val worldProvider = new FakeWorldProvider(123L)
-    val networkHandler = NetworkHandler(true, false, worldProvider, null)
+    worldProvider.setPlayer(storedPlayer.toNBT)
+    worldProvider.saveState(ChunkData.fromStorage(spawnChunkBlocks).toNBT, "chunk", "data/" + 0 + "/" + 0 + ".dat")
+
+    // Step 2: configure the client
+
     val keyboard: GameKeyboard = _ => false
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
-    val (gameScene, rx) = GameScene.create(networkHandler, keyboard, textureLoader, windowSize, audioSystem)
+    val (gameScene, rx) = GameScene.create(
+      GameScene.ClientParams("localhost", 19275, false, keyboard, textureLoader, audioSystem, windowSize),
+      Some(GameScene.ServerParams(worldProvider))
+    )
     val gameSceneTracker = Tracker.fromRx(rx)
 
-    gameScene.player.flying = false
-
-    // ensure player is in the middle of the spawn chunk, and far from the ground
-    gameScene.player.position.y = 128 + 4 // each block is 0.5 high
-
-    // look down
-    gameScene.player.rotation.set(math.Pi / 2, 0, 0)
+    // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
@@ -145,16 +176,9 @@ class GameSceneTest extends FunSuite {
     Thread.sleep(20)
     gameScene.tick(tickContext)
 
-    // place block below feet
-    gameScene.handleEvent(KeyEvent(KeyboardKey.Letter('B'), 0, KeyAction.Press, KeyMods.none))
-    gameScene.tick(tickContext)
-
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
     audioSystem.trackEvents(audioTracker)
-
-    // move so the block can be placed
-    gameScene.player.position.y += 1
 
     // place block
     gameScene.handleEvent(MouseClickEvent(MouseButton.Right, MouseAction.Press, KeyMods.none, (0, 0)))

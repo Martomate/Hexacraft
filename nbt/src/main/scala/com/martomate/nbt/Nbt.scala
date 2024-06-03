@@ -7,7 +7,12 @@ import org.joml.Vector3d
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, IOException}
 import scala.collection.immutable.{ArraySeq, ListMap}
 
-sealed trait Nbt
+sealed trait Nbt {
+  def asMap: Option[Nbt.MapTag] = this match {
+    case t: Nbt.MapTag => Some(t)
+    case _             => None
+  }
+}
 
 object Nbt {
   case class ByteTag(v: Byte) extends Nbt
@@ -25,7 +30,9 @@ object Nbt {
 
   case class DoubleTag(v: Double) extends Nbt
 
-  case class StringTag(v: String) extends Nbt
+  case class StringTag(v: String) extends Nbt {
+    require(v != null)
+  }
 
   case class ByteArrayTag(vs: ArraySeq.ofByte) extends Nbt
   object ByteArrayTag {
@@ -62,6 +69,11 @@ object Nbt {
       vs.get(key) match
         case Some(Nbt.LongTag(v)) => v
         case _                    => default
+
+    def getFloat(key: String, default: => Float): Float =
+      vs.get(key) match
+        case Some(Nbt.FloatTag(v)) => v
+        case _                     => default
 
     def getDouble(key: String, default: => Double): Double =
       vs.get(key) match
@@ -142,7 +154,7 @@ object Nbt {
   extension (tag: Nbt.MapTag)
     def toCompoundTag(name: String): CompoundTag =
       val map = new CompoundMap()
-      tag.vs.foreach((n, t) => map.put(t.toRaw(n)))
+      tag.vs.foreach((n, t) => if t != null then map.put(t.toRaw(n)))
       new CompoundTag(name, map)
 
     def withField(name: String, value: Nbt): Nbt.MapTag =

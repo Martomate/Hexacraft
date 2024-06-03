@@ -1,8 +1,8 @@
-package hexacraft.world
+package hexacraft.server
 
-import hexacraft.math.bits.Int12
+import hexacraft.server.ServerWorld.WorldTickResult
 import hexacraft.util.*
-import hexacraft.world.World.WorldTickResult
+import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
@@ -10,6 +10,7 @@ import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 
 import com.martomate.nbt.Nbt
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -18,7 +19,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
-object World {
+object ServerWorld {
   private val ticksBetweenBlockUpdates = 5
   private val ticksBetweenEntityRelocation = 120
 
@@ -27,11 +28,15 @@ object World {
   class WorldTickResult(
       val chunksAdded: Seq[ChunkRelWorld],
       val chunksRemoved: Seq[ChunkRelWorld],
-      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld]
+      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld],
+      val blocksUpdated: Seq[BlockRelWorld],
+      val entityEvents: Seq[(UUID, EntityEvent)]
   )
 }
 
-class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
+class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
+    extends BlockRepository
+    with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -61,12 +66,18 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
+  private val entityEventsSinceLastTick = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
+
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
   }
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
     chunks.get(coords.value)
+  }
+
+  def loadedChunks: Seq[ChunkRelWorld] = {
+    chunks.keys.map(c => ChunkRelWorld(c)).toSeq
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -100,15 +111,19 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
 
   def addEntity(entity: Entity): Unit = {
     chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.addEntity(entity)
-      case None        =>
+      case Some(chunk) =>
+        chunk.addEntity(entity)
+        entityEventsSinceLastTick += entity.id -> EntityEvent.Spawned(entity.toNBT)
+      case None =>
     }
   }
 
   def removeEntity(entity: Entity): Unit = {
     chunkOfEntity(entity) match {
-      case Some(chunk) => chunk.removeEntity(entity)
-      case None        =>
+      case Some(chunk) =>
+        chunk.removeEntity(entity)
+        entityEventsSinceLastTick += entity.id -> EntityEvent.Despawned
+      case None =>
     }
   }
 
@@ -118,6 +133,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       e <- ch.entities.toSeq
     } do {
       ch.removeEntity(e)
+      entityEventsSinceLastTick += e.id -> EntityEvent.Despawned
     }
   }
 
@@ -261,12 +277,12 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     chunkWasRemoved
   }
 
-  def tick(camera: Camera): WorldTickResult = {
-    val (chunksAdded, chunksRemoved) = performChunkLoading(camera)
+  def tick(cameras: Seq[Camera]): WorldTickResult = {
+    val (chunksAdded, chunksRemoved) = performChunkLoading(cameras)
 
-    if blockUpdateTimer.tick() then {
+    val blocksUpdated = if blockUpdateTimer.tick() then {
       performBlockUpdates()
-    }
+    } else Seq.empty
     if relocateEntitiesTimer.tick() then {
       performEntityRelocation()
     }
@@ -276,26 +292,44 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
       tickEntities(ch.entities)
     }
 
+    val entityEvents = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
+    entityEvents ++= entityEventsSinceLastTick
+    entityEventsSinceLastTick.clear()
+
+    /*
+    for ch <- chunks.values do {
+      for e <- ch.entities do {
+        entityEvents += e.id -> EntityEvent.Position(e.transform.position)
+      }
+    }
+     */
+
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
-    new WorldTickResult(chunksAdded, chunksRemoved, r)
+    new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated, entityEvents.toSeq)
   }
 
-  private def performChunkLoading(camera: Camera): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
-    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(camera.view))
+  private def performChunkLoading(cameras: Seq[Camera]): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
+    if cameras.isEmpty then {
+      return (Nil, Nil)
+    }
+
+    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(cameras.head.view))
 
     val chunksToLoadPerTick = 4
     val chunksToUnloadPerTick = 6
 
     for _ <- 1 to chunksToLoadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 1 else 8
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 1 else 8
       if chunksLoading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToLoad() match {
           case Some(coords) =>
             chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
               case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
-              case None            => (Chunk.fromGenerator(coords, this, worldGenerator), true)
+              case None =>
+                val column = provideColumn(coords.getColumnRelWorld)
+                (Chunk.fromGenerator(coords, column, worldGenerator), true)
             }
           case None =>
         }
@@ -303,7 +337,7 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     }
 
     for _ <- 1 to chunksToUnloadPerTick do {
-      val maxQueueLength = if World.shouldChillChunkLoader then 2 else 10
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 2 else 10
       if chunksUnloading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToRemove() match {
           case Some(coords) =>
@@ -412,20 +446,24 @@ class World(worldProvider: WorldProvider, worldInfo: WorldInfo) extends BlockRep
     e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
   }
 
-  private val blockUpdateTimer: TickableTimer = TickableTimer(World.ticksBetweenBlockUpdates)
+  private val blockUpdateTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenBlockUpdates)
 
-  private def performBlockUpdates(): Unit = {
+  private def performBlockUpdates(): Seq[BlockRelWorld] = {
+    val recordingWorld = RecordingBlockRepository(this)
+
     val blocksToUpdateNow = ArrayBuffer.empty[BlockRelWorld]
     while !blocksToUpdate.isEmpty do {
       blocksToUpdateNow += blocksToUpdate.dequeue()
     }
     for c <- blocksToUpdateNow do {
       val block = getBlock(c).blockType
-      block.behaviour.foreach(_.onUpdated(c, block, this))
+      block.behaviour.foreach(_.onUpdated(c, block, recordingWorld))
     }
+
+    recordingWorld.collectUpdates.distinct
   }
 
-  private val relocateEntitiesTimer: TickableTimer = TickableTimer(World.ticksBetweenEntityRelocation)
+  private val relocateEntitiesTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenEntityRelocation)
 
   private def performEntityRelocation(): Unit = {
     val entList = for {

@@ -8,8 +8,8 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
+import hexacraft.server.ServerWorld
 import hexacraft.util.{Resource, Result}
-import hexacraft.world.World
 
 import org.joml.Vector2i
 
@@ -95,7 +95,7 @@ class MainWindow(
         if ticks % 60 == 0 then {
           fps = frames
           vsyncManager.handleVsync(fps)
-          World.shouldChillChunkLoader = fps < 20
+          ServerWorld.shouldChillChunkLoader = fps < 20
           frames = 0
         }
         prevTime += 1e9.toLong / 60

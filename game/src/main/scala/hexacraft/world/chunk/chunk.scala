@@ -17,8 +17,9 @@ object Chunk {
     new Chunk(ChunkData.fromNBT(loadedTag))
   }
 
-  def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) = {
-    val column = world.provideColumn(coords.getColumnRelWorld)
+  def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
+      CylinderSize
+  ) = {
     new Chunk(generator.generateChunk(coords, column))
   }
 }
@@ -45,7 +46,9 @@ class Chunk private (chunkData: ChunkData)(using CylinderSize) {
   }
 
   def removeEntity(entity: Entity): Unit = {
+    println(s"Before: ${chunkData.entities.find(_.id == entity.id)}")
     chunkData.entities -= entity
+    println(s"After: ${chunkData.entities.find(_.id == entity.id)}")
     _modCount += 1
   }
 

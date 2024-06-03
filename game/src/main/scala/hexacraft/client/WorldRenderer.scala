@@ -1,15 +1,16 @@
-package hexacraft.world.render
+package hexacraft.client
 
+import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, VAO}
-import hexacraft.shaders.{BlockShader, EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
+import hexacraft.shaders.*
 import hexacraft.util.TickableTimer
-import hexacraft.world.{BlocksInWorld, Camera, CylinderSize, World}
-import hexacraft.world.World.WorldTickResult
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityModel}
+import hexacraft.world.render.*
 
 import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
@@ -55,7 +56,6 @@ class WorldRenderer(
 
   private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
 
-  private val chunksToRender: mutable.Set[ChunkRelWorld] = mutable.HashSet.empty
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
 
   private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
@@ -78,9 +78,6 @@ class WorldRenderer(
     transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
-    chunksToRender ++= worldTickResult.chunksAdded
-    chunksToRender --= worldTickResult.chunksRemoved
-
     for coords <- worldTickResult.chunksNeedingRenderUpdate do {
       chunkRenderUpdateQueue.insert(coords)
     }
@@ -90,9 +87,6 @@ class WorldRenderer(
     }
 
     val updatedChunkData = mutable.ArrayBuffer.empty[(ChunkRelWorld, ChunkRenderData)]
-    for coords <- worldTickResult.chunksRemoved do {
-      updatedChunkData += coords -> ChunkRenderData.empty
-    }
 
     var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 4)
     while numUpdatesToPerform > 0 do {
@@ -104,6 +98,7 @@ class WorldRenderer(
               updatedChunkData += coords -> renderData
               numUpdatesToPerform -= 1
             case None =>
+              updatedChunkData += coords -> ChunkRenderData.empty
           }
         case None =>
           numUpdatesToPerform = 0
@@ -314,7 +309,7 @@ class WorldRenderer(
 
       val entityDataList: mutable.ArrayBuffer[(EntityModel, Seq[EntityShader.InstanceData])] = ArrayBuffer.empty
       for {
-        c <- chunksToRender
+        c <- world.loadedChunks
         ch <- world.getChunk(c)
       } do {
         val entities = ch.entities

@@ -1,27 +1,28 @@
-package hexacraft.game
+package hexacraft.client
 
-import hexacraft.gui.*
+import hexacraft.game.*
+import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickContext, WindowSize}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
-import hexacraft.infra.window.*
-import hexacraft.renderer.*
+import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
+import hexacraft.renderer.{Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
-import hexacraft.world.block.BlockSpec.{Offsets, Textures}
-import hexacraft.world.coord.*
-import hexacraft.world.entity.*
-import hexacraft.world.render.WorldRenderer
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
 
 import com.martomate.nbt.Nbt
-import org.joml.{Matrix4f, Vector2f, Vector3f}
-import org.zeromq.ZMQException
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
+import org.zeromq.*
+import zmq.ZError
 
+import java.util.UUID
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
-object GameScene {
+object GameClient {
   enum Event {
     case GameQuit
     case CursorCaptured
@@ -29,14 +30,26 @@ object GameScene {
   }
 
   def create(
-      net: NetworkHandler,
+      serverIp: String,
+      serverPort: Int,
+      isOnline: Boolean,
       keyboard: GameKeyboard,
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem
-  ): (GameScene, Channel.Receiver[GameScene.Event]) = {
+  ): (GameClient, Channel.Receiver[GameClient.Event]) = {
+    val socket = GameClientSocket(serverIp, serverPort)
 
-    val blockSpecs = makeBlockSpecs()
+    val worldInfo = WorldInfo.fromNBT(
+      socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asInstanceOf[Nbt.MapTag],
+      null,
+      WorldSettings.none
+    )
+
+    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+    val player = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+
+    val blockSpecs = BlockSpecs.default
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
@@ -47,25 +60,17 @@ object GameScene {
     val crosshairVAO: VAO = CrosshairShader.createVao()
     val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
-    val worldInfo = net.worldProvider.getWorldInfo
-    val world = World(net.worldProvider, worldInfo)
+    // TODO: get chunks from the server instead of generating the entire world
+    val world = ClientWorld(worldInfo)
 
     given CylinderSize = world.size
 
-    val player: Player = makePlayer(worldInfo.player, world)
-    val otherPlayer: Player = makePlayer(worldInfo.player, world)
-    val otherPlayerEntity: Entity = makeOtherPlayer(player)
-
     val worldRenderer: WorldRenderer = new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
-
-    if net.isOnline then {
-      worldRenderer.addPlayer(otherPlayerEntity)
-    }
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
     val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
-    val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world, world.collisionDetector)
+    val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world.collisionDetector)
 
     val toolbar: Toolbar = makeToolbar(player, initialWindowSize, blockTextureIndices)
     val blockInHandRenderer: GuiBlockRenderer =
@@ -76,21 +81,19 @@ object GameScene {
     val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
     val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
 
-    val (tx, rx) = Channel[GameScene.Event]()
+    val (tx, rx) = Channel[Event]()
 
-    val s = new GameScene(
-      net,
+    val client = new GameClient(
+      socket,
+      isOnline,
       audioSystem,
       tx,
       blockTextureIndices,
       crosshairShader,
       crosshairVAO,
       crosshairRenderer,
-      worldInfo,
       world,
       player,
-      otherPlayer,
-      otherPlayerEntity,
       worldRenderer,
       camera,
       playerInputHandler,
@@ -104,21 +107,17 @@ object GameScene {
       walkSoundBuffer2
     )
 
-    s.updateBlockInHandRendererContent()
-    s.setUniforms(initialWindowSize.logicalAspectRatio)
-    s.setUseMouse(true)
-    s.saveWorldInfo()
+    client.updateBlockInHandRendererContent()
+    client.setUniforms(initialWindowSize.logicalAspectRatio)
+    client.setUseMouse(true)
 
-    if net.isHosting then {
-      Thread(() => net.runServer(s)).start()
-    }
-    net.runClient()
+    Thread(() => socket.runMonitoring()).start()
 
-    (s, rx)
+    (client, rx)
   }
 
   private def makeBlockInHandRenderer(
-      world: World,
+      world: ClientWorld,
       camera: Camera,
       blockTextureIndices: Map[String, IndexedSeq[Int]],
       initialWindowSize: WindowSize
@@ -160,7 +159,7 @@ object GameScene {
       .translate(0, -0.25f, 0)
   }
 
-  private def makePlayer(playerNbt: Nbt.MapTag, world: World): Player = {
+  private def makePlayer(playerNbt: Nbt.MapTag, world: ClientWorld): Player = {
     given CylinderSize = world.size
 
     if playerNbt != null then {
@@ -168,39 +167,10 @@ object GameScene {
     } else {
       val startX = (math.random() * 100 - 50).toInt
       val startZ = (math.random() * 100 - 50).toInt
-      val startY = world.getHeight(startX, startZ) + 4
+      val startY = world.getHeight(startX, startZ).getOrElse(50) + 4
       Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
     }
   }
-
-  private def makeBlockSpecs() = Map(
-    "stone" -> BlockSpec(Textures.basic("stoneSide").withTop("stoneTop").withBottom("stoneTop")),
-    "grass" -> BlockSpec(Textures.basic("grassSide").withTop("grassTop").withBottom("dirt")),
-    "dirt" -> BlockSpec(Textures.basic("dirt")),
-    "sand" -> BlockSpec(Textures.basic("sand")),
-    "water" -> BlockSpec(Textures.basic("water")),
-    "log" -> BlockSpec(
-      Textures
-        .basic("logSide")
-        .withTop("log", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves" -> BlockSpec(Textures.basic("leaves")),
-    "planks" -> BlockSpec(
-      Textures
-        .basic("planks_side")
-        .withTop("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-        .withBottom("planks_top", Offsets(0, 1, 0, 1, 0, 1))
-    ),
-    "log_birch" -> BlockSpec(
-      Textures
-        .basic("logSide_birch")
-        .withTop("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-        .withBottom("log_birch", Offsets(0, 1, 2, 0, 1, 2))
-    ),
-    "leaves_birch" -> BlockSpec(Textures.basic("leaves_birch")),
-    "tnt" -> BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
-  )
 
   private def loadBlockTextures(blockSpecs: Map[String, BlockSpec], blockLoader: BlockTextureLoader) = {
     val textures = blockSpecs.values.map(_.textures)
@@ -208,33 +178,19 @@ object GameScene {
     val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
     blockLoader.load(squareTextureNames, triTextureNames)
   }
-
-  private def makeOtherPlayer(player: Player)(using CylinderSize) = {
-    Entity(
-      null,
-      Seq(
-        TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
-        VelocityComponent(),
-        BoundsComponent(EntityFactory.playerBounds),
-        ModelComponent(PlayerEntityModel.create("player"))
-      )
-    )
-  }
 }
 
-class GameScene private (
-    net: NetworkHandler,
+class GameClient(
+    socket: GameClientSocket,
+    isOnline: Boolean,
     audioSystem: AudioSystem,
-    eventHandler: Channel.Sender[GameScene.Event],
+    eventHandler: Channel.Sender[GameClient.Event],
     blockTextureIndices: Map[String, IndexedSeq[Int]],
     crosshairShader: CrosshairShader,
     crosshairVAO: VAO,
     crosshairRenderer: Renderer,
-    worldInfo: WorldInfo,
-    world: World,
+    world: ClientWorld,
     val player: Player,
-    val otherPlayer: Player,
-    otherPlayerEntity: Entity,
     worldRenderer: WorldRenderer,
     val camera: Camera,
     playerInputHandler: PlayerInputHandler,
@@ -246,9 +202,7 @@ class GameScene private (
     destroyBlockSoundBuffer: AudioSystem.BufferId,
     walkSoundBuffer1: AudioSystem.BufferId,
     walkSoundBuffer2: AudioSystem.BufferId
-)(using CylinderSize)
-    extends Scene {
-
+)(using CylinderSize) {
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
@@ -261,13 +215,6 @@ class GameScene private (
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val walkSoundTimer: TickableTimer = TickableTimer(20, initEnabled = false)
-
-  private def saveWorldInfo(): Unit = {
-    val worldTag = worldInfo.copy(player = player.toNBT).toNBT
-    if net.isHosting then {
-      net.worldProvider.saveWorldData(worldTag)
-    }
-  }
 
   private def setUniforms(windowAspectRatio: Float): Unit = {
     setProjMatrixForAll()
@@ -291,7 +238,7 @@ class GameScene private (
         pauseMenu.unload()
         setPaused(false)
       case QuitGame =>
-        eventHandler.send(GameScene.Event.GameQuit)
+        eventHandler.send(GameClient.Event.GameQuit)
     }
 
     overlays += pauseMenu
@@ -299,12 +246,6 @@ class GameScene private (
   }
 
   private def handleKeyPress(key: KeyboardKey): Unit = key match {
-    case KeyboardKey.Letter('B') =>
-      val newCoords = camera.blockCoords.offset(0, -4, 0)
-
-      if world.getBlock(newCoords).blockType == Block.Air then {
-        world.setBlock(newCoords, new BlockState(player.blockInHand))
-      }
     case KeyboardKey.Escape =>
       pauseGame()
     case KeyboardKey.Letter('E') =>
@@ -321,8 +262,10 @@ class GameScene private (
             isInPopup = false
             setUseMouse(true)
           case InventoryUpdated(inv) =>
-            player.inventory = inv
-            toolbar.onInventoryUpdated(inv)
+            val invNbt = socket.sendPacketAndWait(NetworkPacket.PlayerUpdatedInventory(inv))
+            val serverInv = Inventory.fromNBT(invNbt.asMap.get)
+            player.inventory = serverInv
+            toolbar.onInventoryUpdated(serverInv)
         }
 
         overlays += inventoryScene
@@ -333,6 +276,7 @@ class GameScene private (
       setUseMouse(!moveWithMouse)
     case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
+      socket.sendPacket(NetworkPacket.PlayerToggledFlying)
     case KeyboardKey.Function(7) =>
       setDebugScreenVisible(debugOverlay.isEmpty)
     case KeyboardKey.Digit(digit) =>
@@ -340,11 +284,15 @@ class GameScene private (
         setSelectedItemSlot(digit - 1)
       }
     case KeyboardKey.Letter('P') =>
-      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "player").unwrap())
+      val pos = CylCoords(player.position)
+      val spawnArgs = Seq("player", pos.x.toString, pos.y.toString, pos.z.toString)
+      socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
     case KeyboardKey.Letter('L') =>
-      world.addEntity(EntityFactory.atStartPos(CylCoords(player.position), "sheep").unwrap())
+      val pos = CylCoords(player.position)
+      val spawnArgs = Seq("sheep", pos.x.toString, pos.y.toString, pos.z.toString)
+      socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
     case KeyboardKey.Letter('K') =>
-      world.removeAllEntities()
+      socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
     case _ =>
   }
 
@@ -366,7 +314,7 @@ class GameScene private (
     setMouseCursorInvisible(moveWithMouse)
   }
 
-  override def handleEvent(event: Event): Boolean = {
+  def handleEvent(event: Event): Boolean = {
     if overlays.reverseIterator.exists(_.handleEvent(event)) then {
       return true
     }
@@ -381,7 +329,8 @@ class GameScene private (
         if !isPaused && !isInPopup && moveWithMouse then {
           val dy = -math.signum(yOffset).toInt
           if dy != 0 then {
-            setSelectedItemSlot((player.selectedItemSlot + dy + 9) % 9)
+            val slot = (player.selectedItemSlot + dy + 9) % 9
+            setSelectedItemSlot(slot)
           }
         }
       case MouseClickEvent(button, action, _, _) =>
@@ -399,6 +348,7 @@ class GameScene private (
     player.selectedItemSlot = itemSlot
     updateBlockInHandRendererContent()
     toolbar.setSelectedIndex(itemSlot)
+    socket.sendPacket(NetworkPacket.PlayerSetSelectedItemSlot(itemSlot.toShort))
   }
 
   private def updateBlockInHandRendererContent(): Unit = {
@@ -415,11 +365,14 @@ class GameScene private (
   }
 
   private def setMouseCursorInvisible(invisible: Boolean): Unit = {
-    import GameScene.Event.*
-    eventHandler.send(if invisible then CursorCaptured else CursorReleased)
+    if invisible then {
+      eventHandler.send(GameClient.Event.CursorCaptured)
+    } else {
+      eventHandler.send(GameClient.Event.CursorReleased)
+    }
   }
 
-  override def windowFocusChanged(focused: Boolean): Unit = {
+  def windowFocusChanged(focused: Boolean): Unit = {
     if !focused then {
       if !isPaused then {
         pauseGame()
@@ -427,7 +380,7 @@ class GameScene private (
     }
   }
 
-  override def windowResized(width: Int, height: Int): Unit = {
+  def windowResized(width: Int, height: Int): Unit = {
     val aspectRatio = width.toFloat / height
     camera.proj.aspect = aspectRatio
     camera.updateProjMatrix()
@@ -439,11 +392,11 @@ class GameScene private (
     crosshairShader.setWindowAspectRatio(aspectRatio)
   }
 
-  override def frameBufferResized(width: Int, height: Int): Unit = {
+  def frameBufferResized(width: Int, height: Int): Unit = {
     worldRenderer.frameBufferResized(width, height)
   }
 
-  override def render(transformation: GUITransformation)(using RenderContext): Unit = {
+  def render(transformation: GUITransformation)(using RenderContext): Unit = {
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()
@@ -502,13 +455,94 @@ class GameScene private (
       .sum
   }
 
-  override def tick(ctx: TickContext): Unit = {
-    if net.shouldLogout then {
-      eventHandler.send(GameScene.Event.GameQuit)
+  private val prio = ChunkLoadingPrioritizer(world.renderDistance)
+
+  def tick(ctx: TickContext): Unit = {
+    if socket.isDisconnected then {
+      eventHandler.send(GameClient.Event.GameQuit)
       return
     }
 
+    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+    val syncedPlayer = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+    // println(syncedPlayer.position)
+    if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
+    player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
+    val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
+    if rotationDiff.y < -math.Pi then {
+      rotationDiff.y += math.Pi * 2
+    }
+    if rotationDiff.y > math.Pi then {
+      rotationDiff.y -= math.Pi * 2
+    }
+//    player.rotation.add(rotationDiff.mul(0.1))
+    player.flying = syncedPlayer.flying
+
+    val worldEventsNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetEvents).asMap.get
+
+    val blockUpdatesNbtList = worldEventsNbtPacket.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)
+    val blockUpdates =
+      for u <- blockUpdatesNbtList
+      yield {
+        val coords = BlockRelWorld(u.getLong("coords", -1))
+        val blockId = u.getByte("id", 0)
+        val blockMeta = u.getByte("meta", 0)
+        val blockState = BlockState(Block.byId(blockId), blockMeta)
+        (coords, blockState)
+      }
+
+    for (coords, blockState) <- blockUpdates do {
+      world.setBlock(coords, blockState)
+    }
+
+    val entityEventsNbt = worldEventsNbtPacket.getMap("entity_events").get
+    val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
+    val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
+    val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
+      val event = eventNbt.getString("type").get match {
+        case "spawned"   => EntityEvent.Spawned(eventNbt.getMap("data").get)
+        case "despawned" => EntityEvent.Despawned
+        case "position"  => EntityEvent.Position(CylCoords(eventNbt.getMap("pos").get.setVector(new Vector3d)))
+        case "rotation"  => EntityEvent.Rotation(eventNbt.getMap("r").get.setVector(new Vector3d))
+        case "velocity"  => EntityEvent.Velocity(eventNbt.getMap("v").get.setVector(new Vector3d))
+      }
+
+      (UUID.fromString(id), event)
+    }
+
     updateSoundListener()
+
+    prio.tick(PosAndDir.fromCameraView(camera.view))
+    prio.nextAddableChunk match {
+      case Some(chunkCoords) =>
+        var success = true
+        val columnCoords = chunkCoords.getColumnRelWorld
+        if world.getColumn(columnCoords).isEmpty then {
+          val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
+          if columnNbt != Nbt.emptyMap then {
+            val column = ChunkColumnTerrain.create(
+              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+              Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
+            )
+            world.setColumn(columnCoords, column)
+          } else {
+            success = false
+          }
+        }
+        if success && world.getChunk(chunkCoords).isEmpty then {
+          val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
+          if chunkNbt != Nbt.emptyMap then {
+            val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
+            world.setChunk(chunkCoords, chunk)
+          } else {
+            success = false
+          }
+        }
+        if success then {
+          prio += chunkCoords
+        }
+      case None =>
+    }
 
     try {
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
@@ -521,18 +555,15 @@ class GameScene private (
           val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
 
           playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
-          if !net.isHosting then {
-            net.notifyServer(NetworkPacket.PlayerMovedMouse(mouseMovement))
-            net.notifyServer(NetworkPacket.PlayerPressedKeys(pressedKeys))
-          }
+
+          socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
+          socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
         } else {
-          if !net.isHosting then {
-            net.notifyServer(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
-            net.notifyServer(NetworkPacket.PlayerPressedKeys(Seq()))
-          }
+          socket.sendPacket(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
+          socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
         }
 
-        if !isPaused || net.isOnline then {
+        if !isPaused || isOnline then {
           playerPhysicsHandler.tick(
             player,
             maxSpeed,
@@ -540,16 +571,13 @@ class GameScene private (
             playerVolumeSubmergedInWater(player)
           )
         }
-        playerPhysicsHandler.tick(
-          otherPlayer,
-          maxSpeed,
-          playerEffectiveViscosity(otherPlayer),
-          playerVolumeSubmergedInWater(otherPlayer)
-        )
 
         if !isPaused then {
           walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
         }
+      } else {
+        socket.sendPacket(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
+        socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
       }
 
       if walkSoundTimer.tick() then {
@@ -569,26 +597,15 @@ class GameScene private (
       selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
 
       if rightMouseButtonTimer.tick() then {
-        if !net.isHosting then {
-          net.notifyServer(NetworkPacket.PlayerRightClicked)
-        }
-        performRightMouseClick(true)
+        socket.sendPacket(NetworkPacket.PlayerRightClicked)
+        performRightMouseClick()
       }
       if leftMouseButtonTimer.tick() then {
-        if !net.isHosting then {
-          net.notifyServer(NetworkPacket.PlayerLeftClicked)
-        }
-        performLeftMouseClick(true)
+        socket.sendPacket(NetworkPacket.PlayerLeftClicked)
+        performLeftMouseClick()
       }
 
-      otherPlayerEntity.transform.position = CylCoords(otherPlayer.position)
-        .offset(0, otherPlayer.bounds.bottom.toDouble, 0)
-      otherPlayerEntity.transform.rotation.set(0, math.Pi * 0.5 - otherPlayer.rotation.y, 0)
-      otherPlayerEntity.velocity.velocity.set(otherPlayer.velocity)
-
-      otherPlayerEntity.model.foreach(_.tick(otherPlayerEntity.velocity.velocity.lengthSquared() > 0.1))
-
-      val worldTickResult = world.tick(camera)
+      val worldTickResult = world.tick(Seq(camera), entityEvents)
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
 
       if debugOverlay.isDefined then {
@@ -640,19 +657,8 @@ class GameScene private (
     yield (world.getBlock(hit._1), hit._1, hit._2)
   }
 
-  def performLeftMouseClick(localPlayer: Boolean): Unit = {
-    val blockAndSide =
-      if localPlayer then selectedBlockAndSide
-      else {
-        val otherCamera = Camera(camera.proj)
-        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
-        otherCamera.updateCoords()
-        otherCamera.updateViewMatrix(camera.view.position)
-        for
-          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-        yield (world.getBlock(hit._1), hit._1, hit._2)
-      }
+  def performLeftMouseClick(): Unit = {
+    val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {
       case Some((state, coords, _)) =>
@@ -667,19 +673,8 @@ class GameScene private (
     }
   }
 
-  def performRightMouseClick(localPlayer: Boolean): Unit = {
-    val blockAndSide =
-      if localPlayer then selectedBlockAndSide
-      else {
-        val otherCamera = Camera(camera.proj)
-        otherCamera.setPositionAndRotation(otherPlayer.position, otherPlayer.rotation)
-        otherCamera.updateCoords()
-        otherCamera.updateViewMatrix(camera.view.position)
-        for
-          ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-          hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-        yield (world.getBlock(hit._1), hit._1, hit._2)
-      }
+  def performRightMouseClick(): Unit = {
+    val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {
       case Some((state, coords, Some(side))) =>
@@ -687,7 +682,7 @@ class GameScene private (
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, if localPlayer then player else otherPlayer)
+          case _         => tryPlacingBlockAt(coordsInFront, player)
         }
       case _ =>
     }
@@ -699,6 +694,10 @@ class GameScene private (
     }
 
     val blockType = player.blockInHand
+    if blockType == Block.Air then {
+      return
+    }
+
     val state = new BlockState(blockType)
 
     val collides = world.collisionDetector.collides(
@@ -728,10 +727,10 @@ class GameScene private (
     world.setBlock(coords, BlockState.Air)
   }
 
-  override def unload(): Unit = {
-    setMouseCursorInvisible(false)
+  def unload(): Unit = {
+    socket.close()
 
-    saveWorldInfo()
+    setMouseCursorInvisible(false)
 
     for s <- overlays do {
       s.unload()
@@ -747,7 +746,94 @@ class GameScene private (
     if debugOverlay.isDefined then {
       debugOverlay.get.unload()
     }
+  }
+}
 
-    net.unload()
+class GameClientSocket(serverIp: String, serverPort: Int) {
+  private val context = ZContext()
+  context.setUncaughtExceptionHandler((thread, exc) => println(s"Uncaught exception: $exc"))
+  context.setNotificationExceptionHandler((thread, exc) => println(s"Notification: $exc"))
+
+  private val socket = context.createSocket(SocketType.DEALER)
+
+  private val clientId = (new Random().nextInt(1000000) + 1000000).toString
+
+  socket.setIdentity(clientId.getBytes)
+  socket.setSendTimeOut(3000)
+  socket.setReceiveTimeOut(3000)
+  socket.setReconnectIVL(-1)
+  socket.setHeartbeatIvl(200)
+  socket.setHeartbeatTimeout(1000)
+  socket.connect(s"tcp://$serverIp:$serverPort")
+
+  private var monitoringThread: Thread = null.asInstanceOf[Thread]
+
+  private var _disconnected: Boolean = false
+  def isDisconnected: Boolean = _disconnected
+
+  def runMonitoring(): Unit = {
+    if monitoringThread != null then {
+      throw new Exception("May only run monitoring once")
+    }
+    monitoringThread = Thread.currentThread()
+
+    val monitor = ZMonitor(context, socket)
+    monitor.add(ZMonitor.Event.ALL)
+    monitor.verbose(false)
+    monitor.start()
+
+    while !context.isClosed do {
+      try {
+        val event = monitor.nextEvent(100)
+        if event != null then {
+          if event.`type` == ZMonitor.Event.DISCONNECTED then {
+            _disconnected = true
+          }
+        }
+      } catch {
+        case e: ZMQException =>
+          e.getErrorCode match {
+            case ZError.EINTR => // noop
+            case _            => throw e
+          }
+        case e => throw e
+      }
+    }
+
+    monitor.close()
+  }
+
+  def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
+    val message = packet.serialize()
+
+    if !socket.send(message) then {
+      val err = socket.errno()
+      throw new ZMQException("Could not send message", err)
+    }
+  }
+
+  private def queryRaw(message: Array[Byte]): Array[Byte] = this.synchronized {
+    if !socket.send(message) then {
+      val err = socket.errno()
+      throw new ZMQException("Could not send message", err)
+    }
+
+    val response = socket.recv(0)
+    if response == null then {
+      val err = socket.errno()
+      throw new ZMQException("Could not receive message", err)
+    }
+
+    response
+  }
+
+  def sendPacketAndWait(packet: NetworkPacket): Nbt = {
+    val response = queryRaw(packet.serialize())
+    val (_, tag) = Nbt.fromBinary(response)
+    tag
+  }
+
+  def close(): Unit = {
+    context.close()
   }
 }

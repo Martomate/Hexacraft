@@ -11,5 +11,9 @@ trait BlocksInWorld {
 
   def getBlock(coords: BlockRelWorld): BlockState
 
+  def loadedChunks: Seq[ChunkRelWorld]
+}
+
+trait BlocksInWorldExtended extends BlocksInWorld {
   def provideColumn(coords: ColumnRelWorld): ChunkColumnTerrain
 }
