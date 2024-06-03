@@ -3,6 +3,7 @@ package hexacraft.client
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.math.bits.Int12
 import hexacraft.util.Result
+import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
@@ -40,6 +41,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   val collisionDetector = new CollisionDetector(this)
   private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
+
+  private val entitiesToSpawnLater = mutable.ArrayBuffer.empty[Entity]
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
@@ -232,6 +235,16 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       }
     }
 
+    {
+      val entities = entitiesToSpawnLater.toSeq
+      entitiesToSpawnLater.clear()
+      for e <- entities do {
+        if addEntity(e).isEmpty then {
+          entitiesToSpawnLater += e
+        }
+      }
+    }
+
     for (id, event) <- entityEvents do {
       allEntitiesById.get(id) match {
         case Some(ent) =>
@@ -245,25 +258,31 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
               println(s"Client: despawned entity $id")
             case EntityEvent.Position(pos) =>
               e.transform.position = pos
+            case EntityEvent.Rotation(r) =>
+              e.transform.rotation.set(r)
+            case EntityEvent.Velocity(v) =>
+              e.velocity.velocity.set(v)
           }
         case None =>
           event match {
             case EntityEvent.Spawned(data) =>
-              val spawnedEntity = for {
+              val entity = for {
                 e <- EntityFactory
                   .fromNbt(data)
                   .mapErr(err => s"Could not create entity. Error: $err")
-                c <- Result
-                  .fromOption(addEntity(e))
-                  .mapErr(_ => s"Could not spawn entity because the chunk was not loaded")
-              } yield (c, e)
+              } yield e
 
-              spawnedEntity match {
-                case Result.Ok((c, e)) =>
-                  allEntitiesById(id) = (c, e)
-                  println(s"Client: spawned entity $id")
-                case Result.Err(error) =>
-                  println(error)
+              entity match {
+                case Ok(e) =>
+                  addEntity(e) match {
+                    case Some(c) =>
+                      allEntitiesById(id) = (c, e)
+                      println(s"Client: spawned entity $id")
+                    case None =>
+                      entitiesToSpawnLater += e
+                  }
+                case Err(e) =>
+                  println(e)
               }
             case _ =>
               println(s"Received entity event for an unknown entity (id: $id, event: $event)")

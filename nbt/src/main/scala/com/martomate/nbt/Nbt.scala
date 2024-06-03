@@ -30,7 +30,9 @@ object Nbt {
 
   case class DoubleTag(v: Double) extends Nbt
 
-  case class StringTag(v: String) extends Nbt
+  case class StringTag(v: String) extends Nbt {
+    require(v != null)
+  }
 
   case class ByteArrayTag(vs: ArraySeq.ofByte) extends Nbt
   object ByteArrayTag {

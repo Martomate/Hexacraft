@@ -100,6 +100,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             maxSpeed,
             isInFluid
           )
+          p.mouseMovement.set(0)
 
           playerPhysicsHandler.tick(
             player,
@@ -132,6 +133,14 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
 
       for p <- players.values do {
         p.entityEventsWaitingToBeSent ++= tickResult.entityEvents
+
+        for p2 <- players.values do {
+          if p != p2 then {
+            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Position(p2.entity.transform.position)
+            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
+            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.velocity.velocity)
+          }
+        }
       }
     } catch {
       case e: ZMQException => println(e)
@@ -314,7 +323,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       }
       val entity = Entity(
         Entity.getNextId,
-        null,
+        "player",
         Seq(
           TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
           VelocityComponent(),
@@ -323,7 +332,16 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         )
       )
       val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
-      players(clientId) = PlayerData(player, entity, camera)
+      val playerData = PlayerData(player, entity, camera)
+      players(clientId) = playerData
+
+      for otherPlayer <- players do {
+        val (playerId, otherData) = otherPlayer
+        if playerId != clientId then {
+          otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
+          playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(otherData.entity.toNBT)
+        }
+      }
     }
     val playerData = players(clientId)
     val PlayerData(player, _, playerCamera) = playerData
@@ -346,7 +364,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         Some(world.worldInfo.toNBT)
       case GetPlayerState =>
         Some(player.toNBT)
-      case GetBlockUpdates =>
+      case GetEvents =>
         val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
         playerData.blockUpdatesWaitingToBeSent.clear()
 
@@ -358,8 +376,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             "meta" -> Nbt.ByteTag(bs.metadata)
           )
 
-        Some(Nbt.makeMap("updates" -> Nbt.ListTag(updatesNbt)))
-      case GetEntityStates =>
+        // TODO: must use synchronization on this ArrayBuffer
         val entityEvents = playerData.entityEventsWaitingToBeSent.toSeq
         playerData.entityEventsWaitingToBeSent.clear()
 
@@ -367,21 +384,29 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
 
         val events = for (_, e) <- entityEvents yield {
           val name = e match {
-            case EntityEvent.Spawned(data) => "spawned"
-            case EntityEvent.Despawned     => "despawned"
-            case EntityEvent.Position(pos) => "position"
+            case EntityEvent.Spawned(_)  => "spawned"
+            case EntityEvent.Despawned   => "despawned"
+            case EntityEvent.Position(_) => "position"
+            case EntityEvent.Rotation(_) => "rotation"
+            case EntityEvent.Velocity(_) => "velocity"
           }
 
           val extraFields: Seq[(String, Nbt)] = e match {
             case EntityEvent.Spawned(data) => Seq("data" -> data)
             case EntityEvent.Despawned     => Seq()
             case EntityEvent.Position(pos) => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
+            case EntityEvent.Rotation(r)   => Seq("r" -> Nbt.makeVectorTag(r))
+            case EntityEvent.Velocity(v)   => Seq("v" -> Nbt.makeVectorTag(v))
           }
 
           Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))
         }
 
-        Some(Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
+        val response = Nbt.emptyMap
+          .withField("block_updates", Nbt.ListTag(updatesNbt))
+          .withField("entity_events", Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
+
+        Some(response)
       case PlayerRightClicked =>
         performRightMouseClick(player, playerCamera)
         None
@@ -398,7 +423,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         player.inventory = inv
         Some(inv.toNBT)
       case PlayerMovedMouse(dist) =>
-        playerData.mouseMovement = dist
+        playerData.mouseMovement.add(dist)
         None
       case PlayerPressedKeys(keys) =>
         playerData.pressedKeys = keys
