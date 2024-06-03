@@ -1,5 +1,6 @@
 package hexacraft.world
 
+import hexacraft.server.ServerWorld
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}

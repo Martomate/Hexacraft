@@ -1,5 +1,6 @@
-package hexacraft.game
+package hexacraft.main
 
+import hexacraft.game.{FakeBlockTextureLoader, GameKeyboard}
 import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
 import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem
@@ -10,7 +11,6 @@ import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkData, SparseChunkStorage}
 import hexacraft.world.coord.BlockRelChunk
-
 import munit.FunSuite
 import org.joml.{Vector2f, Vector2i}
 

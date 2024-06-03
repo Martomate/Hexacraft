@@ -1,6 +1,7 @@
-package hexacraft.game
+package hexacraft.client
 
 import hexacraft.game
+import hexacraft.game.*
 import hexacraft.game.NetworkPacket.PlayerUpdatedInventory
 import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickContext, WindowSize}
 import hexacraft.gui.comp.{Component, GUITransformation}
@@ -9,13 +10,21 @@ import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.renderer.{Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, TickableTimer}
-import hexacraft.world.{Camera, CameraProjection, ChunkLoadingPrioritizer, ClientWorld, CylinderSize, EntityEvent, HexBox, Inventory, Player, PosAndDir, WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.block.BlockSpec.{Offsets, Textures}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, NeighborOffsets}
-import hexacraft.world.entity.{BoundsComponent, Entity, EntityFactory, ModelComponent, PlayerEntityModel, TransformComponent, VelocityComponent}
-import hexacraft.world.render.WorldRenderer
+import hexacraft.world.entity.{
+  BoundsComponent,
+  Entity,
+  EntityFactory,
+  ModelComponent,
+  PlayerEntityModel,
+  TransformComponent,
+  VelocityComponent
+}
+
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*

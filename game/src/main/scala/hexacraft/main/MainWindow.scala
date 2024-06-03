@@ -8,8 +8,8 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
+import hexacraft.server.ServerWorld
 import hexacraft.util.{Resource, Result}
-import hexacraft.world.ServerWorld
 
 import org.joml.Vector2i
 

@@ -1,15 +1,16 @@
-package hexacraft.world.render
+package hexacraft.client
 
+import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, VAO}
-import hexacraft.shaders.{BlockShader, EntityShader, SelectedBlockShader, SkyShader, WorldCombinerShader}
+import hexacraft.shaders.*
 import hexacraft.util.TickableTimer
-import hexacraft.world.{BlocksInWorld, Camera, ClientWorld, CylinderSize}
-import hexacraft.world.ClientWorld.WorldTickResult
+import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityModel}
+import hexacraft.world.render.*
 
 import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils

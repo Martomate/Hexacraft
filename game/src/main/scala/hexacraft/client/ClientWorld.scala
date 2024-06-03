@@ -1,8 +1,9 @@
-package hexacraft.world
+package hexacraft.client
 
+import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.math.bits.Int12
 import hexacraft.util.Result
-import hexacraft.world.ClientWorld.WorldTickResult
+import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*

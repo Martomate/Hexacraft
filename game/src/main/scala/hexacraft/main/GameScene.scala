@@ -1,9 +1,12 @@
-package hexacraft.game
+package hexacraft.main
 
-import hexacraft.game.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
+import hexacraft.client.GameClient
+import hexacraft.game.{BlockTextureLoader, GameKeyboard}
 import hexacraft.gui.{Event, RenderContext, Scene, TickContext, WindowSize}
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.audio.AudioSystem
+import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
+import hexacraft.server.GameServer
 import hexacraft.util.Channel
 import hexacraft.world.WorldProvider
 
