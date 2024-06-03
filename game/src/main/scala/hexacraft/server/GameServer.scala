@@ -1,5 +1,6 @@
-package hexacraft.game
+package hexacraft.server
 
+import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler, Ray, RayTracer}
 import hexacraft.util.Result
 import hexacraft.world.*
 import hexacraft.world.EntityEvent.Despawned

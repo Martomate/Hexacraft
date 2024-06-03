@@ -45,6 +45,8 @@ class RootArchTest extends FunSuite {
   test("packages should not depend on too many other packages") {
     val root = "root"
     val Game = "Game"
+    val Server = "Server"
+    val Client = "Client"
     val GUI = "GUI"
     val Infra = "Infra"
     val Main = "Main"
@@ -68,6 +70,8 @@ class RootArchTest extends FunSuite {
       .ignoreDependencyToScala()
       .layer(root, "hexacraft")
       .layer(Game, "hexacraft.game..")
+      .layer(Client, "hexacraft.client..")
+      .layer(Server, "hexacraft.server..")
       .layer(GUI, "hexacraft.gui..")
       .layer(Infra, "hexacraft.infra..")
       .layer(Main, "hexacraft.main..")
@@ -93,11 +97,31 @@ class RootArchTest extends FunSuite {
       )
       .where(
         Game,
-        _.mayOnlyAccessLayers(root, Text, GUI, Infra, Math, Renderer, Shaders, Physics, Util, World, JOML, Nbt, ZeroMQ)
+        _.mayOnlyAccessLayers(Text, GUI, Infra, Math, Renderer, Shaders, Physics, Util, World, JOML, Nbt, ZeroMQ)
       )
+      .where(
+        Client,
+        _.mayOnlyAccessLayers(
+          Game,
+          Text,
+          GUI,
+          Infra,
+          Math,
+          Renderer,
+          Shaders,
+          Physics,
+          Util,
+          World,
+          JOML,
+          LWJGL,
+          Nbt,
+          ZeroMQ
+        )
+      )
+      .where(Server, _.mayOnlyAccessLayers(Game, Infra, Math, Physics, Util, World, JOML, Nbt, ZeroMQ))
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Shaders, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt))
-      .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, GUI, Renderer, Util, World, JOML))
+      .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML))
       .where(Math, _.mayOnlyAccessLayers(Util, JOML))
       .where(Physics, _.mayOnlyAccessLayers(Util, JOML))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
