@@ -127,18 +127,22 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       for coords <- tickResult.blocksUpdated do {
         val blockState = world.getBlock(coords)
         for p <- players.values do {
-          p.blockUpdatesWaitingToBeSent += coords -> blockState
+          p.blockUpdatesWaitingToBeSent.synchronized {
+            p.blockUpdatesWaitingToBeSent += coords -> blockState
+          }
         }
       }
 
       for p <- players.values do {
-        p.entityEventsWaitingToBeSent ++= tickResult.entityEvents
+        p.entityEventsWaitingToBeSent.synchronized {
+          p.entityEventsWaitingToBeSent ++= tickResult.entityEvents
 
-        for p2 <- players.values do {
-          if p != p2 then {
-            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Position(p2.entity.transform.position)
-            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
-            p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.velocity.velocity)
+          for p2 <- players.values do {
+            if p != p2 then {
+              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Position(p2.entity.transform.position)
+              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
+              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.velocity.velocity)
+            }
           }
         }
       }
@@ -171,7 +175,9 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
 
   private def notifyPlayersAboutBlockUpdate(coords: BlockRelWorld, blockState: BlockState): Unit = {
     for (_, playerData) <- players do {
-      playerData.blockUpdatesWaitingToBeSent += coords -> blockState
+      playerData.blockUpdatesWaitingToBeSent.synchronized {
+        playerData.blockUpdatesWaitingToBeSent += coords -> blockState
+      }
     }
   }
 
@@ -338,8 +344,12 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       for otherPlayer <- players do {
         val (playerId, otherData) = otherPlayer
         if playerId != clientId then {
-          otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
-          playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(otherData.entity.toNBT)
+          otherData.entityEventsWaitingToBeSent.synchronized {
+            otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
+          }
+          playerData.entityEventsWaitingToBeSent.synchronized {
+            playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(otherData.entity.toNBT)
+          }
         }
       }
     }
@@ -365,8 +375,11 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       case GetPlayerState =>
         Some(player.toNBT)
       case GetEvents =>
-        val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
-        playerData.blockUpdatesWaitingToBeSent.clear()
+        val updates = playerData.blockUpdatesWaitingToBeSent.synchronized {
+          val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
+          playerData.blockUpdatesWaitingToBeSent.clear()
+          updates
+        }
 
         val updatesNbt =
           for (coords, bs) <- updates
@@ -376,9 +389,11 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             "meta" -> Nbt.ByteTag(bs.metadata)
           )
 
-        // TODO: must use synchronization on this ArrayBuffer
-        val entityEvents = playerData.entityEventsWaitingToBeSent.toSeq
-        playerData.entityEventsWaitingToBeSent.clear()
+        val entityEvents = playerData.entityEventsWaitingToBeSent.synchronized {
+          val entityEvents = playerData.entityEventsWaitingToBeSent.toSeq
+          playerData.entityEventsWaitingToBeSent.clear()
+          entityEvents
+        }
 
         val ids = entityEvents.map((id, _) => Nbt.StringTag(id.toString))
 
