@@ -17,14 +17,14 @@ case class Segment(start: Int, length: Int) {
 
 class SegmentSet extends mutable.Iterable[Segment] {
 
-  private val segments: mutable.TreeSet[Segment] = mutable.TreeSet.empty { (s1, s2) =>
+  private val segments: mutable.TreeSet[Segment] = mutable.TreeSet.empty(using { (s1, s2) =>
     if (s1.overlaps(s2)) 0
     else s1.start - s2.start
-  }
-  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty { (s1, s2) =>
+  })
+  private val segmentsContain: mutable.TreeMap[Segment, Segment] = mutable.TreeMap.empty(using { (s1, s2) =>
     if (s2.contains(s1)) 0
     else s1.start - s2.start
-  }
+  })
   private var _totalLength = 0
 
   protected def _add(seg: Segment): Unit = {
@@ -121,7 +121,7 @@ class KeyedSegmentSet[T] extends SegmentSet {
     }
   }
 
-  private val invMap: mutable.TreeMap[Segment, T] = mutable.TreeMap.empty(invMapOrder)
+  private val invMap: mutable.TreeMap[Segment, T] = mutable.TreeMap.empty(using invMapOrder)
   private val segmentsPerKey: mutable.HashMap[T, Int] = mutable.HashMap.empty
 
   override protected def _add(seg: Segment): Unit = {

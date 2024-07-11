@@ -4,7 +4,7 @@ import scala.util.Properties.isMac
 
 ThisBuild / organization := "com.martomate"
 ThisBuild / version := "0.14"
-ThisBuild / scalaVersion := "3.4.0"
+ThisBuild / scalaVersion := "3.4.2"
 ThisBuild / publishArtifact := false
 ThisBuild / logBuffered := false
 ThisBuild / fork := true
@@ -14,7 +14,8 @@ val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ 
     module.organization + "." + module.name + "-" + module.revision + "." + artifact.extension
   },
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
-  javacOptions ++= Seq("-release", "11")
+  javacOptions ++= Seq("-release", "11"),
+  libraryDependencies += "org.scala-lang" %% "scala2-library-tasty-experimental" % scalaVersion.value
 )
 
 lazy val hexacraft = project
@@ -99,5 +100,6 @@ lazy val game = project
     ),
     packJarNameConvention := "full",
     packGenerateMakefile := false,
-    packArchiveExcludes := Seq("VERSION", "bin/hexacraft-mac.bat")
+    packArchiveExcludes := Seq("VERSION", "bin/hexacraft-mac.bat"),
+    packExcludeJars := Seq(".*scala2-library-tasty.*\\.jar")
   )

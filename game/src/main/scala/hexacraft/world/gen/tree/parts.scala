@@ -70,7 +70,7 @@ case class BlobGenerator(
   override def generate(): Seq[Offset] = {
     val seen = mutable.HashSet.empty[Offset]
     val result = mutable.HashSet.empty[Offset]
-    val edge = mutable.PriorityQueue.empty[(Float, Offset)](Ordering.by(-_._1))
+    val edge = mutable.PriorityQueue.empty[(Float, Offset)](using Ordering.by(-_._1))
     var time = 0.0f
 
     val start = Offset(0, 0, 0)

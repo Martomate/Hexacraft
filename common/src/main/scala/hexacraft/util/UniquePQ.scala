@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 class UniquePQ[S](func: S => Double, ord: Ordering[Double]) { // PQ with fast lookup and resorting
   private type DS = (Double, S)
 
-  private val pq: mutable.PriorityQueue[DS] = mutable.PriorityQueue.empty(ord.on(_._1))
+  private val pq: mutable.PriorityQueue[DS] = mutable.PriorityQueue.empty(using ord.on(_._1))
   private val set: mutable.Set[S] = mutable.HashSet.empty
 
   def enqueue(elem: S): Unit = {

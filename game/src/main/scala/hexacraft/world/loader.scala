@@ -18,8 +18,8 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
   private val furthestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => distSq(origin, c))
   private val closestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => -distSq(origin, c))
 
-  private val addableChunks: mutable.PriorityQueue[ChunkRelWorld] = mutable.PriorityQueue.empty(closestFirst)
-  private val removableChunks: mutable.PriorityQueue[ChunkRelWorld] = mutable.PriorityQueue.empty(furthestFirst)
+  private val addableChunks: mutable.PriorityQueue[ChunkRelWorld] = mutable.PriorityQueue.empty(using closestFirst)
+  private val removableChunks: mutable.PriorityQueue[ChunkRelWorld] = mutable.PriorityQueue.empty(using furthestFirst)
 
   private val maxDistSqInBlocks: Double = (maxDist * 16) * (maxDist * 16)
 
