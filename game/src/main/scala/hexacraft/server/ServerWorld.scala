@@ -433,17 +433,17 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private def tickEntity(e: Entity): Unit = {
     e.ai match {
       case Some(ai) =>
-        ai.tick(this, e.transform, e.velocity, e.boundingBox)
-        e.velocity.velocity.add(ai.acceleration)
+        ai.tick(this, e.transform, e.motion, e.boundingBox)
+        e.motion.velocity.add(ai.acceleration)
       case None =>
     }
 
-    e.velocity.velocity.x *= 0.9
-    e.velocity.velocity.z *= 0.9
+    e.motion.velocity.x *= 0.9
+    e.motion.velocity.z *= 0.9
 
-    entityPhysicsSystem.update(e.transform, e.velocity, e.boundingBox)
+    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
 
-    e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
+    e.model.foreach(_.tick(e.motion.velocity.lengthSquared() > 0.1))
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenBlockUpdates)

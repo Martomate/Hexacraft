@@ -4,7 +4,7 @@ import hexacraft.server.ServerWorld
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import hexacraft.world.entity.{BoundsComponent, Entity, TransformComponent, VelocityComponent}
+import hexacraft.world.entity.{BoundsComponent, Entity, TransformComponent, MotionComponent}
 
 import munit.FunSuite
 
@@ -130,7 +130,7 @@ class WorldTest extends FunSuite {
     val entity = Entity(
       UUID.randomUUID(),
       "scorpion",
-      Seq(TransformComponent(entityPosition), VelocityComponent(), BoundsComponent(HexBox(0.5f, 0, 0.5f)))
+      Seq(TransformComponent(entityPosition), MotionComponent(), BoundsComponent(HexBox(0.5f, 0, 0.5f)))
     )
 
     world.addEntity(entity)

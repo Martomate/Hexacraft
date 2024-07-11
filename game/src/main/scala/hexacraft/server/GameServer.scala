@@ -117,9 +117,8 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         entity.transform.position = CylCoords(player.position)
           .offset(0, player.bounds.bottom.toDouble, 0)
         entity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
-        entity.velocity.velocity.set(player.velocity)
-
-        entity.model.foreach(_.tick(entity.velocity.velocity.lengthSquared() > 0.1))
+        entity.motion.velocity.set(player.velocity)
+        entity.motion.flying = player.flying
       }
 
       val tickResult = world.tick(players.values.map(_.camera).toSeq)
@@ -141,7 +140,8 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             if p != p2 then {
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Position(p2.entity.transform.position)
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
-              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.velocity.velocity)
+              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.motion.velocity)
+              p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Flying(p2.entity.motion.flying)
             }
           }
         }
@@ -332,9 +332,8 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         "player",
         Seq(
           TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
-          VelocityComponent(),
-          BoundsComponent(EntityFactory.playerBounds),
-          ModelComponent(PlayerEntityModel.create("player"))
+          MotionComponent(),
+          BoundsComponent(EntityFactory.playerBounds)
         )
       )
       val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
@@ -404,6 +403,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             case EntityEvent.Position(_) => "position"
             case EntityEvent.Rotation(_) => "rotation"
             case EntityEvent.Velocity(_) => "velocity"
+            case EntityEvent.Flying(_)   => "flying"
           }
 
           val extraFields: Seq[(String, Nbt)] = e match {
@@ -412,6 +412,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
             case EntityEvent.Position(pos) => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
             case EntityEvent.Rotation(r)   => Seq("r" -> Nbt.makeVectorTag(r))
             case EntityEvent.Velocity(v)   => Seq("v" -> Nbt.makeVectorTag(v))
+            case EntityEvent.Flying(f)     => Seq("f" -> Nbt.ByteTag(f))
           }
 
           Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))

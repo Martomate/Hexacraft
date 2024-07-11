@@ -11,4 +11,5 @@ enum EntityEvent {
   case Position(pos: CylCoords)
   case Rotation(v: Vector3d)
   case Velocity(v: Vector3d)
+  case Flying(f: Boolean)
 }

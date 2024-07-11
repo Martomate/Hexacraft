@@ -22,9 +22,9 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
     .map(_.asInstanceOf[TransformComponent])
     .orNull
 
-  val velocity: VelocityComponent = components
-    .find(_.isInstanceOf[VelocityComponent])
-    .map(_.asInstanceOf[VelocityComponent])
+  val motion: MotionComponent = components
+    .find(_.isInstanceOf[MotionComponent])
+    .map(_.asInstanceOf[MotionComponent])
     .orNull
 
   val boundingBox: HexBox = components
@@ -46,7 +46,7 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
         "type" -> Nbt.StringTag(typeName),
         "id" -> Nbt.StringTag(id.toString),
         "pos" -> Nbt.makeVectorTag(transform.position.toVector3d),
-        "velocity" -> Nbt.makeVectorTag(velocity.velocity),
+        "velocity" -> Nbt.makeVectorTag(motion.velocity),
         "rotation" -> Nbt.makeVectorTag(transform.rotation)
       )
       .withOptionalField("ai", ai.map(_.toNBT))
@@ -71,7 +71,7 @@ object EntityFactory {
       case "player" =>
         val components = Seq(
           TransformComponent.fromNBT(tag),
-          VelocityComponent.fromNBT(tag),
+          MotionComponent.fromNBT(tag),
           BoundsComponent(playerBounds),
           ModelComponent(PlayerEntityModel.create("player"))
         )
@@ -80,7 +80,7 @@ object EntityFactory {
       case "sheep" =>
         val components = Seq(
           TransformComponent.fromNBT(tag),
-          VelocityComponent.fromNBT(tag),
+          MotionComponent.fromNBT(tag),
           AiComponent.fromNBT(tag),
           BoundsComponent(sheepBounds),
           ModelComponent(SheepEntityModel.create("sheep"))

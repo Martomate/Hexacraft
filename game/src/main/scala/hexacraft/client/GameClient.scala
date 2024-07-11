@@ -159,19 +159,6 @@ object GameClient {
       .translate(0, -0.25f, 0)
   }
 
-  private def makePlayer(playerNbt: Nbt.MapTag, world: ClientWorld): Player = {
-    given CylinderSize = world.size
-
-    if playerNbt != null then {
-      Player.fromNBT(playerNbt)
-    } else {
-      val startX = (math.random() * 100 - 50).toInt
-      val startZ = (math.random() * 100 - 50).toInt
-      val startY = world.getHeight(startX, startZ).getOrElse(50) + 4
-      Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
-    }
-  }
-
   private def loadBlockTextures(blockSpecs: Map[String, BlockSpec], blockLoader: BlockTextureLoader) = {
     val textures = blockSpecs.values.map(_.textures)
     val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
@@ -458,93 +445,94 @@ class GameClient(
   private val prio = ChunkLoadingPrioritizer(world.renderDistance)
 
   def tick(ctx: TickContext): Unit = {
-    if socket.isDisconnected then {
-      eventHandler.send(GameClient.Event.GameQuit)
-      return
-    }
-
-    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
-    val syncedPlayer = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
-    // println(syncedPlayer.position)
-    if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
-    player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
-    val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
-    if rotationDiff.y < -math.Pi then {
-      rotationDiff.y += math.Pi * 2
-    }
-    if rotationDiff.y > math.Pi then {
-      rotationDiff.y -= math.Pi * 2
-    }
-//    player.rotation.add(rotationDiff.mul(0.1))
-    player.flying = syncedPlayer.flying
-
-    val worldEventsNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetEvents).asMap.get
-
-    val blockUpdatesNbtList = worldEventsNbtPacket.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)
-    val blockUpdates =
-      for u <- blockUpdatesNbtList
-      yield {
-        val coords = BlockRelWorld(u.getLong("coords", -1))
-        val blockId = u.getByte("id", 0)
-        val blockMeta = u.getByte("meta", 0)
-        val blockState = BlockState(Block.byId(blockId), blockMeta)
-        (coords, blockState)
-      }
-
-    for (coords, blockState) <- blockUpdates do {
-      world.setBlock(coords, blockState)
-    }
-
-    val entityEventsNbt = worldEventsNbtPacket.getMap("entity_events").get
-    val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
-    val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
-    val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
-      val event = eventNbt.getString("type").get match {
-        case "spawned"   => EntityEvent.Spawned(eventNbt.getMap("data").get)
-        case "despawned" => EntityEvent.Despawned
-        case "position"  => EntityEvent.Position(CylCoords(eventNbt.getMap("pos").get.setVector(new Vector3d)))
-        case "rotation"  => EntityEvent.Rotation(eventNbt.getMap("r").get.setVector(new Vector3d))
-        case "velocity"  => EntityEvent.Velocity(eventNbt.getMap("v").get.setVector(new Vector3d))
-      }
-
-      (UUID.fromString(id), event)
-    }
-
-    updateSoundListener()
-
-    prio.tick(PosAndDir.fromCameraView(camera.view))
-    prio.nextAddableChunk match {
-      case Some(chunkCoords) =>
-        var success = true
-        val columnCoords = chunkCoords.getColumnRelWorld
-        if world.getColumn(columnCoords).isEmpty then {
-          val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
-          if columnNbt != Nbt.emptyMap then {
-            val column = ChunkColumnTerrain.create(
-              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
-              Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
-            )
-            world.setColumn(columnCoords, column)
-          } else {
-            success = false
-          }
-        }
-        if success && world.getChunk(chunkCoords).isEmpty then {
-          val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
-          if chunkNbt != Nbt.emptyMap then {
-            val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
-            world.setChunk(chunkCoords, chunk)
-          } else {
-            success = false
-          }
-        }
-        if success then {
-          prio += chunkCoords
-        }
-      case None =>
-    }
-
     try {
+      if socket.isDisconnected then {
+        eventHandler.send(GameClient.Event.GameQuit)
+        return
+      }
+
+      val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+      val syncedPlayer = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+      // println(syncedPlayer.position)
+      if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
+      player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
+      val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
+      if rotationDiff.y < -math.Pi then {
+        rotationDiff.y += math.Pi * 2
+      }
+      if rotationDiff.y > math.Pi then {
+        rotationDiff.y -= math.Pi * 2
+      }
+      //    player.rotation.add(rotationDiff.mul(0.1))
+      player.flying = syncedPlayer.flying
+
+      val worldEventsNbtPacket = socket.sendPacketAndWait(NetworkPacket.GetEvents).asMap.get
+
+      val blockUpdatesNbtList = worldEventsNbtPacket.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)
+      val blockUpdates =
+        for u <- blockUpdatesNbtList
+        yield {
+          val coords = BlockRelWorld(u.getLong("coords", -1))
+          val blockId = u.getByte("id", 0)
+          val blockMeta = u.getByte("meta", 0)
+          val blockState = BlockState(Block.byId(blockId), blockMeta)
+          (coords, blockState)
+        }
+
+      for (coords, blockState) <- blockUpdates do {
+        world.setBlock(coords, blockState)
+      }
+
+      val entityEventsNbt = worldEventsNbtPacket.getMap("entity_events").get
+      val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
+      val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
+      val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
+        val event = eventNbt.getString("type").get match {
+          case "spawned"   => EntityEvent.Spawned(eventNbt.getMap("data").get)
+          case "despawned" => EntityEvent.Despawned
+          case "position"  => EntityEvent.Position(CylCoords(eventNbt.getMap("pos").get.setVector(new Vector3d)))
+          case "rotation"  => EntityEvent.Rotation(eventNbt.getMap("r").get.setVector(new Vector3d))
+          case "velocity"  => EntityEvent.Velocity(eventNbt.getMap("v").get.setVector(new Vector3d))
+          case "flying"    => EntityEvent.Flying(eventNbt.getBoolean("f", false))
+        }
+
+        (UUID.fromString(id), event)
+      }
+
+      updateSoundListener()
+
+      prio.tick(PosAndDir.fromCameraView(camera.view))
+      prio.nextAddableChunk match {
+        case Some(chunkCoords) =>
+          var success = true
+          val columnCoords = chunkCoords.getColumnRelWorld
+          if world.getColumn(columnCoords).isEmpty then {
+            val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
+            if columnNbt != Nbt.emptyMap then {
+              val column = ChunkColumnTerrain.create(
+                ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+                Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
+              )
+              world.setColumn(columnCoords, column)
+            } else {
+              success = false
+            }
+          }
+          if success && world.getChunk(chunkCoords).isEmpty then {
+            val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
+            if chunkNbt != Nbt.emptyMap then {
+              val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
+              world.setChunk(chunkCoords, chunk)
+            } else {
+              success = false
+            }
+          }
+          if success then {
+            prio += chunkCoords
+          }
+        case None =>
+      }
+
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
@@ -621,8 +609,10 @@ class GameClient(
         s.tick(ctx)
       }
     } catch {
-      case e: ZMQException => println(e)
-      case e               => throw e
+      case e: ZMQException =>
+        println(e)
+        eventHandler.send(GameClient.Event.GameQuit)
+      case e => throw e
     }
   }
 

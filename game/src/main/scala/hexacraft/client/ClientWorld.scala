@@ -241,6 +241,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       for e <- entities do {
         if addEntity(e).isEmpty then {
           entitiesToSpawnLater += e
+          println(s"Client: not ready to spawn entity ${e.id}")
+        } else {
+          println(s"Client: finally spawned entity ${e.id}")
         }
       }
     }
@@ -261,7 +264,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
             case EntityEvent.Rotation(r) =>
               e.transform.rotation.set(r)
             case EntityEvent.Velocity(v) =>
-              e.velocity.velocity.set(v)
+              e.motion.velocity.set(v)
+            case EntityEvent.Flying(f) =>
+              e.motion.flying = f
           }
         case None =>
           event match {
@@ -312,17 +317,19 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   private def tickEntity(e: Entity): Unit = {
     e.ai match {
       case Some(ai) =>
-        ai.tick(this, e.transform, e.velocity, e.boundingBox)
-        e.velocity.velocity.add(ai.acceleration)
+        ai.tick(this, e.transform, e.motion, e.boundingBox)
+        e.motion.velocity.add(ai.acceleration)
       case None =>
     }
 
-    e.velocity.velocity.x *= 0.9
-    e.velocity.velocity.z *= 0.9
+    e.motion.velocity.x *= 0.9
+    e.motion.velocity.z *= 0.9
 
-    entityPhysicsSystem.update(e.transform, e.velocity, e.boundingBox)
+    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
 
-    e.model.foreach(_.tick(e.velocity.velocity.lengthSquared() > 0.1))
+    val vel = e.motion.velocity
+    val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
+    e.model.foreach(_.tick(horizontalSpeedSq > 0.1))
   }
 
   private def requestRenderUpdateForNeighborChunks(coords: ChunkRelWorld): Unit = {
