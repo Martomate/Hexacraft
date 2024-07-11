@@ -3,8 +3,8 @@ import sbt.*
 object Dependencies {
   object versions {
     val lwjgl = "3.3.3"
-    val joml = "1.10.5"
-    val zeromq = "0.5.4"
+    val joml = "1.10.6"
+    val zeromq = "0.6.0"
   }
 
   def lwjglDependency(name: String) = {
@@ -32,10 +32,10 @@ object Dependencies {
   lazy val FlowNbt = "com.flowpowered" % "flow-nbt" % "1.0.0"
   lazy val ZeroMQ = "org.zeromq" % "jeromq" % versions.zeromq
 
-  lazy val MUnit = "org.scalameta" %% "munit" % "0.7.29" % "test"
-  lazy val Mockito = "org.scalatestplus" %% "mockito-5-8" % "3.2.17.0" % "test"
+  lazy val MUnit = "org.scalameta" %% "munit" % "0.7.29" % Test
+  lazy val Mockito = "org.scalatestplus" %% "mockito-5-8" % "3.2.17.0" % Test
   lazy val ArchUnit = Seq(
-    "com.tngtech.archunit" % "archunit" % "1.2.1" % "test",
-    "org.slf4j" % "slf4j-nop" % "2.0.11" % "test" // Needed for ArchUnit
+    "com.tngtech.archunit" % "archunit" % "1.3.0" % Test,
+    "org.slf4j" % "slf4j-nop" % "2.0.13" % Test // Needed for ArchUnit
   )
 }
