@@ -32,7 +32,7 @@ object Dependencies {
   lazy val FlowNbt = "com.flowpowered" % "flow-nbt" % "1.0.0"
   lazy val ZeroMQ = "org.zeromq" % "jeromq" % versions.zeromq
 
-  lazy val MUnit = "org.scalameta" %% "munit" % "0.7.29" % Test
+  lazy val MUnit = "org.scalameta" %% "munit" % "1.0.0" % Test
   lazy val Mockito = "org.scalatestplus" %% "mockito-5-8" % "3.2.17.0" % Test
   lazy val ArchUnit = Seq(
     "com.tngtech.archunit" % "archunit" % "1.3.0" % Test,
