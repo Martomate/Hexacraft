@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.client
 
 class FakeBlockTextureLoader extends BlockTextureLoader:
   override def load(squareTextureNames: Seq[String], triTextureNames: Seq[String]): BlockTextureLoader.LoadedImages =

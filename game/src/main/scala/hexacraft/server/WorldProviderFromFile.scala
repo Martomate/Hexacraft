@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.server
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.world.{MigrationManager, WorldInfo, WorldProvider, WorldSettings}

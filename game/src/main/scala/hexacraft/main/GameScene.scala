@@ -1,7 +1,7 @@
 package hexacraft.main
 
-import hexacraft.client.GameClient
-import hexacraft.game.{BlockTextureLoader, GameKeyboard}
+import hexacraft.client.{BlockTextureLoader, GameClient}
+import hexacraft.game.GameKeyboard
 import hexacraft.gui.{Event, RenderContext, Scene, TickContext, WindowSize}
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.audio.AudioSystem

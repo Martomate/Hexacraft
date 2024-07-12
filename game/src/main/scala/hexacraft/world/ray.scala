@@ -1,8 +1,7 @@
-package hexacraft.game
+package hexacraft.world
 
-import hexacraft.game.PointHexagon.{Region, Slice}
 import hexacraft.math.MathUtils.oppositeSide
-import hexacraft.world.{Camera, CylinderSize, HexBox}
+import hexacraft.world.PointHexagon.{Region, Slice}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.*
 

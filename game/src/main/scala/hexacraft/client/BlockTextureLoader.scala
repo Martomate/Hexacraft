@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.client
 
 import hexacraft.infra.fs.Bundle
 import hexacraft.renderer.PixelArray

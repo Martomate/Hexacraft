@@ -1,8 +1,8 @@
-package hexacraft.game
+package hexacraft.client
 
 import hexacraft.gui.Event
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.window.{KeyAction, KeyboardKey, KeyMods, MouseAction, MouseButton}
+import hexacraft.infra.window.*
 import hexacraft.util.{Channel, Tracker}
 
 import munit.FunSuite

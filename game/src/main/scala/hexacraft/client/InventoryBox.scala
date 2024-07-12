@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.client
 
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}

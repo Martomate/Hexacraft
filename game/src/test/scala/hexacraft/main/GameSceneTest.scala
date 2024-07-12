@@ -1,6 +1,7 @@
 package hexacraft.main
 
-import hexacraft.game.{FakeBlockTextureLoader, GameKeyboard}
+import hexacraft.client.FakeBlockTextureLoader
+import hexacraft.game.GameKeyboard
 import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
 import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem

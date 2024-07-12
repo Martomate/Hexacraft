@@ -95,10 +95,7 @@ class RootArchTest extends FunSuite {
           "org.lwjgl.stb.."
         )*
       )
-      .where(
-        Game,
-        _.mayOnlyAccessLayers(Text, GUI, Infra, Math, Renderer, Shaders, Physics, Util, World, JOML, Nbt, ZeroMQ)
-      )
+      .where(Game, _.mayOnlyAccessLayers(Infra, Physics, World, JOML, Nbt))
       .where(
         Client,
         _.mayOnlyAccessLayers(
@@ -121,7 +118,7 @@ class RootArchTest extends FunSuite {
       .where(Server, _.mayOnlyAccessLayers(Game, Infra, Math, Physics, Util, World, JOML, Nbt, ZeroMQ))
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Shaders, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt))
-      .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML))
+      .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML, Nbt))
       .where(Math, _.mayOnlyAccessLayers(Util, JOML))
       .where(Physics, _.mayOnlyAccessLayers(Util, JOML))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))

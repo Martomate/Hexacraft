@@ -1,4 +1,4 @@
-package hexacraft.game
+package hexacraft.client
 
 import hexacraft.gui.comp.GUITransformation
 import hexacraft.renderer.*
