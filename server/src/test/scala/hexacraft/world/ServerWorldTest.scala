@@ -4,13 +4,13 @@ import hexacraft.server.ServerWorld
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
-import hexacraft.world.entity.{BoundsComponent, Entity, TransformComponent, MotionComponent}
+import hexacraft.world.entity.{BoundsComponent, Entity, MotionComponent, TransformComponent}
 
 import munit.FunSuite
 
 import java.util.UUID
 
-class WorldTest extends FunSuite {
+class ServerWorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
   test("the world should not crash") {

@@ -3,17 +3,17 @@ version: '3'
 tasks:
   create-launcher-jar:
     cmds:
-      - sbt clean game/pack
+      - sbt clean main/pack
       - defer: rm TmpManifest.mf
       - echo -n "Class-Path:" > TmpManifest.mf
-      - (cd game/target/pack && find lib -type file | awk '{print "  " $0}') >> TmpManifest.mf
-      - mkdir -p game/src/pack
-      - jar -c -f game/src/pack/hexacraft-launcher.jar -m TmpManifest.mf --main-class hexacraft.main.Main
+      - (cd main/target/pack && find lib -type file | awk '{print "  " $0}') >> TmpManifest.mf
+      - mkdir -p main/src/pack
+      - jar -c -f main/src/pack/hexacraft-launcher.jar -m TmpManifest.mf --main-class hexacraft.main.Main
   remove-launcher-jar:
     cmds:
-      - rm game/src/pack/hexacraft-launcher.jar
+      - rm main/src/pack/hexacraft-launcher.jar
   package:
     cmds:
       - task: create-launcher-jar
       - defer: { task: remove-launcher-jar }
-      - sbt clean game/packArchiveZip
+      - sbt clean main/packArchiveZip

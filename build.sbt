@@ -20,7 +20,7 @@ val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ 
 
 lazy val hexacraft = project
   .in(file("."))
-  .aggregate(common, nbt, window, audio, fs, gpu, system, game)
+  .aggregate(common, nbt, window, audio, fs, gpu, system, game, client, server, main)
 
 lazy val common = project
   .in(file("common"))
@@ -80,11 +80,46 @@ lazy val game = project
   .in(file("game"))
   .dependsOn(common, nbt, window, audio, fs, gpu, system)
   .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= LwjglSystem ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito)
+  )
+
+lazy val client = project
+  .in(file("client"))
+  .dependsOn(common, game)
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= Seq(Joml, ZeroMQ) :+ MUnit
+  )
+
+lazy val server = project
+  .in(file("server"))
+  .dependsOn(common, game % "compile->compile;test->test")
+  .settings(commonSettings*)
+  .settings(
+    libraryDependencies ++= Seq(Joml, ZeroMQ) :+ MUnit
+  )
+
+lazy val main = project
+  .in(file("main"))
+  .dependsOn(
+    common,
+    game % "compile->compile;test->test",
+    client % "compile->compile;test->test",
+    server,
+    nbt,
+    window,
+    audio,
+    fs,
+    gpu,
+    system
+  )
+  .settings(commonSettings*)
   .settings( // General
     javaOptions ++= (if (isMac) Some("-XstartOnFirstThread") else None)
   )
   .settings( // Dependencies
-    libraryDependencies ++= LwjglSystem ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito) ++ ArchUnit
+    libraryDependencies ++= Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito) ++ ArchUnit
   )
   .enablePlugins(PackPlugin)
   .settings( // Packaging (using sbt-pack)
