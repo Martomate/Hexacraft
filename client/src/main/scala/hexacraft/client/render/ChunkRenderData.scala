@@ -1,4 +1,4 @@
-package hexacraft.world.render
+package hexacraft.client.render
 
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.chunk.LocalBlockState

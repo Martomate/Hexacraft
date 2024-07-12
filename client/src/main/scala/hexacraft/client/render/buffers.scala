@@ -1,4 +1,4 @@
-package hexacraft.world.render
+package hexacraft.client.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}

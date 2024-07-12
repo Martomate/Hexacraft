@@ -1,4 +1,4 @@
-package hexacraft.world.render
+package hexacraft.client.render
 
 import hexacraft.util.UniquePQ
 import hexacraft.world.{Camera, CylinderSize, PosAndDir}

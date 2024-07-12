@@ -1,8 +1,9 @@
 package hexacraft.client
 
 import hexacraft.client.ClientWorld.WorldTickResult
+import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, TextureArray, VAO}
+import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
 import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
@@ -10,7 +11,6 @@ import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityModel}
-import hexacraft.world.render.*
 
 import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
@@ -321,11 +321,13 @@ class WorldRenderer(
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
-      for (texture, partLists) <- entityDataList.groupBy(_._1.texture) do {
+      for (textureName, partLists) <- entityDataList.groupBy(_._1.textureName) do {
         val data = partLists.flatMap(_._2)
 
         entityRenderers(side).setInstanceData(data.size): buf =>
           data.foreach(_.fill(buf))
+
+        val texture = TextureSingle.getTexture("textures/entities/" + textureName)
 
         texture.bind()
         sh.setTextureSize(texture.width)

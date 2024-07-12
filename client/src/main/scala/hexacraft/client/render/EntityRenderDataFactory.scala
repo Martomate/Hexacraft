@@ -1,4 +1,4 @@
-package hexacraft.world.render
+package hexacraft.client.render
 
 import hexacraft.shaders.EntityShader
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}

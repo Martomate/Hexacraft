@@ -9,7 +9,7 @@ class RootArchTest extends FunSuite {
   import ArchUnitHelpers.*
 
   private val allClasses = new ClassFileImporter()
-    .importPackages("hexacraft..")
+    .importPackages("hexacraft..", "com.martomate..")
     .ignoreScalaTests()
     .ignoreMTests()
 
@@ -22,7 +22,7 @@ class RootArchTest extends FunSuite {
   }
 
   test("Nbt library should only be used in Nbt module") {
-    Packages("com.flowpowered.nbt..").assertOnlyUsedIn() // not used in any package, only in nbt module
+    Packages("com.flowpowered.nbt..").assertOnlyUsedIn("com.martomate.nbt")
   }
 
   test("Glfw library should only be used in Glfw wrapper") {
@@ -125,7 +125,7 @@ class RootArchTest extends FunSuite {
       .where(Shaders, _.mayOnlyAccessLayers(Infra, Renderer, World, LWJGL, JOML))
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, Shaders, JOML))
       .where(Util, _.mayOnlyAccessLayers(JOML, Nbt))
-      .where(World, _.mayOnlyAccessLayers(Math, Infra, Renderer, Shaders, Physics, Util, JOML, LWJGL, Nbt))
+      .where(World, _.mayOnlyAccessLayers(Infra, Math, Physics, Util, JOML, Nbt))
       .check(allClasses)
   }
 

@@ -1,6 +1,5 @@
 package hexacraft.world.entity
 
-import hexacraft.renderer.TextureSingle
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.BlockCoords
 
@@ -22,10 +21,6 @@ class PlayerEntityModel(
 
   override def tick(walking: Boolean): Unit = {
     animation.tick(walking)
-  }
-
-  override def texture: TextureSingle = {
-    TextureSingle.getTexture("textures/entities/" + textureName)
   }
 }
 

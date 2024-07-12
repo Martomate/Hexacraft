@@ -1,4 +1,4 @@
-package hexacraft.world.render
+package hexacraft.client.render
 
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.ChunkRelWorld

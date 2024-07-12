@@ -78,7 +78,7 @@ lazy val system = project
 
 lazy val game = project
   .in(file("game"))
-  .dependsOn(common, nbt, window, audio, fs, gpu, system)
+  .dependsOn(common, nbt, window, fs)
   .settings(commonSettings*)
   .settings(
     libraryDependencies ++= LwjglSystem ++ Seq(Joml, ZeroMQ) ++ Seq(MUnit, Mockito)
@@ -86,7 +86,7 @@ lazy val game = project
 
 lazy val client = project
   .in(file("client"))
-  .dependsOn(common, game)
+  .dependsOn(game, audio, gpu)
   .settings(commonSettings*)
   .settings(
     libraryDependencies ++= Seq(Joml, ZeroMQ) :+ MUnit
@@ -94,7 +94,7 @@ lazy val client = project
 
 lazy val server = project
   .in(file("server"))
-  .dependsOn(common, game % "compile->compile;test->test")
+  .dependsOn(game % "compile->compile;test->test")
   .settings(commonSettings*)
   .settings(
     libraryDependencies ++= Seq(Joml, ZeroMQ) :+ MUnit
@@ -103,15 +103,9 @@ lazy val server = project
 lazy val main = project
   .in(file("main"))
   .dependsOn(
-    common,
     game % "compile->compile;test->test",
     client % "compile->compile;test->test",
     server,
-    nbt,
-    window,
-    audio,
-    fs,
-    gpu,
     system
   )
   .settings(commonSettings*)
