@@ -44,12 +44,18 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
   private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(collisionDetector)
 
-  private def saveWorldInfo(): Unit = {
-    val worldTag = world.worldInfo.copy(player = players.values.head.player.toNBT).toNBT
-    worldProvider.saveWorldData(worldTag)
+  private def savePlayers(): Unit = {
+    for d <- players.values do {
+      val p = d.player
+      worldProvider.savePlayerData(p.toNBT, p.id)
+    }
   }
 
-  def playerEffectiveViscosity(player: Player): Double = {
+  private def saveWorldInfo(): Unit = {
+    worldProvider.saveWorldData(world.worldInfo.toNBT)
+  }
+
+  private def playerEffectiveViscosity(player: Player): Double = {
     player.bounds
       .cover(CylCoords(player.position))
       .map(c => c -> world.getBlock(c))
@@ -151,7 +157,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
     }
   }
 
-  def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
+  private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
     val blockAndSide =
       val otherCamera = Camera(playerCamera.proj)
       otherCamera.setPositionAndRotation(player.position, player.rotation)
@@ -180,7 +186,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
     }
   }
 
-  def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
+  private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
     val blockAndSide =
       val otherCamera = Camera(playerCamera.proj)
       otherCamera.setPositionAndRotation(player.position, player.rotation)
@@ -240,6 +246,7 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
   def unload(): Unit = {
     stop()
 
+    savePlayers()
     saveWorldInfo()
 
     world.unload()
@@ -300,61 +307,89 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
   private def handlePacket(clientId: Long, packet: NetworkPacket, socket: ZMQ.Socket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
-    if !players.contains(clientId) then {
-      if !isOnline && players.nonEmpty then {
-        return None // only one player may join an offline world
-      }
+    packet match {
+      case Login(id, name) =>
+        if !players.contains(clientId) then {
+          if !isOnline && players.nonEmpty then {
+            return Some(
+              Nbt.makeMap(
+                "success" -> Nbt.ByteTag(false),
+                "error" -> Nbt.StringTag("only one player may join an offline world")
+              )
+            )
+          }
 
-      val player = if !isOnline then {
-        val playerNbt = worldProvider.getWorldInfo.player
-        if playerNbt != null then {
-          Player.fromNBT(playerNbt)
-        } else {
-          makePlayer(world)
-        }
-      } else {
-        if players.isEmpty then {
-          // TODO: temporary solution
-          val playerNbt = worldProvider.getWorldInfo.player
-          if playerNbt != null then {
-            Player.fromNBT(playerNbt)
+          if players.map(_._2.player.id).exists(_ == id) then {
+            return Some(
+              Nbt.makeMap(
+                "success" -> Nbt.ByteTag(false),
+                "error" -> Nbt.StringTag("a player has already logged in with that id")
+              )
+            )
+          }
+
+          val playerNbt = worldProvider.loadPlayerData(id).orNull
+          val player = if playerNbt != null then {
+            Player.fromNBT(id, playerNbt)
           } else {
-            makePlayer(world)
+            makePlayer(id, world)
           }
-        } else {
-          // TODO: load the player info from disk somehow
-          makePlayer(world)
-        }
-      }
-      val entity = Entity(
-        Entity.getNextId,
-        "player",
-        Seq(
-          TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
-          MotionComponent(),
-          BoundsComponent(EntityFactory.playerBounds)
-        )
-      )
-      val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
-      val playerData = PlayerData(player, entity, camera)
-      players(clientId) = playerData
+          worldProvider.savePlayerData(player.toNBT, player.id)
 
-      for otherPlayer <- players do {
-        val (playerId, otherData) = otherPlayer
-        if playerId != clientId then {
-          otherData.entityEventsWaitingToBeSent.synchronized {
-            otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
+          val entity = Entity(
+            Entity.getNextId,
+            "player",
+            Seq(
+              TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
+              MotionComponent(),
+              BoundsComponent(EntityFactory.playerBounds)
+            )
+          )
+          val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
+          val playerData = PlayerData(player, entity, camera)
+          players(clientId) = playerData
+
+          for otherPlayer <- players do {
+            val (playerId, otherData) = otherPlayer
+            if playerId != clientId then {
+              otherData.entityEventsWaitingToBeSent.synchronized {
+                otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
+              }
+              playerData.entityEventsWaitingToBeSent.synchronized {
+                playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
+                  otherData.entity.toNBT
+                )
+              }
+            }
           }
-          playerData.entityEventsWaitingToBeSent.synchronized {
-            playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(otherData.entity.toNBT)
-          }
+          println("Received login message from a new client")
+          return Some(Nbt.makeMap("success" -> Nbt.ByteTag(true)))
+        } else {
+          println("Received login message from a logged in client")
+          return Some(
+            Nbt.makeMap(
+              "success" -> Nbt.ByteTag(false),
+              "error" -> Nbt.StringTag("already logged in") // Maybe it's better to ignore the message?
+            )
+          )
         }
-      }
+      case _ =>
+        if !players.contains(clientId) then {
+          println("Received message from unknown client")
+          return None // the client is not logged in
+        }
     }
+
     val playerData = players(clientId)
     val PlayerData(player, _, playerCamera) = playerData
 
     packet match {
+      case Login(_, _) => None // already handled above
+      case Logout =>
+        worldProvider.savePlayerData(player.toNBT, player.id)
+        world.removeEntity(playerData.entity)
+        players.remove(clientId)
+        None
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
         Some(info.toNBT)
@@ -469,13 +504,13 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
     }
   }
 
-  private def makePlayer(world: ServerWorld): Player = {
+  private def makePlayer(id: UUID, world: ServerWorld): Player = {
     given CylinderSize = world.size
 
-    val startX = (math.random() * 100 - 50).toInt
-    val startZ = (math.random() * 100 - 50).toInt
+    val startX = (math.random() * 10 - 5).toInt
+    val startZ = (math.random() * 10 - 5).toInt
     val startY = world.getHeight(startX, startZ) + 4
-    Player.atStartPos(BlockCoords(startX, startY, startZ).toCylCoords)
+    Player.atStartPos(id, BlockCoords(startX, startY, startZ).toCylCoords)
   }
 
   private def stop(): Unit = {

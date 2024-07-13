@@ -7,10 +7,11 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.CursorMode
 import hexacraft.server.WorldProviderFromFile
-import hexacraft.util.Channel
+import hexacraft.util.{Channel, Result}
 import hexacraft.world.WorldSettings
 
 import java.io.File
+import java.util.UUID
 
 object MainRouter {
   enum Event {
@@ -108,7 +109,15 @@ class MainRouter(
       rx.onEvent {
         case Event.Join(address, port) =>
           println(s"Will connect to: $address at port $port")
-          route(SceneRoute.Game(null, WorldSettings.none, isHosting = false, isOnline = true, (address, port)))
+          route(
+            SceneRoute.Game(
+              null,
+              WorldSettings.none,
+              isHosting = false,
+              isOnline = true,
+              (address, port)
+            )
+          )
         case Event.GoBack => route(SceneRoute.Multiplayer)
       }
 
@@ -122,7 +131,9 @@ class MainRouter(
       rx.onEvent {
         case Event.Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
-          route(SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null))
+          route(
+            SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null)
+          )
         case Event.GoBack => route(SceneRoute.Multiplayer)
       }
 
@@ -135,6 +146,7 @@ class MainRouter(
       val (serverIp, serverPort) = if serverLocation != null then serverLocation else ("localhost", 1234)
 
       val client = GameScene.ClientParams(
+        loadUserId(),
         serverIp,
         serverPort,
         isOnline,
@@ -148,18 +160,41 @@ class MainRouter(
       } else {
         None
       }
-      val (scene, rx) = GameScene.create(client, server)
+      GameScene.create(client, server) match {
+        case Result.Ok(res) =>
+          val (scene, rx) = res
 
-      rx.onEvent {
-        case GameScene.Event.GameQuit =>
-          route(SceneRoute.Main)
-          System.gc()
-        case GameScene.Event.CursorCaptured =>
-          window.setCursorMode(CursorMode.Disabled)
-        case GameScene.Event.CursorReleased =>
-          window.setCursorMode(CursorMode.Normal)
+          rx.onEvent {
+            case GameScene.Event.GameQuit =>
+              route(SceneRoute.Main)
+              System.gc()
+            case GameScene.Event.CursorCaptured =>
+              window.setCursorMode(CursorMode.Disabled)
+            case GameScene.Event.CursorReleased =>
+              window.setCursorMode(CursorMode.Normal)
+          }
+
+          scene
+        case Result.Err(message) =>
+          println(message)
+          createScene(SceneRoute.Main, route, requestQuit)
       }
+  }
 
-      scene
+  private def loadUserId(): UUID = {
+    val path = new File(saveFolder, "userid.txt").toPath
+    val userId = fs.readAllBytes(path) match {
+      case Result.Ok(bytes) => UUID.fromString(String(bytes))
+      case Result.Err(e) =>
+        e match {
+          case FileSystem.Error.FileNotFound =>
+            val userId = UUID.randomUUID()
+            fs.writeBytes(path, userId.toString.getBytes)
+            userId
+          case FileSystem.Error.Unknown(e) =>
+            throw new RuntimeException(s"Failed to read userid file", e)
+        }
+    }
+    userId
   }
 }

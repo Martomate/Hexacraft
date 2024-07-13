@@ -7,7 +7,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.renderer.{Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{Channel, TickableTimer}
+import hexacraft.util.{Channel, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
@@ -30,6 +30,7 @@ object GameClient {
   }
 
   def create(
+      playerId: UUID,
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
@@ -37,8 +38,15 @@ object GameClient {
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem
-  ): (GameClient, Channel.Receiver[GameClient.Event]) = {
+  ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(serverIp, serverPort)
+
+    val loginResponse = socket.sendPacketAndWait(NetworkPacket.Login(playerId, "Some name")).asMap.get
+    val loginSuccessful = loginResponse.getBoolean("success", false)
+    if !loginSuccessful then {
+      val errorMessage = loginResponse.getString("error", "")
+      return Result.Err(s"failed to login: $errorMessage")
+    }
 
     val worldInfo = WorldInfo.fromNBT(
       socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asInstanceOf[Nbt.MapTag],
@@ -47,7 +55,7 @@ object GameClient {
     )
 
     val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
-    val player = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+    val player = Player.fromNBT(playerId, playerNbt.asInstanceOf[Nbt.MapTag])
 
     val blockSpecs = BlockSpecs.default
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
@@ -113,7 +121,7 @@ object GameClient {
 
     Thread(() => socket.runMonitoring()).start()
 
-    (client, rx)
+    Result.Ok((client, rx))
   }
 
   private def makeBlockInHandRenderer(
@@ -225,11 +233,16 @@ class GameClient(
         pauseMenu.unload()
         setPaused(false)
       case QuitGame =>
-        eventHandler.send(GameClient.Event.GameQuit)
+        logout()
     }
 
     overlays += pauseMenu
     setPaused(true)
+  }
+
+  private def logout(): Unit = {
+    socket.sendPacket(NetworkPacket.Logout)
+    eventHandler.send(GameClient.Event.GameQuit)
   }
 
   private def handleKeyPress(key: KeyboardKey): Unit = key match {
@@ -409,7 +422,7 @@ class GameClient(
     crosshairRenderer.render(crosshairVAO, crosshairVAO.maxCount)
   }
 
-  def playerEffectiveViscosity(player: Player): Double = {
+  private def playerEffectiveViscosity(player: Player): Double = {
     player.bounds
       .cover(CylCoords(player.position))
       .map(c => c -> world.getBlock(c))
@@ -447,12 +460,12 @@ class GameClient(
   def tick(ctx: TickContext): Unit = {
     try {
       if socket.isDisconnected then {
-        eventHandler.send(GameClient.Event.GameQuit)
+        logout()
         return
       }
 
       val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
-      val syncedPlayer = Player.fromNBT(playerNbt.asInstanceOf[Nbt.MapTag])
+      val syncedPlayer = Player.fromNBT(player.id, playerNbt.asInstanceOf[Nbt.MapTag])
       // println(syncedPlayer.position)
       if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
       player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
@@ -611,7 +624,7 @@ class GameClient(
     } catch {
       case e: ZMQException =>
         println(e)
-        eventHandler.send(GameClient.Event.GameQuit)
+        logout()
       case e => throw e
     }
   }
@@ -647,7 +660,7 @@ class GameClient(
     yield (world.getBlock(hit._1), hit._1, hit._2)
   }
 
-  def performLeftMouseClick(): Unit = {
+  private def performLeftMouseClick(): Unit = {
     val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {
@@ -663,7 +676,7 @@ class GameClient(
     }
   }
 
-  def performRightMouseClick(): Unit = {
+  private def performRightMouseClick(): Unit = {
     val blockAndSide = selectedBlockAndSide
 
     blockAndSide match {

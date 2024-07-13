@@ -111,6 +111,9 @@ object Nbt {
     def getShortArray(name: String): Option[ArraySeq.ofShort] =
       getTag(name).map(tag => tag.asInstanceOf[Nbt.ShortArrayTag].vs)
 
+    def getIntArray(name: String): Option[ArraySeq.ofInt] =
+      getTag(name).map(tag => tag.asInstanceOf[Nbt.IntArrayTag].vs)
+
     def setVector(vector: Vector3d): Vector3d =
       val x = getDouble("x", vector.x)
       val y = getDouble("y", vector.y)

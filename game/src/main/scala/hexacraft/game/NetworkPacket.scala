@@ -6,18 +6,27 @@ import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
 import com.martomate.nbt.Nbt
 import org.joml.Vector2f
 
+import java.nio.ByteBuffer
+import java.util.UUID
+import scala.collection.immutable.ArraySeq
+
 enum ServerCommand {
   case SpawnEntity(entityName: String, position: CylCoords)
   case KillAllEntities
 }
 
 enum NetworkPacket {
+  case Login(id: UUID, name: String)
+  case Logout
+
   case GetWorldInfo
   case LoadChunkData(coords: ChunkRelWorld)
   case LoadColumnData(coords: ColumnRelWorld)
   case LoadWorldData
+
   case GetPlayerState
   case GetEvents
+
   case PlayerRightClicked
   case PlayerLeftClicked
   case PlayerToggledFlying
@@ -25,6 +34,7 @@ enum NetworkPacket {
   case PlayerUpdatedInventory(inventory: Inventory)
   case PlayerMovedMouse(distance: Vector2f)
   case PlayerPressedKeys(keys: Seq[GameKeyboard.Key])
+
   case RunCommand(command: String, args: Seq[String])
 }
 
@@ -34,6 +44,22 @@ object NetworkPacket {
     val root = packetDataTag.asInstanceOf[Nbt.MapTag]
 
     packetName match {
+      case "login" =>
+        val idBytes = root.getByteArray("id").get
+        val name = root.getString("name").get
+
+        if idBytes.length != 16 then {
+          throw new RuntimeException("UUIDs must be 16 bytes")
+        }
+
+        val bb = ByteBuffer.wrap(idBytes.unsafeArray)
+        val msb = bb.getLong
+        val lsb = bb.getLong
+        val id = new UUID(msb, lsb)
+
+        NetworkPacket.Login(id, name)
+      case "logout" =>
+        NetworkPacket.Logout
       case "get_world_info" =>
         NetworkPacket.GetWorldInfo
       case "load_chunk_data" =>
@@ -81,6 +107,8 @@ object NetworkPacket {
   extension (p: NetworkPacket) {
     def serialize(): Array[Byte] =
       val name: String = p match {
+        case NetworkPacket.Login(_, _)                  => "login"
+        case NetworkPacket.Logout                       => "logout"
         case NetworkPacket.GetWorldInfo                 => "get_world_info"
         case NetworkPacket.LoadChunkData(_)             => "load_chunk_data"
         case NetworkPacket.LoadColumnData(_)            => "load_column_data"
@@ -98,11 +126,21 @@ object NetworkPacket {
       }
 
       val tag: Nbt.MapTag = p match {
-        case NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData | NetworkPacket.PlayerRightClicked |
-            NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState | NetworkPacket.PlayerToggledFlying |
-            NetworkPacket.GetEvents =>
+        case NetworkPacket.Logout | NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData |
+            NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
+            NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
           Nbt.emptyMap
 
+        case NetworkPacket.Login(id, name) =>
+          val bb = ByteBuffer.allocate(16)
+          bb.putLong(id.getMostSignificantBits)
+          bb.putLong(id.getLeastSignificantBits)
+          val idBytes = ArraySeq.ofByte(bb.array)
+
+          Nbt.makeMap(
+            "id" -> Nbt.ByteArrayTag(idBytes),
+            "name" -> Nbt.StringTag(name)
+          )
         case NetworkPacket.LoadChunkData(coords) =>
           Nbt.makeMap(
             "coords" -> Nbt.LongTag(coords.value)

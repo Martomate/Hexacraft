@@ -7,8 +7,10 @@ import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
-import hexacraft.util.Channel
+import hexacraft.util.{Channel, Result}
 import hexacraft.world.WorldProvider
+
+import java.util.UUID
 
 object GameScene {
   enum Event {
@@ -18,6 +20,7 @@ object GameScene {
   }
 
   case class ClientParams(
+      playerId: UUID,
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
@@ -28,12 +31,16 @@ object GameScene {
   )
   case class ServerParams(worldProvider: WorldProvider)
 
-  def create(c: ClientParams, serverParams: Option[ServerParams]): (GameScene, Channel.Receiver[GameScene.Event]) = {
+  def create(
+      c: ClientParams,
+      serverParams: Option[ServerParams]
+  ): Result[(GameScene, Channel.Receiver[GameScene.Event]), String] = {
     val (tx, rx) = Channel[GameScene.Event]()
 
     val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldProvider))
 
     val (client, clientEvents) = GameClient.create(
+      c.playerId,
       c.serverIp,
       c.serverPort,
       c.isOnline,
@@ -41,7 +48,10 @@ object GameScene {
       c.textureLoader,
       c.initialWindowSize,
       c.audioSystem
-    )
+    ) match {
+      case Result.Ok(res)      => res
+      case Result.Err(message) => return Result.Err(s"failed to start game: $message")
+    }
 
     clientEvents.onEvent {
       case GameClient.Event.GameQuit       => tx.send(GameQuit)
@@ -49,7 +59,7 @@ object GameScene {
       case GameClient.Event.CursorReleased => tx.send(CursorReleased)
     }
 
-    (new GameScene(client, server), rx)
+    Result.Ok((new GameScene(client, server), rx))
   }
 }
 
