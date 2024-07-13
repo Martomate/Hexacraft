@@ -7,13 +7,19 @@ import hexacraft.infra.window.WindowSystem
 import hexacraft.world.WorldSettings
 
 import java.io.File
+import java.nio.file.Files
 
 object Main {
   def main(args: Array[String]): Unit = {
     val isDebugStr = System.getProperty("hexacraft.debug")
     val isDebug = isDebugStr != null && isDebugStr == "true"
 
-    val saveFolder: File = new File(OSUtils.appdataPath, ".hexacraft")
+    val useTempSaveFolder = System.getProperty("hexacraft.tempSaveFolder")
+    val saveFolder: File = if useTempSaveFolder != null then {
+      Files.createTempDirectory("hexacraft").toFile
+    } else {
+      new File(OSUtils.appdataPath, ".hexacraft")
+    }
 
     val errorHandler = MainErrorLogger.create(!isDebug, saveFolder)
 
