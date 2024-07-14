@@ -5,7 +5,7 @@ import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
-import hexacraft.util.TickableTimer
+import hexacraft.util.{TickableTimer, UniqueQueue}
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
@@ -58,6 +58,7 @@ class WorldRenderer(
 
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
 
+  private val chunkRemovedQueue: UniqueQueue[ChunkRelWorld] = new UniqueQueue
   private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
   private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
 
@@ -78,17 +79,28 @@ class WorldRenderer(
     transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
+    val updatedChunkData = mutable.ArrayBuffer.empty[(ChunkRelWorld, ChunkRenderData)]
+
     for coords <- worldTickResult.chunksNeedingRenderUpdate do {
-      chunkRenderUpdateQueue.insert(coords)
+      if world.getChunk(coords).isEmpty then {
+        chunkRemovedQueue.enqueue(coords)
+      } else {
+        chunkRenderUpdateQueue.insert(coords)
+      }
     }
 
     if chunkRenderUpdateQueueReorderingTimer.tick() then {
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
 
-    val updatedChunkData = mutable.ArrayBuffer.empty[(ChunkRelWorld, ChunkRenderData)]
+    var numClearsToPerform = math.min(chunkRemovedQueue.size, 8)
+    while numClearsToPerform > 0 do {
+      val coords = chunkRemovedQueue.dequeue()
+      updatedChunkData += coords -> ChunkRenderData.empty
+      numClearsToPerform -= 1
+    }
 
-    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 4)
+    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 5)
     while numUpdatesToPerform > 0 do {
       chunkRenderUpdateQueue.pop() match {
         case Some(coords) =>
@@ -97,8 +109,7 @@ class WorldRenderer(
               val renderData = ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
               updatedChunkData += coords -> renderData
               numUpdatesToPerform -= 1
-            case None =>
-              updatedChunkData += coords -> ChunkRenderData.empty
+            case None => // handled earlier in this function
           }
         case None =>
           numUpdatesToPerform = 0

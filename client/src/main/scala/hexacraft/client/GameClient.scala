@@ -515,35 +515,53 @@ class GameClient(
       updateSoundListener()
 
       prio.tick(PosAndDir.fromCameraView(camera.view))
-      prio.nextAddableChunk match {
-        case Some(chunkCoords) =>
-          var success = true
-          val columnCoords = chunkCoords.getColumnRelWorld
-          if world.getColumn(columnCoords).isEmpty then {
-            val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
-            if columnNbt != Nbt.emptyMap then {
-              val column = ChunkColumnTerrain.create(
-                ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
-                Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
-              )
-              world.setColumn(columnCoords, column)
-            } else {
-              success = false
+
+      var chunksToLoad = 2
+      while chunksToLoad > 0 do {
+        prio.nextAddableChunk match {
+          case Some(chunkCoords) =>
+            var success = true
+            val columnCoords = chunkCoords.getColumnRelWorld
+            if world.getColumn(columnCoords).isEmpty then {
+              val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
+              if columnNbt != Nbt.emptyMap then {
+                val column = ChunkColumnTerrain.create(
+                  ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+                  Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
+                )
+                world.setColumn(columnCoords, column)
+              } else {
+                success = false
+              }
             }
-          }
-          if success && world.getChunk(chunkCoords).isEmpty then {
-            val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
-            if chunkNbt != Nbt.emptyMap then {
-              val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
-              world.setChunk(chunkCoords, chunk)
-            } else {
-              success = false
+            if success && world.getChunk(chunkCoords).isEmpty then {
+              val chunkNbt = socket.sendPacketAndWait(NetworkPacket.LoadChunkData(chunkCoords))
+              if chunkNbt != Nbt.emptyMap then {
+                val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
+                world.setChunk(chunkCoords, chunk)
+              } else {
+                success = false
+              }
             }
-          }
-          if success then {
-            prio += chunkCoords
-          }
-        case None =>
+            if success then {
+              prio += chunkCoords
+            } else {
+              chunksToLoad = 0 // no need to try to load the same chunk again
+            }
+          case None =>
+        }
+        chunksToLoad -= 1
+      }
+
+      var chunksToUnload = 3
+      while chunksToUnload > 0 do {
+        prio.nextRemovableChunk match {
+          case Some(chunkCoords) =>
+            world.removeChunk(chunkCoords)
+            prio -= chunkCoords
+          case None =>
+        }
+        chunksToUnload -= 1
       }
 
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
