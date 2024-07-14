@@ -780,10 +780,17 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
     }
     monitoringThread = Thread.currentThread()
 
-    val monitor = ZMonitor(context, socket)
-    monitor.add(ZMonitor.Event.ALL)
-    monitor.verbose(false)
-    monitor.start()
+    val monitor = context.synchronized {
+      if context.isClosed then {
+        return
+      }
+
+      val monitor = ZMonitor(context, socket)
+      monitor.add(ZMonitor.Event.ALL)
+      monitor.verbose(false)
+      monitor.start()
+      monitor
+    }
 
     while !context.isClosed do {
       try {
@@ -837,6 +844,8 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   }
 
   def close(): Unit = {
-    context.close()
+    context.synchronized {
+      context.close()
+    }
   }
 }
