@@ -6,6 +6,7 @@ import hexacraft.world.coord.CylCoords
 import munit.FunSuite
 import org.joml.Vector2f
 
+import java.util.UUID
 import scala.collection.mutable
 
 class PlayerInputHandlerTest extends FunSuite {
@@ -17,7 +18,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val keyboard: GameKeyboard = key =>
       keyboardCalls += key
       key == Key.MoveForward
-    val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
@@ -27,7 +28,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("tick should not rotate the player if mouse has not moved") {
     val keyboard: GameKeyboard = _ => false
-    val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
@@ -40,7 +41,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("test should rotate the player if mouse has moved") {
     val keyboard: GameKeyboard = _ => false
-    val player = Player.atStartPos(CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
