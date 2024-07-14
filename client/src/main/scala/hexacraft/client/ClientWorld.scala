@@ -53,7 +53,11 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   def loadedChunks: Seq[ChunkRelWorld] = {
-    chunks.keys.map(c => ChunkRelWorld(c)).toSeq
+    val result: ArrayBuffer[ChunkRelWorld] = ArrayBuffer.empty
+    for c <- chunks.keys do {
+      result += ChunkRelWorld(c)
+    }
+    result.toSeq
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {

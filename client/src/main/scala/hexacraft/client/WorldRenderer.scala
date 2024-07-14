@@ -5,7 +5,7 @@ import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
-import hexacraft.util.{TickableTimer, UniqueQueue}
+import hexacraft.util.TickableTimer
 import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.Chunk
@@ -18,6 +18,9 @@ import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 class WorldRenderer(
     world: BlocksInWorld,
@@ -58,9 +61,10 @@ class WorldRenderer(
 
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
 
-  private val chunkRemovedQueue: UniqueQueue[ChunkRelWorld] = new UniqueQueue
   private val chunkRenderUpdateQueue: ChunkRenderUpdateQueue = new ChunkRenderUpdateQueue
   private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
+
+  private val futureRenderData: ArrayBuffer[(ChunkRelWorld, Future[ChunkRenderData])] = ArrayBuffer.empty
 
   private val players = ArrayBuffer.empty[Entity]
 
@@ -79,25 +83,21 @@ class WorldRenderer(
     transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
-    val updatedChunkData = mutable.ArrayBuffer.empty[(ChunkRelWorld, ChunkRenderData)]
+    // Step 1: Perform render updates using data calculated in the background since the previous frame
+    updateBlockData(futureRenderData.map((coords, fut) => (coords, Await.result(fut, Duration.Inf))).toSeq)
+    futureRenderData.clear()
 
+    // Step 2: Start calculating render updates in the background
     for coords <- worldTickResult.chunksNeedingRenderUpdate do {
       if world.getChunk(coords).isEmpty then {
-        chunkRemovedQueue.enqueue(coords)
-      } else {
-        chunkRenderUpdateQueue.insert(coords)
+        // clear the chunk immediately so it doesn't have to be drawn (the PQ is in closest first order)
+        futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
       }
+      chunkRenderUpdateQueue.insert(coords)
     }
 
     if chunkRenderUpdateQueueReorderingTimer.tick() then {
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
-    }
-
-    var numClearsToPerform = math.min(chunkRemovedQueue.size, 8)
-    while numClearsToPerform > 0 do {
-      val coords = chunkRemovedQueue.dequeue()
-      updatedChunkData += coords -> ChunkRenderData.empty
-      numClearsToPerform -= 1
     }
 
     var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 5)
@@ -106,17 +106,15 @@ class WorldRenderer(
         case Some(coords) =>
           world.getChunk(coords) match {
             case Some(chunk) =>
-              val renderData = ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
-              updatedChunkData += coords -> renderData
+              futureRenderData += coords -> Future(ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
               numUpdatesToPerform -= 1
-            case None => // handled earlier in this function
+            case None =>
+              futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
           }
         case None =>
           numUpdatesToPerform = 0
       }
     }
-
-    updateBlockData(updatedChunkData.toSeq)
   }
 
   def onTotalSizeChanged(totalSize: Int): Unit = {
@@ -323,9 +321,8 @@ class WorldRenderer(
         c <- world.loadedChunks
         ch <- world.getChunk(c)
       } do {
-        val entities = ch.entities
-        if entities.nonEmpty then {
-          val data = EntityRenderDataFactory.getEntityRenderData(entities, side, world)
+        if ch.hasEntities then {
+          val data = EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
           entityDataList ++= data
         }
       }

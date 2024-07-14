@@ -40,6 +40,11 @@ class Chunk private (chunkData: ChunkData)(using CylinderSize) {
 
   def entities: collection.Seq[Entity] = chunkData.entities
 
+  def hasEntities: Boolean = {
+    // noinspection EmptyCheck
+    chunkData.entities.length > 0
+  }
+
   def addEntity(entity: Entity): Unit = {
     chunkData.entities += entity
     _modCount += 1
