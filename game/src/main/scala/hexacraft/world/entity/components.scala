@@ -32,14 +32,19 @@ object TransformComponent {
   }
 }
 
-class VelocityComponent(var velocity: Vector3d = new Vector3d) extends EntityComponent
+class MotionComponent(
+    var velocity: Vector3d = new Vector3d,
+    var flying: Boolean = false
+) extends EntityComponent
 
-object VelocityComponent {
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): VelocityComponent = {
+object MotionComponent {
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): MotionComponent = {
     val vel = new Vector3d
     tag.getMap("velocity").foreach(_.setVector(vel))
 
-    VelocityComponent(vel)
+    val flying = tag.getBoolean("flying", false)
+
+    MotionComponent(vel, flying)
   }
 }
 

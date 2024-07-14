@@ -4,6 +4,8 @@ import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 import com.martomate.nbt.Nbt
 
+import java.util.UUID
+
 trait WorldProvider {
   def getWorldInfo: WorldInfo
 
@@ -32,5 +34,13 @@ trait WorldProvider {
 
   final def saveWorldData(tag: Nbt.MapTag): Unit = {
     saveState(tag, "world", "world.dat")
+  }
+
+  final def loadPlayerData(id: UUID): Option[Nbt.MapTag] = {
+    loadState(s"players/${id.toString}.dat")
+  }
+
+  final def savePlayerData(tag: Nbt.MapTag, id: UUID): Unit = {
+    saveState(tag, "", s"players/${id.toString}.dat")
   }
 }

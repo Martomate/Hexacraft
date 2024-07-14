@@ -6,7 +6,9 @@ import hexacraft.world.coord.CylCoords
 import com.martomate.nbt.Nbt
 import org.joml.Vector3d
 
-class Player(var inventory: Inventory) {
+import java.util.UUID
+
+class Player(val id: UUID, var inventory: Inventory) {
   val bounds = new HexBox(0.2f, -1.65f, 0.1f)
   val velocity = new Vector3d
   val position = new Vector3d
@@ -29,8 +31,8 @@ class Player(var inventory: Inventory) {
 }
 
 object Player {
-  def atStartPos(initialFootCoords: CylCoords): Player = {
-    val player = new Player(Inventory.default)
+  def atStartPos(id: UUID, initialFootCoords: CylCoords): Player = {
+    val player = new Player(id, Inventory.default)
     player.position.set(
       initialFootCoords.x,
       initialFootCoords.y - player.bounds.bottom,
@@ -39,14 +41,14 @@ object Player {
     player
   }
 
-  def fromNBT(tag: Nbt.MapTag): Player = {
+  def fromNBT(id: UUID, tag: Nbt.MapTag): Player = {
     val inventory =
       tag.getMap("inventory") match {
         case Some(tag) => Inventory.fromNBT(tag)
         case None      => Inventory.default
       }
 
-    val player = new Player(inventory)
+    val player = new Player(id, inventory)
 
     tag.getMap("position").foreach(p => p.setVector(player.position))
     tag.getMap("rotation").foreach(p => p.setVector(player.rotation))

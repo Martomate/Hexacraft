@@ -17,8 +17,9 @@ object Chunk {
     new Chunk(ChunkData.fromNBT(loadedTag))
   }
 
-  def fromGenerator(coords: ChunkRelWorld, world: BlocksInWorld, generator: WorldGenerator)(using CylinderSize) = {
-    val column = world.provideColumn(coords.getColumnRelWorld)
+  def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
+      CylinderSize
+  ) = {
     new Chunk(generator.generateChunk(coords, column))
   }
 }
@@ -38,6 +39,11 @@ class Chunk private (chunkData: ChunkData)(using CylinderSize) {
   }
 
   def entities: collection.Seq[Entity] = chunkData.entities
+
+  def hasEntities: Boolean = {
+    // noinspection EmptyCheck
+    chunkData.entities.length > 0
+  }
 
   def addEntity(entity: Entity): Unit = {
     chunkData.entities += entity

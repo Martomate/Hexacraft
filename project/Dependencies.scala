@@ -3,7 +3,7 @@ import sbt.*
 object Dependencies {
   object versions {
     val lwjgl = "3.3.3"
-    val joml = "1.10.6"
+    val joml = "1.10.7"
     val zeromq = "0.6.0"
   }
 

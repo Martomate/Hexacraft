@@ -23,6 +23,7 @@ object FileSystem {
 
   enum Error {
     case FileNotFound
+    case Unknown(e: Throwable)
   }
 }
 
@@ -55,7 +56,7 @@ class FileSystem private (files: FilesWrapper) {
       Ok(bytes)
     } catch {
       case _: NoSuchFileException => Err(FileSystem.Error.FileNotFound)
-      case e                      => throw e
+      case e                      => Err(FileSystem.Error.Unknown(e))
     } finally {
       if stream != null then {
         stream.close()

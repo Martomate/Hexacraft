@@ -1,6 +1,5 @@
 package hexacraft.world.entity
 
-import hexacraft.renderer.TextureSingle
 import hexacraft.world.HexBox
 import hexacraft.world.coord.CylCoords
 
@@ -8,7 +7,7 @@ import org.joml.{Matrix4f, Vector3f}
 
 trait EntityModel {
   def parts: Seq[EntityPart]
-  def texture: TextureSingle
+  def textureName: String
   def tick(walking: Boolean): Unit
 }
 

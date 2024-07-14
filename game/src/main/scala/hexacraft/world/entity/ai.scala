@@ -9,10 +9,10 @@ import org.joml.{Vector3d, Vector3dc}
 
 trait EntityAI {
   def tick(
-      world: BlocksInWorld,
-      transform: TransformComponent,
-      velocity: VelocityComponent,
-      entityBoundingBox: HexBox
+            world: BlocksInWorld,
+            transform: TransformComponent,
+            velocity: MotionComponent,
+            entityBoundingBox: HexBox
   ): Unit
   def acceleration: Vector3dc
   def toNBT: Nbt.MapTag
@@ -42,10 +42,10 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private val input: SimpleAIInput = new SimpleAIInput
 
   def tick(
-      world: BlocksInWorld,
-      transform: TransformComponent,
-      velocity: VelocityComponent,
-      entityBoundingBox: HexBox
+            world: BlocksInWorld,
+            transform: TransformComponent,
+            velocity: MotionComponent,
+            entityBoundingBox: HexBox
   ): Unit = {
     val distSq = transform.position.distanceXZSq(target)
 
