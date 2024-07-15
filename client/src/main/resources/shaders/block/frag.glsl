@@ -49,7 +49,7 @@ void main() {
 #endif
 
 	vec3 sunDir = normalize(sun);
-	float visibility = 1 - (side < 2 ? side * 3 : (side - 2) % 2 + 1) * 0.05;//max(min(dot(fragIn.normal, sunDir) * 0.4, 0.3), 0.0) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
+	float visibility = max(dot(fragIn.normal, sunDir), 0) * 0.2 + 0.8;
 
 	color.rgb *= (fragIn.brightness * 0.8 + 0.2) * visibility;
 }
