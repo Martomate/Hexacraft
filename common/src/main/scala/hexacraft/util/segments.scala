@@ -27,20 +27,45 @@ class SegmentSet extends mutable.Iterable[Segment] {
   })
   private var _totalLength = 0
 
-  protected def _add(seg: Segment): Unit = {
-    require(segments.add(seg), s"$seg cannot be added")
+  private def _add(seg: Segment): Unit = {
+    val wasAdded = segments.add(seg)
+    require(wasAdded, s"$seg cannot be added")
+
     segmentsContain(seg) = seg
     _totalLength += seg.length
   }
-  protected def _remove(seg: Segment): Unit = {
-    require(segmentsContain.remove(seg).isDefined, s"$seg cannot be removed")
+
+  private def _remove(seg: Segment): Unit = {
+    val didExist = segmentsContain.remove(seg).isDefined
+    require(didExist, s"$seg cannot be removed")
+
     segments.remove(seg)
     _totalLength -= seg.length
   }
 
   def add(seg: Segment): Unit = {
     require(!segments.contains(seg))
-    _add(seg)
+    val before = segments.maxBefore(seg)
+    val after = segments.minAfter(seg)
+
+    var newSegment = seg
+    before match {
+      case Some(b) =>
+        if b.start + b.length == newSegment.start then {
+          newSegment = Segment(b.start, b.length + newSegment.length)
+          _remove(b)
+        }
+      case None =>
+    }
+    after match {
+      case Some(a) =>
+        if a.start == newSegment.start + newSegment.length then {
+          newSegment = Segment(newSegment.start, newSegment.length + a.length)
+          _remove(a)
+        }
+      case None =>
+    }
+    _add(newSegment)
   }
 
   /** segment `[a, b]` has to either exist as `[a, b]`
@@ -93,7 +118,48 @@ class SegmentSet extends mutable.Iterable[Segment] {
 
   def firstSegment(): Segment = segments.firstKey
   def lastSegment(): Segment = segments.last
-  def segmentCount: Int = segments.size
+
+  def allocate(length: Int): SegmentSet = {
+    val result = SegmentSet()
+
+    if length == 0 then {
+      return result
+    } else if segments.isEmpty then {
+      val s = Segment(0, length)
+      add(s)
+      result.add(s)
+      return result
+    }
+
+    var left = length
+    while left > 0 do {
+      val it = segments.iterator
+      val first = it.next()
+      it.nextOption() match {
+        case Some(second) =>
+          val start = first.start + first.length
+          val space = second.start - start
+          if left < space then {
+            val s = Segment(start, left)
+            result.add(s)
+            add(s)
+            left = 0
+          } else {
+            val s = Segment(start, space)
+            result.add(s)
+            add(s)
+            left -= space
+          }
+        case None =>
+          val start = first.start + first.length
+          val s = Segment(start, left)
+          result.add(s)
+          add(s)
+          left = 0
+      }
+    }
+    result
+  }
 
   override def clone(): SegmentSet = {
     val res = new SegmentSet
@@ -104,136 +170,41 @@ class SegmentSet extends mutable.Iterable[Segment] {
   }
 }
 
-// TODO: make thread-safe, or rewrite it
-class KeyedSegmentSet[T] extends SegmentSet {
-  private var currentKey: T = _
+class KeyedSegment[K] {
+  private val keyedSegments: mutable.HashMap[K, SegmentSet] = mutable.HashMap.empty
+  private val allSegments: SegmentSet = SegmentSet()
 
-  private val invMapOrder: Ordering[Segment] = { (s1, s2) =>
-    if s2.contains(s1) then {
-      0
-    } else {
-      val res = s1.start - s2.start
-      if res != 0 then {
-        res
-      } else {
-        res + s1.length - s2.length
-      }
+  def allocate(key: K, length: Int): SegmentSet = {
+    val segmentsForKey = keyedSegments.getOrElseUpdate(key, SegmentSet())
+    val newSegments = allSegments.allocate(length)
+    for s <- newSegments do {
+      segmentsForKey.add(s)
+    }
+    newSegments
+  }
+
+  def clear(key: K): Unit = {
+    for {
+      segmentSet <- keyedSegments.remove(key)
+      segment <- segmentSet
+    } do {
+      allSegments.remove(segment)
     }
   }
 
-  private val invMap: mutable.TreeMap[Segment, T] = mutable.TreeMap.empty(using invMapOrder)
-  private val segmentsPerKey: mutable.HashMap[T, Int] = mutable.HashMap.empty
-
-  override protected def _add(seg: Segment): Unit = {
-    super._add(seg)
-    invMap.put(seg, currentKey)
-    segmentsPerKey(currentKey) = segmentsPerKey.getOrElse(currentKey, 0) + 1
+  def usedSegments: SegmentSet = {
+    allSegments.clone()
   }
 
-  override protected def _remove(seg: Segment): Unit = {
-    super._remove(seg)
-    invMap.remove(seg) match {
-      case Some(key) =>
-        val newCount = segmentsPerKey.getOrElse(key, 0) - 1
-        if newCount < 1 then {
-          segmentsPerKey -= key
-        } else {
-          segmentsPerKey(key) = newCount
-        }
-      case None =>
-    }
+  def isEmpty: Boolean = {
+    allSegments.totalLength == 0
   }
 
-  def add(key: T, segment: Segment): Unit = {
-    currentKey = key
-    add(segment)
+  def numKeyedSegments: Int = {
+    keyedSegments.values.map(_.size).sum
   }
 
-  def remove(key: T, segment: Segment): Unit = {
-    require(invMap.get(segment).contains(key))
-    currentKey = key
-    remove(segment)
-  }
-
-  def lastKeyAndSegment: (T, Segment) = {
-    val seg = lastSegment()
-    (invMap(seg), seg)
-  }
-
-  def keyCount: Int = segmentsPerKey.size
-}
-
-/** A dense stack of keyed segments, which means that:
-  *   1. there are no gaps between the segments
-  *   1. segments can only be added/removed at the end
-  *   1. adjacent segments can only be merged if they have the same key
-  *
-  * It can also be thought of as a contiguous piece of memory where the bytes are colored.
-  */
-class DenseKeyedSegmentStack[K] {
-  private val contentMap: mutable.Map[K, SegmentSet] = mutable.Map.empty
-  private val allSegments: KeyedSegmentSet[K] = new KeyedSegmentSet
-
-  def length: Int = lastSegment.map(s => s._2.start + s._2.length).getOrElse(0)
-
-  def fragmentation: Float = allSegments.segmentCount.toFloat / allSegments.keyCount
-
-  def hasMapping(key: K): Boolean = {
-    contentMap.get(key).exists(_.totalLength != 0)
-  }
-
-  def totalLengthForChunk(key: K): Int = {
-    contentMap.get(key).map(_.totalLength).getOrElse(0)
-  }
-
-  /** Creates a new segment on top of the stack and labels it with the given key */
-  def push(key: K, numBytes: Int): Segment = {
-    val segment = Segment(length, numBytes)
-    this.add(key, segment)
-    segment
-  }
-
-  /** Sets the key for the segment
-    *
-    * @throws IllegalArgumentException if the segment does not belong to `from`
-    */
-  def relabel(from: K, to: K, segment: Segment): Unit = {
-    this.remove(from, segment)
-    this.add(to, segment)
-  }
-
-  /** Removes the given segment from the top of the stack
-    *
-    * @throws IllegalArgumentException if the segment is not the top of the stack
-    * @throws IllegalArgumentException if the segment does not belong to the given key
-    */
-  def pop(key: K, segment: Segment): Unit = {
-    require(segment.start + segment.length == length)
-    this.remove(key, segment)
-  }
-
-  private def add(key: K, segment: Segment): Unit = {
-    contentMap.getOrElseUpdate(key, new SegmentSet).add(segment)
-    allSegments.add(key, segment)
-  }
-
-  private def remove(key: K, segment: Segment): Unit = {
-    allSegments.remove(key, segment)
-    contentMap.get(key).exists(_.remove(segment))
-  }
-
-  def segments(key: K): SegmentSet = {
-    contentMap.get(key) match {
-      case Some(segments) => segments.clone()
-      case None           => new SegmentSet
-    }
-  }
-
-  def lastSegment: Option[(K, Segment)] = {
-    if allSegments.totalLength > 0 then {
-      Some(allSegments.lastKeyAndSegment)
-    } else {
-      None
-    }
+  def numKeys: Int = {
+    keyedSegments.keys.size
   }
 }

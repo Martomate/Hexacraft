@@ -3,7 +3,7 @@ package hexacraft.client.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
 import hexacraft.shaders.BlockShader
-import hexacraft.util.Segment
+import hexacraft.util.{Segment, SegmentSet}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
@@ -81,6 +81,21 @@ class BufferHandler[T <: RenderBuffer[T]](
     }
   }
 
+  def render(segments: SegmentSet): Unit = {
+    for s <- segments do {
+      if s.length > 0 then {
+        val lo = s.start
+        val hi = s.start + s.length
+        for i <- lo / bufSize to (hi - 1) / bufSize do {
+          val start = math.max(lo - i * bufSize, 0)
+          val end = math.min(hi - i * bufSize, bufSize)
+          val len = end - start
+          buffers(i).render(start, len)
+        }
+      }
+    }
+  }
+
   def unload(): Unit = {
     for b <- buffers do {
       b.unload()
@@ -100,6 +115,7 @@ trait RenderBuffer[B <: RenderBuffer[B]] {
   def set(start: Int, buf: ByteBuffer): Unit
 
   def render(length: Int): Unit
+  def render(offset: Int, length: Int): Unit
 
   def unload(): Unit
 }
@@ -129,6 +145,11 @@ class VaoRenderBuffer(vao: VAO, val vboToFill: VBO, renderer: Renderer) extends 
 
   def render(length: Int): Unit = {
     renderer.render(vao, length / vboToFill.stride)
+  }
+
+  def render(offset: Int, length: Int): Unit = {
+    val stride = vboToFill.stride
+    renderer.render(vao, offset / stride, length / stride)
   }
 
   override def unload(): Unit = {

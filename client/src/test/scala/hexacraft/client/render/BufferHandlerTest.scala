@@ -108,6 +108,7 @@ class LocalRenderBuffer(size: Int) extends RenderBuffer[LocalRenderBuffer] {
   }
 
   override def render(length: Int): Unit = ???
+  override def render(offset: Int, length: Int): Unit = ???
 
   override def unload(): Unit = unloadCount += 1
 }
