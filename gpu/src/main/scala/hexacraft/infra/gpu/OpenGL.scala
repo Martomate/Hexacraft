@@ -521,16 +521,6 @@ object OpenGL {
     gl.glBufferSubData(target.toGL, offset, data)
   }
 
-  def glCopyBufferSubData(
-      readTarget: VertexBufferTarget,
-      writeTarget: VertexBufferTarget,
-      readOffset: Long,
-      writeOffset: Long,
-      size: Long
-  ): Unit = {
-    gl.glCopyBufferSubData(readTarget.toGL, writeTarget.toGL, readOffset, writeOffset, size)
-  }
-
   def glDeleteBuffers(buffer: VertexBufferId): Unit = {
     gl.glDeleteBuffers(buffer)
   }
@@ -880,7 +870,6 @@ trait GLWrapper {
   def glGenVertexArrays(): Int
 
   def glDeleteBuffers(buffer: Int): Unit
-  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit
   def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit
   def glBufferData(target: Int, size: Long, usage: Int): Unit
   def glBindBuffer(target: Int, buffer: Int): Unit
@@ -1008,7 +997,6 @@ class StubGL extends GLWrapper {
   def glGenVertexArrays(): Int = 13
 
   def glDeleteBuffers(buffer: Int): Unit = ()
-  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit = ()
   def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit = ()
   def glBufferData(target: Int, size: Long, usage: Int): Unit = ()
   def glBindBuffer(target: Int, buffer: Int): Unit = ()
@@ -1135,8 +1123,6 @@ object RealGL extends GLWrapper {
   def glGenVertexArrays(): Int = GL30.glGenVertexArrays()
 
   def glDeleteBuffers(buffer: Int): Unit = GL15.glDeleteBuffers(buffer)
-  def glCopyBufferSubData(readTarget: Int, writeTarget: Int, readOffset: Long, writeOffset: Long, size: Long): Unit =
-    GL31.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size)
   def glBufferSubData(target: Int, offset: Long, data: ByteBuffer): Unit = GL15.glBufferSubData(target, offset, data)
   def glBufferData(target: Int, size: Long, usage: Int): Unit = GL15.glBufferData(target, size, usage)
   def glBindBuffer(target: Int, buffer: Int): Unit = GL15.glBindBuffer(target, buffer)

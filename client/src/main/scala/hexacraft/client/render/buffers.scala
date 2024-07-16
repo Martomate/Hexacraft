@@ -43,44 +43,6 @@ class BufferHandler[T <: RenderBuffer[T]](
     }
   }
 
-  /** This probably only works if to &lt;= from */
-  def copy(from: Int, to: Int, len: Int): Unit = {
-    var fromBuffer: Int = from / bufSize
-    var fromIdx: Int = from % bufSize
-    var toBuffer: Int = to / bufSize
-    var toIdx: Int = to % bufSize
-    var left: Int = len
-
-    while left > 0 do {
-      val leftF = bufSize - fromIdx
-      val leftT = bufSize - toIdx
-      val len = math.min(math.min(leftF, leftT), left)
-
-      bufferAllocator.copy(buffers(fromBuffer), buffers(toBuffer), fromIdx, toIdx, len)
-
-      fromIdx = (fromIdx + len) % bufSize
-      toIdx = (toIdx + len) % bufSize
-
-      if leftF == len then {
-        fromBuffer += 1
-      }
-      if leftT == len then {
-        toBuffer += 1
-      }
-
-      left -= len
-    }
-  }
-
-  def render(length: Int): Unit = {
-    if length > 0 then {
-      for i <- 0 to (length - 1) / bufSize do {
-        val len = math.min(length - i * bufSize, bufSize)
-        buffers(i).render(len)
-      }
-    }
-  }
-
   def render(segments: SegmentSet): Unit = {
     for s <- segments do {
       if s.length > 0 then {
@@ -106,15 +68,12 @@ class BufferHandler[T <: RenderBuffer[T]](
 object RenderBuffer {
   trait Allocator[T <: RenderBuffer[T]] {
     def allocate(numVertices: Int): T
-
-    def copy(from: T, to: T, fromIdx: Int, toIdx: Int, len: Int): Unit
   }
 }
 
 trait RenderBuffer[B <: RenderBuffer[B]] {
   def set(start: Int, buf: ByteBuffer): Unit
 
-  def render(length: Int): Unit
   def render(offset: Int, length: Int): Unit
 
   def unload(): Unit
@@ -124,15 +83,8 @@ object VaoRenderBuffer {
   class Allocator(side: Int, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
     override def allocate(numVertices: Int): VaoRenderBuffer = {
       val vao = BlockShader.createVao(side, numVertices)
-      new VaoRenderBuffer(
-        vao,
-        vao.vbos(0),
-        new Renderer(OpenGL.PrimitiveMode.Triangles, gpuState)
-      )
-    }
-
-    override def copy(from: VaoRenderBuffer, to: VaoRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {
-      VBO.copy(from.vboToFill, to.vboToFill, fromIdx, toIdx, len)
+      val renderer = new Renderer(OpenGL.PrimitiveMode.Triangles, gpuState)
+      new VaoRenderBuffer(vao, vao.vbos(0), renderer)
     }
   }
 }
@@ -141,10 +93,6 @@ class VaoRenderBuffer(vao: VAO, val vboToFill: VBO, renderer: Renderer) extends 
   override def set(start: Int, buf: ByteBuffer): Unit = {
     val vbo = vboToFill
     vbo.fill(start / vbo.stride, buf)
-  }
-
-  def render(length: Int): Unit = {
-    renderer.render(vao, length / vboToFill.stride)
   }
 
   def render(offset: Int, length: Int): Unit = {

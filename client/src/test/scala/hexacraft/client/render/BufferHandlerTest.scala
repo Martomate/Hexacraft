@@ -39,14 +39,10 @@ class BufferHandlerTest extends FunSuite {
     assertEquals(dest.localBuffer.array().toSeq.take(6), Seq(0, 1, 2, 3, 0, 0).map(_.toByte))
   }
 
+  // TODO: fill in these tests or remove them
+
   test("set should transfer the data into the correct buffers even if a border is crossed".ignore) {}
   test("set should transfer the data into the correct buffers even if several borders are crossed".ignore) {}
-
-  test("copy should do nothing if len is 0".ignore) {}
-  test("copy should move the data into the correct buffer assuming no border is crossed".ignore) {}
-  test("copy should move the data into the correct buffers even if a border is crossed".ignore) {}
-  test("copy should move the data into the correct buffers even if several borders are crossed".ignore) {}
-  test("copy should be able to move a distance shorter than len if from < to".ignore) {}
 
   test("render should do nothing if length is 0".ignore) {}
   test("render should render the correct amount if no border is crossed".ignore) {}
@@ -86,16 +82,6 @@ object LocalRenderBuffer {
       verticesRequested += numVertices
       mkBuffer(numVertices)
     }
-
-    override def copy(from: LocalRenderBuffer, to: LocalRenderBuffer, fromIdx: Int, toIdx: Int, len: Int): Unit = {
-      val temp = ByteBuffer.allocate(len)
-
-      from.localBuffer.position(fromIdx).limit(fromIdx + len)
-      temp.put(from.localBuffer)
-
-      temp.flip()
-      to.localBuffer.position(toIdx).put(temp)
-    }
   }
 }
 
@@ -107,7 +93,6 @@ class LocalRenderBuffer(size: Int) extends RenderBuffer[LocalRenderBuffer] {
     localBuffer.position(start).put(buf)
   }
 
-  override def render(length: Int): Unit = ???
   override def render(offset: Int, length: Int): Unit = ???
 
   override def unload(): Unit = unloadCount += 1

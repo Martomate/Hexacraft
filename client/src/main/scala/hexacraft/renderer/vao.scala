@@ -95,14 +95,6 @@ class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val vbos: Seq[VBO]) e
 
 object VBO {
   private var boundVBO: VBO = null.asInstanceOf[VBO]
-
-  def copy(from: VBO, to: VBO, fromOffset: Int, toOffset: Int, length: Int): Unit = {
-    import OpenGL.VertexBufferTarget.*
-
-    OpenGL.glBindBuffer(CopyReadBuffer, from.id)
-    OpenGL.glBindBuffer(CopyWriteBuffer, to.id)
-    OpenGL.glCopyBufferSubData(CopyReadBuffer, CopyWriteBuffer, fromOffset, toOffset, length)
-  }
 }
 
 class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: OpenGL.VboUsage) {
