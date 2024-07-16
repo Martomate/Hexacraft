@@ -7,6 +7,7 @@ import munit.FunSuite
 
 import java.nio.ByteBuffer
 
+// TODO: make these tests more to-the-point, and test the "used segments" aspect as well
 class BlockFaceBatchRendererTest extends FunSuite {
   given CylinderSize = CylinderSize(4)
 
@@ -63,14 +64,14 @@ class BlockFaceBatchRendererTest extends FunSuite {
 
     renderHandler.update(Seq(coords1), Nil)
     assertEquals(
-      buffer.localBuffer.array().toSeq.take(6),
-      Seq[Byte](2, 2, 2, 2, 2, 2)
+      buffer.localBuffer.array().toSeq,
+      Seq[Byte](9, 8, 7, 6, 5, 4, 2, 2, 2, 2, 2, 2)
     )
 
     renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(1, 2, 3, 4, 5, 6))))
     assertEquals(
       buffer.localBuffer.array().toSeq,
-      Seq[Byte](2, 2, 2, 2, 2, 2, 1, 2, 3, 4, 5, 6)
+      Seq[Byte](1, 2, 3, 4, 5, 6, 2, 2, 2, 2, 2, 2)
     )
 
     renderHandler.unload()
@@ -95,14 +96,14 @@ class BlockFaceBatchRendererTest extends FunSuite {
 
     renderHandler.update(Nil, Seq(coords1 -> ByteBuffer.wrap(Array(19, 18, 17))))
     assertEquals(
-      buffer.localBuffer.array().toSeq.take(9),
-      Seq[Byte](19, 18, 17, 24, 25, 26, 21, 22, 23)
+      buffer.localBuffer.array().toSeq,
+      Seq[Byte](19, 18, 17, 14, 15, 16, 21, 22, 23, 24, 25, 26)
     )
 
     renderHandler.update(Nil, Seq(coords2 -> ByteBuffer.wrap(Array(29, 28, 27))))
     assertEquals(
-      buffer.localBuffer.array().toSeq.take(6),
-      Seq[Byte](19, 18, 17, 29, 28, 27)
+      buffer.localBuffer.array().toSeq,
+      Seq[Byte](19, 18, 17, 29, 28, 27, 21, 22, 23, 24, 25, 26)
     )
   }
 
@@ -130,8 +131,8 @@ class BlockFaceBatchRendererTest extends FunSuite {
 
     renderHandler.update(Seq(coords1), Nil)
     assertEquals(
-      buffer.localBuffer.array().toSeq.take(6),
-      Seq[Byte](24, 25, 26, 21, 22, 23)
+      buffer.localBuffer.array().toSeq,
+      Seq[Byte](19, 18, 17, 21, 22, 23, 24, 25, 26, 16, 15, 14)
     )
   }
 }

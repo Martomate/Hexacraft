@@ -132,6 +132,22 @@ class SegmentSet extends mutable.Iterable[Segment] {
     }
 
     var left = length
+    val first = segments.firstKey
+    if first.start > 0 then {
+      val space = first.start
+      if left < space then {
+        val s = Segment(0, left)
+        result.add(s)
+        add(s)
+        left = 0
+      } else {
+        val s = Segment(0, space)
+        result.add(s)
+        add(s)
+        left -= space
+      }
+    }
+
     while left > 0 do {
       val it = segments.iterator
       val first = it.next()
