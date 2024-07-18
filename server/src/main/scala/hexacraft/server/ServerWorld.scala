@@ -60,7 +60,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[(Chunk, Boolean)]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
-  private val blocksToUpdate: UniqueQueue[BlockRelWorld] = new UniqueQueue
+  private val blocksToUpdate: UniqueLongQueue = new UniqueLongQueue
 
   private val savedChunkModCounts = mutable.Map.empty[ChunkRelWorld, Long]
 
@@ -165,20 +165,38 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     requestRenderUpdate(chunkCoords)
     requestRenderUpdateForNeighborChunks(chunkCoords)
 
-    for block <- ch.blocks do {
-      requestBlockUpdate(BlockRelWorld.fromChunk(block.coords, chunkCoords))
+    val allBlocks = ch.blocks
 
-      for side <- 0 until 8 do {
+    // Add all blocks in the chunk to the update queue
+    val newBlockUpdates = new mutable.ArrayBuffer[Long](allBlocks.length)
+    var bIdx = 0
+    while bIdx < allBlocks.length do {
+      newBlockUpdates += BlockRelWorld.fromChunk(allBlocks(bIdx).coords, chunkCoords).value
+      bIdx += 1
+    }
+    blocksToUpdate.enqueueMany(newBlockUpdates)
+    newBlockUpdates.clear()
+
+    // Add all blocks in neighboring chunks to the update queue
+    bIdx = 0
+    while bIdx < allBlocks.length do {
+      val block = allBlocks(bIdx)
+
+      var side = 0
+      while side < 8 do {
         if block.coords.isOnChunkEdge(side) then {
           val neighCoords = block.coords.neighbor(side)
           val neighChunkCoords = chunkCoords.offset(ChunkRelWorld.neighborOffsets(side))
 
-          for neighbor <- getChunk(neighChunkCoords) do {
-            requestBlockUpdate(BlockRelWorld.fromChunk(neighCoords, neighChunkCoords))
+          if getChunk(neighChunkCoords).isDefined then {
+            newBlockUpdates += BlockRelWorld.fromChunk(neighCoords, neighChunkCoords).value
           }
         }
+        side += 1
       }
+      bIdx += 1
     }
+    blocksToUpdate.enqueueMany(newBlockUpdates)
   }
 
   private def updateHeightmapAfterChunkUpdate(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk)(using
@@ -256,8 +274,14 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
     var chunkWasRemoved = false
 
-    for col <- columns.get(columnCoords.value) do {
-      for removedChunk <- chunks.remove(chunkCoords.value) do {
+    val columnOpt = columns.get(columnCoords.value)
+    if columnOpt.isDefined then {
+      val col = columnOpt.get
+
+      val removedChunkOpt = chunks.remove(chunkCoords.value)
+      if removedChunkOpt.isDefined then {
+        val removedChunk = removedChunkOpt.get
+
         chunkWasRemoved = true
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
@@ -287,7 +311,10 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       performEntityRelocation()
     }
 
-    for ch <- chunks.values do {
+    val chIt = chunks.values.iterator
+    while chIt.hasNext do {
+      val ch = chIt.next
+
       ch.optimizeStorage()
       tickEntities(ch.entities)
     }
@@ -317,11 +344,11 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
     chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(cameras.head.view))
 
-    val chunksToLoadPerTick = 4
-    val chunksToUnloadPerTick = 6
+    val chunksToLoadPerTick = 8
+    val chunksToUnloadPerTick = 12
 
     for _ <- 1 to chunksToLoadPerTick do {
-      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 1 else 8
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 1 else 16
       if chunksLoading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToLoad() match {
           case Some(coords) =>
@@ -337,7 +364,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
 
     for _ <- 1 to chunksToUnloadPerTick do {
-      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 2 else 10
+      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 2 else 20
       if chunksUnloading.size < maxQueueLength then {
         chunkLoadingPrioritizer.popChunkToRemove() match {
           case Some(coords) =>
@@ -360,16 +387,18 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     val chunksAdded = mutable.ArrayBuffer.empty[ChunkRelWorld]
     val chunksRemoved = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
-    for (chunkCoords, chunk, isNew) <- chunksFinishedLoading do {
+    val lIt = chunksFinishedLoading.iterator
+    while lIt.hasNext do {
+      val (chunkCoords, chunk, isNew) = lIt.next
       savedChunkModCounts(chunkCoords) = if isNew then -1L else chunk.modCount
-
       setChunk(chunkCoords, chunk)
-
       chunksAdded += chunkCoords
     }
-    for chunkCoords <- chunksFinishedUnloading do {
-      val chunkWasRemoved = removeChunk(chunkCoords)
 
+    val uIt = chunksFinishedUnloading.iterator
+    while uIt.hasNext do {
+      val chunkCoords = uIt.next
+      val chunkWasRemoved = removeChunk(chunkCoords)
       if chunkWasRemoved then {
         chunksRemoved += chunkCoords
       }
@@ -451,13 +480,20 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private def performBlockUpdates(): Seq[BlockRelWorld] = {
     val recordingWorld = RecordingBlockRepository(this)
 
-    val blocksToUpdateNow = ArrayBuffer.empty[BlockRelWorld]
-    while !blocksToUpdate.isEmpty do {
-      blocksToUpdateNow += blocksToUpdate.dequeue()
-    }
-    for c <- blocksToUpdateNow do {
+    val blocksToUpdateNow = new ArrayBuffer[Long](blocksToUpdate.size)
+    blocksToUpdate.drainInto(value => blocksToUpdateNow += value)
+
+    var bIdx = 0
+    while bIdx < blocksToUpdateNow.length do {
+      val c = BlockRelWorld(blocksToUpdateNow(bIdx))
+
       val block = getBlock(c).blockType
-      block.behaviour.foreach(_.onUpdated(c, block, recordingWorld))
+      val behaviour = block.behaviour
+      if behaviour.isDefined then {
+        behaviour.get.onUpdated(c, block, recordingWorld)
+      }
+
+      bIdx += 1
     }
 
     recordingWorld.collectUpdates.distinct
@@ -547,7 +583,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   }
 
   private def requestBlockUpdate(coords: BlockRelWorld): Unit = {
-    blocksToUpdate.enqueue(coords)
+    blocksToUpdate.enqueue(coords.value)
   }
 
   private def onSetBlock(coords: BlockRelWorld, block: BlockState): Unit = {

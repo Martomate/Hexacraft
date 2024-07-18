@@ -82,6 +82,10 @@ class WorldRenderer(
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] =
     transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
+  def renderQueueLength: Int = {
+    chunkRenderUpdateQueue.length
+  }
+
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
     // Step 1: Perform render updates using data calculated in the background since the previous frame
     updateBlockData(futureRenderData.map((coords, fut) => (coords, Await.result(fut, Duration.Inf))).toSeq)
@@ -92,6 +96,9 @@ class WorldRenderer(
       if world.getChunk(coords).isEmpty then {
         // clear the chunk immediately so it doesn't have to be drawn (the PQ is in closest first order)
         futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
+      } else if !coords.neighbors.forall(n => world.getChunk(n).isDefined) then {
+        // some neighbor has not been loaded yet, so let's not render this chunk yet
+        futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
       }
       chunkRenderUpdateQueue.insert(coords)
     }
@@ -100,14 +107,18 @@ class WorldRenderer(
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
 
-    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 5)
+    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 15)
     while numUpdatesToPerform > 0 do {
       chunkRenderUpdateQueue.pop() match {
         case Some(coords) =>
           world.getChunk(coords) match {
             case Some(chunk) =>
-              futureRenderData += coords -> Future(ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
-              numUpdatesToPerform -= 1
+              if coords.neighbors.forall(n => world.getChunk(n).isDefined) then {
+                futureRenderData += coords -> Future(ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
+                numUpdatesToPerform -= 1
+              } else {
+                futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
+              }
             case None =>
               futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
           }

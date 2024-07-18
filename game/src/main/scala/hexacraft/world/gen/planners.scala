@@ -1,5 +1,6 @@
 package hexacraft.world.gen
 
+import hexacraft.util.LongSet
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
@@ -41,17 +42,20 @@ class WoodChoice(val log: Block, val leaves: Block)
 
 class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: CylinderSize)
     extends WorldFeaturePlanner {
-  private val plannedChanges: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
-  private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
+  private val plannedChanges: mutable.LongMap[mutable.ArrayBuffer[LocalBlockState]] =
+    mutable.LongMap.empty
+  private val chunksPlanned: LongSet = new LongSet
 
   private val maxTreesPerChunk = 5
 
   override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
-    for {
-      ch <- plannedChanges.remove(chunkCoords)
-      LocalBlockState(c, b) <- ch
-    } do {
-      chunk.setBlock(c, b)
+    val changesOpt = plannedChanges.remove(chunkCoords.value)
+    if changesOpt.isDefined then {
+      val cIt = changesOpt.get.iterator
+      while cIt.hasNext do {
+        val LocalBlockState(c, b) = cIt.next
+        chunk.setBlock(c, b)
+      }
     }
   }
 
@@ -67,7 +71,7 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
   }
 
   def plan(coords: ChunkRelWorld): Unit = {
-    if !chunksPlanned(coords) then {
+    if chunksPlanned.add(coords.value) then {
       val column = world.provideColumn(coords.getColumnRelWorld)
       val terrainHeight = column.originalTerrainHeight
 
@@ -81,7 +85,6 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
           generateTree(coords, cx, cz, yy, allowBig)
         }
       }
-      chunksPlanned(coords) = true
     }
   }
 
@@ -117,7 +120,7 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
 
   private def generateChanges(tree: PlannedWorldChange): Unit = {
     for (c, ch) <- tree.chunkChanges do {
-      plannedChanges.getOrElseUpdate(c, mutable.Buffer.empty).appendAll(ch)
+      plannedChanges.getOrElseUpdate(c.value, mutable.ArrayBuffer.empty).appendAll(ch)
     }
   }
 }
@@ -126,28 +129,29 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
     CylinderSize
 ) extends WorldFeaturePlanner {
 
-  private val plannedEntities: mutable.Map[ChunkRelWorld, Seq[Entity]] = mutable.Map.empty
-  private val chunksPlanned: mutable.Set[ChunkRelWorld] = mutable.Set.empty
+  private val plannedEntities: mutable.LongMap[Seq[Entity]] = mutable.LongMap.empty
+  private val chunksPlanned: LongSet = new LongSet
 
   private val maxEntitiesPerGroup = 7
 
   override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
-    for {
-      entities <- plannedEntities.get(chunkCoords)
-      entity <- entities
-    } do {
-      chunk.addEntity(entity)
+    val entitiesOpt = plannedEntities.get(chunkCoords.value)
+    if entitiesOpt.isDefined then {
+      val eIt = entitiesOpt.get.iterator
+      while eIt.hasNext do {
+        val entity = eIt.next
+        chunk.addEntity(entity)
+      }
     }
   }
 
   override def plan(coords: ChunkRelWorld): Unit = {
-    if !chunksPlanned(coords) then {
+    if chunksPlanned.add(coords.value) then {
       val rand = new Random(mainSeed ^ coords.value + 364453868)
       if rand.nextDouble() < 0.01 then {
         val column = world.provideColumn(coords.getColumnRelWorld)
-        plannedEntities(coords) = makePlan(rand, coords, column)
+        plannedEntities(coords.value) = makePlan(rand, coords, column)
       }
-      chunksPlanned += coords
     }
   }
 

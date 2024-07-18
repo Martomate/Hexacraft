@@ -1,13 +1,13 @@
 package hexacraft.client.render
 
-import hexacraft.util.UniquePQ
+import hexacraft.util.UniqueLongPQ
 import hexacraft.world.{Camera, CylinderSize, PosAndDir}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 
 class ChunkRenderUpdateQueue(using CylinderSize) {
   private val origin = PosAndDir(CylCoords(0, 0, 0))
 
-  private val queue: UniquePQ[ChunkRelWorld] = new UniquePQ(makeChunkToUpdatePriority, Ordering.by(-_))
+  private val queue: UniqueLongPQ = new UniqueLongPQ(makeChunkToUpdatePriority, Ordering.by(-_))
 
   def reorderAndFilter(camera: Camera, renderDistance: Double): Unit = {
     origin.setPosAndDirFrom(camera.view)
@@ -20,17 +20,19 @@ class ChunkRenderUpdateQueue(using CylinderSize) {
 
   def pop(): Option[ChunkRelWorld] = {
     if !queue.isEmpty then {
-      Some(queue.dequeue())
+      Some(ChunkRelWorld(queue.dequeue()))
     } else {
       None
     }
   }
 
   def insert(coords: ChunkRelWorld): Unit = {
-    queue.enqueue(coords)
+    queue.enqueue(coords.value)
   }
 
-  private def makeChunkToUpdatePriority(coords: ChunkRelWorld): Double = {
+  private def makeChunkToUpdatePriority(coordsValue: Long): Double = {
+    val coords = ChunkRelWorld(coordsValue)
+
     def distTo(x: Int, y: Int, z: Int): Double = {
       val cyl = BlockCoords(BlockRelWorld(x, y, z, coords)).toCylCoords
       val cDir = cyl.toNormalCoords(origin.pos).toVector3d.normalize()

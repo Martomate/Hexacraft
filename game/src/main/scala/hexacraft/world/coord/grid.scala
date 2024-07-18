@@ -5,6 +5,9 @@ import hexacraft.world.CylinderSize
 
 import org.joml.Vector2d
 
+import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
+
 case class Offset(dx: Int, dy: Int, dz: Int) {
   def +(other: Offset): Offset = {
     Offset(
@@ -28,7 +31,7 @@ case class Offset(dx: Int, dy: Int, dz: Int) {
 }
 
 object NeighborOffsets {
-  val all: Seq[Offset] = IndexedSeq(
+  val all: Array[Offset] = Array(
     Offset(0, 1, 0),
     Offset(0, -1, 0),
     Offset(1, 0, 0),
@@ -44,9 +47,9 @@ object NeighborOffsets {
     * @return
     * The offset of the neighboring block on the given side
     */
-  def apply(side: Int): Offset = all(side)
+  inline def apply(side: Int): Offset = all(side)
 
-  val indices: Range = all.indices
+  inline def indices: Range = all.indices
 }
 
 object BlockRelChunk {
@@ -160,13 +163,18 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
     ChunkRelWorld.neighborOffsets.map(offset)
 
   def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] = {
+    val s = 2 * radius + 1
+    val buf = new mutable.ArrayBuffer[ChunkRelWorld](s * s * s)
+
     for {
       y <- -radius to radius
       z <- -radius to radius
       x <- -radius to radius
-    } yield {
-      offset(x, y, z)
+    } do {
+      buf += offset(x, y, z)
     }
+
+    buf.toSeq
   }
 
   def offset(t: Offset)(using CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)

@@ -516,7 +516,7 @@ class GameClient(
 
       prio.tick(PosAndDir.fromCameraView(camera.view))
 
-      var chunksToLoad = 2
+      var chunksToLoad = 5
       while chunksToLoad > 0 do {
         prio.nextAddableChunk match {
           case Some(chunkCoords) =>
@@ -553,7 +553,7 @@ class GameClient(
         chunksToLoad -= 1
       }
 
-      var chunksToUnload = 3
+      var chunksToUnload = 6
       while chunksToUnload > 0 do {
         prio.nextRemovableChunk match {
           case Some(chunkCoords) =>
@@ -630,9 +630,16 @@ class GameClient(
       if debugOverlay.isDefined then {
         val regularFragmentation = worldRenderer.regularChunkBufferFragmentation
         val transmissiveFragmentation = worldRenderer.transmissiveChunkBufferFragmentation
+        val renderQueueLength = worldRenderer.renderQueueLength
 
         debugOverlay.get.updateContent(
-          DebugOverlay.Content.fromCamera(camera, world.renderDistance, regularFragmentation, transmissiveFragmentation)
+          DebugOverlay.Content.fromCamera(
+            camera,
+            world.renderDistance,
+            regularFragmentation,
+            transmissiveFragmentation,
+            renderQueueLength
+          )
         )
       }
 

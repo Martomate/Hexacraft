@@ -17,7 +17,8 @@ object DebugOverlay {
       cameraRotation: Vector3f,
       viewDistance: Double,
       regularChunkBufferFragmentation: IndexedSeq[Float],
-      transmissiveChunkBufferFragmentation: IndexedSeq[Float]
+      transmissiveChunkBufferFragmentation: IndexedSeq[Float],
+      renderQueueLength: Int
   )
 
   object Content {
@@ -25,7 +26,8 @@ object DebugOverlay {
         camera: Camera,
         viewDistance: Double,
         regularChunkBufferFragmentation: IndexedSeq[Float],
-        transmissiveChunkBufferFragmentation: IndexedSeq[Float]
+        transmissiveChunkBufferFragmentation: IndexedSeq[Float],
+        renderQueueLength: Int
     )(using CylinderSize): Content = {
       Content(
         CylCoords(camera.position),
@@ -33,7 +35,8 @@ object DebugOverlay {
         camera.rotation,
         viewDistance,
         regularChunkBufferFragmentation,
-        transmissiveChunkBufferFragmentation
+        transmissiveChunkBufferFragmentation,
+        renderQueueLength
       )
     }
   }
@@ -67,6 +70,7 @@ class DebugOverlay {
   addDebugText("viewDist", "viewDistance")
   addDebugText("fragmentation.opaque", "fragmentation (opaque)")
   addDebugText("fragmentation.transmissive", "fragmentation (transmissive)")
+  addDebugText("renderQueueLength", "render queue")
 
   private def addLabel(text: String): Unit = {
     yOff += 0.02f
@@ -116,6 +120,10 @@ class DebugOverlay {
     setValue(
       "fragmentation.transmissive",
       info.transmissiveChunkBufferFragmentation.sortBy(-_).map(v => f"$v%.2f").mkString(" ")
+    )
+    setValue(
+      "renderQueueLength",
+      info.renderQueueLength
     )
   }
 

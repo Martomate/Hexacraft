@@ -13,7 +13,9 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
 
   def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     if !chunk.isDecorated then {
-      for p <- planners do {
+      val pIt = planners.iterator
+      while pIt.hasNext do {
+        val p = pIt.next
         p.decorate(chunkCoords, chunk)
       }
       chunk.setDecorated()
@@ -21,11 +23,14 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
   }
 
   def prepare(coords: ChunkRelWorld): Unit = {
-    for {
-      ch <- coords.extendedNeighbors(4)
-      p <- planners
-    } do {
-      p.plan(ch)
+    val neighbors = coords.extendedNeighbors(4)
+    val nIt = neighbors.iterator
+    while nIt.hasNext do {
+      val ch = nIt.next
+      val pIt = planners.iterator
+      while pIt.hasNext do {
+        pIt.next.plan(ch)
+      }
     }
   }
 }

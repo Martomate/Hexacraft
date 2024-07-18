@@ -88,7 +88,8 @@ class MainWindow(
 
       switchSceneIfNeeded()
 
-      for _ <- 0 until delta do {
+      var tIdx = 0
+      while tIdx < delta do {
         tick()
         ticks += 1
         titleTicker += 1
@@ -99,6 +100,7 @@ class MainWindow(
           frames = 0
         }
         prevTime += 1e9.toLong / 60
+        tIdx += 1
       }
 
       OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
