@@ -47,7 +47,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     heightMap * heightVariation * 100 + biomeHeight * 100
   }
 
-  def generateChunk(coords: ChunkRelWorld, column: ChunkColumnTerrain): ChunkData = {
+  def generateChunk(coords: ChunkRelWorld, column: ChunkColumnTerrain): ChunkStorage = {
     val storage: ChunkStorage = new DenseChunkStorage
     val blockNoise = WorldGenerator.makeBlockInterpolator(coords, this.blockNoise)
 
@@ -64,7 +64,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
       }
     }
 
-    ChunkData.fromStorage(storage)
+    storage
   }
 
   private def getBlockAtDepth(yToGo: Int) = {

@@ -6,10 +6,10 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
 import hexacraft.util.TickableTimer
-import hexacraft.world.{BlocksInWorld, Camera, CylinderSize}
+import hexacraft.world.{BlocksInWorld, Camera, ChunkLoadingPrioritizer, CylinderSize, PosAndDir, WorldGenerator}
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
+import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
+import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Vector2ic, Vector3f}
@@ -24,7 +24,9 @@ import scala.concurrent.duration.Duration
 
 class WorldRenderer(
     world: BlocksInWorld,
+    worldGenerator: WorldGenerator,
     blockTextureIndices: Map[String, IndexedSeq[Int]],
+    blockTextureColors: Map[String, IndexedSeq[Vector3f]],
     initialFrameBufferSize: Vector2ic
 )(using CylinderSize) {
 
@@ -38,13 +40,19 @@ class WorldRenderer(
   private val blockSideShader = new BlockShader(isSide = true)
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
+  private val terrainShader = new TerrainShader()
+
   private val solidBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
   private val transmissiveBlockGpuState = GpuState.build(_.blend(true).cullFace(false))
+
+  private val terrainGpuState = GpuState.build(_.blend(false).cullFace(true))
 
   private val solidBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
   private val transmissiveBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
+
+  private val terrainRenderers: mutable.LongMap[TerrainBatchRenderer] = mutable.LongMap.empty
 
   private val skyVao: VAO = SkyShader.createVao()
   private val skyRenderer = SkyShader.createRenderer()
@@ -67,6 +75,10 @@ class WorldRenderer(
   private val futureRenderData: ArrayBuffer[(ChunkRelWorld, Future[ChunkRenderData])] = ArrayBuffer.empty
 
   private val players = ArrayBuffer.empty[Entity]
+
+  private val terrainLoadingPrio = new ChunkLoadingPrioritizer(20)
+  private val columnCache: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
+  private val chunkCache: mutable.LongMap[ChunkStorage] = mutable.LongMap.empty
 
   def addPlayer(player: Entity): Unit = {
     players += player
@@ -126,11 +138,86 @@ class WorldRenderer(
           numUpdatesToPerform = 0
       }
     }
+
+    val terrainUpdates = mutable.ArrayBuffer.empty[(ChunkRelWorld, ByteBuffer)]
+    terrainLoadingPrio.tick(PosAndDir.fromCameraView(camera.view))
+
+    val terrainRemovals = mutable.ArrayBuffer.empty[ChunkRelWorld]
+    var doneRemoving = false
+    while !doneRemoving do {
+      terrainLoadingPrio.popChunkToRemove() match {
+        case Some(coords) =>
+          terrainRemovals += coords
+        case None =>
+          doneRemoving = true
+      }
+    }
+    for _ <- 0 until 10 do {
+      terrainLoadingPrio.nextAddableChunk match {
+        case Some(coords) =>
+          val columnCoords = coords.getColumnRelWorld
+          val cc = columnCoords
+
+          val columns = mutable.LongMap.empty[ChunkColumnTerrain]
+          for {
+            dx <- -1 to 1
+            dz <- -1 to 1
+          } do {
+            val col = ColumnRelWorld(cc.X.toInt + dx, cc.Z.toInt + dz)
+            columns.put(
+              col.value,
+              columnCache.getOrElseUpdate(
+                col.value,
+                ChunkColumnTerrain.create(
+                  ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(col)),
+                  None
+                )
+              )
+            )
+          }
+
+          val chunks = mutable.LongMap.empty[ChunkStorage]
+          for {
+            dx <- -1 to 1
+            dy <- -1 to 1
+            dz <- -1 to 1
+          } do {
+            val ch = ChunkRelWorld(coords.X.toInt + dx, coords.Y.toInt + dy, coords.Z.toInt + dz)
+            chunks.put(
+              ch.value,
+              chunkCache.getOrElseUpdate(
+                ch.value,
+                worldGenerator.generateChunk(ch, columns(ch.getColumnRelWorld.value))
+              )
+            )
+          }
+
+          val data = TerrainVboData.fromChunk(coords, chunks, blockTextureColors)
+          if data.hasRemaining then {
+            terrainUpdates += coords -> data
+          }
+          terrainLoadingPrio += coords
+        case None =>
+      }
+    }
+
+    for (g, removals) <- terrainRemovals.toSeq.groupBy(c => chunkGroup(c)) do {
+      terrainRenderers
+        .getOrElseUpdate(g, new TerrainBatchRenderer(makeTerrainBufferHandler()))
+        .update(removals, Seq())
+    }
+
+    for (g, updates) <- terrainUpdates.toSeq.groupBy((c, _) => chunkGroup(c)) do {
+      terrainRenderers
+        .getOrElseUpdate(g, new TerrainBatchRenderer(makeTerrainBufferHandler()))
+        .update(Seq(), updates)
+    }
   }
 
   def onTotalSizeChanged(totalSize: Int): Unit = {
     blockShader.setTotalSize(totalSize)
     blockSideShader.setTotalSize(totalSize)
+    terrainShader.setTotalSize(totalSize)
 
     entityShader.setTotalSize(totalSize)
     entitySideShader.setTotalSize(totalSize)
@@ -140,6 +227,7 @@ class WorldRenderer(
   def onProjMatrixChanged(camera: Camera): Unit = {
     blockShader.setProjectionMatrix(camera.proj.matrix)
     blockSideShader.setProjectionMatrix(camera.proj.matrix)
+    terrainShader.setProjectionMatrix(camera.proj.matrix)
 
     entityShader.setProjectionMatrix(camera.proj.matrix)
     entitySideShader.setProjectionMatrix(camera.proj.matrix)
@@ -176,7 +264,8 @@ class WorldRenderer(
     renderSky(camera, sun)
 
     // World content
-    renderBlocks(camera, sun)
+    // renderBlocks(camera, sun)
+    renderTerrain(camera, sun)
     renderEntities(camera, sun)
 
     if selectedBlockAndSide.flatMap(_._3).isDefined then {
@@ -231,6 +320,14 @@ class WorldRenderer(
     renderBlocks()
   }
 
+  private def renderTerrain(camera: Camera, sun: Vector3f): Unit = {
+    terrainShader.setViewMatrix(camera.view.matrix)
+    terrainShader.setCameraPosition(camera.position)
+    terrainShader.setSunPosition(sun)
+
+    renderTerrain()
+  }
+
   private def updateBlockData(chunks: Seq[(ChunkRelWorld, ChunkRenderData)]): Unit = {
     val opaqueData = chunks.partitionMap((coords, data) =>
       data.opaqueBlocks match {
@@ -269,8 +366,27 @@ class WorldRenderer(
     }
   }
 
+  private def renderTerrain(): Unit = {
+    val sh = terrainShader
+    sh.enable()
+    for r <- terrainRenderers.values do {
+      r.render()
+    }
+  }
+
   private def makeBufferHandler(s: Int, gpuState: GpuState): BufferHandler[?] =
-    new BufferHandler(100000 * 3, BlockShader.bytesPerVertex(s), VaoRenderBuffer.Allocator(s, gpuState))
+    new BufferHandler(
+      100000 * 3,
+      BlockShader.bytesPerVertex(s),
+      VaoRenderBuffer.Allocator(numVertices => BlockShader.createVao(s, numVertices), gpuState)
+    )
+
+  private def makeTerrainBufferHandler(): BufferHandler[?] =
+    new BufferHandler(
+      100000 * 3,
+      TerrainShader.bytesPerVertex,
+      VaoRenderBuffer.Allocator(TerrainShader.createVao, terrainGpuState)
+    )
 
   private def updateBlockData(
       chunksToClear: Seq[ChunkRelWorld],
@@ -385,6 +501,7 @@ class WorldRenderer(
 
     blockShader.free()
     blockSideShader.free()
+    terrainShader.free()
 
     mainFrameBuffer.unload()
   }

@@ -20,7 +20,7 @@ object Chunk {
   def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
       CylinderSize
   ) = {
-    new Chunk(generator.generateChunk(coords, column))
+    new Chunk(ChunkData.fromStorage(generator.generateChunk(coords, column)))
   }
 }
 
