@@ -80,9 +80,9 @@ trait RenderBuffer[B <: RenderBuffer[B]] {
 }
 
 object VaoRenderBuffer {
-  class Allocator(side: Int, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
+  class Allocator(createVao: Int => VAO, gpuState: GpuState) extends RenderBuffer.Allocator[VaoRenderBuffer] {
     override def allocate(numVertices: Int): VaoRenderBuffer = {
-      val vao = BlockShader.createVao(side, numVertices)
+      val vao = createVao(numVertices)
       val renderer = new Renderer(OpenGL.PrimitiveMode.Triangles, gpuState)
       new VaoRenderBuffer(vao, vao.vbos(0), renderer)
     }

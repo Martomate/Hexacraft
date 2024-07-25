@@ -5,7 +5,7 @@ import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickCon
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
-import hexacraft.renderer.{Renderer, TextureArray, VAO}
+import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, Result, TickableTimer}
 import hexacraft.world.*
@@ -61,6 +61,10 @@ object GameClient {
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
+    val blockTextureColors: Map[String, IndexedSeq[Vector3f]] =
+      blockTextureIndices.view
+        .mapValues(indices => indices.map(idx => calculateTextureColor(blockTextureMapping.images(idx & 0xfff))))
+        .toMap
 
     TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
 
@@ -73,7 +77,13 @@ object GameClient {
 
     given CylinderSize = world.size
 
-    val worldRenderer: WorldRenderer = new WorldRenderer(world, blockTextureIndices, initialWindowSize.physicalSize)
+    val worldRenderer: WorldRenderer = new WorldRenderer(
+      world,
+      world.worldGenerator,
+      blockTextureIndices,
+      blockTextureColors,
+      initialWindowSize.physicalSize
+    )
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
@@ -122,6 +132,21 @@ object GameClient {
     Thread(() => socket.runMonitoring()).start()
 
     Result.Ok((client, rx))
+  }
+
+  private def calculateTextureColor(texture: PixelArray): Vector3f = {
+    var r = 0L
+    var g = 0L
+    var b = 0L
+
+    for pix <- texture.pixels do {
+      r += (pix >> 16) & 0xff
+      g += (pix >> 8) & 0xff
+      b += (pix >> 0) & 0xff
+    }
+
+    val c = texture.pixels.length * 255
+    Vector3f(r.toFloat / c, g.toFloat / c, b.toFloat / c)
   }
 
   private def makeBlockInHandRenderer(

@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.client.BlockTextureLoader
+import hexacraft.client.{BlockSpecs, BlockTextureLoader}
 import hexacraft.game.GameKeyboard
 import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem

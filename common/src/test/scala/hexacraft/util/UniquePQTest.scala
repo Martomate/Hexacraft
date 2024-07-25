@@ -72,7 +72,7 @@ class UniquePQTest extends FunSuite {
     assertEquals(q.size, 1)
   }
   test("dequeue should return items with highest priority first") {
-    val q = new UniqueLongPQ(s => -s.toDouble, defOrder)
+    val q = new UniqueLongPQ(s => -math.abs(s - 11).toDouble, defOrder)
     q.enqueue(10)
     q.enqueue(13)
     q.enqueue(11)
@@ -91,19 +91,19 @@ class UniquePQTest extends FunSuite {
     assertEquals(q.size, 1)
   }
   test("reprioritizeAndFilter should reorder items") {
-    var reference = 1
+    var reference = 13
     def f(s: Long): Double = math.abs(s - reference).toDouble
     val q = new UniqueLongPQ(f, defOrder)
-    q.enqueue(13) // a   -> |1-1| = 0
-    q.enqueue(10) // aa  -> |2-1| = 1
-    q.enqueue(11) // aaa -> |3-1| = 2
+    q.enqueue(13)
+    q.enqueue(10)
+    q.enqueue(11)
 
-    reference = 3
+    reference = 11
     q.reprioritizeAndFilter(_ => true)
 
-    assertEquals(q.dequeue(), 13L) //   a   -> |1-3| = 2
-    assertEquals(q.dequeue(), 10L) //  aa  -> |2-3| = 1
-    assertEquals(q.dequeue(), 11L) // aaa -> |3-3| = 0
+    assertEquals(q.dequeue(), 13L)
+    assertEquals(q.dequeue(), 10L)
+    assertEquals(q.dequeue(), 11L)
   }
   test("reprioritizeAndFilter should filter out items") {
     val q = new UniqueLongPQ(s => -s.toDouble, defOrder)
@@ -111,7 +111,7 @@ class UniquePQTest extends FunSuite {
     q.enqueue(10)
     q.enqueue(11)
 
-    q.reprioritizeAndFilter { case (_, s) => !s.equals(10) }
+    q.reprioritizeAndFilter { case (_, s) => !s.equals(10L) }
 
     assertEquals(q.dequeue(), 11L)
     assertEquals(q.dequeue(), 13L)
