@@ -139,6 +139,10 @@ class WorldRenderer(
       }
     }
 
+    // performTerrainUpdates(camera)
+  }
+
+  private def performTerrainUpdates(camera: Camera): Unit = {
     val terrainUpdates = mutable.ArrayBuffer.empty[(ChunkRelWorld, ByteBuffer)]
     terrainLoadingPrio.tick(PosAndDir.fromCameraView(camera.view))
 
@@ -264,8 +268,8 @@ class WorldRenderer(
     renderSky(camera, sun)
 
     // World content
-    // renderBlocks(camera, sun)
-    renderTerrain(camera, sun)
+    renderBlocks(camera, sun)
+    // renderTerrain(camera, sun)
     renderEntities(camera, sun)
 
     if selectedBlockAndSide.flatMap(_._3).isDefined then {
