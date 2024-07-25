@@ -503,6 +503,10 @@ class WorldRenderer(
       rs.clear()
     }
 
+    for r <- terrainRenderers.values do {
+      r.unload()
+    }
+
     blockShader.free()
     blockSideShader.free()
     terrainShader.free()
