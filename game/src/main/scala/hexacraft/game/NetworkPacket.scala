@@ -26,6 +26,7 @@ enum NetworkPacket {
 
   case GetPlayerState
   case GetEvents
+  case GetWorldLoadingEvents(maxChunksToLoad: Int)
 
   case PlayerRightClicked
   case PlayerLeftClicked
@@ -74,6 +75,9 @@ object NetworkPacket {
         NetworkPacket.GetPlayerState
       case "get_events" =>
         NetworkPacket.GetEvents
+      case "get_world_loading_events" =>
+        val maxChunksToLoad = root.getShort("max_chunks", 1)
+        NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad)
       case "right_mouse_clicked" =>
         NetworkPacket.PlayerRightClicked
       case "left_mouse_clicked" =>
@@ -115,6 +119,7 @@ object NetworkPacket {
         case NetworkPacket.LoadWorldData                => "load_world_data"
         case NetworkPacket.GetPlayerState               => "get_player_state"
         case NetworkPacket.GetEvents                    => "get_events"
+        case NetworkPacket.GetWorldLoadingEvents(_)     => "get_world_loading_events"
         case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
         case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
         case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
@@ -172,6 +177,11 @@ object NetworkPacket {
               "name" -> Nbt.StringTag(command),
               "args" -> Nbt.ListTag(args.map(arg => Nbt.StringTag(arg)))
             )
+          )
+
+        case NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad) =>
+          Nbt.makeMap(
+            "max_chunks" -> Nbt.ShortTag(maxChunksToLoad.toShort)
           )
       }
 

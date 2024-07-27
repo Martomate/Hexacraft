@@ -1,7 +1,7 @@
 package hexacraft.server
 
 import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler}
-import hexacraft.util.Result
+import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.ChunkColumnData
@@ -94,6 +94,8 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         val PlayerData(player, entity, camera) = p
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
+        chunksLoadedPerPlayer.get(player.id).foreach(_.tick(PosAndDir.fromCameraView(camera.view)))
+
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
           val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
           val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
@@ -126,7 +128,14 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         entity.motion.flying = player.flying
       }
 
-      val tickResult = world.tick(players.values.map(_.camera).toSeq)
+      val tickResult = world.tick(
+        players.values.map(_.camera).toSeq,
+        SeqUtils.roundRobin(chunksLoadedPerPlayer.values.map(_.nextAddableChunks(15)).toSeq),
+        chunksLoadCount.filter((coords, count) => count == 0).keys.map(ChunkRelWorld(_)).toSeq
+      )
+      for coords <- tickResult.chunksRemoved do {
+        chunksLoadCount.remove(coords.value)
+      }
 
       for coords <- tickResult.blocksUpdated do {
         val blockState = world.getBlock(coords)
@@ -304,6 +313,9 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
     println(s"Stopped server")
   }
 
+  private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
+  private val chunksLoadCount = mutable.LongMap.empty[Int]
+
   private def handlePacket(clientId: Long, packet: NetworkPacket, socket: ZMQ.Socket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
@@ -389,6 +401,14 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
         worldProvider.savePlayerData(player.toNBT, player.id)
         world.removeEntity(playerData.entity)
         players.remove(clientId)
+        chunksLoadedPerPlayer.remove(player.id) match {
+          case Some(prio) =>
+            while prio.nextRemovableChunk.isDefined do {
+              val coords = prio.popChunkToRemove().get
+              chunksLoadCount(coords.value) -= 1
+            }
+          case None =>
+        }
         None
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
@@ -457,6 +477,51 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
           .withField("entity_events", Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
 
         Some(response)
+      case GetWorldLoadingEvents(maxChunksToLoad) =>
+        val prio = chunksLoadedPerPlayer.getOrElseUpdate(player.id, ChunkLoadingPrioritizer(world.renderDistance))
+
+        val loadedChunks = mutable.ArrayBuffer.empty[(ChunkRelWorld, Nbt)]
+        val unloadedChunks = mutable.ArrayBuffer.empty[ChunkRelWorld]
+
+        var chunksToLoad = maxChunksToLoad
+        while chunksToLoad > 0 do {
+          chunksToLoad -= 1
+
+          prio.nextAddableChunk.flatMap(coords => world.getChunk(coords).map(coords -> _)) match {
+            case Some(coords -> chunk) =>
+              loadedChunks += ((coords, chunk.toNbt))
+              prio += coords
+              chunksLoadCount(coords.value) = chunksLoadCount.getOrElse(coords.value, 0) + 1
+            case None =>
+              chunksToLoad = 0
+          }
+        }
+
+        var moreChunksToUnload = true
+        while moreChunksToUnload do {
+          prio.popChunkToRemove() match {
+            case Some(coords) =>
+              unloadedChunks += coords
+              chunksLoadCount(coords.value) -= 1
+            case None =>
+              moreChunksToUnload = false
+          }
+        }
+
+        Some(
+          Nbt.makeMap(
+            "chunks_loaded" -> Nbt.ListTag(
+              loadedChunks
+                .map((coords, data) => Nbt.makeMap("coords" -> Nbt.LongTag(coords.value), "data" -> data))
+                .toSeq
+            ),
+            "chunks_unloaded" -> Nbt.ListTag(
+              unloadedChunks
+                .map(coords => Nbt.LongTag(coords.value))
+                .toSeq
+            )
+          )
+        )
       case PlayerRightClicked =>
         performRightMouseClick(player, playerCamera)
         None

@@ -301,8 +301,12 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     chunkWasRemoved
   }
 
-  def tick(cameras: Seq[Camera]): WorldTickResult = {
-    val (chunksAdded, chunksRemoved) = performChunkLoading(cameras)
+  def tick(
+      cameras: Seq[Camera],
+      requestedLoads: Seq[ChunkRelWorld],
+      requestedUnloads: Seq[ChunkRelWorld]
+  ): WorldTickResult = {
+    val (chunksAdded, chunksRemoved) = performChunkLoading(requestedLoads, requestedUnloads)
 
     val blocksUpdated = if blockUpdateTimer.tick() then {
       performBlockUpdates()
@@ -337,49 +341,45 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated, entityEvents.toSeq)
   }
 
-  private def performChunkLoading(cameras: Seq[Camera]): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
-    if cameras.isEmpty then {
-      return (Nil, Nil)
-    }
-
-    chunkLoadingPrioritizer.tick(PosAndDir.fromCameraView(cameras.head.view))
-
+  private def performChunkLoading(
+      requestedLoads: Seq[ChunkRelWorld],
+      requestedUnloads: Seq[ChunkRelWorld]
+  ): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
     val chunksToLoadPerTick = 8
     val chunksToUnloadPerTick = 12
 
-    for _ <- 1 to chunksToLoadPerTick do {
-      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 1 else 16
-      if chunksLoading.size < maxQueueLength then {
-        chunkLoadingPrioritizer.popChunkToLoad() match {
-          case Some(coords) =>
-            chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
-              case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
-              case None =>
-                val column = provideColumn(coords.getColumnRelWorld)
-                (Chunk.fromGenerator(coords, column, worldGenerator), true)
-            }
-          case None =>
+    var unloadsLeft = chunksToUnloadPerTick
+    for coords <- requestedUnloads do {
+      if unloadsLeft > 0 then {
+        if !requestedLoads.contains(coords) && !chunksUnloading.contains(coords) && !chunksLoading.contains(coords)
+        then {
+          getChunk(coords) match {
+            case Some(chunk) =>
+              if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
+                savedChunkModCounts(coords) = chunk.modCount
+
+                unloadsLeft -= 1
+                chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunk.toNbt, coords))
+              } else { // The chunk has not changed, so no need to save it to disk, but still unload it
+                chunksUnloading(coords) = Future.successful(())
+              }
+            case None =>
+          }
         }
       }
     }
 
-    for _ <- 1 to chunksToUnloadPerTick do {
-      val maxQueueLength = if ServerWorld.shouldChillChunkLoader then 2 else 20
-      if chunksUnloading.size < maxQueueLength then {
-        chunkLoadingPrioritizer.popChunkToRemove() match {
-          case Some(coords) =>
-            getChunk(coords) match {
-              case Some(chunk) =>
-                if chunk.modCount != savedChunkModCounts.getOrElse(coords, -1L) then {
-                  savedChunkModCounts(coords) = chunk.modCount
-
-                  chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunk.toNbt, coords))
-                } else { // The chunk has not changed, so no need to save it to disk, but still unload it
-                  chunksUnloading(coords) = Future.successful(())
-                }
-              case None =>
-            }
-          case None =>
+    var loadsLeft = chunksToLoadPerTick
+    for coords <- requestedLoads do {
+      if loadsLeft > 0 then {
+        if !chunksLoading.contains(coords) && !chunksUnloading.contains(coords) then {
+          loadsLeft -= 1
+          chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
+            case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
+            case None =>
+              val column = provideColumn(coords.getColumnRelWorld)
+              (Chunk.fromGenerator(coords, column, worldGenerator), true)
+          }
         }
       }
     }

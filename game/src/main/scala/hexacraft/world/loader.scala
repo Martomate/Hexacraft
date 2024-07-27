@@ -62,6 +62,34 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     }
   }
 
+  def nextAddableChunks(n: Int): Seq[ChunkRelWorld] = {
+    if n == 1 then {
+      return nextAddableChunk.toSeq
+    } else if n < 1 then {
+      return Seq()
+    }
+
+    while addableChunks.nonEmpty && !edge.canLoad(addableChunks.head) do {
+      addableChunks.dequeue()
+    }
+
+    val result: mutable.ArrayBuffer[ChunkRelWorld] = mutable.ArrayBuffer.empty
+
+    if addableChunks.nonEmpty then {
+      result ++= addableChunks.take(n)
+    } else {
+      val startCoords = CoordUtils.approximateChunkCoords(origin.pos)
+      if !edge.isLoaded(startCoords) then {
+        result += startCoords
+        result ++= addableChunks.take(n - 1)
+      } else {
+        result ++= addableChunks.take(n)
+      }
+    }
+
+    result.filter(coords => distSq(origin, coords) <= maxDistSqInBlocks).toSeq
+  }
+
   def nextRemovableChunk: Option[ChunkRelWorld] = {
     while removableChunks.nonEmpty && !edge.onEdge(removableChunks.head) do {
       removableChunks.dequeue()
