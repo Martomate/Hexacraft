@@ -16,7 +16,7 @@ class Player(val id: UUID, var inventory: Inventory) {
   var flying = false
   var selectedItemSlot: Int = 0
 
-  def blockInHand: Block = inventory(selectedItemSlot) // TODO: temporary, make inventory system
+  def blockInHand: Block = inventory(selectedItemSlot)
 
   def toNBT: Nbt.MapTag = {
     Nbt.makeMap(

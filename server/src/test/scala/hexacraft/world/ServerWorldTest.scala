@@ -18,7 +18,7 @@ class ServerWorldTest extends FunSuite {
     val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
 
     val cCoords = ChunkRelWorld(3, 7, -4)
 
@@ -72,9 +72,9 @@ class ServerWorldTest extends FunSuite {
     assert(world.getChunk(cCoords).isEmpty)
 
     // Run the game a bit
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -92,9 +92,9 @@ class ServerWorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords)).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -103,9 +103,9 @@ class ServerWorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords.offset(100, 0, 0))).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq(cCoords))
     Thread.sleep(20)
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
 
     // The chunk should be unloaded
     assert(world.getChunk(cCoords).isEmpty)
@@ -123,9 +123,9 @@ class ServerWorldTest extends FunSuite {
 
     // Make sure the chunk is loaded
     camera.setPosition(entityPosition.toVector3d)
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
     Thread.sleep(20)
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
 
     val entity = Entity(
       UUID.randomUUID(),
@@ -136,25 +136,25 @@ class ServerWorldTest extends FunSuite {
     world.addEntity(entity)
 
     val pos1 = entity.transform.position
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
     val pos2 = entity.transform.position
     assertNotEquals(pos1, pos2)
 
     world.removeEntity(entity)
 
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
     val pos3 = entity.transform.position
     assertEquals(pos2, pos3)
 
     world.addEntity(entity)
 
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
     val pos4 = entity.transform.position
     assertNotEquals(pos3, pos4)
 
     world.removeAllEntities()
 
-    world.tick(Seq(camera))
+    world.tick(Seq(camera), Seq(), Seq())
     val pos5 = entity.transform.position
     assertEquals(pos4, pos5)
   }

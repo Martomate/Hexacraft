@@ -39,16 +39,6 @@ class BufferHandlerTest extends FunSuite {
     assertEquals(dest.localBuffer.array().toSeq.take(6), Seq(0, 1, 2, 3, 0, 0).map(_.toByte))
   }
 
-  // TODO: fill in these tests or remove them
-
-  test("set should transfer the data into the correct buffers even if a border is crossed".ignore) {}
-  test("set should transfer the data into the correct buffers even if several borders are crossed".ignore) {}
-
-  test("render should do nothing if length is 0".ignore) {}
-  test("render should render the correct amount if no border is crossed".ignore) {}
-  test("render should render the correct amount if a border is crossed".ignore) {}
-  test("render should render the correct amount if several borders are crossed".ignore) {}
-
   test("unload should unload all buffers") {
     val dest = new LocalRenderBuffer(BufferSize)
     val allocator = new LocalRenderBuffer.Allocator(_ => dest)

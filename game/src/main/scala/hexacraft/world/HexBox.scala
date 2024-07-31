@@ -44,7 +44,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
     val yLo = math.floor((pos.y + this.bottom) * 2).toInt
     val yHi = math.floor((pos.y + this.top) * 2).toInt
 
-    // TODO: improve this implementation to be more correct
+    // TODO: improve this implementation to be more correct (the HexBox radius might be too big)
     for {
       y <- yLo to yHi
       dx <- -1 to 1

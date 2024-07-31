@@ -413,11 +413,6 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
         Some(info.toNBT)
-      case LoadChunkData(coords) =>
-        world.getChunk(coords) match {
-          case Some(chunk) => Some(chunk.toNbt)
-          case None        => Some(Nbt.emptyMap) // TODO: return None
-        }
       case LoadColumnData(coords) =>
         world.getColumn(coords) match {
           case Some(column) => Some(ChunkColumnData(Some(column.terrainHeight)).toNBT)

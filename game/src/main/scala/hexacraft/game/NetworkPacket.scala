@@ -20,7 +20,6 @@ enum NetworkPacket {
   case Logout
 
   case GetWorldInfo
-  case LoadChunkData(coords: ChunkRelWorld)
   case LoadColumnData(coords: ColumnRelWorld)
   case LoadWorldData
 
@@ -63,9 +62,6 @@ object NetworkPacket {
         NetworkPacket.Logout
       case "get_world_info" =>
         NetworkPacket.GetWorldInfo
-      case "load_chunk_data" =>
-        val coords = ChunkRelWorld(root.getLong("coords", -1))
-        NetworkPacket.LoadChunkData(coords)
       case "load_column_data" =>
         val coords = ColumnRelWorld(root.getLong("coords", -1))
         NetworkPacket.LoadColumnData(coords)
@@ -114,7 +110,6 @@ object NetworkPacket {
         case NetworkPacket.Login(_, _)                  => "login"
         case NetworkPacket.Logout                       => "logout"
         case NetworkPacket.GetWorldInfo                 => "get_world_info"
-        case NetworkPacket.LoadChunkData(_)             => "load_chunk_data"
         case NetworkPacket.LoadColumnData(_)            => "load_column_data"
         case NetworkPacket.LoadWorldData                => "load_world_data"
         case NetworkPacket.GetPlayerState               => "get_player_state"
@@ -145,10 +140,6 @@ object NetworkPacket {
           Nbt.makeMap(
             "id" -> Nbt.ByteArrayTag(idBytes),
             "name" -> Nbt.StringTag(name)
-          )
-        case NetworkPacket.LoadChunkData(coords) =>
-          Nbt.makeMap(
-            "coords" -> Nbt.LongTag(coords.value)
           )
         case NetworkPacket.LoadColumnData(coords) =>
           Nbt.makeMap(

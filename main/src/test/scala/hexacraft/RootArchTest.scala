@@ -96,25 +96,9 @@ class RootArchTest extends FunSuite {
         )*
       )
       .where(Game, _.mayOnlyAccessLayers(Infra, Physics, World, JOML, Nbt))
-      .where(
-        Client,
-        _.mayOnlyAccessLayers(
-          Game,
-          Text,
-          GUI,
-          Infra,
-          Math,
-          Renderer,
-          Shaders,
-          Physics,
-          Util,
-          World,
-          JOML,
-          LWJGL,
-          Nbt,
-          ZeroMQ
-        )
-      )
+      // format: off
+      .where(Client, _.mayOnlyAccessLayers(Game, Text, GUI, Infra, Math, Renderer, Shaders, Physics, Util, World, JOML, LWJGL, Nbt, ZeroMQ))
+      // format: on
       .where(Server, _.mayOnlyAccessLayers(Game, Infra, Math, Physics, Util, World, JOML, Nbt, ZeroMQ))
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Shaders, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt))

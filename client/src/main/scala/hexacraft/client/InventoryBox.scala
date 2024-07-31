@@ -3,7 +3,7 @@ package hexacraft.client
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
 import hexacraft.gui.comp.{Component, GUITransformation}
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
-import hexacraft.util.{Channel, Tracker}
+import hexacraft.util.Channel
 import hexacraft.world.Inventory
 import hexacraft.world.block.Block
 
@@ -45,10 +45,10 @@ class InventoryBox private (
     eventHandler: Channel.Sender[InventoryBox.Event]
 ) extends Component {
 
-  private val location: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
+  private val bounds: LocationInfo = LocationInfo(-4.5f * 0.2f, -2.5f * 0.2f, 9 * 0.2f, 4 * 0.2f)
   private val backgroundColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.75f)
   private val selectedColor = new Vector4f(0.2f, 0.2f, 0.2f, 0.25f)
-  private val selectedBox = LocationInfo(location.x + 0.01f, location.y + 0.01f, 0.18f, 0.18f)
+  private val selectedBox = LocationInfo(bounds.x + 0.01f, bounds.y + 0.01f, 0.18f, 0.18f)
 
   /** The index of the slot under the cursor */
   private var hoverIndex: Option[Int] = None
@@ -64,9 +64,9 @@ class InventoryBox private (
   }
 
   private def calculateHoverIndex(mx: Float, my: Float) = {
-    if location.containsPoint(mx, my) then {
-      val xi = ((mx - location.x) / 0.2f).toInt
-      val yi = ((my - location.y) / 0.2f).toInt
+    if bounds.containsPoint(mx, my) then {
+      val xi = ((mx - bounds.x) / 0.2f).toInt
+      val yi = ((my - bounds.y) / 0.2f).toInt
       Some(xi + yi * 9)
     } else {
       None
@@ -79,27 +79,31 @@ class InventoryBox private (
       case KeyEvent(key, _, KeyAction.Press, _) =>
         key match {
           case KeyboardKey.Escape | KeyboardKey.Letter('E') =>
-            handleFloatingBlock()
+            releaseFloatingBlock()
             eventHandler.send(InventoryBox.Event.BoxClosed)
           case _ =>
         }
-      case MouseClickEvent(_, MouseAction.Release, _, mousePos) if location.containsPoint(mousePos) =>
+      case MouseClickEvent(_, MouseAction.Release, _, mousePos) if bounds.containsPoint(mousePos) =>
         hoverIndex match {
           case Some(hover) =>
-            val newFloatingBlock = Some(inventory(hover)).filter(_ != Block.Air)
-            inventory = inventory.updated(hover, floatingBlock.getOrElse(Block.Air))
-            eventHandler.send(InventoryBox.Event.InventoryUpdated(inventory))
-            updateRendererContent()
-            floatingBlock = newFloatingBlock
+            swapFloatingBlock(hover)
           case None =>
-            handleFloatingBlock()
+            releaseFloatingBlock()
         }
       case _ =>
     }
     true
   }
 
-  private def handleFloatingBlock(): Unit = {
+  private def swapFloatingBlock(index: Int): Unit = {
+    val newFloatingBlock = Some(inventory(index)).filter(_ != Block.Air)
+    inventory = inventory.updated(index, floatingBlock.getOrElse(Block.Air))
+    eventHandler.send(InventoryBox.Event.InventoryUpdated(inventory))
+    updateRendererContent()
+    floatingBlock = newFloatingBlock
+  }
+
+  private def releaseFloatingBlock(): Unit = {
     floatingBlock match {
       case Some(block) =>
         inventory.firstEmptySlot match {
@@ -124,7 +128,7 @@ class InventoryBox private (
       floatingBlockRenderer.updateContent(mousePos.x, mousePos.y, Seq(floatingBlock.get))
     }
 
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
+    Component.drawRect(bounds, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
 
     if hoverIndex.isDefined then {
       val xOffset = transformation.x + (hoverIndex.get % 9) * 0.2f

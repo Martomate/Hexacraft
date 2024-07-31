@@ -29,7 +29,6 @@ class TextMaster {
     textBatch -= text
     if textBatch.isEmpty then {
       texts -= text.font
-      // TODO: remove VAO
     }
   }
 
@@ -39,6 +38,7 @@ class TextMaster {
       text <- texts(font)
     } do {
       text.unload()
+      // TODO: this class is currently not the owner of the Text, but it probably should be
     }
     texts.clear()
   }

@@ -72,7 +72,6 @@ object GameClient {
     val crosshairVAO: VAO = CrosshairShader.createVao()
     val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
-    // TODO: get chunks from the server instead of generating the entire world
     val world = ClientWorld(worldInfo)
 
     given CylinderSize = world.size

@@ -76,6 +76,8 @@ class GameSceneTest extends FunSuite {
 
     // All newly loaded shader programs should be released after the game is unloaded
     assertEquals(shadersRemoved.sorted, shadersAdded.sorted)
+
+    gameScene.unload()
   }
 
   test("GameScene emits QuitGame event when quit-button is pressed in pause menu") {
@@ -108,6 +110,8 @@ class GameSceneTest extends FunSuite {
         GameScene.Event.GameQuit // when the "Back to Menu" button is pressed
       )
     )
+
+    gameScene.unload()
   }
 
   test("GameScene plays a sound when the player breaks a block") {
@@ -150,8 +154,7 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
     Thread.sleep(20)
     gameScene.tick(tickContext)
-
-    println(gameScene.client.player.position)
+    Thread.sleep(2)
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
@@ -163,6 +166,8 @@ class GameSceneTest extends FunSuite {
 
     // the sound should have started playing
     assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
+
+    gameScene.unload()
   }
 
   test("GameScene plays a sound when the player places a block") {
@@ -205,6 +210,7 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
     Thread.sleep(20)
     gameScene.tick(tickContext)
+    Thread.sleep(2)
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
@@ -216,5 +222,7 @@ class GameSceneTest extends FunSuite {
 
     // the sound should have started playing
     assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
+
+    gameScene.unload()
   }
 }
