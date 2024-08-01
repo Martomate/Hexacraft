@@ -127,6 +127,8 @@ class ServerWorldTest extends FunSuite {
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
 
+    assert(world.getChunk(ChunkRelWorld(0, 0, 0)).isDefined)
+
     val entity = Entity(
       UUID.randomUUID(),
       "scorpion",

@@ -41,21 +41,12 @@ object GameClient {
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(serverIp, serverPort)
 
-    val loginResponse = socket.sendPacketAndWait(NetworkPacket.Login(playerId, "Some name")).asMap.get
-    val loginSuccessful = loginResponse.getBoolean("success", false)
-    if !loginSuccessful then {
-      val errorMessage = loginResponse.getString("error", "")
-      return Result.Err(s"failed to login: $errorMessage")
+    val (worldInfo, player) = fetchWorldInfo(socket, playerId) match {
+      case Result.Ok(value) => value
+      case Result.Err(message) =>
+        socket.close()
+        return Result.Err(s"failed to connect to server: $message")
     }
-
-    val worldInfo = WorldInfo.fromNBT(
-      socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asInstanceOf[Nbt.MapTag],
-      null,
-      WorldSettings.none
-    )
-
-    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
-    val player = Player.fromNBT(playerId, playerNbt.asInstanceOf[Nbt.MapTag])
 
     val blockSpecs = BlockSpecs.default
     val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
@@ -131,6 +122,29 @@ object GameClient {
     Thread(() => socket.runMonitoring()).start()
 
     Result.Ok((client, rx))
+  }
+
+  private def fetchWorldInfo(socket: GameClientSocket, playerId: UUID): Result[(WorldInfo, Player), String] = try {
+    val loginResponse = socket.sendPacketAndWait(NetworkPacket.Login(playerId, "Some name")).asMap.get
+    val loginSuccessful = loginResponse.getBoolean("success", false)
+    if !loginSuccessful then {
+      val errorMessage = loginResponse.getString("error", "")
+      return Result.Err(s"failed to login: $errorMessage")
+    }
+
+    val worldInfo = WorldInfo.fromNBT(
+      socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asMap.get,
+      null,
+      WorldSettings.none
+    )
+
+    val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
+    val player = Player.fromNBT(playerId, playerNbt.asMap.get)
+
+    Result.Ok((worldInfo, player))
+  } catch {
+    case e: Exception =>
+      Result.Err(e.getMessage)
   }
 
   private def calculateTextureColor(texture: PixelArray): Vector3f = {
@@ -917,6 +931,10 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   def close(): Unit = {
     context.synchronized {
       context.close()
+    }
+
+    if monitoringThread != null then {
+      monitoringThread.interrupt()
     }
   }
 }

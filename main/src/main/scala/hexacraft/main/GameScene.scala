@@ -9,7 +9,6 @@ import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
 import hexacraft.util.{Channel, Result}
 import hexacraft.world.WorldProvider
-import hexacraft.world.block.BlockSpec
 
 import java.util.UUID
 
@@ -50,8 +49,12 @@ object GameScene {
       c.initialWindowSize,
       c.audioSystem
     ) match {
-      case Result.Ok(res)      => res
-      case Result.Err(message) => return Result.Err(s"failed to start game: $message")
+      case Result.Ok(res) => res
+      case Result.Err(message) =>
+        if server.isDefined then {
+          server.get.unload()
+        }
+        return Result.Err(s"failed to start game: $message")
     }
 
     clientEvents.onEvent {
