@@ -74,6 +74,8 @@ class ServerWorldTest extends FunSuite {
     // Run the game a bit
     world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
+    world.tick(Seq(camera), Seq(cCoords), Seq())
+    Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
 
     // The chunk should be loaded
@@ -92,6 +94,8 @@ class ServerWorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords)).toCylCoords.toVector3d)
 
     // Run the game a bit
+    world.tick(Seq(camera), Seq(cCoords), Seq())
+    Thread.sleep(20)
     world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
@@ -123,6 +127,8 @@ class ServerWorldTest extends FunSuite {
 
     // Make sure the chunk is loaded
     camera.setPosition(entityPosition.toVector3d)
+    world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
+    Thread.sleep(20)
     world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
