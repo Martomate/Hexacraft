@@ -16,7 +16,6 @@ import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUt
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*
-import zmq.ZError
 
 import java.util.UUID
 import scala.collection.mutable
@@ -118,8 +117,6 @@ object GameClient {
     client.updateBlockInHandRendererContent()
     client.setUniforms(initialWindowSize.logicalAspectRatio)
     client.setUseMouse(true)
-
-    Thread(() => socket.runMonitoring()).start()
 
     Result.Ok((client, rx))
   }
@@ -495,11 +492,6 @@ class GameClient(
 
   def tick(ctx: TickContext): Unit = {
     try {
-      if socket.isDisconnected then {
-        logout()
-        return
-      }
-
       val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) =
         socket.sendMultiplePacketsAndWait(
           Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(5))
@@ -819,9 +811,6 @@ class GameClient(
 
 class GameClientSocket(serverIp: String, serverPort: Int) {
   private val context = ZContext()
-  context.setUncaughtExceptionHandler((thread, exc) => println(s"Uncaught exception: $exc"))
-  context.setNotificationExceptionHandler((thread, exc) => println(s"Notification: $exc"))
-
   private val socket = context.createSocket(SocketType.DEALER)
 
   private val clientId = (new Random().nextInt(1000000) + 1000000).toString
@@ -834,50 +823,6 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   socket.setHeartbeatTimeout(1000)
   socket.connect(s"tcp://$serverIp:$serverPort")
 
-  private var monitoringThread: Thread = null.asInstanceOf[Thread]
-
-  private var _disconnected: Boolean = false
-  def isDisconnected: Boolean = _disconnected
-
-  def runMonitoring(): Unit = {
-    if monitoringThread != null then {
-      throw new Exception("May only run monitoring once")
-    }
-    monitoringThread = Thread.currentThread()
-
-    val monitor = context.synchronized {
-      if context.isClosed then {
-        return
-      }
-
-      val monitor = ZMonitor(context, socket)
-      monitor.add(ZMonitor.Event.ALL)
-      monitor.verbose(false)
-      monitor.start()
-      monitor
-    }
-
-    while !context.isClosed do {
-      try {
-        val event = monitor.nextEvent(100)
-        if event != null then {
-          if event.`type` == ZMonitor.Event.DISCONNECTED then {
-            _disconnected = true
-          }
-        }
-      } catch {
-        case e: ZMQException =>
-          e.getErrorCode match {
-            case ZError.EINTR => // noop
-            case _            => throw e
-          }
-        case e => throw e
-      }
-    }
-
-    monitor.close()
-  }
-
   def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
     val message = packet.serialize()
 
@@ -887,8 +832,8 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
     }
   }
 
-  private def queryRaw(message: Array[Byte]): Array[Byte] = this.synchronized {
-    if !socket.send(message) then {
+  def sendPacketAndWait(packet: NetworkPacket): Nbt = this.synchronized {
+    if !socket.send(packet.serialize()) then {
       val err = socket.errno()
       throw new ZMQException("Could not send message", err)
     }
@@ -899,16 +844,11 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
       throw new ZMQException("Could not receive message", err)
     }
 
-    response
-  }
-
-  def sendPacketAndWait(packet: NetworkPacket): Nbt = {
-    val response = queryRaw(packet.serialize())
     val (_, tag) = Nbt.fromBinary(response)
     tag
   }
 
-  def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = {
+  def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = this.synchronized {
     for p <- packets do {
       if !socket.send(p.serialize()) then {
         val err = socket.errno()
@@ -916,11 +856,11 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
       }
     }
 
-    for _ <- packets.indices yield {
+    for i <- packets.indices yield {
       val response = socket.recv(0)
       if response == null then {
         val err = socket.errno()
-        throw new ZMQException("Could not receive message", err)
+        throw new ZMQException(s"Could not receive message ${i + 1}", err)
       }
 
       val (_, tag) = Nbt.fromBinary(response)
@@ -929,12 +869,6 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
   }
 
   def close(): Unit = {
-    context.synchronized {
-      context.close()
-    }
-
-    if monitoringThread != null then {
-      monitoringThread.interrupt()
-    }
+    context.close()
   }
 }

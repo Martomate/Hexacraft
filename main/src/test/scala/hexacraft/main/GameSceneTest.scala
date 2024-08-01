@@ -76,8 +76,6 @@ class GameSceneTest extends FunSuite {
 
     // All newly loaded shader programs should be released after the game is unloaded
     assertEquals(shadersRemoved.sorted, shadersAdded.sorted)
-
-    gameScene.unload()
   }
 
   test("GameScene emits QuitGame event when quit-button is pressed in pause menu") {

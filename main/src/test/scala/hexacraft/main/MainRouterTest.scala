@@ -211,6 +211,7 @@ class MainRouterTest extends FunSuite {
     test("Game routes to GameScene".ignore) {
       val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null))
       assert(scene.isInstanceOf[GameScene])
+      scene.unload()
     }
 
     test("Game with Escape key and click on Back to menu routes to MainMenu".ignore) {

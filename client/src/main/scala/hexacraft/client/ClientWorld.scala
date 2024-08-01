@@ -245,9 +245,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       for e <- entities do {
         if addEntity(e).isEmpty then {
           entitiesToSpawnLater += e
-          println(s"Client: not ready to spawn entity ${e.id}")
+          // println(s"Client: not ready to spawn entity ${e.id}")
         } else {
-          println(s"Client: finally spawned entity ${e.id}")
+          // println(s"Client: finally spawned entity ${e.id}")
         }
       }
     }
@@ -294,7 +294,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
                   println(e)
               }
             case _ =>
-              println(s"Received entity event for an unknown entity (id: $id, event: $event)")
+            // println(s"Received entity event for an unknown entity (id: $id, event: $event)")
           }
       }
     }

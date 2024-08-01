@@ -41,7 +41,7 @@ enum NetworkPacket {
 object NetworkPacket {
   def deserialize(bytes: Array[Byte]): NetworkPacket = {
     val (packetName, packetDataTag) = Nbt.fromBinary(bytes)
-    val root = packetDataTag.asInstanceOf[Nbt.MapTag]
+    val root = packetDataTag.asMap.get
 
     packetName match {
       case "login" =>

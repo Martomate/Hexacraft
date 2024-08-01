@@ -1,6 +1,7 @@
 package hexacraft.server
 
 import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler}
+import hexacraft.server.TcpServer.Error
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
@@ -10,8 +11,7 @@ import hexacraft.world.entity.*
 
 import com.martomate.nbt.Nbt
 import org.joml.Vector2f
-import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
-import zmq.ZError
+import org.zeromq.ZMQException
 
 import java.util.UUID
 import scala.collection.mutable
@@ -20,11 +20,11 @@ object GameServer {
   def create(isOnline: Boolean, port: Int, worldProvider: WorldProvider): GameServer = {
     val world = new ServerWorld(worldProvider, worldProvider.getWorldInfo)
 
-    val server = new GameServer(isOnline, port, worldProvider, world)(using world.size)
+    val tcpServer = TcpServer
+      .start(port)
+      .unwrapWith(m => new IllegalStateException(s"Could not start server: $m"))
 
-    Thread(() => server.run()).start()
-
-    server
+    new GameServer(isOnline, tcpServer, worldProvider, world)(using world.size)
   }
 }
 
@@ -35,14 +35,21 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
   val entityEventsWaitingToBeSent: mutable.ArrayBuffer[(UUID, EntityEvent)] = mutable.ArrayBuffer.empty
 }
 
-class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, world: ServerWorld)(using CylinderSize) {
-  private var serverThread: Thread = null.asInstanceOf[Thread]
+class GameServer(
+    isOnline: Boolean,
+    server: TcpServer,
+    worldProvider: WorldProvider,
+    world: ServerWorld
+)(using CylinderSize) {
 
   private val players: mutable.LongMap[PlayerData] = mutable.LongMap.empty
 
   private val collisionDetector: CollisionDetector = new CollisionDetector(world)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
   private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(collisionDetector)
+
+  private val serverThread: Thread = Thread(() => this.run())
+  serverThread.start()
 
   private def savePlayers(): Unit = {
     for d <- players.values do {
@@ -262,61 +269,46 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
   }
 
   def run(): Unit = {
-    if serverThread != null then {
-      throw new RuntimeException("You may only start the server once")
-    }
-    serverThread = Thread.currentThread()
+    val messagesToSend: mutable.ArrayBuffer[(Long, Nbt)] = mutable.ArrayBuffer.empty
 
-    try {
-      val context = ZContext()
+    while server.running do {
       try {
-        val serverSocket = context.createSocket(SocketType.ROUTER)
-        serverSocket.setHeartbeatIvl(1000)
-        serverSocket.setHeartbeatTtl(3000)
-        serverSocket.setHeartbeatTimeout(3000)
-
-        if !serverSocket.bind(s"tcp://*:$port") then {
-          throw new IllegalStateException("Server could not be bound")
+        server.receive() match {
+          case Result.Ok((clientId, packet)) =>
+            handlePacket(clientId, packet) match {
+              case Some(res) =>
+                messagesToSend += clientId -> res
+              case None =>
+            }
+          case Result.Err(error) =>
+            error match {
+              case Error.InvalidPacket(message) =>
+                // Ignore the invalid packet, since it's up to the client to send correct data
+                println(s"Received invalid packet: $message")
+            }
         }
-        println(s"Running server on port $port")
 
-        while !Thread.currentThread().isInterrupted do {
-          val identity = serverSocket.recv(0)
-          if identity.isEmpty then {
-            throw new Exception("Received an empty identity frame")
+        if server.running then {
+          for (clientId, data) <- messagesToSend do {
+            server.send(clientId, data) match {
+              case Result.Ok(_)                             =>
+              case Result.Err(Error.InvalidPacket(message)) =>
+                // This is a bug in the server, not invalid input, so it's best to shut down
+                throw new RuntimeException(s"Tried to send invalid packet: $message")
+            }
           }
-          val clientId = String(identity).toLong
-          val bytes = serverSocket.recv(0)
-          if bytes == null then {
-            throw new ZMQException(serverSocket.errno())
-          }
-
-          val packet = NetworkPacket.deserialize(bytes)
-          handlePacket(clientId, packet, serverSocket) match {
-            case Some(res) =>
-              serverSocket.sendMore(identity)
-              serverSocket.send(res.toBinary())
-            case None =>
-          }
+          messagesToSend.clear()
         }
-      } finally context.close()
-    } catch {
-      case e: ZMQException =>
-        e.getErrorCode match {
-          case ZError.EINTR => // noop
-          case _            => throw e
-        }
-      case e =>
-        throw e
+      } catch {
+        case _: InterruptedException =>
+      }
     }
-
-    println(s"Stopped server")
   }
 
   private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
   private val chunksLoadCount = mutable.LongMap.empty[Int]
 
-  private def handlePacket(clientId: Long, packet: NetworkPacket, socket: ZMQ.Socket): Option[Nbt.MapTag] = {
+  private def handlePacket(clientId: Long, packet: NetworkPacket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
     packet match {
@@ -574,8 +566,8 @@ class GameServer(isOnline: Boolean, port: Int, worldProvider: WorldProvider, wor
   }
 
   private def stop(): Unit = {
-    if serverThread != null then {
-      serverThread.interrupt()
-    }
+    server.stop()
+    serverThread.interrupt()
+    serverThread.join()
   }
 }
