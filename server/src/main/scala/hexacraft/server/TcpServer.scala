@@ -35,18 +35,20 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket) {
 
   def running: Boolean = _running
 
+  private val cancelToken = serverSocket.createCancellationToken()
+
   def receive(): Result[(Long, NetworkPacket), TcpServer.Error] = {
     if !_running then {
       throw new IllegalStateException("The server is not running")
     }
 
     try {
-      val identity = serverSocket.recv(0)
+      val identity = serverSocket.recv(0, cancelToken)
       if identity == null then {
         throw new ZMQException(serverSocket.errno())
       }
 
-      val bytes = serverSocket.recv(0)
+      val bytes = serverSocket.recv(0, cancelToken)
       if bytes == null then {
         throw new ZMQException(serverSocket.errno())
       }
@@ -63,7 +65,7 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket) {
           .mapErr(e => TcpServer.Error.InvalidPacket(e.getMessage))
       } yield (clientId, packet)
     } catch {
-      case e: ZMQException if e.getErrorCode == ZError.ETERM =>
+      case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
         throw new InterruptedException()
     }
   }
@@ -75,10 +77,10 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket) {
 
     try {
       serverSocket.sendMore(clientId.toString)
-      serverSocket.send(data.toBinary())
+      serverSocket.send(data.toBinary(), 0, cancelToken)
       Ok(())
     } catch {
-      case e: ZMQException if e.getErrorCode == ZError.ETERM =>
+      case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
         throw new InterruptedException()
     }
   }
@@ -88,8 +90,16 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket) {
     if !_running then {
       throw new IllegalStateException("The server is not running")
     }
-
     _running = false
-    context.close()
+
+    context.synchronized {
+      if !context.isClosed then {
+        cancelToken.cancel()
+      }
+    }
+  }
+
+  def unload(): Unit = {
+    context.synchronized(context.destroy())
   }
 }

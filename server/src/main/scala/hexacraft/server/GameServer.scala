@@ -303,6 +303,8 @@ class GameServer(
         case _: InterruptedException =>
       }
     }
+
+    server.unload()
   }
 
   private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
@@ -567,7 +569,6 @@ class GameServer(
 
   private def stop(): Unit = {
     server.stop()
-    serverThread.interrupt()
     serverThread.join()
   }
 }
