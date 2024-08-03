@@ -11,12 +11,9 @@ import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityFactory, EntityPhysicsSystem}
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
 
 object ClientWorld {
   class WorldTickResult(
@@ -26,8 +23,6 @@ object ClientWorld {
 
 class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
   given size: CylinderSize = worldInfo.worldSize
-
-  private val backgroundTasks: mutable.ArrayBuffer[Future[Unit]] = mutable.ArrayBuffer.empty
 
   private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
@@ -359,10 +354,6 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   def unload(): Unit = {
     chunks.clear()
     columns.clear()
-
-    for t <- backgroundTasks do {
-      Await.result(t, Duration(10, TimeUnit.SECONDS))
-    }
   }
 
   private def onSetBlock(coords: BlockRelWorld, block: BlockState): Unit = {

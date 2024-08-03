@@ -345,8 +345,8 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       requestedLoads: Seq[ChunkRelWorld],
       requestedUnloads: Seq[ChunkRelWorld]
   ): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
-    val chunksToLoadPerTick = 8
-    val chunksToUnloadPerTick = 12
+    val chunksToLoadPerTick = if ServerWorld.shouldChillChunkLoader then 1 else 4
+    val chunksToUnloadPerTick = if ServerWorld.shouldChillChunkLoader then 2 else 6
 
     var unloadsLeft = chunksToUnloadPerTick
     for coords <- requestedUnloads do {

@@ -209,7 +209,8 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
     Thread.sleep(20)
     gameScene.tick(tickContext)
-    Thread.sleep(2)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]

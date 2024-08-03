@@ -18,7 +18,11 @@ import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 import scala.util.Random
 
 object GameClient {
@@ -490,12 +494,20 @@ class GameClient(
       .sum
   }
 
+  private var tickFut: Option[Future[Seq[Nbt]]] = None
+
   def tick(ctx: TickContext): Unit = {
+    // Act on the server info requested last tick, and send a new request to be used in the next tick
+    val currentTickFut = tickFut
+    tickFut = Some(Future {
+      val packets = Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(5))
+      socket.sendMultiplePacketsAndWait(packets)
+    })
+    if currentTickFut.isEmpty then return // the first tick has no server data to act on
+
     try {
       val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) =
-        socket.sendMultiplePacketsAndWait(
-          Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(5))
-        )
+        Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
 
       val syncedPlayer = Player.fromNBT(player.id, playerNbt.asInstanceOf[Nbt.MapTag])
       // println(syncedPlayer.position)

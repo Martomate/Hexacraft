@@ -99,8 +99,8 @@ class WorldRenderer(
   }
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
-    // Step 1: Perform render updates using data calculated in the background since the previous frame
-    updateBlockData(futureRenderData.map((coords, fut) => (coords, Await.result(fut, Duration.Inf))).toSeq)
+    // Step 1: Collect render data calculated since the previous frame (used in step 3)
+    val blockDataToUpdate = futureRenderData.map((coords, fut) => (coords, Await.result(fut, Duration.Inf))).toSeq
     futureRenderData.clear()
 
     // Step 2: Start calculating render updates in the background
@@ -138,6 +138,9 @@ class WorldRenderer(
           numUpdatesToPerform = 0
       }
     }
+
+    // Step 3: Perform render updates using data calculated in the background since the previous frame
+    updateBlockData(blockDataToUpdate)
 
     // performTerrainUpdates(camera)
   }

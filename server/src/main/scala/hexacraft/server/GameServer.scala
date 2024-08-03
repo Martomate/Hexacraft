@@ -368,7 +368,7 @@ class GameServer(
               }
             }
           }
-          println("Received login message from a new client")
+          // println("Received login message from a new client")
           return Some(Nbt.makeMap("success" -> Nbt.ByteTag(true)))
         } else {
           println("Received login message from a logged in client")
