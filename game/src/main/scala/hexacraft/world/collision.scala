@@ -47,10 +47,12 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
     val parts = (velocity.length * 10).toInt + 1
     result._2.div(parts)
 
-    for _ <- 1 to parts do {
+    var pIdx = 0
+    while pIdx < parts do {
       val currentPos = CylCoords(result._1)
       val currentVelocity = CylCoords.Offset(vel)
       result = _collides(new MovingBox(box, currentPos, currentVelocity), 100)
+      pIdx += 1
     }
 
     result._2.mul(parts)
@@ -88,16 +90,39 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
     val yLo = math.floor((box.pos.y + box.bounds.bottom) * 2).toInt
     val yHi = math.floor((box.pos.y + box.bounds.top) * 2).toInt
 
-    val candidates =
-      for {
-        y <- yLo to yHi
-        dx <- -1 to 1
-        dz <- -1 to 1
-        if dx * dz != 1 // remove corners
-      } yield distanceToBlock(box, BlockRelWorld(bc.x + dx, y, bc.z + dz))
+    // min by dist, with dir as extra data
+    var minDist: Double = Double.MaxValue
+    var minDir: Int = 0
 
-    candidates.flatten // remove blocks that are not in the way
-      .minByOption(_._1)
+    var y = yLo
+    while y <= yHi do {
+      var i = 0
+      while i < 9 do {
+        val dx = (i % 3) - 1
+        val dz = (i / 3) - 1
+
+        if dx * dz != 1 then { // remove corners
+          // keep track of the closest block we are about to collide with
+          distanceToBlock(box, BlockRelWorld(bc.x + dx, y, bc.z + dz)) match {
+            case Some((dist, dir)) =>
+              if dist < minDist then {
+                minDist = dist
+                minDir = dir
+              }
+            case None =>
+          }
+        }
+        i += 1
+      }
+      y += 1
+    }
+
+    // only return the distance if there was in fact a collision
+    if minDist != Double.MaxValue then {
+      Some((minDist, minDir))
+    } else {
+      None
+    }
   }
 
   /** Returns the distance to the target block along `vec` and the side of the collision.
