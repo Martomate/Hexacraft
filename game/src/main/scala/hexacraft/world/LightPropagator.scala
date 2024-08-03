@@ -3,7 +3,7 @@ package hexacraft.world
 import hexacraft.math.MathUtils.oppositeSide
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, LocalBlockState}
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, NeighborOffsets}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
 import scala.collection.mutable
 
@@ -13,31 +13,33 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
   def initBrightnesses(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     chunkCache.clearCache()
 
-    val lights = mutable.HashMap.empty[BlockRelChunk, BlockState]
-
-    for
-      LocalBlockState(c, b) <- chunk.blocks
-      if b.blockType.lightEmitted != 0
-    do lights(c) = b
-
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
     val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
 
-    for ((c, b) <- lights) {
-      chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
-      queueTorch += ((c, chunkCoords, chunk))
+    val blocks = chunk.blocks
+    var cIdx = 0
+    while cIdx < blocks.length do {
+      val LocalBlockState(c, b) = blocks(cIdx)
+
+      if b.blockType.lightEmitted != 0 then {
+        chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
+        queueTorch += ((c, chunkCoords, chunk))
+      }
+      cIdx += 1
     }
 
     def shouldEnqueueSunlight(coords: BlockRelChunk, neighCoords: ChunkRelWorld, neigh: Chunk) = {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neighCoords.getColumnRelWorld).get
       if neighCoords.Y.toInt * 16 + coords.cy > neighCol.terrainHeight.getHeight(coords.cx, coords.cz)
-      then
+      then {
         val transparentTop = !block.blockType.isCovering(block.metadata, 0) || block.blockType.isTransmissive
         val transparentBottom = !block.blockType.isCovering(block.metadata, 1) || block.blockType.isTransmissive
         transparentTop && transparentBottom
-      else false
+      } else {
+        false
+      }
     }
 
     def handleEdge(x: Int, y: Int, z: Int) = {
@@ -70,15 +72,19 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       }
     }
 
-    for s <- -1 to 16 do {
-      for t <- -1 to 16 do {
+    var s = -1
+    while s <= 16 do {
+      var t = -1
+      while t <= 16 do {
         handleEdge(-1, s, t)
         handleEdge(16, s, t)
         handleEdge(s, -1, t)
         handleEdge(s, 16, t)
         handleEdge(s, t, -1)
         handleEdge(s, t, 16)
+        t += 1
       }
+      s += 1
     }
 
     propagateTorchlight(queueTorch)
@@ -119,7 +125,8 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       chunksNeedingRenderUpdate += chunkCoords
 
-      for s <- NeighborOffsets.indices do {
+      var s = 0
+      while s < 8 do {
         val c2w = here.globalNeighbor(s, chunkCoords)
         val c2 = c2w.getBlockRelChunk
         val neighCoords = c2w.getChunkRelWorld
@@ -137,6 +144,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
             chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
           }
         }
+        s += 1
       }
     }
 
@@ -155,7 +163,8 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       chunksNeedingRenderUpdate += chunkCoords
 
-      for s <- NeighborOffsets.indices do {
+      var s = 0
+      while s < 8 do {
         val c2w = here.globalNeighbor(s, chunkCoords)
         val c2 = c2w.getBlockRelChunk
         val neighCoords = c2w.getChunkRelWorld
@@ -173,6 +182,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
             chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
           }
         }
+        s += 1
       }
     }
 
@@ -191,7 +201,8 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       if nextLevel > 0 then {
         chunksNeedingRenderUpdate += chunkCoords
 
-        for s <- NeighborOffsets.indices do {
+        var s = 0
+        while s < 8 do {
           val c2w = here.globalNeighbor(s, chunkCoords)
           val c2 = c2w.getBlockRelChunk
           val neighCoords = c2w.getChunkRelWorld
@@ -208,6 +219,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
               chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
             }
           }
+          s += 1
         }
       }
     }
@@ -231,7 +243,9 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
         val thisQueue = chunksToProcess.remove(chunkCoords).get
         val map = propagateSunlightInChunk(chunkCoords, chunk, thisQueue)
 
-        for chunkCoords <- map.keysIterator do {
+        val cIt = map.keysIterator
+        while cIt.hasNext do {
+          val chunkCoords = cIt.next()
           chunksToProcess.getOrElseUpdate(chunkCoords, mutable.Queue.empty).enqueueAll(map(chunkCoords))
           chunksNeedingRenderUpdate += chunkCoords
         }
@@ -245,7 +259,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       chunkCoords: ChunkRelWorld,
       chunk: Chunk,
       queue: mutable.Queue[Int]
-  ): Map[ChunkRelWorld, Seq[Int]] = {
+  ): collection.Map[ChunkRelWorld, Seq[Int]] = {
     val neighborMap: mutable.Map[ChunkRelWorld, mutable.ArrayBuffer[Int]] = mutable.Map.empty
     val inQueue: java.util.BitSet = new java.util.BitSet(16 * 16 * 16)
 
@@ -305,6 +319,12 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       }
     }
 
-    neighborMap.view.mapValues(_.toSeq).toMap
+    val result = mutable.HashMap.empty[ChunkRelWorld, Seq[Int]]
+    val kIt = neighborMap.iterator
+    while kIt.hasNext do {
+      val (coords, blocks) = kIt.next()
+      result += coords -> blocks.toSeq
+    }
+    result
   }
 }

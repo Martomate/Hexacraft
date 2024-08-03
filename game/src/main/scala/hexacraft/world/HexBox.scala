@@ -7,6 +7,7 @@ import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 import org.joml.Vector3dc
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /** radius is the big radius of the hexagon */
 class HexBox(val radius: Float, val bottom: Float, val top: Float) {
@@ -26,17 +27,22 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   }
 
   def vertices: IndexedSeq[CylCoords.Offset] = {
-    // val ints = Seq(1, 2, 0, 3, 5, 4)
+    val result = new mutable.ArrayBuffer[CylCoords.Offset](12)
 
-    for {
-      s <- 0 to 1
-      i <- 0 until 6
-    } yield {
-      val v = i * Math.PI / 3
-      val x = Math.cos(v).toFloat
-      val z = Math.sin(v).toFloat
-      CylCoords.Offset(x * radius, (1 - s) * (top - bottom) + bottom, z * radius)
+    var s = 0
+    while s < 2 do {
+      var i = 0
+      while i < 6 do {
+        val v = i * Math.PI / 3
+        val x = Math.cos(v).toFloat
+        val z = Math.sin(v).toFloat
+
+        result += CylCoords.Offset(x * radius, (1 - s) * (top - bottom) + bottom, z * radius)
+        i += 1
+      }
+      s += 1
     }
+    result.toIndexedSeq
   }
 
   /** Returns all blocks spaces that would intersect with this HexBox when placed at the given position */
@@ -44,16 +50,25 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
     val yLo = math.floor((pos.y + this.bottom) * 2).toInt
     val yHi = math.floor((pos.y + this.top) * 2).toInt
 
-    // TODO: improve this implementation to be more correct (the HexBox radius might be too big)
-    for {
-      y <- yLo to yHi
-      dx <- -1 to 1
-      dz <- -1 to 1
-      if dx * dz != 1 // remove corners
-    } yield {
-      val origin = pos.toBlockCoords.offset(dx, 0, dz)
-      CoordUtils.getEnclosingBlock(BlockCoords(origin.x, y, origin.z))._1
+    val result = mutable.ArrayBuffer.empty[BlockRelWorld]
+
+    var y = yLo
+    while y <= yHi do {
+      // TODO: improve this implementation to be more correct (the HexBox radius might be too big)
+      var i = 0
+      while i < 9 do {
+        val dx = (i % 3) - 1
+        val dz = (i / 3) - 1
+
+        if dx * dz != 1 then { // remove corners
+          val origin = pos.toBlockCoords.offset(dx, 0, dz)
+          result += CoordUtils.getEnclosingBlock(BlockCoords(origin.x, y, origin.z))._1
+        }
+        i += 1
+      }
+      y += 1
     }
+    result.toSeq
   }
 }
 
