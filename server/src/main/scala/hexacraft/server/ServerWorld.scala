@@ -11,11 +11,11 @@ import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 import com.martomate.nbt.Nbt
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
@@ -38,7 +38,12 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     extends BlockRepository
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
-  import scala.concurrent.ExecutionContext.Implicits.global
+
+  private val fsExecutorService = Executors.newFixedThreadPool(8, NamedThreadFactory("server-fs"))
+  private val genExecutorService = Executors.newFixedThreadPool(4, NamedThreadFactory("server-gen"))
+
+  private val fsAsync: ExecutionContext = ExecutionContext.fromExecutor(fsExecutorService)
+  private val genAsync: ExecutionContext = ExecutionContext.fromExecutor(genExecutorService)
 
   private val backgroundTasks: mutable.ArrayBuffer[Future[Unit]] = mutable.ArrayBuffer.empty
 
@@ -59,6 +64,8 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[(Chunk, Boolean)]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
+
+  private val columnsLoading: mutable.LongMap[Future[ChunkColumnTerrain]] = mutable.LongMap.empty
 
   private val blocksToUpdate: UniqueLongQueue = new UniqueLongQueue
 
@@ -155,7 +162,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
     if ch.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
       val chunkNbt = ch.toNbt
-      backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))
+      backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))(using fsAsync)
       savedChunkModCounts(chunkCoords) = ch.modCount
       updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
     }
@@ -286,7 +293,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
           val removedChunkNbt = removedChunk.toNbt
-          backgroundTasks += Future(worldProvider.saveChunkData(removedChunkNbt, chunkCoords))
+          backgroundTasks += Future(worldProvider.saveChunkData(removedChunkNbt, chunkCoords))(using fsAsync)
           savedChunkModCounts -= chunkCoords
         }
         requestRenderUpdateForNeighborChunks(chunkCoords)
@@ -294,7 +301,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
       if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
         columns.remove(columnCoords.value)
-        backgroundTasks += Future(saveColumn(columnCoords, col))
+        backgroundTasks += Future(saveColumn(columnCoords, col))(using fsAsync)
       }
     }
 
@@ -359,7 +366,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
                 savedChunkModCounts(coords) = chunk.modCount
 
                 unloadsLeft -= 1
-                chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunk.toNbt, coords))
+                chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunk.toNbt, coords))(using fsAsync)
               } else { // The chunk has not changed, so no need to save it to disk, but still unload it
                 chunksUnloading(coords) = Future.successful(())
               }
@@ -374,12 +381,14 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       if loadsLeft > 0 then {
         if !chunksLoading.contains(coords) && !chunksUnloading.contains(coords) then {
           loadsLeft -= 1
-          chunksLoading(coords) = Future(worldProvider.loadChunkData(coords)).map {
-            case Some(loadedTag) => (Chunk.fromNbt(loadedTag), false)
+          chunksLoading(coords) = Future(worldProvider.loadChunkData(coords))(using fsAsync).flatMap {
+            case Some(loadedTag) =>
+              Future((Chunk.fromNbt(loadedTag), false))(using genAsync)
             case None =>
-              val column = provideColumn(coords.getColumnRelWorld)
-              (Chunk.fromGenerator(coords, column, worldGenerator), true)
-          }
+              Future(provideColumn(coords.getColumnRelWorld))(using fsAsync).flatMap(column =>
+                Future((Chunk.fromGenerator(coords, column, worldGenerator), true))(using genAsync)
+              )(using genAsync)
+          }(using genAsync)
         }
       }
     }
@@ -527,15 +536,40 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   }
 
   private def ensureColumnExists(here: ColumnRelWorld): ChunkColumnTerrain = {
-    columns.get(here.value) match {
-      case Some(col) => col
-      case None =>
-        val col = ChunkColumnTerrain.create(
-          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(here)),
-          worldProvider.loadColumnData(here).map(ChunkColumnData.fromNbt)
+    handleLoadingColumns()
+
+    val columnsToLoad = mutable.ArrayBuffer.empty[ColumnRelWorld]
+    if !columns.contains(here.value) && !columnsLoading.contains(here.value) then {
+      columnsToLoad += here
+    }
+    for coords <- here.neighbors do {
+      if !columns.contains(coords.value) && !columnsLoading.contains(coords.value) then {
+        columnsToLoad += coords
+      }
+    }
+    for coords <- columnsToLoad do {
+      columnsLoading(coords.value) = Future(worldProvider.loadColumnData(coords))(using fsAsync).map(columnData =>
+        ChunkColumnTerrain.create(
+          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
+          columnData.map(ChunkColumnData.fromNbt)
         )
-        columns(here.value) = col
-        col
+      )(using genAsync)
+    }
+
+    if !columns.contains(here.value) then {
+      Await.ready(columnsLoading(here.value), Duration.Inf)
+    }
+
+    handleLoadingColumns()
+
+    columns(here.value)
+  }
+
+  private def handleLoadingColumns(): Unit = {
+    val completed = columnsLoading.filter(_._2.isCompleted)
+    for (coords, fut) <- completed do {
+      columns(coords) = fut.value.get.get
+      columnsLoading -= coords
     }
   }
 
@@ -558,14 +592,14 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
       if chunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
         val chunkNbt = chunk.toNbt
-        backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))
+        backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))(using fsAsync)
       }
     }
 
     chunks.clear()
 
     for (columnKey, column) <- columns do {
-      backgroundTasks += Future(saveColumn(ColumnRelWorld(columnKey), column))
+      backgroundTasks += Future(saveColumn(ColumnRelWorld(columnKey), column))(using fsAsync)
     }
 
     columns.clear()
@@ -580,6 +614,9 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     for f <- chunksUnloading.values do {
       Await.result(f, Duration(10, TimeUnit.SECONDS))
     }
+
+    fsExecutorService.shutdown()
+    genExecutorService.shutdown()
   }
 
   private def requestBlockUpdate(coords: BlockRelWorld): Unit = {

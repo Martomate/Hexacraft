@@ -17,8 +17,8 @@ class BlockFaceBatchRenderer(bufferHandler: BufferHandler[?]) {
   }
 
   def update(
-      chunksToClear: Seq[ChunkRelWorld],
-      chunksToUpdate: Seq[(ChunkRelWorld, ByteBuffer)]
+      chunksToClear: collection.Seq[ChunkRelWorld],
+      chunksToUpdate: collection.Seq[(ChunkRelWorld, ByteBuffer)]
   ): Unit = {
     // Step 1: mark old data as unused
     for coords <- chunksToClear do {

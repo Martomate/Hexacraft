@@ -5,7 +5,7 @@ import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
-import hexacraft.util.TickableTimer
+import hexacraft.util.{NamedThreadFactory, TickableTimer}
 import hexacraft.world.{BlocksInWorld, Camera, ChunkLoadingPrioritizer, CylinderSize, PosAndDir, WorldGenerator}
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
@@ -16,11 +16,10 @@ import org.joml.{Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 
 class WorldRenderer(
     world: BlocksInWorld,
@@ -29,6 +28,8 @@ class WorldRenderer(
     blockTextureColors: Map[String, IndexedSeq[Vector3f]],
     initialFrameBufferSize: Vector2ic
 )(using CylinderSize) {
+  private val executorService = Executors.newFixedThreadPool(8, NamedThreadFactory("render"))
+  given ExecutionContext = ExecutionContext.fromExecutor(executorService)
 
   private val skyShader = new SkyShader()
   private val entityShader = new EntityShader(isSide = false)
@@ -99,12 +100,37 @@ class WorldRenderer(
   }
 
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult): Unit = {
+    val blockDataToUpdate = handleChunkUpdateQueue(camera, renderDistance, worldTickResult.chunksNeedingRenderUpdate)
+
+    // Step 3: Perform render updates using data calculated in the background since the previous frame
+    updateBlockData(blockDataToUpdate)
+
+    // performTerrainUpdates(camera)
+  }
+
+  private def handleChunkUpdateQueue(
+      camera: Camera,
+      renderDistance: Double,
+      chunksNeedingRenderUpdate: Seq[ChunkRelWorld]
+  ): collection.Seq[(ChunkRelWorld, ChunkRenderData)] = {
     // Step 1: Collect render data calculated since the previous frame (used in step 3)
-    val blockDataToUpdate = futureRenderData.map((coords, fut) => (coords, Await.result(fut, Duration.Inf))).toSeq
+    val (blockDataToUpdate, blockDataNotReady) = {
+      // Only collect the completed tasks in the beginning (to keep the order of the updates)
+      val idxFirstPending = futureRenderData.indexWhere(!_._2.isCompleted)
+      val (completed, rest) = if idxFirstPending != -1 then {
+        futureRenderData.splitAt(idxFirstPending)
+      } else {
+        (futureRenderData, new ArrayBuffer(0))
+      }
+      (completed.map((coords, fut) => coords -> fut.value.get.get), rest)
+    }
     futureRenderData.clear()
+    futureRenderData ++= blockDataNotReady
+    val chunksAlreadyUpdating = futureRenderData.filter(!_._2.isCompleted).map(_._1)
+    val numUpdatesPending = chunksAlreadyUpdating.size
 
     // Step 2: Start calculating render updates in the background
-    for coords <- worldTickResult.chunksNeedingRenderUpdate do {
+    for coords <- chunksNeedingRenderUpdate do {
       if world.getChunk(coords).isEmpty then {
         // clear the chunk immediately so it doesn't have to be drawn (the PQ is in closest first order)
         futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
@@ -119,15 +145,23 @@ class WorldRenderer(
       chunkRenderUpdateQueue.reorderAndFilter(camera, renderDistance)
     }
 
-    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, 15)
+    val chunkRenderUpdatesSkipped = mutable.ArrayBuffer.empty[ChunkRelWorld]
+
+    var numUpdatesToPerform = math.min(chunkRenderUpdateQueue.length, math.max(15 - numUpdatesPending, 0))
     while numUpdatesToPerform > 0 do {
       chunkRenderUpdateQueue.pop() match {
         case Some(coords) =>
           world.getChunk(coords) match {
             case Some(chunk) =>
               if coords.neighbors.forall(n => world.getChunk(n).isDefined) then {
-                futureRenderData += coords -> Future(ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices))
-                numUpdatesToPerform -= 1
+                if !chunksAlreadyUpdating.contains(coords) then {
+                  futureRenderData += coords -> Future(
+                    ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
+                  )
+                  numUpdatesToPerform -= 1
+                } else {
+                  chunkRenderUpdatesSkipped += coords
+                }
               } else {
                 futureRenderData += coords -> Future.successful(ChunkRenderData.empty)
               }
@@ -139,10 +173,11 @@ class WorldRenderer(
       }
     }
 
-    // Step 3: Perform render updates using data calculated in the background since the previous frame
-    updateBlockData(blockDataToUpdate)
+    for coords <- chunkRenderUpdatesSkipped do {
+      chunkRenderUpdateQueue.insert(coords)
+    }
 
-    // performTerrainUpdates(camera)
+    blockDataToUpdate
   }
 
   private def performTerrainUpdates(camera: Camera): Unit = {
@@ -335,7 +370,7 @@ class WorldRenderer(
     renderTerrain()
   }
 
-  private def updateBlockData(chunks: Seq[(ChunkRelWorld, ChunkRenderData)]): Unit = {
+  private def updateBlockData(chunks: collection.Seq[(ChunkRelWorld, ChunkRenderData)]): Unit = {
     val opaqueData = chunks.partitionMap((coords, data) =>
       data.opaqueBlocks match {
         case Some(content) => Right((coords, content))
@@ -396,8 +431,8 @@ class WorldRenderer(
     )
 
   private def updateBlockData(
-      chunksToClear: Seq[ChunkRelWorld],
-      chunksToUpdate: Seq[(ChunkRelWorld, IndexedSeq[ByteBuffer])],
+      chunksToClear: collection.Seq[ChunkRelWorld],
+      chunksToUpdate: collection.Seq[(ChunkRelWorld, IndexedSeq[ByteBuffer])],
       transmissive: Boolean
   ): Unit = {
     val clear = chunksToClear.groupBy(c => chunkGroup(c))
@@ -515,5 +550,7 @@ class WorldRenderer(
     terrainShader.free()
 
     mainFrameBuffer.unload()
+
+    executorService.shutdown()
   }
 }

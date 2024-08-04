@@ -7,7 +7,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{Channel, Result, TickableTimer}
+import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
@@ -18,10 +18,9 @@ import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 import org.zeromq.*
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Random
 
@@ -237,6 +236,9 @@ class GameClient(
     walkSoundBuffer1: AudioSystem.BufferId,
     walkSoundBuffer2: AudioSystem.BufferId
 )(using CylinderSize) {
+  private val executorService = Executors.newFixedThreadPool(4, NamedThreadFactory("client"))
+  given ExecutionContext = ExecutionContext.fromExecutor(executorService)
+
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
@@ -818,6 +820,8 @@ class GameClient(
     if debugOverlay.isDefined then {
       debugOverlay.get.unload()
     }
+
+    executorService.shutdown()
   }
 }
 

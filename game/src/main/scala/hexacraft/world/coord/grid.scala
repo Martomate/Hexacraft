@@ -206,4 +206,19 @@ case class ColumnRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZ
     val dz = math.min(dz1, dz2)
     dx * dx + dz * dz
   }
+
+  def neighbors(using CylinderSize): Seq[ColumnRelWorld] = {
+    val buf = new mutable.ArrayBuffer[ColumnRelWorld](8)
+
+    for {
+      dz <- -1 to 1
+      dx <- -1 to 1
+    } do {
+      if dz != 0 || dx != 0 then {
+        buf += offset(dx, dz)
+      }
+    }
+
+    buf.toSeq
+  }
 }
