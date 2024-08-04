@@ -3,7 +3,7 @@ import Dependencies.*
 import scala.util.Properties.isMac
 
 ThisBuild / organization := "com.martomate"
-ThisBuild / version := "0.14"
+ThisBuild / version := "0.14.1"
 ThisBuild / scalaVersion := "3.4.2"
 ThisBuild / publishArtifact := false
 ThisBuild / logBuffered := false

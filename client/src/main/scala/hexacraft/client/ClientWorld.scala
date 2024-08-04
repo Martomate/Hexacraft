@@ -11,7 +11,6 @@ import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityFactory, EntityPhysicsSystem}
 
 import java.util.UUID
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -210,16 +209,20 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
     var chunkWasRemoved = false
 
-    for col <- columns.get(columnCoords.value) do {
-      for removedChunk <- chunks.remove(chunkCoords.value) do {
-        chunkWasRemoved = true
-        requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
-        requestRenderUpdateForNeighborChunks(chunkCoords)
-      }
+    columns.get(columnCoords.value) match {
+      case Some(col) =>
+        chunks.remove(chunkCoords.value) match {
+          case Some(removedChunk) =>
+            chunkWasRemoved = true
+            requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
+            requestRenderUpdateForNeighborChunks(chunkCoords)
+          case None =>
+        }
 
-      if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
-        columns.remove(columnCoords.value)
-      }
+        if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
+          columns.remove(columnCoords.value)
+        }
+      case None =>
     }
 
     chunkWasRemoved
@@ -227,17 +230,26 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
     val allEntitiesById = mutable.HashMap.empty[UUID, (ChunkRelWorld, Entity)]
-    for (chunkCoordsValue, ch) <- chunks do {
-      val chunkCoords = ChunkRelWorld(chunkCoordsValue)
-      for e <- ch.entities do {
-        allEntitiesById(e.id) = (chunkCoords, e)
+
+    {
+      val chIt = chunks.iterator
+      while chIt.hasNext do {
+        val (chunkCoordsValue, ch) = chIt.next()
+        val chunkCoords = ChunkRelWorld(chunkCoordsValue)
+        val eIt = ch.entities.iterator
+        while eIt.hasNext do {
+          val e = eIt.next()
+          allEntitiesById(e.id) = (chunkCoords, e)
+        }
       }
     }
 
     {
       val entities = entitiesToSpawnLater.toSeq
       entitiesToSpawnLater.clear()
-      for e <- entities do {
+      val eIt = entities.iterator
+      while eIt.hasNext do {
+        val e = eIt.next()
         if addEntity(e).isEmpty then {
           entitiesToSpawnLater += e
           // println(s"Client: not ready to spawn entity ${e.id}")
@@ -247,7 +259,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       }
     }
 
-    for (id, event) <- entityEvents do {
+    val evIt = entityEvents.iterator
+    while evIt.hasNext do {
+      val (id, event) = evIt.next()
       allEntitiesById.get(id) match {
         case Some(ent) =>
           val (c, e) = ent
@@ -294,23 +308,24 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       }
     }
 
-    for ch <- chunks.values do {
-      ch.optimizeStorage()
-      tickEntities(ch.entities)
+    {
+      val chIt = chunks.valuesIterator
+      while chIt.hasNext do {
+        val ch = chIt.next()
+        ch.optimizeStorage()
+
+        val eIt = ch.entities.iterator
+        while eIt.hasNext do {
+          val e = eIt.next()
+          tickEntity(e)
+        }
+      }
     }
 
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
     new WorldTickResult(r)
-  }
-
-  @tailrec // this is done for performance
-  private def tickEntities(ents: Iterable[Entity]): Unit = {
-    if ents.nonEmpty then {
-      tickEntity(ents.head)
-      tickEntities(ents.tail)
-    }
   }
 
   private def tickEntity(e: Entity): Unit = {
@@ -328,7 +343,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
     val vel = e.motion.velocity
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
-    e.model.foreach(_.tick(horizontalSpeedSq > 0.1))
+    if e.model.isDefined then {
+      e.model.get.tick(horizontalSpeedSq > 0.1)
+    }
   }
 
   private def requestRenderUpdateForNeighborChunks(coords: ChunkRelWorld): Unit = {

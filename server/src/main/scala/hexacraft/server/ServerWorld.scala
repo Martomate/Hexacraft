@@ -12,7 +12,6 @@ import com.martomate.nbt.Nbt
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -322,12 +321,17 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       performEntityRelocation()
     }
 
-    val chIt = chunks.values.iterator
+    val chIt = chunks.valuesIterator
     while chIt.hasNext do {
       val ch = chIt.next
 
       ch.optimizeStorage()
-      tickEntities(ch.entities)
+
+      val eIt = ch.entities.iterator
+      while eIt.hasNext do {
+        val e = eIt.next()
+        tickEntity(e)
+      }
     }
 
     val entityEvents = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
@@ -460,14 +464,6 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     worldProvider.saveColumnData(ChunkColumnData(Some(col.terrainHeight)).toNBT, columnCoords)
   }
 
-  @tailrec // this is done for performance
-  private def tickEntities(ents: Iterable[Entity]): Unit = {
-    if ents.nonEmpty then {
-      tickEntity(ents.head)
-      tickEntities(ents.tail)
-    }
-  }
-
   private def tickEntity(e: Entity): Unit = {
     e.ai match {
       case Some(ai) =>
@@ -481,7 +477,9 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
     entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
 
-    e.model.foreach(_.tick(e.motion.velocity.lengthSquared() > 0.1))
+    if e.model.isDefined then {
+      e.model.get.tick(e.motion.velocity.lengthSquared() > 0.1)
+    }
   }
 
   private val blockUpdateTimer: TickableTimer = TickableTimer(ServerWorld.ticksBetweenBlockUpdates)
