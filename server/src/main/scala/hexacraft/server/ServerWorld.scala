@@ -275,7 +275,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
   }
 
-  def removeChunk(chunkCoords: ChunkRelWorld): Boolean = {
+  private def removeChunk(chunkCoords: ChunkRelWorld): Boolean = {
     val columnCoords = chunkCoords.getColumnRelWorld
 
     var chunkWasRemoved = false
@@ -312,6 +312,8 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       requestedLoads: Seq[ChunkRelWorld],
       requestedUnloads: Seq[ChunkRelWorld]
   ): WorldTickResult = {
+    handleLoadingColumns()
+
     val (chunksAdded, chunksRemoved) = performChunkLoading(requestedLoads, requestedUnloads)
 
     val blocksUpdated = if blockUpdateTimer.tick() then {
@@ -384,15 +386,20 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     for coords <- requestedLoads do {
       if loadsLeft > 0 then {
         if !chunksLoading.contains(coords) && !chunksUnloading.contains(coords) then {
-          loadsLeft -= 1
-          chunksLoading(coords) = Future(worldProvider.loadChunkData(coords))(using fsAsync).flatMap {
-            case Some(loadedTag) =>
-              Future((Chunk.fromNbt(loadedTag), false))(using genAsync)
+          // make sure the columns around the chunk are getting loaded
+          startLoadingColumnIfNeeded(coords.getColumnRelWorld)
+
+          columns.get(coords.getColumnRelWorld.value) match { // the column is needed for the chunk to load
+            case Some(column) =>
+              loadsLeft -= 1
+              chunksLoading(coords) = Future(worldProvider.loadChunkData(coords))(using fsAsync).flatMap {
+                case Some(loadedTag) =>
+                  Future((Chunk.fromNbt(loadedTag), false))(using genAsync)
+                case None =>
+                  Future((Chunk.fromGenerator(coords, column, worldGenerator), true))(using genAsync)
+              }(using genAsync)
             case None =>
-              Future(provideColumn(coords.getColumnRelWorld))(using fsAsync).flatMap(column =>
-                Future((Chunk.fromGenerator(coords, column, worldGenerator), true))(using genAsync)
-              )(using genAsync)
-          }(using genAsync)
+          }
         }
       }
     }
@@ -429,7 +436,9 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
           result match {
             case Failure(_) => // TODO: handle error
             case Success((chunk, isNew)) =>
-              chunksToAdd += ((chunkCoords, chunk, isNew))
+              if ensurePlannerCanPlanSoon(chunkCoords) then {
+                chunksToAdd += ((chunkCoords, chunk, isNew))
+              }
           }
       }
     }
@@ -438,6 +447,20 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       chunksLoading -= coords
     }
     finishedChunks
+  }
+
+  private def ensurePlannerCanPlanSoon(coords: ChunkRelWorld): Boolean = {
+    var readyToPlan = true
+    val neighbors = coords.extendedNeighbors(5)
+    val nIt = neighbors.iterator
+    while nIt.hasNext do {
+      val ch = nIt.next
+      if getColumn(ch.getColumnRelWorld).isEmpty then {
+        startLoadingColumnIfNeeded(ch.getColumnRelWorld)
+        readyToPlan = false
+      }
+    }
+    readyToPlan
   }
 
   private def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
@@ -533,9 +556,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
   }
 
-  private def ensureColumnExists(here: ColumnRelWorld): ChunkColumnTerrain = {
-    handleLoadingColumns()
-
+  private def startLoadingColumnIfNeeded(here: ColumnRelWorld): Unit = {
     val columnsToLoad = mutable.ArrayBuffer.empty[ColumnRelWorld]
     if !columns.contains(here.value) && !columnsLoading.contains(here.value) then {
       columnsToLoad += here
@@ -553,6 +574,12 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
         )
       )(using genAsync)
     }
+  }
+
+  private def ensureColumnExists(here: ColumnRelWorld): ChunkColumnTerrain = {
+    handleLoadingColumns()
+
+    startLoadingColumnIfNeeded(here)
 
     if !columns.contains(here.value) then {
       Await.ready(columnsLoading(here.value), Duration.Inf)
