@@ -24,6 +24,7 @@ struct FragInFlat {
 };
 
 struct FragIn {
+    vec3 position;
     vec2 texCoords;
     vec3 normal;
 };
@@ -61,6 +62,8 @@ void main() {
     pos = vec3(pos.x - cam.x, y, z) * mult;
     pos.y -= radius;
     gl_Position = matrix * vec4(pos, 1);
+
+    fragIn.position = pos;
     fragIn.texCoords = texCoords;
     //	fragIn.texCoords = (vec2(texCoords.x, texCoords.y) + texOffset / texSize) * texDim / texSize;
     fragInFlat.texOffset = texOffset;

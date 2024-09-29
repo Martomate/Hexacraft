@@ -210,6 +210,10 @@ object OpenGL {
     gl.glDrawBuffer(buf.toGL)
   }
 
+  def glDrawBuffers(buf: Seq[FrameBufferAttachment]): Unit = {
+    gl.glDrawBuffers(buf.map(_.toGL).toArray)
+  }
+
   def glFramebufferTexture(
       target: FrameBufferTarget,
       attachment: FrameBufferAttachment,
@@ -265,10 +269,12 @@ object OpenGL {
   }
 
   enum TextureInternalFormat {
+    case Rgba16f
     case Rgba
     case DepthComponent32
 
     def toGL: Int = this match {
+      case TextureInternalFormat.Rgba16f          => GL30.GL_RGBA16F
       case TextureInternalFormat.Rgba             => GL11.GL_RGBA
       case TextureInternalFormat.DepthComponent32 => GL14.GL_DEPTH_COMPONENT32
     }
@@ -814,6 +820,7 @@ trait GLWrapper {
   def glGenFramebuffers(): Int
   def glBindFramebuffer(target: Int, framebuffer: Int): Unit
   def glDrawBuffer(buf: Int): Unit
+  def glDrawBuffers(bufs: Array[Int]): Unit
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit
   def glDeleteFramebuffers(framebuffer: Int): Unit
 
@@ -941,6 +948,7 @@ class StubGL extends GLWrapper {
   def glGenFramebuffers(): Int = 9
   def glBindFramebuffer(target: Int, framebuffer: Int): Unit = ()
   def glDrawBuffer(buf: Int): Unit = ()
+  def glDrawBuffers(bufs: Array[Int]): Unit = ()
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit = ()
   def glDeleteFramebuffers(framebuffer: Int): Unit = ()
 
@@ -1064,6 +1072,7 @@ object RealGL extends GLWrapper {
   def glGenFramebuffers(): Int = GL30.glGenFramebuffers()
   def glBindFramebuffer(target: Int, framebuffer: Int): Unit = GL30.glBindFramebuffer(target, framebuffer)
   def glDrawBuffer(buf: Int): Unit = GL11.glDrawBuffer(buf)
+  def glDrawBuffers(bufs: Array[Int]): Unit = GL20.glDrawBuffers(bufs)
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit =
     GL32.glFramebufferTexture(target, attachment, texture, level)
   def glDeleteFramebuffers(framebuffer: Int): Unit = GL30.glDeleteFramebuffers(framebuffer)

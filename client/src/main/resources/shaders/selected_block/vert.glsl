@@ -9,6 +9,7 @@ in ivec3 blockPos;
 in vec3 color;
 in float blockHeight;
 
+flat out vec3 fragPos;
 flat out vec3 fragColor;
 
 uniform mat4 projMatrix;
@@ -35,5 +36,7 @@ void main() {
     pos = vec3(pos.x - cam.x, y, z) * mult;
     pos.y -= radius;
     gl_Position = matrix * vec4(pos, 1);
+
+    fragPos = pos;
     fragColor = color;
 }

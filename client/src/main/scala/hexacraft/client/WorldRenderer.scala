@@ -303,8 +303,6 @@ class WorldRenderer(
 
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
-    renderSky(camera, sun)
-
     // World content
     renderBlocks(camera, sun)
     // renderTerrain(camera, sun)
@@ -317,15 +315,28 @@ class WorldRenderer(
     mainFrameBuffer.unbind()
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
 
+    OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
+
+    renderSky(camera, sun)
+
     // Step 2: Render the FrameBuffer to the screen (one could add post processing here in the future)
+    OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.positionTexture)
+    OpenGL.glActiveTexture(worldCombinerShader.normalTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.normalTexture)
     OpenGL.glActiveTexture(worldCombinerShader.colorTextureSlot)
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
     OpenGL.glActiveTexture(worldCombinerShader.depthTextureSlot)
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
 
     worldCombinerShader.enable()
+    worldCombinerShader.setSunPosition(sun)
     worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
 
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(3))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(2))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
     OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
@@ -352,11 +363,9 @@ class WorldRenderer(
   private def renderBlocks(camera: Camera, sun: Vector3f): Unit = {
     blockShader.setViewMatrix(camera.view.matrix)
     blockShader.setCameraPosition(camera.position)
-    blockShader.setSunPosition(sun)
 
     blockSideShader.setViewMatrix(camera.view.matrix)
     blockSideShader.setCameraPosition(camera.position)
-    blockSideShader.setSunPosition(sun)
 
     blockTexture.bind()
     renderBlocks()
@@ -474,11 +483,9 @@ class WorldRenderer(
   private def renderEntities(camera: Camera, sun: Vector3f): Unit = {
     entityShader.setViewMatrix(camera.view.matrix)
     entityShader.setCameraPosition(camera.position)
-    entityShader.setSunPosition(sun)
 
     entitySideShader.setViewMatrix(camera.view.matrix)
     entitySideShader.setCameraPosition(camera.position)
-    entitySideShader.setSunPosition(sun)
 
     for side <- 0 until 8 do {
       val sh = if side < 2 then entityShader else entitySideShader

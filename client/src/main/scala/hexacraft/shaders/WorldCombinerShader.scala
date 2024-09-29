@@ -4,6 +4,8 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.*
 
+import org.joml.Vector3f
+
 class WorldCombinerShader {
   private val shader = Shader.from(
     ShaderConfig()
@@ -12,15 +14,23 @@ class WorldCombinerShader {
       .withInputs("position")
   )
 
-  shader.setUniform1i("worldColorTexture", 0)
-  shader.setUniform1i("worldDepthTexture", 1)
+  shader.setUniform1i("worldPositionTexture", 0)
+  shader.setUniform1i("worldNormalTexture", 1)
+  shader.setUniform1i("worldColorTexture", 2)
+  shader.setUniform1i("worldDepthTexture", 3)
 
-  def colorTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(0)
-  def depthTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(1)
+  def positionTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(0)
+  def normalTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(1)
+  def colorTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(2)
+  def depthTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(3)
 
   def setClipPlanes(nearPlane: Float, farPlane: Float): Unit = {
     shader.setUniform1f("nearPlane", nearPlane)
     shader.setUniform1f("farPlane", farPlane)
+  }
+
+  def setSunPosition(sun: Vector3f): Unit = {
+    shader.setUniform3f("sun", sun.x, sun.y, sun.z)
   }
 
   def enable(): Unit = {
@@ -42,5 +52,6 @@ object WorldCombinerShader {
     )
   }
 
-  def createRenderer(): Renderer = new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false)))
+  def createRenderer(): Renderer =
+    new Renderer(OpenGL.PrimitiveMode.TriangleStrip, GpuState.build(_.depthTest(false).blend(true)))
 }

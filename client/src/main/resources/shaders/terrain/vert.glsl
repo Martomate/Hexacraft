@@ -4,7 +4,9 @@
 in ivec3 position;
 in vec3 color;
 
-out vec3 blockColor;
+flat out vec3 blockPosition;
+flat out vec3 blockColor;
+flat out vec3 fragNormal;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
@@ -31,5 +33,7 @@ void main() {
     pos.y -= radius;
     gl_Position = matrix * vec4(pos, 1);
 
+    blockPosition = pos;
     blockColor = color;
+    fragNormal = vec3(1); // TODO: take as input or calculate
 }

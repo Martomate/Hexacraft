@@ -9,6 +9,7 @@ struct FragInFlat {
 };
 
 struct FragIn {
+    vec3 position;
     vec2 texCoords;
     vec3 normal;
 };
@@ -16,12 +17,13 @@ struct FragIn {
 flat in FragInFlat fragInFlat;
 in FragIn fragIn;
 
-out vec4 color;
+layout (location = 0) out vec3 position;
+layout (location = 1) out vec3 normal;
+layout (location = 2) out vec4 color;
 
 uniform sampler2D texSampler;
 uniform int side;
 uniform int texSize;
-uniform vec3 sun;
 
 void main() {
     vec2 texCoords = fragIn.texCoords;
@@ -49,8 +51,7 @@ void main() {
     color = texelFetch(texSampler, ivec2(texX + texOffset * texDim, texY) + fragInFlat.texOffset, 0);
     #endif
 
-    vec3 sunDir = normalize(sun);
-    float visibility = clamp(dot(fragIn.normal, sunDir) * 0.4, 0.0, 0.3) + 0.7;// * (max(sunDir.y * 0.8, 0.0) + 0.2);
-
-    color.rgb *= (fragInFlat.brightness * 0.8 + 0.2) * visibility;
+    position = fragIn.position;
+    normal = fragIn.normal;
+    color.rgb *= fragInFlat.brightness * 0.8 + 0.2;
 }

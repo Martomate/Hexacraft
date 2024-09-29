@@ -12,6 +12,7 @@ struct FragInFlat {
 };
 
 struct FragIn {
+    vec3 position;
     vec2 texCoords;
     float mult;
     float brightness;
@@ -48,6 +49,7 @@ void main() {
     pos.y -= radius;
     gl_Position = matrix * vec4(pos, 1);
 
+    fragIn.position = pos;
     // Here 'mult' is used for correct texturing since block sides are not square
     fragIn.texCoords = vec2(texCoords.x, texCoords.y) * mult;
 

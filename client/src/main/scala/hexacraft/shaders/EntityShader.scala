@@ -35,10 +35,6 @@ class EntityShader(isSide: Boolean) {
     shader.setUniform1i("totalSize", totalSize)
   }
 
-  def setSunPosition(sun: Vector3f): Unit = {
-    shader.setUniform3f("sun", sun.x, sun.y, sun.z)
-  }
-
   def setCameraPosition(cam: Vector3d): Unit = {
     shader.setUniform3f("cam", cam.x.toFloat, cam.y.toFloat, cam.z.toFloat)
   }

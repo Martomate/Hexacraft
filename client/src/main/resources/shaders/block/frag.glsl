@@ -5,6 +5,7 @@ struct FragInFlat {
 };
 
 struct FragIn {
+	vec3 position;
 	vec2 texCoords;
 	float mult;
 	float brightness;
@@ -14,12 +15,13 @@ struct FragIn {
 flat in FragInFlat fragInFlat;
 in FragIn fragIn;
 
-out vec4 color;
+layout (location = 0) out vec3 position;
+layout (location = 1) out vec3 normal;
+layout (location = 2) out vec4 color;
 
 uniform sampler2DArray texSampler;
 uniform int side;
 uniform int texSize = 32;
-uniform vec3 sun;
 
 void main() {
 	float texSizef = float(texSize);
@@ -48,8 +50,7 @@ void main() {
 		dFdy(fragIn.texCoords / fragIn.mult));
 #endif
 
-	vec3 sunDir = normalize(sun);
-	float visibility = max(dot(fragIn.normal, sunDir), 0) * 0.2 + 0.8;
-
-	color.rgb *= (fragIn.brightness * 0.8 + 0.2) * visibility;
+	position = fragIn.position;
+	normal = fragIn.normal;
+	color.rgb *= fragIn.brightness * 0.8 + 0.2;
 }
