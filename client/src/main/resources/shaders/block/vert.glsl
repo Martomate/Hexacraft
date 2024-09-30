@@ -55,5 +55,5 @@ void main() {
 
     fragIn.mult = mult;
     fragInFlat.texIndex = texIndex;
-    fragIn.brightness = brightness;
+    fragIn.brightness = brightness * brightness;
 }

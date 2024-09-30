@@ -301,12 +301,14 @@ object BlockVboData {
         }
       case _ =>
         cornerIdx match {
-          case 0 => b += Offset(0, 1, 0)
-          case 1 => b += Offset(0, 1, 0)
-          case 2 => b += Offset(0, -1, 0)
-          case 3 => b += Offset(0, -1, 0)
+          case 0 => b += Offset(0, 1, 0); b += Offset(0, 1, 0)
+          case 1 => b += Offset(0, 1, 0); b += Offset(0, 1, 0)
+          case 2 => b += Offset(0, -1, 0); b += Offset(0, -1, 0)
+          case 3 => b += Offset(0, -1, 0); b += Offset(0, -1, 0)
         }
     }
+
+    // TODO: calculate ambient occlusion based on the neighbors, and make sure it's independent of `side`
 
     var brSum = 0f
     var brCount = 0
@@ -320,7 +322,11 @@ object BlockVboData {
       }
       bIdx += 1
     }
-    if brCount == 0 then brightness(neighborBlockCoords) else brSum / brCount
+    if brCount == 0 then brightness(neighborBlockCoords)
+    else {
+      val ambientOcclusionFactor = (brCount - 1).toFloat / (bLen - 1) * 0.2f + 0.8f // TODO: temporary
+      brSum / brCount * ambientOcclusionFactor
+    }
   }
 
   private def oppositeSide(s: Int): Int = {
