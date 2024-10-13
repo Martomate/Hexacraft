@@ -77,6 +77,12 @@ class ServerWorldTest extends FunSuite {
     world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -97,6 +103,12 @@ class ServerWorldTest extends FunSuite {
     world.tick(Seq(camera), Seq(cCoords), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(cCoords), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
 
@@ -130,6 +142,12 @@ class ServerWorldTest extends FunSuite {
     world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
+    Thread.sleep(20)
+    world.tick(Seq(camera), Seq(), Seq())
     Thread.sleep(20)
     world.tick(Seq(camera), Seq(), Seq())
 

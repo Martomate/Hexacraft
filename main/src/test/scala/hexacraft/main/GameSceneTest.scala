@@ -154,6 +154,12 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
     Thread.sleep(20)
     gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
@@ -206,6 +212,12 @@ class GameSceneTest extends FunSuite {
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
+    gameScene.tick(tickContext)
+    Thread.sleep(20)
     gameScene.tick(tickContext)
     Thread.sleep(20)
     gameScene.tick(tickContext)
