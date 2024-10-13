@@ -252,6 +252,10 @@ class GameClient(
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val walkSoundTimer: TickableTimer = TickableTimer(20, initEnabled = false)
 
+  def isReadyToPlay: Boolean = {
+    this.world.getChunk(this.camera.blockCoords.getChunkRelWorld).isDefined
+  }
+
   private def setUniforms(windowAspectRatio: Float): Unit = {
     setProjMatrixForAll()
     worldRenderer.onTotalSizeChanged(world.size.totalSize)

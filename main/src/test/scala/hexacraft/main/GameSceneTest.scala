@@ -23,6 +23,14 @@ class GameSceneTest extends FunSuite {
 
   private val windowSize = WindowSize(Vector2i(1920, 1080), Vector2i(1920, 1080))
 
+  def waitFor(maxIterations: Int, waitTimeMs: Int)(success: => Boolean)(iterate: => Unit): Boolean = {
+    (0 until maxIterations).exists { _ =>
+      iterate
+      Thread.sleep(waitTimeMs)
+      success
+    }
+  }
+
   test("GameScene.unload frees all shader programs owned by the GameScene") {
     OpenGL._enterTestMode()
 
@@ -149,17 +157,9 @@ class GameSceneTest extends FunSuite {
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
+    assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
+      gameScene.tick(tickContext)
+    })
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]
@@ -212,17 +212,9 @@ class GameSceneTest extends FunSuite {
 
     // ensure the spawn chunk gets loaded
     val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
-    Thread.sleep(20)
-    gameScene.tick(tickContext)
+    assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
+      gameScene.tick(tickContext)
+    })
 
     // start listening for audio events
     val audioTracker = Tracker.withStorage[AudioSystem.Event]

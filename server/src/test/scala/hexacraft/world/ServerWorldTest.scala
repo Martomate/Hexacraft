@@ -2,16 +2,25 @@ package hexacraft.world
 
 import hexacraft.server.ServerWorld
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkData}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords}
 import hexacraft.world.entity.{BoundsComponent, Entity, MotionComponent, TransformComponent}
 
+import com.martomate.nbt.Nbt
 import munit.FunSuite
 
 import java.util.UUID
 
 class ServerWorldTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
+
+  def waitFor(maxIterations: Int, waitTimeMs: Int)(success: => Boolean)(iterate: => Unit): Boolean = {
+    (0 until maxIterations).exists { _ =>
+      iterate
+      Thread.sleep(waitTimeMs)
+      success
+    }
+  }
 
   test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
@@ -72,17 +81,7 @@ class ServerWorldTest extends FunSuite {
     assert(world.getChunk(cCoords).isEmpty)
 
     // Run the game a bit
-    world.tick(Seq(camera), Seq(cCoords), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(cCoords), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
+    assert(waitFor(20, 10)(world.getChunk(cCoords).isDefined)(world.tick(Seq(camera), Seq(cCoords), Seq())))
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -100,17 +99,9 @@ class ServerWorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords)).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(Seq(camera), Seq(cCoords), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(cCoords), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
+    assert(waitFor(20, 10)(world.getChunk(cCoords).isDefined) {
+      world.tick(Seq(camera), Seq(cCoords), Seq())
+    })
 
     // The chunk should be loaded
     assert(world.getChunk(cCoords).isDefined)
@@ -119,12 +110,9 @@ class ServerWorldTest extends FunSuite {
     camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, cCoords.offset(100, 0, 0))).toCylCoords.toVector3d)
 
     // Run the game a bit
-    world.tick(Seq(camera), Seq(), Seq(cCoords))
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-
-    // The chunk should be unloaded
-    assert(world.getChunk(cCoords).isEmpty)
+    assert(waitFor(20, 10)(world.getChunk(cCoords).isEmpty) {
+      world.tick(Seq(camera), Seq(), Seq(cCoords))
+    })
 
     // Clean up
     world.unload()
@@ -132,6 +120,9 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
+    provider.saveColumnData(ChunkColumnData(Some(ChunkColumnHeightMap.from((_, _) => 0))).toNBT, ColumnRelWorld(0, 0))
+    provider.saveChunkData(ChunkData.fromNBT(Nbt.makeMap()).toNBT, ChunkRelWorld(0, 0, 0))
+
     val world = ServerWorld(provider, provider.getWorldInfo)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
@@ -139,19 +130,10 @@ class ServerWorldTest extends FunSuite {
 
     // Make sure the chunk is loaded
     camera.setPosition(entityPosition.toVector3d)
-    world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
-    Thread.sleep(20)
-    world.tick(Seq(camera), Seq(), Seq())
 
-    assert(world.getChunk(ChunkRelWorld(0, 0, 0)).isDefined)
+    assert(waitFor(20, 10)(world.getChunk(ChunkRelWorld(0, 0, 0)).isDefined) {
+      world.tick(Seq(camera), Seq(ChunkRelWorld(0, 0, 0)), Seq())
+    })
 
     val entity = Entity(
       UUID.randomUUID(),
