@@ -14,16 +14,12 @@ import java.nio.file.Path
 import scala.util.Random
 
 object Menus {
+  private val backgroundImage = TextureSingle.getTexture("textures/gui/menu/background")
 
   abstract class MenuScene extends Scene with SubComponents {
     override def render(context: RenderContext): Unit = {
-      Component.drawImage(
-        LocationInfo(-context.windowAspectRatio, -1, context.windowAspectRatio * 2, 2),
-        context.offset.x,
-        context.offset.y,
-        TextureSingle.getTexture("textures/gui/menu/background"),
-        context.windowAspectRatio
-      )
+      val location = LocationInfo(-context.windowAspectRatio, -1, context.windowAspectRatio * 2, 2)
+      Component.drawImage(location, context.offset.x, context.offset.y, backgroundImage, context.windowAspectRatio)
       super.render(context)
     }
   }

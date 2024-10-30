@@ -245,7 +245,7 @@ class GameClient(
 
   private var debugOverlay: Option[DebugOverlay] = None
 
-  private var selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
+  private var selectedBlockAndSide: Option[MousePickerResult] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -298,7 +298,7 @@ class GameClient(
 
       if !isPaused then {
         val (tx, rx) = Channel[InventoryBox.Event]()
-        val inventoryScene = InventoryBox(player.inventory, blockTextureIndices)(tx)
+        val inventoryScene = InventoryBox(player.inventory, blockTextureIndices, tx)
 
         rx.onEvent {
           case BoxClosed =>
@@ -716,7 +716,7 @@ class GameClient(
   private def updatedMousePicker(
       windowSize: WindowSize,
       mouse: MousePosition
-  ): Option[(BlockState, BlockRelWorld, Option[Int])] = {
+  ): Option[MousePickerResult] = {
     if isPaused || isInPopup then {
       return None
     }
@@ -732,14 +732,12 @@ class GameClient(
     for
       ray <- Ray.fromScreen(camera, screenCoords)
       hit <- new RayTracer(camera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-    yield (world.getBlock(hit._1), hit._1, hit._2)
+    yield MousePickerResult(world.getBlock(hit._1), hit._1, hit._2)
   }
 
   private def performLeftMouseClick(): Unit = {
-    val blockAndSide = selectedBlockAndSide
-
-    blockAndSide match {
-      case Some((state, coords, _)) =>
+    selectedBlockAndSide match {
+      case Some(MousePickerResult(state, coords, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
 
@@ -752,10 +750,8 @@ class GameClient(
   }
 
   private def performRightMouseClick(): Unit = {
-    val blockAndSide = selectedBlockAndSide
-
-    blockAndSide match {
-      case Some((state, coords, Some(side))) =>
+    selectedBlockAndSide match {
+      case Some(MousePickerResult(state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
 
         state.blockType match {
@@ -828,6 +824,8 @@ class GameClient(
     executorService.shutdown()
   }
 }
+
+case class MousePickerResult(block: BlockState, coords: BlockRelWorld, side: Option[Int])
 
 class GameClientSocket(serverIp: String, serverPort: Int) {
   private val context = ZContext()

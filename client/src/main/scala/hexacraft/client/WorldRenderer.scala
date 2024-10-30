@@ -66,7 +66,7 @@ class WorldRenderer(
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFrameBufferSize.x, initialFrameBufferSize.y)
 
-  private var currentlySelectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])] = None
+  private var currentlySelectedBlockAndSide: Option[MousePickerResult] = None
 
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
 
@@ -280,16 +280,12 @@ class WorldRenderer(
     worldCombinerShader.setClipPlanes(camera.proj.near, camera.proj.far)
   }
 
-  def render(
-      camera: Camera,
-      sun: Vector3f,
-      selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])]
-  ): Unit = {
+  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[MousePickerResult]): Unit = {
     if currentlySelectedBlockAndSide != selectedBlockAndSide then {
       currentlySelectedBlockAndSide = selectedBlockAndSide
 
       selectedBlockAndSide match {
-        case Some((state, coords, Some(_))) =>
+        case Some(MousePickerResult(state, coords, Some(_))) =>
           val buf = BufferUtils.createByteBuffer(7 * 4)
           SelectedBlockShader.InstanceData(coords, state).fill(buf)
           buf.flip()
@@ -308,8 +304,8 @@ class WorldRenderer(
     // renderTerrain(camera, sun)
     renderEntities(camera, sun)
 
-    if selectedBlockAndSide.flatMap(_._3).isDefined then {
-      renderSelectedBlock(camera, selectedBlockAndSide)
+    if selectedBlockAndSide.flatMap(_.side).isDefined then {
+      renderSelectedBlock(camera)
     }
 
     mainFrameBuffer.unbind()
@@ -350,10 +346,7 @@ class WorldRenderer(
     skyRenderer.render(skyVao, skyVao.maxCount)
   }
 
-  private def renderSelectedBlock(
-      camera: Camera,
-      selectedBlockAndSide: Option[(BlockState, BlockRelWorld, Option[Int])]
-  ): Unit = {
+  private def renderSelectedBlock(camera: Camera): Unit = {
     selectedBlockShader.setViewMatrix(camera.view.matrix)
     selectedBlockShader.setCameraPosition(camera.position)
     selectedBlockShader.enable()

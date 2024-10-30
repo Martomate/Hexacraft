@@ -15,7 +15,9 @@ object InventoryBox {
     case InventoryUpdated(inventory: Inventory)
   }
 
-  def apply(currentInventory: Inventory, blockTextureIndices: Map[String, IndexedSeq[Int]])(
+  def apply(
+      currentInventory: Inventory,
+      blockTextureIndices: Map[String, IndexedSeq[Int]],
       eventHandler: Channel.Sender[Event]
   ): InventoryBox = {
     val gridRenderer = new GuiBlockRenderer(9, 4)(blockTextureIndices)
