@@ -11,9 +11,9 @@ trait SubComponents extends Component {
     comps.exists(_.handleEvent(event)) || super.handleEvent(event)
   }
 
-  override def render(transformation: GUITransformation)(using RenderContext): Unit = {
-    super.render(transformation)
-    comps.foreach(_.render(transformation))
+  override def render(context: RenderContext): Unit = {
+    super.render(context)
+    comps.foreach(_.render(context))
   }
 
   override def tick(ctx: TickContext): Unit = {

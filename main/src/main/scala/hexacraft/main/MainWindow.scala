@@ -2,7 +2,6 @@ package hexacraft.main
 
 import hexacraft.game.GameKeyboard
 import hexacraft.gui.*
-import hexacraft.gui.comp.GUITransformation
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
@@ -11,7 +10,7 @@ import hexacraft.renderer.VAO
 import hexacraft.server.ServerWorld
 import hexacraft.util.{Resource, Result}
 
-import org.joml.Vector2i
+import org.joml.{Vector2f, Vector2i}
 
 import java.io.File
 import scala.collection.mutable
@@ -215,11 +214,12 @@ class MainWindow(
 
   private def render(): Unit = {
     if scene.isDefined then {
-      scene.get.render(GUITransformation(0, 0))(using
+      scene.get.render(
         RenderContext(
           this._windowSize.logicalAspectRatio,
           this._windowSize.physicalSize,
-          mouse.currentPos.heightNormalizedPos(this.windowSize.logicalSize)
+          mouse.currentPos.heightNormalizedPos(this.windowSize.logicalSize),
+          Vector2f(0, 0)
         )
       )
     }

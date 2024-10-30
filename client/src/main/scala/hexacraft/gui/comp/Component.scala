@@ -18,9 +18,9 @@ abstract class Component {
 
   def tick(ctx: TickContext): Unit = ()
 
-  def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  def render(context: RenderContext): Unit = {
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
-    textMaster.render(transformation.x, transformation.y)
+    textMaster.render(context.offset.x, context.offset.y)
   }
 
   def handleEvent(event: Event): Boolean = false

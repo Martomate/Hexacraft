@@ -1,12 +1,13 @@
 package hexacraft.main
 
-import com.martomate.nbt.Nbt
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 import hexacraft.renderer.TextureSingle
 import hexacraft.util.Channel
 import hexacraft.world.WorldSettings
+
+import com.martomate.nbt.Nbt
 
 import java.io.File
 import java.nio.file.Path
@@ -15,15 +16,15 @@ import scala.util.Random
 object Menus {
 
   abstract class MenuScene extends Scene with SubComponents {
-    override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+    override def render(context: RenderContext): Unit = {
       Component.drawImage(
         LocationInfo(-context.windowAspectRatio, -1, context.windowAspectRatio * 2, 2),
-        transformation.x,
-        transformation.y,
+        context.offset.x,
+        context.offset.y,
         TextureSingle.getTexture("textures/gui/menu/background"),
         context.windowAspectRatio
       )
-      super.render(transformation)
+      super.render(context)
     }
   }
 

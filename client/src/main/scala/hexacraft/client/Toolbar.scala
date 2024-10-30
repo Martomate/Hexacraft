@@ -1,7 +1,7 @@
 package hexacraft.client
 
 import hexacraft.gui.{LocationInfo, RenderContext}
-import hexacraft.gui.comp.{Component, GUITransformation}
+import hexacraft.gui.comp.Component
 import hexacraft.world.Inventory
 
 import org.joml.{Matrix4f, Vector4f}
@@ -46,17 +46,17 @@ class Toolbar(location: LocationInfo, private var inventory: Inventory)(
     guiBlockRenderer.updateContent(-4 * 0.2f, -0.83f, (0 until 9).map(i => inventory(i)))
   }
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
-    Component.drawRect(location, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
+  override def render(context: RenderContext): Unit = {
+    Component.drawRect(location, context.offset.x, context.offset.y, backgroundColor, context.windowAspectRatio)
     Component.drawRect(
       selectedBox,
-      transformation.x + selectedIndex * location.w / 9,
-      transformation.y,
+      context.offset.x + selectedIndex * location.w / 9,
+      context.offset.y,
       selectedColor,
       context.windowAspectRatio
     )
 
-    guiBlockRenderer.render(transformation)
+    guiBlockRenderer.render()
   }
 
   override def unload(): Unit = {

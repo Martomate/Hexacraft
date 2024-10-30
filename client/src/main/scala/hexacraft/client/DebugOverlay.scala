@@ -1,7 +1,7 @@
 package hexacraft.client
 
 import hexacraft.gui.{LocationInfo, RenderContext}
-import hexacraft.gui.comp.{Component, GUITransformation}
+import hexacraft.gui.comp.Component
 import hexacraft.text.{Text, TextMaster}
 import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.coord.{ChunkRelWorld, CylCoords}
@@ -127,10 +127,10 @@ class DebugOverlay {
     )
   }
 
-  def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  def render(context: RenderContext): Unit = {
     texts.foreach(t => t.setPosition(-context.windowAspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
     textMaster.setWindowAspectRatio(context.windowAspectRatio)
-    textMaster.render(transformation.x, transformation.y)
+    textMaster.render(context.offset.x, context.offset.y)
   }
 
   def unload(): Unit = {

@@ -79,16 +79,16 @@ class TextField(
     }
   }
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  override def render(context: RenderContext): Unit = {
     Component.drawFancyRect(
       location,
-      transformation.x,
-      transformation.y,
+      context.offset.x,
+      context.offset.y,
       bgColor,
       context.windowAspectRatio,
       inverted = true
     )
-    super.render(transformation)
+    super.render(context)
   }
 
   override def handleEvent(event: Event): Boolean = {

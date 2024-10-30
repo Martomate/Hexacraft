@@ -20,21 +20,23 @@ class ScrollPane(
 
   def addComponent(comp: Component & Boundable): Unit = components.append(comp)
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  override def render(context: RenderContext): Unit = {
     Component.drawRect(
       location,
-      transformation.x,
-      transformation.y,
+      context.offset.x,
+      context.offset.y,
       new Vector4f(0, 0, 0, 0.4f),
       context.windowAspectRatio
     )
 
-    val contentTransformation = transformation.offset(this.xOffset, this.yOffset)
+    val contentTransformation = context.withMoreOffset(this.xOffset, this.yOffset)
     val loc = location.inScaledScreenCoordinates(context.frameBufferSize)
+
     OpenGL.glScissor(loc.x, loc.y, loc.w, loc.h)
     OpenGL.glEnable(OpenGL.State.ScissorTest)
     components.foreach(_.render(contentTransformation))
     OpenGL.glDisable(OpenGL.State.ScissorTest)
+
     super.render(contentTransformation)
   }
 

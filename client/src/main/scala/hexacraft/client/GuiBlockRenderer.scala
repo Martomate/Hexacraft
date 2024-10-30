@@ -1,7 +1,6 @@
 package hexacraft.client
 
 import hexacraft.client.render.BlockRenderer
-import hexacraft.gui.comp.GUITransformation
 import hexacraft.renderer.*
 import hexacraft.shaders.GuiBlockShader
 import hexacraft.world.CameraProjection
@@ -44,7 +43,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
     guiBlockSideShader.setWindowAspectRatio(aspectRatio)
   }
 
-  def render(transformation: GUITransformation): Unit = {
+  def render(): Unit = {
     guiBlockShader.setViewMatrix(viewMatrix)
     guiBlockSideShader.setViewMatrix(viewMatrix)
 

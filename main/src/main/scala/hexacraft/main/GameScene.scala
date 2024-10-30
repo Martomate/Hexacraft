@@ -2,8 +2,7 @@ package hexacraft.main
 
 import hexacraft.client.{BlockTextureLoader, GameClient}
 import hexacraft.game.GameKeyboard
-import hexacraft.gui.{Event, RenderContext, Scene, TickContext, WindowSize}
-import hexacraft.gui.comp.GUITransformation
+import hexacraft.gui.*
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
@@ -84,8 +83,8 @@ class GameScene private (val client: GameClient, server: Option[GameServer]) ext
     client.frameBufferResized(width, height)
   }
 
-  override def render(transformation: GUITransformation)(using RenderContext): Unit = {
-    client.render(transformation)
+  override def render(context: RenderContext): Unit = {
+    client.render(context)
   }
 
   override def tick(ctx: TickContext): Unit = {

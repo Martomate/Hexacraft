@@ -1,7 +1,7 @@
 package hexacraft.client
 
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
-import hexacraft.gui.comp.{Component, GUITransformation}
+import hexacraft.gui.comp.Component
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction}
 import hexacraft.util.Channel
 import hexacraft.world.Inventory
@@ -117,7 +117,7 @@ class InventoryBox private (
     }
   }
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  override def render(context: RenderContext): Unit = {
     gridRenderer.setWindowAspectRatio(context.windowAspectRatio)
     floatingBlockRenderer.setWindowAspectRatio(context.windowAspectRatio)
 
@@ -128,18 +128,18 @@ class InventoryBox private (
       floatingBlockRenderer.updateContent(mousePos.x, mousePos.y, Seq(floatingBlock.get))
     }
 
-    Component.drawRect(bounds, transformation.x, transformation.y, backgroundColor, context.windowAspectRatio)
+    Component.drawRect(bounds, context.offset.x, context.offset.y, backgroundColor, context.windowAspectRatio)
 
     if hoverIndex.isDefined then {
-      val xOffset = transformation.x + (hoverIndex.get % 9) * 0.2f
-      val yOffset = transformation.y + (hoverIndex.get / 9) * 0.2f
+      val xOffset = context.offset.x + (hoverIndex.get % 9) * 0.2f
+      val yOffset = context.offset.y + (hoverIndex.get / 9) * 0.2f
       Component.drawRect(selectedBox, xOffset, yOffset, selectedColor, context.windowAspectRatio)
     }
 
-    gridRenderer.render(transformation)
+    gridRenderer.render()
 
     if floatingBlock.isDefined then {
-      floatingBlockRenderer.render(transformation)
+      floatingBlockRenderer.render()
     }
   }
 

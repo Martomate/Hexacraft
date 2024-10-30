@@ -14,9 +14,9 @@ object Button {
 class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) extends Component with Boundable {
   addText(Component.makeText(text, bounds, 4.0f, shadow = true).setTextAndFitSize(text, 4.0f))
 
-  override def render(transformation: GUITransformation)(using context: RenderContext): Unit = {
+  override def render(context: RenderContext): Unit = {
     val mousePos = context.heightNormalizedMousePos
-    val containsMouse = bounds.containsPoint(mousePos.x - transformation.x, mousePos.y - transformation.y)
+    val containsMouse = bounds.containsPoint(mousePos.x - context.offset.x, mousePos.y - context.offset.y)
 
     val color =
       if containsMouse then {
@@ -25,8 +25,8 @@ class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) exten
         new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
       }
 
-    Component.drawFancyRect(bounds, transformation.x, transformation.y, color, context.windowAspectRatio)
-    super.render(transformation)
+    Component.drawFancyRect(bounds, context.offset.x, context.offset.y, color, context.windowAspectRatio)
+    super.render(context)
   }
 
   override def handleEvent(event: Event): Boolean = event match {

@@ -1,8 +1,8 @@
 package hexacraft.client
 
 import hexacraft.game.*
-import hexacraft.gui.{Event, LocationInfo, MousePosition, RenderContext, TickContext, WindowSize}
-import hexacraft.gui.comp.{Component, GUITransformation}
+import hexacraft.gui.*
+import hexacraft.gui.comp.Component
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
@@ -11,7 +11,7 @@ import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
-import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CoordUtils, CylCoords, NeighborOffsets}
+import hexacraft.world.coord.*
 
 import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -441,20 +441,20 @@ class GameClient(
     worldRenderer.frameBufferResized(width, height)
   }
 
-  def render(transformation: GUITransformation)(using RenderContext): Unit = {
+  def render(context: RenderContext): Unit = {
     worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
 
     renderCrosshair()
 
-    blockInHandRenderer.render(transformation)
-    toolbar.render(transformation)
+    blockInHandRenderer.render()
+    toolbar.render(context)
 
     if debugOverlay.isDefined then {
-      debugOverlay.get.render(transformation)
+      debugOverlay.get.render(context)
     }
 
     for s <- overlays do {
-      s.render(transformation)
+      s.render(context)
     }
   }
 
