@@ -7,12 +7,12 @@ import munit.FunSuite
 import java.io.{ByteArrayOutputStream, File, PrintStream}
 import java.nio.file.Path
 
-class MainErrorLoggerTest extends FunSuite {
+class ErrorLoggerTest extends FunSuite {
   test("does not write log files in debug mode") {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
 
-    val logger = MainErrorLogger(false, null, fs)
+    val logger = ErrorLogger.ToConsole
     captureStdErr(logger.log(new Exception("something happened")))
 
     assertEquals(tracker.events, Seq())
@@ -20,7 +20,7 @@ class MainErrorLoggerTest extends FunSuite {
 
   test("writes stacktrace to stderr in debug mode") {
     val fs = FileSystem.createNull()
-    val logger = MainErrorLogger(false, null, fs)
+    val logger = ErrorLogger.ToConsole
 
     val output = captureStdErr(logger.log(new Exception("something happened")))
 
@@ -33,8 +33,7 @@ class MainErrorLoggerTest extends FunSuite {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
 
-    val saveFolder = File("some/path")
-    val logger = MainErrorLogger(true, saveFolder, fs)
+    val logger = ErrorLogger.ToFile(File("some/path/logs"), fs)
     captureStdErr(logger.log(new Exception("something happened")))
 
     assertEquals(tracker.events.size, 1)
@@ -58,8 +57,7 @@ class MainErrorLoggerTest extends FunSuite {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
 
-    val saveFolder = File("some/path")
-    val logger = MainErrorLogger(true, saveFolder, fs)
+    val logger = ErrorLogger.ToFile(File("some/path/logs"), fs)
     captureStdErr(logger.log(new Exception("something happened")))
 
     assertEquals(tracker.events.size, 1)
@@ -73,8 +71,7 @@ class MainErrorLoggerTest extends FunSuite {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
 
-    val saveFolder = File("some/path")
-    val logger = MainErrorLogger(true, saveFolder, fs)
+    val logger = ErrorLogger.ToFile(File("some/path/logs"), fs)
 
     val output = captureStdErr(logger.log(new Exception("something happened")))
 

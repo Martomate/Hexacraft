@@ -1,46 +1,15 @@
 package hexacraft.main
 
-import hexacraft.infra.audio.AudioSystem
-import hexacraft.infra.fs.FileSystem
-import hexacraft.infra.os.OSUtils
-import hexacraft.infra.window.WindowSystem
-import hexacraft.world.WorldSettings
-
-import java.io.File
-import java.nio.file.Files
-
 object Main {
   def main(args: Array[String]): Unit = {
-    val isDebugStr = System.getProperty("hexacraft.debug")
-    val isDebug = isDebugStr != null && isDebugStr == "true"
+    val config = ApplicationConfig.fromSystem
 
-    val useTempSaveFolder = System.getProperty("hexacraft.tempSaveFolder")
-    val saveFolder: File = if useTempSaveFolder != null then {
-      Files.createTempDirectory("hexacraft").toFile
-    } else {
-      new File(OSUtils.appdataPath, ".hexacraft")
-    }
+    val application = Application.create(config)
 
-    val errorHandler = MainErrorLogger.create(!isDebug, saveFolder)
+    val success = application.run()
 
-    val fs = FileSystem.create()
-    val audioSystem = AudioSystem.create()
-    val windowSystem = WindowSystem.create()
-
-    val window = new MainWindow(isDebug, saveFolder, fs, audioSystem, windowSystem)
-
-    val startWorldName = System.getProperty("hexacraft.start_world")
-    if isDebug && startWorldName != null then {
-      val worldSaveDir = new File(saveFolder, s"saves/$startWorldName")
-      window.setNextScene(SceneRoute.Game(worldSaveDir, WorldSettings.none, true, false, null))
-    }
-
-    try {
-      window.run()
-    } catch {
-      case t: Throwable =>
-        errorHandler.log(t)
-        System.exit(1)
+    if !success then {
+      System.exit(1)
     }
   }
 }
