@@ -9,7 +9,9 @@ object Block {
   private val blocks = new Array[Block](maxBlocks)
   def byId(id: Byte): Block = blocks(id)
 
-  def register[B <: Block](block: B): B = {
+  def all: Seq[Block] = blocks.filterNot(_ == null).toSeq
+
+  private def register[B <: Block](block: B): B = {
     require(blocks(block.id) == null)
     blocks(block.id) = block
     block

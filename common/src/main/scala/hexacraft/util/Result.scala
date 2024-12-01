@@ -113,4 +113,13 @@ object Result {
 
     Ok(values.toSeq)
   }
+
+  extension [A, E <: Throwable](r: Result[A, E]) {
+    def toTry: Try[A] = {
+      r match {
+        case Ok(value)  => Success(value)
+        case Err(error) => Failure(error)
+      }
+    }
+  }
 }

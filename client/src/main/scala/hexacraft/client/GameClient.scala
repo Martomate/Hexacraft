@@ -51,7 +51,7 @@ object GameClient {
     }
 
     val blockSpecs = BlockSpecs.default
-    val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader)
+    val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader).unwrap()
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
     val blockTextureColors: Map[String, IndexedSeq[Vector3f]] =
@@ -205,11 +205,17 @@ object GameClient {
       .translate(0, -0.25f, 0)
   }
 
-  private def loadBlockTextures(blockSpecs: Map[String, BlockSpec], blockLoader: BlockTextureLoader) = {
+  private def loadBlockTextures(
+      blockSpecs: Map[String, BlockSpec],
+      blockLoader: BlockTextureLoader
+  ): Result[BlockTextureLoader.LoadedImages, String] = {
     val textures = blockSpecs.values.map(_.textures)
     val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
     val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
-    blockLoader.load(squareTextureNames, triTextureNames)
+
+    blockLoader
+      .load(squareTextureNames, triTextureNames)
+      .mapErr(e => s"Block texture not found: ${e.getMessage}")
   }
 }
 
