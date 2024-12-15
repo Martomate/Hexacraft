@@ -29,6 +29,7 @@ object Block {
   val BirchLog = register(new Block(9, "log_birch", "Birch log"))
   val BirchLeaves = register(new Block(10, "leaves_birch", "Birch leaves"))
   val Tnt = register(new Block(11, "tnt", "TNT"))
+  val Glass = register(new BlockGlass(12, "glass", "Glass"))
 }
 
 class Block(val id: Byte, val name: String, val displayName: String) {
@@ -71,4 +72,10 @@ class BlockAir extends Block(0, "air", "Air") {
 
 trait EmittingLight extends Block {
   override def lightEmitted: Byte = 14
+}
+
+class BlockGlass(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
+  override def isCovering(metadata: Byte, side: Int): Boolean = false
+
+  override def isTransmissive: Boolean = true
 }

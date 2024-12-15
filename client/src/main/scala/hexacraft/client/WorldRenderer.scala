@@ -6,10 +6,9 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
 import hexacraft.util.{NamedThreadFactory, TickableTimer}
-import hexacraft.world.{BlocksInWorld, Camera, ChunkLoadingPrioritizer, CylinderSize, PosAndDir, WorldGenerator}
-import hexacraft.world.block.BlockState
+import hexacraft.world.*
 import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
-import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Vector2ic, Vector3f}
@@ -44,7 +43,7 @@ class WorldRenderer(
   private val terrainShader = new TerrainShader()
 
   private val solidBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
-  private val transmissiveBlockGpuState = GpuState.build(_.blend(true).cullFace(false))
+  private val transmissiveBlockGpuState = GpuState.build(_.blend(true).cullFace(true))
 
   private val terrainGpuState = GpuState.build(_.blend(false).cullFace(true))
 
@@ -301,6 +300,11 @@ class WorldRenderer(
 
     // World content
     renderBlocks(camera, sun)
+    // TODO: Opaque and translucent blocks are both rendered here, but they need to be separate.
+    //  In the world combiner there is a normal field, but if there is glass in front of grass then the normal will be for the glass.
+    //  The normal-based shading only happens for the grass.
+    //  Instead we should render in two steps, or alternatively send both to the shader. How is this usually done?
+
     // renderTerrain(camera, sun)
     renderEntities(camera, sun)
 

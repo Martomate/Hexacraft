@@ -82,11 +82,16 @@ object BlockVboData {
             if neigh != null then {
               val bs = neigh.getBlock(c2)
 
-              val shouldRenderSide = if bs.blockType == Block.Water then {
-                b != bs && s < 2 && b.blockType != Block.Water
-              } else {
-                b != bs && (s == 0 || !bs.blockType.isSolid)
-              }
+              val here = b.blockType
+              val there = bs.blockType
+
+              val shouldRenderSide =
+                if here == there then false
+                else if there.isTransmissive then true
+                else if s == 0 && here.blockHeight(b.metadata) < 1.0 then true
+                else false
+
+              // TODO: sort translucent faces and the rendering glitches might be fixed
 
               if shouldRenderSide then {
                 brightness(c.value) = neigh.lighting.getBrightness(c2)

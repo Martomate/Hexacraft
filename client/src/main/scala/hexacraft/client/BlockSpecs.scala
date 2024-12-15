@@ -36,5 +36,6 @@ object BlockSpecs {
       )
     case "leaves_birch" => BlockSpec(Textures.basic("leaves_birch"))
     case "tnt"          => BlockSpec(Textures.basic("tnt").withTop("tnt_top").withBottom("tnt_top"))
+    case "glass"        => BlockSpec(Textures.basic("glass"))
   }
 }
