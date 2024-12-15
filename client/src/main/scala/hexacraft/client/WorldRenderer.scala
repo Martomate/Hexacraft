@@ -3,7 +3,7 @@ package hexacraft.client
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
+import hexacraft.renderer.{GpuState, Shader, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
 import hexacraft.util.{NamedThreadFactory, TickableTimer}
 import hexacraft.world.*
@@ -42,14 +42,14 @@ class WorldRenderer(
 
   private val terrainShader = new TerrainShader()
 
-  private val solidBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
-  private val transmissiveBlockGpuState = GpuState.build(_.blend(true).cullFace(true))
+  private val opaqueBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
+  private val translucentBlockGpuState = GpuState.build(_.blend(true).cullFace(true))
 
   private val terrainGpuState = GpuState.build(_.blend(false).cullFace(true))
 
-  private val solidBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
+  private val opaqueBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
-  private val transmissiveBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
+  private val translucentBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
 
   private val terrainRenderers: mutable.LongMap[TerrainBatchRenderer] = mutable.LongMap.empty
@@ -89,10 +89,10 @@ class WorldRenderer(
   }
 
   def regularChunkBufferFragmentation: IndexedSeq[Float] =
-    solidBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
+    opaqueBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float] =
-    transmissiveBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
+    translucentBlockRenderers.map(a => a.values.map(_.fragmentation).sum / a.keys.size)
 
   def renderQueueLength: Int = {
     chunkRenderUpdateQueue.length
@@ -293,17 +293,12 @@ class WorldRenderer(
       }
     }
 
-    // Step 1: Render everything to a FrameBuffer
+    // Step 1.1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
-
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     // World content
-    renderBlocks(camera, sun)
-    // TODO: Opaque and translucent blocks are both rendered here, but they need to be separate.
-    //  In the world combiner there is a normal field, but if there is glass in front of grass then the normal will be for the glass.
-    //  The normal-based shading only happens for the grass.
-    //  Instead we should render in two steps, or alternatively send both to the shader. How is this usually done?
+    renderBlocks(camera, sun, true)
 
     // renderTerrain(camera, sun)
     renderEntities(camera, sun)
@@ -313,13 +308,48 @@ class WorldRenderer(
     }
 
     mainFrameBuffer.unbind()
+
+    // Step 2: Render everything to the screen (one could add post processing here in the future)
     OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
 
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     renderSky(camera, sun)
 
-    // Step 2: Render the FrameBuffer to the screen (one could add post processing here in the future)
+    // Step 2.1: Render the FrameBuffer for opaque things
+    OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.positionTexture)
+    OpenGL.glActiveTexture(worldCombinerShader.normalTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.normalTexture)
+    OpenGL.glActiveTexture(worldCombinerShader.colorTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
+    OpenGL.glActiveTexture(worldCombinerShader.depthTextureSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
+
+    worldCombinerShader.enable()
+    worldCombinerShader.setSunPosition(sun)
+    worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
+
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(3))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(2))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+
+    // Step 1.2: Render all translucent things to a FrameBuffer
+    mainFrameBuffer.bind()
+    OpenGL.glClear(OpenGL.ClearMask.colorBuffer)
+    OpenGL.glDepthMask(false)
+
+    renderBlocks(camera, sun, false)
+
+    OpenGL.glDepthMask(true)
+    mainFrameBuffer.unbind()
+
+    // Step 2.2: Render the FrameBuffer for translucent things
     OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
     OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.positionTexture)
     OpenGL.glActiveTexture(worldCombinerShader.normalTextureSlot)
@@ -357,7 +387,7 @@ class WorldRenderer(
     selectedBlockRenderer.render(selectedBlockVao, 1)
   }
 
-  private def renderBlocks(camera: Camera, sun: Vector3f): Unit = {
+  private def renderBlocks(camera: Camera, sun: Vector3f, opaque: Boolean): Unit = {
     blockShader.setViewMatrix(camera.view.matrix)
     blockShader.setCameraPosition(camera.position)
 
@@ -365,7 +395,7 @@ class WorldRenderer(
     blockSideShader.setCameraPosition(camera.position)
 
     blockTexture.bind()
-    renderBlocks()
+    renderBlocks(opaque)
   }
 
   private def renderTerrain(camera: Camera, sun: Vector3f): Unit = {
@@ -394,22 +424,24 @@ class WorldRenderer(
     updateBlockData(transmissiveData._1, transmissiveData._2, transmissive = true)
   }
 
-  private def renderBlocks(): Unit = {
-    for side <- 0 until 8 do {
-      val sh = if side < 2 then blockShader else blockSideShader
-      sh.enable()
-      sh.setSide(side)
-      for h <- solidBlockRenderers(side).values do {
-        h.render()
+  private def renderBlocks(opaque: Boolean): Unit = {
+    if opaque then {
+      for side <- 0 until 8 do {
+        val sh = if side < 2 then blockShader else blockSideShader
+        sh.enable()
+        sh.setSide(side)
+        for h <- opaqueBlockRenderers(side).values do {
+          h.render()
+        }
       }
-    }
-
-    for side <- 0 until 8 do {
-      val sh = if side < 2 then blockShader else blockSideShader
-      sh.enable()
-      sh.setSide(side)
-      for h <- transmissiveBlockRenderers(side).values do {
-        h.render()
+    } else {
+      for side <- 0 until 8 do {
+        val sh = if side < 2 then blockShader else blockSideShader
+        sh.enable()
+        sh.setSide(side)
+        for h <- translucentBlockRenderers(side).values do {
+          h.render()
+        }
       }
     }
   }
@@ -449,10 +481,10 @@ class WorldRenderer(
       (g, clear.getOrElse(g, Seq()), update.getOrElse(g, Seq()))
     }
 
-    val gpuState = if transmissive then transmissiveBlockGpuState else solidBlockGpuState
+    val gpuState = if transmissive then translucentBlockGpuState else opaqueBlockGpuState
 
     for s <- 0 until 8 do {
-      val batchRenderers = if transmissive then transmissiveBlockRenderers(s) else solidBlockRenderers(s)
+      val batchRenderers = if transmissive then translucentBlockRenderers(s) else opaqueBlockRenderers(s)
 
       for (g, clear, update) <- groupData do {
         val r = batchRenderers.getOrElseUpdate(g, new BlockFaceBatchRenderer(makeBufferHandler(s, gpuState)))
@@ -531,14 +563,14 @@ class WorldRenderer(
       r.unload()
     }
 
-    for rs <- solidBlockRenderers do {
+    for rs <- opaqueBlockRenderers do {
       for h <- rs.values do {
         h.unload()
       }
       rs.clear()
     }
 
-    for rs <- transmissiveBlockRenderers do {
+    for rs <- translucentBlockRenderers do {
       for h <- rs.values do {
         h.unload()
       }

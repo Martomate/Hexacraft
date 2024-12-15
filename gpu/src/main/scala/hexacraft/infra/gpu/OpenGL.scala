@@ -653,6 +653,10 @@ object OpenGL {
     gl.glBlendFunc(sfactor.toGL, dfactor.toGL)
   }
 
+  def glDepthMask(shouldWriteDepth: Boolean): Unit = {
+    gl.glDepthMask(shouldWriteDepth)
+  }
+
   def glDepthFunc(func: DepthFunc): Unit = {
     gl.glDepthFunc(func.toGL)
   }
@@ -889,6 +893,7 @@ trait GLWrapper {
 
   def glGetError(): Int
   def glClear(mask: Int): Unit
+  def glDepthMask(flag: Boolean): Unit
   def glDepthFunc(func: Int): Unit
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit
@@ -1024,6 +1029,7 @@ class StubGL extends GLWrapper {
 
   def glGetError(): Int = 0
   def glClear(mask: Int): Unit = ()
+  def glDepthMask(flag: Boolean): Unit = ()
   def glDepthFunc(func: Int): Unit = ()
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit = ()
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = ()
@@ -1152,6 +1158,7 @@ object RealGL extends GLWrapper {
 
   def glGetError(): Int = GL11.glGetError()
   def glClear(mask: Int): Unit = GL11.glClear(mask)
+  def glDepthMask(flag: Boolean): Unit = GL11.glDepthMask(flag)
   def glDepthFunc(func: Int): Unit = GL11.glDepthFunc(func)
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit = GL11.glBlendFunc(sfactor, dfactor)
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glScissor(x, y, width, height)
