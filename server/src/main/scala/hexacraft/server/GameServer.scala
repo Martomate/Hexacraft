@@ -101,7 +101,9 @@ class GameServer(
         val PlayerData(player, entity, camera) = p
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
-        chunksLoadedPerPlayer.get(player.id).foreach(_.tick(PosAndDir.fromCameraView(camera.view)))
+        chunksLoadedPerPlayer.synchronized {
+          chunksLoadedPerPlayer.get(player.id).foreach(_.tick(PosAndDir.fromCameraView(camera.view)))
+        }
 
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
           val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
@@ -135,13 +137,18 @@ class GameServer(
         entity.motion.flying = player.flying
       }
 
-      val tickResult = world.tick(
-        players.values.map(_.camera).toSeq,
-        SeqUtils.roundRobin(chunksLoadedPerPlayer.values.map(_.nextAddableChunks(15)).toSeq),
-        chunksLoadCount.filter((coords, count) => count == 0).keys.map(ChunkRelWorld(_)).toSeq
-      )
-      for coords <- tickResult.chunksRemoved do {
-        chunksLoadCount.remove(coords.value)
+      val tickResult = chunksLoadedPerPlayer.synchronized {
+        chunksLoadCount.synchronized {
+          val tickResult = world.tick(
+            players.values.map(_.camera).toSeq,
+            SeqUtils.roundRobin(chunksLoadedPerPlayer.values.map(_.nextAddableChunks(15)).toSeq),
+            chunksLoadCount.filter((coords, count) => count == 0).keys.map(ChunkRelWorld(_)).toSeq
+          )
+          for coords <- tickResult.chunksRemoved do {
+            chunksLoadCount.remove(coords.value)
+          }
+          tickResult
+        }
       }
 
       for coords <- tickResult.blocksUpdated do {
@@ -275,7 +282,7 @@ class GameServer(
       try {
         server.receive() match {
           case Result.Ok((clientId, packet)) =>
-            handlePacket(clientId, packet) match {
+            handlePacket(clientId, packet) match { // TODO: run this from the `tick` method to prevent race conditions
               case Some(res) =>
                 messagesToSend += clientId -> res
               case None =>
@@ -359,9 +366,11 @@ class GameServer(
             val (playerId, otherData) = otherPlayer
             if playerId != clientId then {
               otherData.entityEventsWaitingToBeSent.synchronized {
+                println(s"Sending Login message about new player: $clientId")
                 otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
               }
               playerData.entityEventsWaitingToBeSent.synchronized {
+                println(s"Sending Login message about existing player: $playerId")
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
                   otherData.entity.toNBT
                 )
@@ -395,13 +404,17 @@ class GameServer(
         worldProvider.savePlayerData(player.toNBT, player.id)
         world.removeEntity(playerData.entity)
         players.remove(clientId)
-        chunksLoadedPerPlayer.remove(player.id) match {
-          case Some(prio) =>
-            while prio.nextRemovableChunk.isDefined do {
-              val coords = prio.popChunkToRemove().get
-              chunksLoadCount(coords.value) -= 1
-            }
-          case None =>
+        chunksLoadedPerPlayer.synchronized {
+          chunksLoadedPerPlayer.remove(player.id) match {
+            case Some(prio) =>
+              while prio.nextRemovableChunk.isDefined do {
+                val coords = prio.popChunkToRemove().get
+                chunksLoadCount.synchronized {
+                  chunksLoadCount(coords.value) -= 1
+                }
+              }
+            case None =>
+          }
         }
         None
       case GetWorldInfo =>
@@ -467,7 +480,9 @@ class GameServer(
 
         Some(response)
       case GetWorldLoadingEvents(maxChunksToLoad) =>
-        val prio = chunksLoadedPerPlayer.getOrElseUpdate(player.id, ChunkLoadingPrioritizer(world.renderDistance))
+        val prio = chunksLoadedPerPlayer.synchronized {
+          chunksLoadedPerPlayer.getOrElseUpdate(player.id, ChunkLoadingPrioritizer(world.renderDistance))
+        }
 
         val loadedChunks = mutable.ArrayBuffer.empty[(ChunkRelWorld, Nbt)]
         val unloadedChunks = mutable.ArrayBuffer.empty[ChunkRelWorld]
@@ -480,7 +495,9 @@ class GameServer(
             case Some(coords -> chunk) =>
               loadedChunks += ((coords, chunk.toNbt))
               prio += coords
-              chunksLoadCount(coords.value) = chunksLoadCount.getOrElse(coords.value, 0) + 1
+              chunksLoadCount.synchronized {
+                chunksLoadCount(coords.value) = chunksLoadCount.getOrElse(coords.value, 0) + 1
+              }
             case None =>
               chunksToLoad = 0
           }
@@ -491,7 +508,9 @@ class GameServer(
           prio.popChunkToRemove() match {
             case Some(coords) =>
               unloadedChunks += coords
-              chunksLoadCount(coords.value) -= 1
+              chunksLoadCount.synchronized {
+                chunksLoadCount(coords.value) -= 1
+              }
             case None =>
               moreChunksToUnload = false
           }

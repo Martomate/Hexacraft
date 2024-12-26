@@ -229,7 +229,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
-    val allEntitiesById = mutable.HashMap.empty[UUID, (ChunkRelWorld, Entity)]
+    val allEntitiesById = mutable.HashMap.empty[UUID, (Option[ChunkRelWorld], Entity)]
 
     {
       val chIt = chunks.iterator
@@ -239,7 +239,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
         val eIt = ch.entities.iterator
         while eIt.hasNext do {
           val e = eIt.next()
-          allEntitiesById(e.id) = (chunkCoords, e)
+          allEntitiesById(e.id) = (Some(chunkCoords), e)
         }
       }
     }
@@ -251,6 +251,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       while eIt.hasNext do {
         val e = eIt.next()
         if addEntity(e).isEmpty then {
+          allEntitiesById(e.id) = (None, e)
           entitiesToSpawnLater += e
           // println(s"Client: not ready to spawn entity ${e.id}")
         } else {
@@ -264,7 +265,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       val (id, event) = evIt.next()
       allEntitiesById.get(id) match {
         case Some(ent) =>
-          val (c, e) = ent
+          val (_, e) = ent
           event match {
             case EntityEvent.Spawned(_) =>
               println(s"Received spawn event for an entity that already exists (id: $id)")
@@ -284,19 +285,18 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
         case None =>
           event match {
             case EntityEvent.Spawned(data) =>
-              val entity = for {
-                e <- EntityFactory
-                  .fromNbt(data)
-                  .mapErr(err => s"Could not create entity. Error: $err")
-              } yield e
+              val entity = EntityFactory
+                .fromNbt(data)
+                .mapErr(err => s"Could not create entity. Error: $err")
 
               entity match {
                 case Ok(e) =>
                   addEntity(e) match {
                     case Some(c) =>
-                      allEntitiesById(id) = (c, e)
+                      allEntitiesById(id) = (Some(c), e)
                       println(s"Client: spawned entity $id")
                     case None =>
+                      allEntitiesById(id) = (None, e)
                       entitiesToSpawnLater += e
                   }
                 case Err(e) =>

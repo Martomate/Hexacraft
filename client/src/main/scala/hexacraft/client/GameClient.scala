@@ -20,7 +20,7 @@ import org.zeromq.*
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.concurrent.duration.Duration
 import scala.util.Random
 
@@ -248,6 +248,7 @@ class GameClient(
   private var moveWithMouse: Boolean = false
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
+  private var isLoggingOut: Boolean = false
 
   private var debugOverlay: Option[DebugOverlay] = None
 
@@ -292,7 +293,8 @@ class GameClient(
   }
 
   private def logout(): Unit = {
-    socket.sendPacket(NetworkPacket.Logout)
+    isLoggingOut = true
+    Future(socket.sendPacket(NetworkPacket.Logout)) // use Future to make sure it does not block
     eventHandler.send(GameClient.Event.GameQuit)
   }
 
@@ -509,6 +511,8 @@ class GameClient(
   private var tickFut: Option[Future[Seq[Nbt]]] = None
 
   def tick(ctx: TickContext): Unit = {
+    if isLoggingOut then return
+
     // Act on the server info requested last tick, and send a new request to be used in the next tick
     val currentTickFut = tickFut
     tickFut = Some(Future {
@@ -704,6 +708,9 @@ class GameClient(
       }
     } catch {
       case e: ZMQException =>
+        println(e)
+        logout()
+      case e: TimeoutException =>
         println(e)
         logout()
       case e => throw e
