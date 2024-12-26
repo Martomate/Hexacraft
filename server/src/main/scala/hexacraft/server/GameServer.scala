@@ -33,6 +33,9 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
   var mouseMovement: Vector2f = new Vector2f
   val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
   val entityEventsWaitingToBeSent: mutable.ArrayBuffer[(UUID, EntityEvent)] = mutable.ArrayBuffer.empty
+
+  var lastSeen: Long = System.currentTimeMillis
+  var hasBeenKicked: Boolean = false
 }
 
 class GameServer(
@@ -99,7 +102,16 @@ class GameServer(
 
   def tick(): Unit = {
     try {
+      players.filterInPlace((_, p) => !p.hasBeenKicked)
+
       for (playerId, p) <- players do {
+        if System.currentTimeMillis - p.lastSeen > 1000 then {
+          p.hasBeenKicked = true
+          for (_, p2) <- players do {
+            p2.entityEventsWaitingToBeSent += p.entity.id -> EntityEvent.Despawned
+          }
+        }
+
         val PlayerData(player, entity, camera) = p
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
@@ -412,6 +424,8 @@ class GameServer(
     }
 
     val playerData = players(clientId)
+    playerData.lastSeen = System.currentTimeMillis
+
     val PlayerData(player, _, playerCamera) = playerData
 
     packet match {
