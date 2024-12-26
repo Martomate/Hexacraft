@@ -27,6 +27,10 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
     .map(_.asInstanceOf[MotionComponent])
     .orNull
 
+  val headDirection: Option[HeadDirectionComponent] = components
+    .find(_.isInstanceOf[HeadDirectionComponent])
+    .map(_.asInstanceOf[HeadDirectionComponent])
+
   val boundingBox: HexBox = components
     .find(_.isInstanceOf[BoundsComponent])
     .map(_.asInstanceOf[BoundsComponent].bounds)
@@ -72,6 +76,7 @@ object EntityFactory {
         val components = Seq(
           TransformComponent.fromNBT(tag),
           MotionComponent.fromNBT(tag),
+          HeadDirectionComponent.fromNBT(tag),
           BoundsComponent(playerBounds),
           ModelComponent(PlayerEntityModel.create("player"))
         )

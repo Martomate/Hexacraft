@@ -48,6 +48,18 @@ object MotionComponent {
   }
 }
 
+@deprecated("a better solution needs to be made soon")
+class HeadDirectionComponent(var direction: Vector3d = new Vector3d) extends EntityComponent
+
+object HeadDirectionComponent {
+  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): HeadDirectionComponent = {
+    val dir = new Vector3d
+    tag.getMap("head_direction").foreach(_.setVector(dir))
+
+    HeadDirectionComponent(dir)
+  }
+}
+
 class ModelComponent(val model: EntityModel) extends EntityComponent
 
 class AiComponent(val ai: EntityAI) extends EntityComponent

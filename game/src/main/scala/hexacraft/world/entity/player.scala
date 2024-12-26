@@ -3,9 +3,10 @@ package hexacraft.world.entity
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.BlockCoords
 
-import org.joml.Vector3f
+import org.joml.{Vector3d, Vector3f}
 
 class PlayerEntityModel(
+    val headBase: BasicEntityPart, // not rendered
     val head: BasicEntityPart,
     val leftBodyHalf: BasicEntityPart,
     val rightBodyHalf: BasicEntityPart,
@@ -19,15 +20,15 @@ class PlayerEntityModel(
 
   private val animation = new PlayerAnimation(this)
 
-  override def tick(walking: Boolean): Unit = {
-    animation.tick(walking)
+  override def tick(walking: Boolean, headDirection: Option[Vector3d]): Unit = {
+    animation.tick(walking, headDirection.getOrElse(new Vector3d))
   }
 }
 
 class PlayerAnimation(model: PlayerEntityModel) {
   private var time = 0
 
-  def tick(walking: Boolean): Unit = {
+  def tick(walking: Boolean, headDirection: Vector3d): Unit = {
     if walking || time % 30 != 0 then {
       time += 1
     }
@@ -39,6 +40,8 @@ class PlayerAnimation(model: PlayerEntityModel) {
 
     model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
     model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+
+    model.headBase.rotation.z = -headDirection.x.toFloat
   }
 }
 
@@ -66,7 +69,9 @@ object PlayerEntityModel {
     val armBounds = makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength)
     val legBounds = makeHexBox(legRadius, 0, legLength)
 
-    val headY = bodyLength + legLength + headRadius * CylinderSize.y60
+    val headBaseY = bodyLength + legLength
+    val headY = headRadius * CylinderSize.y60
+    val headBasePos = makePartPosition(0, headBaseY, 0).toCylCoordsOffset
     val headPos = makePartPosition(0, headY, 0).toCylCoordsOffset
 
     val rightBodyPos = makePartPosition(0, legLength, 0.5 * bodyRadius).toCylCoordsOffset
@@ -81,8 +86,12 @@ object PlayerEntityModel {
 
     val pi = math.Pi.toFloat
 
+    val headBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f())
+    val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), headBase)
+
     PlayerEntityModel(
-      head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176)),
+      headBase = headBase,
+      head = head,
       leftBodyHalf = BasicEntityPart(bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120)),
       rightBodyHalf = BasicEntityPart(bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120)),
       rightArm = BasicEntityPart(armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64)),

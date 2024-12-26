@@ -12,4 +12,5 @@ enum EntityEvent {
   case Rotation(v: Vector3d)
   case Velocity(v: Vector3d)
   case Flying(f: Boolean)
+  case HeadDirection(d: Vector3d)
 }

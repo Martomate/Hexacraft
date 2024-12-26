@@ -281,6 +281,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
               e.motion.velocity.set(v)
             case EntityEvent.Flying(f) =>
               e.motion.flying = f
+            case EntityEvent.HeadDirection(d) =>
+              e.headDirection.foreach(_.direction = d)
           }
         case None =>
           event match {
@@ -344,7 +346,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     val vel = e.motion.velocity
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
     if e.model.isDefined then {
-      e.model.get.tick(horizontalSpeedSq > 0.1)
+      e.model.get.tick(horizontalSpeedSq > 0.1, e.headDirection.map(_.direction))
     }
   }
 

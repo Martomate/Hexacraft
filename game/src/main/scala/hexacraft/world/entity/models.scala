@@ -3,12 +3,12 @@ package hexacraft.world.entity
 import hexacraft.world.HexBox
 import hexacraft.world.coord.CylCoords
 
-import org.joml.{Matrix4f, Vector3f}
+import org.joml.{Matrix4f, Vector3d, Vector3f}
 
 trait EntityModel {
   def parts: Seq[EntityPart]
   def textureName: String
-  def tick(walking: Boolean): Unit
+  def tick(walking: Boolean, headDirection: Option[Vector3d]): Unit
 }
 
 trait EntityPart {

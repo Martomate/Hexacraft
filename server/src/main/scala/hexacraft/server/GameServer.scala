@@ -10,7 +10,7 @@ import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
 import com.martomate.nbt.Nbt
-import org.joml.Vector2f
+import org.joml.{Vector2f, Vector3d}
 import org.zeromq.ZMQException
 
 import java.util.UUID
@@ -149,6 +149,7 @@ class GameServer(
         entity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
         entity.motion.velocity.set(player.velocity)
         entity.motion.flying = player.flying
+        entity.headDirection.foreach(_.direction.set(player.rotation.x, 0, 0))
       }
 
       val tickResult = chunksLoadedPerPlayer.synchronized {
@@ -184,6 +185,9 @@ class GameServer(
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.motion.velocity)
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Flying(p2.entity.motion.flying)
+              p2.entity.headDirection.foreach { comp =>
+                p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.HeadDirection(comp.direction)
+              }
             }
           }
         }
@@ -385,6 +389,7 @@ class GameServer(
             Seq(
               TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
               MotionComponent(),
+              HeadDirectionComponent(Vector3d(player.rotation.x, 0, 0)),
               BoundsComponent(EntityFactory.playerBounds)
             )
           )
@@ -484,21 +489,23 @@ class GameServer(
 
         val events = for (_, e) <- entityEvents yield {
           val name = e match {
-            case EntityEvent.Spawned(_)  => "spawned"
-            case EntityEvent.Despawned   => "despawned"
-            case EntityEvent.Position(_) => "position"
-            case EntityEvent.Rotation(_) => "rotation"
-            case EntityEvent.Velocity(_) => "velocity"
-            case EntityEvent.Flying(_)   => "flying"
+            case EntityEvent.Spawned(_)       => "spawned"
+            case EntityEvent.Despawned        => "despawned"
+            case EntityEvent.Position(_)      => "position"
+            case EntityEvent.Rotation(_)      => "rotation"
+            case EntityEvent.Velocity(_)      => "velocity"
+            case EntityEvent.Flying(_)        => "flying"
+            case EntityEvent.HeadDirection(_) => "head_direction"
           }
 
           val extraFields: Seq[(String, Nbt)] = e match {
-            case EntityEvent.Spawned(data) => Seq("data" -> data)
-            case EntityEvent.Despawned     => Seq()
-            case EntityEvent.Position(pos) => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
-            case EntityEvent.Rotation(r)   => Seq("r" -> Nbt.makeVectorTag(r))
-            case EntityEvent.Velocity(v)   => Seq("v" -> Nbt.makeVectorTag(v))
-            case EntityEvent.Flying(f)     => Seq("f" -> Nbt.ByteTag(f))
+            case EntityEvent.Spawned(data)    => Seq("data" -> data)
+            case EntityEvent.Despawned        => Seq()
+            case EntityEvent.Position(pos)    => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
+            case EntityEvent.Rotation(r)      => Seq("r" -> Nbt.makeVectorTag(r))
+            case EntityEvent.Velocity(v)      => Seq("v" -> Nbt.makeVectorTag(v))
+            case EntityEvent.Flying(f)        => Seq("f" -> Nbt.ByteTag(f))
+            case EntityEvent.HeadDirection(d) => Seq("d" -> Nbt.makeVectorTag(d))
           }
 
           Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))

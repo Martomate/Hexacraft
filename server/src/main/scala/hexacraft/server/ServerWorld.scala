@@ -501,7 +501,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
 
     if e.model.isDefined then {
-      e.model.get.tick(e.motion.velocity.lengthSquared() > 0.1)
+      e.model.get.tick(e.motion.velocity.lengthSquared() > 0.1, e.headDirection.map(_.direction))
     }
   }
 
