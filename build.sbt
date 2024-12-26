@@ -20,10 +20,21 @@ val commonSettings: scala.Seq[Def.Setting[?]] = Defaults.coreDefaultSettings ++ 
 
 lazy val hexacraft = project
   .in(file("."))
-  .aggregate(common, nbt, window, audio, fs, gpu, system, game, client, server, main)
+  .aggregate(native, common, nbt, window, audio, fs, gpu, system, game, client, server, main)
+
+lazy val native = project
+  .in(file("native"))
+  .settings(commonSettings*)
+  .settings(libraryDependencies += MUnit)
+  .settings(
+    sbtJniCoreScope := Compile,
+    javah / target := (nativeCompile / sourceDirectory).value / "jni" // just for reference
+  )
+  .enablePlugins(JniNative)
 
 lazy val common = project
   .in(file("common"))
+  .dependsOn(native % Runtime)
   .settings(commonSettings*)
   .settings(
     libraryDependencies ++= Seq(Joml) :+ MUnit
