@@ -293,6 +293,9 @@ class GameClient(
   }
 
   private def logout(): Unit = {
+    if isOnline then {
+      println("Logging out...")
+    }
     isLoggingOut = true
     Future(socket.sendPacket(NetworkPacket.Logout)) // use Future to make sure it does not block
     eventHandler.send(GameClient.Event.GameQuit)
@@ -521,6 +524,8 @@ class GameClient(
     })
     if currentTickFut.isEmpty then return // the first tick has no server data to act on
 
+    var serverIsShuttingDown = false
+
     try {
       val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) =
         Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
@@ -540,6 +545,11 @@ class GameClient(
       player.flying = syncedPlayer.flying
 
       val worldEventsNbt = worldEventsNbtPacket.asMap.get
+      if worldEventsNbt.getBoolean("server_shutting_down", false) then {
+        println("The server is shutting down")
+        serverIsShuttingDown = true
+      }
+
       val blockUpdatesNbtList = worldEventsNbt.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)
       val blockUpdates =
         for u <- blockUpdatesNbtList
@@ -714,6 +724,10 @@ class GameClient(
         println(e)
         logout()
       case e => throw e
+    }
+
+    if serverIsShuttingDown then {
+      logout()
     }
   }
 

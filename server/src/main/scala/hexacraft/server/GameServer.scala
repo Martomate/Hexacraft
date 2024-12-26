@@ -42,6 +42,8 @@ class GameServer(
     world: ServerWorld
 )(using CylinderSize) {
 
+  private var isShuttingDown: Boolean = false
+
   private val players: mutable.LongMap[PlayerData] = mutable.LongMap.empty
 
   private val collisionDetector: CollisionDetector = new CollisionDetector(world)
@@ -266,7 +268,16 @@ class GameServer(
     notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
   }
 
+  def shutdown(): Unit = {
+    isShuttingDown = true
+
+    if players.nonEmpty then {
+      Thread.sleep(1000) // give clients a chance to logout
+    }
+  }
+
   def unload(): Unit = {
+    shutdown()
     stop()
 
     savePlayers()
@@ -322,7 +333,14 @@ class GameServer(
 
     packet match {
       case Login(id, name) =>
-        if !players.contains(clientId) then {
+        if isShuttingDown then {
+          return Some(
+            Nbt.makeMap(
+              "success" -> Nbt.ByteTag(false),
+              "error" -> Nbt.StringTag("server is shutting down")
+            )
+          )
+        } else if !players.contains(clientId) then {
           if !isOnline && players.nonEmpty then {
             return Some(
               Nbt.makeMap(
@@ -366,11 +384,9 @@ class GameServer(
             val (playerId, otherData) = otherPlayer
             if playerId != clientId then {
               otherData.entityEventsWaitingToBeSent.synchronized {
-                println(s"Sending Login message about new player: $clientId")
                 otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
               }
               playerData.entityEventsWaitingToBeSent.synchronized {
-                println(s"Sending Login message about existing player: $playerId")
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
                   otherData.entity.toNBT
                 )
@@ -477,6 +493,7 @@ class GameServer(
         val response = Nbt.emptyMap
           .withField("block_updates", Nbt.ListTag(updatesNbt))
           .withField("entity_events", Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
+          .withField("server_shutting_down", Nbt.ByteTag(isShuttingDown)) // TODO: make proper shutdown feature
 
         Some(response)
       case GetWorldLoadingEvents(maxChunksToLoad) =>
