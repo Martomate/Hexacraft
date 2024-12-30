@@ -25,6 +25,10 @@ trait SubComponents extends Component {
     comps += comp
   }
 
+  def removeComponent(comp: Component): Unit = {
+    comps -= comp
+  }
+
   override def unload(): Unit = {
     comps.foreach(_.unload())
     super.unload()

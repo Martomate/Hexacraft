@@ -1,7 +1,7 @@
 package hexacraft.game
 
 import hexacraft.world.Inventory
-import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
+import hexacraft.world.coord.ColumnRelWorld
 
 import com.martomate.nbt.Nbt
 import org.joml.Vector2f
@@ -9,10 +9,61 @@ import org.joml.Vector2f
 import java.nio.ByteBuffer
 import java.util.UUID
 import scala.collection.immutable.ArraySeq
+import scala.util.Try
 
-enum ServerCommand {
-  case SpawnEntity(entityName: String, position: CylCoords)
-  case KillAllEntities
+case class ServerMessage(
+    text: String,
+    sender: ServerMessage.Sender
+) {
+  def toNbt: Nbt = {
+    Nbt.makeMap(
+      "text" -> Nbt.StringTag(this.text),
+      "sender" -> this.sender.toNbt
+    )
+  }
+}
+
+object ServerMessage {
+  enum Sender {
+    case Server
+    case Player(id: UUID)
+
+    def toNbt: Nbt = {
+      val kind = this match {
+        case Sender.Server     => "server"
+        case Sender.Player(id) => "player"
+      }
+      val data = this match {
+        case Sender.Server =>
+          Nbt.makeMap()
+        case Sender.Player(id) =>
+          Nbt.makeMap("id" -> Nbt.StringTag(id.toString))
+      }
+      data.withField("kind", Nbt.StringTag(kind))
+    }
+  }
+
+  object Sender {
+    def fromNbt(tag: Nbt.MapTag): Option[Sender] = {
+      tag.getString("kind") match {
+        case Some("server") =>
+          Some(Sender.Server)
+        case Some("player") =>
+          for {
+            id <- tag.getString("id")
+            id <- Try(UUID.fromString(id)).toOption
+          } yield Sender.Player(id)
+        case _ => None
+      }
+    }
+  }
+
+  def fromNbt(tag: Nbt.MapTag): Option[ServerMessage] = {
+    for {
+      text <- tag.getString("text")
+      sender <- Sender.fromNbt(tag.getMap("sender").getOrElse(Nbt.makeMap()))
+    } yield ServerMessage(text, sender)
+  }
 }
 
 enum NetworkPacket {

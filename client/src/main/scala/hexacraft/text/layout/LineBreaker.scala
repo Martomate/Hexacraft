@@ -12,8 +12,10 @@ class LineBreaker(maxLineWidth: Float) {
 
     var currentLine: Line = Line(font.spaceWidth, maxLineWidth)
 
+    val textWithoutTrailingSpaces = text.stripTrailing()
+
     val words: Array[Word] =
-      for s <- text.split(' ') yield {
+      for s <- textWithoutTrailingSpaces.split(' ') yield {
         val w = new Word
         for c <- s.toCharArray do {
           val character: Character = font.getCharacter(c.toInt)
@@ -21,8 +23,9 @@ class LineBreaker(maxLineWidth: Float) {
         }
         w
       }
+    val numTrailingSpaces = text.length - textWithoutTrailingSpaces.length
 
-    for w <- words do {
+    for w <- words ++ Seq.fill(numTrailingSpaces)(new Word()) do {
       val added: Boolean = currentLine.attemptToAddWord(w)
       if !added then {
         lines += currentLine

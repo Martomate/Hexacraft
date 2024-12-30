@@ -249,11 +249,15 @@ class GameClient(
   private var isPaused: Boolean = false
   private var isInPopup: Boolean = false
   private var isLoggingOut: Boolean = false
+  private var shouldOpenChat: Boolean = false
+
+  private val chatMessagesToSend: mutable.ArrayBuffer[String] = mutable.ArrayBuffer.empty
 
   private var debugOverlay: Option[DebugOverlay] = None
+  private val chatOverlay: ChatOverlay = makeChatOverlay()
 
   private var selectedBlockAndSide: Option[MousePickerResult] = None
-  private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
+  private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer(chatOverlay)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -261,6 +265,25 @@ class GameClient(
 
   def isReadyToPlay: Boolean = {
     this.world.getChunk(this.camera.blockCoords.getChunkRelWorld).isDefined
+  }
+
+  private def makeChatOverlay(): ChatOverlay = {
+    val (tx, rx) = Channel[ChatOverlay.Event]()
+    val chat = ChatOverlay(tx)
+    rx.onEvent {
+      case ChatOverlay.Event.Closed =>
+        chat.setInputEnabled(false)
+        this.isInPopup = false
+        this.setUseMouse(true)
+      case ChatOverlay.Event.MessageSubmitted(message) =>
+        if message.nonEmpty then {
+          this.chatMessagesToSend += message
+        }
+        chat.setInputEnabled(false)
+        this.isInPopup = false
+        this.setUseMouse(true)
+    }
+    chat
   }
 
   private def setUniforms(windowAspectRatio: Float): Unit = {
@@ -330,6 +353,8 @@ class GameClient(
       }
     case KeyboardKey.Letter('M') =>
       setUseMouse(!moveWithMouse)
+    case KeyboardKey.Letter('T') =>
+      shouldOpenChat = true
     case KeyboardKey.Letter('F') =>
       player.flying = !player.flying
       socket.sendPacket(NetworkPacket.PlayerToggledFlying)
@@ -430,7 +455,7 @@ class GameClient(
 
   def windowFocusChanged(focused: Boolean): Unit = {
     if !focused then {
-      if !isPaused then {
+      if !isPaused && !chatOverlay.isInputEnabled then {
         pauseGame()
       }
     }
@@ -516,6 +541,20 @@ class GameClient(
   def tick(ctx: TickContext): Unit = {
     if isLoggingOut then return
 
+    if shouldOpenChat then {
+      shouldOpenChat = false
+      chatOverlay.setInputEnabled(true)
+      isInPopup = true
+      setUseMouse(false)
+    }
+
+    if this.chatMessagesToSend.nonEmpty then {
+      for m <- this.chatMessagesToSend do {
+        socket.sendPacket(NetworkPacket.RunCommand("chat", Seq(m)))
+      }
+      this.chatMessagesToSend.clear()
+    }
+
     // Act on the server info requested last tick, and send a new request to be used in the next tick
     val currentTickFut = tickFut
     tickFut = Some(Future {
@@ -548,6 +587,18 @@ class GameClient(
       if worldEventsNbt.getBoolean("server_shutting_down", false) then {
         println("The server is shutting down")
         serverIsShuttingDown = true
+      }
+
+      val messages = worldEventsNbt.getList("messages").getOrElse(Seq.empty)
+      if messages.nonEmpty then {
+        for m <- messages do {
+          m.asMap.flatMap(ServerMessage.fromNbt) match {
+            case Some(m) =>
+              this.chatOverlay.addMessage(m)
+            case None =>
+              println(s"Could not parse server message: $m")
+          }
+        }
       }
 
       val blockUpdatesNbtList = worldEventsNbt.getList("block_updates").getOrElse(Seq()).map(_.asMap.get)

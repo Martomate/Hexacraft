@@ -1,6 +1,6 @@
 package hexacraft.server
 
-import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler}
+import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler, ServerMessage}
 import hexacraft.server.TcpServer.Error
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
@@ -33,6 +33,7 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
   var mouseMovement: Vector2f = new Vector2f
   val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
   val entityEventsWaitingToBeSent: mutable.ArrayBuffer[(UUID, EntityEvent)] = mutable.ArrayBuffer.empty
+  val messagesWaitingToBeSent: mutable.ArrayBuffer[ServerMessage] = mutable.ArrayBuffer.empty
 
   var lastSeen: Long = System.currentTimeMillis
   var hasBeenKicked: Boolean = false
@@ -511,10 +512,17 @@ class GameServer(
           Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))
         }
 
+        val messages = playerData.messagesWaitingToBeSent.synchronized {
+          val messages = playerData.messagesWaitingToBeSent.toSeq
+          playerData.messagesWaitingToBeSent.clear()
+          messages
+        }
+
         val response = Nbt.emptyMap
           .withField("block_updates", Nbt.ListTag(updatesNbt))
           .withField("entity_events", Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
           .withField("server_shutting_down", Nbt.ByteTag(isShuttingDown)) // TODO: make proper shutdown feature
+          .withField("messages", Nbt.ListTag(messages.map(m => m.toNbt)))
 
         Some(response)
       case GetWorldLoadingEvents(maxChunksToLoad) =>
@@ -591,9 +599,25 @@ class GameServer(
         None
       case RunCommand(command, args) =>
         command match {
+          case "chat" =>
+            if args.length != 1 then {
+              println(s"Wrong number of arguments to chat command: ${args.length}")
+              return None
+            }
+            val message = args.head
+
+            for p <- players.values do {
+              p.messagesWaitingToBeSent.synchronized {
+                p.messagesWaitingToBeSent += ServerMessage(
+                  text = message,
+                  sender = ServerMessage.Sender.Player(p.player.id)
+                )
+              }
+            }
           case "spawn" =>
             if args.length != 4 then {
               println(s"Wrong number of arguments to spawn command: ${args.length}")
+              return None
             }
             val entityType = args.head
             val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)

@@ -72,4 +72,5 @@ object KeyboardKey {
   val Right: KeyboardKey = GLFW.GLFW_KEY_RIGHT
   val Escape: KeyboardKey = GLFW.GLFW_KEY_ESCAPE
   val Backspace: KeyboardKey = GLFW.GLFW_KEY_BACKSPACE
+  val Enter: KeyboardKey = GLFW.GLFW_KEY_ENTER
 }

@@ -94,7 +94,9 @@ class Text(
     this
   }
 
-  def getLineWidth(line: Int): Double = lineWidths(line)
+  def getLineWidth(line: Int): Double = {
+    if lineWidths.isEmpty then 0 else lineWidths(line)
+  }
 
   def setPosition(x: Float, y: Float): Text = {
     position.x = x
