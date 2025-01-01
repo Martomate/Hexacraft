@@ -1,7 +1,7 @@
 package hexacraft.rs
 
-import com.github.sbt.jni.syntax.NativeLoader
+object RustLib {
+  NativeLoader.load("hexacraft_rs")
 
-object RustLib extends NativeLoader("hexacraft_rs") {
   @native def hello(): String
 }

@@ -16,4 +16,64 @@ tasks:
     cmds:
       - task: create-launcher-jar
       - defer: { task: remove-launcher-jar }
-      - sbt clean main/packArchiveZip
+      - sbt clean compile
+      - task: build-natives
+      - sbt main/packArchiveZip
+
+  build-natives:
+    cmds:
+      - task: build-rust-lib
+        vars:
+          KIND: dylib
+          RUST_TARGET: aarch64-apple-darwin
+          NATIVE_NAME: arm64-darwin
+
+      - task: build-rust-lib
+        vars:
+          KIND: dylib
+          RUST_TARGET: x86_64-apple-darwin
+          NATIVE_NAME: x86_64-darwin
+
+      - task: build-rust-lib
+        vars:
+          KIND: so
+          RUST_TARGET: x86_64-unknown-linux-gnu
+          NATIVE_NAME: x86_64-linux
+
+      - task: build-rust-lib
+        vars:
+          KIND: dll
+          RUST_TARGET: x86_64-pc-windows-gnu
+          NATIVE_NAME: x86_64-windows
+
+  build-rust-lib:
+    requires:
+      vars:
+        - KIND
+        - RUST_TARGET
+        - NATIVE_NAME
+    cmds:
+      - task: run-cargo
+        vars:
+          RUST_TARGET: "{{ .RUST_TARGET }}"
+      - task: extract-cargo-artifact
+        vars:
+          KIND: "{{ .KIND }}"
+          RUST_TARGET: "{{ .RUST_TARGET }}"
+          NATIVE_NAME: "{{ .NATIVE_NAME }}"
+
+  run-cargo:
+    requires:
+      vars: [ RUST_TARGET ]
+    dir: native/src/native
+    cmds:
+      - cargo build --release --target {{ .RUST_TARGET }}
+
+  extract-cargo-artifact:
+    requires:
+      vars: [ KIND, RUST_TARGET, NATIVE_NAME ]
+    silent: true
+    cmds:
+      - mkdir -p native/target/classes/native/{{ .NATIVE_NAME }}
+      - cp native/src/native/target/{{ .RUST_TARGET }}/release/*.{{ .KIND }}
+           native/target/classes/native/{{ .NATIVE_NAME }}

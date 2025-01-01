@@ -97,3 +97,5 @@ project/metals.sbt
 .vscode
 
 .DS_Store
+
+.task

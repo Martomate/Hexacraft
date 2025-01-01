@@ -25,7 +25,7 @@ lazy val hexacraft = project
 lazy val native = project
   .in(file("native"))
   .settings(commonSettings*)
-  .settings(libraryDependencies += MUnit)
+  .settings(libraryDependencies ++= LwjglSystem :+ MUnit) // we use Lwjgl to load the natives
   .settings(
     sbtJniCoreScope := Compile,
     javah / target := (nativeCompile / sourceDirectory).value / "jni" // just for reference
@@ -117,7 +117,8 @@ lazy val main = project
     game % "compile->compile;test->test",
     client % "compile->compile;test->test",
     server,
-    system
+    system,
+    native
   )
   .settings(commonSettings*)
   .settings( // General
