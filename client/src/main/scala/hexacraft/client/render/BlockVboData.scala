@@ -2,6 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.shaders.BlockShader
 import hexacraft.shaders.BlockShader.BlockVertexData
+import hexacraft.util.Loop
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.LocalBlockState
@@ -16,11 +17,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object BlockVboData {
-  private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
-  private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
-  private val cornerOffsets = Seq((2, 0), (1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1))
+  private val topBottomVertexIndices = Array(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
+  private val sideVertexIndices = Array(0, 1, 3, 2, 0, 3)
+  private val cornerOffsets = Array((2, 0), (1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1))
   private val normals =
-    for s <- 0 until 8 yield {
+    Array.tabulate(8) { s =>
       if s < 2 then {
         new Vector3f(0, 1f - 2f * s, 0)
       } else {
@@ -44,13 +45,13 @@ object BlockVboData {
     val sideBrightness = Array.ofDim[Float](8, 16 * 16 * 16)
     val sidesCount = Array.ofDim[Int](8)
 
-    for s <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { s =>
       val shouldRender = sidesToRender(s)
       val shouldRenderTop = sidesToRender(0)
       val brightness = sideBrightness(s)
       val otherSide = oppositeSide(s)
 
-      for LocalBlockState(c, b) <- blocks do {
+      Loop.array(blocks) { case LocalBlockState(c, b) =>
         if b.blockType.canBeRendered then {
           if !transmissiveBlocks && !b.blockType.isTransmissive then {
             val c2w = c.globalNeighbor(s, chunkCoords)
@@ -104,7 +105,9 @@ object BlockVboData {
       }
     }
 
-    val blocksBuffers = for side <- 0 until 8 yield {
+    val blocksBuffers = Array.ofDim[ByteBuffer](8)
+
+    Loop.rangeUntil(0, 8) { side =>
       val shouldRender = sidesToRender(side)
       val brightness = sideBrightness(side)
 
@@ -130,70 +133,73 @@ object BlockVboData {
 
       val vertices = new mutable.ArrayBuffer[BlockVertexData](blocks.length)
 
-      for LocalBlockState(localCoords, block) <- blocks if shouldRender.get(localCoords.value) do {
-        val normal = normals(side)
-        val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
-        val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
-        val blockTex = blockTextureIndices(block.blockType.name)(side)
+      Loop.array(blocks) { case LocalBlockState(localCoords, block) =>
+        if shouldRender.get(localCoords.value) then {
+          val normal = normals(side)
+          val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
+          val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
+          val blockTex = blockTextureIndices(block.blockType.name)(side)
 
-        val cornerHeights = Array.ofDim[Float](7)
-        val cornerBrightnesses = Array.ofDim[Float](7)
+          val cornerHeights = Array.ofDim[Float](7)
+          val cornerBrightnesses = Array.ofDim[Float](7)
 
-        for cornerIdx <- 0 until cornersPerBlock do {
-          cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAtFn, cornerIdx, side)
-          cornerBrightnesses(cornerIdx) = calculateCornerBrightness(neighborWorldCoords, brightnessFn, cornerIdx, side)
-        }
+          Loop.rangeUntil(0, cornersPerBlock) { cornerIdx =>
+            cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAtFn, cornerIdx, side)
+            cornerBrightnesses(cornerIdx) =
+              calculateCornerBrightness(neighborWorldCoords, brightnessFn, cornerIdx, side)
+          }
 
-        if side < 2 then {
-          for i <- 0 until 6 * 3 do {
-            val faceIndex = i / 3
-            val vertexId = i % 3
-            val a = topBottomVertexIndices(i)
+          if side < 2 then {
+            Loop.rangeUntil(0, 6 * 3) { i =>
+              val faceIndex = i / 3
+              val vertexId = i % 3
+              val a = topBottomVertexIndices(i)
 
-            val (x, z) =
-              if a == 6 then {
-                (0, 0)
-              } else {
-                val (x, z) = cornerOffsets(a)
-                if side == 0 then (-x, z) else (x, z)
+              val (x, z) =
+                if a == 6 then {
+                  (0, 0)
+                } else {
+                  val (x, z) = cornerOffsets(a)
+                  if side == 0 then (-x, z) else (x, z)
+                }
+
+              val tex = vertexId match {
+                case 0 => new Vector2f(0.5f, 1)
+                case 1 => new Vector2f(0, 0)
+                case 2 => new Vector2f(1, 0)
               }
 
-            val tex = vertexId match {
-              case 0 => new Vector2f(0.5f, 1)
-              case 1 => new Vector2f(0, 0)
-              case 2 => new Vector2f(1, 0)
+              val height = cornerHeights(a)
+              val brightness = cornerBrightnesses(a)
+
+              val pos = Vector3i(
+                worldCoords.x * 3 + x,
+                worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt,
+                worldCoords.z * 2 + worldCoords.x + z
+              )
+              val texIndex = (blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15)
+
+              vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
             }
+          } else {
+            Loop.rangeUntil(0, 2 * 3) { i =>
+              val a = sideVertexIndices(i)
+              val v = (side - 2 + a % 2) % 6
+              val (x, z) = cornerOffsets(v)
 
-            val height = cornerHeights(a)
-            val brightness = cornerBrightnesses(a)
+              val height = cornerHeights(a)
+              val brightness = cornerBrightnesses(a)
 
-            val pos = Vector3i(
-              worldCoords.x * 3 + x,
-              worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt,
-              worldCoords.z * 2 + worldCoords.x + z
-            )
-            val texIndex = (blockTex & 0xfff) + ((blockTex >> (4 * (5 - faceIndex)) & 0xffff) >> 12 & 15)
+              val pos = Vector3i(
+                worldCoords.x * 3 + x,
+                worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt,
+                worldCoords.z * 2 + worldCoords.x + z
+              )
+              val texIndex = blockTex & 0xfff
+              val tex = Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
 
-            vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
-          }
-        } else {
-          for i <- 0 until 2 * 3 do {
-            val a = sideVertexIndices(i)
-            val v = (side - 2 + a % 2) % 6
-            val (x, z) = cornerOffsets(v)
-
-            val height = cornerHeights(a)
-            val brightness = cornerBrightnesses(a)
-
-            val pos = Vector3i(
-              worldCoords.x * 3 + x,
-              worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt,
-              worldCoords.z * 2 + worldCoords.x + z
-            )
-            val texIndex = blockTex & 0xfff
-            val tex = Vector2f((1 - a % 2).toFloat, (a / 2).toFloat)
-
-            vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
+              vertices += BlockVertexData(pos, texIndex, normal, brightness, tex)
+            }
           }
         }
       }
@@ -205,10 +211,10 @@ object BlockVboData {
       }
 
       buf.flip()
-      buf
+      blocksBuffers(side) = buf
     }
 
-    blocksBuffers
+    blocksBuffers.toIndexedSeq
   }
 
   private def calculateCornerHeight(
@@ -254,20 +260,19 @@ object BlockVboData {
     var hCount = 0
     var shouldBeMax = false
 
-    var bIdx1 = 0
-    val bLen1 = b.length
-    while bIdx1 < bLen1 do {
-      val above = blockAt(blockCoords.offset(b(bIdx1)).offset(0, 1, 0))
+    Loop.array(b) { off =>
+      val coords = blockCoords.offset(off)
+
+      val above = blockAt(coords.offset(0, 1, 0))
       if above.blockType == Block.Water then {
         shouldBeMax = true
       }
 
-      val bs = blockAt(blockCoords.offset(b(bIdx1)))
+      val bs = blockAt(coords)
       if bs.blockType == Block.Water then {
         hSum += bs.blockType.blockHeight(bs.metadata)
         hCount += 1
       }
-      bIdx1 += 1
     }
 
     if shouldBeMax then 1.0f else hSum / hCount
@@ -317,19 +322,19 @@ object BlockVboData {
 
     var brSum = 0f
     var brCount = 0
-    var bIdx = 0
-    val bLen = b.length
-    while bIdx < bLen do {
-      val br = brightness(neighborBlockCoords.offset(b(bIdx)))
+
+    Loop.array(b) { off =>
+      val br = brightness(neighborBlockCoords.offset(off))
       if br != 0 then {
         brSum += br
         brCount += 1
       }
-      bIdx += 1
     }
-    if brCount == 0 then brightness(neighborBlockCoords)
-    else {
-      val ambientOcclusionFactor = (brCount - 1).toFloat / (bLen - 1) * 0.2f + 0.8f // TODO: temporary
+
+    if brCount == 0 then {
+      brightness(neighborBlockCoords)
+    } else {
+      val ambientOcclusionFactor = (brCount - 1).toFloat / (b.length - 1) * 0.2f + 0.8f // TODO: temporary
       brSum / brCount * ambientOcclusionFactor
     }
   }

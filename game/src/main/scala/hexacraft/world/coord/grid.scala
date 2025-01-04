@@ -162,19 +162,8 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
   def neighbors(using CylinderSize): Seq[ChunkRelWorld] =
     ChunkRelWorld.neighborOffsets.map(offset)
 
-  def extendedNeighbors(radius: Int)(using CylinderSize): Seq[ChunkRelWorld] = {
-    val s = 2 * radius + 1
-    val buf = new mutable.ArrayBuffer[ChunkRelWorld](s * s * s)
-
-    for {
-      y <- -radius to radius
-      z <- -radius to radius
-      x <- -radius to radius
-    } do {
-      buf += offset(x, y, z)
-    }
-
-    buf.toSeq
+  def extendedNeighbors(radius: Int)(using CylinderSize): ExtendedNeighbors = {
+    ExtendedNeighbors.calculate(this, radius)
   }
 
   def offset(t: Offset)(using CylinderSize): ChunkRelWorld = offset(t.dx, t.dy, t.dz)
@@ -185,6 +174,45 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
   )
 
   override def toString: String = s"(${X.toInt}, ${Y.toInt}, ${Z.toInt})"
+}
+
+object ExtendedNeighbors {
+  def calculate(origin: ChunkRelWorld, radius: Int)(using CylinderSize): ExtendedNeighbors = {
+    val s = 2 * radius + 1
+    val len = s * s * s
+    val buf = new Array[Long](len)
+    var idx = 0
+
+    Loop.rangeTo(-radius, radius) { y =>
+      Loop.rangeTo(-radius, radius) { z =>
+        Loop.rangeTo(-radius, radius) { x =>
+          buf(idx) = origin.offset(x, y, z).value
+          idx += 1
+        }
+      }
+    }
+
+    ExtendedNeighbors(buf)
+  }
+}
+
+class ExtendedNeighbors(arr: Array[Long]) extends AnyVal {
+  inline def foreach(inline f: ChunkRelWorld => Unit): Unit = {
+    Loop.array(arr) { c =>
+      val ch = ChunkRelWorld(c)
+      f(ch)
+    }
+  }
+
+  def toSeq: ArraySeq[ChunkRelWorld] = {
+    val buf = new Array[ChunkRelWorld](this.arr.length)
+    var idx = 0
+    for v <- this do {
+      buf(idx) = v
+      idx += 1
+    }
+    ArraySeq.unsafeWrapArray(buf)
+  }
 }
 
 object ColumnRelWorld {
@@ -210,12 +238,11 @@ case class ColumnRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZ
   def neighbors(using CylinderSize): Seq[ColumnRelWorld] = {
     val buf = new mutable.ArrayBuffer[ColumnRelWorld](8)
 
-    for {
-      dz <- -1 to 1
-      dx <- -1 to 1
-    } do {
-      if dz != 0 || dx != 0 then {
-        buf += offset(dx, dz)
+    Loop.rangeTo(-1, 1) { dz =>
+      Loop.rangeTo(-1, 1) { dx =>
+        if dz != 0 || dx != 0 then {
+          buf += offset(dx, dz)
+        }
       }
     }
 

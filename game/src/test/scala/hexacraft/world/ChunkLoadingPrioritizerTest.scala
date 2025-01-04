@@ -176,6 +176,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
       mutable.HashSet.from(
         ChunkRelWorld(0, 0, 0)
           .extendedNeighbors(4)
+          .toSeq
           .filter(c => ChunkLoadingPrioritizer.distSq(origin, c) <= maxDistSqInBlocks)
       )
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>

@@ -1,6 +1,7 @@
 package hexacraft.client.render
 
 import hexacraft.shaders.EntityShader
+import hexacraft.util.InlinedIterable
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
@@ -15,11 +16,11 @@ object EntityRenderDataFactory {
 
     val tr = new Matrix4f
 
-    for ent <- entities if ent.model.isDefined yield {
+    for ent <- InlinedIterable(entities) if ent.model.isDefined yield {
       val baseT = ent.transform.transform
       val model = ent.model.get
 
-      val parts = for part <- model.parts yield {
+      val parts = for part <- InlinedIterable(model.parts) yield {
         baseT.mul(part.transform, tr)
 
         val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
@@ -45,7 +46,7 @@ object EntityRenderDataFactory {
         )
       }
 
-      (model, parts)
+      (model, parts.toSeq)
     }
   }
 }

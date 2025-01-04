@@ -5,21 +5,17 @@ import scala.collection.mutable
 
 object SeqUtils {
   def whileSome[T](maxCount: Int, maker: => Option[T])(taker: T => Any): Unit = {
-    var i = 0
-    while i < maxCount do {
+    Loop.rangeUntil(0, maxCount) { _ =>
       maker match {
-        case Some(t) =>
-          taker(t)
-        case None =>
-          i = maxCount
+        case Some(t) => taker(t)
+        case None    => return
       }
-      i += 1
     }
   }
 
   def shuffleArray[T](arr: Array[T], random: Random): Unit = {
     val len = arr.length
-    for i <- 0 until len do {
+    Loop.rangeUntil(0, len) { i =>
       val idx = random.nextInt(len - i) + i
       val temp = arr(i)
       arr(i) = arr(idx)
@@ -35,7 +31,7 @@ object SeqUtils {
     var left = true
     while left do {
       left = false
-      for it <- its do {
+      Loop.iterate(its.iterator) { it =>
         if it.hasNext then {
           left = true
           result += it.next

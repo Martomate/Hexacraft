@@ -2,6 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.shaders.BlockShader
 import hexacraft.shaders.TerrainShader.TerrainVertexData
+import hexacraft.util.Loop
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkStorage, LocalBlockState}
@@ -185,20 +186,19 @@ object TerrainVboData {
     var hCount = 0
     var shouldBeMax = false
 
-    var bIdx1 = 0
-    val bLen1 = b.length
-    while bIdx1 < bLen1 do {
-      val above = blockAt(blockCoords.offset(b(bIdx1)).offset(0, 1, 0))
+    Loop.array(b) { off =>
+      val coords = blockCoords.offset(off)
+
+      val above = blockAt(coords.offset(0, 1, 0))
       if above.blockType == Block.Water then {
         shouldBeMax = true
       }
 
-      val bs = blockAt(blockCoords.offset(b(bIdx1)))
+      val bs = blockAt(coords)
       if bs.blockType == Block.Water then {
         hSum += bs.blockType.blockHeight(bs.metadata)
         hCount += 1
       }
-      bIdx1 += 1
     }
 
     if shouldBeMax then 1.0f else hSum / hCount

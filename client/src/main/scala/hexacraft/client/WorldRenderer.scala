@@ -3,9 +3,9 @@ package hexacraft.client
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{GpuState, Shader, TextureArray, TextureSingle, VAO}
+import hexacraft.renderer.{GpuState, TextureArray, TextureSingle, VAO}
 import hexacraft.shaders.*
-import hexacraft.util.{NamedThreadFactory, TickableTimer}
+import hexacraft.util.{InlinedIterable, Loop, NamedThreadFactory, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
@@ -426,20 +426,20 @@ class WorldRenderer(
 
   private def renderBlocks(opaque: Boolean): Unit = {
     if opaque then {
-      for side <- 0 until 8 do {
+      Loop.rangeUntil(0, 8) { side =>
         val sh = if side < 2 then blockShader else blockSideShader
         sh.enable()
         sh.setSide(side)
-        for h <- opaqueBlockRenderers(side).values do {
+        for h <- InlinedIterable(opaqueBlockRenderers(side).values) do {
           h.render()
         }
       }
     } else {
-      for side <- 0 until 8 do {
+      Loop.rangeUntil(0, 8) { side =>
         val sh = if side < 2 then blockShader else blockSideShader
         sh.enable()
         sh.setSide(side)
-        for h <- translucentBlockRenderers(side).values do {
+        for h <- InlinedIterable(translucentBlockRenderers(side).values) do {
           h.render()
         }
       }
@@ -477,16 +477,16 @@ class WorldRenderer(
     val update = chunksToUpdate.groupBy((c, _) => chunkGroup(c))
 
     val groups = (clear.keys ++ update.keys).toSet
-    val groupData = for g <- groups yield {
+    val groupData = for g <- InlinedIterable(groups) yield {
       (g, clear.getOrElse(g, Seq()), update.getOrElse(g, Seq()))
     }
 
     val gpuState = if transmissive then translucentBlockGpuState else opaqueBlockGpuState
 
-    for s <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { s =>
       val batchRenderers = if transmissive then translucentBlockRenderers(s) else opaqueBlockRenderers(s)
 
-      for (g, clear, update) <- groupData do {
+      for (g, clear, update) <- InlinedIterable(groupData) do {
         val r = batchRenderers.getOrElseUpdate(g, new BlockFaceBatchRenderer(makeBufferHandler(s, gpuState)))
 
         r.update(clear, update.map((c, data) => c -> data(s)))

@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import hexacraft.math.MathUtils.oppositeSide
-import hexacraft.world.block.BlockState
+import hexacraft.util.Loop
 import hexacraft.world.chunk.{Chunk, LocalBlockState}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
 
@@ -17,23 +17,17 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
     val queueSunFromNeighbor = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
 
-    val blocks = chunk.blocks
-    var cIdx = 0
-    while cIdx < blocks.length do {
-      val LocalBlockState(c, b) = blocks(cIdx)
-
+    Loop.array(chunk.blocks) { case LocalBlockState(c, b) =>
       if b.blockType.lightEmitted != 0 then {
         chunk.lighting.setTorchlight(c, b.blockType.lightEmitted)
         queueTorch += ((c, chunkCoords, chunk))
       }
-      cIdx += 1
     }
 
     def shouldEnqueueSunlight(coords: BlockRelChunk, neighCoords: ChunkRelWorld, neigh: Chunk) = {
       val block = neigh.getBlock(coords)
       val neighCol = world.getColumn(neighCoords.getColumnRelWorld).get
-      if neighCoords.Y.toInt * 16 + coords.cy > neighCol.terrainHeight.getHeight(coords.cx, coords.cz)
-      then {
+      if neighCoords.Y.toInt * 16 + coords.cy > neighCol.terrainHeight.getHeight(coords.cx, coords.cz) then {
         val transparentTop = !block.blockType.isCovering(block.metadata, 0) || block.blockType.isTransmissive
         val transparentBottom = !block.blockType.isCovering(block.metadata, 1) || block.blockType.isTransmissive
         transparentTop && transparentBottom
@@ -50,8 +44,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       val neighCoords = c2.getChunkRelWorld
       chunkCache.getChunk(neighCoords) match {
         case null =>
-          if isAboveChunk && shouldEnqueueSunlight(c2c.offset(0, -1, 0), chunkCoords, chunk)
-          then {
+          if isAboveChunk && shouldEnqueueSunlight(c2c.offset(0, -1, 0), chunkCoords, chunk) then {
             chunk.lighting.setSunlight(c2c.offset(0, -1, 0), 15)
             queueSun15 += ((c2c.offset(0, -1, 0), chunkCoords, chunk))
           }
@@ -72,19 +65,15 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       }
     }
 
-    var s = -1
-    while s <= 16 do {
-      var t = -1
-      while t <= 16 do {
+    Loop.rangeTo(-1, 16) { s =>
+      Loop.rangeTo(-1, 16) { t =>
         handleEdge(-1, s, t)
         handleEdge(16, s, t)
         handleEdge(s, -1, t)
         handleEdge(s, 16, t)
         handleEdge(s, t, -1)
         handleEdge(s, t, 16)
-        t += 1
       }
-      s += 1
     }
 
     propagateTorchlight(queueTorch)
@@ -125,8 +114,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       chunksNeedingRenderUpdate += chunkCoords
 
-      var s = 0
-      while s < 8 do {
+      Loop.rangeUntil(0, 8) { s =>
         val c2w = here.globalNeighbor(s, chunkCoords)
         val c2 = c2w.getBlockRelChunk
         val neighCoords = c2w.getChunkRelWorld
@@ -144,7 +132,6 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
             chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
           }
         }
-        s += 1
       }
     }
 
@@ -163,8 +150,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
 
       chunksNeedingRenderUpdate += chunkCoords
 
-      var s = 0
-      while s < 8 do {
+      Loop.rangeUntil(0, 8) { s =>
         val c2w = here.globalNeighbor(s, chunkCoords)
         val c2 = c2w.getBlockRelChunk
         val neighCoords = c2w.getChunkRelWorld
@@ -182,7 +168,6 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
             chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
           }
         }
-        s += 1
       }
     }
 
@@ -201,8 +186,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       if nextLevel > 0 then {
         chunksNeedingRenderUpdate += chunkCoords
 
-        var s = 0
-        while s < 8 do {
+        Loop.rangeUntil(0, 8) { s =>
           val c2w = here.globalNeighbor(s, chunkCoords)
           val c2 = c2w.getBlockRelChunk
           val neighCoords = c2w.getChunkRelWorld
@@ -219,7 +203,6 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
               chunksNeedingRenderUpdate += neighCoords // the if-case above gets handled later since it's in the queue
             }
           }
-          s += 1
         }
       }
     }
@@ -243,9 +226,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
         val thisQueue = chunksToProcess.remove(chunkCoords).get
         val map = propagateSunlightInChunk(chunkCoords, chunk, thisQueue)
 
-        val cIt = map.keysIterator
-        while cIt.hasNext do {
-          val chunkCoords = cIt.next()
+        Loop.iterate(map.keysIterator) { chunkCoords =>
           chunksToProcess.getOrElseUpdate(chunkCoords, mutable.Queue.empty).enqueueAll(map(chunkCoords))
           chunksNeedingRenderUpdate += chunkCoords
         }
@@ -271,8 +252,7 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
       val nextLevel = chunk.lighting.getSunlight(here) - 1
 
       if nextLevel > 0 then {
-        var s = 0
-        while s < 8 do { // done as an optimization
+        Loop.rangeUntil(0, 8) { s =>
           if here.isOnChunkEdge(s) then {
             val c2w = here.globalNeighbor(s, chunkCoords)
             val neighChunkCoords = c2w.getChunkRelWorld
@@ -313,16 +293,12 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
               }
             }
           }
-
-          s += 1
         }
       }
     }
 
     val result = mutable.HashMap.empty[ChunkRelWorld, Seq[Int]]
-    val kIt = neighborMap.iterator
-    while kIt.hasNext do {
-      val (coords, blocks) = kIt.next()
+    Loop.iterate(neighborMap.iterator) { (coords, blocks) =>
       result += coords -> blocks.toSeq
     }
     result

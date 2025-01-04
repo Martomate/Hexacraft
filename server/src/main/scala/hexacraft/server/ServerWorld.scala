@@ -175,21 +175,15 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
     // Add all blocks in the chunk to the update queue
     val newBlockUpdates = new mutable.ArrayBuffer[Long](allBlocks.length)
-    var bIdx = 0
-    while bIdx < allBlocks.length do {
-      newBlockUpdates += BlockRelWorld.fromChunk(allBlocks(bIdx).coords, chunkCoords).value
-      bIdx += 1
+    Loop.array(allBlocks) { block =>
+      newBlockUpdates += BlockRelWorld.fromChunk(block.coords, chunkCoords).value
     }
     blocksToUpdate.enqueueMany(newBlockUpdates)
     newBlockUpdates.clear()
 
     // Add all blocks in neighboring chunks to the update queue
-    bIdx = 0
-    while bIdx < allBlocks.length do {
-      val block = allBlocks(bIdx)
-
-      var side = 0
-      while side < 8 do {
+    Loop.array(allBlocks) { block =>
+      Loop.rangeUntil(0, 8) { side =>
         if block.coords.isOnChunkEdge(side) then {
           val neighCoords = block.coords.neighbor(side)
           val neighChunkCoords = chunkCoords.offset(ChunkRelWorld.neighborOffsets(side))
@@ -198,9 +192,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
             newBlockUpdates += BlockRelWorld.fromChunk(neighCoords, neighChunkCoords).value
           }
         }
-        side += 1
       }
-      bIdx += 1
     }
     blocksToUpdate.enqueueMany(newBlockUpdates)
   }
@@ -208,16 +200,15 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private def updateHeightmapAfterChunkUpdate(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk)(using
       CylinderSize
   ): Unit = {
-    for {
-      cx <- 0 until 16
-      cz <- 0 until 16
-    } do {
-      val blockCoords = BlockRelChunk(cx, 15, cz)
-      updateHeightmapAfterBlockUpdate(
-        col,
-        BlockRelWorld.fromChunk(blockCoords, chunkCoords),
-        chunk.getBlock(blockCoords)
-      )
+    Loop.rangeUntil(0, 16) { cx =>
+      Loop.rangeUntil(0, 16) { cz =>
+        val blockCoords = BlockRelChunk(cx, 15, cz)
+        updateHeightmapAfterBlockUpdate(
+          col,
+          BlockRelWorld.fromChunk(blockCoords, chunkCoords),
+          chunk.getBlock(blockCoords)
+        )
+      }
     }
   }
 
@@ -251,20 +242,37 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       chunk: Chunk
   ): Unit = {
     val yy = chunkCoords.Y.toInt * 16
-    for x <- 0 until 16 do {
-      for z <- 0 until 16 do {
+    Loop.rangeUntil(0, 16) { x =>
+      Loop.rangeUntil(0, 16) { z =>
         val height = heightMap.getHeight(x, z)
 
-        val highestBlockY = (yy + 15 to yy by -1)
-          .filter(_ > height)
-          .find(y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Block.Air)
+        if height < yy + 15 then {
+          val highestBlockY = findHighest(
+            math.max(yy, height),
+            yy + 15,
+            y => chunk.getBlock(BlockRelChunk(x, y, z)).blockType != Block.Air
+          )
 
-        highestBlockY match {
-          case Some(h) => heightMap.setHeight(x, z, h.toShort)
-          case None    =>
+          highestBlockY match {
+            case Some(h) => heightMap.setHeight(x, z, h.toShort)
+            case None    =>
+          }
         }
       }
     }
+  }
+
+  private inline def findHighest(lo: Int, hi: Int, inline p: Int => Boolean): Option[Int] = {
+    var res: Option[Int] = None
+    var i = hi
+    while i >= lo do {
+      if p(i) then {
+        res = Some(i)
+        i = lo
+      }
+      i -= 1
+    }
+    res
   }
 
   private def setChunkAndUpdateHeightmap(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
@@ -407,17 +415,13 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     val chunksAdded = mutable.ArrayBuffer.empty[ChunkRelWorld]
     val chunksRemoved = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
-    val lIt = chunksFinishedLoading.iterator
-    while lIt.hasNext do {
-      val (chunkCoords, chunk, isNew) = lIt.next
+    Loop.array(chunksFinishedLoading) { (chunkCoords, chunk, isNew) =>
       savedChunkModCounts(chunkCoords) = if isNew then -1L else chunk.modCount
       setChunk(chunkCoords, chunk)
       chunksAdded += chunkCoords
     }
 
-    val uIt = chunksFinishedUnloading.iterator
-    while uIt.hasNext do {
-      val chunkCoords = uIt.next
+    Loop.array(chunksFinishedUnloading) { chunkCoords =>
       val chunkWasRemoved = removeChunk(chunkCoords)
       if chunkWasRemoved then {
         chunksRemoved += chunkCoords
@@ -427,7 +431,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     (chunksAdded.toSeq, chunksRemoved.toSeq)
   }
 
-  private def chunksFinishedLoading: Seq[(ChunkRelWorld, Chunk, Boolean)] = {
+  private def chunksFinishedLoading: IndexedSeq[(ChunkRelWorld, Chunk, Boolean)] = {
     val chunksToAdd = mutable.ArrayBuffer.empty[(ChunkRelWorld, Chunk, Boolean)]
     for (chunkCoords, futureChunk) <- chunksLoading do {
       futureChunk.value match {
@@ -442,7 +446,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
           }
       }
     }
-    val finishedChunks = chunksToAdd.toSeq
+    val finishedChunks = chunksToAdd.toIndexedSeq
     for (coords, _, _) <- finishedChunks do {
       chunksLoading -= coords
     }
@@ -451,19 +455,17 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private def ensurePlannerCanPlanSoon(coords: ChunkRelWorld): Boolean = {
     var readyToPlan = true
-    val neighbors = coords.extendedNeighbors(5)
-    val nIt = neighbors.iterator
-    while nIt.hasNext do {
-      val ch = nIt.next
-      if getColumn(ch.getColumnRelWorld).isEmpty then {
-        startLoadingColumnIfNeeded(ch.getColumnRelWorld)
+    for ch <- coords.extendedNeighbors(5) do {
+      val colCoords = ch.getColumnRelWorld
+      if getColumn(colCoords).isEmpty then {
+        startLoadingColumnIfNeeded(colCoords)
         readyToPlan = false
       }
     }
     readyToPlan
   }
 
-  private def chunksFinishedUnloading: Seq[ChunkRelWorld] = {
+  private def chunksFinishedUnloading: IndexedSeq[ChunkRelWorld] = {
     val chunksToRemove = mutable.ArrayBuffer.empty[ChunkRelWorld]
     for (chunkCoords, future) <- chunksUnloading do {
       future.value match {
@@ -476,7 +478,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
           }
       }
     }
-    val finishedChunks = chunksToRemove.toSeq
+    val finishedChunks = chunksToRemove.toIndexedSeq
     for coords <- finishedChunks do {
       chunksUnloading -= coords
     }
@@ -513,17 +515,14 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     val blocksToUpdateNow = new ArrayBuffer[Long](blocksToUpdate.size)
     blocksToUpdate.drainInto(value => blocksToUpdateNow += value)
 
-    var bIdx = 0
-    while bIdx < blocksToUpdateNow.length do {
-      val c = BlockRelWorld(blocksToUpdateNow(bIdx))
+    Loop.array(blocksToUpdateNow) { v =>
+      val c = BlockRelWorld(v)
 
       val block = getBlock(c).blockType
       val behaviour = block.behaviour
       if behaviour.isDefined then {
         behaviour.get.onUpdated(c, block, recordingWorld)
       }
-
-      bIdx += 1
     }
 
     recordingWorld.collectUpdates.distinct
@@ -548,7 +547,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   }
 
   private def requestRenderUpdateForNeighborChunks(coords: ChunkRelWorld): Unit = {
-    for side <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { side =>
       val nCoords = coords.offset(NeighborOffsets(side))
       if getChunk(nCoords).isDefined then {
         requestRenderUpdate(nCoords)

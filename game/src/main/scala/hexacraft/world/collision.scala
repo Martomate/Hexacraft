@@ -1,6 +1,7 @@
 package hexacraft.world
 
 import hexacraft.math.MathUtils
+import hexacraft.util.Loop
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords, Offset, SkewCylCoords}
 
 import org.joml.Vector3d
@@ -47,12 +48,10 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
     val parts = (velocity.length * 10).toInt + 1
     result._2.div(parts)
 
-    var pIdx = 0
-    while pIdx < parts do {
+    Loop.rangeUntil(0, parts) { _ =>
       val currentPos = CylCoords(result._1)
       val currentVelocity = CylCoords.Offset(vel)
       result = _collides(new MovingBox(box, currentPos, currentVelocity), 100)
-      pIdx += 1
     }
 
     result._2.mul(parts)
@@ -69,11 +68,9 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
     }
 
     val futureCoords = box.pos.offset(box.velocity).toBlockCoords
-    val (bc, fc) = CoordUtils.getEnclosingBlock(futureCoords)
-    val futurePos = BlockCoords(bc).offset(fc).toCylCoords
-    val futureBox = new MovingBox(box.bounds, futurePos, box.velocity)
+    val (bc, _) = CoordUtils.getEnclosingBlock(futureCoords)
 
-    minDistAndReflectionDir(futureBox, bc) match {
+    minDistAndReflectionDir(box, bc) match {
       case Some((minDist, reflectionDir)) =>
         resultAfterCollision(box, minDist, reflectionDir, ttl)
       case None =>
@@ -87,17 +84,15 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
     * 'side of collision for that block')
     */
   private def minDistAndReflectionDir(box: MovingBox, bc: BlockRelWorld): Option[(Double, Int)] = {
-    val yLo = math.floor((box.pos.y + box.bounds.bottom) * 2).toInt
-    val yHi = math.floor((box.pos.y + box.bounds.top) * 2).toInt
+    val yLo = math.floor((box.pos.y + box.velocity.y + box.bounds.bottom) * 2).toInt
+    val yHi = math.floor((box.pos.y + box.velocity.y + box.bounds.top) * 2).toInt
 
     // min by dist, with dir as extra data
     var minDist: Double = Double.MaxValue
     var minDir: Int = 0
 
-    var y = yLo
-    while y <= yHi do {
-      var i = 0
-      while i < 9 do {
+    Loop.rangeTo(yLo, yHi) { y =>
+      Loop.rangeUntil(0, 9) { i =>
         val dx = (i % 3) - 1
         val dz = (i / 3) - 1
 
@@ -112,9 +107,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
             case None =>
           }
         }
-        i += 1
       }
-      y += 1
     }
 
     // only return the distance if there was in fact a collision
@@ -188,8 +181,8 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
       box2: HexBox,
       _pos2: SkewCylCoords
   ): (Double, Int) = {
-    val pos1 = box1.pos.toSkewCylCoords
     val vel1 = box1.velocity.toSkewCylCoordsOffset
+    val pos1 = box1.pos.toSkewCylCoords.offset(vel1) // pos after moving
     // The following line ensures that the code works when z is close to 0
     val pos2 = SkewCylCoords.Offset(
       _pos2.x,
@@ -232,23 +225,33 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
       d - dz + dx //   (z1 - x1 + r1) - (z2 - x2 - r2)
     )
 
-    if !distances.forall(_ >= 0) then { // intersection before moving
-      return (1, -1)
+    Loop.array(distances) { d =>
+      if d < 0 then { // the box is not colliding after moving
+        return (1, -1)
+      }
     }
 
-    val velDists = reflectionDirs.map(t => t.dx * vx + t.dy * vy + t.dz * vz) // the length of v along the normals
+    var minDist = 1.0
+    var minDistDir = -1
 
-    if !distances.indices.exists(i => distances(i) <= velDists(i)) then { // no intersection after moving
-      return (0, -1)
+    Loop.rangeUntil(0, 8) { i =>
+      val t = reflectionDirs(i)
+      val velDist = t.dx * vx + t.dy * vy + t.dz * vz // the length of v along the normals
+      val distAfter = ((velDist - distances(i)) * 1e9).toLong / 1e9
+
+      if velDist > 0 && distAfter >= 0 then {
+        val a = distAfter / velDist
+        if a < minDist then {
+          minDist = a
+          minDistDir = i
+        }
+      }
     }
 
-    val zipped = for (i <- distances.indices) yield {
-      val velDist = velDists(i)
-      val distBefore = ((distances(i) - velDist) * 1e9).toLong / 1e9
-      val a = if velDist <= 0 || distBefore > 0 then 1 else -distBefore / velDist
-      (a, i)
+    if minDistDir != -1 then {
+      (math.min(minDist, 1), minDistDir)
+    } else {
+      (0, -1) // the box was colliding even before moving
     }
-    val minInZip = zipped.minBy(_._1)
-    (math.min(minInZip._1, 1), minInZip._2)
   }
 }

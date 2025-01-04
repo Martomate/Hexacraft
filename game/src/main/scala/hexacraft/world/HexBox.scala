@@ -2,6 +2,7 @@ package hexacraft.world
 
 import hexacraft.math.MathUtils
 import hexacraft.math.geometry.{ConvexHull, OrthogonalProjection}
+import hexacraft.util.Loop
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 
 import org.joml.Vector3dc
@@ -29,18 +30,14 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
   def vertices: IndexedSeq[CylCoords.Offset] = {
     val result = new mutable.ArrayBuffer[CylCoords.Offset](12)
 
-    var s = 0
-    while s < 2 do {
-      var i = 0
-      while i < 6 do {
+    Loop.rangeUntil(0, 2) { s =>
+      Loop.rangeUntil(0, 6) { i =>
         val v = i * Math.PI / 3
         val x = Math.cos(v).toFloat
         val z = Math.sin(v).toFloat
 
         result += CylCoords.Offset(x * radius, (1 - s) * (top - bottom) + bottom, z * radius)
-        i += 1
       }
-      s += 1
     }
     result.toIndexedSeq
   }
@@ -52,11 +49,9 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
 
     val result = mutable.ArrayBuffer.empty[BlockRelWorld]
 
-    var y = yLo
-    while y <= yHi do {
+    Loop.rangeTo(yLo, yHi) { y =>
       // TODO: improve this implementation to be more correct (the HexBox radius might be too big)
-      var i = 0
-      while i < 9 do {
+      Loop.rangeUntil(0, 9) { i =>
         val dx = (i % 3) - 1
         val dz = (i / 3) - 1
 
@@ -64,9 +59,7 @@ class HexBox(val radius: Float, val bottom: Float, val top: Float) {
           val origin = pos.toBlockCoords.offset(dx, 0, dz)
           result += CoordUtils.getEnclosingBlock(BlockCoords(origin.x, y, origin.z))._1
         }
-        i += 1
       }
-      y += 1
     }
     result.toSeq
   }

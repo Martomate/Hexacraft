@@ -1,6 +1,6 @@
 package hexacraft.world.gen
 
-import hexacraft.util.LongSet
+import hexacraft.util.{LongSet, Loop}
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
@@ -49,13 +49,12 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
   private val maxTreesPerChunk = 5
 
   override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
-    val changesOpt = plannedChanges.remove(chunkCoords.value)
-    if changesOpt.isDefined then {
-      val cIt = changesOpt.get.iterator
-      while cIt.hasNext do {
-        val LocalBlockState(c, b) = cIt.next
-        chunk.setBlock(c, b)
-      }
+    plannedChanges.remove(chunkCoords.value) match {
+      case Some(changes) =>
+        Loop.array(changes) { case LocalBlockState(c, b) =>
+          chunk.setBlock(c, b)
+        }
+      case None =>
     }
   }
 
@@ -129,19 +128,18 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
     CylinderSize
 ) extends WorldFeaturePlanner {
 
-  private val plannedEntities: mutable.LongMap[Seq[Entity]] = mutable.LongMap.empty
+  private val plannedEntities: mutable.LongMap[IndexedSeq[Entity]] = mutable.LongMap.empty
   private val chunksPlanned: LongSet = new LongSet
 
   private val maxEntitiesPerGroup = 7
 
   override def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
-    val entitiesOpt = plannedEntities.get(chunkCoords.value)
-    if entitiesOpt.isDefined then {
-      val eIt = entitiesOpt.get.iterator
-      while eIt.hasNext do {
-        val entity = eIt.next
-        chunk.addEntity(entity)
-      }
+    plannedEntities.get(chunkCoords.value) match {
+      case Some(entities) =>
+        Loop.array(entities) { entity =>
+          chunk.addEntity(entity)
+        }
+      case None =>
     }
   }
 
@@ -155,7 +153,7 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
     }
   }
 
-  private def makePlan(rand: Random, coords: ChunkRelWorld, column: ChunkColumnTerrain): Seq[Entity] = {
+  private def makePlan(rand: Random, coords: ChunkRelWorld, column: ChunkColumnTerrain): IndexedSeq[Entity] = {
     val thePlan = mutable.Buffer.empty[Entity]
     val count = rand.nextInt(maxEntitiesPerGroup) + 1
     for _ <- 0 until count do {
@@ -169,6 +167,6 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
         thePlan += entity
       }
     }
-    thePlan.toSeq
+    thePlan.toIndexedSeq
   }
 }

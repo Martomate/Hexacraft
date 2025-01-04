@@ -43,9 +43,7 @@ class UniqueLongQueue {
   def enqueueMany(elems: Iterable[Long]): Unit = {
     q.ensureSize(q.size + elems.size)
 
-    val it = elems.iterator
-    while it.hasNext do {
-      val elem = it.next
+    Loop.iterate(elems.iterator) { elem =>
       if set.add(elem) then {
         q.enqueue(elem)
       }

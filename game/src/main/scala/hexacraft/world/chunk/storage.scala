@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.util.SmartArray
+import hexacraft.util.{Loop, SmartArray}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.BlockRelChunk
 
@@ -65,13 +65,11 @@ final class DenseChunkStorage extends ChunkStorage {
   def allBlocks: Array[LocalBlockState] = {
     val arr = Array.ofDim[LocalBlockState](_numBlocks)
     var idx = 0
-    var i = 0
-    while i < blockTypes.length do {
+    Loop.rangeUntil(0, blockTypes.length) { i =>
       if blockTypes(i) != 0 then {
         arr(idx) = LocalBlockState(BlockRelChunk(i), new BlockState(Block.byId(blockTypes(i)), metadata(i)))
         idx += 1
       }
-      i += 1
     }
     arr
   }

@@ -102,9 +102,7 @@ object Result {
   def all[A, B, E](s: Iterable[A])(f: A => Result[B, E]): Result[Seq[B], E] = {
     val values = new mutable.ArrayBuffer[B](s.size)
 
-    val it = s.iterator
-    while it.hasNext do {
-      val a = it.next
+    Loop.iterate(s.iterator) { a =>
       f(a) match {
         case Ok(v)  => values += v
         case Err(e) => return Err(e)

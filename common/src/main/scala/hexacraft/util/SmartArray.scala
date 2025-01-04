@@ -1,6 +1,5 @@
 package hexacraft.util
 
-import java.util
 import scala.collection.mutable
 
 class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Array[T]) extends mutable.IndexedSeq[T] {
@@ -18,10 +17,8 @@ class SmartArray[@specialized(Byte) T](size: Int, default: T, builder: Int => Ar
     if arr == null && value != default then {
       arr = builder(size)
 
-      var i = 0
-      while i < size do {
+      Loop.rangeUntil(0, size) { i =>
         arr(i) = default
-        i += 1
       }
     }
 

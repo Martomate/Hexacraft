@@ -1,5 +1,6 @@
 package hexacraft.world
 
+import hexacraft.util.InlinedIterable
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.entity.{Entity, EntityFactory}
@@ -13,9 +14,7 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
 
   def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     if !chunk.isDecorated then {
-      val pIt = planners.iterator
-      while pIt.hasNext do {
-        val p = pIt.next
+      for p <- InlinedIterable(planners) do {
         p.decorate(chunkCoords, chunk)
       }
       chunk.setDecorated()
@@ -23,13 +22,9 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
   }
 
   def prepare(coords: ChunkRelWorld): Unit = {
-    val neighbors = coords.extendedNeighbors(4)
-    val nIt = neighbors.iterator
-    while nIt.hasNext do {
-      val ch = nIt.next
-      val pIt = planners.iterator
-      while pIt.hasNext do {
-        pIt.next.plan(ch)
+    for ch <- coords.extendedNeighbors(4) do {
+      for p <- InlinedIterable(planners) do {
+        p.plan(ch)
       }
     }
   }

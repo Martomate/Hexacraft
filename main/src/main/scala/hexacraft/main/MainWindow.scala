@@ -8,7 +8,7 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
 import hexacraft.server.ServerWorld
-import hexacraft.util.{Resource, Result}
+import hexacraft.util.{Loop, Resource, Result}
 
 import org.joml.{Vector2f, Vector2i}
 
@@ -87,8 +87,7 @@ class MainWindow(
 
       switchSceneIfNeeded()
 
-      var tIdx = 0
-      while tIdx < delta do {
+      Loop.rangeUntil(0, delta) { _ =>
         tick()
         ticks += 1
         titleTicker += 1
@@ -99,7 +98,6 @@ class MainWindow(
           frames = 0
         }
         prevTime += 1e9.toLong / 60
-        tIdx += 1
       }
 
       OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
@@ -117,8 +115,7 @@ class MainWindow(
 
       window.swapBuffers()
 
-      if titleTicker > 10
-      then {
+      if titleTicker > 10 then {
         titleTicker = 0
         window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format)
       }
@@ -137,10 +134,8 @@ class MainWindow(
     case CallbackEvent.KeyPressed(window, key, scancode, action, mods) =>
       val keyIsPressed = action == KeyAction.Press
 
-      if keyIsPressed
-      then {
-        if key == KeyboardKey.Function(11)
-        then {
+      if keyIsPressed then {
+        if key == KeyboardKey.Function(11) then {
           toggleFullscreen()
         }
       }
@@ -169,10 +164,8 @@ class MainWindow(
       }
 
     case CallbackEvent.WindowResized(_, w, h) =>
-      if w > 0 && h > 0
-      then {
-        if w != _windowSize.logicalSize.x || h != _windowSize.logicalSize.y
-        then {
+      if w > 0 && h > 0 then {
+        if w != _windowSize.logicalSize.x || h != _windowSize.logicalSize.y then {
           if scene.isDefined then {
             scene.get.windowResized(w, h)
           }
@@ -188,10 +181,8 @@ class MainWindow(
       }
 
     case CallbackEvent.FrameBufferResized(_, w, h) =>
-      if w > 0 && h > 0
-      then {
-        if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y
-        then {
+      if w > 0 && h > 0 then {
+        if w != _windowSize.physicalSize.x || h != _windowSize.physicalSize.y then {
           OpenGL.glViewport(0, 0, w, h)
           if scene.isDefined then {
             scene.get.frameBufferResized(w, h)
