@@ -7,18 +7,23 @@ import scala.collection.mutable
 
 class ChunkCache(world: BlocksInWorld) {
   private val cache: mutable.LongMap[Chunk] = mutable.LongMap.empty
-  private var lastChunkCoords: Option[ChunkRelWorld] = None
+
+  private var hasLastChunk: Boolean = false
+  private var lastChunkCoords: ChunkRelWorld = ChunkRelWorld(0)
   private var lastChunk: Chunk = null.asInstanceOf[Chunk]
 
   def clearCache(): Unit = {
     cache.clear()
-    lastChunkCoords = None
+
+    hasLastChunk = false
+    lastChunkCoords = ChunkRelWorld(0)
     lastChunk = null
   }
 
   def getChunk(coords: ChunkRelWorld): Chunk = {
-    if lastChunkCoords.isEmpty || coords != lastChunkCoords.get then {
-      lastChunkCoords = Some(coords)
+    if !hasLastChunk || coords != lastChunkCoords then {
+      hasLastChunk = true
+      lastChunkCoords = coords
       lastChunk = cache.getOrNull(coords.value)
 
       if lastChunk == null then {
