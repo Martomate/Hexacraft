@@ -82,10 +82,6 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     chunks.get(coords.value)
   }
 
-  def loadedChunks: Seq[ChunkRelWorld] = {
-    chunks.keys.map(c => ChunkRelWorld(c)).toSeq
-  }
-
   def getBlock(coords: BlockRelWorld): BlockState = {
     getChunk(coords.getChunkRelWorld) match {
       case Some(chunk) => chunk.getBlock(coords.getBlockRelChunk)

@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 class WorldRenderer(
-    world: BlocksInWorld,
+    world: ClientWorld,
     worldGenerator: WorldGenerator,
     blockTextureIndices: Map[String, IndexedSeq[Int]],
     blockTextureColors: Map[String, IndexedSeq[Vector3f]],
