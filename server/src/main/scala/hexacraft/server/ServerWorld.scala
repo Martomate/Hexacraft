@@ -57,7 +57,10 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
 
   private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
+
+  // Note: these two must be updated together
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
+  private val chunkList: mutable.ArrayBuffer[Chunk] = mutable.ArrayBuffer.empty // used for iteration
 
   private val chunkLoadingPrioritizer = new ChunkLoadingPrioritizer(renderDistance)
 
@@ -131,7 +134,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   def removeAllEntities(): Unit = {
     for {
-      ch <- chunks.values
+      ch <- chunks.values // TODO: replace with chunkList once the race condition is fixed
       e <- ch.entities.toSeq
     } do {
       ch.removeEntity(e)
@@ -273,9 +276,23 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private def setChunkAndUpdateHeightmap(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     chunks.put(chunkCoords.value, chunk) match {
-      case Some(`chunk`)  => // the chunk is not new so nothing needs to be done
-      case Some(oldChunk) => updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
-      case None           => updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+      case Some(`chunk`) => // the chunk is not new so nothing needs to be done
+      case Some(oldChunk) =>
+        val oldIdx = this.chunkList.indexOfRef(oldChunk)
+        this.chunkList(oldIdx) = chunk
+        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+      case None =>
+        this.chunkList += chunk
+        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+    }
+  }
+
+  extension [A <: AnyRef](arr: mutable.ArrayBuffer[A]) {
+    private def indexOfRef(elem: A): Int = {
+      Loop.rangeUntil(0, arr.length) { i =>
+        if arr(i).eq(elem) then return i
+      }
+      -1
     }
   }
 
@@ -291,6 +308,16 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       val removedChunkOpt = chunks.remove(chunkCoords.value)
       if removedChunkOpt.isDefined then {
         val removedChunk = removedChunkOpt.get
+
+        {
+          // remove `removedChunk` from `chunkList` by replacing it with the last element
+          val dst = this.chunkList.indexOf(removedChunk)
+          val src = this.chunkList.size - 1
+          val removed = this.chunkList.remove(src)
+          if dst != src then {
+            this.chunkList(dst) = removed
+          }
+        }
 
         chunkWasRemoved = true
 
@@ -327,35 +354,36 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       performEntityRelocation()
     }
 
-    val chIt = chunks.valuesIterator
-    while chIt.hasNext do {
-      val ch = chIt.next
-
-      ch.optimizeStorage()
-
-      val eIt = ch.entities.iterator
-      while eIt.hasNext do {
-        val e = eIt.next()
-        tickEntity(e)
-      }
-    }
+    tickChunks()
 
     val entityEvents = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
     entityEvents ++= entityEventsSinceLastTick
     entityEventsSinceLastTick.clear()
 
-    /*
-    for ch <- chunks.values do {
-      for e <- ch.entities do {
-        entityEvents += e.id -> EntityEvent.Position(e.transform.position)
-      }
-    }
-     */
-
     val r = chunksNeedingRenderUpdate.toSeq
     chunksNeedingRenderUpdate.clear()
 
     new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated, entityEvents.toSeq)
+  }
+
+  private def tickChunks(): Unit = {
+    Loop.array(chunkList) { ch =>
+      ch.optimizeStorage()
+    }
+
+    Loop.array(this.getAllEntities) { e =>
+      tickEntity(e)
+    }
+  }
+
+  private def getAllEntities: mutable.ArrayBuffer[Entity] = {
+    val res = mutable.ArrayBuffer.empty[Entity]
+    Loop.array(chunkList) { ch =>
+      if ch.hasEntities then {
+        ch.foreachEntity(res += _)
+      }
+    }
+    res
   }
 
   private def performChunkLoading(
@@ -528,7 +556,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   private def performEntityRelocation(): Unit = {
     val entList = for {
-      ch <- chunks.values
+      ch <- chunkList
       ent <- ch.entities
     } yield (ch, ent, chunkOfEntity(ent))
 
@@ -617,6 +645,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
 
     chunks.clear()
+    chunkList.clear()
 
     for (columnKey, column) <- columns do {
       backgroundTasks += Future(saveColumn(ColumnRelWorld(columnKey), column))(using fsAsync)

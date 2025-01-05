@@ -348,6 +348,8 @@ class GameServer(
   private def handlePacket(clientId: Long, packet: NetworkPacket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
+    // TODO: call this function from tick to reduce race conditions
+
     packet match {
       case Login(id, name) =>
         if isShuttingDown then {

@@ -1,7 +1,7 @@
 package hexacraft.world.chunk
 
+import hexacraft.util.{Loop, SmartArray}
 import hexacraft.util.Result.{Err, Ok}
-import hexacraft.util.SmartArray
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
@@ -24,8 +24,9 @@ object Chunk {
   }
 }
 
-class Chunk private (chunkData: ChunkData)(using CylinderSize) {
+final class Chunk private (chunkData: ChunkData)(using CylinderSize) {
   private var _modCount: Long = 0L
+  private var _hasEntities: Boolean = chunkData.entities.nonEmpty
 
   def modCount: Long = _modCount
 
@@ -38,20 +39,27 @@ class Chunk private (chunkData: ChunkData)(using CylinderSize) {
     }
   }
 
-  def entities: collection.Seq[Entity] = chunkData.entities
+  def entities: collection.IndexedSeq[Entity] = chunkData.entities
+
+  inline def foreachEntity(inline f: Entity => Unit): Unit = {
+    Loop.array(chunkData.entities)(f)
+  }
 
   def hasEntities: Boolean = {
-    // noinspection EmptyCheck
-    chunkData.entities.length > 0
+    _hasEntities
   }
 
   def addEntity(entity: Entity): Unit = {
     chunkData.entities += entity
+    _hasEntities = true
     _modCount += 1
   }
 
   def removeEntity(entity: Entity): Unit = {
     chunkData.entities -= entity
+    if chunkData.entities.isEmpty then {
+      _hasEntities = false
+    }
     _modCount += 1
   }
 
