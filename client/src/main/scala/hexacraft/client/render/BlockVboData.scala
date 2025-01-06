@@ -63,7 +63,7 @@ object BlockVboData {
               val bs = neigh.getBlock(c2)
 
               if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then {
-                brightness(c.value) = neigh.lighting.getBrightness(c2)
+                brightness(c.value) = neigh.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
 
@@ -95,7 +95,7 @@ object BlockVboData {
               // TODO: sort translucent faces and the rendering glitches might be fixed
 
               if shouldRenderSide then {
-                brightness(c.value) = neigh.lighting.getBrightness(c2)
+                brightness(c.value) = neigh.getBrightness(c2)
                 shouldRender.set(c.value)
                 sidesCount(s) += 1
               }
@@ -123,7 +123,7 @@ object BlockVboData {
       val brightnessFn = (coords: BlockRelWorld) => {
         val ch = chunkCache.getChunk(coords.getChunkRelWorld)
         if ch != null then {
-          ch.lighting.getBrightness(coords.getBlockRelChunk)
+          ch.getBrightness(coords.getBlockRelChunk)
         } else {
           0
         }

@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.util.{Loop, SmartArray}
+import hexacraft.util.Loop
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
@@ -30,11 +30,33 @@ final class Chunk private (chunkData: ChunkData)(using CylinderSize) {
 
   def modCount: Long = _modCount
 
-  val lighting: ChunkLighting = new ChunkLighting
+  private val sunlight: Array[Byte] = new Array[Byte](16 * 16 * 16)
+  private val torchlight: Array[Byte] = new Array[Byte](16 * 16 * 16)
+  private var brightnessInitialized: Boolean = false
+
+  inline def setSunlight(coords: BlockRelChunk, value: Byte): Unit = {
+    sunlight(coords.value) = value
+  }
+
+  inline def getSunlight(coords: BlockRelChunk): Byte = {
+    sunlight(coords.value)
+  }
+
+  inline def setTorchlight(coords: BlockRelChunk, value: Byte): Unit = {
+    torchlight(coords.value) = value
+  }
+
+  inline def getTorchlight(coords: BlockRelChunk): Byte = {
+    torchlight(coords.value)
+  }
+
+  def getBrightness(block: BlockRelChunk): Float = {
+    math.min((torchlight(block.value) + sunlight(block.value)) / 15f, 1.0f)
+  }
 
   def initLightingIfNeeded(coords: ChunkRelWorld, lightPropagator: LightPropagator): Unit = {
-    if !lighting.initialized then {
-      lighting.setInitialized()
+    if !brightnessInitialized then {
+      brightnessInitialized = true
       lightPropagator.initBrightnesses(coords, this)
     }
   }
@@ -155,31 +177,4 @@ object ChunkData {
   }
 }
 
-class ChunkLighting {
-  private val brightness: SmartArray[Byte] = SmartArray.withByteArray(16 * 16 * 16, 0)
-  private var brightnessInitialized: Boolean = false
-
-  def initialized: Boolean = brightnessInitialized
-
-  def setInitialized(): Unit = brightnessInitialized = true
-
-  def setSunlight(coords: BlockRelChunk, value: Int): Unit = {
-    brightness(coords.value) = (brightness(coords.value) & 0xf | value << 4).toByte
-  }
-
-  def getSunlight(coords: BlockRelChunk): Byte = {
-    ((brightness(coords.value) >> 4) & 0xf).toByte
-  }
-
-  def setTorchlight(coords: BlockRelChunk, value: Int): Unit = {
-    brightness(coords.value) = (brightness(coords.value) & 0xf0 | value).toByte
-  }
-
-  def getTorchlight(coords: BlockRelChunk): Byte = {
-    (brightness(coords.value) & 0xf).toByte
-  }
-
-  def getBrightness(block: BlockRelChunk): Float = {
-    math.min((getTorchlight(block) + getSunlight(block)) / 15f, 1.0f)
-  }
-}
+class ChunkLighting {}

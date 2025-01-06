@@ -32,7 +32,7 @@ object EntityRenderDataFactory {
 
         val brightness: Float =
           if partChunk != null then {
-            partChunk.lighting.getBrightness(coords.getBlockRelChunk)
+            partChunk.getBrightness(coords.getBlockRelChunk)
           } else {
             0
           }

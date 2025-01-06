@@ -623,7 +623,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
 
   def getBrightness(block: BlockRelWorld): Float = {
     getChunk(block.getChunkRelWorld) match {
-      case Some(c) => c.lighting.getBrightness(block.getBlockRelChunk)
+      case Some(c) => c.getBrightness(block.getBlockRelChunk)
       case None    => 1.0f
     }
   }

@@ -361,7 +361,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   def getBrightness(block: BlockRelWorld): Float = {
     getChunk(block.getChunkRelWorld) match {
-      case Some(c) => c.lighting.getBrightness(block.getBlockRelChunk)
+      case Some(c) => c.getBrightness(block.getBlockRelChunk)
       case None    => 1.0f
     }
   }
