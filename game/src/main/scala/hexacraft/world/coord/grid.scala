@@ -1,6 +1,7 @@
 package hexacraft.world.coord
 
 import hexacraft.math.bits.{Int12, Int20}
+import hexacraft.util.Loop
 import hexacraft.world.CylinderSize
 
 import org.joml.Vector2d
