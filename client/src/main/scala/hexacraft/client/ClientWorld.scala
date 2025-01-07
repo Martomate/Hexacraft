@@ -2,7 +2,7 @@ package hexacraft.client
 
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.math.bits.Int12
-import hexacraft.util.Result
+import hexacraft.util.{Loop, Result}
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
@@ -25,6 +25,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
+  private val chunkList: mutable.ArrayBuffer[Chunk] = mutable.ArrayBuffer.empty
 
   val worldGenerator = new WorldGenerator(worldInfo.gen)
 
@@ -46,12 +47,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     chunks.get(coords.value)
   }
 
-  def loadedChunks: Seq[ChunkRelWorld] = {
-    val result: ArrayBuffer[ChunkRelWorld] = ArrayBuffer.empty
-    for c <- chunks.keys do {
-      result += ChunkRelWorld(c)
-    }
-    result.toSeq
+  inline def foreachChunk(inline f: Chunk => Unit): Unit = {
+    Loop.array(chunkList)(f)
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -91,7 +88,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   def removeEntity(entity: Entity): Unit = {
-    chunks.values.find(_.entities.exists(_.id == entity.id)) match {
+    chunkList.find(_.entities.exists(_.id == entity.id)) match {
       case Some(chunk) =>
         chunk.removeEntity(entity)
       case None =>
@@ -198,9 +195,23 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   private def setChunkAndUpdateHeightmap(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     chunks.put(chunkCoords.value, chunk) match {
-      case Some(`chunk`)  => // the chunk is not new so nothing needs to be done
-      case Some(oldChunk) => updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
-      case None           => updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+      case Some(`chunk`) => // the chunk is not new so nothing needs to be done
+      case Some(oldChunk) =>
+        val oldIdx = this.chunkList.indexOfRef(oldChunk)
+        this.chunkList(oldIdx) = chunk
+        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+      case None =>
+        chunkList += chunk
+        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+    }
+  }
+
+  extension [A <: AnyRef](arr: mutable.ArrayBuffer[A]) {
+    private def indexOfRef(elem: A): Int = {
+      Loop.rangeUntil(0, arr.length) { i =>
+        if arr(i).eq(elem) then return i
+      }
+      -1
     }
   }
 
@@ -213,6 +224,16 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       case Some(col) =>
         chunks.remove(chunkCoords.value) match {
           case Some(removedChunk) =>
+            {
+              // remove `removedChunk` from `chunkList` by replacing it with the last element
+              val dst = this.chunkList.indexOf(removedChunk)
+              val src = this.chunkList.size - 1
+              val removed = this.chunkList.remove(src)
+              if dst != src then {
+                this.chunkList(dst) = removed
+              }
+            }
+
             chunkWasRemoved = true
             requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
             requestRenderUpdateForNeighborChunks(chunkCoords)
@@ -311,7 +332,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
     }
 
     {
-      val chIt = chunks.valuesIterator
+      val chIt = chunkList.iterator
       while chIt.hasNext do {
         val ch = chIt.next()
         ch.optimizeStorage()
@@ -371,6 +392,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   def unload(): Unit = {
+    chunkList.clear()
     chunks.clear()
     columns.clear()
   }

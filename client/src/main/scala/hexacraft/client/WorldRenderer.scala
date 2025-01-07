@@ -516,16 +516,13 @@ class WorldRenderer(
     entitySideShader.setViewMatrix(camera.view.matrix)
     entitySideShader.setCameraPosition(camera.position)
 
-    for side <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { side =>
       val sh = if side < 2 then entityShader else entitySideShader
       sh.enable()
       sh.setSide(side)
 
       val entityDataList: mutable.ArrayBuffer[(EntityModel, Seq[EntityShader.InstanceData])] = ArrayBuffer.empty
-      for {
-        c <- world.loadedChunks
-        ch <- world.getChunk(c)
-      } do {
+      world.foreachChunk { ch =>
         if ch.hasEntities then {
           val data = EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
           entityDataList ++= data
@@ -534,7 +531,7 @@ class WorldRenderer(
 
       entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
 
-      for (textureName, partLists) <- entityDataList.groupBy(_._1.textureName) do {
+      Loop.iterate(entityDataList.groupBy(_._1.textureName).iterator) { (textureName, partLists) =>
         val data = partLists.flatMap(_._2)
 
         entityRenderers(side).setInstanceData(data.size): buf =>
