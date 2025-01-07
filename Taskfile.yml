@@ -39,6 +39,7 @@ tasks:
           KIND: so
           RUST_TARGET: x86_64-unknown-linux-gnu
           NATIVE_NAME: x86_64-linux
+          EXTRA_CARGO_ARGS: '--config target.x86_64-unknown-linux-gnu.linker=\"x86_64-unknown-linux-gnu-gcc\"'
 
       - task: build-rust-lib
         vars:
@@ -56,6 +57,7 @@ tasks:
       - task: run-cargo
         vars:
           RUST_TARGET: "{{ .RUST_TARGET }}"
+          EXTRA_CARGO_ARGS: "{{ .EXTRA_CARGO_ARGS }}"
       - task: extract-cargo-artifact
         vars:
           KIND: "{{ .KIND }}"
@@ -67,7 +69,7 @@ tasks:
       vars: [ RUST_TARGET ]
     dir: native/src/native
     cmds:
-      - cargo build --release --target {{ .RUST_TARGET }}
+      - cargo build --release --target {{ .RUST_TARGET }} {{ .EXTRA_CARGO_ARGS }}
 
   extract-cargo-artifact:
     requires:
