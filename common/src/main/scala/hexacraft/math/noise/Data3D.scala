@@ -1,8 +1,11 @@
 package hexacraft.math.noise
 
 import hexacraft.math.Range3D
+import hexacraft.util.Loop
 
 import org.joml.Math.triLerp
+
+import scala.collection.mutable.ArrayBuffer
 
 case class Data3D(sizeX: Int, sizeY: Int, sizeZ: Int, values: Array[Double]) {
   def apply(x: Int, y: Int, z: Int): Double = {
@@ -13,10 +16,17 @@ case class Data3D(sizeX: Int, sizeY: Int, sizeZ: Int, values: Array[Double]) {
 object Data3D {
   def evaluate(indices: Range3D, fn: (Int, Int, Int) => Double): Data3D = {
     val Range3D(xs, ys, zs) = indices
-    val values = for (z <- zs; y <- ys; x <- xs) yield {
-      fn(x, y, z)
+    val values = new Array[Double](xs.length * ys.length * zs.length)
+    var idx = 0
+    Loop.iterate(zs.iterator) { z =>
+      Loop.iterate(ys.iterator) { y =>
+        Loop.iterate(xs.iterator) { x =>
+          values(idx) = fn(x, y, z)
+          idx += 1
+        }
+      }
     }
-    Data3D(xs.length, ys.length, zs.length, values.toArray)
+    Data3D(xs.length, ys.length, zs.length, values)
   }
 
   def interpolate(scaleX: Int, scaleY: Int, scaleZ: Int, data: Data3D): Data3D = {

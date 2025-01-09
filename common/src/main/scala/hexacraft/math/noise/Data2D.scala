@@ -1,6 +1,7 @@
 package hexacraft.math.noise
 
 import hexacraft.math.Range2D
+import hexacraft.util.Loop
 
 import org.joml.Math.biLerp
 
@@ -13,10 +14,15 @@ case class Data2D(sizeX: Int, sizeY: Int, values: Array[Double]) {
 object Data2D {
   def evaluate(indices: Range2D, fn: (Int, Int) => Double): Data2D = {
     val Range2D(xs, ys) = indices
-    val values = for (y <- ys; x <- xs) yield {
-      fn(x, y)
+    val values = new Array[Double](xs.length * ys.length)
+    var idx = 0
+    Loop.iterate(ys.iterator) { y =>
+      Loop.iterate(xs.iterator) { x =>
+        values(idx) = fn(x, y)
+        idx += 1
+      }
     }
-    Data2D(xs.length, ys.length, values.toArray)
+    Data2D(xs.length, ys.length, values)
   }
 
   def interpolate(scaleX: Int, scaleY: Int, data: Data2D): Data2D = {
