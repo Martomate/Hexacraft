@@ -1,81 +1,15 @@
 version: '3'
 
 tasks:
-  create-launcher-jar:
+  clean:
     cmds:
-      - sbt clean main/pack
-      - defer: rm TmpManifest.mf
-      - echo -n "Class-Path:" > TmpManifest.mf
-      - (cd main/target/pack && find lib -type file | awk '{print "  " $0}') >> TmpManifest.mf
-      - mkdir -p main/src/pack
-      - jar -c -f main/src/pack/hexacraft-launcher.jar -m TmpManifest.mf --main-class hexacraft.main.Main
-  remove-launcher-jar:
-    cmds:
-      - rm main/src/pack/hexacraft-launcher.jar
+      - ./mill native.cleanNative
+      - ./mill clean
+
   package:
-    cmds:
-      - task: create-launcher-jar
-      - defer: { task: remove-launcher-jar }
-      - sbt clean compile
-      - task: build-natives
-      - sbt main/packArchiveZip
-
-  build-natives:
-    cmds:
-      - task: build-rust-lib
-        vars:
-          KIND: dylib
-          RUST_TARGET: aarch64-apple-darwin
-          NATIVE_NAME: arm64-darwin
-
-      - task: build-rust-lib
-        vars:
-          KIND: dylib
-          RUST_TARGET: x86_64-apple-darwin
-          NATIVE_NAME: x86_64-darwin
-
-      - task: build-rust-lib
-        vars:
-          KIND: so
-          RUST_TARGET: x86_64-unknown-linux-gnu
-          NATIVE_NAME: x86_64-linux
-          EXTRA_CARGO_ARGS: '--config target.x86_64-unknown-linux-gnu.linker=\"x86_64-unknown-linux-gnu-gcc\"'
-
-      - task: build-rust-lib
-        vars:
-          KIND: dll
-          RUST_TARGET: x86_64-pc-windows-gnu
-          NATIVE_NAME: x86_64-windows
-
-  build-rust-lib:
-    requires:
-      vars:
-        - KIND
-        - RUST_TARGET
-        - NATIVE_NAME
-    cmds:
-      - task: run-cargo
-        vars:
-          RUST_TARGET: "{{ .RUST_TARGET }}"
-          EXTRA_CARGO_ARGS: "{{ .EXTRA_CARGO_ARGS }}"
-      - task: extract-cargo-artifact
-        vars:
-          KIND: "{{ .KIND }}"
-          RUST_TARGET: "{{ .RUST_TARGET }}"
-          NATIVE_NAME: "{{ .NATIVE_NAME }}"
-
-  run-cargo:
-    requires:
-      vars: [ RUST_TARGET ]
-    dir: native/src/native
-    cmds:
-      - cargo build --release --target {{ .RUST_TARGET }} {{ .EXTRA_CARGO_ARGS }}
-
-  extract-cargo-artifact:
-    requires:
-      vars: [ KIND, RUST_TARGET, NATIVE_NAME ]
     silent: true
     cmds:
-      - mkdir -p native/target/classes/native/{{ .NATIVE_NAME }}
-      - cp native/src/native/target/{{ .RUST_TARGET }}/release/*.{{ .KIND }}
-           native/target/classes/native/{{ .NATIVE_NAME }}
+      - ./mill -Dbuild-all-targets=true main.universalStagePackageZip
+      - echo ""
+      - echo "Generated files:"
+      - find ./out/main/universalStagePackageZip.dest -type f

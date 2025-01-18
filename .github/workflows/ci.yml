@@ -21,13 +21,8 @@ jobs:
         with:
           jvm: "adoptium:1.17"
       - name: Build
-        run: sbt coverage "Test / compile"
+        run: ./mill __.compile
         shell: bash
       - name: Run tests
-        run: sbt coverage test
+        run: ./mill __.test
         shell: bash
-      - name: Coveralls
-        run: sbt coverageAggregate coveralls
-        shell: bash
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,12 +1,14 @@
 package build
 
-import $ivy.`io.github.otavia-projects::mill-rust_mill$MILL_BIN_PLATFORM:0.2.4`
-import io.github.otavia.jni.plugin.RustJniModule
+import $ivy.`io.github.hoangmaihuy::mill-universal-packager::0.1.4`
+import io.github.hoangmaihuy.mill.packager.archetypes.JavaAppPackagingModule
+import io.github.hoangmaihuy.mill.packager.subPathRw
+import mill._
+import mill.api.JarManifest
+import mill.scalalib._
+import mill.util.Jvm
 
 import scala.util.Properties.isMac
-
-import mill._
-import scalalib._
 
 object common extends HexacraftModule {
   override def moduleDeps = super.moduleDeps ++ Seq(native)
@@ -18,78 +20,14 @@ object common extends HexacraftModule {
 }
 
 object native extends HexacraftModule with RustJniModule {
-  override def rustSourceRoot = Task.Sources(
-    millSourcePath / "src/native"
-  )
-  // TODO: set crossTargets
-
-  override def localTarget: String = if (System.getenv("MILL_RUST_TARGET") != null)
-    System.getenv("MILL_RUST_TARGET") else {
-    val os = System.getProperty("os.name").toLowerCase
-    if (os.contains("windows")) "x86_64-pc-windows-msvc"
-    else if (os.contains("linux")) "x86_64-unknown-linux-gnu"
-    else if (os.startsWith("mac") || os.startsWith("osx") || os.startsWith("darwin")) {
-      val arch = System.getProperty("os.arch")
-      if (arch.matches("^(x8664|amd64|ia32e|em64t|x64)$")) "x86_64-apple-darwin"
-      else if (arch.trim == "aarch64") "aarch64-apple-darwin"
-      else throw new IllegalArgumentException(s"Unknown arch: $arch")
-    }
-    else "x86_64-pc-windows-msvc"
-  }
-
-  private def getNativeLibName(target: String, libraryName: String): String = target match {
-    case _: String if target.contains("windows") => libraryName + ".dll"
-    case _: String if target.contains("linux") => "lib" + libraryName + ".so"
-    case _: String if target.contains("apple") => "lib" + libraryName + ".dylib"
-    case _ => throw new IllegalArgumentException(s"Not support rust target: $target")
-  }
+  override def nativeName = "hexacraft-rs"
 
   private def javahClassNames = Seq(
     "hexacraft.rs.RustLib$"
   )
 
   def javah = T {
-    println(compile().classes.path)
     os.proc("javah", "-d", rustSourceRoot().head.path / "jni", "-cp", compile().classes.path, javahClassNames).call()
-  }
-
-  override def compileNative = T {
-    val library = T.dest / "native"
-    os.makeDir.all(library)
-
-    val crateHome = rustSourceRoot().head.path
-
-    for (target <- crossTargets) {
-      if (release)
-        os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome, env = cargoBuildEnvs)
-      else
-        os.proc("cargo", "build", "--target", target).call(cwd = crateHome, env = cargoBuildEnvs)
-
-      val mode = if (release) "release" else "debug"
-      val name = getNativeLibName(target, nativeName().replace('-', '_'))
-
-      val from = crateHome / "target" / target / mode / name
-
-      val osName = target match {
-        case t if t.contains("windows") => "windows"
-        case t if t.contains("apple") => "darwin"
-        case t if t.contains("linux") => "linux"
-        case _ => throw new IllegalArgumentException(s"Could not extract os from target: $target")
-      }
-      val archName = target match {
-        case t if t.contains("aarch64") => "arm64"
-        case t if t.contains("x86_64") => "x86_64"
-        case _ => throw new IllegalArgumentException(s"Could not extract arch from target: $target")
-      }
-
-      val targetShortName = s"$archName-$osName"
-
-      val to = library / targetShortName / name
-
-      os.copy(from, to, replaceExisting = true, createFolders = true)
-    }
-
-    PathRef(T.dest)
   }
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
@@ -185,7 +123,7 @@ object server extends HexacraftModule {
   }
 }
 
-object main extends HexacraftModule {
+object main extends HexacraftModule with JavaAppPackagingModule {
   override def moduleDeps = Seq(game, client, server, system)
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
@@ -193,6 +131,27 @@ object main extends HexacraftModule {
   )
 
   override def forkArgs = super.forkArgs() ++ (if (isMac) Some("-XstartOnFirstThread") else None).toSeq
+
+  override def packageVersion = "0.14.1"
+  override def packageName = "hexacraft-" + packageVersion()
+  override def executableScriptName = "hexacraft"
+
+  def launcherJarManifest = T {
+    JarManifest.MillDefault
+      .add("Main-Class" -> finalMainClass())
+      .add("Class-Path" -> scriptClasspath().map(name => s"lib/$name").mkString(" "))
+  }
+
+  def launcherJar = T {
+    Jvm.createJar(Agg(), launcherJarManifest())
+  }
+
+  override def universalMappings = T {
+    val launcherJarPath = launcherJar().path
+    val launcherJarMapping = PathRef(launcherJarPath) -> (os.sub / "hexacraft-launcher.jar")
+
+    super.universalMappings().filterNot(_._2.startsWith(os.sub / "bin")) ++ Seq(launcherJarMapping)
+  }
 
   object test extends Tests {
     override def moduleDeps = super.moduleDeps ++ Seq(game.test, client.test)
@@ -213,15 +172,123 @@ trait HexacraftModule extends SbtModule {
   override def javacOptions = Seq(
     "-release", "11"
   )
-  override def ivyDeps = Agg(
+
+  override def compileIvyDeps = Agg(
     ivy"org.scala-lang::scala2-library-tasty-experimental:${scalaVersion()}"
   )
+
+  override def artifactName = "hexacraft-" + super.artifactName()
 
   trait Tests extends SbtTests with TestModule.Munit {
     override def ivyDeps = super.ivyDeps() ++ Agg(
       Deps.MUnit
     )
   }
+}
+
+trait RustJniModule extends JavaModule {
+  private def buildAllTargets = Task.Input(sys.props("build-all-targets") == "true")
+
+  /** Name used in Cargo.toml [package].name. */
+  protected def nativeName: T[String]
+
+  def rustSourceRoot = Task.Sources {
+    millSourcePath / "src" / "native"
+  }
+
+  override def compileResources = Task.Sources {
+    super.compileResources() :+ compileNative()
+  }
+
+  private def localTarget: String = {
+    if (System.getenv("MILL_RUST_TARGET") != null) {
+      System.getenv("MILL_RUST_TARGET")
+    } else {
+      System.getProperty("os.name").toLowerCase match {
+        case os if os.contains("windows") => "x86_64-pc-windows-msvc"
+        case os if os.startsWith("mac") =>
+          System.getProperty("os.arch") match {
+            case arch if arch.trim == "aarch64" => "aarch64-apple-darwin"
+            case _ => "x86_64-apple-darwin"
+          }
+        case _ => "x86_64-unknown-linux-gnu"
+      }
+    }
+  }
+
+  private def crossTargets = Set(
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-gnu",
+    "x86_64-unknown-linux-gnu",
+  )
+
+  private def getNativeLibName(target: String, libraryName: String): String = target match {
+    case _: String if target.contains("windows") => libraryName + ".dll"
+    case _: String if target.contains("linux") => "lib" + libraryName + ".so"
+    case _: String if target.contains("apple") => "lib" + libraryName + ".dylib"
+    case _ => throw new IllegalArgumentException(s"Rust target $target not supported")
+  }
+
+  def compileNative = T {
+    val library = T.dest / "native"
+    os.makeDir.all(library)
+
+    val crateHome = rustSourceRoot().head.path
+    val nativeName1 = nativeName()
+
+    if (buildAllTargets()) {
+      for (target <- crossTargets) {
+        println(s"Compiling Rust library $nativeName1 for target $target")
+        compileRust(crateHome, library, nativeName1, target)
+      }
+    } else {
+      println(s"Compiling Rust library $nativeName1 for local target ($localTarget)")
+      compileRust(crateHome, library, nativeName1, localTarget)
+    }
+
+    PathRef(T.dest)
+  }
+
+  def cleanNative = T {
+    val crateHome = rustSourceRoot().head.path
+    os.proc("cargo", "clean").call(cwd = crateHome)
+  }
+
+  protected def compileRust(crateHome: os.Path, library: os.Path, nativeName: String, target: String): Unit = {
+    val configFile = if (isMac) Some("./.cargo/config-macos.toml") else None
+
+    configFile match {
+      case Some(configFile) =>
+        os.proc("cargo", "build", "--release", "--target", target, "--config", configFile).call(cwd = crateHome)
+      case None =>
+        os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome)
+    }
+
+    val name = getNativeLibName(target, nativeName.replace('-', '_'))
+
+    val from = crateHome / "target" / target / "release" / name
+
+    val osName = target match {
+      case t if t.contains("windows") => "windows"
+      case t if t.contains("apple") => "darwin"
+      case t if t.contains("linux") => "linux"
+      case _ => throw new IllegalArgumentException(s"Could not extract os from target: $target")
+    }
+    val archName = target match {
+      case t if t.contains("aarch64") => "arm64"
+      case t if t.contains("x86_64") => "x86_64"
+      case _ => throw new IllegalArgumentException(s"Could not extract arch from target: $target")
+    }
+
+    val targetShortName = s"$archName-$osName"
+
+    val to = library / targetShortName / name
+
+    os.copy(from, to, replaceExisting = true, createFolders = true)
+  }
+
 }
 
 object Deps {
