@@ -1,0 +1,332 @@
+package build
+
+import $ivy.`io.github.hoangmaihuy::mill-universal-packager::0.1.4`
+import io.github.hoangmaihuy.mill.packager.archetypes.JavaAppPackagingModule
+import io.github.hoangmaihuy.mill.packager.subPathRw
+import mill._
+import mill.api.JarManifest
+import mill.scalalib._
+import mill.util.Jvm
+
+import scala.util.Properties.isMac
+
+object common extends HexacraftModule {
+  override def moduleDeps = super.moduleDeps ++ Seq(native)
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.Joml
+  )
+
+  object test extends Tests
+}
+
+object native extends HexacraftModule with RustJniModule {
+  override def nativeName = "hexacraft-rs"
+
+  private def javahClassNames = Seq(
+    "hexacraft.rs.RustLib$"
+  )
+
+  def javah = T {
+    os.proc("javah", "-d", rustSourceRoot().head.path / "jni", "-cp", compile().classes.path, javahClassNames).call()
+  }
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.LwjglSystem: _* // TODO: remove (not used)
+  )
+
+  object test extends Tests
+}
+
+object nbt extends HexacraftModule {
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.Joml, Deps.FlowNbt
+  )
+
+  object test extends Tests
+}
+
+object window extends HexacraftModule {
+  override def moduleDeps = Seq(common)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.LwjglGlfw: _*
+  )
+
+  object test extends Tests
+}
+
+object audio extends HexacraftModule {
+  override def moduleDeps = Seq(common, fs)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.LwjglOpenAL ++ Deps.LwjglStb: _*
+  )
+
+  object test extends Tests
+}
+
+object fs extends HexacraftModule {
+  override def moduleDeps = Seq(common, nbt)
+
+  object test extends Tests
+}
+
+object gpu extends HexacraftModule {
+  override def moduleDeps = Seq(common)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Deps.LwjglOpenGL: _*
+  )
+
+  object test extends Tests
+}
+
+object system extends HexacraftModule {
+  override def moduleDeps = Seq(common)
+
+  object test extends Tests
+}
+
+object game extends HexacraftModule {
+  override def moduleDeps = Seq(common, nbt, window, fs)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  )
+
+  object test extends Tests {
+    override def ivyDeps = super.ivyDeps() ++ Agg(
+      Deps.Mockito
+    )
+  }
+}
+
+object client extends HexacraftModule {
+  override def moduleDeps = Seq(game, audio, gpu)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  )
+
+  object test extends Tests
+}
+
+object server extends HexacraftModule {
+  override def moduleDeps = Seq(game)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  )
+
+  object test extends Tests {
+    override def moduleDeps = super.moduleDeps ++ Seq(game.test)
+  }
+}
+
+object main extends HexacraftModule with JavaAppPackagingModule {
+  override def moduleDeps = Seq(game, client, server, system)
+
+  override def ivyDeps = super.ivyDeps() ++ Agg(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  )
+
+  override def forkArgs = super.forkArgs() ++ (if (isMac) Some("-XstartOnFirstThread") else None).toSeq
+
+  override def packageVersion = "0.14.1"
+  override def packageName = "hexacraft-" + packageVersion()
+  override def executableScriptName = "hexacraft"
+
+  def launcherJarManifest = T {
+    JarManifest.MillDefault
+      .add("Main-Class" -> finalMainClass())
+      .add("Class-Path" -> scriptClasspath().map(name => s"lib/$name").mkString(" "))
+  }
+
+  def launcherJar = T {
+    Jvm.createJar(Agg(), launcherJarManifest())
+  }
+
+  override def universalMappings = T {
+    val launcherJarPath = launcherJar().path
+    val launcherJarMapping = PathRef(launcherJarPath) -> (os.sub / "hexacraft-launcher.jar")
+
+    super.universalMappings().filterNot(_._2.startsWith(os.sub / "bin")) ++ Seq(launcherJarMapping)
+  }
+
+  object test extends Tests {
+    override def moduleDeps = super.moduleDeps ++ Seq(game.test, client.test)
+    override def ivyDeps = super.ivyDeps() ++ Agg(
+      Seq(Deps.Mockito) ++ Deps.ArchUnit: _*
+    )
+  }
+}
+
+
+
+trait HexacraftModule extends SbtModule {
+  def scalaVersion = "3.5.1"
+
+  override def scalacOptions = Seq(
+    "-deprecation", "-unchecked", "-feature"
+  )
+  override def javacOptions = Seq(
+    "-release", "11"
+  )
+
+  override def compileIvyDeps = Agg(
+    ivy"org.scala-lang::scala2-library-tasty-experimental:${scalaVersion()}"
+  )
+
+  override def artifactName = "hexacraft-" + super.artifactName()
+
+  trait Tests extends SbtTests with TestModule.Munit {
+    override def ivyDeps = super.ivyDeps() ++ Agg(
+      Deps.MUnit
+    )
+  }
+}
+
+trait RustJniModule extends JavaModule {
+  private def buildAllTargets = Task.Input(sys.props("build-all-targets") == "true")
+
+  /** Name used in Cargo.toml [package].name. */
+  protected def nativeName: T[String]
+
+  def rustSourceRoot = Task.Sources {
+    millSourcePath / "src" / "native"
+  }
+
+  override def compileResources = Task.Sources {
+    super.compileResources() :+ compileNative()
+  }
+
+  private def localTarget: String = {
+    if (System.getenv("MILL_RUST_TARGET") != null) {
+      System.getenv("MILL_RUST_TARGET")
+    } else {
+      System.getProperty("os.name").toLowerCase match {
+        case os if os.contains("windows") => "x86_64-pc-windows-msvc"
+        case os if os.startsWith("mac") =>
+          System.getProperty("os.arch") match {
+            case arch if arch.trim == "aarch64" => "aarch64-apple-darwin"
+            case _ => "x86_64-apple-darwin"
+          }
+        case _ => "x86_64-unknown-linux-gnu"
+      }
+    }
+  }
+
+  private def crossTargets = Set(
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-gnu",
+    "x86_64-unknown-linux-gnu",
+  )
+
+  private def getNativeLibName(target: String, libraryName: String): String = target match {
+    case _: String if target.contains("windows") => libraryName + ".dll"
+    case _: String if target.contains("linux") => "lib" + libraryName + ".so"
+    case _: String if target.contains("apple") => "lib" + libraryName + ".dylib"
+    case _ => throw new IllegalArgumentException(s"Rust target $target not supported")
+  }
+
+  def compileNative = T {
+    val library = T.dest / "native"
+    os.makeDir.all(library)
+
+    val crateHome = rustSourceRoot().head.path
+    val nativeName1 = nativeName()
+
+    if (buildAllTargets()) {
+      for (target <- crossTargets) {
+        println(s"Compiling Rust library $nativeName1 for target $target")
+        compileRust(crateHome, library, nativeName1, target)
+      }
+    } else {
+      println(s"Compiling Rust library $nativeName1 for local target ($localTarget)")
+      compileRust(crateHome, library, nativeName1, localTarget)
+    }
+
+    PathRef(T.dest)
+  }
+
+  def cleanNative = T {
+    val crateHome = rustSourceRoot().head.path
+    os.proc("cargo", "clean").call(cwd = crateHome)
+  }
+
+  protected def compileRust(crateHome: os.Path, library: os.Path, nativeName: String, target: String): Unit = {
+    val configFile = if (isMac) Some("./.cargo/config-macos.toml") else None
+
+    configFile match {
+      case Some(configFile) =>
+        os.proc("cargo", "build", "--release", "--target", target, "--config", configFile).call(cwd = crateHome)
+      case None =>
+        os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome)
+    }
+
+    val name = getNativeLibName(target, nativeName.replace('-', '_'))
+
+    val from = crateHome / "target" / target / "release" / name
+
+    val osName = target match {
+      case t if t.contains("windows") => "windows"
+      case t if t.contains("apple") => "darwin"
+      case t if t.contains("linux") => "linux"
+      case _ => throw new IllegalArgumentException(s"Could not extract os from target: $target")
+    }
+    val archName = target match {
+      case t if t.contains("aarch64") => "arm64"
+      case t if t.contains("x86_64") => "x86_64"
+      case _ => throw new IllegalArgumentException(s"Could not extract arch from target: $target")
+    }
+
+    val targetShortName = s"$archName-$osName"
+
+    val to = library / targetShortName / name
+
+    os.copy(from, to, replaceExisting = true, createFolders = true)
+  }
+
+}
+
+object Deps {
+  private object versions {
+    val lwjgl = "3.3.5"
+    val joml = "1.10.7"
+    val zeromq = "0.6.0"
+  }
+
+  private def lwjglDependency(name: String) = {
+    val platforms = Seq(
+      "natives-windows",
+      "natives-windows-arm64",
+      "natives-linux",
+      "natives-linux-arm64",
+      "natives-macos",
+      "natives-macos-arm64"
+    )
+
+    val base = ivy"org.lwjgl:$name:${versions.lwjgl}"
+    val natives = platforms.map(p => ivy"org.lwjgl:$name:${versions.lwjgl};classifier=$p")
+    base +: natives
+  }
+
+  lazy val LwjglSystem = lwjglDependency("lwjgl")
+  lazy val LwjglGlfw = lwjglDependency("lwjgl-glfw")
+  lazy val LwjglOpenGL = lwjglDependency("lwjgl-opengl")
+  lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
+  lazy val LwjglStb = lwjglDependency("lwjgl-stb")
+
+  lazy val Joml = ivy"org.joml:joml:${versions.joml}"
+  lazy val FlowNbt = ivy"com.flowpowered:flow-nbt:1.0.0"
+  lazy val ZeroMQ = ivy"org.zeromq:jeromq:${versions.zeromq}"
+
+  lazy val MUnit = ivy"org.scalameta::munit:1.0.0"
+  lazy val Mockito = ivy"org.scalatestplus::mockito-5-8:3.2.17.0"
+  lazy val ArchUnit = Seq(
+    ivy"com.tngtech.archunit:archunit:1.3.0",
+    ivy"org.slf4j:slf4j-nop:2.0.13" // Needed for ArchUnit
+  )
+}
