@@ -8,7 +8,7 @@ import hexacraft.shaders.*
 import hexacraft.util.{InlinedIterable, Loop, NamedThreadFactory, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
-import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
+import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
 
 import org.joml.{Vector2ic, Vector3f}
@@ -181,7 +181,7 @@ class WorldRenderer(
 
   private def performTerrainUpdates(camera: Camera): Unit = {
     val terrainUpdates = mutable.ArrayBuffer.empty[(ChunkRelWorld, ByteBuffer)]
-    terrainLoadingPrio.tick(PosAndDir.fromCameraView(camera.view))
+    terrainLoadingPrio.tick(Pose(CylCoords(camera.view.position), camera.view.forward))
 
     val terrainRemovals = mutable.ArrayBuffer.empty[ChunkRelWorld]
     var doneRemoving = false

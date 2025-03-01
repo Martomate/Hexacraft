@@ -3,7 +3,7 @@ package hexacraft.world
 import hexacraft.math.MathUtils
 import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
 
-import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc}
+import org.joml.{Matrix4f, Vector3d, Vector3f, Vector3fc, Vector4d}
 
 class Camera(val proj: CameraProjection)(using worldSize: CylinderSize) {
   val view = new CameraView
@@ -92,4 +92,6 @@ class CameraView {
     matrix.rotate(rotation.y, CameraView.unitY)
     matrix.invert(invMatrix)
   }
+
+  def forward: Vector3d = new Vector4d(0, 0, -1, 0).mul(this.invMatrix).xyz(new Vector3d)
 }

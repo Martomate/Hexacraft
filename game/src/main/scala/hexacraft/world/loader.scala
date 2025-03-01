@@ -6,13 +6,13 @@ import hexacraft.world.coord.*
 import scala.collection.mutable
 
 object ChunkLoadingPrioritizer {
-  def distSq(p: PosAndDir, c: ChunkRelWorld)(using CylinderSize): Double = {
+  def distSq(p: Pose, c: ChunkRelWorld)(using CylinderSize): Double = {
     p.pos.distanceSq(BlockCoords(BlockRelWorld(8, 8, 8, c)).toCylCoords)
   }
 }
 
 class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
-  private var origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0))
+  private var origin: Pose = Pose(CylCoords(0, 0, 0))
   private val edge = makeChunkLoadingEdge()
 
   private val furthestFirst: Ordering[ChunkRelWorld] = Ordering.by(c => distSq(origin, c))
@@ -25,7 +25,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
 
   private val reorderingTimer = TickableTimer(60)
 
-  private def distSq(p: PosAndDir, c: ChunkRelWorld): Double = ChunkLoadingPrioritizer.distSq(p, c)
+  private def distSq(p: Pose, c: ChunkRelWorld): Double = ChunkLoadingPrioritizer.distSq(p, c)
 
   def +=(chunk: ChunkRelWorld): Unit = {
     edge.loadChunk(chunk)
@@ -35,7 +35,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     edge.unloadChunk(chunk)
   }
 
-  def tick(origin: PosAndDir): Unit = {
+  def tick(origin: Pose): Unit = {
     this.origin = origin
     if reorderingTimer.tick() then reorderPQs()
   }

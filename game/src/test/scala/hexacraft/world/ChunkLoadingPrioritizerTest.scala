@@ -10,12 +10,12 @@ import scala.collection.mutable
 class ChunkLoadingPrioritizerTest extends FunSuite {
   given CylinderSize = CylinderSize(4)
 
-  def make(origin: PosAndDir = PosAndDir(CylCoords(0, 0, 0)), maxDist: Double = 4): ChunkLoadingPrioritizer =
+  def make(origin: CylCoords = CylCoords(0, 0, 0), maxDist: Double = 4): ChunkLoadingPrioritizer =
     val prio = new ChunkLoadingPrioritizer(maxDist)
-    prio.tick(origin)
+    prio.tick(Pose(origin))
     prio
 
-  private def makePos(x: Int, y: Int, z: Int) = PosAndDir(BlockCoords(x, y, z).toCylCoords)
+  private def makePos(x: Int, y: Int, z: Int) = BlockCoords(x, y, z).toCylCoords
 
   test("nextAddableChunk should be the chunk of the origin in the beginning") {
     assertEquals(make(makePos(0, 0, 0)).nextAddableChunk, Some(ChunkRelWorld(0, 0, 0)))
@@ -139,7 +139,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     val prio = make(origin)
     val start = ChunkRelWorld(0, 0, 0)
     prio += start
-    origin.pos = makePos(10 * 16, 0, 0).pos
+    prio.tick(Pose(makePos(10 * 16, 0, 0)))
     assertEquals(prio.nextRemovableChunk, Some(start))
   }
 
@@ -160,7 +160,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     prio += prio.nextAddableChunk.get
     var prevDistSq: Double = 0
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
-      val distSq = ChunkLoadingPrioritizer.distSq(origin, chunk)
+      val distSq = ChunkLoadingPrioritizer.distSq(Pose(origin), chunk)
       assert(distSq >= prevDistSq)
       prevDistSq = distSq
       prio += chunk
@@ -177,7 +177,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
         ChunkRelWorld(0, 0, 0)
           .extendedNeighbors(4)
           .toSeq
-          .filter(c => ChunkLoadingPrioritizer.distSq(origin, c) <= maxDistSqInBlocks)
+          .filter(c => ChunkLoadingPrioritizer.distSq(Pose(origin), c) <= maxDistSqInBlocks)
       )
     SeqUtils.whileSome(10000, prio.nextAddableChunk) { chunk =>
       prio += chunk
@@ -199,7 +199,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     assertEquals(nextAddableChunkWPos(8, 8, -32), Some(ChunkRelWorld(0, 0, -1)))
 
     def nextAddableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
-      origin.pos = BlockCoords(x, y, z).toCylCoords
+      prio.tick(Pose(BlockCoords(x, y, z).toCylCoords))
       prio.reorderPQs()
       prio.nextAddableChunk
     }
@@ -214,7 +214,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
 
     var prevDistSq: Double = Double.MaxValue
     SeqUtils.whileSome(100, prio.nextRemovableChunk) { chunk =>
-      val distSq = ChunkLoadingPrioritizer.distSq(origin, chunk)
+      val distSq = ChunkLoadingPrioritizer.distSq(Pose(origin), chunk)
       assert(distSq <= prevDistSq)
       prevDistSq = distSq
       prio -= chunk
@@ -242,7 +242,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     assertEquals(nextRemovableChunkWPos(8, 8, -32), Some(ChunkRelWorld(0, 0, 1)))
 
     def nextRemovableChunkWPos(x: Int, y: Int, z: Int): Option[ChunkRelWorld] = {
-      origin.pos = BlockCoords(x, y, z).toCylCoords
+      prio.tick(Pose(BlockCoords(x, y, z).toCylCoords))
       prio.reorderPQs()
       prio.nextRemovableChunk
     }

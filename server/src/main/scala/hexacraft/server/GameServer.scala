@@ -117,7 +117,9 @@ class GameServer(
         val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
         chunksLoadedPerPlayer.synchronized {
-          chunksLoadedPerPlayer.get(player.id).foreach(_.tick(PosAndDir.fromCameraView(camera.view)))
+          chunksLoadedPerPlayer
+            .get(player.id)
+            .foreach(_.tick(Pose(CylCoords(camera.view.position), camera.view.forward)))
         }
 
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
