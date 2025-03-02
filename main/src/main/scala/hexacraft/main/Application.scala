@@ -2,7 +2,7 @@ package hexacraft.main
 
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
-import hexacraft.infra.os.OSUtils
+import hexacraft.infra.os.OS
 import hexacraft.infra.window.WindowSystem
 import hexacraft.world.WorldSettings
 
@@ -39,7 +39,7 @@ class Application(
     if config.useTempSaveFolder then {
       Files.createTempDirectory("hexacraft").toFile
     } else {
-      val folder = new File(OSUtils.appdataPath, ".hexacraft")
+      val folder = new File(OS.current.appdataPath, ".hexacraft")
       folder.mkdir()
       folder
     }

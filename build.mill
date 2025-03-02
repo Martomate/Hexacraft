@@ -81,12 +81,6 @@ object gpu extends HexacraftModule {
   object test extends Tests
 }
 
-object system extends HexacraftModule {
-  override def moduleDeps = Seq(common)
-
-  object test extends Tests
-}
-
 object game extends HexacraftModule {
   override def moduleDeps = Seq(common, nbt, window, fs)
 
@@ -124,7 +118,7 @@ object server extends HexacraftModule {
 }
 
 object main extends HexacraftModule with JavaAppPackagingModule {
-  override def moduleDeps = Seq(game, client, server, system)
+  override def moduleDeps = Seq(game, client, server)
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
     Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*

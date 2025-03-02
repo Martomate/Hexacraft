@@ -40,7 +40,7 @@ class OSTest extends FunSuite {
 
   private def testOsName(osName: String, os: OS)(using munit.Location): Unit = {
     withSystemProperty("os.name", osName) {
-      assertEquals(OSUtils.os, os)
+      assertEquals(OS.current, os)
     }
   }
 
