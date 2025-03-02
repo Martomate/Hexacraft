@@ -5,6 +5,7 @@ import hexacraft.gui.*
 import hexacraft.gui.comp.Component
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
+import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
@@ -572,14 +573,11 @@ class GameClient(
       val syncedPlayer = Player.fromNBT(player.id, playerNbt.asInstanceOf[Nbt.MapTag])
       // println(syncedPlayer.position)
       if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
-      player.position.add(syncedPlayer.position.sub(player.position, new Vector3d).mul(0.1))
+      val positionDiff = syncedPlayer.position.sub(player.position, new Vector3d)
+      positionDiff.z = MathUtils.absmin(positionDiff.z, world.size.circumference)
+      player.position.add(positionDiff.mul(0.1))
       val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
-      if rotationDiff.y < -math.Pi then {
-        rotationDiff.y += math.Pi * 2
-      }
-      if rotationDiff.y > math.Pi then {
-        rotationDiff.y -= math.Pi * 2
-      }
+      rotationDiff.y = MathUtils.absmin(rotationDiff.y, math.Pi * 2)
       //    player.rotation.add(rotationDiff.mul(0.1))
       player.flying = syncedPlayer.flying
 
