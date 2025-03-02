@@ -1,9 +1,9 @@
 package hexacraft.game
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.Inventory
 import hexacraft.world.coord.ColumnRelWorld
 
-import com.martomate.nbt.Nbt
 import org.joml.Vector2f
 
 import java.nio.ByteBuffer

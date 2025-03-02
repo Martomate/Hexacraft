@@ -1,13 +1,12 @@
 package hexacraft.world.chunk
 
+import hexacraft.nbt.Nbt
 import hexacraft.util.Loop
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 import hexacraft.world.entity.{Entity, EntityFactory}
-
-import com.martomate.nbt.Nbt
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable

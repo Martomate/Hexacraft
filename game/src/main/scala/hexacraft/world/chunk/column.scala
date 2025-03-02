@@ -1,8 +1,7 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.noise.Data2D
-
-import com.martomate.nbt.Nbt
+import hexacraft.nbt.Nbt
 
 import scala.collection.immutable.ArraySeq
 

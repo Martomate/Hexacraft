@@ -13,7 +13,7 @@ import scala.util.Properties.isMac
 object common extends HexacraftModule {
   override def moduleDeps = super.moduleDeps ++ Seq(native)
   override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.Joml
+    Deps.Joml, Deps.FlowNbt
   )
 
   object test extends Tests
@@ -32,14 +32,6 @@ object native extends HexacraftModule with RustJniModule {
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
     Deps.LwjglSystem: _* // TODO: remove (not used)
-  )
-
-  object test extends Tests
-}
-
-object nbt extends HexacraftModule {
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.Joml, Deps.FlowNbt
   )
 
   object test extends Tests
@@ -66,7 +58,7 @@ object audio extends HexacraftModule {
 }
 
 object fs extends HexacraftModule {
-  override def moduleDeps = Seq(common, nbt)
+  override def moduleDeps = Seq(common)
 
   object test extends Tests
 }
@@ -82,7 +74,7 @@ object gpu extends HexacraftModule {
 }
 
 object game extends HexacraftModule {
-  override def moduleDeps = Seq(common, nbt, window, fs)
+  override def moduleDeps = Seq(common, window, fs)
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
     Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*

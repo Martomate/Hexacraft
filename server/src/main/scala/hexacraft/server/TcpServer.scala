@@ -1,10 +1,10 @@
 package hexacraft.server
 
 import hexacraft.game.NetworkPacket
+import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 
-import com.martomate.nbt.Nbt
 import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
 import zmq.ZError
 

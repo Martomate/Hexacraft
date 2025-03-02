@@ -1,5 +1,6 @@
 package hexacraft.server.world
 
+import hexacraft.nbt.Nbt
 import hexacraft.server.world.ServerWorld.WorldTickResult
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
@@ -8,8 +9,6 @@ import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
-
-import com.martomate.nbt.Nbt
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}

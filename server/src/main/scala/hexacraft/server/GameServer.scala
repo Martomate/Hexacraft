@@ -1,6 +1,7 @@
 package hexacraft.server
 
 import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler, ServerMessage}
+import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
 import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Result, SeqUtils}
@@ -10,7 +11,6 @@ import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
-import com.martomate.nbt.Nbt
 import org.joml.{Vector2f, Vector3d}
 import org.zeromq.ZMQException
 

@@ -1,8 +1,7 @@
 package hexacraft.world
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
-
-import com.martomate.nbt.Nbt
 
 import java.util.UUID
 

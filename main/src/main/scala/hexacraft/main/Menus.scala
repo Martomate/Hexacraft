@@ -3,11 +3,10 @@ package hexacraft.main
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
 import hexacraft.infra.fs.{FileSystem, NbtIO}
+import hexacraft.nbt.Nbt
 import hexacraft.renderer.TextureSingle
 import hexacraft.util.Channel
 import hexacraft.world.WorldSettings
-
-import com.martomate.nbt.Nbt
 
 import java.io.File
 import java.nio.file.Path

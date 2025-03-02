@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import com.martomate.nbt.Nbt
+import hexacraft.nbt.Nbt
 
 import java.io.File
 import java.util.Random

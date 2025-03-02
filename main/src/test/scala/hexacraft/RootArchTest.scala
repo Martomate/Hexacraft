@@ -22,7 +22,7 @@ class RootArchTest extends FunSuite {
   }
 
   test("Nbt library should only be used in Nbt module") {
-    Packages("com.flowpowered.nbt..").assertOnlyUsedIn("com.martomate.nbt")
+    Packages("com.flowpowered.nbt..").assertOnlyUsedIn("hexacraft.nbt")
   }
 
   test("Glfw library should only be used in Glfw wrapper") {
@@ -51,6 +51,7 @@ class RootArchTest extends FunSuite {
     val Infra = "Infra"
     val Main = "Main"
     val Math = "Math"
+    val Nbt = "Nbt"
     val Physics = "Physics"
     val Renderer = "Renderer"
     val Shaders = "Shaders"
@@ -58,7 +59,7 @@ class RootArchTest extends FunSuite {
     val Util = "Util"
     val World = "World"
 
-    val Nbt = "Nbt"
+    val NbtLib = "NbtLib"
     val JOML = "JOML"
     val LWJGL = "LWJGL"
     val ZeroMQ = "ZeroMQ"
@@ -77,13 +78,14 @@ class RootArchTest extends FunSuite {
       .layer(Main, "hexacraft.main..")
       .layer(Math, "hexacraft.math..")
       .layer(Physics, "hexacraft.physics..")
+      .layer(Nbt, "hexacraft.nbt..")
       .layer(Renderer, "hexacraft.renderer..")
       .layer(Shaders, "hexacraft.shaders..")
       .layer(Text, "hexacraft.text..")
       .layer(Util, "hexacraft.util..")
       .layer(World, "hexacraft.world..")
       .optionalLayer(JOML, "org.joml..")
-      .optionalLayer(Nbt, "com.martomate.nbt..")
+      .optionalLayer(NbtLib, "com.flowpowered.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..") // TODO: wrap this lib
       .optionalLayer(ZeroMQ, "org.zeromq..")
       .optionalLayer(
@@ -105,6 +107,7 @@ class RootArchTest extends FunSuite {
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML, Nbt))
       .where(Math, _.mayOnlyAccessLayers(Util, JOML))
       .where(Physics, _.mayOnlyAccessLayers(Util, JOML))
+      .where(Nbt, _.mayOnlyAccessLayers(Util, JOML, NbtLib))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
       .where(Shaders, _.mayOnlyAccessLayers(Infra, Renderer, World, LWJGL, JOML))
       .where(Text, _.mayOnlyAccessLayers(Infra, Renderer, Shaders, JOML))

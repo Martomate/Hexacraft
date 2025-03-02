@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import com.martomate.nbt.Nbt
+import hexacraft.nbt.Nbt
 
 class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {
   override def getWorldInfo: WorldInfo = new WorldInfo(

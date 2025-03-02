@@ -7,10 +7,10 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
+import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 import hexacraft.world.WorldSettings
 
-import com.martomate.nbt.Nbt
 import munit.FunSuite
 
 import java.nio.file.Path

@@ -1,9 +1,9 @@
 package hexacraft.world
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.block.Block
 import hexacraft.world.coord.CylCoords
 
-import com.martomate.nbt.Nbt
 import org.joml.Vector3d
 
 import java.util.UUID

@@ -1,18 +1,18 @@
 package hexacraft.world.entity
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.{BlocksInWorld, CylinderSize, HexBox}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
 
-import com.martomate.nbt.Nbt
 import org.joml.{Vector3d, Vector3dc}
 
 trait EntityAI {
   def tick(
-            world: BlocksInWorld,
-            transform: TransformComponent,
-            velocity: MotionComponent,
-            entityBoundingBox: HexBox
+      world: BlocksInWorld,
+      transform: TransformComponent,
+      velocity: MotionComponent,
+      entityBoundingBox: HexBox
   ): Unit
   def acceleration: Vector3dc
   def toNBT: Nbt.MapTag
@@ -42,10 +42,10 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private val input: SimpleAIInput = new SimpleAIInput
 
   def tick(
-            world: BlocksInWorld,
-            transform: TransformComponent,
-            velocity: MotionComponent,
-            entityBoundingBox: HexBox
+      world: BlocksInWorld,
+      transform: TransformComponent,
+      velocity: MotionComponent,
+      entityBoundingBox: HexBox
   ): Unit = {
     val distSq = transform.position.distanceXZSq(target)
 

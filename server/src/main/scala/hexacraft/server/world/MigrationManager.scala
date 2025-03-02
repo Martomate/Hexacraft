@@ -1,8 +1,7 @@
 package hexacraft.server.world
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
-
-import com.martomate.nbt.Nbt
+import hexacraft.nbt.Nbt
 
 import java.io.File
 import scala.util.Try

@@ -1,9 +1,9 @@
 package hexacraft.world.entity
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
 
-import com.martomate.nbt.Nbt
 import org.joml.{Matrix4f, Vector3d}
 
 trait EntityComponent

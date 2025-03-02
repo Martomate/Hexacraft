@@ -1,8 +1,8 @@
 package hexacraft.infra.fs
 
 import hexacraft.math.GzipAlgorithm
+import hexacraft.nbt.Nbt
 
-import com.martomate.nbt.Nbt
 import munit.FunSuite
 
 import java.io.*

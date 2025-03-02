@@ -1,4 +1,4 @@
-package com.martomate.nbt
+package hexacraft.nbt
 
 import munit.FunSuite
 import org.joml.Vector3d

@@ -1,11 +1,10 @@
 package hexacraft.world.entity
 
+import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
-
-import com.martomate.nbt.Nbt
 
 import java.util.UUID
 

@@ -1,8 +1,7 @@
 package hexacraft.world
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.block.Block
-
-import com.martomate.nbt.Nbt
 
 case class Inventory(slots: Map[Int, Block]) {
   def apply(idx: Int): Block = slots.getOrElse(idx, Block.Air)
