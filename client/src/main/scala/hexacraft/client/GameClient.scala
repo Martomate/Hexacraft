@@ -4,12 +4,13 @@ import hexacraft.game.*
 import hexacraft.gui.*
 import hexacraft.gui.comp.Component
 import hexacraft.infra.audio.AudioSystem
+import hexacraft.infra.audio.AudioSystem.BufferId
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
+import hexacraft.util.{Channel, Loop, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
@@ -537,6 +538,18 @@ class GameClient(
       .sum
   }
 
+  private def playSoundAt(sound: BufferId, coords: CylCoords): Unit = {
+    val baseCoords = CylCoords.Offset(coords.toVector3d)
+
+    // Since the world is wrapped we need to play three sounds (there might be a better solution...)
+    val c = world.size.circumference
+    for dz <- Seq(-c, 0, c) do {
+      val sourceId = audioSystem.createSoundSource(sound)
+      audioSystem.setSoundSourcePosition(sourceId, baseCoords.offset(0, 0, dz).toVector3f)
+      audioSystem.startPlayingSound(sourceId)
+    }
+  }
+
   private var tickFut: Option[Future[Seq[Nbt]]] = None
 
   def tick(ctx: TickContext): Unit = {
@@ -722,9 +735,7 @@ class GameClient(
       if walkSoundTimer.tick() then {
         val sound = if math.random() < 0.5 then walkSoundBuffer1 else walkSoundBuffer2
 
-        val sourceId = audioSystem.createSoundSource(sound)
-        audioSystem.setSoundSourcePosition(sourceId, CylCoords(player.position).toVector3f)
-        audioSystem.startPlayingSound(sourceId)
+        playSoundAt(sound, CylCoords(player.position).offset(0, player.bounds.bottom, 0))
       }
 
       camera.setPositionAndRotation(player.position, player.rotation)
@@ -818,9 +829,7 @@ class GameClient(
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
 
-          val sourceId = audioSystem.createSoundSource(destroyBlockSoundBuffer)
-          audioSystem.setSoundSourcePosition(sourceId, BlockCoords(coords).toCylCoords.toVector3f)
-          audioSystem.startPlayingSound(sourceId)
+          playSoundAt(destroyBlockSoundBuffer, BlockCoords(coords).toCylCoords)
         }
       case _ =>
     }
@@ -861,9 +870,7 @@ class GameClient(
     if !collides then {
       world.setBlock(coords, state)
 
-      val sourceId = audioSystem.createSoundSource(placeBlockSoundBuffer)
-      audioSystem.setSoundSourcePosition(sourceId, BlockCoords(coords).toCylCoords.toVector3f)
-      audioSystem.startPlayingSound(sourceId)
+      playSoundAt(placeBlockSoundBuffer, BlockCoords(coords).toCylCoords)
     }
   }
 
