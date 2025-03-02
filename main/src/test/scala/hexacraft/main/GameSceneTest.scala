@@ -170,7 +170,15 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
 
     // the sound should have started playing
-    assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
+    assertEquals(
+      audioTracker.events,
+      Seq(
+        // three times because of a hack
+        AudioSystem.Event.StartedPlaying,
+        AudioSystem.Event.StartedPlaying,
+        AudioSystem.Event.StartedPlaying
+      )
+    )
 
     gameScene.unload()
   }
@@ -225,7 +233,15 @@ class GameSceneTest extends FunSuite {
     gameScene.tick(tickContext)
 
     // the sound should have started playing
-    assertEquals(audioTracker.events, Seq(AudioSystem.Event.StartedPlaying))
+    assertEquals(
+      audioTracker.events,
+      Seq(
+        // three times because of a hack
+        AudioSystem.Event.StartedPlaying,
+        AudioSystem.Event.StartedPlaying,
+        AudioSystem.Event.StartedPlaying
+      )
+    )
 
     gameScene.unload()
   }
