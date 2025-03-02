@@ -1,10 +1,10 @@
-package hexacraft.world
+package hexacraft.server.world.plan
 
 import hexacraft.util.InlinedIterable
+import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.entity.{Entity, EntityFactory}
-import hexacraft.world.gen.{EntityGroupPlanner, TreePlanner, WorldFeaturePlanner}
 
 class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderSize) {
   private val planners: Seq[WorldFeaturePlanner] = Seq(

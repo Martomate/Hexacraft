@@ -1,12 +1,12 @@
-package hexacraft.world.gen
+package hexacraft.server.world.plan
 
+import hexacraft.server.world.plan.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 import hexacraft.util.{LongSet, Loop}
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
-import hexacraft.world.gen.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -16,7 +16,7 @@ trait WorldFeaturePlanner {
   def plan(chunkCoords: ChunkRelWorld): Unit
 }
 
-class PlannedWorldChange {
+private class PlannedWorldChange {
   private val changes: mutable.Map[ChunkRelWorld, mutable.Buffer[LocalBlockState]] = mutable.Map.empty
 
   def setBlock(coords: BlockRelWorld, block: BlockState): Unit = {
@@ -28,7 +28,7 @@ class PlannedWorldChange {
   def chunkChanges: Map[ChunkRelWorld, Seq[LocalBlockState]] = changes.view.mapValues(_.toSeq).toMap
 }
 
-object PlannedWorldChange {
+private object PlannedWorldChange {
   def from(blocks: Seq[(BlockRelWorld, BlockState)]): PlannedWorldChange = {
     val worldChange = new PlannedWorldChange
     for (c, b) <- blocks do {
@@ -38,7 +38,7 @@ object PlannedWorldChange {
   }
 }
 
-class WoodChoice(val log: Block, val leaves: Block)
+private class WoodChoice(val log: Block, val leaves: Block)
 
 class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: CylinderSize)
     extends WorldFeaturePlanner {

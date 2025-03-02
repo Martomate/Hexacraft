@@ -7,7 +7,7 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.renderer.VAO
-import hexacraft.server.ServerWorld
+import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Loop, Resource, Result}
 
 import org.joml.{Vector2f, Vector2i}

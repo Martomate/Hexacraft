@@ -1,6 +1,7 @@
-package hexacraft.server
+package hexacraft.server.world
 
-import hexacraft.server.ServerWorld.WorldTickResult
+import hexacraft.server.world.ServerWorld.WorldTickResult
+import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
