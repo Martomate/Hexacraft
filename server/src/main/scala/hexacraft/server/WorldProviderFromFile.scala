@@ -1,7 +1,8 @@
 package hexacraft.server
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
-import hexacraft.world.{MigrationManager, WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.server.world.MigrationManager
+import hexacraft.world.{WorldInfo, WorldProvider, WorldSettings}
 
 import com.martomate.nbt.Nbt
 

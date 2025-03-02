@@ -1,4 +1,4 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.infra.fs.{FileSystem, NbtIO}
 
@@ -8,7 +8,7 @@ import java.io.File
 import scala.util.Try
 
 object MigrationManager {
-  val LatestVersion: Short = 2
+  private val LatestVersion: Short = 2
 }
 
 class MigrationManager(fs: FileSystem) {

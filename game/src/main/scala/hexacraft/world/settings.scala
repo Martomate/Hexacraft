@@ -5,10 +5,10 @@ import com.martomate.nbt.Nbt
 import java.io.File
 import java.util.Random
 
-case class WorldInfo(worldName: String, worldSize: CylinderSize, gen: WorldGenSettings) {
-  def toNBT: Nbt.MapTag = {
+case class WorldInfo(private val version: Short, worldName: String, worldSize: CylinderSize, gen: WorldGenSettings) {
+  def toNbt: Nbt.MapTag = {
     Nbt.makeMap(
-      "version" -> Nbt.ShortTag(MigrationManager.LatestVersion),
+      "version" -> Nbt.ShortTag(version),
       "general" -> Nbt.makeMap(
         "worldSize" -> Nbt.ByteTag(worldSize.worldSize.toByte),
         "name" -> Nbt.StringTag(worldName)
@@ -27,6 +27,7 @@ object WorldInfo {
     val gen = nbtData.getMap("gen").getOrElse(Nbt.emptyMap)
 
     WorldInfo(
+      version = nbtData.getShort("version", 0.toShort),
       worldName = name,
       worldSize = CylinderSize(worldSize),
       gen = WorldGenSettings.fromNBT(gen, worldSettings)

@@ -4,7 +4,7 @@ import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPh
 import hexacraft.server.TcpServer.Error
 import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Result, SeqUtils}
-import hexacraft.world.{WorldProvider, *}
+import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.coord.*
@@ -66,7 +66,7 @@ class GameServer(
   }
 
   private def saveWorldInfo(): Unit = {
-    worldProvider.saveWorldData(world.worldInfo.toNBT)
+    worldProvider.saveWorldData(world.worldInfo.toNbt)
   }
 
   private def playerEffectiveViscosity(player: Player): Double = {
@@ -460,14 +460,14 @@ class GameServer(
         None
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
-        Some(info.toNBT)
+        Some(info.toNbt)
       case LoadColumnData(coords) =>
         world.getColumn(coords) match {
           case Some(column) => Some(ChunkColumnData(Some(column.terrainHeight)).toNBT)
           case None         => Some(Nbt.emptyMap) // TODO: return None
         }
       case LoadWorldData =>
-        Some(world.worldInfo.toNBT)
+        Some(world.worldInfo.toNbt)
       case GetPlayerState =>
         Some(player.toNBT)
       case GetEvents =>

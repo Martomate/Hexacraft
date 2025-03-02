@@ -4,6 +4,7 @@ import com.martomate.nbt.Nbt
 
 class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {
   override def getWorldInfo: WorldInfo = new WorldInfo(
+    1,
     "test world",
     cylSize,
     new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001)
