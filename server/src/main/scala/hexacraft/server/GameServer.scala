@@ -37,7 +37,7 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
   val messagesWaitingToBeSent: mutable.ArrayBuffer[ServerMessage] = mutable.ArrayBuffer.empty
 
   var lastSeen: Long = System.currentTimeMillis
-  var hasBeenKicked: Boolean = false
+  var shouldBeKicked: Boolean = false
 }
 
 class GameServer(
@@ -104,14 +104,14 @@ class GameServer(
 
   def tick(): Unit = {
     try {
-      players.filterInPlace((_, p) => !p.hasBeenKicked)
+      for (playerId, p) <- players if p.shouldBeKicked do {
+        logoutPlayer(p)
+      }
+      players.filterInPlace((_, p) => !p.shouldBeKicked)
 
       for (playerId, p) <- players do {
         if System.currentTimeMillis - p.lastSeen > 1000 then {
-          p.hasBeenKicked = true
-          for (_, p2) <- players do {
-            p2.entityEventsWaitingToBeSent += p.entity.id -> EntityEvent.Despawned
-          }
+          p.shouldBeKicked = true
         }
 
         val PlayerData(player, entity, camera) = p
@@ -345,6 +345,25 @@ class GameServer(
     server.unload()
   }
 
+  private def logoutPlayer(playerData: PlayerData): Unit = {
+    val player = playerData.player
+    worldProvider.savePlayerData(player.toNBT, player.id)
+    world.removeEntity(playerData.entity)
+
+    chunksLoadedPerPlayer.synchronized {
+      chunksLoadedPerPlayer.remove(player.id) match {
+        case Some(prio) =>
+          while prio.nextRemovableChunk.isDefined do {
+            val coords = prio.popChunkToRemove().get
+            chunksLoadCount.synchronized {
+              chunksLoadCount(coords.value) -= 1
+            }
+          }
+        case None =>
+      }
+    }
+  }
+
   private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
   private val chunksLoadCount = mutable.LongMap.empty[Int]
 
@@ -442,21 +461,8 @@ class GameServer(
     packet match {
       case Login(_, _) => None // already handled above
       case Logout =>
-        worldProvider.savePlayerData(player.toNBT, player.id)
-        world.removeEntity(playerData.entity)
+        logoutPlayer(playerData)
         players.remove(clientId)
-        chunksLoadedPerPlayer.synchronized {
-          chunksLoadedPerPlayer.remove(player.id) match {
-            case Some(prio) =>
-              while prio.nextRemovableChunk.isDefined do {
-                val coords = prio.popChunkToRemove().get
-                chunksLoadCount.synchronized {
-                  chunksLoadCount(coords.value) -= 1
-                }
-              }
-            case None =>
-          }
-        }
         None
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
