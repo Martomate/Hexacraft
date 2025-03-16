@@ -629,6 +629,14 @@ object OpenGL {
       def |(r: ClearMask): ClearMask = l | r
   }
 
+  def lockContext(): Unit = {
+    gl.lockContext()
+  }
+
+  def unlockContext(): Unit = {
+    gl.unlockContext()
+  }
+
   def glIsEnabled(target: State): Boolean = {
     gl.glIsEnabled(target.toGL)
   }
@@ -794,6 +802,9 @@ trait GLWrapper {
   def createCapabilities(): GLCapabilitiesWrapper
   def getCapabilities: GLCapabilitiesWrapper
 
+  def lockContext(): Unit
+  def unlockContext(): Unit
+
   def glCreateShader(shaderType: Int): Int
   def glShaderSource(shader: Int, string: String): Unit
   def glCompileShader(shader: Int): Unit
@@ -908,6 +919,9 @@ trait GLWrapper {
 class StubGL extends GLWrapper {
   def createCapabilities(): GLCapabilitiesWrapper = new StubGLCapabilities
   def getCapabilities: GLCapabilitiesWrapper = new StubGLCapabilities
+
+  def lockContext(): Unit = ()
+  def unlockContext(): Unit = ()
 
   private var lastShaderId = 8
   def glCreateShader(shaderType: Int): Int =
@@ -1044,6 +1058,9 @@ class StubGL extends GLWrapper {
 object RealGL extends GLWrapper {
   def createCapabilities(): GLCapabilitiesWrapper = new RealGLCapabilities(GL.createCapabilities())
   def getCapabilities: GLCapabilitiesWrapper = new RealGLCapabilities(GL.getCapabilities)
+
+  def lockContext(): Unit = CGL.CGLLockContext(CGL.CGLGetCurrentContext())
+  def unlockContext(): Unit = CGL.CGLUnlockContext(CGL.CGLGetCurrentContext())
 
   def glCreateShader(shaderType: Int): Int = GL20.glCreateShader(shaderType)
   def glShaderSource(shader: Int, string: String): Unit = GL20.glShaderSource(shader, string)

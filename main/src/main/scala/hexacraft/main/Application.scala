@@ -19,13 +19,25 @@ class Application(
     val saveFolder: File = this.createSaveFolder()
 
     try {
-      val window = new MainWindow(config.isDebug, saveFolder, fs, audioSystem, windowSystem)
+      var gameIsRunning = true
 
-      if config.isDebug then {
-        this.performShortcuts(saveFolder, window)
+      val gameThread = new Thread(() => {
+        val window = new MainWindow(config.isDebug, saveFolder, fs, audioSystem, windowSystem)
+
+        if config.isDebug then {
+          this.performShortcuts(saveFolder, window)
+        }
+
+        window.run()
+
+        gameIsRunning = false
+      })
+      gameThread.start()
+
+      while gameIsRunning do {
+        windowSystem.performCallsAsMainThread()
+        Thread.sleep(1)
       }
-
-      window.run()
 
       true
     } catch {

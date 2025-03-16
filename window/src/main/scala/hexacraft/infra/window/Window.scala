@@ -15,13 +15,21 @@ object Window {
 class Window(val id: Window.Id, glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
 
-  def position: (Int, Int) = pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(id.toLong, px, py))
+  def position: (Int, Int) = pointerWrapper.synchronized {
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(id.toLong, px, py))
+  }
 
-  def size: (Int, Int) = pointerWrapper.ints((px, py) => glfw.glfwGetWindowSize(id.toLong, px, py))
+  def size: (Int, Int) = pointerWrapper.synchronized {
+    pointerWrapper.ints((px, py) => glfw.glfwGetWindowSize(id.toLong, px, py))
+  }
 
-  def framebufferSize: (Int, Int) = pointerWrapper.ints((px, py) => glfw.glfwGetFramebufferSize(id.toLong, px, py))
+  def framebufferSize: (Int, Int) = pointerWrapper.synchronized {
+    pointerWrapper.ints((px, py) => glfw.glfwGetFramebufferSize(id.toLong, px, py))
+  }
 
-  def cursorPosition: (Double, Double) = pointerWrapper.doubles((px, py) => glfw.glfwGetCursorPos(id.toLong, px, py))
+  def cursorPosition: (Double, Double) = pointerWrapper.synchronized {
+    pointerWrapper.doubles((px, py) => glfw.glfwGetCursorPos(id.toLong, px, py))
+  }
 
   def shouldClose: Boolean = glfw.glfwWindowShouldClose(id.toLong)
 
@@ -92,6 +100,13 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
             KeyMods.fromGlfw(mods)
           )
         )
+    )
+  }
+
+  def setCursorPosCallback(callback: CallbackEvent.MousePosition => Unit): Unit = {
+    glfw.glfwSetCursorPosCallback(
+      id.toLong,
+      (_, x, y) => callback(CallbackEvent.MousePosition(this, x, y))
     )
   }
 

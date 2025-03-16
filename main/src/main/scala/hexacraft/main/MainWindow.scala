@@ -5,7 +5,7 @@ import hexacraft.gui.*
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.infra.window.*
+import hexacraft.infra.window.{CallbackEvent, *}
 import hexacraft.renderer.VAO
 import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Loop, Resource, Result}
@@ -14,6 +14,8 @@ import org.joml.{Vector2f, Vector2i}
 
 import java.io.File
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class MainWindow(
     isDebug: Boolean,
@@ -25,6 +27,7 @@ class MainWindow(
   private val multiplayerEnabled = isDebug
 
   private var _windowSize = WindowSize(Vector2i(960, 540), Vector2i(0, 0)) // Initialized in initWindow
+  private val _mousePos = Vector2f(0, 0)
 
   def windowSize: WindowSize = _windowSize
 
@@ -50,9 +53,8 @@ class MainWindow(
   }
 
   private def resetMousePos(): Unit = {
-    val (cx, cy) = window.cursorPosition
     mouse.skipNextMouseMovedUpdate()
-    mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
+    mouse.moveTo(_mousePos.x, _windowSize.logicalSize.y - _mousePos.y)
     mouse.skipNextMouseMovedUpdate()
   }
 
@@ -79,6 +81,7 @@ class MainWindow(
   private def loop(): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
+    var pollingEvents = false
 
     while !window.shouldClose do {
       val currentTime = System.nanoTime
@@ -86,6 +89,8 @@ class MainWindow(
       val realPrevTime = currentTime
 
       switchSceneIfNeeded()
+
+      keyboard.refreshPressedKeys()
 
       Loop.rangeUntil(0, delta) { _ =>
         tick()
@@ -99,6 +104,8 @@ class MainWindow(
         }
         prevTime += 1e9.toLong / 60
       }
+
+      OpenGL.lockContext()
 
       OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
       render()
@@ -115,17 +122,25 @@ class MainWindow(
 
       window.swapBuffers()
 
+      OpenGL.unlockContext()
+
       if titleTicker > 10 then {
         titleTicker = 0
-        window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format)
+        Future(window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format))
       }
 
       // Put occurred events into event queue
-      windowSystem.runEventCallbacks()
+      if !pollingEvents then {
+        pollingEvents = true
+        Future {
+          windowSystem.runEventCallbacks()
+          pollingEvents = false
+        }
+      }
 
       // Process events in event queue
       while callbackQueue.nonEmpty do {
-        processCallbackEvent(callbackQueue.dequeue())
+        processCallbackEvent(callbackQueue.synchronized(callbackQueue.dequeue()))
       }
     }
   }
@@ -155,6 +170,9 @@ class MainWindow(
       if scene.isDefined then {
         scene.get.handleEvent(Event.MouseClickEvent(button, action, mods, mousePos))
       }
+
+    case CallbackEvent.MousePosition(_, x, y) =>
+      _mousePos.set(x, y)
 
     case CallbackEvent.MouseScrolled(_, xOff, yOff) =>
       val normalizedMousePos = mouse.currentPos.heightNormalizedPos(windowSize.logicalSize)
@@ -218,8 +236,7 @@ class MainWindow(
   }
 
   private def tick(): Unit = {
-    val (cx, cy) = window.cursorPosition
-    mouse.moveTo(cx, _windowSize.logicalSize.y - cy)
+    mouse.moveTo(_mousePos.x, _windowSize.logicalSize.y - _mousePos.y)
 
     if scene.isDefined then {
       scene.get.tick(
@@ -281,13 +298,14 @@ class MainWindow(
     val (fw, fh) = window.framebufferSize
     _windowSize = WindowSize(_windowSize.logicalSize, Vector2i(fw, fh))
 
-    window.setKeyCallback(callbackQueue.enqueue)
-    window.setCharCallback(callbackQueue.enqueue)
-    window.setMouseButtonCallback(callbackQueue.enqueue)
-    window.setWindowSizeCallback(callbackQueue.enqueue)
-    window.setWindowFocusCallback(callbackQueue.enqueue)
-    window.setScrollCallback(callbackQueue.enqueue)
-    window.setFrameBufferSizeCallback(callbackQueue.enqueue)
+    window.setKeyCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setCharCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setMouseButtonCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setCursorPosCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setWindowSizeCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setWindowFocusCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setScrollCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
+    window.setFrameBufferSizeCallback(e => callbackQueue.synchronized(callbackQueue.enqueue(e)))
 
     centerWindow(window)
 

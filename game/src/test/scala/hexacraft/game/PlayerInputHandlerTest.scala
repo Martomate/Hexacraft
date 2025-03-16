@@ -7,27 +7,32 @@ import munit.FunSuite
 import org.joml.Vector2f
 
 import java.util.UUID
-import scala.collection.mutable
 
 class PlayerInputHandlerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
-  test("tick should ask the keyboard for pressed keys") {
-    import GameKeyboard.Key
-    val keyboardCalls = mutable.Set.empty[GameKeyboard.Key]
-    val keyboard: GameKeyboard = key =>
-      keyboardCalls += key
-      key == Key.MoveForward
+  test("tick should update the velocity if MoveForward is pressed") {
+    val keyboard = FakeGameKeyboard(Seq(GameKeyboard.Key.MoveForward))
     val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
+    assert(player.velocity.length() == 0)
     handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
+    assert(player.velocity.length() > 0)
+  }
 
-    assert(keyboardCalls.toSet.contains(Key.MoveForward))
+  test("tick should not update the velocity if no key is pressed") {
+    val keyboard = FakeGameKeyboard(Seq.empty)
+    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
+    val handler = new PlayerInputHandler()
+
+    assert(player.velocity.length() == 0)
+    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
+    assert(player.velocity.length() == 0)
   }
 
   test("tick should not rotate the player if mouse has not moved") {
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
@@ -40,7 +45,7 @@ class PlayerInputHandlerTest extends FunSuite {
   }
 
   test("test should rotate the player if mouse has moved") {
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 

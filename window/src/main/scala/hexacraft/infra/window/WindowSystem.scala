@@ -7,6 +7,8 @@ import org.lwjgl.glfw.*
 import org.lwjgl.system.MemoryUtil
 
 import scala.collection.mutable
+import scala.concurrent.{Await, Promise}
+import scala.concurrent.duration.Duration
 
 object WindowSystem {
   def create(): WindowSystem = new WindowSystem(RealGlfw)
@@ -37,6 +39,10 @@ class WindowSystem(glfw: GlfwWrapper) {
     then throw new IllegalStateException("Unable to initialize GLFW")
 
     dispatcher.notify(WindowSystem.Event.Initialized)
+  }
+
+  def performCallsAsMainThread(): Unit = {
+    glfw.performCallsAsMainThread()
   }
 
   def setErrorCallback(callback: ErrorEvent => Unit): Unit = {
@@ -105,6 +111,8 @@ case class ErrorEvent(reason: WindowErrorReason, description: String)
 case class VideoMode(width: Int, height: Int, redBits: Int, greenBits: Int, blueBits: Int, refreshRate: Int)
 
 trait GlfwWrapper {
+  def performCallsAsMainThread(): Unit
+
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit
@@ -125,6 +133,7 @@ trait GlfwWrapper {
   def glfwSetKeyCallback(window: Long, callback: GLFWKeyCallbackI): Unit
   def glfwSetCharCallback(window: Long, callback: GLFWCharCallbackI): Unit
   def glfwSetMouseButtonCallback(window: Long, callback: GLFWMouseButtonCallbackI): Unit
+  def glfwSetCursorPosCallback(window: Long, callback: GLFWCursorPosCallbackI): Unit
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit
   def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit
@@ -151,35 +160,51 @@ trait GlfwWrapper {
 }
 
 object RealGlfw extends GlfwWrapper {
+  private val calls = mutable.Queue.empty[(() => Any, Promise[Any])]
+  private def runOnMainThread[A](r: => A): A = {
+    val promise = Promise[Any]()
+    calls.synchronized {
+      calls.enqueue((() => r, promise))
+    }
+    Await.result(promise.future, Duration.Inf).asInstanceOf[A]
+  }
+
+  def performCallsAsMainThread(): Unit = {
+    while calls.nonEmpty do {
+      val (r, p) = calls.synchronized { calls.dequeue() }
+      p.success(r())
+    }
+  }
+
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = {
-    GLFW.glfwGetWindowPos(window, xpos, ypos)
+    runOnMainThread(GLFW.glfwGetWindowPos(window, xpos, ypos))
   }
 
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = {
-    GLFW.glfwGetWindowSize(window, xpos, ypos)
+    runOnMainThread(GLFW.glfwGetWindowSize(window, xpos, ypos))
   }
 
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = {
-    GLFW.glfwGetFramebufferSize(window, xpos, ypos)
+    runOnMainThread(GLFW.glfwGetFramebufferSize(window, xpos, ypos))
   }
 
   def glfwGetMonitorPos(monitor: Long, xpos: Array[Int], ypos: Array[Int]): Unit = {
-    GLFW.glfwGetMonitorPos(monitor, xpos, ypos)
+    runOnMainThread(GLFW.glfwGetMonitorPos(monitor, xpos, ypos))
   }
 
   def glfwGetCursorPos(window: Long, xpos: Array[Double], ypos: Array[Double]): Unit = {
-    GLFW.glfwGetCursorPos(window, xpos, ypos)
+    runOnMainThread(GLFW.glfwGetCursorPos(window, xpos, ypos))
   }
 
   def glfwGetMonitors(): PointerBuffer = {
-    GLFW.glfwGetMonitors()
+    runOnMainThread(GLFW.glfwGetMonitors())
   }
 
   def glfwGetPrimaryMonitor(): Long = {
-    GLFW.glfwGetPrimaryMonitor()
+    runOnMainThread(GLFW.glfwGetPrimaryMonitor())
   }
 
-  def glfwGetVideoMode(monitor: Long): VideoMode = {
+  def glfwGetVideoMode(monitor: Long): VideoMode = runOnMainThread {
     val mode = GLFW.glfwGetVideoMode(monitor)
     VideoMode(mode.width, mode.height, mode.redBits, mode.greenBits, mode.blueBits, mode.refreshRate)
   }
@@ -193,43 +218,47 @@ object RealGlfw extends GlfwWrapper {
       height: Int,
       refreshRate: Int
   ): Unit = {
-    GLFW.glfwSetWindowMonitor(window, monitor, xpos, ypos, width, height, refreshRate)
+    runOnMainThread(GLFW.glfwSetWindowMonitor(window, monitor, xpos, ypos, width, height, refreshRate))
   }
 
   def glfwSetKeyCallback(window: Long, callback: GLFWKeyCallbackI): Unit = {
-    GLFW.glfwSetKeyCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetKeyCallback(window, callback))
   }
 
   def glfwSetCharCallback(window: Long, callback: GLFWCharCallbackI): Unit = {
-    GLFW.glfwSetCharCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetCharCallback(window, callback))
   }
 
   def glfwSetMouseButtonCallback(window: Long, callback: GLFWMouseButtonCallbackI): Unit = {
-    GLFW.glfwSetMouseButtonCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetMouseButtonCallback(window, callback))
+  }
+
+  def glfwSetCursorPosCallback(window: Long, callback: GLFWCursorPosCallbackI): Unit = {
+    runOnMainThread(GLFW.glfwSetCursorPosCallback(window, callback))
   }
 
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit = {
-    GLFW.glfwSetWindowSizeCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetWindowSizeCallback(window, callback))
   }
 
   def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit = {
-    GLFW.glfwSetWindowFocusCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetWindowFocusCallback(window, callback))
   }
 
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit = {
-    GLFW.glfwSetFramebufferSizeCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetFramebufferSizeCallback(window, callback))
   }
 
   def glfwSetScrollCallback(window: Long, callback: GLFWScrollCallbackI): Unit = {
-    GLFW.glfwSetScrollCallback(window, callback)
+    runOnMainThread(GLFW.glfwSetScrollCallback(window, callback))
   }
 
   def glfwGetKey(window: Long, key: Int): Int = {
-    GLFW.glfwGetKey(window, key)
+    runOnMainThread(GLFW.glfwGetKey(window, key))
   }
 
   def glfwSetInputMode(window: Long, mode: Int, value: Int): Unit = {
-    GLFW.glfwSetInputMode(window, mode, value)
+    runOnMainThread(GLFW.glfwSetInputMode(window, mode, value))
   }
 
   def glfwWindowShouldClose(window: Long): Boolean = {
@@ -241,11 +270,11 @@ object RealGlfw extends GlfwWrapper {
   }
 
   def glfwSetWindowTitle(window: Long, title: String): Unit = {
-    GLFW.glfwSetWindowTitle(window, title)
+    runOnMainThread(GLFW.glfwSetWindowTitle(window, title))
   }
 
   def glfwPollEvents(): Unit = {
-    GLFW.glfwPollEvents()
+    runOnMainThread(GLFW.glfwPollEvents())
   }
 
   def glfwSwapInterval(interval: Int): Unit = {
@@ -253,19 +282,19 @@ object RealGlfw extends GlfwWrapper {
   }
 
   def glfwDestroyWindow(window: Long): Unit = {
-    GLFW.glfwDestroyWindow(window)
+    runOnMainThread(GLFW.glfwDestroyWindow(window))
   }
 
   def glfwTerminate(): Unit = {
-    GLFW.glfwTerminate()
+    runOnMainThread(GLFW.glfwTerminate())
   }
 
   def glfwSetErrorCallback(callback: GLFWErrorCallbackI): GLFWErrorCallback = {
-    GLFW.glfwSetErrorCallback(callback)
+    runOnMainThread(GLFW.glfwSetErrorCallback(callback))
   }
 
   def glfwInit(): Boolean = {
-    GLFW.glfwInit()
+    runOnMainThread(GLFW.glfwInit())
   }
 
   def glfwMakeContextCurrent(window: Long): Unit = {
@@ -273,7 +302,7 @@ object RealGlfw extends GlfwWrapper {
   }
 
   def glfwShowWindow(window: Long): Unit = {
-    GLFW.glfwShowWindow(window)
+    runOnMainThread(GLFW.glfwShowWindow(window))
   }
 
   def glfwCreateWindow(
@@ -283,15 +312,15 @@ object RealGlfw extends GlfwWrapper {
       monitor: Long,
       share: Long
   ): Long = {
-    GLFW.glfwCreateWindow(width, height, title, monitor, share)
+    runOnMainThread(GLFW.glfwCreateWindow(width, height, title, monitor, share))
   }
 
   def glfwDefaultWindowHints(): Unit = {
-    GLFW.glfwDefaultWindowHints()
+    runOnMainThread(GLFW.glfwDefaultWindowHints())
   }
 
   def glfwWindowHint(hint: Int, value: Int): Unit = {
-    GLFW.glfwWindowHint(hint, value)
+    runOnMainThread(GLFW.glfwWindowHint(hint, value))
   }
 
   def glfwSetWindowShouldClose(window: Long, value: Boolean): Unit = {
@@ -299,17 +328,18 @@ object RealGlfw extends GlfwWrapper {
   }
 
   def glfwSetWindowPos(window: Long, xpos: Int, ypos: Int): Unit = {
-    GLFW.glfwSetWindowPos(window, xpos, ypos)
+    runOnMainThread(GLFW.glfwSetWindowPos(window, xpos, ypos))
   }
 
   def glfwFreeCallbacks(window: Long): Unit = {
-    Callbacks.glfwFreeCallbacks(window)
+    runOnMainThread(Callbacks.glfwFreeCallbacks(window))
   }
 }
 
 class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
   private var errorCallback: GLFWErrorCallback = null.asInstanceOf[GLFWErrorCallback]
 
+  def performCallsAsMainThread(): Unit = ()
   def glfwGetWindowPos(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetWindowSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
   def glfwGetFramebufferSize(window: Long, xpos: Array[Int], ypos: Array[Int]): Unit = ()
@@ -330,6 +360,7 @@ class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
   def glfwSetKeyCallback(window: Long, callback: GLFWKeyCallbackI): Unit = ()
   def glfwSetCharCallback(window: Long, callback: GLFWCharCallbackI): Unit = ()
   def glfwSetMouseButtonCallback(window: Long, callback: GLFWMouseButtonCallbackI): Unit = ()
+  def glfwSetCursorPosCallback(window: Long, callback: GLFWCursorPosCallbackI): Unit = ()
   def glfwSetWindowSizeCallback(window: Long, callback: GLFWWindowSizeCallbackI): Unit = ()
   def glfwSetWindowFocusCallback(window: Long, callback: GLFWWindowFocusCallbackI): Unit = ()
   def glfwSetFramebufferSizeCallback(window: Long, callback: GLFWFramebufferSizeCallbackI): Unit = ()
