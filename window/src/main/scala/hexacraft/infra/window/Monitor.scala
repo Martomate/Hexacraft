@@ -5,7 +5,7 @@ import hexacraft.util.PointerWrapper
 class Monitor(val id: Monitor.Id, glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
 
-  def position: (Int, Int) = {
+  def position: (Int, Int) = pointerWrapper.synchronized {
     pointerWrapper.ints((px, py) => glfw.glfwGetMonitorPos(id.toLong, px, py))
   }
 

@@ -1,7 +1,7 @@
 package hexacraft.main
 
 import hexacraft.client.FakeBlockTextureLoader
-import hexacraft.game.GameKeyboard
+import hexacraft.game.{FakeGameKeyboard, GameKeyboard}
 import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
 import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
 import hexacraft.infra.audio.AudioSystem
@@ -38,7 +38,7 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val audioSystem = AudioSystem.createNull()
 
     val (gameScene1, _) =
@@ -90,7 +90,7 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
@@ -140,7 +140,7 @@ class GameSceneTest extends FunSuite {
 
     // Step 2: configure the client
 
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
@@ -203,7 +203,7 @@ class GameSceneTest extends FunSuite {
 
     // Step 2: configure the client
 
-    val keyboard: GameKeyboard = _ => false
+    val keyboard = FakeGameKeyboard(Seq.empty)
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 

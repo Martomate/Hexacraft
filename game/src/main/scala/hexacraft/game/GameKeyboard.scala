@@ -2,20 +2,15 @@ package hexacraft.game
 
 import hexacraft.infra.window.{KeyboardKey, Window}
 
-import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait GameKeyboard {
-  def pressedKeys: Seq[GameKeyboard.Key] = {
-    val pressed = mutable.ArrayBuffer.empty[GameKeyboard.Key]
-    for key <- GameKeyboard.Key.values do {
-      if keyIsPressed(key) then {
-        pressed += key
-      }
-    }
-    pressed.toSeq
-  }
+  def pressedKeys: Seq[GameKeyboard.Key]
 
   def keyIsPressed(key: GameKeyboard.Key): Boolean
+
+  def refreshPressedKeys(): Unit
 }
 
 object GameKeyboard {
@@ -43,25 +38,42 @@ object GameKeyboard {
   }
 
   class GlfwKeyboard(window: Window) extends GameKeyboard {
+    private var currentlyPressedKeys: Set[GameKeyboard.Key] = Set.empty
+    private var loadingPressedKeys: Boolean = false
+
+    def pressedKeys: Seq[GameKeyboard.Key] = {
+      currentlyPressedKeys.toSeq
+    }
+
     def keyIsPressed(key: GameKeyboard.Key): Boolean = {
-      import GameKeyboard.Key.*
-      key match {
-        case MoveForward   => window.isKeyPressed(KeyboardKey.Letter('W'))
-        case MoveBackward  => window.isKeyPressed(KeyboardKey.Letter('S'))
-        case MoveRight     => window.isKeyPressed(KeyboardKey.Letter('D'))
-        case MoveLeft      => window.isKeyPressed(KeyboardKey.Letter('A'))
-        case Jump          => window.isKeyPressed(KeyboardKey.Space)
-        case Sneak         => window.isKeyPressed(KeyboardKey.LeftShift)
-        case LookUp        => window.isKeyPressed(KeyboardKey.Up)
-        case LookDown      => window.isKeyPressed(KeyboardKey.Down)
-        case LookLeft      => window.isKeyPressed(KeyboardKey.Left)
-        case LookRight     => window.isKeyPressed(KeyboardKey.Right)
-        case TurnHeadLeft  => window.isKeyPressed(KeyboardKey.PageUp)
-        case TurnHeadRight => window.isKeyPressed(KeyboardKey.PageDown)
-        case MoveSlowly    => window.isKeyPressed(KeyboardKey.LeftControl)
-        case MoveFast      => window.isKeyPressed(KeyboardKey.LeftAlt)
-        case MoveSuperFast => window.isKeyPressed(KeyboardKey.RightControl)
-        case ResetRotation => window.isKeyPressed(KeyboardKey.Delete) && window.isKeyPressed(KeyboardKey.Letter('R'))
+      currentlyPressedKeys.contains(key)
+    }
+
+    def refreshPressedKeys(): Unit = {
+      if !loadingPressedKeys then {
+        loadingPressedKeys = true
+        Future {
+          val pressedPerKey = Seq(
+            (Key.MoveForward, window.isKeyPressed(KeyboardKey.Letter('W'))),
+            (Key.MoveBackward, window.isKeyPressed(KeyboardKey.Letter('S'))),
+            (Key.MoveRight, window.isKeyPressed(KeyboardKey.Letter('D'))),
+            (Key.MoveLeft, window.isKeyPressed(KeyboardKey.Letter('A'))),
+            (Key.Jump, window.isKeyPressed(KeyboardKey.Space)),
+            (Key.Sneak, window.isKeyPressed(KeyboardKey.LeftShift)),
+            (Key.LookUp, window.isKeyPressed(KeyboardKey.Up)),
+            (Key.LookDown, window.isKeyPressed(KeyboardKey.Down)),
+            (Key.LookLeft, window.isKeyPressed(KeyboardKey.Left)),
+            (Key.LookRight, window.isKeyPressed(KeyboardKey.Right)),
+            (Key.TurnHeadLeft, window.isKeyPressed(KeyboardKey.PageUp)),
+            (Key.TurnHeadRight, window.isKeyPressed(KeyboardKey.PageDown)),
+            (Key.MoveSlowly, window.isKeyPressed(KeyboardKey.LeftControl)),
+            (Key.MoveFast, window.isKeyPressed(KeyboardKey.LeftAlt)),
+            (Key.MoveSuperFast, window.isKeyPressed(KeyboardKey.RightControl)),
+            (Key.ResetRotation, window.isKeyPressed(KeyboardKey.Delete) && window.isKeyPressed(KeyboardKey.Letter('R')))
+          )
+          currentlyPressedKeys = pressedPerKey.filter(_._2).map(_._1).toSet
+          loadingPressedKeys = false
+        }
       }
     }
   }

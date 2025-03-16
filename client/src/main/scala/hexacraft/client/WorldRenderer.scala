@@ -11,7 +11,7 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain, C
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
 import hexacraft.world.entity.{Entity, EntityModel}
 
-import org.joml.{Vector2ic, Vector3f}
+import org.joml.{Vector2i, Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
@@ -64,6 +64,7 @@ class WorldRenderer(
   private val selectedBlockRenderer = SelectedBlockShader.createRenderer()
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFrameBufferSize.x, initialFrameBufferSize.y)
+  private var nextFrameBufferSize: Option[Vector2ic] = None
 
   private var currentlySelectedBlockAndSide: Option[MousePickerResult] = None
 
@@ -280,6 +281,16 @@ class WorldRenderer(
   }
 
   def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[MousePickerResult]): Unit = {
+    nextFrameBufferSize match {
+      case Some(size) =>
+        nextFrameBufferSize = None
+
+        val newFrameBuffer = MainFrameBuffer.fromSize(size.x, size.y)
+        mainFrameBuffer.unload()
+        mainFrameBuffer = newFrameBuffer
+      case None =>
+    }
+
     if currentlySelectedBlockAndSide != selectedBlockAndSide then {
       currentlySelectedBlockAndSide = selectedBlockAndSide
 
@@ -348,6 +359,8 @@ class WorldRenderer(
 
     OpenGL.glDepthMask(true)
     mainFrameBuffer.unbind()
+
+    OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
 
     // Step 2.2: Render the FrameBuffer for translucent things
     OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
@@ -504,9 +517,7 @@ class WorldRenderer(
   }
 
   def frameBufferResized(width: Int, height: Int): Unit = {
-    val newFrameBuffer = MainFrameBuffer.fromSize(width, height)
-    mainFrameBuffer.unload()
-    mainFrameBuffer = newFrameBuffer
+    nextFrameBufferSize = Some(Vector2i(width, height))
   }
 
   private def renderEntities(camera: Camera, sun: Vector3f): Unit = {
