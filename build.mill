@@ -116,6 +116,44 @@ object main extends HexacraftModule with JavaAppPackagingModule {
     Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
   )
 
+  def jdepsModules: T[String] = Task {
+    val classPath = runClasspath().map(_.path).filter(os.exists).map(_.toString)
+    val res = os.proc(
+      Seq(
+        Jvm.jdkTool("jdeps", this.zincWorker().javaHome().map(_.path)),
+        "--multi-release", "17",
+        "-R",
+        "--print-module-deps",
+        "--ignore-missing-deps",
+        "--class-path",
+      ) ++
+      classPath,
+    ).call()
+
+    new String(res.out.bytes).stripSuffix("\n")
+  }
+
+  def jlinkAppImage: T[PathRef] = Task {
+    val modules = jdepsModules()
+    val outputPath = Task.dest / "runtime"
+
+    val args = Seq(
+      Jvm.jdkTool("jlink", this.zincWorker().javaHome().map(_.path)),
+      "--add-modules",
+      modules,
+      "--output",
+      outputPath.toString,
+      "--compress",
+      "2",
+      "--no-header-files",
+      "--no-man-pages",
+      "--strip-debug"
+    )
+    os.proc(args).call()
+
+    PathRef(outputPath)
+  }
+
   override def forkArgs = super.forkArgs() ++ (if (isMac) Some("-XstartOnFirstThread") else None).toSeq
 
   override def packageVersion = "0.14.1"
@@ -135,8 +173,9 @@ object main extends HexacraftModule with JavaAppPackagingModule {
   override def universalMappings = T {
     val launcherJarPath = launcherJar().path
     val launcherJarMapping = PathRef(launcherJarPath) -> (os.sub / "hexacraft-launcher.jar")
+    val jreMapping = jlinkAppImage() -> (os.sub / "runtime")
 
-    super.universalMappings().filterNot(_._2.startsWith(os.sub / "bin")) ++ Seq(launcherJarMapping)
+    super.universalMappings().filterNot(_._2.startsWith(os.sub / "bin")) ++ Seq(launcherJarMapping, jreMapping)
   }
 
   object test extends Tests {

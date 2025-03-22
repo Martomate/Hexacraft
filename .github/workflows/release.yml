@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Build and package release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux-x64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
+          - os: macos-13
+            name: macos-x64
+          - os: macos-14
+            name: macos-arm64
+          - os: windows-2022
+            name: windows-x64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Coursier cache
+        uses: coursier/cache-action@v6
+
+      - name: Setup
+        uses: coursier/setup-action@v1
+        with:
+          jvm: "adoptium:1.17"
+
+      - name: Build and package
+        run: ./mill main.universalStagePackageZip
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: hexacraft-${{matrix.name}}
+          path: ./out/main/universalStagePackageZip.dest/
