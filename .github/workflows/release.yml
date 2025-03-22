@@ -31,12 +31,19 @@ jobs:
       - name: Coursier cache
         uses: coursier/cache-action@v6
 
-      - name: Setup
-        uses: coursier/setup-action@v1
+      - name: Install Java
+        uses: actions/setup-java@v4
         with:
-          jvm: "adoptium:1.17"
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Build and package
+      - name: Build
+        run: ./mill __.compile
+
+      - name: Run tests
+        run: ./mill __.test
+
+      - name: Package
         run: ./mill main.universalStagePackageZip
 
       - name: Upload package

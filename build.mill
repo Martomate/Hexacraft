@@ -130,12 +130,14 @@ object main extends HexacraftModule with JavaAppPackagingModule {
       classPath,
     ).call()
 
-    new String(res.out.bytes).stripSuffix("\n")
+    new String(res.out.bytes).stripSuffix("\n").stripSuffix("\r")
   }
 
   def jlinkAppImage: T[PathRef] = Task {
     val modules = jdepsModules()
     val outputPath = Task.dest / "runtime"
+
+    println(s"Creating Java runtime based on [$modules]")
 
     val args = Seq(
       Jvm.jdkTool("jlink", this.zincWorker().javaHome().map(_.path)),
@@ -230,13 +232,22 @@ trait RustJniModule extends JavaModule {
       System.getenv("MILL_RUST_TARGET")
     } else {
       System.getProperty("os.name").toLowerCase match {
-        case os if os.contains("windows") => "x86_64-pc-windows-msvc"
+        case os if os.contains("windows") =>
+          System.getProperty("os.arch") match {
+            case arch if arch.trim == "aarch64" =>
+              throw new IllegalArgumentException("Arm on Windows is not yet supported")
+            case _ => "x86_64-pc-windows-msvc"
+          }
         case os if os.startsWith("mac") =>
           System.getProperty("os.arch") match {
             case arch if arch.trim == "aarch64" => "aarch64-apple-darwin"
             case _ => "x86_64-apple-darwin"
           }
-        case _ => "x86_64-unknown-linux-gnu"
+        case _ =>
+          System.getProperty("os.arch") match {
+            case arch if arch.trim == "aarch64" => "aarch64-unknown-linux-gnu"
+            case _ => "x86_64-unknown-linux-gnu"
+          }
       }
     }
   }
