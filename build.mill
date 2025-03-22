@@ -137,6 +137,8 @@ object main extends HexacraftModule with JavaAppPackagingModule {
     val modules = jdepsModules()
     val outputPath = Task.dest / "runtime"
 
+    println(s"Creating Java runtime based on [$modules]")
+
     val args = Seq(
       Jvm.jdkTool("jlink", this.zincWorker().javaHome().map(_.path)),
       "--add-modules",
