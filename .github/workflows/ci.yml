@@ -19,7 +19,7 @@ jobs:
       - name: Setup
         uses: coursier/setup-action@v1
         with:
-          jvm: "adoptium:1.17"
+          jvm: "temurin:1.17"
       - name: Build
         run: ./mill __.compile
         shell: bash
