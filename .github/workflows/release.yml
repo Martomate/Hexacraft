@@ -36,7 +36,13 @@ jobs:
         with:
           jvm: "adoptium:1.17"
 
-      - name: Build and package
+      - name: Build
+        run: ./mill __.compile
+
+      - name: Run tests
+        run: ./mill __.test
+
+      - name: Package
         run: ./mill main.universalStagePackageZip
 
       - name: Upload package
