@@ -130,7 +130,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
       classPath,
     ).call()
 
-    new String(res.out.bytes).stripSuffix("\n")
+    new String(res.out.bytes).stripSuffix("\n").stripSuffix("\r\n")
   }
 
   def jlinkAppImage: T[PathRef] = Task {
