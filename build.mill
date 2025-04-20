@@ -191,7 +191,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
 
 
 trait HexacraftModule extends SbtModule {
-  def scalaVersion = "3.5.1"
+  def scalaVersion = "3.6.4"
 
   override def scalacOptions = Seq(
     "-deprecation", "-unchecked", "-feature"
