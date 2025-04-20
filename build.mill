@@ -197,7 +197,7 @@ trait HexacraftModule extends SbtModule {
     "-deprecation", "-unchecked", "-feature"
   )
   override def javacOptions = Seq(
-    "-release", "11"
+    "-release", "17"
   )
 
   override def compileIvyDeps = Agg(
