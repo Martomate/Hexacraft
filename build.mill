@@ -4,11 +4,52 @@ import $ivy.`io.github.hoangmaihuy::mill-universal-packager::0.1.4`
 import io.github.hoangmaihuy.mill.packager.archetypes.JavaAppPackagingModule
 import io.github.hoangmaihuy.mill.packager.subPathRw
 import mill._
-import mill.api.JarManifest
 import mill.scalalib._
-import mill.util.Jvm
+import mill.util.{JarManifest, Jvm}
 
 import scala.util.Properties.isMac
+
+object Deps {
+  def scalaVersion = "3.6.4"
+
+  private object versions {
+    val lwjgl = "3.3.5"
+    val joml = "1.10.7"
+    val zeromq = "0.6.0"
+  }
+
+  private def lwjglDependency(name: String) = {
+    val platforms = Seq(
+      "natives-windows",
+      "natives-windows-arm64",
+      "natives-linux",
+      "natives-linux-arm64",
+      "natives-macos",
+      "natives-macos-arm64"
+    )
+
+    val base = ivy"org.lwjgl:$name:${versions.lwjgl}"
+    val natives = platforms.map(p => ivy"org.lwjgl:$name:${versions.lwjgl};classifier=$p")
+    base +: natives
+  }
+
+  lazy val LwjglSystem = lwjglDependency("lwjgl")
+  lazy val LwjglGlfw = lwjglDependency("lwjgl-glfw")
+  lazy val LwjglOpenGL = lwjglDependency("lwjgl-opengl")
+  lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
+  lazy val LwjglStb = lwjglDependency("lwjgl-stb")
+
+  lazy val Joml = ivy"org.joml:joml:${versions.joml}"
+  lazy val FlowNbt = ivy"com.flowpowered:flow-nbt:1.0.0"
+  lazy val ZeroMQ = ivy"org.zeromq:jeromq:${versions.zeromq}"
+
+  lazy val MUnit = ivy"org.scalameta::munit:1.0.0"
+  lazy val Mockito = ivy"org.scalatestplus::mockito-5-8:3.2.17.0"
+  lazy val ArchUnit = Seq(
+    ivy"com.tngtech.archunit:archunit:1.3.0",
+    ivy"org.slf4j:slf4j-nop:2.0.13" // Needed for ArchUnit
+  )
+}
 
 object common extends HexacraftModule {
   override def moduleDeps = super.moduleDeps ++ Seq(native)
@@ -29,10 +70,6 @@ object native extends HexacraftModule with RustJniModule {
   def javah = T {
     os.proc("javah", "-d", rustSourceRoot().head.path / "jni", "-cp", compile().classes.path, javahClassNames).call()
   }
-
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.LwjglSystem: _* // TODO: remove (not used)
-  )
 
   object test extends Tests
 }
@@ -191,7 +228,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
 
 
 trait HexacraftModule extends SbtModule {
-  def scalaVersion = "3.6.4"
+  def scalaVersion = Deps.scalaVersion
 
   override def scalacOptions = Seq(
     "-deprecation", "-unchecked", "-feature"
@@ -214,8 +251,6 @@ trait HexacraftModule extends SbtModule {
 }
 
 trait RustJniModule extends JavaModule {
-  private def buildAllTargets = Task.Input(sys.props("build-all-targets") == "true")
-
   /** Name used in Cargo.toml [package].name. */
   protected def nativeName: T[String]
 
@@ -228,37 +263,25 @@ trait RustJniModule extends JavaModule {
   }
 
   private def localTarget: String = {
-    if (System.getenv("MILL_RUST_TARGET") != null) {
-      System.getenv("MILL_RUST_TARGET")
-    } else {
-      System.getProperty("os.name").toLowerCase match {
-        case os if os.contains("windows") =>
-          System.getProperty("os.arch") match {
-            case arch if arch.trim == "aarch64" =>
-              throw new IllegalArgumentException("Arm on Windows is not yet supported")
-            case _ => "x86_64-pc-windows-msvc"
-          }
-        case os if os.startsWith("mac") =>
-          System.getProperty("os.arch") match {
-            case arch if arch.trim == "aarch64" => "aarch64-apple-darwin"
-            case _ => "x86_64-apple-darwin"
-          }
-        case _ =>
-          System.getProperty("os.arch") match {
-            case arch if arch.trim == "aarch64" => "aarch64-unknown-linux-gnu"
-            case _ => "x86_64-unknown-linux-gnu"
-          }
-      }
+    System.getProperty("os.name").toLowerCase match {
+      case os if os.contains("windows") =>
+        System.getProperty("os.arch") match {
+          case arch if arch.trim == "aarch64" =>
+            throw new IllegalArgumentException("Arm on Windows is not yet supported")
+          case _ => "x86_64-pc-windows-msvc"
+        }
+      case os if os.startsWith("mac") =>
+        System.getProperty("os.arch") match {
+          case arch if arch.trim == "aarch64" => "aarch64-apple-darwin"
+          case _ => "x86_64-apple-darwin"
+        }
+      case _ =>
+        System.getProperty("os.arch") match {
+          case arch if arch.trim == "aarch64" => "aarch64-unknown-linux-gnu"
+          case _ => "x86_64-unknown-linux-gnu"
+        }
     }
   }
-
-  private def crossTargets = Set(
-    "aarch64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-gnu",
-    "x86_64-unknown-linux-gnu",
-  )
 
   private def getNativeLibName(target: String, libraryName: String): String = target match {
     case _: String if target.contains("windows") => libraryName + ".dll"
@@ -274,22 +297,10 @@ trait RustJniModule extends JavaModule {
     val crateHome = rustSourceRoot().head.path
     val nativeName1 = nativeName()
 
-    if (buildAllTargets()) {
-      for (target <- crossTargets) {
-        println(s"Compiling Rust library $nativeName1 for target $target")
-        compileRust(crateHome, library, nativeName1, target)
-      }
-    } else {
-      println(s"Compiling Rust library $nativeName1 for local target ($localTarget)")
-      compileRust(crateHome, library, nativeName1, localTarget)
-    }
+    println(s"Compiling Rust library $nativeName1 for local target ($localTarget)")
+    compileRust(crateHome, library, nativeName1, localTarget)
 
     PathRef(T.dest)
-  }
-
-  def cleanNative = T {
-    val crateHome = rustSourceRoot().head.path
-    os.proc("cargo", "clean").call(cwd = crateHome)
   }
 
   protected def compileRust(crateHome: os.Path, library: os.Path, nativeName: String, target: String): Unit = {
@@ -325,44 +336,4 @@ trait RustJniModule extends JavaModule {
     os.copy(from, to, replaceExisting = true, createFolders = true)
   }
 
-}
-
-object Deps {
-  private object versions {
-    val lwjgl = "3.3.5"
-    val joml = "1.10.7"
-    val zeromq = "0.6.0"
-  }
-
-  private def lwjglDependency(name: String) = {
-    val platforms = Seq(
-      "natives-windows",
-      "natives-windows-arm64",
-      "natives-linux",
-      "natives-linux-arm64",
-      "natives-macos",
-      "natives-macos-arm64"
-    )
-
-    val base = ivy"org.lwjgl:$name:${versions.lwjgl}"
-    val natives = platforms.map(p => ivy"org.lwjgl:$name:${versions.lwjgl};classifier=$p")
-    base +: natives
-  }
-
-  lazy val LwjglSystem = lwjglDependency("lwjgl")
-  lazy val LwjglGlfw = lwjglDependency("lwjgl-glfw")
-  lazy val LwjglOpenGL = lwjglDependency("lwjgl-opengl")
-  lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
-  lazy val LwjglStb = lwjglDependency("lwjgl-stb")
-
-  lazy val Joml = ivy"org.joml:joml:${versions.joml}"
-  lazy val FlowNbt = ivy"com.flowpowered:flow-nbt:1.0.0"
-  lazy val ZeroMQ = ivy"org.zeromq:jeromq:${versions.zeromq}"
-
-  lazy val MUnit = ivy"org.scalameta::munit:1.0.0"
-  lazy val Mockito = ivy"org.scalatestplus::mockito-5-8:3.2.17.0"
-  lazy val ArchUnit = Seq(
-    ivy"com.tngtech.archunit:archunit:1.3.0",
-    ivy"org.slf4j:slf4j-nop:2.0.13" // Needed for ArchUnit
-  )
 }
