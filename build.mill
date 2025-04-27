@@ -174,7 +174,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
     val modules = jdepsModules()
     val outputPath = Task.dest / "runtime"
 
-    println(s"Creating Java runtime based on [$modules]")
+    Task.log.info(s"Creating Java runtime based on [$modules]")
 
     val args = Seq(
       Jvm.jdkTool("jlink", this.zincWorker().javaHome().map(_.path)),
@@ -262,7 +262,7 @@ trait RustJniModule extends JavaModule {
     super.compileResources() :+ compileNative()
   }
 
-  private def localTarget: String = {
+  private val localTarget: String = {
     System.getProperty("os.name").toLowerCase match {
       case os if os.contains("windows") =>
         System.getProperty("os.arch") match {
@@ -291,32 +291,29 @@ trait RustJniModule extends JavaModule {
   }
 
   def compileNative = T {
-    val library = T.dest / "native"
-    os.makeDir.all(library)
-
     val crateHome = rustSourceRoot().head.path
-    val nativeName1 = nativeName()
+    val libName = nativeName()
+    val target = localTarget
 
-    println(s"Compiling Rust library $nativeName1 for local target ($localTarget)")
-    compileRust(crateHome, library, nativeName1, localTarget)
+    val compilation = Task.fork.async(Task.dest / "cargo", "cargo", s"Compiling $libName ($target)") { _ =>
+      val outputFolder = compileRust(crateHome, target)
+      outputFolder / getNativeLibName(target, libName.replace('-', '_'))
+    }
+    val libFile = Task.fork.await(compilation)
+    val libDestPath = getNativeLibEmbedPath(libName, target)
 
-    PathRef(T.dest)
+    val resultDir = T.dest / "embed"
+    os.copy(libFile, resultDir / libDestPath, replaceExisting = true, createFolders = true)
+    PathRef(resultDir)
   }
 
-  protected def compileRust(crateHome: os.Path, library: os.Path, nativeName: String, target: String): Unit = {
-    val configFile = if (isMac) Some("./.cargo/config-macos.toml") else None
+  protected def compileRust(crateHome: os.Path, target: String): os.Path = {
+    os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome)
 
-    configFile match {
-      case Some(configFile) =>
-        os.proc("cargo", "build", "--release", "--target", target, "--config", configFile).call(cwd = crateHome)
-      case None =>
-        os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome)
-    }
+    crateHome / "target" / target / "release"
+  }
 
-    val name = getNativeLibName(target, nativeName.replace('-', '_'))
-
-    val from = crateHome / "target" / target / "release" / name
-
+  private def getNativeLibEmbedPath(nativeName: String, target: String): os.SubPath = {
     val osName = target match {
       case t if t.contains("windows") => "windows"
       case t if t.contains("apple") => "darwin"
@@ -330,10 +327,9 @@ trait RustJniModule extends JavaModule {
     }
 
     val targetShortName = s"$archName-$osName"
+    val libFileName = getNativeLibName(target, nativeName.replace('-', '_'))
 
-    val to = library / targetShortName / name
-
-    os.copy(from, to, replaceExisting = true, createFolders = true)
+    os.sub / "native" / targetShortName / libFileName
   }
 
 }
