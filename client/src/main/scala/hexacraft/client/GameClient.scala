@@ -1,5 +1,6 @@
 package hexacraft.client
 
+import hexacraft.client.render.{FarDistanceTerrainRenderer, StandardTerrainRenderer, TerrainRenderer}
 import hexacraft.game.*
 import hexacraft.gui.*
 import hexacraft.gui.comp.Component
@@ -10,7 +11,7 @@ import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
-import hexacraft.util.{Channel, Loop, NamedThreadFactory, Result, TickableTimer}
+import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
@@ -33,6 +34,8 @@ object GameClient {
     case CursorReleased
   }
 
+  private val useFarDistanceRenderer = false
+  
   def create(
       playerId: UUID,
       serverIp: String,
@@ -71,13 +74,14 @@ object GameClient {
 
     given CylinderSize = world.size
 
-    val worldRenderer: WorldRenderer = new WorldRenderer(
-      world,
-      world.worldGenerator,
-      blockTextureIndices,
-      blockTextureColors,
-      initialWindowSize.physicalSize
-    )
+    val terrainRenderer: TerrainRenderer =
+      if useFarDistanceRenderer then {
+        FarDistanceTerrainRenderer(world.worldGenerator, blockTextureColors)
+      } else {
+        StandardTerrainRenderer(world, blockTextureIndices)
+      }
+
+    val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
 
