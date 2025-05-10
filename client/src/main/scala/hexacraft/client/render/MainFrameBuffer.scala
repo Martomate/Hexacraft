@@ -3,6 +3,8 @@ package hexacraft.client.render
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{FrameBuffer, TextureSingle}
 
+import org.joml.{Vector2i, Vector2ic}
+
 import java.nio.{ByteBuffer, FloatBuffer}
 
 object MainFrameBuffer {
@@ -149,8 +151,10 @@ class MainFrameBuffer private (
     val normalTexture: OpenGL.TextureId,
     val colorTexture: OpenGL.TextureId,
     val depthTexture: OpenGL.TextureId,
-    val frameBuffer: FrameBuffer
+    frameBuffer: FrameBuffer
 ) {
+  def size: Vector2ic = new Vector2i(frameBuffer.width, frameBuffer.height)
+
   def bind(): Unit = {
     frameBuffer.bind()
   }

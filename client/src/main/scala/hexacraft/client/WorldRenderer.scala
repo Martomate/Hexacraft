@@ -91,7 +91,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     worldCombinerShader.setClipPlanes(camera.proj.near, camera.proj.far)
   }
 
-  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[MousePickerResult]): Unit = {
+  private def replaceFrameBufferIfNeeded(): Unit = {
     nextFrameBufferSize match {
       case Some(size) =>
         nextFrameBufferSize = None
@@ -101,7 +101,9 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
         mainFrameBuffer = newFrameBuffer
       case None =>
     }
+  }
 
+  private def updateSelectedBlockVao(selectedBlockAndSide: Option[MousePickerResult]) = {
     if currentlySelectedBlockAndSide != selectedBlockAndSide then {
       currentlySelectedBlockAndSide = selectedBlockAndSide
 
@@ -114,6 +116,13 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
         case _ =>
       }
     }
+  }
+
+  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[MousePickerResult]): Unit = {
+    val viewportSize = mainFrameBuffer.size
+
+    replaceFrameBufferIfNeeded()
+    updateSelectedBlockVao(selectedBlockAndSide)
 
     // Step 1.1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
@@ -131,34 +140,14 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     mainFrameBuffer.unbind()
 
     // Step 2: Render everything to the screen (one could add post processing here in the future)
-    OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
+    OpenGL.glViewport(0, 0, viewportSize.x, viewportSize.y)
 
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     renderSky(camera, sun)
 
     // Step 2.1: Render the FrameBuffer for opaque things
-    OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.positionTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.normalTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.normalTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.colorTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.depthTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
-
-    worldCombinerShader.enable()
-    worldCombinerShader.setSunPosition(sun)
-    worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
-
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(3))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(2))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    renderFrameBuffer(mainFrameBuffer, sun)
 
     // Step 1.2: Render all translucent things to a FrameBuffer
     mainFrameBuffer.bind()
@@ -170,30 +159,23 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     OpenGL.glDepthMask(true)
     mainFrameBuffer.unbind()
 
-    OpenGL.glViewport(0, 0, mainFrameBuffer.frameBuffer.width, mainFrameBuffer.frameBuffer.height)
+    OpenGL.glViewport(0, 0, viewportSize.x, viewportSize.y)
 
     // Step 2.2: Render the FrameBuffer for translucent things
-    OpenGL.glActiveTexture(worldCombinerShader.positionTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.positionTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.normalTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.normalTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.colorTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.colorTexture)
-    OpenGL.glActiveTexture(worldCombinerShader.depthTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, mainFrameBuffer.depthTexture)
+    renderFrameBuffer(mainFrameBuffer, sun)
+  }
 
+  private def renderFrameBuffer(frameBuffer: MainFrameBuffer, sun: Vector3f): Unit = {
+    worldCombinerShader.bindTextures(
+      positionTexture = frameBuffer.positionTexture,
+      normalTexture = frameBuffer.normalTexture,
+      colorTexture = frameBuffer.colorTexture,
+      depthTexture = frameBuffer.depthTexture
+    )
     worldCombinerShader.enable()
     worldCombinerShader.setSunPosition(sun)
     worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
-
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(3))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(2))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(1))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(OpenGL.TextureSlot.ofSlot(0))
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    worldCombinerShader.unbindTextures()
   }
 
   private def renderSky(camera: Camera, sun: Vector3f): Unit = {
