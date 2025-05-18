@@ -11,6 +11,7 @@ import hexacraft.util.Channel
 import hexacraft.world.WorldSettings
 
 import java.io.File
+import java.net.InetAddress
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -51,6 +52,7 @@ object Menus {
   class MainMenu private extends MenuScene
   class HostWorldChooserMenu private extends MenuScene
   class JoinWorldChooserMenu private extends MenuScene
+  class AddServerMenu private extends MenuScene
   class MultiplayerMenu private extends MenuScene
   class WorldChooserMenu private extends MenuScene
   class NewWorldMenu private extends MenuScene
@@ -131,17 +133,14 @@ object Menus {
   object JoinWorldChooserMenu {
     enum Event {
       case Join(address: String, port: Int)
+      case AddServer
       case GoBack
     }
 
-    def create(): (MenuScene, Channel.Receiver[Event]) = {
+    def create(servers: Seq[(String, Int)]): (MenuScene, Channel.Receiver[Event]) = {
       val (tx, rx) = Channel[Event]()
 
       val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
-
-      val servers = Seq(
-        ("localhost", 1234)
-      )
 
       enum ServerState {
         case Connecting
@@ -202,7 +201,51 @@ object Menus {
 
       menu.addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
       menu.addComponent(scrollPane)
-      menu.addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(tx.send(Event.GoBack)))
+      menu.addComponent(Button("Back", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f))(tx.send(Event.GoBack)))
+      menu.addComponent(Button("Add", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(tx.send(Event.AddServer)))
+
+      (menu, rx)
+    }
+  }
+
+  object AddServerMenu {
+    enum Event {
+      case AddServer(address: String, port: Int)
+      case GoBack
+    }
+
+    def create(): (MenuScene, Channel.Receiver[Event]) = {
+      val (tx, rx) = Channel[Event]()
+
+      val menu = new AddServerMenu
+
+      val addressTF = new TextField(LocationInfo.from16x9(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 2.5f)
+      val portTF = new TextField(LocationInfo.from16x9(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 2.5f)
+
+      def calculateResult = {
+        Try {
+          val address = addressTF.text
+          InetAddress.getByName(address)
+          val port = portTF.text.toIntOption.filter(p => p >= 0 && p <= 65535).get
+          Event.AddServer(address, port)
+        }.toOption
+      }
+
+      val addressLabel = new Label("IP address", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
+        .withColor(1, 1, 1)
+      val portLabel = new Label("Port", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
+        .withColor(1, 1, 1)
+
+      menu.addComponent(addressLabel)
+      menu.addComponent(addressTF)
+
+      menu.addComponent(portLabel)
+      menu.addComponent(portTF)
+
+      menu.addComponent(Button("Back", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f))(tx.send(Event.GoBack)))
+      menu.addComponent(Button("Add", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f)) {
+        calculateResult.foreach(tx.send)
+      })
 
       (menu, rx)
     }

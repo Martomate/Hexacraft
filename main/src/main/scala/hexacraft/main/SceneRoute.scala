@@ -12,6 +12,7 @@ enum SceneRoute {
   case Multiplayer
   case JoinWorld
   case HostWorld
+  case AddServer
   case Settings
   case Game(
       saveDir: File,

@@ -12,6 +12,7 @@ import hexacraft.world.WorldSettings
 
 import java.io.File
 import java.util.UUID
+import scala.collection.mutable.ArrayBuffer
 
 object MainRouter {
   enum Event {
@@ -28,6 +29,9 @@ class MainRouter(
     kb: GameKeyboard,
     audioSystem: AudioSystem
 ) {
+
+  // TODO: persist this state somewhere (in a file probably)
+  private val servers: ArrayBuffer[(String, Int)] = ArrayBuffer.empty
 
   def route(sceneRoute: SceneRoute): (Scene, Channel.Receiver[MainRouter.Event]) = {
     import MainRouter.Event
@@ -104,7 +108,7 @@ class MainRouter(
     case SceneRoute.JoinWorld =>
       import Menus.JoinWorldChooserMenu.Event
 
-      val (scene, rx) = Menus.JoinWorldChooserMenu.create()
+      val (scene, rx) = Menus.JoinWorldChooserMenu.create(servers.toSeq)
 
       rx.onEvent {
         case Event.Join(address, port) =>
@@ -118,7 +122,23 @@ class MainRouter(
               (address, port)
             )
           )
-        case Event.GoBack => route(SceneRoute.Multiplayer)
+        case Event.AddServer => route(SceneRoute.AddServer)
+        case Event.GoBack    => route(SceneRoute.Multiplayer)
+      }
+
+      scene
+
+    case SceneRoute.AddServer =>
+      import Menus.AddServerMenu.Event
+
+      val (scene, rx) = Menus.AddServerMenu.create()
+
+      rx.onEvent {
+        case Event.AddServer(address, port) =>
+          servers += address -> port
+          route(SceneRoute.JoinWorld)
+        case Event.GoBack =>
+          route(SceneRoute.JoinWorld)
       }
 
       scene
