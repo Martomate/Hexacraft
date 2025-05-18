@@ -163,7 +163,8 @@ class MainRouter(
       new Menus.SettingsMenu(() => route(SceneRoute.Main))
 
     case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
-      val (serverIp, serverPort) = if serverLocation != null then serverLocation else ("localhost", 1234)
+      val (serverIp, serverPort) = Option(serverLocation)
+        .getOrElse(("127.0.0.1", (Math.random() * 8000 + 2000).toInt))
 
       val client = GameScene.ClientParams(
         loadUserId(),

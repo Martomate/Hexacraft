@@ -8,6 +8,8 @@ import hexacraft.util.Result.{Err, Ok}
 import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
 import zmq.ZError
 
+import java.net.{DatagramSocket, InetAddress}
+
 object TcpServer {
   enum Error {
     case InvalidPacket(message: String)
@@ -26,14 +28,24 @@ object TcpServer {
       return Err("Server could not be bound")
     }
 
-    Ok(new TcpServer(context, serverSocket))
+    Ok(new TcpServer(context, serverSocket, port))
   }
 }
 
-class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket) {
+class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localPort: Int) {
   private var _running = true
 
   def running: Boolean = _running
+
+  val localAddress: String = {
+    val socket = new DatagramSocket
+    try {
+      socket.connect(InetAddress.getByName("8.8.8.8"), 10002)
+      socket.getLocalAddress.getHostAddress
+    } finally {
+      socket.close()
+    }
+  }
 
   private val cancelToken = serverSocket.createCancellationToken()
 

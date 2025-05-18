@@ -30,7 +30,7 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       t.position.y += 0.06f
     }
 
-    val location = LocationInfo.from16x9(0.01f, 0.20f, 0.2f, 0.05f)
+    val location = LocationInfo.from16x9(0.01f, 0.20f, 0.3f, 0.05f)
     val guiText = Component.makeText(m.text, location, 2, centered = false, shadow = true)
     this.addText(guiText)
     texts += guiText

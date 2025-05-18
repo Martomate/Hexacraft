@@ -367,6 +367,8 @@ class GameServer(
   private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
   private val chunksLoadCount = mutable.LongMap.empty[Int]
 
+  private var hasSentServerStartMessage: Boolean = false
+
   private def handlePacket(clientId: Long, packet: NetworkPacket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
 
@@ -421,6 +423,14 @@ class GameServer(
           val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
           val playerData = PlayerData(player, entity, camera)
           players(clientId) = playerData
+
+          if !hasSentServerStartMessage && isOnline then {
+            hasSentServerStartMessage = true
+            val address = server.localAddress
+            val port = server.localPort
+            val message = s"Server started on $address:$port"
+            playerData.messagesWaitingToBeSent += ServerMessage(message, ServerMessage.Sender.Server)
+          }
 
           for otherPlayer <- players do {
             val (playerId, otherData) = otherPlayer
