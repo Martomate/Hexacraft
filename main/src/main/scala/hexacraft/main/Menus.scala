@@ -1,5 +1,7 @@
 package hexacraft.main
 
+import hexacraft.client.GameClientSocket
+import hexacraft.game.NetworkPacket
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
 import hexacraft.infra.fs.{FileSystem, NbtIO}
@@ -10,7 +12,11 @@ import hexacraft.world.WorldSettings
 
 import java.io.File
 import java.nio.file.Path
-import scala.util.Random
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Random, Try}
 
 object Menus {
   private val backgroundImage = TextureSingle.getTexture("textures/gui/menu/background")
@@ -133,16 +139,66 @@ object Menus {
 
       val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
 
-      for (f, i) <- getWorlds.zipWithIndex do {
-        scrollPane.addComponent(
-          Button(f.name, LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)) {
-            val connectionDetails = loadOnlineWorld(f.id)
-            tx.send(Event.Join(connectionDetails.address, connectionDetails.port))
-          }
-        )
+      val servers = Seq(
+        ("localhost", 1234)
+      )
+
+      enum ServerState {
+        case Connecting
+        case Unavailable
+        case Available(name: String)
       }
 
+      val serverConnectionState = ArrayBuffer.fill[ServerState](servers.length)(ServerState.Connecting)
+
+      val stateUpdates = mutable.Queue.empty[(Int, ServerState)]
+
+      for ((address, port), idx) <- servers.zipWithIndex do {
+        Future {
+          val socket = GameClientSocket(address, port)
+          val res = for {
+            res <- Try(socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asMap.get).toOption
+            general <- res.getMap("general")
+            name <- general.getString("name")
+          } yield ServerState.Available(name)
+          socket.close()
+          stateUpdates.synchronized {
+            stateUpdates += idx -> res.getOrElse(ServerState.Unavailable)
+          }
+        }
+      }
+
+      def updateScrollPane(): Unit = {
+        for (((address, port), state), i) <- servers.zip(serverConnectionState).zipWithIndex do {
+          val (ready, title) = state match {
+            case ServerState.Connecting      => (false, s"Connecting to $address:$port...")
+            case ServerState.Unavailable     => (false, "Connection failed")
+            case ServerState.Available(name) => (true, name)
+          }
+          val buttonBounds = LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)
+          val button = Button(title, buttonBounds, disabled = !ready) {
+            tx.send(Event.Join(address, port))
+          }
+          scrollPane.replaceComponent(i, button)
+        }
+      }
+
+      updateScrollPane()
+
       val menu = new JoinWorldChooserMenu
+
+      menu.onTick {
+        if stateUpdates.nonEmpty then {
+          val updates = stateUpdates.synchronized {
+            stateUpdates.removeAll()
+          }
+
+          for (idx, state) <- updates do {
+            serverConnectionState(idx) = state
+            updateScrollPane()
+          }
+        }
+      }
 
       menu.addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
       menu.addComponent(scrollPane)
@@ -150,26 +206,6 @@ object Menus {
 
       (menu, rx)
     }
-
-    private def getWorlds: Seq[OnlineWorldInfo] = {
-      Seq(
-        OnlineWorldInfo(new Random().nextLong(), "Test Online World", "Welcome to my test world!"),
-        OnlineWorldInfo(new Random().nextLong(), "Another Online World", "Free bitcakes!")
-      )
-    }
-
-    private def loadOnlineWorld(id: Long): OnlineWorldConnectionDetails = {
-      // TODO: connect to the server registry to get this information
-      OnlineWorldConnectionDetails(
-        "localhost",
-        1234,
-        System.currentTimeMillis() + 10
-      )
-    }
-
-    private case class OnlineWorldInfo(id: Long, name: String, description: String)
-
-    private case class OnlineWorldConnectionDetails(address: String, port: Int, time: Long)
   }
 
   object MultiplayerMenu {

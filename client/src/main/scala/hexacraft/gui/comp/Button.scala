@@ -6,12 +6,14 @@ import hexacraft.infra.window.MouseAction
 import org.joml.Vector4f
 
 object Button {
-  def apply(text: String, bounds: LocationInfo)(clickAction: => Unit): Button = {
-    new Button(text, bounds, clickAction)
+  def apply(text: String, bounds: LocationInfo, disabled: Boolean = false)(clickAction: => Unit): Button = {
+    new Button(text, bounds, clickAction, disabled)
   }
 }
 
-class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) extends Component with Boundable {
+class Button(text: String, val bounds: LocationInfo, clickAction: => Unit, disabled: Boolean)
+    extends Component
+    with Boundable {
   addText(Component.makeText(text, bounds, 4.0f, shadow = true).setTextAndFitSize(text, 4.0f))
 
   override def render(context: RenderContext): Unit = {
@@ -19,13 +21,19 @@ class Button(text: String, val bounds: LocationInfo, clickAction: => Unit) exten
     val containsMouse = bounds.containsPoint(mousePos.x - context.offset.x, mousePos.y - context.offset.y)
 
     val color =
-      if containsMouse then {
+      if disabled then {
+        new Vector4f(0.3f, 0.3f, 0.3f, 0.8f)
+      } else if containsMouse then {
         new Vector4f(0.5f, 0.5f, 0.5f, 0.8f)
       } else {
         new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
       }
 
-    Component.drawFancyRect(bounds, context.offset.x, context.offset.y, color, context.windowAspectRatio)
+    if disabled then {
+      Component.drawRect(bounds, context.offset.x, context.offset.y, color, context.windowAspectRatio)
+    } else {
+      Component.drawFancyRect(bounds, context.offset.x, context.offset.y, color, context.windowAspectRatio)
+    }
     super.render(context)
   }
 

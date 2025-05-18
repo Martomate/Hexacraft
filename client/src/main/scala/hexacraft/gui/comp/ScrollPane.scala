@@ -20,6 +20,17 @@ class ScrollPane(
 
   def addComponent(comp: Component & Boundable): Unit = components.append(comp)
 
+  def replaceComponent(idx: Int, comp: Component & Boundable): Unit = {
+    require(idx >= 0 && idx <= components.length)
+
+    if idx == components.length then {
+      components.append(comp)
+    } else if comp != components(idx) then {
+      components(idx).unload()
+      components(idx) = comp
+    }
+  }
+
   override def render(context: RenderContext): Unit = {
     Component.drawRect(
       location,

@@ -446,6 +446,9 @@ class GameServer(
             )
           )
         }
+      case GetWorldInfo =>
+        val info = worldProvider.getWorldInfo
+        return Some(info.toNbt)
       case _ =>
         if !players.contains(clientId) then {
           println("Received message from unknown client")
@@ -464,9 +467,7 @@ class GameServer(
         logoutPlayer(playerData)
         players.remove(clientId)
         None
-      case GetWorldInfo =>
-        val info = worldProvider.getWorldInfo
-        Some(info.toNbt)
+      case GetWorldInfo => None // already handled above
       case LoadColumnData(coords) =>
         world.getColumn(coords) match {
           case Some(column) => Some(ChunkColumnData(Some(column.terrainHeight)).toNBT)
