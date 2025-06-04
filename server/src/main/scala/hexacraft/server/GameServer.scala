@@ -288,11 +288,12 @@ class GameServer(
     notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
   }
 
-  def shutdown(): Unit = {
+  private def shutdown(): Unit = {
     isShuttingDown = true
 
-    if players.nonEmpty then {
-      Thread.sleep(1000) // give clients a chance to logout
+    // give clients a chance to logout
+    for _ <- 1 to 100 if players.nonEmpty do {
+      Thread.sleep(10)
     }
   }
 
@@ -306,7 +307,7 @@ class GameServer(
     world.unload()
   }
 
-  def run(): Unit = {
+  private def run(): Unit = {
     val messagesToSend: mutable.ArrayBuffer[(Long, Nbt)] = mutable.ArrayBuffer.empty
 
     while server.running do {
@@ -442,6 +443,9 @@ class GameServer(
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
                   otherData.entity.toNBT
                 )
+              }
+              otherData.messagesWaitingToBeSent.synchronized {
+                otherData.messagesWaitingToBeSent += ServerMessage(s"$name logged in", ServerMessage.Sender.Server)
               }
             }
           }
