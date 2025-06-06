@@ -19,7 +19,8 @@ class Text(
     val position: Vector2f,
     val maxLineLength: Float,
     val centered: Boolean,
-    val hasShadow: Boolean
+    val hasShadow: Boolean,
+    val bold: Boolean
 ) {
   private var textMeshVao: VAO = null.asInstanceOf[VAO]
   private var _vertexCount: Int = 0

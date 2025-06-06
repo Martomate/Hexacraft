@@ -13,7 +13,7 @@ class PlayerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
   test("saving should save all the fields as NBT") {
-    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(3.2, 4.56, -1.7))
+    val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(3.2, 4.56, -1.7))
 
     val nbt = player.toNBT
     assert(nbt.getMap("position").isDefined)
@@ -27,14 +27,14 @@ class PlayerTest extends FunSuite {
   }
 
   test("saving should be possible to load the player from NBT") {
-    val playerBefore = Player.atStartPos(UUID.randomUUID(), CylCoords(3.2, 4.56, -1.7))
+    val playerBefore = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(3.2, 4.56, -1.7))
     playerBefore.velocity.set(4, -5, .6)
     playerBefore.rotation.set(0.1, 0.2, -0.3)
     playerBefore.flying = true
     playerBefore.selectedItemSlot = 7
     playerBefore.inventory = playerBefore.inventory.updated(3, Block.Stone)
 
-    val playerAfter = Player.fromNBT(UUID.randomUUID(), playerBefore.toNBT)
+    val playerAfter = Player.fromNBT(UUID.randomUUID(), "Some dude", playerBefore.toNBT)
 
     assert(playerAfter.velocity.distance(playerBefore.velocity) < 1e-9)
     assert(playerAfter.position.distance(playerBefore.position) < 1e-9)
@@ -45,7 +45,7 @@ class PlayerTest extends FunSuite {
   }
 
   test("fromNBT should have good default values") {
-    val player = Player.fromNBT(UUID.randomUUID(), Nbt.emptyMap)
+    val player = Player.fromNBT(UUID.randomUUID(), "Some dude", Nbt.emptyMap)
 
     assert(player.position.length() < 1e-9)
     assert(player.rotation.length() < 1e-9)

@@ -35,9 +35,10 @@ object GameClient {
   }
 
   private val useFarDistanceRenderer = false
-  
+
   def create(
       playerId: UUID,
+      playerName: String,
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
@@ -48,7 +49,7 @@ object GameClient {
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(serverIp, serverPort)
 
-    val (worldInfo, player) = fetchWorldInfo(socket, playerId) match {
+    val (worldInfo, player) = fetchWorldInfo(socket, playerId, playerName) match {
       case Result.Ok(value) => value
       case Result.Err(message) =>
         socket.close()
@@ -130,8 +131,12 @@ object GameClient {
     Result.Ok((client, rx))
   }
 
-  private def fetchWorldInfo(socket: GameClientSocket, playerId: UUID): Result[(WorldInfo, Player), String] = try {
-    val loginResponse = socket.sendPacketAndWait(NetworkPacket.Login(playerId, "Some name")).asMap.get
+  private def fetchWorldInfo(
+      socket: GameClientSocket,
+      playerId: UUID,
+      playerName: String
+  ): Result[(WorldInfo, Player), String] = try {
+    val loginResponse = socket.sendPacketAndWait(NetworkPacket.Login(playerId, playerName)).asMap.get
     val loginSuccessful = loginResponse.getBoolean("success", false)
     if !loginSuccessful then {
       val errorMessage = loginResponse.getString("error", "")
@@ -145,7 +150,7 @@ object GameClient {
     )
 
     val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
-    val player = Player.fromNBT(playerId, playerNbt.asMap.get)
+    val player = Player.fromNBT(playerId, playerName, playerNbt.asMap.get)
 
     Result.Ok((worldInfo, player))
   } catch {
@@ -587,7 +592,7 @@ class GameClient(
       val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) =
         Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
 
-      val syncedPlayer = Player.fromNBT(player.id, playerNbt.asInstanceOf[Nbt.MapTag])
+      val syncedPlayer = Player.fromNBT(player.id, player.name, playerNbt.asInstanceOf[Nbt.MapTag])
       // println(syncedPlayer.position)
       if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
       val positionDiff = syncedPlayer.position.sub(player.position, new Vector3d)

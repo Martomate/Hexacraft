@@ -47,6 +47,7 @@ class GameSceneTest extends FunSuite {
           GameScene
             .ClientParams(
               UUID.randomUUID(),
+              "Some dude",
               "localhost",
               19271,
               false,
@@ -68,7 +69,17 @@ class GameSceneTest extends FunSuite {
     val (gameScene, _) = GameScene
       .create(
         GameScene
-          .ClientParams(UUID.randomUUID(), "localhost", 19272, false, keyboard, textureLoader, audioSystem, windowSize),
+          .ClientParams(
+            UUID.randomUUID(),
+            "Some dude",
+            "localhost",
+            19272,
+            false,
+            keyboard,
+            textureLoader,
+            audioSystem,
+            windowSize
+          ),
         Some(GameScene.ServerParams(worldProvider))
       )
       .unwrap()
@@ -97,7 +108,17 @@ class GameSceneTest extends FunSuite {
     val (gameScene, rx) = GameScene
       .create(
         GameScene
-          .ClientParams(UUID.randomUUID(), "localhost", 19273, false, keyboard, textureLoader, audioSystem, windowSize),
+          .ClientParams(
+            UUID.randomUUID(),
+            "Some dude",
+            "localhost",
+            19273,
+            false,
+            keyboard,
+            textureLoader,
+            audioSystem,
+            windowSize
+          ),
         Some(GameScene.ServerParams(worldProvider))
       )
       .unwrap()
@@ -126,7 +147,7 @@ class GameSceneTest extends FunSuite {
     // Step 1: configure the server to host a world with a player looking at a block a few meters away
 
     val playerId = UUID.randomUUID()
-    val storedPlayer = new Player(playerId, Inventory.default)
+    val storedPlayer = new Player(playerId, "Some dude", Inventory.default)
     storedPlayer.flying = false
     storedPlayer.position.set(0, 4, 0) // ensure player is in the middle of the spawn chunk (4 meters = 8 blocks)
     storedPlayer.rotation.set(math.Pi / 2, 0, 0) // look down
@@ -147,7 +168,17 @@ class GameSceneTest extends FunSuite {
     val (gameScene, rx) = GameScene
       .create(
         GameScene
-          .ClientParams(playerId, "localhost", 19274, false, keyboard, textureLoader, audioSystem, windowSize),
+          .ClientParams(
+            playerId,
+            "localhost",
+            "Some dude",
+            19274,
+            false,
+            keyboard,
+            textureLoader,
+            audioSystem,
+            windowSize
+          ),
         Some(GameScene.ServerParams(worldProvider))
       )
       .unwrap()
@@ -189,7 +220,7 @@ class GameSceneTest extends FunSuite {
     // Step 1: configure the server to host a world with a player looking at a block a few meters away
 
     val playerId = UUID.randomUUID()
-    val storedPlayer = new Player(playerId, Inventory.default)
+    val storedPlayer = new Player(playerId, "Some dude", Inventory.default)
     storedPlayer.flying = false
     storedPlayer.position.set(0, 4, 0) // ensure player is in the middle of the spawn chunk (4 meters = 8 blocks)
     storedPlayer.rotation.set(math.Pi / 2, 0, 0) // look down
@@ -210,7 +241,17 @@ class GameSceneTest extends FunSuite {
     val (gameScene, rx) = GameScene
       .create(
         GameScene
-          .ClientParams(playerId, "localhost", 19275, false, keyboard, textureLoader, audioSystem, windowSize),
+          .ClientParams(
+            playerId,
+            "localhost",
+            "Some dude",
+            19275,
+            false,
+            keyboard,
+            textureLoader,
+            audioSystem,
+            windowSize
+          ),
         Some(GameScene.ServerParams(worldProvider))
       )
       .unwrap()

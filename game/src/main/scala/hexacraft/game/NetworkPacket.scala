@@ -26,18 +26,18 @@ case class ServerMessage(
 object ServerMessage {
   enum Sender {
     case Server
-    case Player(id: UUID)
+    case Player(id: UUID, name: String)
 
     def toNbt: Nbt = {
       val kind = this match {
-        case Sender.Server     => "server"
-        case Sender.Player(id) => "player"
+        case Sender.Server       => "server"
+        case Sender.Player(_, _) => "player"
       }
       val data = this match {
         case Sender.Server =>
           Nbt.makeMap()
-        case Sender.Player(id) =>
-          Nbt.makeMap("id" -> Nbt.StringTag(id.toString))
+        case Sender.Player(id, name) =>
+          Nbt.makeMap("id" -> Nbt.StringTag(id.toString), "name" -> Nbt.StringTag(name.toString))
       }
       data.withField("kind", Nbt.StringTag(kind))
     }
@@ -52,7 +52,8 @@ object ServerMessage {
           for {
             id <- tag.getString("id")
             id <- Try(UUID.fromString(id)).toOption
-          } yield Sender.Player(id)
+            name <- tag.getString("name")
+          } yield Sender.Player(id, name)
         case _ => None
       }
     }

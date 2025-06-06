@@ -48,17 +48,28 @@ class FontRenderer {
     OpenGL.glBindVertexArray(text.getMesh)
 
     if text.hasShadow then {
+      val dist = 0.001f * (if text.bold then 2 else 1)
       shader.setColor(text.shadowColor)
       shader.setTranslation(
-        text.position.x + xOffset + 0.001f * (2 + text.fontSize * 0.5f),
-        text.position.y + yOffset + -0.001f * (2 + text.fontSize * 0.5f)
+        text.position.x + xOffset + dist * (2 + text.fontSize * 0.5f),
+        text.position.y + yOffset + -dist * (2 + text.fontSize * 0.5f)
       )
       OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
     }
 
-    shader.setColor(text.color)
-    shader.setTranslation(text.position.x + xOffset, text.position.y + yOffset)
-    OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
+    if text.bold then {
+      for i <- 1 until 9 by 2 do {
+        val dx = ((i % 3) - 1) * 0.001f
+        val dy = ((i / 3) - 1) * 0.001f
+        shader.setColor(text.color)
+        shader.setTranslation(text.position.x + xOffset + dx, text.position.y + yOffset + dy)
+        OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
+      }
+    } else {
+      shader.setColor(text.color)
+      shader.setTranslation(text.position.x + xOffset, text.position.y + yOffset)
+      OpenGL.glDrawArrays(OpenGL.PrimitiveMode.Triangles, 0, text.vertexCount)
+    }
   }
 
   private def endRendering(): Unit = {

@@ -28,9 +28,11 @@ class Application(
           this.performShortcuts(saveFolder, window)
         }
 
-        window.run()
-
-        gameIsRunning = false
+        try {
+          window.run()
+        } finally {
+          gameIsRunning = false
+        }
       })
       gameThread.start()
 

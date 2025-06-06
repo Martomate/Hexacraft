@@ -12,6 +12,7 @@ enum SceneRoute {
   case Multiplayer
   case JoinWorld
   case HostWorld
+  case ChoosePlayerName(next: SceneRoute)
   case AddServer
   case Settings
   case Game(

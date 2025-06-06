@@ -42,6 +42,8 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
     try {
       socket.connect(InetAddress.getByName("8.8.8.8"), 10002)
       socket.getLocalAddress.getHostAddress
+    } catch {
+      case _: Exception => "127.0.0.1"
     } finally {
       socket.close()
     }

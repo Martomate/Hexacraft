@@ -7,7 +7,7 @@ import hexacraft.shaders.{ColorShader, FancyRectShader, ImageShader}
 import hexacraft.text.{Fonts, Text, TextMaster}
 import hexacraft.text.font.Font
 
-import org.joml.{Matrix4f, Vector2f, Vector4f}
+import org.joml.{Matrix4f, Vector2f, Vector3f, Vector4f}
 
 abstract class Component {
   private val textMaster = new TextMaster()
@@ -117,15 +117,17 @@ object Component {
       location: LocationInfo,
       textSize: Float,
       centered: Boolean = true,
-      shadow: Boolean = false
+      shadow: Boolean = false,
+      bold: Boolean = false,
+      color: Vector3f = new Vector3f(0.9f, 0.9f, 0.9f)
   ): Text = {
     val position = new Vector2f(location.x, location.y + 0.5f * location.h + 0.015f * textSize)
-    val guiText = Text(text, textSize, Component.font, position, location.w, centered, shadow)
+    val guiText = Text(text, textSize, Component.font, position, location.w, centered, shadow, bold)
 
     if shadow then {
       guiText.setShadowColor(0.3f, 0.3f, 0.3f)
     }
-    guiText.setColor(0.9f, 0.9f, 0.9f)
+    guiText.setColor(color.x, color.y, color.z)
 
     guiText
   }

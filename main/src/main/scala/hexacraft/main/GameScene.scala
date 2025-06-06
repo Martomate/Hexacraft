@@ -20,6 +20,7 @@ object GameScene {
 
   case class ClientParams(
       playerId: UUID,
+      playerName: String,
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
@@ -40,6 +41,7 @@ object GameScene {
 
     val (client, clientEvents) = GameClient.create(
       c.playerId,
+      c.playerName,
       c.serverIp,
       c.serverPort,
       c.isOnline,

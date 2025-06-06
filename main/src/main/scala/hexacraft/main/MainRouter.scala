@@ -6,6 +6,8 @@ import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.CursorMode
+import hexacraft.main.Menus.ChoosePlayerNameMenu
+import hexacraft.main.SceneRoute.AddServer
 import hexacraft.server.WorldProviderFromFile
 import hexacraft.util.{Channel, Result}
 import hexacraft.world.WorldSettings
@@ -114,12 +116,14 @@ class MainRouter(
         case Event.Join(address, port) =>
           println(s"Will connect to: $address at port $port")
           route(
-            SceneRoute.Game(
-              null,
-              WorldSettings.none,
-              isHosting = false,
-              isOnline = true,
-              (address, port)
+            SceneRoute.ChoosePlayerName(
+              SceneRoute.Game(
+                null,
+                WorldSettings.none,
+                isHosting = false,
+                isOnline = true,
+                (address, port)
+              )
             )
           )
         case Event.AddServer => route(SceneRoute.AddServer)
@@ -152,12 +156,32 @@ class MainRouter(
         case Event.Host(f) =>
           println(s"Hosting world from ${f.saveFile.getName}")
           route(
-            SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null)
+            SceneRoute.ChoosePlayerName(
+              SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null)
+            )
           )
         case Event.GoBack => route(SceneRoute.Multiplayer)
       }
 
       scene
+
+    case SceneRoute.ChoosePlayerName(next) =>
+      import Menus.ChoosePlayerNameMenu.Event
+
+      loadUserName() match {
+        case Some(_) =>
+          createScene(next, route, requestQuit)
+        case None =>
+          val (scene, rx) = ChoosePlayerNameMenu.create()
+          rx.onEvent {
+            case Event.ChooseName(name) =>
+              storeUserName(name)
+              route(next)
+            case Event.Cancel =>
+              route(SceneRoute.Multiplayer)
+          }
+          scene
+      }
 
     case SceneRoute.Settings =>
       new Menus.SettingsMenu(() => route(SceneRoute.Main))
@@ -168,6 +192,7 @@ class MainRouter(
 
       val client = GameScene.ClientParams(
         loadUserId(),
+        loadUserName().getOrElse(""),
         serverIp,
         serverPort,
         isOnline,
@@ -217,5 +242,23 @@ class MainRouter(
         }
     }
     userId
+  }
+
+  private def loadUserName(): Option[String] = {
+    val path = new File(saveFolder, "username.txt").toPath
+    fs.readAllBytes(path) match {
+      case Result.Ok(bytes) => Some(String(bytes))
+      case Result.Err(e) =>
+        e match {
+          case FileSystem.Error.FileNotFound => None
+          case FileSystem.Error.Unknown(e) =>
+            throw new RuntimeException(s"Failed to read username file", e)
+        }
+    }
+  }
+
+  private def storeUserName(name: String): Unit = {
+    val path = new File(saveFolder, "username.txt").toPath
+    fs.writeBytes(path, name.getBytes)
   }
 }

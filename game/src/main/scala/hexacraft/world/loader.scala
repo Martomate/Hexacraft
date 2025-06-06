@@ -27,11 +27,11 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
 
   private def distSq(p: Pose, c: ChunkRelWorld): Double = ChunkLoadingPrioritizer.distSq(p, c)
 
-  def +=(chunk: ChunkRelWorld): Unit = {
+  def +=(chunk: ChunkRelWorld): Unit = this.synchronized {
     edge.loadChunk(chunk)
   }
 
-  def -=(chunk: ChunkRelWorld): Unit = {
+  def -=(chunk: ChunkRelWorld): Unit = this.synchronized {
     edge.unloadChunk(chunk)
   }
 
@@ -40,7 +40,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     if reorderingTimer.tick() then reorderPQs()
   }
 
-  def reorderPQs(): Unit = {
+  def reorderPQs(): Unit = this.synchronized {
     val addSeq = addableChunks.toSeq
     addableChunks.clear()
     addableChunks.enqueue(addSeq*)
@@ -50,7 +50,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     removableChunks.enqueue(remSeq*)
   }
 
-  def nextAddableChunk: Option[ChunkRelWorld] = {
+  def nextAddableChunk: Option[ChunkRelWorld] = this.synchronized {
     while addableChunks.nonEmpty && !edge.canLoad(addableChunks.head) do {
       addableChunks.dequeue()
     }
@@ -62,7 +62,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     }
   }
 
-  def nextAddableChunks(n: Int): Seq[ChunkRelWorld] = {
+  def nextAddableChunks(n: Int): Seq[ChunkRelWorld] = this.synchronized {
     if n == 1 then {
       return nextAddableChunk.toSeq
     } else if n < 1 then {
@@ -90,7 +90,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     result.filter(coords => distSq(origin, coords) <= maxDistSqInBlocks).toSeq
   }
 
-  def nextRemovableChunk: Option[ChunkRelWorld] = {
+  def nextRemovableChunk: Option[ChunkRelWorld] = this.synchronized {
     while removableChunks.nonEmpty && !edge.onEdge(removableChunks.head) do {
       removableChunks.dequeue()
     }
@@ -118,7 +118,7 @@ class ChunkLoadingPrioritizer(maxDist: Double)(using CylinderSize) {
     chunk
   }
 
-  private def makeChunkLoadingEdge(): ChunkLoadingEdge = {
+  private def makeChunkLoadingEdge(): ChunkLoadingEdge = this.synchronized {
     import ChunkLoadingEdge.Event
 
     val (tx, rx) = Channel[ChunkLoadingEdge.Event]()

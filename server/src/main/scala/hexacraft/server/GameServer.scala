@@ -405,9 +405,9 @@ class GameServer(
 
           val playerNbt = worldProvider.loadPlayerData(id).orNull
           val player = if playerNbt != null then {
-            Player.fromNBT(id, playerNbt)
+            Player.fromNBT(id, name, playerNbt)
           } else {
-            makePlayer(id, world)
+            makePlayer(id, name, world)
           }
           worldProvider.savePlayerData(player.toNBT, player.id)
 
@@ -636,7 +636,7 @@ class GameServer(
               p.messagesWaitingToBeSent.synchronized {
                 p.messagesWaitingToBeSent += ServerMessage(
                   text = message,
-                  sender = ServerMessage.Sender.Player(p.player.id)
+                  sender = ServerMessage.Sender.Player(player.id, player.name)
                 )
               }
             }
@@ -665,13 +665,13 @@ class GameServer(
     }
   }
 
-  private def makePlayer(id: UUID, world: ServerWorld): Player = {
+  private def makePlayer(id: UUID, name: String, world: ServerWorld): Player = {
     given CylinderSize = world.size
 
     val startX = (math.random() * 10 - 5).toInt
     val startZ = (math.random() * 10 - 5).toInt
     val startY = world.getHeight(startX, startZ) + 4
-    Player.atStartPos(id, BlockCoords(startX, startY, startZ).toCylCoords)
+    Player.atStartPos(id, name, BlockCoords(startX, startY, startZ).toCylCoords)
   }
 
   private def stop(): Unit = {

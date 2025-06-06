@@ -276,7 +276,7 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
           entitiesToSpawnLater += e
           // println(s"Client: not ready to spawn entity ${e.id}")
         } else {
-          // println(s"Client: finally spawned entity ${e.id}")
+          println(s"Client: finally spawned entity ${e.id}")
         }
       }
     }

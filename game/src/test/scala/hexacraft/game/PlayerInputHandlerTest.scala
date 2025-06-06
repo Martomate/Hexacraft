@@ -13,7 +13,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("tick should update the velocity if MoveForward is pressed") {
     val keyboard = FakeGameKeyboard(Seq(GameKeyboard.Key.MoveForward))
-    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     assert(player.velocity.length() == 0)
@@ -23,7 +23,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("tick should not update the velocity if no key is pressed") {
     val keyboard = FakeGameKeyboard(Seq.empty)
-    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     assert(player.velocity.length() == 0)
@@ -33,7 +33,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("tick should not rotate the player if mouse has not moved") {
     val keyboard = FakeGameKeyboard(Seq.empty)
-    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
@@ -46,7 +46,7 @@ class PlayerInputHandlerTest extends FunSuite {
 
   test("test should rotate the player if mouse has moved") {
     val keyboard = FakeGameKeyboard(Seq.empty)
-    val player = Player.atStartPos(UUID.randomUUID(), CylCoords(1.23, 2.45, 3.56))
+    val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(1.23, 2.45, 3.56))
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
