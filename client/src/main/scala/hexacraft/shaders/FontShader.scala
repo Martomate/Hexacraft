@@ -3,7 +3,7 @@ package hexacraft.shaders
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
-import org.joml.Vector3f
+import org.joml.Vector4f
 
 class FontShader {
   private val shader = Shader.from(
@@ -17,8 +17,8 @@ class FontShader {
     shader.setUniform1f("windowAspectRatio", aspectRatio)
   }
 
-  def setColor(color: Vector3f): Unit = {
-    shader.setUniform3f("color", color)
+  def setColor(color: Vector4f): Unit = {
+    shader.setUniform4f("color", color)
   }
 
   def setTranslation(x: Float, y: Float): Unit = {

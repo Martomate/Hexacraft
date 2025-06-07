@@ -6,7 +6,7 @@ import hexacraft.shaders.FontShader
 import hexacraft.text.font.Font
 import hexacraft.text.layout.LineBreaker
 
-import org.joml.{Vector2f, Vector3f}
+import org.joml.{Vector2f, Vector3f, Vector4f}
 
 object Text {
   private val BaseLineHeight: Double = 0.03
@@ -25,6 +25,7 @@ class Text(
   private var textMeshVao: VAO = null.asInstanceOf[VAO]
   private var _vertexCount: Int = 0
   private val _color: Vector3f = new Vector3f(0f, 0f, 0f)
+  private var _opacity: Float = 1f
   private val _shadowColor: Vector3f = new Vector3f(0f, 0f, 0f)
   private var numberOfLines: Int = 0
   private var lineWidths: Seq[Double] = Nil
@@ -73,7 +74,7 @@ class Text(
     setMeshInfo(vao, data.getVertexCount)
   }
 
-  def color: Vector3f = _color
+  def color: Vector4f = new Vector4f(_color, _opacity)
   def shadowColor: Vector3f = _shadowColor
 
   /** Set the color of the text.
@@ -87,6 +88,11 @@ class Text(
     */
   def setColor(r: Float, g: Float, b: Float): Text = {
     _color.set(r, g, b)
+    this
+  }
+
+  def setOpacity(a: Float): Text = {
+    _opacity = a
     this
   }
 

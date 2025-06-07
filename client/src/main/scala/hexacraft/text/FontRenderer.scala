@@ -5,6 +5,8 @@ import hexacraft.renderer.{TextureSingle, VAO}
 import hexacraft.shaders.FontShader
 import hexacraft.text.font.Font
 
+import org.joml.Vector4f
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -49,7 +51,7 @@ class FontRenderer {
 
     if text.hasShadow then {
       val dist = 0.001f * (if text.bold then 2 else 1)
-      shader.setColor(text.shadowColor)
+      shader.setColor(new Vector4f(text.shadowColor, text.color.w))
       shader.setTranslation(
         text.position.x + xOffset + dist * (2 + text.fontSize * 0.5f),
         text.position.y + yOffset + -dist * (2 + text.fontSize * 0.5f)

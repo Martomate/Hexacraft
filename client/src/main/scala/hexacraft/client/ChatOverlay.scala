@@ -20,7 +20,7 @@ object ChatOverlay {
 }
 
 class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Component with SubComponents {
-  private val texts = mutable.ArrayBuffer.empty[(LocationInfo, Text)]
+  private val texts = mutable.ArrayBuffer.empty[(Long, ServerMessage)]
 
   private val scrollPaneVerticalPadding = 0.005f
   private val scrollPaneBounds = LocationInfo.from16x9(0.005f, 0.20f, 0.3f, scrollPaneVerticalPadding + 0.03f * 16)
@@ -39,14 +39,33 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       enableVerticalScroll = active,
       transparentBackground = !active
     )
-    for (l, t) <- texts do {
-      pane.addComponent(new Label(t, l))
+    for ((ts, m), index) <- texts.zipWithIndex do {
+      val (t, l) = makeText(m, index)
+      pane.addComponent(makeMessageLabel(t, l, ts, active))
     }
     pane.scroll(0, 1e9) // scroll to bottom so the newest messages are visible
     pane
   }
 
+  private def makeMessageLabel(text: Text, location: LocationInfo, ts: Long, active: Boolean) = {
+    val label = new Label(text, location)
+    if active then label else label.withFade(ts + 5000, 1000)
+  }
+
   def addMessage(m: ServerMessage): Unit = {
+    val ts = System.currentTimeMillis()
+
+    val (text, location) = makeText(m, texts.size)
+
+    if scrollPane.isDefined then {
+      val active = input.isDefined
+      scrollPane.get.addComponent(makeMessageLabel(text, location, ts, active))
+      scrollPane.get.scroll(0, 0.06f)
+    }
+    texts += ((ts, m))
+  }
+
+  def makeText(m: ServerMessage, index: Int): (Text, LocationInfo) = {
     val prefix = m.sender match {
       case Sender.Server          => ""
       case Sender.Player(_, name) => s"$name: "
@@ -62,22 +81,19 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       case Sender.Player(_, _) => false
     }
 
-    val location = LocationInfo.from16x9(0.01f, -0.03f * texts.size, 0.3f, 0.03f)
-    val text = Component.makeText(
-      prefix + m.text,
-      location,
-      2,
-      centered = false,
-      shadow = true,
-      bold = bold,
-      color = color
+    val location = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f)
+    (
+      Component.makeText(
+        prefix + m.text,
+        location,
+        2,
+        centered = false,
+        shadow = true,
+        bold = bold,
+        color = color
+      ),
+      location
     )
-    val guiText = new Label(text, location)
-    if scrollPane.isDefined then {
-      scrollPane.get.addComponent(guiText)
-      scrollPane.get.scroll(0, 0.06f)
-    }
-    texts += ((location, text))
   }
 
   def setInputEnabled(enabled: Boolean): Unit = {

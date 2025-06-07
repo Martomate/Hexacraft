@@ -1,6 +1,6 @@
 package hexacraft.gui.comp
 
-import hexacraft.gui.{Event, LocationInfo, RenderContext}
+import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.math.MathUtils
 
@@ -42,6 +42,13 @@ class ScrollPane(
       components(idx) = comp
     }
     clampScroll()
+  }
+
+  override def tick(ctx: TickContext): Unit = {
+    super.tick(ctx)
+    for c <- this.components do {
+      c.tick(ctx)
+    }
   }
 
   override def render(context: RenderContext): Unit = {
