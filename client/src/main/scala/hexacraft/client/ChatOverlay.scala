@@ -3,7 +3,7 @@ package hexacraft.client
 import hexacraft.game.ServerMessage
 import hexacraft.game.ServerMessage.Sender
 import hexacraft.gui.{Event, LocationInfo, RenderContext}
-import hexacraft.gui.comp.{Component, SubComponents, TextField}
+import hexacraft.gui.comp.{Component, Label, ScrollPane, SubComponents, TextField}
 import hexacraft.infra.window.{KeyAction, KeyboardKey}
 import hexacraft.text.Text
 import hexacraft.util.Channel
@@ -20,19 +20,33 @@ object ChatOverlay {
 }
 
 class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Component with SubComponents {
-  private val texts = mutable.ArrayBuffer.empty[Text]
+  private val texts = mutable.ArrayBuffer.empty[(LocationInfo, Text)]
+
+  private val scrollPaneVerticalPadding = 0.005f
+  private val scrollPaneBounds = LocationInfo.from16x9(0.005f, 0.20f, 0.3f, scrollPaneVerticalPadding + 0.03f * 16)
+  private var scrollPane: Option[ScrollPane] = Some(makeScrollPane(active = false))
+  addComponent(scrollPane.get)
 
   private var input: Option[TextField] = None
 
   def isInputEnabled: Boolean = input.isDefined
 
-  def addMessage(m: ServerMessage): Unit = {
-    // TODO: include player name somehow
-
-    for t <- texts do {
-      t.position.y += 0.06f
+  private def makeScrollPane(active: Boolean): ScrollPane = {
+    val pane = ScrollPane(
+      scrollPaneBounds,
+      padding = scrollPaneVerticalPadding,
+      placeAtBottom = true,
+      enableVerticalScroll = active,
+      transparentBackground = !active
+    )
+    for (l, t) <- texts do {
+      pane.addComponent(new Label(t, l))
     }
+    pane.scroll(0, 1e9) // scroll to bottom so the newest messages are visible
+    pane
+  }
 
+  def addMessage(m: ServerMessage): Unit = {
     val prefix = m.sender match {
       case Sender.Server          => ""
       case Sender.Player(_, name) => s"$name: "
@@ -48,8 +62,8 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       case Sender.Player(_, _) => false
     }
 
-    val location = LocationInfo.from16x9(0.01f, 0.20f, 0.3f, 0.05f)
-    val guiText = Component.makeText(
+    val location = LocationInfo.from16x9(0.01f, -0.03f * texts.size, 0.3f, 0.03f)
+    val text = Component.makeText(
       prefix + m.text,
       location,
       2,
@@ -58,8 +72,12 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       bold = bold,
       color = color
     )
-    this.addText(guiText)
-    texts += guiText
+    val guiText = new Label(text, location)
+    if scrollPane.isDefined then {
+      scrollPane.get.addComponent(guiText)
+      scrollPane.get.scroll(0, 0.06f)
+    }
+    texts += ((location, text))
   }
 
   def setInputEnabled(enabled: Boolean): Unit = {
@@ -86,6 +104,16 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
         c.unload()
       }
     }
+
+    if enabled then {
+      if scrollPane.isDefined then removeComponent(scrollPane.get)
+      scrollPane = Some(makeScrollPane(active = true))
+      addComponent(scrollPane.get)
+    } else if !enabled then {
+      if scrollPane.isDefined then removeComponent(scrollPane.get)
+      scrollPane = Some(makeScrollPane(active = false))
+      addComponent(scrollPane.get)
+    }
   }
 
   override def handleEvent(event: Event): Boolean = {
@@ -104,12 +132,5 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
     } else {
       super.handleEvent(event)
     }
-  }
-
-  override def render(context: RenderContext): Unit = {
-    texts.foreach(t => t.setPosition(-context.windowAspectRatio + 0.01f * 2 * 16 / 9, t.position.y))
-    val location = LocationInfo.from16x9(0.0f, 0.20f, 0.3f, 0.02f + 0.03f * texts.size)
-    Component.drawRect(location, context.offset.x, context.offset.y, Vector4f(0, 0, 0, 0.3f), context.windowAspectRatio)
-    super.render(context)
   }
 }

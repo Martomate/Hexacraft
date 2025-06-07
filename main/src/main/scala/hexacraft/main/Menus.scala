@@ -72,7 +72,7 @@ object Menus {
 
       val menu = new MainMenu
 
-      menu.addComponent(new Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
+      menu.addComponent(Label("Hexacraft", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
       menu.addComponent(Button("Play", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(tx.send(Event.Play)))
 
       if multiplayerEnabled then {
@@ -106,7 +106,7 @@ object Menus {
       val worlds = getWorlds(saveFolder, fs)
       val scrollPane = makeScrollPane(worlds, tx)
 
-      menu.addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
+      menu.addComponent(Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
       menu.addComponent(scrollPane)
       menu.addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.4f, 0.1f))(tx.send(Event.GoBack)))
 
@@ -200,7 +200,7 @@ object Menus {
         }
       }
 
-      menu.addComponent(new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
+      menu.addComponent(Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1))
       menu.addComponent(scrollPane)
       menu.addComponent(Button("Back", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f))(tx.send(Event.GoBack)))
       menu.addComponent(Button("Add", LocationInfo.from16x9(0.51f, 0.05f, 0.19f, 0.1f))(tx.send(Event.AddServer)))
@@ -232,9 +232,9 @@ object Menus {
         }.toOption
       }
 
-      val addressLabel = new Label("IP address", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val addressLabel = Label("IP address", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
-      val portLabel = new Label("Port", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val portLabel = Label("Port", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
 
       menu.addComponent(addressLabel)
@@ -265,7 +265,7 @@ object Menus {
 
       val nameTF = new TextField(LocationInfo.from16x9(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 2.5f)
 
-      val nameLabel = new Label("Player name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val nameLabel = Label("Player name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
 
       menu.addComponent(nameLabel)
@@ -293,7 +293,7 @@ object Menus {
       val (tx, rx) = Channel[Event]()
 
       val menu = new MultiplayerMenu
-      menu.addComponent(new Label("Multiplayer", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
+      menu.addComponent(Label("Multiplayer", LocationInfo.from16x9(0, 0.8f, 1, 0.2f), 10).withColor(1, 1, 1))
       menu.addComponent(Button("Join", LocationInfo.from16x9(0.4f, 0.55f, 0.2f, 0.1f))(tx.send(Event.Join)))
       menu.addComponent(Button("Host", LocationInfo.from16x9(0.4f, 0.4f, 0.2f, 0.1f))(tx.send(Event.Host)))
       menu.addComponent(Button("Back", LocationInfo.from16x9(0.4f, 0.05f, 0.2f, 0.1f))(tx.send(Event.GoBack)))
@@ -326,7 +326,7 @@ object Menus {
       val scrollPane = makeScrollPane(worlds, tx)
 
       menu.addComponent(
-        new Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
+        Label("Choose world", LocationInfo.from16x9(0, 0.85f, 1, 0.15f), 6).withColor(1, 1, 1)
       )
       menu.addComponent(scrollPane)
       menu.addComponent(Button("Back to menu", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
@@ -411,11 +411,11 @@ object Menus {
         }
       }
 
-      val nameLabel = new Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val nameLabel = Label("World name", LocationInfo.from16x9(0.3f, 0.7f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
-      val sizeLabel = new Label("World size", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val sizeLabel = Label("World size", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
-      val seedLabel = new Label("World seed", LocationInfo.from16x9(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false)
+      val seedLabel = Label("World seed", LocationInfo.from16x9(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
 
       menu.addComponent(nameLabel)
