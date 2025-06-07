@@ -39,30 +39,37 @@ object GameScene {
 
     val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldProvider))
 
-    val (client, clientEvents) = GameClient.create(
-      c.playerId,
-      c.playerName,
-      c.serverIp,
-      c.serverPort,
-      c.isOnline,
-      c.keyboard,
-      c.textureLoader,
-      c.initialWindowSize,
-      c.audioSystem
-    ) match {
-      case Result.Ok(res) => res
-      case Result.Err(message) =>
-        if server.isDefined then {
-          server.get.unload()
+    val client =
+      try {
+        val (client, clientEvents) = GameClient.create(
+          c.playerId,
+          c.playerName,
+          c.serverIp,
+          c.serverPort,
+          c.isOnline,
+          c.keyboard,
+          c.textureLoader,
+          c.initialWindowSize,
+          c.audioSystem
+        ) match {
+          case Result.Ok(res) => res
+          case Result.Err(message) =>
+            if server.isDefined then {
+              server.get.unload()
+            }
+            return Result.Err(s"failed to start game: $message")
         }
-        return Result.Err(s"failed to start game: $message")
-    }
-
-    clientEvents.onEvent {
-      case GameClient.Event.GameQuit       => tx.send(GameQuit)
-      case GameClient.Event.CursorCaptured => tx.send(CursorCaptured)
-      case GameClient.Event.CursorReleased => tx.send(CursorReleased)
-    }
+        clientEvents.onEvent {
+          case GameClient.Event.GameQuit       => tx.send(GameQuit)
+          case GameClient.Event.CursorCaptured => tx.send(CursorCaptured)
+          case GameClient.Event.CursorReleased => tx.send(CursorReleased)
+        }
+        client
+      } catch {
+        case e: Exception =>
+          server.foreach(_.unload())
+          throw e
+      }
 
     Result.Ok((new GameScene(client, server), rx))
   }
