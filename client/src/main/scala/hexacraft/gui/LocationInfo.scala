@@ -30,11 +30,16 @@ case class LocationInfo(x: Float, y: Float, w: Float, h: Float) {
   def expand(d: Float): LocationInfo = {
     LocationInfo(x - d, y - d, w + 2 * d, h + 2 * d)
   }
+
+  def inAspectRatio(currentAspectRatio: Float, newAspectRatio: Float): LocationInfo = {
+    val scaleX = newAspectRatio / currentAspectRatio
+    LocationInfo(x * scaleX, y, w * scaleX, h)
+  }
 }
 
 object LocationInfo {
   def from16x9(x: Float, y: Float, w: Float, h: Float): LocationInfo = {
-    LocationInfo((x * 2 - 1) * (16f / 9), y * 2 - 1, w * 2 * 16 / 9, h * 2)
+    LocationInfo(x * 2 - 1, y * 2 - 1, w * 2, h * 2).inAspectRatio(1, 16f / 9f)
   }
 
   /** @return the smallest enclosing rectangle */

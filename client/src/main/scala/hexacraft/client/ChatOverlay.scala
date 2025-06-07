@@ -27,13 +27,38 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
   private var scrollPane: Option[ScrollPane] = Some(makeScrollPane(active = false))
   addComponent(scrollPane.get)
 
+  private var windowAspectRatio = 16f / 9f
+
   private var input: Option[TextField] = None
 
   def isInputEnabled: Boolean = input.isDefined
 
+  override def render(context: RenderContext): Unit = {
+    if windowAspectRatio != context.windowAspectRatio then {
+      windowAspectRatio = context.windowAspectRatio
+
+      if scrollPane.isDefined then {
+        scrollPane.get.unload()
+        removeComponent(scrollPane.get)
+        scrollPane = None
+      }
+      scrollPane = Some(makeScrollPane(input.isDefined))
+      addComponent(scrollPane.get)
+
+      if input.isDefined then {
+        val newInput = makeInputTextField()
+        input.get.unload()
+        removeComponent(input.get)
+        input = Some(newInput)
+        addComponent(input.get)
+      }
+    }
+    super.render(context)
+  }
+
   private def makeScrollPane(active: Boolean): ScrollPane = {
     val pane = ScrollPane(
-      scrollPaneBounds,
+      scrollPaneBounds.inAspectRatio(16f / 9f, windowAspectRatio),
       padding = scrollPaneVerticalPadding,
       placeAtBottom = true,
       enableVerticalScroll = active,
@@ -81,7 +106,7 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       case Sender.Player(_, _) => false
     }
 
-    val location = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f)
+    val location = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f).inAspectRatio(16f / 9f, windowAspectRatio)
     (
       Component.makeText(
         prefix + m.text,
@@ -96,17 +121,21 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
     )
   }
 
+  private def makeInputTextField(): TextField = {
+    TextField(
+      LocationInfo.from16x9(0.01f, 0.15f, 0.20f, 0.05f).inAspectRatio(16f / 9f, windowAspectRatio),
+      "",
+      maxFontSize = 2,
+      alwaysFocused = true,
+      centered = false,
+      backgroundEnabled = false
+    )
+  }
+
   def setInputEnabled(enabled: Boolean): Unit = {
     if enabled then {
       if input.isEmpty then {
-        val c = TextField(
-          LocationInfo.from16x9(0.01f, 0.15f, 0.20f, 0.05f),
-          "",
-          maxFontSize = 2,
-          alwaysFocused = true,
-          centered = false,
-          backgroundEnabled = false
-        )
+        val c = makeInputTextField()
         input = Some(c)
 
         this.addComponent(c)
