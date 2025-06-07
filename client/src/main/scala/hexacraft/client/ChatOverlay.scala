@@ -21,15 +21,20 @@ object ChatOverlay {
 
 class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Component with SubComponents {
   private val texts = mutable.ArrayBuffer.empty[(Long, ServerMessage)]
-
-  private val scrollPaneVerticalPadding = 0.005f
-  private val scrollPaneBounds = LocationInfo.from16x9(0.005f, 0.20f, 0.3f, scrollPaneVerticalPadding + 0.03f * 16)
-  private var scrollPane: Option[ScrollPane] = Some(makeScrollPane(active = false))
-  addComponent(scrollPane.get)
+  private var numberOfLines: Int = 0
 
   private var windowAspectRatio = 16f / 9f
 
   private var input: Option[TextField] = None
+
+  private val scrollPaneVerticalPadding = 0.005f
+  private val scrollPaneBounds = LocationInfo.from16x9(0.005f, 0.20f, 0.3f, scrollPaneVerticalPadding + 0.03f * 16)
+  private var scrollPane: ScrollPane = {
+    val (pane, lines) = makeScrollPane(active = false)
+    numberOfLines = lines
+    pane
+  }
+  addComponent(scrollPane)
 
   def isInputEnabled: Boolean = input.isDefined
 
@@ -37,13 +42,13 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
     if windowAspectRatio != context.windowAspectRatio then {
       windowAspectRatio = context.windowAspectRatio
 
-      if scrollPane.isDefined then {
-        scrollPane.get.unload()
-        removeComponent(scrollPane.get)
-        scrollPane = None
-      }
-      scrollPane = Some(makeScrollPane(input.isDefined))
-      addComponent(scrollPane.get)
+      scrollPane.unload()
+      removeComponent(scrollPane)
+
+      val (pane, lines) = makeScrollPane(input.isDefined)
+      scrollPane = pane
+      numberOfLines = lines
+      addComponent(scrollPane)
 
       if input.isDefined then {
         val newInput = makeInputTextField()
@@ -56,7 +61,7 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
     super.render(context)
   }
 
-  private def makeScrollPane(active: Boolean): ScrollPane = {
+  private def makeScrollPane(active: Boolean): (ScrollPane, Int) = {
     val pane = ScrollPane(
       scrollPaneBounds.inAspectRatio(16f / 9f, windowAspectRatio),
       padding = scrollPaneVerticalPadding,
@@ -64,12 +69,14 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       enableVerticalScroll = active,
       transparentBackground = !active
     )
-    for ((ts, m), index) <- texts.zipWithIndex do {
-      val (t, l) = makeText(m, index)
+    var index = 0
+    for (ts, m) <- texts do {
+      val (t, l, lines) = makeText(m, index)
+      index += lines
       pane.addComponent(makeMessageLabel(t, l, ts, active))
     }
     pane.scroll(0, 1e9) // scroll to bottom so the newest messages are visible
-    pane
+    (pane, index)
   }
 
   private def makeMessageLabel(text: Text, location: LocationInfo, ts: Long, active: Boolean) = {
@@ -80,17 +87,16 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
   def addMessage(m: ServerMessage): Unit = {
     val ts = System.currentTimeMillis()
 
-    val (text, location) = makeText(m, texts.size)
+    val (text, location, lines) = makeText(m, numberOfLines)
+    numberOfLines += lines
 
-    if scrollPane.isDefined then {
-      val active = input.isDefined
-      scrollPane.get.addComponent(makeMessageLabel(text, location, ts, active))
-      scrollPane.get.scroll(0, 0.06f)
-    }
+    val active = input.isDefined
+    scrollPane.addComponent(makeMessageLabel(text, location, ts, active))
+    // scrollPane.scroll(0, location.h)
     texts += ((ts, m))
   }
 
-  def makeText(m: ServerMessage, index: Int): (Text, LocationInfo) = {
+  def makeText(m: ServerMessage, index: Int): (Text, LocationInfo, Int) = {
     val prefix = m.sender match {
       case Sender.Server          => ""
       case Sender.Player(_, name) => s"$name: "
@@ -106,19 +112,20 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
       case Sender.Player(_, _) => false
     }
 
-    val location = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f).inAspectRatio(16f / 9f, windowAspectRatio)
-    (
-      Component.makeText(
-        prefix + m.text,
-        location,
-        2,
-        centered = false,
-        shadow = true,
-        bold = bold,
-        color = color
-      ),
-      location
+    val location1 = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f).inAspectRatio(16f / 9f, windowAspectRatio)
+    val text = Component.makeText(
+      prefix + m.text,
+      location1,
+      2,
+      centered = false,
+      shadow = true,
+      bold = bold,
+      color = color
     )
+    val location2 = LocationInfo
+      .from16x9(0.01f, -0.03f * (index + text.numberOfLines - 1), 0.3f, 0.03f * text.numberOfLines)
+      .inAspectRatio(16f / 9f, windowAspectRatio)
+    (text, location2, text.numberOfLines)
   }
 
   private def makeInputTextField(): TextField = {
@@ -151,13 +158,17 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
     }
 
     if enabled then {
-      if scrollPane.isDefined then removeComponent(scrollPane.get)
-      scrollPane = Some(makeScrollPane(active = true))
-      addComponent(scrollPane.get)
+      removeComponent(scrollPane)
+      val (pane, lines) = makeScrollPane(active = true)
+      numberOfLines = lines
+      scrollPane = pane
+      addComponent(scrollPane)
     } else if !enabled then {
-      if scrollPane.isDefined then removeComponent(scrollPane.get)
-      scrollPane = Some(makeScrollPane(active = false))
-      addComponent(scrollPane.get)
+      removeComponent(scrollPane)
+      val (pane, lines) = makeScrollPane(active = false)
+      numberOfLines = lines
+      scrollPane = pane
+      addComponent(scrollPane)
     }
   }
 

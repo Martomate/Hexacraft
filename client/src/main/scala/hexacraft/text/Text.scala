@@ -27,9 +27,11 @@ class Text(
   private val _color: Vector3f = new Vector3f(0f, 0f, 0f)
   private var _opacity: Float = 1f
   private val _shadowColor: Vector3f = new Vector3f(0f, 0f, 0f)
-  private var numberOfLines: Int = 0
+  private var _numberOfLines: Int = 0
   private var lineWidths: Seq[Double] = Nil
   update()
+
+  def numberOfLines: Int = _numberOfLines
 
   def vertexCount: Int = _vertexCount
 
@@ -53,7 +55,7 @@ class Text(
     this.text = text
     this.fontSize = startSize
     update()
-    while numberOfLines > 1 do { // TODO: refactor so the loop variable is incremented here
+    while _numberOfLines > 1 do { // TODO: refactor so the loop variable is incremented here
       this.fontSize *= 0.8f
       update()
     }
@@ -65,7 +67,7 @@ class Text(
 
     val lines = LineBreaker(maxLineLength).layout(text, metaData)
 
-    this.numberOfLines = lines.size
+    this._numberOfLines = lines.size
     this.lineWidths = lines.map(_.width)
 
     val data: TextMesh = TextMesh.fromLines(lines, centered, metaData)
