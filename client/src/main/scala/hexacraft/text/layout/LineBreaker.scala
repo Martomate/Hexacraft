@@ -28,13 +28,31 @@ class LineBreaker(maxLineWidth: Float) {
     for w <- words ++ Seq.fill(numTrailingSpaces)(new Word()) do {
       val added: Boolean = currentLine.attemptToAddWord(w)
       if !added then {
-        lines += currentLine
-        currentLine = Line(font.spaceWidth, maxLineWidth)
-        val couldFit = currentLine.attemptToAddWord(w)
+        val couldFit = if currentLine.words.nonEmpty then {
+          lines += currentLine
+          currentLine = Line(font.spaceWidth, maxLineWidth)
+          currentLine.attemptToAddWord(w)
+        } else false
 
         // The following is a workaround for auto-resizing texts to detect an overflow
         if !couldFit then {
-          lines += Line(font.spaceWidth, maxLineWidth)
+          var w2 = Word()
+          for c <- w.getCharacters do {
+            if w2.getWordWidth + c.screenBounds.xAdvance <= maxLineWidth then {
+              w2.addCharacter(c)
+            } else {
+              currentLine.attemptToAddWord(w2)
+              lines += currentLine
+              currentLine = Line(font.spaceWidth, maxLineWidth)
+              w2 = Word()
+              w2.addCharacter(c)
+            }
+          }
+          if w2.getCharacters.nonEmpty then {
+            currentLine.attemptToAddWord(w2)
+            lines += currentLine
+            currentLine = Line(font.spaceWidth, maxLineWidth)
+          }
         }
       }
     }
