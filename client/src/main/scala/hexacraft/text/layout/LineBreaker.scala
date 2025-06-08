@@ -50,8 +50,6 @@ class LineBreaker(maxLineWidth: Float) {
           }
           if w2.getCharacters.nonEmpty then {
             currentLine.attemptToAddWord(w2)
-            lines += currentLine
-            currentLine = Line(font.spaceWidth, maxLineWidth)
           }
         }
       }

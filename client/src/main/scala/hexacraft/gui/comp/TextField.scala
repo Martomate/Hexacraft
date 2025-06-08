@@ -12,9 +12,11 @@ class TextField(
     centered: Boolean = true,
     maxFontSize: Float = 4f,
     alwaysFocused: Boolean = false,
-    backgroundEnabled: Boolean = true
+    backgroundEnabled: Boolean = true,
+    fancyBackground: Boolean = true,
+    bgColor: Vector4f = new Vector4f(0.4f, 0.4f, 0.4f, 0.8f),
+    padding: Float = 0.005f
 ) extends Component {
-  private val bgColor = new Vector4f(0.4f, 0.4f, 0.4f, 0.8f)
   private val textColor = new Vector3f(1.0f)
 
   private val contentText: Text = makeContentText()
@@ -48,7 +50,7 @@ class TextField(
       if centered then {
         location.x + location.w / 2f + contentText.getLineWidth(0).toFloat / 2f - fontSize * 0.002f
       } else {
-        location.x + contentText.getLineWidth(0).toFloat - fontSize * 0.002f
+        location.x + padding + contentText.getLineWidth(0).toFloat - fontSize * 0.002f
       }
     val newCursorTextY = cursorText.position.y
 
@@ -87,14 +89,24 @@ class TextField(
 
   override def render(context: RenderContext): Unit = {
     if this.backgroundEnabled then {
-      Component.drawFancyRect(
-        location,
-        context.offset.x,
-        context.offset.y,
-        bgColor,
-        context.windowAspectRatio,
-        inverted = true
-      )
+      if this.fancyBackground then {
+        Component.drawFancyRect(
+          location,
+          context.offset.x,
+          context.offset.y,
+          bgColor,
+          context.windowAspectRatio,
+          inverted = true
+        )
+      } else {
+        Component.drawRect(
+          location,
+          context.offset.x,
+          context.offset.y,
+          bgColor,
+          context.windowAspectRatio
+        )
+      }
     }
     super.render(context)
   }
@@ -119,15 +131,15 @@ class TextField(
 
   private def makeContentText() = {
     Component
-      .makeText(initText, location, maxFontSize, centered)
+      .makeText(initText, location.expand(-padding), maxFontSize, centered)
       .setColor(textColor.x, textColor.y, textColor.z)
   }
 
   private def makeCursorText() = {
     val textLocation = LocationInfo(
-      location.x + (if centered then location.w / 2f else 0f) - maxFontSize * 0.002f,
+      location.x + (if centered then location.w / 2f else padding) - maxFontSize * 0.002f,
       location.y + maxFontSize * 0.002f,
-      location.h / 4,
+      location.h / 3,
       location.h
     )
 

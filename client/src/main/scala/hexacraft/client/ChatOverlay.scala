@@ -130,12 +130,15 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
 
   private def makeInputTextField(): TextField = {
     TextField(
-      LocationInfo.from16x9(0.01f, 0.15f, 0.20f, 0.05f).inAspectRatio(16f / 9f, windowAspectRatio),
+      LocationInfo.from16x9(0.005f, 0.15f, 0.99f, 0.04f).inAspectRatio(16f / 9f, windowAspectRatio),
       "",
       maxFontSize = 2,
       alwaysFocused = true,
       centered = false,
-      backgroundEnabled = false
+      backgroundEnabled = true,
+      fancyBackground = false,
+      bgColor = new Vector4f(0, 0, 0, 0.4f),
+      padding = 0.02f
     )
   }
 

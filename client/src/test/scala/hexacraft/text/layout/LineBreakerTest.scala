@@ -46,5 +46,9 @@ class LineBreakerTest extends FunSuite {
       linesToText(LineBreaker(2.5).layout("abbaabba", font), characters),
       Seq("ab", "ba", "ab", "ba")
     )
+    assertEquals(
+      linesToText(LineBreaker(4.5).layout("ababa bb aa", font), characters),
+      Seq("abab", "a bb", "aa")
+    )
   }
 }
