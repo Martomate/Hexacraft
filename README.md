@@ -4,7 +4,7 @@ A game with hexagonal blocks on a cylindrical world inspired by Minecraft
 
 ![image](https://martomate.com/games/hexacraft/hexacraft_in_game_0.10.png)
 
-## Features:
+## Features
 
 - Hexagonal blocks
 - Cylindrical world
@@ -23,7 +23,7 @@ You can download the launcher [here](https://github.com/Martomate/Hexacraft/rele
 ### Controls
 The controls are almost the same as in Minecraft.
 
-#### Movement:
+#### Movement
 | Action          | Keys                             |
 |-----------------|----------------------------------|
 | Movement        | WASD                             |
@@ -56,6 +56,20 @@ The controls are almost the same as in Minecraft.
 The program works very similarly to Minecraft (at least when it comes to saving worlds).
 
 You can create as many worlds as you like and they will be saved on your computer. To find the files go to the folder named ".hexacraft" in the %appdata% directory on Windows and in the home directory on Mac and Linux (just like for Minecraft).
+
+## Building from source
+
+### Run
+
+```bash
+./mill main.run
+```
+
+### Test
+
+```bash
+./mill __.test
+```
 
 ## Licence
 
