@@ -24,7 +24,7 @@ class MainWindow(
     audioSystem: AudioSystem,
     windowSystem: WindowSystem
 ) extends GameWindow {
-  private val multiplayerEnabled = isDebug
+  private val multiplayerEnabled = true
 
   private var _windowSize = WindowSize(Vector2i(960, 540), Vector2i(0, 0)) // Initialized in initWindow
   private val _mousePos = Vector2f(0, 0)
