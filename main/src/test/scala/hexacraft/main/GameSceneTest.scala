@@ -170,8 +170,8 @@ class GameSceneTest extends FunSuite {
         GameScene
           .ClientParams(
             playerId,
-            "localhost",
             "Some dude",
+            "localhost",
             19274,
             false,
             keyboard,
@@ -243,8 +243,8 @@ class GameSceneTest extends FunSuite {
         GameScene
           .ClientParams(
             playerId,
-            "localhost",
             "Some dude",
+            "localhost",
             19275,
             false,
             keyboard,
