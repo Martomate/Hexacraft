@@ -101,7 +101,7 @@ object fs extends HexacraftModule {
 }
 
 object gpu extends HexacraftModule {
-  override def moduleDeps = Seq(common)
+  override def moduleDeps = Seq(common, native)
 
   override def ivyDeps = super.ivyDeps() ++ Agg(
     Deps.LwjglOpenGL: _*

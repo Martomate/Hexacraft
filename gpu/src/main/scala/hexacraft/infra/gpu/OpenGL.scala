@@ -1,6 +1,7 @@
 package hexacraft.infra.gpu
 
 import hexacraft.infra.*
+import hexacraft.infra.os.{Mac, OS}
 import hexacraft.util.*
 import hexacraft.util.Result.{Err, Ok}
 
@@ -630,11 +631,15 @@ object OpenGL {
   }
 
   def lockContext(): Unit = {
-    gl.lockContext()
+    if OS.current == Mac then {
+      gl.lockContext()
+    }
   }
 
   def unlockContext(): Unit = {
-    gl.unlockContext()
+    if OS.current == Mac then {
+      gl.unlockContext()
+    }
   }
 
   def glIsEnabled(target: State): Boolean = {
