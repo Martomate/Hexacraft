@@ -54,7 +54,7 @@ struct MainState {
     selected_version: Option<String>,
 }
 
-#[derive(Component, Event, Clone)]
+#[derive(Event, Clone)]
 enum Action {
     Play,
     SelectVersion(String),
@@ -99,7 +99,7 @@ fn handle_http_tasks(
 
                     zip_extract::extract(Cursor::new(data), &game_dir, false).unwrap();
                 }
-                Err(err) => println!("Failed to make http request: {}", err),
+                Err(err) => println!("Failed to make http request: {err}"),
             }
             commands.entity(entity).despawn();
         }
@@ -151,7 +151,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                             font_size: 72.0,
                             color: Color::WHITE,
                         },
-                        Color::rgba(0.1, 0.1, 0.1, 1.0),
+                        Color::srgba(0.1, 0.1, 0.1, 1.0),
                     );
 
                     for outline_bundle in outline_bundles {
@@ -166,14 +166,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                         width: Val::Px(128.0),
                         height: Val::Px(64.0),
                         border: UiRect::all(Val::Px(2.0)),
-                        // TODO: add border_radius when this is released: https://github.com/bevyengine/bevy/pull/8973
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         margin: UiRect::bottom(Val::Percent(20.0)),
                         ..default()
                     },
-                    border_color: Color::rgba(1.0, 1.0, 1.0, 0.5).into(),
-                    background_color: Color::rgba(0.15, 0.15, 0.15, 0.4).into(),
+                    border_radius: BorderRadius::all(Val::Px(10.0)),
+                    border_color: Color::srgba(1.0, 1.0, 1.0, 0.5).into(),
+                    background_color: Color::srgba(0.15, 0.15, 0.15, 0.4).into(),
                     ..default()
                 })
                 .insert(Action::Play)
@@ -183,7 +183,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                         TextStyle {
                             font: asset_server.load("Verdana.ttf"),
                             font_size: 32.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
+                            color: Color::srgb(0.9, 0.9, 0.9),
                         },
                     ));
                 });
@@ -208,7 +208,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                                 flex_direction: FlexDirection::Column,
                                 ..default()
                             },
-                            background_color: Color::rgb(0.10, 0.10, 0.10).into(),
+                            background_color: Color::srgb(0.10, 0.10, 0.10).into(),
                             visibility: Visibility::Hidden,
                             ..default()
                         })
@@ -224,11 +224,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                                         align_items: AlignItems::Stretch,
                                         ..default()
                                     },
-                                    background_color: Color::rgba(0.15, 0.15, 0.15, 0.8).into(),
+                                    background_color: Color::srgba(0.15, 0.15, 0.15, 0.8).into(),
                                     ..default()
                                 })
-                                .insert(AvailableVersionsList)
-                                .with_children(|_| {}); // make sure there is a Children component
+                                .insert(AvailableVersionsList);
                         });
 
                     parent
@@ -239,7 +238,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                                 padding: UiRect::all(Val::Px(4.0)),
                                 ..default()
                             },
-                            background_color: Color::rgba(0.15, 0.15, 0.15, 0.0).into(),
+                            background_color: Color::srgba(0.15, 0.15, 0.15, 0.0).into(),
                             ..default()
                         })
                         .insert(VersionButton)
@@ -264,7 +263,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
 fn update_available_versions_list(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    q_list: Query<(Entity, &Children), With<AvailableVersionsList>>,
+    q_list: Query<(Entity, Option<&Children>), With<AvailableVersionsList>>,
     state: Res<MainState>,
 ) {
     if !state.is_changed() {
@@ -284,7 +283,7 @@ fn update_available_versions_list(
                         margin: UiRect::axes(Val::Px(8.0), Val::Px(2.0)),
                         ..default()
                     },
-                    background_color: Color::rgba(0.15, 0.15, 0.15, 0.0).into(),
+                    background_color: Color::srgba(0.15, 0.15, 0.15, 0.0).into(),
                     ..default()
                 })
                 .insert(Action::SelectVersion(v.name.clone()))
@@ -303,10 +302,13 @@ fn update_available_versions_list(
             items.push(item);
         }
 
-        let (list, old_children) = q_list.single();
-        commands.entity(list).replace_children(&items);
-        for ch in old_children {
-            commands.entity(*ch).despawn_recursive();
+        if let Ok((list, old_children)) = q_list.get_single() {
+            commands.entity(list).replace_children(&items);
+            if let Some(old_children) = old_children {
+                for ch in old_children {
+                    commands.entity(*ch).despawn_recursive();
+                }
+            }
         }
     }
 }
