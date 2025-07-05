@@ -14,7 +14,7 @@ import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockSpec, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnTerrain}
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -681,7 +681,8 @@ class GameClient(
           val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
           if columnNbt != Nbt.emptyMap then {
             val column = ChunkColumnTerrain.create(
-              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+              columnCoords,
+              world.worldGenerator,
               Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
             )
             world.setColumn(columnCoords, column)
