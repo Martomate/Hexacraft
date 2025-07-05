@@ -1,7 +1,7 @@
 package hexacraft.world
 
-import hexacraft.world.{CylinderSize, WorldGenerator}
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
+
 import munit.FunSuite
 
 class WorldGeneratorTest extends FunSuite {
@@ -9,7 +9,7 @@ class WorldGeneratorTest extends FunSuite {
 
   test("block interpolator works") {
     val fn: (Int, Int, Int) => Double = (x, y, z) => x + 3 * y + 5 * z
-    val sampler = WorldGenerator.makeBlockInterpolator(ChunkRelWorld(1, 2, 3), fn)
+    val sampler = WorldGenerator.makeSampler3D(ChunkRelWorld(1, 2, 3), fn)
     for
       x <- 0 until 16
       y <- 0 until 16
@@ -19,7 +19,7 @@ class WorldGeneratorTest extends FunSuite {
 
   test("heightmap interpolator works") {
     val fn: (Int, Int) => Double = (x, z) => x + 5 * z
-    val sampler = WorldGenerator.makeHeightmapInterpolator(ColumnRelWorld(1, 3), fn)
+    val sampler = WorldGenerator.makeSampler2D(ColumnRelWorld(1, 3), fn)
     for
       x <- 0 until 16
       y <- 0 until 16
