@@ -630,14 +630,16 @@ object OpenGL {
       def |(r: ClearMask): ClearMask = l | r
   }
 
+  private val isMac = OS.current == Mac
+
   def lockContext(): Unit = {
-    if OS.current == Mac then {
+    if isMac then {
       gl.lockContext()
     }
   }
 
   def unlockContext(): Unit = {
-    if OS.current == Mac then {
+    if isMac then {
       gl.unlockContext()
     }
   }
