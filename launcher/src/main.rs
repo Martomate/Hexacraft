@@ -9,7 +9,11 @@ use bevy::{
 use futures_lite::future;
 use platform_dirs::AppDirs;
 use serde::Deserialize;
-use std::{fs, io::Cursor};
+use std::{
+    fs,
+    io::{Cursor, Read},
+    path::Path,
+};
 
 fn main() {
     App::new()
@@ -52,6 +56,7 @@ struct GameVersion {
 struct MainState {
     available_versions: Option<Vec<GameVersion>>,
     selected_version: Option<String>,
+    is_downloading: bool,
 }
 
 #[derive(Event, Clone)]
@@ -94,10 +99,22 @@ fn handle_http_tasks(
                     let dirs = AppDirs::new(Some("Hexacraft"), false).unwrap();
                     let cache_dir = dirs.cache_dir;
 
-                    let game_dir = cache_dir.join("versions").join(version_name);
+                    let game_dir = cache_dir.join("versions").join(version_name.clone());
                     fs::create_dir_all(&game_dir).unwrap();
 
                     zip_extract::extract(Cursor::new(data), &game_dir, false).unwrap();
+
+                    main_state.is_downloading = false;
+
+                    let game_version = main_state
+                        .available_versions
+                        .as_ref()
+                        .unwrap()
+                        .iter()
+                        .find(|v| v.name == version_name)
+                        .unwrap();
+
+                    start_game(&game_dir, game_version);
                 }
                 Err(err) => println!("Failed to make http request: {err}"),
             }
@@ -327,6 +344,20 @@ fn button_system(
     }
 }
 
+fn start_game(game_dir: &Path, game_version: &GameVersion) {
+    let file_to_run = game_dir.join(&game_version.file_to_run);
+
+    let mut p = std::process::Command::new("java");
+    if cfg!(target_os = "macos") {
+        p.arg("-XstartOnFirstThread");
+    }
+    p.arg("-jar").arg(file_to_run);
+
+    p.spawn().unwrap();
+
+    std::process::exit(0);
+}
+
 fn perform_actions(
     mut commands: Commands,
     mut action_event_reader: EventReader<Action>,
@@ -338,27 +369,38 @@ fn perform_actions(
     for action in &mut action_event_reader.read() {
         match action {
             Action::Play => {
-                if let Some(ref versions) = state.available_versions {
+                if state.is_downloading {
+                } else if let Some(ref versions) = state.available_versions {
                     let game_version = match state.selected_version {
                         Some(ref s) => versions.iter().find(|&v| v.name == *s),
                         None => versions.last(),
                     };
                     if let Some(game_version) = game_version {
                         let version_name = game_version.name.clone();
-                        let url = game_version.url.clone();
 
-                        let task_pool = IoTaskPool::get();
-                        let entity = commands.spawn_empty().id();
+                        let dirs = AppDirs::new(Some("Hexacraft"), false).unwrap();
+                        let game_dir = dirs.cache_dir.join("versions").join(version_name.clone());
 
-                        let task = HttpTask(task_pool.spawn(async move {
-                            let response = ureq::get(&url).call()?;
+                        if game_dir.exists() {
+                            start_game(&game_dir, game_version);
+                        } else {
+                            let url = game_version.url.clone();
 
-                            let mut buffer = Vec::new();
-                            response.into_reader().read_to_end(&mut buffer)?;
+                            let task_pool = IoTaskPool::get();
+                            let entity = commands.spawn_empty().id();
 
-                            Ok(HttpTaskResponse::FetchGame(version_name, buffer))
-                        }));
-                        commands.entity(entity).insert(task);
+                            state.is_downloading = true;
+
+                            let task = HttpTask(task_pool.spawn(async move {
+                                let response = ureq::get(&url).call()?;
+
+                                let mut buffer = Vec::new();
+                                response.into_reader().read_to_end(&mut buffer)?;
+
+                                Ok(HttpTaskResponse::FetchGame(version_name, buffer))
+                            }));
+                            commands.entity(entity).insert(task);
+                        }
                     }
                 } else {
                     println!("Version list is not available yet. Maybe you don't have an internet connection?")
