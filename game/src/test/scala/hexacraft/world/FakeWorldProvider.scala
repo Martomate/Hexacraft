@@ -7,7 +7,7 @@ class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldPr
     1,
     "test world",
     cylSize,
-    new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001)
+    new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001, 0.001, 0.001)
   )
 
   private var fs: Map[String, Nbt.MapTag] = Map.empty
