@@ -54,7 +54,9 @@ jobs:
         if: ${{matrix.name}} == 'linux-x64' || ${{matrix.name}} == 'linux-arm64'
         with:
           name: hexacraft-${{matrix.name}}
-          path: ./launcher/target/release/bundle/linux/Hexacraft
+          path: |
+            ./launcher/target/release/bundle/deb/Hexacraft_*.deb
+            ./launcher/target/release/bundle/appimage/Hexacraft_*.AppImage
 
       - name: Package (windows)
         working-directory: launcher

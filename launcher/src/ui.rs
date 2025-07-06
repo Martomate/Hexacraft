@@ -15,7 +15,7 @@ pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Game".to_string(),
+                title: "Hexacraft".to_string(),
                 resolution: (720.0, 540.0).into(),
                 resizable: false,
                 ..Default::default()

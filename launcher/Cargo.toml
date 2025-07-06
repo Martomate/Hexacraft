@@ -24,7 +24,12 @@ features = [
     "bevy_winit",
     "png",
     "multi_threaded",
+    "x11",
 ]
+
+[[bin]]
+name = "Hexacraft"
+path = "src/main.rs"
 
 [package.metadata.bundle]
 name = "Hexacraft"
