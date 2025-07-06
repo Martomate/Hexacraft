@@ -1,5 +1,7 @@
 #![allow(clippy::type_complexity)]
 
+use std::sync::{Arc, Mutex};
+
 use crate::{fetch_versions_list, GameDirectory, GameVersion, ZipFile};
 
 use bevy::{
@@ -32,6 +34,7 @@ pub fn run() {
                 button_system,
                 perform_actions,
                 update_available_versions_list,
+                update_download_progress,
             ),
         )
         .run();
@@ -62,6 +65,9 @@ struct VersionButton;
 
 #[derive(Component)]
 struct PlayButton;
+
+#[derive(Component)]
+struct DownloadProgress(Arc<Mutex<f32>>);
 
 enum HttpTaskResponse {
     FetchGameVersions(Vec<GameVersion>),
@@ -303,6 +309,23 @@ fn update_available_versions_list(
     }
 }
 
+fn update_download_progress(
+    mut redraw_request_events: EventWriter<RequestRedraw>,
+    q_play_button: Query<&Children, With<PlayButton>>,
+    mut q_text: Query<&mut Text>,
+    q_progress: Query<&DownloadProgress>,
+) {
+    if let Ok(progress) = q_progress.get_single() {
+        let progress_percent = (*progress.0.lock().unwrap() * 100.0).floor();
+
+        let play_button_children = q_play_button.single();
+        let mut play_button_text = q_text.get_mut(play_button_children[0]).unwrap();
+        play_button_text.sections[0].value = format!("{progress_percent} %");
+
+        redraw_request_events.send(RequestRedraw);
+    }
+}
+
 fn button_system(
     mut interaction_query: Query<(&Interaction, &Action), (Changed<Interaction>, With<Button>)>,
     mut redraw_event_writer: EventWriter<RequestRedraw>,
@@ -328,7 +351,6 @@ fn perform_actions(
     mut action_event_reader: EventReader<Action>,
     mut q_version_selector: Query<&mut Visibility, With<VersionSelector>>,
     q_version_button: Query<&Children, With<VersionButton>>,
-    q_play_button: Query<&Children, With<PlayButton>>,
     mut q_text: Query<&mut Text>,
     mut state: ResMut<MainState>,
 ) {
@@ -347,11 +369,6 @@ fn perform_actions(
                         if game_dir.is_downloaded() {
                             start_game(&game_dir);
                         } else {
-                            let play_button_children = q_play_button.single();
-                            let mut play_button_text =
-                                q_text.get_mut(play_button_children[0]).unwrap();
-                            play_button_text.sections[0].value = "...".to_string();
-
                             let game_version = game_version.clone();
 
                             let task_pool = AsyncComputeTaskPool::get();
@@ -359,11 +376,26 @@ fn perform_actions(
 
                             state.is_downloading = true;
 
-                            let task = HttpTask(task_pool.spawn(async move {
-                                let buffer = game_version.download()?;
-                                Ok(HttpTaskResponse::FetchGame(game_version, buffer))
+                            let download_progress = Arc::new(Mutex::new(0.0));
+
+                            let task = HttpTask(task_pool.spawn({
+                                let download_progress = download_progress.clone();
+                                async move {
+                                    let buffer = game_version.download(|bytes, total| {
+                                        let progress = if total != 0 {
+                                            bytes as f32 / total as f32
+                                        } else {
+                                            0.0
+                                        };
+                                        *download_progress.lock().unwrap() = progress;
+                                    })?;
+                                    Ok(HttpTaskResponse::FetchGame(game_version, buffer))
+                                }
                             }));
-                            commands.entity(entity).insert(task);
+                            commands
+                                .entity(entity)
+                                .insert(task)
+                                .insert(DownloadProgress(download_progress));
                         }
                     }
                 } else {

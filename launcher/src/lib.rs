@@ -15,11 +15,23 @@ pub struct GameVersion {
 }
 
 impl GameVersion {
-    pub fn download(&self) -> Result<ZipFile, anyhow::Error> {
+    pub fn download(&self, report_progress: impl Fn(usize, usize)) -> Result<ZipFile, anyhow::Error> {
         let response = ureq::get(&self.url).call()?;
+        let total = response.header("Content-Length").and_then(|s| s.parse::<usize>().ok()).unwrap_or_default();
+
+        let mut reader = response.into_reader();
 
         let mut buffer = Vec::new();
-        response.into_reader().read_to_end(&mut buffer)?;
+        let mut buf = [0; 1024];
+
+        loop {
+            let bytes_read = reader.read(&mut buf)?;
+            if bytes_read == 0 {
+                break;
+            }
+            buffer.extend_from_slice(&buf[..bytes_read]);
+            report_progress(buffer.len(), total);
+        }
 
         Ok(ZipFile(buffer))
     }
