@@ -19,7 +19,7 @@ tasks:
       - sips -z 1024 1024 {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_512x512@2x.png
 
   move_macos_assets:
-    dir: ./target/release/bundle/osx/HexacraftLauncher.app
+    dir: ./target/release/bundle/osx/Hexacraft.app
     cmds:
       - mv ./Contents/Resources/assets ./Contents/MacOS/
 

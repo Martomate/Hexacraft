@@ -27,7 +27,7 @@ features = [
 ]
 
 [package.metadata.bundle]
-name = "HexacraftLauncher"
+name = "Hexacraft"
 identifier = "com.martomate.hexacraft.launcher"
 icon = ["./target/packaging/icons/icon_*.png"]
 resources = ['assets']

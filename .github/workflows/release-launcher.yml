@@ -1,0 +1,69 @@
+name: Release Launcher
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Build and package release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux-x64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
+          - os: macos-13
+            name: macos-x64
+          - os: macos-14
+            name: macos-arm64
+          - os: windows-2022
+            name: windows-x64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests
+        working-directory: launcher
+        run: cargo test
+
+      - name: Package (macos)
+        working-directory: launcher
+        if: ${{matrix.name}} == 'macos-x64' || ${{matrix.name}} == 'macos-arm64'
+        run: task package-macos
+
+      - name: Upload package (macos)
+        uses: actions/upload-artifact@v4
+        if: ${{matrix.name}} == 'macos-x64' || ${{matrix.name}} == 'macos-arm64'
+        with:
+          name: hexacraft-${{matrix.name}}
+          path: ./launcher/target/release/bundle/osx/Hexacraft.app
+
+      - name: Package (linux)
+        working-directory: launcher
+        if: ${{matrix.name}} == 'linux-x64' || ${{matrix.name}} == 'linux-arm64'
+        run: task package-linux
+
+      - name: Upload package (linux)
+        uses: actions/upload-artifact@v4
+        if: ${{matrix.name}} == 'linux-x64' || ${{matrix.name}} == 'linux-arm64'
+        with:
+          name: hexacraft-${{matrix.name}}
+          path: ./launcher/target/release/bundle/linux/Hexacraft
+
+      - name: Package (windows)
+        working-directory: launcher
+        if: ${{matrix.name}} == 'windows-x64'
+        run: task package-windows
+
+      - name: Upload package (windows)
+        uses: actions/upload-artifact@v4
+        if: ${{matrix.name}} == 'windows-x64'
+        with:
+          name: hexacraft-${{matrix.name}}
+          path: ./launcher/target/release/bundle/windows/Hexacraft.exe
