@@ -4,7 +4,7 @@ use crate::{fetch_versions_list, GameDirectory, GameVersion, ZipFile};
 
 use bevy::{
     prelude::*,
-    tasks::{block_on, AsyncComputeTaskPool, Task, poll_once},
+    tasks::{block_on, poll_once, AsyncComputeTaskPool, Task},
     window::RequestRedraw,
     winit::WinitSettings,
 };
@@ -47,7 +47,7 @@ struct MainState {
 #[derive(Event, Clone)]
 enum Action {
     Play,
-    SelectVersion(String),
+    SelectVersion(GameVersion),
     ShowVersionSelector,
 }
 
@@ -59,6 +59,9 @@ struct AvailableVersionsList;
 
 #[derive(Component)]
 struct VersionButton;
+
+#[derive(Component)]
+struct PlayButton;
 
 enum HttpTaskResponse {
     FetchGameVersions(Vec<GameVersion>),
@@ -102,11 +105,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
     let task_pool = AsyncComputeTaskPool::get();
     let entity = commands.spawn_empty().id();
 
-    let task = HttpTask(task_pool.spawn(async {
-        Ok(HttpTaskResponse::FetchGameVersions(
-            fetch_versions_list()?,
-        ))
-    }));
+    let task = HttpTask(
+        task_pool.spawn(async { Ok(HttpTaskResponse::FetchGameVersions(fetch_versions_list()?)) }),
+    );
     commands.entity(entity).insert(task);
 
     commands.spawn(Camera2dBundle::default());
@@ -164,6 +165,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                     background_color: Color::srgba(0.15, 0.15, 0.15, 0.4).into(),
                     ..default()
                 })
+                .insert(PlayButton)
                 .insert(Action::Play)
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
@@ -274,7 +276,7 @@ fn update_available_versions_list(
                     background_color: Color::srgba(0.15, 0.15, 0.15, 0.0).into(),
                     ..default()
                 })
-                .insert(Action::SelectVersion(v.name.clone()))
+                .insert(Action::SelectVersion(v.clone()))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         v.name.clone(),
@@ -316,6 +318,7 @@ fn button_system(
 }
 
 fn start_game(game: &GameDirectory) -> ! {
+    println!("Starting game at: {}", game.game_dir.display());
     let _ = game.start_game();
     std::process::exit(0);
 }
@@ -325,6 +328,7 @@ fn perform_actions(
     mut action_event_reader: EventReader<Action>,
     mut q_version_selector: Query<&mut Visibility, With<VersionSelector>>,
     q_version_button: Query<&Children, With<VersionButton>>,
+    q_play_button: Query<&Children, With<PlayButton>>,
     mut q_text: Query<&mut Text>,
     mut state: ResMut<MainState>,
 ) {
@@ -343,6 +347,11 @@ fn perform_actions(
                         if game_dir.is_downloaded() {
                             start_game(&game_dir);
                         } else {
+                            let play_button_children = q_play_button.single();
+                            let mut play_button_text =
+                                q_text.get_mut(play_button_children[0]).unwrap();
+                            play_button_text.sections[0].value = "...".to_string();
+
                             let game_version = game_version.clone();
 
                             let task_pool = AsyncComputeTaskPool::get();
@@ -362,11 +371,11 @@ fn perform_actions(
                 }
             }
             Action::SelectVersion(version) => {
-                state.selected_version = Some(version.clone());
+                state.selected_version = Some(version.name.clone());
 
                 let version_button_children = q_version_button.single();
                 let mut version_button_text = q_text.get_mut(version_button_children[0]).unwrap();
-                version_button_text.sections[0].value = format!("Version: {}", *version);
+                version_button_text.sections[0].value = format!("Version: {}", version.name);
 
                 let mut version_selector = q_version_selector.single_mut();
                 *version_selector = Visibility::Hidden;
