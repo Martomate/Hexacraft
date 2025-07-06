@@ -31,3 +31,11 @@ tasks:
           DEST_DIR: ./target/packaging/icons
       - cargo bundle --release
       - task: move_macos_assets
+
+  package-linux:
+    cmds:
+      - cargo bundle --release
+
+  package-windows:
+    cmds:
+      - cargo bundle --release
