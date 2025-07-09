@@ -32,7 +32,9 @@ jobs:
       - name: Cargo cache
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('launcher/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('native/src/native/Cargo.lock') }}
+          path: |
+            native/src/native/target
 
       - name: Coursier cache
         uses: coursier/cache-action@v6
