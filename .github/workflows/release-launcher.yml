@@ -40,6 +40,7 @@ jobs:
         with:
           key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('launcher/Cargo.lock') }}
           path: |
+            ~/.cargo
             launcher/target
 
       - name: Run tests

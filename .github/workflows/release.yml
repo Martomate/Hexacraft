@@ -34,6 +34,7 @@ jobs:
         with:
           key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('native/src/native/Cargo.lock') }}
           path: |
+            ~/.cargo
             native/src/native/target
 
       - name: Coursier cache
