@@ -12,18 +12,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup Rust
+        id: setup-rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('native/**/Cargo.lock') }}
+
       - name: Coursier cache
         uses: coursier/cache-action@v6
+
       - name: Install Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
       - name: Build
         run: ./mill __.compile
         shell: bash
+
       - name: Run tests
         run: ./mill __.test
         shell: bash
