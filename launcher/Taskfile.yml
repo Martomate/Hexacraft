@@ -44,7 +44,6 @@ tasks:
     requires: { vars: ['OUT_DIR'] }
     cmds:
       - cp target/release/Hexacraft {{.OUT_DIR}}/
-      - cp -r assets {{.OUT_DIR}}/
 
   package-windows:
     internal: true
@@ -52,7 +51,6 @@ tasks:
     requires: { vars: ['OUT_DIR'] }
     cmds:
       - cp target/release/Hexacraft.exe {{.OUT_DIR}}/
-      - cp -r assets {{.OUT_DIR}}/
 
 # ---- Packaging helpers ----
 
@@ -99,5 +97,4 @@ tasks:
 
       - cp packaging/macos/Info.plist {{.DEST_DIR}}/Contents/
       - cp target/release/Hexacraft {{.DEST_DIR}}/Contents/MacOS/
-      - cp -r assets {{.DEST_DIR}}/Contents/MacOS/
       - cp {{.ICON_FILE}} {{.DEST_DIR}}/Contents/Resources/

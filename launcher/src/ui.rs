@@ -11,6 +11,23 @@ use bevy::{
     winit::WinitSettings,
 };
 
+use bevy::asset::embedded_asset;
+
+macro_rules! embed_all_assets {
+    ($app: ident) => {
+        embedded_asset!($app, "assets/background.png");
+        embedded_asset!($app, "assets/Verdana.ttf");
+    };
+}
+
+struct EmbeddedAssetPlugin;
+
+impl Plugin for EmbeddedAssetPlugin {
+    fn build(&self, app: &mut App) {
+        embed_all_assets!(app);
+    }
+}
+
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -22,6 +39,7 @@ pub fn run() {
             }),
             ..Default::default()
         }))
+        .add_plugins(EmbeddedAssetPlugin)
         .add_event::<Action>()
         .insert_resource(MainState::default())
         // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
@@ -119,7 +137,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
     commands.spawn(Camera2dBundle::default());
 
     commands.spawn(SpriteBundle {
-        texture: asset_server.load("background.png"),
+        texture: asset_server.load("embedded://launcher/assets/background.png"),
         ..Default::default()
     });
 
@@ -142,7 +160,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                     let (outline_bundles, main_bundle) = make_outlined_text(
                         "Hexacraft",
                         TextStyle {
-                            font: asset_server.load("Verdana.ttf"),
+                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
                             font_size: 72.0,
                             color: Color::WHITE,
                         },
@@ -177,7 +195,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                     parent.spawn(TextBundle::from_section(
                         "Play",
                         TextStyle {
-                            font: asset_server.load("Verdana.ttf"),
+                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
                             font_size: 32.0,
                             color: Color::srgb(0.9, 0.9, 0.9),
                         },
@@ -246,7 +264,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                                     None => "Latest version".to_string(),
                                 },
                                 TextStyle {
-                                    font: asset_server.load("Verdana.ttf"),
+                                    font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
                                     font_size: 20.0,
                                     ..default()
                                 },
@@ -287,7 +305,7 @@ fn update_available_versions_list(
                     parent.spawn(TextBundle::from_section(
                         v.name.clone(),
                         TextStyle {
-                            font: asset_server.load("Verdana.ttf"),
+                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
                             font_size: 20.0,
                             ..default()
                         },
