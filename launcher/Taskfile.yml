@@ -1,41 +1,103 @@
 version: '3'
 
 tasks:
-  gen_macos_icons:
-    requires:
-      vars: ['SOURCE_DIR', 'DEST_DIR']
+  package:
+    vars:
+      OUT_DIR: target/packaging
     cmds:
-      - rm -rf {{.DEST_DIR}}
-      - mkdir -p {{.DEST_DIR}}
-      - sips -z 16 16     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_16x16.png
-      - sips -z 32 32     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_16x16@2x.png
-      - sips -z 32 32     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_32x32.png
-      - sips -z 64 64     {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_32x32@2x.png
-      - sips -z 128 128   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_128x128.png
-      - sips -z 256 256   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_128x128@2x.png
-      - sips -z 256 256   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_256x256.png
-      - sips -z 512 512   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_256x256@2x.png
-      - sips -z 512 512   {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_512x512.png
-      - sips -z 1024 1024 {{.SOURCE_DIR}}/icon_1024.png --out {{.DEST_DIR}}/icon_512x512@2x.png
+      - cmd: cargo build --release
 
-  move_macos_assets:
-    dir: ./target/release/bundle/osx/Hexacraft.app
-    cmds:
-      - mv ./Contents/Resources/assets ./Contents/MacOS/
+      - cmd: rm -rf "{{.OUT_DIR}}"; mkdir -p "{{.OUT_DIR}}"
+        silent: true
+
+      - task: package-macos
+        vars: { OUT_DIR: "{{.OUT_DIR}}" }
+      - task: package-linux
+        vars: { OUT_DIR: "{{.OUT_DIR}}" }
+      - task: package-windows
+        vars: { OUT_DIR: "{{.OUT_DIR}}" }
+
+# ---- Packaging scripts per platform ----
 
   package-macos:
+    internal: true
+    platforms: [darwin]
+    requires: { vars: ['OUT_DIR'] }
     cmds:
       - task: gen_macos_icons
         vars:
-          SOURCE_DIR: ./packaging/icons
-          DEST_DIR: ./target/packaging/icons
-      - cargo bundle --release
-      - task: move_macos_assets
+          SOURCE_DIR: packaging/icons
+          DEST_DIR: "{{.OUT_DIR}}/Hexacraft.iconset"
+      - defer: rm -rd "{{.OUT_DIR}}/Hexacraft.iconset"
+
+      - cd "{{.OUT_DIR}}"; iconutil -c icns Hexacraft.iconset
+      - defer: rm "{{.OUT_DIR}}/Hexacraft.icns"
+
+      - task: populate_macos_app_dir
+        vars:
+          ICON_FILE: "{{.OUT_DIR}}/Hexacraft.icns"
+          DEST_DIR: "{{.OUT_DIR}}/Hexacraft.app"
 
   package-linux:
+    internal: true
+    platforms: [linux]
+    requires: { vars: ['OUT_DIR'] }
     cmds:
-      - cargo bundle --release
+      - cp target/release/Hexacraft {{.OUT_DIR}}/
+      - cp assets {{.OUT_DIR}}/
 
   package-windows:
+    internal: true
+    platforms: [windows]
+    requires: { vars: ['OUT_DIR'] }
     cmds:
-      - cargo bundle --release
+      - cp target/release/Hexacraft.exe {{.OUT_DIR}}/
+      - cp assets {{.OUT_DIR}}/
+
+# ---- Packaging helpers ----
+
+  gen_macos_icons:
+    internal: true
+    requires:
+      vars: ['SOURCE_DIR', 'DEST_DIR']
+    vars:
+      SIZES: 16 32 64 128 256 512
+    cmds:
+      - cmd: mkdir -p "{{.DEST_DIR}}"
+        silent: true
+
+      - for: { var: SIZES }
+        task: gen_macos_icon
+        vars:
+          SOURCE_IMAGE: "{{.SOURCE_DIR}}/icon_1024.png"
+          DEST_IMAGE: "{{.DEST_DIR}}/icon_{{.ITEM}}x{{.ITEM}}.png"
+          SIZE: "{{.ITEM}}"
+
+      - for: { var: SIZES }
+        task: gen_macos_icon
+        vars:
+          SOURCE_IMAGE: "{{.SOURCE_DIR}}/icon_1024.png"
+          DEST_IMAGE: "{{.DEST_DIR}}/icon_{{.ITEM}}x{{.ITEM}}x2.png"
+          SIZE: "{{mul .ITEM 2}}"
+
+  gen_macos_icon:
+    internal: true
+    requires:
+      vars: ['SOURCE_IMAGE', 'DEST_IMAGE', 'SIZE']
+    cmds:
+      - sips -z {{.SIZE}} {{.SIZE}} {{.SOURCE_IMAGE}} --out {{.DEST_IMAGE}} > /dev/null
+
+  populate_macos_app_dir:
+    internal: true
+    requires:
+      vars: ['DEST_DIR', 'ICON_FILE']
+    cmds:
+      - cmd: mkdir -p "{{.DEST_DIR}}/Contents/MacOS/"
+        silent: true
+      - cmd: mkdir -p "{{.DEST_DIR}}/Contents/Resources/"
+        silent: true
+
+      - cp packaging/macos/Info.plist {{.DEST_DIR}}/Contents/
+      - cp target/release/Hexacraft {{.DEST_DIR}}/Contents/MacOS/
+      - cp -r assets {{.DEST_DIR}}/Contents/MacOS/
+      - cp {{.ICON_FILE}} {{.DEST_DIR}}/Contents/Resources/

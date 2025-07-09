@@ -32,40 +32,12 @@ jobs:
         working-directory: launcher
         run: cargo test
 
-      - name: Package (macos)
+      - name: Package
         working-directory: launcher
-        if: ${{matrix.name}} == 'macos-x64' || ${{matrix.name}} == 'macos-arm64'
-        run: task package-macos
+        run: task package
 
-      - name: Upload package (macos)
+      - name: Upload package
         uses: actions/upload-artifact@v4
-        if: ${{matrix.name}} == 'macos-x64' || ${{matrix.name}} == 'macos-arm64'
         with:
           name: hexacraft-${{matrix.name}}
-          path: ./launcher/target/release/bundle/osx/Hexacraft.app
-
-      - name: Package (linux)
-        working-directory: launcher
-        if: ${{matrix.name}} == 'linux-x64' || ${{matrix.name}} == 'linux-arm64'
-        run: task package-linux
-
-      - name: Upload package (linux)
-        uses: actions/upload-artifact@v4
-        if: ${{matrix.name}} == 'linux-x64' || ${{matrix.name}} == 'linux-arm64'
-        with:
-          name: hexacraft-${{matrix.name}}
-          path: |
-            ./launcher/target/release/bundle/deb/Hexacraft_*.deb
-            ./launcher/target/release/bundle/appimage/Hexacraft_*.AppImage
-
-      - name: Package (windows)
-        working-directory: launcher
-        if: ${{matrix.name}} == 'windows-x64'
-        run: task package-windows
-
-      - name: Upload package (windows)
-        uses: actions/upload-artifact@v4
-        if: ${{matrix.name}} == 'windows-x64'
-        with:
-          name: hexacraft-${{matrix.name}}
-          path: ./launcher/target/release/bundle/windows/Hexacraft.exe
+          path: launcher/target/packaging/*
