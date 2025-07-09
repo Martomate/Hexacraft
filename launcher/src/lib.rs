@@ -15,9 +15,15 @@ pub struct GameVersion {
 }
 
 impl GameVersion {
-    pub fn download(&self, report_progress: impl Fn(usize, usize)) -> Result<ZipFile, anyhow::Error> {
+    pub fn download(
+        &self,
+        report_progress: impl Fn(usize, usize),
+    ) -> Result<ZipFile, anyhow::Error> {
         let response = ureq::get(&self.url).call()?;
-        let total = response.header("Content-Length").and_then(|s| s.parse::<usize>().ok()).unwrap_or_default();
+        let total = response
+            .header("Content-Length")
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or_default();
 
         let mut reader = response.into_reader();
 
@@ -54,7 +60,10 @@ impl GameDirectory {
     pub fn new(game_version: GameVersion) -> Self {
         let dirs = AppDirs::new(Some("Hexacraft"), false).unwrap();
         let game_dir = dirs.cache_dir.join("versions").join(&game_version.name);
-        Self { game_dir, game_version }
+        Self {
+            game_dir,
+            game_version,
+        }
     }
 
     pub fn is_downloaded(&self) -> bool {
@@ -72,7 +81,9 @@ impl GameDirectory {
     pub fn start_game(&self) -> std::process::Child {
         let file_to_run = self.game_dir.join(&self.game_version.file_to_run);
 
-        let mut p = std::process::Command::new("java");
+        let java_cmd = if cfg!(windows) { "javaw" } else { "java" };
+
+        let mut p = std::process::Command::new(java_cmd);
         if cfg!(target_os = "macos") {
             p.arg("-XstartOnFirstThread");
         }
