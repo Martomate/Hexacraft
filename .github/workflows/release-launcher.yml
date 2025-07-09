@@ -1,0 +1,49 @@
+name: Release Launcher
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: Build and package release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux-x64
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
+          - os: macos-13
+            name: macos-x64
+          - os: macos-14
+            name: macos-arm64
+          - os: windows-2022
+            name: windows-x64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests
+        working-directory: launcher
+        run: cargo test
+
+      - name: Package
+        working-directory: launcher
+        run: task package
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: hexacraft-${{matrix.name}}
+          path: launcher/target/packaging/*
