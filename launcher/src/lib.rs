@@ -54,9 +54,25 @@ impl UiHandler for MainUiHandler {
     ) -> impl Future<Output = Result<Vec<GameVersion>, anyhow::Error>> + Send + 'static {
         let request = ureq::get(&format!("{}/api/hexacraft/versions", &self.api_url));
 
+        let versions_cache = self.versions_dir.join("versions.json");
+
         async {
-            let response = request.call()?;
-            let body = response.into_string()?;
+            let body = request
+                .call()
+                .and_then(|res| Ok(res.into_string()?))
+                .or_else(|err| {
+                    if versions_cache.exists() {
+                        Ok(std::fs::read_to_string(versions_cache.clone())?)
+                    } else {
+                        Err(err)
+                    }
+                })?;
+
+            if !versions_cache.exists() {
+                std::fs::create_dir_all(versions_cache.parent().unwrap())?;
+                std::fs::File::create(versions_cache.clone())?;
+            }
+            std::fs::write(versions_cache, body.clone())?;
 
             Ok(serde_json::from_str::<Vec<GameVersion>>(&body)?)
         }
