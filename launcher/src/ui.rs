@@ -1,12 +1,12 @@
 #![allow(clippy::type_complexity)]
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 
-use crate::{fetch_versions_list, GameDirectory, GameVersion, ZipFile};
+use crate::{GameVersion, UiHandler, ZipFile};
 
 use bevy::{
     prelude::*,
-    tasks::{block_on, poll_once, AsyncComputeTaskPool, Task},
+    tasks::{AsyncComputeTaskPool, Task, block_on, poll_once},
     window::RequestRedraw,
     winit::WinitSettings,
 };
@@ -28,7 +28,7 @@ impl Plugin for EmbeddedAssetPlugin {
     }
 }
 
-pub fn run() {
+pub fn run<H: UiHandler>(handler: H) {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -42,15 +42,16 @@ pub fn run() {
         .add_plugins(EmbeddedAssetPlugin)
         .add_event::<Action>()
         .insert_resource(MainState::default())
+        .insert_resource(handler)
         // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
         .insert_resource(WinitSettings::desktop_app())
-        .add_systems(Startup, setup)
+        .add_systems(Startup, setup::<H>)
         .add_systems(
             Update,
             (
-                handle_http_tasks,
+                handle_http_tasks::<H>,
                 button_system,
-                perform_actions,
+                perform_actions::<H>,
                 update_available_versions_list,
                 update_download_progress,
             ),
@@ -95,10 +96,11 @@ enum HttpTaskResponse {
 #[derive(Component)]
 struct HttpTask(Task<anyhow::Result<HttpTaskResponse>>);
 
-fn handle_http_tasks(
+fn handle_http_tasks<H: UiHandler>(
     mut commands: Commands,
     mut http_tasks: Query<(Entity, &mut HttpTask)>,
     mut main_state: ResMut<MainState>,
+    handler: Res<H>,
 ) {
     for (entity, mut task) in &mut http_tasks {
         if !task.0.is_finished() {
@@ -111,12 +113,11 @@ fn handle_http_tasks(
                 }
                 Ok(HttpTaskResponse::FetchGame(game_version, data)) => {
                     println!("Version {} downloaded", game_version.name);
-                    let game_dir = GameDirectory::new(game_version.clone());
-                    game_dir.init_from_archive(data);
+                    handler.init_from_archive(&game_version, data);
 
                     main_state.is_downloading = false;
 
-                    start_game(&game_dir);
+                    start_game(&*handler, &game_version);
                 }
                 Err(err) => println!("Failed to make http request: {err}"),
             }
@@ -125,13 +126,19 @@ fn handle_http_tasks(
     }
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<MainState>) {
+fn setup<H: UiHandler>(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    state: Res<MainState>,
+    handler: Res<H>,
+) {
     let task_pool = AsyncComputeTaskPool::get();
     let entity = commands.spawn_empty().id();
 
-    let task = HttpTask(
-        task_pool.spawn(async { Ok(HttpTaskResponse::FetchGameVersions(fetch_versions_list()?)) }),
-    );
+    let res = handler.fetch_versions_list();
+
+    let task =
+        HttpTask(task_pool.spawn(async { Ok(HttpTaskResponse::FetchGameVersions(res.await?)) }));
     commands.entity(entity).insert(task);
 
     commands.spawn(Camera2dBundle::default());
@@ -264,7 +271,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, state: Res<Main
                                     None => "Latest version".to_string(),
                                 },
                                 TextStyle {
-                                    font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
+                                    font: asset_server
+                                        .load("embedded://launcher/assets/Verdana.ttf"),
                                     font_size: 20.0,
                                     ..default()
                                 },
@@ -358,19 +366,19 @@ fn button_system(
     }
 }
 
-fn start_game(game: &GameDirectory) -> ! {
-    println!("Starting game at: {}", game.game_dir.display());
-    let _ = game.start_game();
+fn start_game<H: UiHandler>(handler: &H, game_version: &GameVersion) -> ! {
+    let _ = handler.start_game(game_version);
     std::process::exit(0);
 }
 
-fn perform_actions(
+fn perform_actions<H: UiHandler>(
     mut commands: Commands,
     mut action_event_reader: EventReader<Action>,
     mut q_version_selector: Query<&mut Visibility, With<VersionSelector>>,
     q_version_button: Query<&Children, With<VersionButton>>,
     mut q_text: Query<&mut Text>,
     mut state: ResMut<MainState>,
+    handler: Res<H>,
 ) {
     for action in &mut action_event_reader.read() {
         match action {
@@ -382,10 +390,8 @@ fn perform_actions(
                         None => versions.last(),
                     };
                     if let Some(game_version) = game_version {
-                        let game_dir = GameDirectory::new(game_version.clone());
-
-                        if game_dir.is_downloaded() {
-                            start_game(&game_dir);
+                        if handler.is_downloaded(game_version) {
+                            start_game(&*handler, game_version);
                         } else {
                             let game_version = game_version.clone();
 
@@ -395,18 +401,29 @@ fn perform_actions(
                             state.is_downloading = true;
 
                             let download_progress = Arc::new(Mutex::new(0.0));
+                            let (progress_tx, progress_rx) = mpsc::channel();
+
+                            task_pool
+                                .spawn({
+                                    let download_progress = download_progress.clone();
+                                    async move {
+                                        while let Ok((bytes, total)) = progress_rx.recv() {
+                                            let progress = if total != 0 {
+                                                bytes as f32 / total as f32
+                                            } else {
+                                                0.0
+                                            };
+                                            *download_progress.lock().unwrap() = progress;
+                                        }
+                                    }
+                                })
+                                .detach();
 
                             let task = HttpTask(task_pool.spawn({
-                                let download_progress = download_progress.clone();
+                                let download_task =
+                                    handler.download(&game_version, progress_tx);
                                 async move {
-                                    let buffer = game_version.download(|bytes, total| {
-                                        let progress = if total != 0 {
-                                            bytes as f32 / total as f32
-                                        } else {
-                                            0.0
-                                        };
-                                        *download_progress.lock().unwrap() = progress;
-                                    })?;
+                                    let buffer = download_task.await?;
                                     Ok(HttpTaskResponse::FetchGame(game_version, buffer))
                                 }
                             }));
@@ -417,7 +434,9 @@ fn perform_actions(
                         }
                     }
                 } else {
-                    println!("Version list is not available yet. Maybe you don't have an internet connection?")
+                    println!(
+                        "Version list is not available yet. Maybe you don't have an internet connection?"
+                    )
                 }
             }
             Action::SelectVersion(version) => {

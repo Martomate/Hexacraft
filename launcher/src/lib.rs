@@ -1,132 +1,180 @@
+pub mod net;
 pub mod ui;
 
-use std::path::{Path, PathBuf};
+use std::{
+    future::Future,
+    path::{Path, PathBuf},
+};
 
+use bevy::ecs::system::Resource;
 use platform_dirs::AppDirs;
-use serde::Deserialize;
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
-pub struct GameVersion {
-    pub id: String,
-    pub name: String,
-    pub release_date: String,
-    pub url: String,
-    pub file_to_run: String,
+use crate::net::{GameVersion, Platform};
+
+pub trait UiHandler: Resource {
+    fn fetch_versions_list(
+        &self,
+    ) -> impl Future<Output = Result<Vec<GameVersion>, anyhow::Error>> + Send + 'static;
+
+    fn is_downloaded(&self, game_version: &GameVersion) -> bool;
+
+    fn download(
+        &self,
+        game_version: &GameVersion,
+        report_progress: std::sync::mpsc::Sender<(usize, usize)>,
+    ) -> impl Future<Output = Result<ZipFile, anyhow::Error>> + Send + 'static;
+
+    fn init_from_archive(&self, game_version: &GameVersion, data: ZipFile);
+
+    fn start_game(&self, game_version: &GameVersion) -> std::process::Child;
 }
 
-impl GameVersion {
-    pub fn download(
-        &self,
-        report_progress: impl Fn(usize, usize),
-    ) -> Result<ZipFile, anyhow::Error> {
-        let response = ureq::get(&self.url).call()?;
-        let total = response
-            .header("Content-Length")
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or_default();
+#[derive(Resource)]
+pub struct MainUiHandler {
+    pub api_url: String,
+    pub versions_dir: PathBuf,
+}
 
-        let mut reader = response.into_reader();
-
-        let mut buffer = Vec::new();
-        let mut buf = [0; 1024];
-
-        loop {
-            let bytes_read = reader.read(&mut buf)?;
-            if bytes_read == 0 {
-                break;
-            }
-            buffer.extend_from_slice(&buf[..bytes_read]);
-            report_progress(buffer.len(), total);
+impl MainUiHandler {
+    pub fn from_env() -> Self {
+        Self {
+            api_url: std::env::var("API_URL")
+                .unwrap_or_else(|_| "https://martomate.com".to_string()),
+            versions_dir: AppDirs::new(Some("Hexacraft"), false)
+                .unwrap()
+                .cache_dir
+                .join("versions"),
         }
+    }
+}
 
-        Ok(ZipFile(buffer))
+impl UiHandler for MainUiHandler {
+    fn fetch_versions_list(
+        &self,
+    ) -> impl Future<Output = Result<Vec<GameVersion>, anyhow::Error>> + Send + 'static {
+        let request = ureq::get(&format!("{}/api/hexacraft/versions", &self.api_url));
+
+        async {
+            let response = request.call()?;
+            let body = response.into_string()?;
+
+            Ok(serde_json::from_str::<Vec<GameVersion>>(&body)?)
+        }
+    }
+
+    fn is_downloaded(&self, game_version: &GameVersion) -> bool {
+        self.game_dir(game_version).exists()
+    }
+
+    fn download(
+        &self,
+        game_version: &GameVersion,
+        report_progress: std::sync::mpsc::Sender<(usize, usize)>,
+    ) -> impl Future<Output = Result<ZipFile, anyhow::Error>> + Send + 'static {
+        let request = ureq::get(
+            &game_version
+                .distribution(&Platform::current())
+                .unwrap()
+                .archive,
+        );
+
+        async move {
+            println!("Fetching {}", request.url());
+
+            let response = request.call()?;
+            let total = response
+                .header("Content-Length")
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or_default();
+
+            let mut reader = response.into_reader();
+
+            let mut buffer = Vec::new();
+            let mut buf = [0; 1024];
+
+            loop {
+                let bytes_read = reader.read(&mut buf)?;
+                if bytes_read == 0 {
+                    break;
+                }
+                buffer.extend_from_slice(&buf[..bytes_read]);
+                let _ = report_progress.send((buffer.len(), total));
+            }
+
+            Ok(ZipFile(buffer))
+        }
+    }
+
+    fn init_from_archive(&self, game_version: &GameVersion, archive: ZipFile) {
+        let game_dir = self.game_dir(game_version);
+
+        if game_dir.exists() {
+            std::fs::remove_dir_all(&game_dir).unwrap();
+        }
+        std::fs::create_dir_all(&game_dir).unwrap();
+        archive.extract_into_dir(&game_dir).unwrap();
+    }
+
+    fn start_game(&self, game_version: &GameVersion) -> std::process::Child {
+        let platform = Platform::current();
+
+        let game_dir = self.game_dir(game_version);
+
+        let Some(dist) = game_version.distribution(&platform) else {
+            panic!("No distribution is available for this platform ({platform:?})");
+        };
+
+        let mut p = if let Some(executable) = dist.executable {
+            let exe_cmd = PathBuf::from(executable);
+            assert!(exe_cmd.is_relative());
+            let exe_cmd = game_dir.join(exe_cmd);
+
+            println!("Running native command: {exe_cmd:?}");
+
+            std::process::Command::new(exe_cmd)
+        } else {
+            let java_cmd = if let Some(java_exe) =
+                dist.java_exe.map(PathBuf::from).filter(|p| p.is_relative())
+            {
+                game_dir.join(java_exe)
+            } else if cfg!(windows) {
+                PathBuf::from("javaw")
+            } else {
+                PathBuf::from("java")
+            };
+
+            let Some(jar_file) = dist.jar_file.map(PathBuf::from).filter(|p| p.is_relative())
+            else {
+                panic!(
+                    "Could not run jar file, either because it was not given or because it was not a relative path."
+                );
+            };
+            let file_to_run = game_dir.join(jar_file);
+
+            println!("Running Java command: {java_cmd:?}\n\tJar file: {file_to_run:?}");
+
+            let mut p = std::process::Command::new(java_cmd);
+            if cfg!(target_os = "macos") {
+                p.arg("-XstartOnFirstThread");
+            }
+            p.arg("-jar").arg(file_to_run);
+            p
+        };
+
+        p.spawn().unwrap()
+    }
+}
+
+impl MainUiHandler {
+    fn game_dir(&self, game_version: &GameVersion) -> PathBuf {
+        self.versions_dir.join(&game_version.name)
     }
 }
 
 pub struct ZipFile(Vec<u8>);
 
 impl ZipFile {
-    fn extract_into_dir(self, dir: &Path) -> Result<(), zip_extract::ZipExtractError> {
+    pub fn extract_into_dir(self, dir: &Path) -> Result<(), zip_extract::ZipExtractError> {
         zip_extract::extract(std::io::Cursor::new(self.0), dir, false)
-    }
-}
-
-pub struct GameDirectory {
-    game_dir: PathBuf,
-    game_version: GameVersion,
-}
-
-impl GameDirectory {
-    pub fn new(game_version: GameVersion) -> Self {
-        let dirs = AppDirs::new(Some("Hexacraft"), false).unwrap();
-        let game_dir = dirs.cache_dir.join("versions").join(&game_version.name);
-        Self {
-            game_dir,
-            game_version,
-        }
-    }
-
-    pub fn is_downloaded(&self) -> bool {
-        self.game_dir.exists()
-    }
-
-    pub fn init_from_archive(&self, data: ZipFile) {
-        if self.game_dir.exists() {
-            std::fs::remove_dir_all(&self.game_dir).unwrap();
-        }
-        std::fs::create_dir_all(&self.game_dir).unwrap();
-        data.extract_into_dir(&self.game_dir).unwrap();
-    }
-
-    pub fn start_game(&self) -> std::process::Child {
-        let file_to_run = self.game_dir.join(&self.game_version.file_to_run);
-
-        let java_cmd = if cfg!(windows) { "javaw" } else { "java" };
-
-        let mut p = std::process::Command::new(java_cmd);
-        if cfg!(target_os = "macos") {
-            p.arg("-XstartOnFirstThread");
-        }
-        p.arg("-jar").arg(file_to_run);
-
-        p.spawn().unwrap()
-    }
-}
-
-pub fn fetch_versions_list() -> Result<Vec<GameVersion>, anyhow::Error> {
-    let url = "https://martomate.com/api/hexacraft/versions";
-
-    let response = ureq::get(url).call()?;
-    let body = response.into_string()?;
-
-    Ok(serde_json::from_str::<Vec<GameVersion>>(&body)?)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_game_version() -> serde_json::Result<()> {
-        let json_str = r#"{
-            "id": "0.1",
-            "name": "0.1",
-            "release_date": "2015-06-20T00:37:30+02:00",
-            "url": "https://a.com/b/c.zip",
-            "file_to_run": "Game.jar"
-        }"#;
-
-        assert_eq!(
-            serde_json::from_str::<GameVersion>(json_str)?,
-            GameVersion {
-                id: "0.1".into(),
-                name: "0.1".into(),
-                release_date: "2015-06-20T00:37:30+02:00".into(),
-                url: "https://a.com/b/c.zip".into(),
-                file_to_run: "Game.jar".into(),
-            }
-        );
-
-        Ok(())
     }
 }
