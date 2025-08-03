@@ -1,0 +1,38 @@
+name: CI (launcher)
+
+on:
+  pull_request:
+    paths:
+      - launcher/**
+  push:
+    branches: [master]
+    paths:
+      - launcher/**
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        id: setup-rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('launcher/Cargo.lock') }}
+          path: |
+            ~/.cargo
+            launcher/target
+
+      - name: Build
+        working-directory: launcher
+        run: cargo build
+
+      - name: Run tests
+        working-directory: launcher
+        run: cargo test

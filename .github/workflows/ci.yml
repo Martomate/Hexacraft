@@ -2,8 +2,12 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - launcher/**
   push:
     branches: [master]
+    paths-ignore:
+      - launcher/**
 
 jobs:
   test:
