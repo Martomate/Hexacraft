@@ -1,17 +1,38 @@
 #![allow(clippy::type_complexity)]
 
-use std::sync::{Arc, Mutex, mpsc};
-
-use crate::{GameVersion, UiHandler, ZipFile};
-
+use crate::core::GameVersion;
 use bevy::{
+    asset::embedded_asset,
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, block_on, poll_once},
     window::RequestRedraw,
     winit::WinitSettings,
 };
+use std::{
+    ops::Deref,
+    sync::{Arc, Mutex, mpsc},
+};
 
-use bevy::asset::embedded_asset;
+pub trait UiHandler: Send + Sync + 'static {
+    fn fetch_versions_list(
+        &self,
+    ) -> impl Future<Output = Result<Vec<GameVersion>, anyhow::Error>> + Send + 'static;
+
+    fn is_downloaded(&self, game_version: &GameVersion) -> bool;
+
+    fn download(
+        &self,
+        game_version: &GameVersion,
+        report_progress: std::sync::mpsc::Sender<(usize, usize)>,
+    ) -> impl Future<Output = Result<Vec<u8>, anyhow::Error>> + Send + 'static;
+
+    fn init_from_archive(&self, game_version: &GameVersion, compressed_data: Vec<u8>);
+
+    fn start_game(
+        &self,
+        game_version: &GameVersion,
+    ) -> Result<std::process::Command, anyhow::Error>;
+}
 
 macro_rules! embed_all_assets {
     ($app: ident) => {
@@ -20,11 +41,28 @@ macro_rules! embed_all_assets {
     };
 }
 
+macro_rules! asset_path {
+    ($asset: literal) => {
+        concat!("embedded://launcher/ui/assets/", $asset)
+    };
+}
+
 struct EmbeddedAssetPlugin;
 
 impl Plugin for EmbeddedAssetPlugin {
     fn build(&self, app: &mut App) {
         embed_all_assets!(app);
+    }
+}
+
+#[derive(Resource)]
+struct UiHandlerRes<H: UiHandler>(H);
+
+impl<H: UiHandler> Deref for UiHandlerRes<H> {
+    type Target = H;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -42,7 +80,7 @@ pub fn run<H: UiHandler>(handler: H) {
         .add_plugins(EmbeddedAssetPlugin)
         .add_event::<Action>()
         .insert_resource(MainState::default())
-        .insert_resource(handler)
+        .insert_resource(UiHandlerRes(handler))
         // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
         .insert_resource(WinitSettings::desktop_app())
         .add_systems(Startup, setup::<H>)
@@ -90,7 +128,7 @@ struct DownloadProgress(Arc<Mutex<f32>>);
 
 enum HttpTaskResponse {
     FetchGameVersions(Vec<GameVersion>),
-    FetchGame(GameVersion, ZipFile),
+    FetchGame(GameVersion, Vec<u8>),
 }
 
 #[derive(Component)]
@@ -100,7 +138,7 @@ fn handle_http_tasks<H: UiHandler>(
     mut commands: Commands,
     mut http_tasks: Query<(Entity, &mut HttpTask)>,
     mut main_state: ResMut<MainState>,
-    handler: Res<H>,
+    handler: Res<UiHandlerRes<H>>,
 ) {
     for (entity, mut task) in &mut http_tasks {
         if !task.0.is_finished() {
@@ -117,7 +155,7 @@ fn handle_http_tasks<H: UiHandler>(
 
                     main_state.is_downloading = false;
 
-                    start_game(&*handler, &game_version);
+                    start_game(&handler.0, &game_version);
                 }
                 Err(err) => println!("Failed to make http request: {err}"),
             }
@@ -130,7 +168,7 @@ fn setup<H: UiHandler>(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     state: Res<MainState>,
-    handler: Res<H>,
+    handler: Res<UiHandlerRes<H>>,
 ) {
     let task_pool = AsyncComputeTaskPool::get();
     let entity = commands.spawn_empty().id();
@@ -144,7 +182,7 @@ fn setup<H: UiHandler>(
     commands.spawn(Camera2dBundle::default());
 
     commands.spawn(SpriteBundle {
-        texture: asset_server.load("embedded://launcher/assets/background.png"),
+        texture: asset_server.load(asset_path!("background.png")),
         ..Default::default()
     });
 
@@ -167,7 +205,7 @@ fn setup<H: UiHandler>(
                     let (outline_bundles, main_bundle) = make_outlined_text(
                         "Hexacraft",
                         TextStyle {
-                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
+                            font: asset_server.load(asset_path!("Verdana.ttf")),
                             font_size: 72.0,
                             color: Color::WHITE,
                         },
@@ -202,7 +240,7 @@ fn setup<H: UiHandler>(
                     parent.spawn(TextBundle::from_section(
                         "Play",
                         TextStyle {
-                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
+                            font: asset_server.load(asset_path!("Verdana.ttf")),
                             font_size: 32.0,
                             color: Color::srgb(0.9, 0.9, 0.9),
                         },
@@ -271,8 +309,7 @@ fn setup<H: UiHandler>(
                                     None => "Latest version".to_string(),
                                 },
                                 TextStyle {
-                                    font: asset_server
-                                        .load("embedded://launcher/assets/Verdana.ttf"),
+                                    font: asset_server.load(asset_path!("Verdana.ttf")),
                                     font_size: 20.0,
                                     ..default()
                                 },
@@ -313,7 +350,7 @@ fn update_available_versions_list(
                     parent.spawn(TextBundle::from_section(
                         v.name.clone(),
                         TextStyle {
-                            font: asset_server.load("embedded://launcher/assets/Verdana.ttf"),
+                            font: asset_server.load(asset_path!("Verdana.ttf")),
                             font_size: 20.0,
                             ..default()
                         },
@@ -367,7 +404,8 @@ fn button_system(
 }
 
 fn start_game<H: UiHandler>(handler: &H, game_version: &GameVersion) -> ! {
-    let _ = handler.start_game(game_version);
+    let mut cmd = handler.start_game(game_version).unwrap();
+    let _ = cmd.spawn().unwrap();
     std::process::exit(0);
 }
 
@@ -378,7 +416,7 @@ fn perform_actions<H: UiHandler>(
     q_version_button: Query<&Children, With<VersionButton>>,
     mut q_text: Query<&mut Text>,
     mut state: ResMut<MainState>,
-    handler: Res<H>,
+    handler: Res<UiHandlerRes<H>>,
 ) {
     for action in &mut action_event_reader.read() {
         match action {
@@ -391,7 +429,7 @@ fn perform_actions<H: UiHandler>(
                     };
                     if let Some(game_version) = game_version {
                         if handler.is_downloaded(game_version) {
-                            start_game(&*handler, game_version);
+                            start_game(&handler.0, game_version);
                         } else {
                             let game_version = game_version.clone();
 
@@ -420,8 +458,7 @@ fn perform_actions<H: UiHandler>(
                                 .detach();
 
                             let task = HttpTask(task_pool.spawn({
-                                let download_task =
-                                    handler.download(&game_version, progress_tx);
+                                let download_task = handler.download(&game_version, progress_tx);
                                 async move {
                                     let buffer = download_task.await?;
                                     Ok(HttpTaskResponse::FetchGame(game_version, buffer))
