@@ -252,9 +252,10 @@ fn setup<H: UiHandler>(
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::FlexStart,
-                        align_items: AlignItems::Center,
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::FlexEnd,
+                        align_items: AlignItems::Start,
+                        //row_gap: Val::Px(4.0),
                         width: Val::Percent(100.0),
                         height: Val::Px(64.0),
                         padding: UiRect::all(Val::Px(4.0)),
@@ -267,36 +268,24 @@ fn setup<H: UiHandler>(
                         .spawn(NodeBundle {
                             style: Style {
                                 flex_direction: FlexDirection::Column,
+                                align_items: AlignItems::Stretch,
+                                margin: UiRect::all(Val::Px(8.0)),
+                                border: UiRect::all(Val::Px(2.0)),
                                 ..default()
                             },
-                            background_color: Color::srgb(0.10, 0.10, 0.10).into(),
+                            background_color: Color::srgba(0.15, 0.15, 0.15, 0.7).into(),
+                            border_color: BorderColor(Color::srgba(0.0, 0.0, 0.0, 0.7)),
                             visibility: Visibility::Hidden,
                             ..default()
                         })
                         .insert(VersionSelector)
-                        .with_children(|parent| {
-                            parent
-                                .spawn(NodeBundle {
-                                    style: Style {
-                                        position_type: PositionType::Absolute,
-                                        left: Val::Px(5.0),
-                                        bottom: Val::Px(10.0),
-                                        flex_direction: FlexDirection::Column,
-                                        align_items: AlignItems::Stretch,
-                                        ..default()
-                                    },
-                                    background_color: Color::srgba(0.15, 0.15, 0.15, 0.8).into(),
-                                    ..default()
-                                })
-                                .insert(AvailableVersionsList);
-                        });
+                        .insert(AvailableVersionsList);
 
                     parent
                         .spawn(ButtonBundle {
                             style: Style {
-                                height: Val::Px(24.0),
                                 justify_content: JustifyContent::FlexStart,
-                                padding: UiRect::all(Val::Px(4.0)),
+                                margin: UiRect::all(Val::Px(8.0)),
                                 ..default()
                             },
                             background_color: Color::srgba(0.15, 0.15, 0.15, 0.0).into(),
@@ -308,7 +297,7 @@ fn setup<H: UiHandler>(
                             parent.spawn(TextBundle::from_section(
                                 match state.selected_version {
                                     Some(ref v) => format!("Version: {}", *v),
-                                    None => "Latest version".to_string(),
+                                    None => "Version: Latest".to_string(),
                                 },
                                 TextStyle {
                                     font: asset_server.load(asset_path!("Verdana.ttf")),
@@ -339,12 +328,11 @@ fn update_available_versions_list(
                 .spawn(ButtonBundle {
                     style: Style {
                         height: Val::Px(24.0),
-                        width: Val::Px(100.0),
+                        width: Val::Px(120.0),
                         justify_content: JustifyContent::FlexStart,
                         margin: UiRect::axes(Val::Px(8.0), Val::Px(2.0)),
                         ..default()
                     },
-                    background_color: Color::srgba(0.15, 0.15, 0.15, 0.0).into(),
                     ..default()
                 })
                 .insert(Action::SelectVersion(v.clone()))
