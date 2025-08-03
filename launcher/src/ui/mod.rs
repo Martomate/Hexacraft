@@ -109,6 +109,7 @@ enum Action {
     Play,
     SelectVersion(GameVersion),
     ShowVersionSelector,
+    HideVersionSelector,
 }
 
 #[derive(Component)]
@@ -187,7 +188,7 @@ fn setup<H: UiHandler>(
     });
 
     commands
-        .spawn(NodeBundle {
+        .spawn(ButtonBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
@@ -198,6 +199,7 @@ fn setup<H: UiHandler>(
             },
             ..default()
         })
+        .insert(Action::HideVersionSelector)
         .with_children(|parent| {
             parent
                 .spawn(NodeBundle { ..default() })
@@ -489,6 +491,10 @@ fn perform_actions<H: UiHandler>(
             Action::ShowVersionSelector => {
                 let mut version_selector = q_version_selector.single_mut();
                 *version_selector = Visibility::Visible;
+            }
+            Action::HideVersionSelector => {
+                let mut version_selector = q_version_selector.single_mut();
+                *version_selector = Visibility::Hidden;
             }
         };
     }
