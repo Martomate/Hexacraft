@@ -35,14 +35,6 @@ jobs:
         id: setup-rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cargo cache
-        uses: actions/cache@v4
-        with:
-          key: ${{ matrix.os }}-${{ steps.setup-rust.outputs.cachekey }}-${{ hashFiles('launcher/Cargo.lock') }}
-          path: |
-            ~/.cargo
-            launcher/target
-
       - name: Run tests
         working-directory: launcher
         run: cargo test
