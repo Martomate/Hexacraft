@@ -30,6 +30,7 @@ object Block {
   val BirchLeaves = register(new Block(10, "leaves_birch", "Birch leaves"))
   val Tnt = register(new Block(11, "tnt", "TNT"))
   val Glass = register(new BlockGlass(12, "glass", "Glass"))
+  val Marble = register(new Block(13, "marble", "Marble"))
 }
 
 class Block(val id: Byte, val name: String, val displayName: String) {
