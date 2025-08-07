@@ -9,6 +9,8 @@ import mill.util.{JarManifest, Jvm}
 
 import scala.util.Properties.isMac
 
+val HexacraftVersion = "0.15"
+
 object Deps {
   def scalaVersion = "3.6.4"
 
@@ -195,7 +197,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
 
   override def forkArgs = super.forkArgs() ++ (if (isMac) Some("-XstartOnFirstThread") else None).toSeq
 
-  override def packageVersion = "0.14.1"
+  override def packageVersion = HexacraftVersion
   override def packageName = "hexacraft-" + packageVersion()
   override def executableScriptName = "hexacraft"
 
