@@ -53,10 +53,10 @@ jobs:
         run: ./mill __.test
 
       - name: Package
-        run: ./mill main.universalStagePackageZip
+        run: ./mill main.universalStage
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: hexacraft-${{matrix.name}}
-          path: ./out/main/universalStagePackageZip.dest/
+          path: ./out/main/universalStage.dest/

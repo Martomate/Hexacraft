@@ -47,4 +47,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hexacraft-${{matrix.name}}
-          path: launcher/target/packaging/*
+          path: launcher/target/packaging/
