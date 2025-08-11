@@ -78,6 +78,10 @@ class WindowSystem(glfw: GlfwWrapper) {
     res.toSeq
   }
 
+  def clipboard: String = {
+    glfw.glfwGetClipboardString()
+  }
+
   def createWindow(settings: WindowSettings): Option[Window] = {
     val glfwResizable = if settings.resizable then GLFW.GLFW_TRUE else GLFW.GLFW_FALSE
     val glfwDebugMode = if settings.opengl.debugMode then GLFW.GLFW_TRUE else GLFW.GLFW_FALSE
@@ -157,6 +161,7 @@ trait GlfwWrapper {
   def glfwSetWindowShouldClose(window: Long, value: Boolean): Unit
   def glfwSetWindowPos(window: Long, xpos: Int, ypos: Int): Unit
   def glfwFreeCallbacks(window: Long): Unit
+  def glfwGetClipboardString(): String
 }
 
 object RealGlfw extends GlfwWrapper {
@@ -334,6 +339,11 @@ object RealGlfw extends GlfwWrapper {
   def glfwFreeCallbacks(window: Long): Unit = {
     runOnMainThread(Callbacks.glfwFreeCallbacks(window))
   }
+
+  def glfwGetClipboardString(): String = {
+    val s = runOnMainThread(GLFW.glfwGetClipboardString(0))
+    if s != null then s else ""
+  }
 }
 
 class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
@@ -388,4 +398,5 @@ class NullGlfw(config: WindowSystem.NullConfig) extends GlfwWrapper {
   def glfwSetWindowShouldClose(window: Long, value: Boolean): Unit = ()
   def glfwSetWindowPos(window: Long, xpos: Int, ypos: Int): Unit = ()
   def glfwFreeCallbacks(window: Long): Unit = ()
+  def glfwGetClipboardString(): String = ""
 }

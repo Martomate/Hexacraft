@@ -243,7 +243,8 @@ class MainWindow(
         TickContext(
           windowSize = _windowSize,
           currentMousePosition = mouse.currentPos,
-          previousMousePosition = mouse.previousPos
+          previousMousePosition = mouse.previousPos,
+          readClipboard = () => windowSystem.clipboard
         )
       )
     }

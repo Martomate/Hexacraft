@@ -1,7 +1,8 @@
 package hexacraft.gui.comp
 
 import hexacraft.gui.{Event, LocationInfo, RenderContext, TickContext}
-import hexacraft.infra.window.{KeyAction, KeyboardKey}
+import hexacraft.infra.os.{Mac, OS}
+import hexacraft.infra.window.{KeyAction, KeyboardKey, KeyMods}
 import hexacraft.text.Text
 
 import org.joml.{Vector3f, Vector4f}
@@ -25,6 +26,7 @@ class TextField(
   private var cursorTextVisible: Boolean = false
   private var time: Int = 0
   private var focused: Boolean = alwaysFocused
+  private var shouldPasteFromClipboard: Boolean = false
 
   addText(contentText)
   setText(initText)
@@ -85,6 +87,11 @@ class TextField(
         cursorTextVisible = false
       }
     }
+
+    if shouldPasteFromClipboard then {
+      shouldPasteFromClipboard = false
+      setText(text + ctx.clipboard)
+    }
   }
 
   override def render(context: RenderContext): Unit = {
@@ -121,6 +128,13 @@ class TextField(
       case KeyEvent(KeyboardKey.Backspace, _, KeyAction.Press, _) =>
         if focused && text.nonEmpty then {
           setText(text.substring(0, text.length - 1))
+        }
+      case KeyEvent(KeyboardKey.Letter('V'), _, KeyAction.Release, mods) =>
+        if focused then {
+          val isAttemptingPaste = if OS.current == Mac then mods.superDown else mods.ctrlDown
+          if isAttemptingPaste then {
+            shouldPasteFromClipboard = true
+          }
         }
       case MouseClickEvent(_, _, _, mousePos) =>
         focused = alwaysFocused || location.containsPoint(mousePos)

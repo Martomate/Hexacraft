@@ -187,7 +187,7 @@ class GameSceneTest extends FunSuite {
     // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
-    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
+    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), () => "")
     assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
       gameScene.tick(tickContext)
     })
@@ -260,7 +260,7 @@ class GameSceneTest extends FunSuite {
     // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
-    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)))
+    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), () => "")
     assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
       gameScene.tick(tickContext)
     })
