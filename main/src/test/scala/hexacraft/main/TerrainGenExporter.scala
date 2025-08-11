@@ -1,10 +1,10 @@
 package hexacraft.main
 
 import hexacraft.client.{BlockSpecs, BlockTextureLoader}
+import hexacraft.math.MathUtils.clamp
 import hexacraft.math.Range2D
 import hexacraft.math.noise.Data2D
 import hexacraft.nbt.Nbt
-import hexacraft.renderer.PixelArray
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.Loop
 import hexacraft.world.*
@@ -31,7 +31,7 @@ object TerrainGenExporter {
     blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
   private val blockTextureColors: Map[String, IndexedSeq[Vector3f]] =
     blockTextureIndices.view
-      .mapValues(indices => indices.map(idx => calculateTextureColor(blockTextureMapping.images(idx & 0xfff))))
+      .mapValues(indices => indices.map(idx => blockTextureMapping.images(idx & 0xfff).averageColor))
       .toMap
 
   private val genSettings = WorldGenSettings.fromNBT(Nbt.emptyMap, WorldSettings.none.copy(seed = seed))
@@ -194,27 +194,8 @@ object TerrainGenExporter {
     fToI8(r) << 16 | fToI8(g) << 8 | fToI8(b)
   }
 
-  private def clamp(v: Int, lo: Int, hi: Int): Int = {
-    if v < lo then lo else if v > hi then hi else v
-  }
-
   private def memoized[A, B](f: A => B): A => B = {
     val cache = mutable.Map.empty[A, B]
     a => cache.getOrElseUpdate(a, f(a))
-  }
-
-  private def calculateTextureColor(texture: PixelArray): Vector3f = {
-    var r = 0L
-    var g = 0L
-    var b = 0L
-
-    for pix <- texture.pixels do {
-      r += (pix >> 16) & 0xff
-      g += (pix >> 8) & 0xff
-      b += (pix >> 0) & 0xff
-    }
-
-    val c = texture.pixels.length * 255
-    Vector3f(r.toFloat / c, g.toFloat / c, b.toFloat / c)
   }
 }
