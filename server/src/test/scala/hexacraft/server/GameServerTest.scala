@@ -199,23 +199,43 @@ class GameServerTest extends FunSuite {
 
       socket2.receive()
 
-      socket1.send(NetworkPacket.GetEvents)
+      {
+        socket1.send(NetworkPacket.GetEvents)
 
-      val tag = socket1.receive()
+        val tag = socket1.receive()
 
-      val messages = tag.asMap.get.getList("messages").get
-      assertEquals(messages.size, 1)
+        val messages = tag.asMap.get.getList("messages").get
+        assertEquals(messages.size, 1)
 
-      assertEquals(
-        messages.head.asMap.get,
-        Nbt.makeMap(
-          "text" -> Nbt.StringTag(s"$player2Name logged in"),
-          "sender" -> Nbt.makeMap("kind" -> Nbt.StringTag("server"))
+        assertEquals(
+          messages.head.asMap.get,
+          Nbt.makeMap(
+            "text" -> Nbt.StringTag(s"$player2Name logged in"),
+            "sender" -> Nbt.makeMap("kind" -> Nbt.StringTag("server"))
+          )
         )
-      )
+      }
+
+      socket2.send(NetworkPacket.Logout)
+
+      {
+        socket1.send(NetworkPacket.GetEvents)
+
+        val tag = socket1.receive()
+
+        val messages = tag.asMap.get.getList("messages").get
+        assertEquals(messages.size, 1)
+
+        assertEquals(
+          messages.head.asMap.get,
+          Nbt.makeMap(
+            "text" -> Nbt.StringTag(s"$player2Name logged out"),
+            "sender" -> Nbt.makeMap("kind" -> Nbt.StringTag("server"))
+          )
+        )
+      }
 
       socket1.send(NetworkPacket.Logout)
-      socket2.send(NetworkPacket.Logout)
     }
   }
 }

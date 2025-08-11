@@ -363,6 +363,14 @@ class GameServer(
         case None =>
       }
     }
+
+    val name = player.name
+    for otherPlayer <- players do {
+      val (playerId, otherData) = otherPlayer
+      otherData.messagesWaitingToBeSent.synchronized {
+        otherData.messagesWaitingToBeSent += ServerMessage(s"$name logged out", ServerMessage.Sender.Server)
+      }
+    }
   }
 
   private val chunksLoadedPerPlayer: mutable.HashMap[UUID, ChunkLoadingPrioritizer] = mutable.HashMap.empty
