@@ -165,7 +165,9 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
     }
 
-    ch.initLightingIfNeeded(chunkCoords, lightPropagator)
+    lightPropagator.synchronized {
+      ch.initLightingIfNeeded(chunkCoords, lightPropagator)
+    }
 
     requestRenderUpdate(chunkCoords)
     requestRenderUpdateForNeighborChunks(chunkCoords)
@@ -724,10 +726,12 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
       blockCoords: BlockRelChunk,
       block: BlockState
   ): Unit = {
-    lightPropagator.removeTorchlight(chunkCoords, chunk, blockCoords)
-    lightPropagator.removeSunlight(chunkCoords, chunk, blockCoords)
-    if block.blockType.lightEmitted != 0 then {
-      lightPropagator.addTorchlight(chunkCoords, chunk, blockCoords, block.blockType.lightEmitted)
+    lightPropagator.synchronized {
+      lightPropagator.removeTorchlight(chunkCoords, chunk, blockCoords)
+      lightPropagator.removeSunlight(chunkCoords, chunk, blockCoords)
+      if block.blockType.lightEmitted != 0 then {
+        lightPropagator.addTorchlight(chunkCoords, chunk, blockCoords, block.blockType.lightEmitted)
+      }
     }
   }
 }

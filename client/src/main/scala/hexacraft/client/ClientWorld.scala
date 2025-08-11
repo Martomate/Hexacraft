@@ -125,7 +125,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       case None =>
     }
 
-    ch.initLightingIfNeeded(chunkCoords, lightPropagator)
+    lightPropagator.synchronized {
+      ch.initLightingIfNeeded(chunkCoords, lightPropagator)
+    }
 
     requestRenderUpdate(chunkCoords)
     requestRenderUpdateForNeighborChunks(chunkCoords)
@@ -444,10 +446,12 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       blockCoords: BlockRelChunk,
       block: BlockState
   ): Unit = {
-    lightPropagator.removeTorchlight(chunkCoords, chunk, blockCoords)
-    lightPropagator.removeSunlight(chunkCoords, chunk, blockCoords)
-    if block.blockType.lightEmitted != 0 then {
-      lightPropagator.addTorchlight(chunkCoords, chunk, blockCoords, block.blockType.lightEmitted)
+    lightPropagator.synchronized {
+      lightPropagator.removeTorchlight(chunkCoords, chunk, blockCoords)
+      lightPropagator.removeSunlight(chunkCoords, chunk, blockCoords)
+      if block.blockType.lightEmitted != 0 then {
+        lightPropagator.addTorchlight(chunkCoords, chunk, blockCoords, block.blockType.lightEmitted)
+      }
     }
   }
 }
