@@ -9,12 +9,12 @@ import hexacraft.infra.audio.AudioSystem.BufferId
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
-import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
+import hexacraft.renderer.{Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnTerrain}
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -62,7 +62,7 @@ object GameClient {
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
     val blockTextureColors: Map[String, IndexedSeq[Vector3f]] =
       blockTextureIndices.view
-        .mapValues(indices => indices.map(idx => calculateTextureColor(blockTextureMapping.images(idx & 0xfff))))
+        .mapValues(indices => indices.map(idx => blockTextureMapping.images(idx & 0xfff).averageColor))
         .toMap
 
     TextureArray.registerTextureArray("blocks", 32, blockTextureMapping.images)
@@ -156,21 +156,6 @@ object GameClient {
   } catch {
     case e: Exception =>
       Result.Err(e.getMessage)
-  }
-
-  private def calculateTextureColor(texture: PixelArray): Vector3f = {
-    var r = 0L
-    var g = 0L
-    var b = 0L
-
-    for pix <- texture.pixels do {
-      r += (pix >> 16) & 0xff
-      g += (pix >> 8) & 0xff
-      b += (pix >> 0) & 0xff
-    }
-
-    val c = texture.pixels.length * 255
-    Vector3f(r.toFloat / c, g.toFloat / c, b.toFloat / c)
   }
 
   private def makeBlockInHandRenderer(
