@@ -100,6 +100,7 @@ object TerrainGenExporter {
   }
 
   private def biomeColor(biome: Biome): Int = biome match {
+    case Biome.Ocean      => 0x0000ff
     case Biome.Desert     => 0xdddd22
     case Biome.Snowland   => 0xeeeeee
     case Biome.Rainforest => 0x22cc22
