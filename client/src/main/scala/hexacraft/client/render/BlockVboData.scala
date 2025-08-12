@@ -311,10 +311,10 @@ object BlockVboData {
         }
       case _ =>
         cornerIdx match {
-          case 0 => b += Offset(0, 1, 0); b += Offset(0, 1, 0)
-          case 1 => b += Offset(0, 1, 0); b += Offset(0, 1, 0)
-          case 2 => b += Offset(0, -1, 0); b += Offset(0, -1, 0)
-          case 3 => b += Offset(0, -1, 0); b += Offset(0, -1, 0)
+          case 0 => b += Offset(0, 1, 0)
+          case 1 => b += Offset(0, 1, 0)
+          case 2 => b += Offset(0, -1, 0)
+          case 3 => b += Offset(0, -1, 0)
         }
     }
 
