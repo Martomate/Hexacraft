@@ -83,7 +83,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     if yToGo < -6 then {
       -0.4
     } else if yToGo < 0 then {
-      -0.4 - (6 + yToGo) * 0.025
+      -0.4 - (6 + yToGo) * 0.25
     } else {
       4
     }
