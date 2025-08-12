@@ -70,17 +70,16 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     Loop.rangeUntil(0, 16) { i =>
       Loop.rangeUntil(0, 16) { k =>
         val groundLevel = column.originalTerrainHeight.getHeight(i, k)
-        val isDesert = column.biome(i, k) == Biome.Desert
 
         Loop.rangeUntil(0, 16) { j =>
           val noise = blockNoise(i, j, k)
           val yToGo = coords.Y.toInt * 16 + j - groundLevel
           val limit = limitForBlockNoise(yToGo)
+          val biome = column.biome(i, k)
           if noise > limit then {
-            storage.setBlock(
-              BlockRelChunk(i, j, k),
-              new BlockState(getBlockAtDepth(yToGo, isDesert))
-            )
+            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo, biome)))
+          } else if biome == Biome.Ocean && groundLevel + yToGo <= 0 then {
+            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Block.Water))
           }
         }
       }
@@ -89,21 +88,28 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     storage
   }
 
-  private def getBlockAtDepth(yToGo: Int, isDesert: Boolean) = {
-    if isDesert then {
-      if yToGo < -5 then {
-        Block.Stone
-      } else {
-        Block.Sand
-      }
-    } else {
-      if yToGo < -5 then {
-        Block.Stone
-      } else if yToGo < -1 then {
-        Block.Dirt
-      } else {
-        Block.Grass
-      }
+  private def getBlockAtDepth(yToGo: Int, biome: Biome) = {
+    biome match {
+      case Biome.Ocean =>
+        if yToGo < -2 then {
+          Block.Stone
+        } else {
+          Block.Sand
+        }
+      case Biome.Desert =>
+        if yToGo < -5 then {
+          Block.Stone
+        } else {
+          Block.Sand
+        }
+      case _ =>
+        if yToGo < -5 then {
+          Block.Stone
+        } else if yToGo < -1 then {
+          Block.Dirt
+        } else {
+          Block.Grass
+        }
     }
   }
 

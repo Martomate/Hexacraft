@@ -85,6 +85,7 @@ object ChunkColumnHeightMap {
 }
 
 enum Biome {
+  case Ocean
   case Grassland
   case Desert
   case Snowland
@@ -104,8 +105,10 @@ class ChunkColumnTerrain(
     // TODO: use better units
     val h = humidity(cx, cz)
     val t = temperature(cx, cz)
+    val height = this.originalTerrainHeight.getHeight(cx, cz)
 
-    if h < 0.0 && t > 0.0 then Biome.Desert // TODO: deserts should not generate in mountainous regions
+    if height <= 0 then Biome.Ocean
+    else if h < 0.0 && t > 0.0 then Biome.Desert // TODO: deserts should not generate in mountainous regions
     else if h > 0.0 && t < 0.0 then Biome.Snowland // TODO: this is not correct (cannot have high h and low t)
     else if h > 0.0 && t > 0.0 then Biome.Rainforest
     else if h < 0.0 && t < 0.0 then Biome.Tundra

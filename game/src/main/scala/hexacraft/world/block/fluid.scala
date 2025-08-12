@@ -30,6 +30,7 @@ class BlockBehaviourFluid extends BlockBehaviour {
   override def onUpdated(coords: BlockRelWorld, block: Block, world: BlockRepository)(using
       cylSize: CylinderSize
   ): Unit = {
+    return // TODO: re-enable this when we know that oceans will not lag
     val bs = world.getBlock(coords)
     var depth: Int = bs.metadata & fluidLevelMask
     val bottomCoords = coords.offset(0, -1, 0)

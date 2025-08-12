@@ -1,6 +1,11 @@
 package hexacraft.server.world.plan
 
-import hexacraft.server.world.plan.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
+import hexacraft.server.world.plan.tree.{
+  HugeTreeGenStrategy,
+  RainforestTreeGenStrategy,
+  ShortTreeGenStrategy,
+  TallTreeGenStrategy
+}
 import hexacraft.util.{LongSet, Loop}
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
@@ -59,9 +64,13 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
     }
   }
 
-  private def treeLocations(coords: ChunkRelWorld): Array[Vector2i] = {
+  private def treeLocations(coords: ChunkRelWorld, biome: Biome): Array[Vector2i] = {
     val rand = new Random(mainSeed ^ coords.value)
-    val count = rand.nextInt(maxTreesPerChunk + 1)
+    val count = if biome == Biome.Rainforest then {
+      rand.nextInt(maxTreesPerChunk + 1) + 4
+    } else {
+      rand.nextInt(maxTreesPerChunk + 1)
+    }
 
     Array.fill(count) {
       val cx = rand.nextInt(16)
@@ -74,7 +83,7 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
     val column = world.provideColumn(coords.getColumnRelWorld)
     val terrainHeight = column.originalTerrainHeight
 
-    val locations = treeLocations(coords)
+    val locations = treeLocations(coords, column.biome(8, 8))
     val allowBig = locations.length == 1
 
     Loop.array(locations) { loc =>
@@ -82,15 +91,27 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
       val cz = loc.y
 
       val yy = terrainHeight.getHeight(cx, cz)
-      val isDesert = column.biome(cx, cz) == Biome.Desert
-
-      if !isDesert && yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
-        generateTree(coords, cx, cz, yy, allowBig)
+      if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
+        column.biome(cx, cz) match {
+          case Biome.Ocean  =>
+          case Biome.Desert =>
+          case biome @ Biome.Rainforest =>
+            generateTree(coords, cx, cz, yy, false, biome)
+          case biome =>
+            generateTree(coords, cx, cz, yy, allowBig, biome)
+        }
       }
     }
   }
 
-  private def generateTree(coords: ChunkRelWorld, cx: Int, cz: Int, yy: Short, allowBig: Boolean): Unit = {
+  private def generateTree(
+      coords: ChunkRelWorld,
+      cx: Int,
+      cz: Int,
+      yy: Short,
+      allowBig: Boolean,
+      biome: Biome
+  ): Unit = {
     val rand = new Random(mainSeed ^ coords.value + 836538746785L * (cx * 16 + cz + 387L))
 
     val birchWood = WoodChoice(Block.BirchLog, Block.BirchLeaves)
@@ -102,13 +123,19 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
       if allowBig && choice < 0.05 then {
         new HugeTreeGenStrategy(oakWood.log, oakWood.leaves)
       } else {
-        val useBirch = rand.nextDouble() < 0.1
+        val useBirch = rand.nextDouble() < 0.1 && biome != Biome.Rainforest
         val woodChoice = if useBirch then birchWood else oakWood
 
-        if choice < 0.3 then {
-          new TallTreeGenStrategy(16)(woodChoice.log, woodChoice.leaves)
-        } else {
-          new ShortTreeGenStrategy(woodChoice.log, woodChoice.leaves)
+        biome match {
+          case Biome.Rainforest =>
+            val height = (rand.nextDouble() * 12 + 12).toInt
+            new RainforestTreeGenStrategy(height)(woodChoice.log, woodChoice.leaves)
+          case _ =>
+            if choice < 0.3 then {
+              new TallTreeGenStrategy(16)(woodChoice.log, woodChoice.leaves)
+            } else {
+              new ShortTreeGenStrategy(woodChoice.log, woodChoice.leaves)
+            }
         }
       }
 
@@ -146,10 +173,15 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
   }
 
   override def plan(coords: ChunkRelWorld): Unit = {
-    val rand = new Random(mainSeed ^ coords.value + 364453868)
-    if rand.nextDouble() < 0.01 then {
-      val column = world.provideColumn(coords.getColumnRelWorld)
-      plannedEntities(coords.value) = makePlan(rand, coords, column)
+    val column = world.provideColumn(coords.getColumnRelWorld)
+    column.biome(8, 8) match {
+      case Biome.Ocean  =>
+      case Biome.Desert =>
+      case _ =>
+        val rand = new Random(mainSeed ^ coords.value + 364453868)
+        if rand.nextDouble() < 0.01 then {
+          plannedEntities(coords.value) = makePlan(rand, coords, column)
+        }
     }
   }
 
