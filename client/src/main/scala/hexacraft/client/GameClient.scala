@@ -13,7 +13,7 @@ import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
-import hexacraft.world.block.{Block, BlockSpec, BlockState}
+import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.*
 
@@ -57,7 +57,7 @@ object GameClient {
     }
 
     val blockSpecs = BlockSpecs.default
-    val blockTextureMapping = loadBlockTextures(blockSpecs, blockLoader).unwrap()
+    val blockTextureMapping = BlockTextureLoader.loadBlockTextures(blockSpecs, blockLoader).unwrap()
     val blockTextureIndices: Map[String, IndexedSeq[Int]] =
       blockSpecs.view.mapValues(spec => spec.textures.indices(blockTextureMapping.texIdxMap)).toMap
     val blockTextureColors: Map[String, IndexedSeq[Vector3f]] =
@@ -214,19 +214,6 @@ object GameClient {
       .rotateZ(-3.1415f / 12)
       .rotateX(3.1415f / 6)
       .translate(0, -0.25f, 0)
-  }
-
-  private def loadBlockTextures(
-      blockSpecs: Map[String, BlockSpec],
-      blockLoader: BlockTextureLoader
-  ): Result[BlockTextureLoader.LoadedImages, String] = {
-    val textures = blockSpecs.values.map(_.textures)
-    val squareTextureNames = textures.flatMap(_.sides).toSet.toSeq.map(name => s"$name.png")
-    val triTextureNames = (textures.map(_.top) ++ textures.map(_.bottom)).toSet.toSeq.map(name => s"$name.png")
-
-    blockLoader
-      .load(squareTextureNames, triTextureNames)
-      .mapErr(e => s"Block texture not found: ${e.getMessage}")
   }
 }
 
