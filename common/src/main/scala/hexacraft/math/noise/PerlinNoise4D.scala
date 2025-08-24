@@ -1,5 +1,6 @@
 package hexacraft.math.noise
 
+import hexacraft.rs.RustLib
 import hexacraft.util.SeqUtils.shuffleArray
 
 import org.joml.Math.{lerp, triLerp}
@@ -27,6 +28,8 @@ class PerlinNoise4D(random: Random) { // Apparently SimplexNoise exists in joml
     arr ++ arr
   }
 
+  private val handle = RustLib.PerlinNoise4D.init(perm)
+
   private def intComps(i: Double): (Int, Double, Double) = {
     val intPart = math.floor(i).toInt
     val rest = i - intPart
@@ -47,6 +50,8 @@ class PerlinNoise4D(random: Random) { // Apparently SimplexNoise exists in joml
   private def fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)
 
   def noise(xx: Double, yy: Double, zz: Double, ww: Double): Double = {
+    return RustLib.PerlinNoise4D.noise(handle, xx, yy, zz, ww)
+
     val (ix, x, tx) = intComps(xx)
     val (iy, y, ty) = intComps(yy)
     val (iz, z, tz) = intComps(zz)
