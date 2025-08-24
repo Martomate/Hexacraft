@@ -65,13 +65,8 @@ object common extends HexacraftModule {
 object native extends HexacraftModule with RustJniModule {
   override def nativeName = "hexacraft-rs"
 
-  private def javahClassNames = Seq(
-    "hexacraft.rs.RustLib$"
-  )
-
-  def javah = T {
-    os.proc("javah", "-d", rustSourceRoot().head.path / "jni", "-cp", compile().classes.path, javahClassNames).call()
-  }
+  override def javacOptions =
+    super.javacOptions() :+ "-h" :+ (rustSourceRoot().head.path / "jni").toString
 
   object test extends Tests
 }
@@ -236,7 +231,7 @@ trait HexacraftModule extends SbtModule {
     "-deprecation", "-unchecked", "-feature"
   )
   override def javacOptions = Seq(
-    "-release", "17"
+    "--release", "17"
   )
 
   override def compileIvyDeps = Agg(
