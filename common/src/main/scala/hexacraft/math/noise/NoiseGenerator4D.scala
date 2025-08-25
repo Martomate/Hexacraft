@@ -1,18 +1,26 @@
 package hexacraft.math.noise
 
+import hexacraft.rs.RustLib
 import hexacraft.util.Loop
+import hexacraft.util.SeqUtils.shuffleArray
 
 import java.util.Random
 
 class NoiseGenerator4D(random: Random, val numOctaves: Int, val scale: Double) {
-  private val noiseGens = Array.fill(numOctaves)(PerlinNoise4D(random))
+  private val noiseGens = Array.fill(numOctaves) {
+    val arr = (0 until 256).toArray
+    shuffleArray(arr, random)
+    val perm = arr ++ arr
+    RustLib.PerlinNoise4D.init(perm)
+  }
 
   def genNoise(x: Double, y: Double, z: Double, w: Double): Double = {
     var amp = 1d
     var result = 0d
     Loop.array(noiseGens) { n =>
       val mult = scale / amp
-      val noise = n.noise(
+      val noise = RustLib.PerlinNoise4D.noise(
+        n,
         x * mult,
         y * mult,
         z * mult,

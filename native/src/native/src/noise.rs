@@ -1,3 +1,5 @@
+// Improved Perlin Noise: http://mrl.nyu.edu/~perlin/noise/
+
 #[rustfmt::skip]
 const GRAD4: [i8; 128] = [
     0,  1,  1,  1,    0,  1,  1, -1,    0,  1, -1,  1,    0,  1, -1, -1,
