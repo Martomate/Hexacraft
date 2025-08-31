@@ -84,6 +84,14 @@ object ChunkColumnHeightMap {
   def fromData2D(data: Data2D): ChunkColumnHeightMap = from((x, z) => data(x, z).toShort)
 }
 
+enum Biome {
+  case Grassland
+  case Desert
+  case Snowland
+  case Rainforest
+  case Tundra
+}
+
 class ChunkColumnTerrain(
     // regenerated on load
     val originalTerrainHeight: ChunkColumnHeightMap,
@@ -92,9 +100,16 @@ class ChunkColumnTerrain(
     // stored on disk
     val terrainHeight: ChunkColumnHeightMap
 ) {
-  def isDesert(cx: Int, cz: Int): Boolean = {
+  def biome(cx: Int, cz: Int): Biome = {
     // TODO: use better units
-    humidity(cx, cz) < 0.0 && temperature(cx, cz) > 0.0
+    val h = humidity(cx, cz)
+    val t = temperature(cx, cz)
+
+    if h < 0.0 && t > 0.0 then Biome.Desert // TODO: deserts should not generate in mountainous regions
+    else if h > 0.0 && t < 0.0 then Biome.Snowland // TODO: this is not correct (cannot have high h and low t)
+    else if h > 0.0 && t > 0.0 then Biome.Rainforest
+    else if h < 0.0 && t < 0.0 then Biome.Tundra
+    else Biome.Grassland // TODO: this cannot currently happen, please fix that
   }
 }
 

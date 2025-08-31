@@ -4,7 +4,7 @@ import hexacraft.server.world.plan.tree.{HugeTreeGenStrategy, ShortTreeGenStrate
 import hexacraft.util.{LongSet, Loop}
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
+import hexacraft.world.chunk.{Biome, Chunk, ChunkColumnTerrain, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
 
@@ -82,7 +82,7 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
       val cz = loc.y
 
       val yy = terrainHeight.getHeight(cx, cz)
-      val isDesert = column.isDesert(cx, cz)
+      val isDesert = column.biome(cx, cz) == Biome.Desert
 
       if !isDesert && yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
         generateTree(coords, cx, cz, yy, allowBig)
