@@ -58,6 +58,7 @@ class RootArchTest extends FunSuite {
     val Text = "Text"
     val Util = "Util"
     val World = "World"
+    val Native = "Native"
 
     val NbtLib = "NbtLib"
     val JOML = "JOML"
@@ -84,6 +85,7 @@ class RootArchTest extends FunSuite {
       .layer(Text, "hexacraft.text..")
       .layer(Util, "hexacraft.util..")
       .layer(World, "hexacraft.world..")
+      .layer(Native, "hexacraft.rs..")
       .optionalLayer(JOML, "org.joml..")
       .optionalLayer(NbtLib, "com.flowpowered.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..") // TODO: wrap this lib
@@ -105,7 +107,7 @@ class RootArchTest extends FunSuite {
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Shaders, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML, Nbt))
-      .where(Math, _.mayOnlyAccessLayers(Util, JOML))
+      .where(Math, _.mayOnlyAccessLayers(Util, Native, JOML))
       .where(Physics, _.mayOnlyAccessLayers(Util, JOML))
       .where(Nbt, _.mayOnlyAccessLayers(Util, JOML, NbtLib))
       .where(Renderer, _.mayOnlyAccessLayers(Infra, Util, JOML, LWJGL))
