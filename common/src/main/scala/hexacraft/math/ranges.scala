@@ -2,11 +2,14 @@ package hexacraft.math
 
 extension (xs: Range) {
   def offset(dx: Int): Range = {
-    val (start, end, step) = (xs.start + dx, xs.end + dx, xs.step)
+    val start = xs.start + dx
+    val end = xs.end + dx
+    val step = xs.step
+
     if xs.isInclusive then {
-      start to end by step
+      new Range.Inclusive(start, end, step)
     } else {
-      start until end by step
+      new Range.Exclusive(start, end, step)
     }
   }
 }
