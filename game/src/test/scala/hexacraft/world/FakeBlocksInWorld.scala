@@ -29,10 +29,8 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     if cols.contains(coords) then {
       cols(coords)
     } else {
-      val col = ChunkColumnTerrain.create(
-        ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-        provider.loadColumnData(coords).map(ChunkColumnData.fromNbt)
-      )
+      val col =
+        ChunkColumnTerrain.create(coords, worldGenerator, provider.loadColumnData(coords).map(ChunkColumnData.fromNbt))
       cols += coords -> col
       col
     }

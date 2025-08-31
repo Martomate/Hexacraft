@@ -593,10 +593,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
     for coords <- columnsToLoad do {
       columnsLoading(coords.value) = Future(worldProvider.loadColumnData(coords))(using fsAsync).map(columnData =>
-        ChunkColumnTerrain.create(
-          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-          columnData.map(ChunkColumnData.fromNbt)
-        )
+        ChunkColumnTerrain.create(coords, worldGenerator, columnData.map(ChunkColumnData.fromNbt))
       )(using genAsync)
     }
   }
