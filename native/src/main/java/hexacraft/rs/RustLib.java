@@ -15,12 +15,13 @@ public class RustLib {
 
     public static native String hello();
 
-    public static class PerlinNoise4D {
+    public static class NoiseGenerator4D {
         static {
             RustLib.loadNative();
         }
 
-        public static native long init(int[] perm);
-        public static native double noise(long handle, double xx, double yy, double zz, double ww);
+        public static native long storePerms(int[] perm);
+        public static native long createLayeredNoiseGenerator(long[] noiseHandles);
+        public static native double genNoise(long genHandle, double scale, double x, double y, double z, double w);
     }
 }

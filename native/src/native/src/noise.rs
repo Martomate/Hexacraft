@@ -131,3 +131,21 @@ fn tri_lerp(
     let y1 = lerp(x01, x11, ty);
     lerp(y0, y1, tz)
 }
+
+pub fn noise_with_octaves(perms: &[&[i32]], scale: f64, x: f64, y: f64, z: f64, w: f64) -> f64 {
+    let mut amp = 1.0;
+    let mut result = 0.0;
+    for perm in perms {
+      let mult = scale / amp;
+      let noise = noise(
+        perm,
+        x * mult,
+        y * mult,
+        z * mult,
+        w * mult
+      );
+      result += amp * noise;
+      amp /= 2.0;
+    }
+    result
+}
