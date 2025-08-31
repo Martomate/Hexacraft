@@ -1,6 +1,6 @@
 package hexacraft.server.world.plan
 
-import hexacraft.util.InlinedIterable
+import hexacraft.util.{InlinedIterable, LongSet}
 import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.ChunkRelWorld
@@ -11,6 +11,8 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
     new TreePlanner(world, mainSeed),
     new EntityGroupPlanner(world, pos => EntityFactory.atStartPos(Entity.getNextId, pos, "sheep").unwrap(), mainSeed)
   )
+
+  private val chunksPlanned: LongSet = new LongSet
 
   def decorate(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     if !chunk.isDecorated then {
@@ -23,8 +25,10 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
 
   def prepare(coords: ChunkRelWorld): Unit = {
     for ch <- coords.extendedNeighbors(4) do {
-      for p <- InlinedIterable(planners) do {
-        p.plan(ch)
+      if chunksPlanned.add(coords.value) then {
+        for p <- InlinedIterable(planners) do {
+          p.plan(ch)
+        }
       }
     }
   }

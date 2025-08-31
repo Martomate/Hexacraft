@@ -8,6 +8,8 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
 
+import org.joml.Vector2i
+
 import scala.collection.mutable
 import scala.util.Random
 
@@ -44,7 +46,6 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
     extends WorldFeaturePlanner {
   private val plannedChanges: mutable.LongMap[mutable.ArrayBuffer[LocalBlockState]] =
     mutable.LongMap.empty
-  private val chunksPlanned: LongSet = new LongSet
 
   private val maxTreesPerChunk = 5
 
@@ -58,31 +59,32 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
     }
   }
 
-  private def treeLocations(coords: ChunkRelWorld): Seq[(Int, Int)] = {
+  private def treeLocations(coords: ChunkRelWorld): Array[Vector2i] = {
     val rand = new Random(mainSeed ^ coords.value)
     val count = rand.nextInt(maxTreesPerChunk + 1)
 
-    for _ <- 0 until count yield {
+    Array.fill(count) {
       val cx = rand.nextInt(16)
       val cz = rand.nextInt(16)
-      (cx, cz)
+      new Vector2i(cx, cz)
     }
   }
 
   def plan(coords: ChunkRelWorld): Unit = {
-    if chunksPlanned.add(coords.value) then {
-      val column = world.provideColumn(coords.getColumnRelWorld)
-      val terrainHeight = column.originalTerrainHeight
+    val column = world.provideColumn(coords.getColumnRelWorld)
+    val terrainHeight = column.originalTerrainHeight
 
-      val locations = treeLocations(coords)
-      val allowBig = locations.size == 1
+    val locations = treeLocations(coords)
+    val allowBig = locations.length == 1
 
-      for (cx, cz) <- locations do {
-        val yy = terrainHeight.getHeight(cx, cz)
+    Loop.array(locations) { loc =>
+      val cx = loc.x
+      val cz = loc.y
 
-        if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
-          generateTree(coords, cx, cz, yy, allowBig)
-        }
+      val yy = terrainHeight.getHeight(cx, cz)
+
+      if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
+        generateTree(coords, cx, cz, yy, allowBig)
       }
     }
   }
@@ -129,7 +131,6 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
 ) extends WorldFeaturePlanner {
 
   private val plannedEntities: mutable.LongMap[IndexedSeq[Entity]] = mutable.LongMap.empty
-  private val chunksPlanned: LongSet = new LongSet
 
   private val maxEntitiesPerGroup = 7
 
@@ -144,12 +145,10 @@ class EntityGroupPlanner(world: BlocksInWorldExtended, entityFactory: CylCoords 
   }
 
   override def plan(coords: ChunkRelWorld): Unit = {
-    if chunksPlanned.add(coords.value) then {
-      val rand = new Random(mainSeed ^ coords.value + 364453868)
-      if rand.nextDouble() < 0.01 then {
-        val column = world.provideColumn(coords.getColumnRelWorld)
-        plannedEntities(coords.value) = makePlan(rand, coords, column)
-      }
+    val rand = new Random(mainSeed ^ coords.value + 364453868)
+    if rand.nextDouble() < 0.01 then {
+      val column = world.provideColumn(coords.getColumnRelWorld)
+      plannedEntities(coords.value) = makePlan(rand, coords, column)
     }
   }
 

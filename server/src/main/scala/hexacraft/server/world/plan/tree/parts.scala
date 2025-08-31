@@ -1,5 +1,6 @@
 package hexacraft.server.world.plan.tree
 
+import hexacraft.util.Loop
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{NeighborOffsets, Offset}
 
@@ -77,13 +78,13 @@ case class BlobGenerator(
     seen += start
     edge += time -> start
 
-    for _ <- 1 to numBlocks do {
+    Loop.rangeTo(1, numBlocks) { _ =>
       val top = edge.dequeue()
       time = top._1
       val here = top._2
       result += here
 
-      for off <- NeighborOffsets.all do {
+      Loop.array(NeighborOffsets.all) { off =>
         val pos = here + off
         if !seen(pos) then {
           seen += pos
