@@ -28,6 +28,20 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
   private val biomeHeightVariationGenerator =
     new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
 
+  private val humidityGenerator =
+    new NoiseGenerator3D(random, 4, worldGenSettings.humidityGenScale)
+
+  private val temperatureGenerator =
+    new NoiseGenerator3D(random, 4, worldGenSettings.temperatureGenScale)
+
+  def getHumidityForColumn(coords: ColumnRelWorld): Data2D = {
+    WorldGenerator.makeSampler2D(coords, Pos.eval2(_.evalXZ(humidityGenerator)))
+  }
+
+  def getTemperatureForColumn(coords: ColumnRelWorld): Data2D = {
+    WorldGenerator.makeSampler2D(coords, Pos.eval2(_.evalXZ(temperatureGenerator)))
+  }
+
   def getHeightmapInterpolator(coords: ColumnRelWorld): Data2D = {
     WorldGenerator.makeSampler2D(coords, terrainHeight)
   }
@@ -54,13 +68,19 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     val blockNoise = WorldGenerator.makeSampler3D(coords, this.blockNoise)
 
     Loop.rangeUntil(0, 16) { i =>
-      Loop.rangeUntil(0, 16) { j =>
-        Loop.rangeUntil(0, 16) { k =>
+      Loop.rangeUntil(0, 16) { k =>
+        val groundLevel = column.originalTerrainHeight.getHeight(i, k)
+        val isDesert = column.isDesert(i, k)
+
+        Loop.rangeUntil(0, 16) { j =>
           val noise = blockNoise(i, j, k)
-          val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight.getHeight(i, k)
+          val yToGo = coords.Y.toInt * 16 + j - groundLevel
           val limit = limitForBlockNoise(yToGo)
           if noise > limit then {
-            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
+            storage.setBlock(
+              BlockRelChunk(i, j, k),
+              new BlockState(getBlockAtDepth(yToGo, isDesert))
+            )
           }
         }
       }
@@ -69,13 +89,21 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     storage
   }
 
-  private def getBlockAtDepth(yToGo: Int) = {
-    if yToGo < -5 then {
-      Block.Stone
-    } else if yToGo < -1 then {
-      Block.Dirt
+  private def getBlockAtDepth(yToGo: Int, isDesert: Boolean) = {
+    if isDesert then {
+      if yToGo < -5 then {
+        Block.Stone
+      } else {
+        Block.Sand
+      }
     } else {
-      Block.Grass
+      if yToGo < -5 then {
+        Block.Stone
+      } else if yToGo < -1 then {
+        Block.Dirt
+      } else {
+        Block.Grass
+      }
     }
   }
 
