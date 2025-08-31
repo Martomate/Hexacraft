@@ -5,7 +5,7 @@ import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
 import hexacraft.util.Loop
 import hexacraft.world.WorldGenerator.Pos
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
+import hexacraft.world.chunk.{Biome, ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}
 
 import java.util.Random
@@ -29,10 +29,10 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
 
   private val humidityGenerator =
-    new NoiseGenerator3D(random, 4, worldGenSettings.humidityGenScale)
+    new NoiseGenerator3D(random, 2, worldGenSettings.humidityGenScale)
 
   private val temperatureGenerator =
-    new NoiseGenerator3D(random, 4, worldGenSettings.temperatureGenScale)
+    new NoiseGenerator3D(random, 2, worldGenSettings.temperatureGenScale)
 
   def getHumidityForColumn(coords: ColumnRelWorld): Data2D = {
     WorldGenerator.makeSampler2D(coords, Pos.eval2(_.evalXZ(humidityGenerator)))
@@ -70,7 +70,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     Loop.rangeUntil(0, 16) { i =>
       Loop.rangeUntil(0, 16) { k =>
         val groundLevel = column.originalTerrainHeight.getHeight(i, k)
-        val isDesert = column.isDesert(i, k)
+        val isDesert = column.biome(i, k) == Biome.Desert
 
         Loop.rangeUntil(0, 16) { j =>
           val noise = blockNoise(i, j, k)
