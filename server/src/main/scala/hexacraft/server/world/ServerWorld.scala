@@ -38,6 +38,8 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
 
+  println(s"Loading world with seed: ${worldInfo.gen.seed}")
+
   private val fsExecutorService = Executors.newFixedThreadPool(8, NamedThreadFactory("server-fs"))
   private val genExecutorService = Executors.newFixedThreadPool(4, NamedThreadFactory("server-gen"))
 
