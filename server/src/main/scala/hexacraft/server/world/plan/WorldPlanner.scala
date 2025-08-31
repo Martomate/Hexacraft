@@ -25,7 +25,7 @@ class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderS
 
   def prepare(coords: ChunkRelWorld): Unit = {
     for ch <- coords.extendedNeighbors(4) do {
-      if chunksPlanned.add(coords.value) then {
+      if chunksPlanned.add(ch.value) then {
         for p <- InlinedIterable(planners) do {
           p.plan(ch)
         }
