@@ -3,6 +3,7 @@ package hexacraft.world
 import hexacraft.math.{Range2D, Range3D}
 import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
 import hexacraft.util.Loop
+import hexacraft.world.WorldGenerator.Pos
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}
@@ -28,29 +29,29 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
 
   def getHeightmapInterpolator(coords: ColumnRelWorld): Data2D = {
-    WorldGenerator.makeHeightmapInterpolator(coords, terrainHeight)
+    WorldGenerator.makeSampler2D(coords, terrainHeight)
   }
 
-  private def blockNoise(x: Int, y: Int, z: Int) = {
-    val c = BlockCoords(x, y, z).toCylCoords
-    val radius = cylSize.radius
-    val n1 = blockGenerator.genWrappedNoise(c.x, c.y, c.z, radius)
-    val n2 = blockDensityGenerator.genWrappedNoise(c.x, c.y, c.z, radius)
-    n1 + n2 * 0.4
-  }
+  private def blockNoise(x: Int, y: Int, z: Int) =
+    Pos.eval(BlockCoords(x, y, z)) { pos =>
+      val n1 = pos.evalXYZ(blockGenerator)
+      val n2 = pos.evalXYZ(blockDensityGenerator)
 
-  private def terrainHeight(x: Int, z: Int) = {
-    val c = BlockCoords(x, 0, z).toCylCoords
-    val radius = cylSize.radius
-    val biomeHeight = biomeHeightGenerator.genWrappedNoise(c.x, c.z, radius)
-    val heightVariation = biomeHeightVariationGenerator.genWrappedNoise(c.x, c.z, radius)
-    val heightMap = heightMapGenerator.genWrappedNoise(c.x, c.z, radius)
-    heightMap * heightVariation * 100 + biomeHeight * 100
-  }
+      n1 + n2 * 0.4
+    }
+
+  private def terrainHeight(x: Int, z: Int) =
+    Pos.eval(BlockCoords(x, 0, z)) { pos =>
+      val biomeHeight = pos.evalXZ(biomeHeightGenerator)
+      val heightVariation = pos.evalXZ(biomeHeightVariationGenerator)
+      val heightMap = pos.evalXZ(heightMapGenerator)
+
+      heightMap * heightVariation * 100 + biomeHeight * 100
+    }
 
   def generateChunk(coords: ChunkRelWorld, column: ChunkColumnTerrain): ChunkStorage = {
     val storage: ChunkStorage = new DenseChunkStorage
-    val blockNoise = WorldGenerator.makeBlockInterpolator(coords, this.blockNoise)
+    val blockNoise = WorldGenerator.makeSampler3D(coords, this.blockNoise)
 
     Loop.rangeUntil(0, 16) { i =>
       Loop.rangeUntil(0, 16) { j =>
@@ -90,31 +91,49 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
 }
 
 object WorldGenerator {
-  def makeHeightmapInterpolator(coords: ColumnRelWorld, terrainHeight: (Int, Int) => Double): Data2D = {
-    val samplingPoints = Range2D(
-      0 to 16 by 4,
-      0 to 16 by 4
-    ).offset(
-      coords.X.toInt * 16,
-      coords.Z.toInt * 16
-    )
+  private val samplingPoints2D = Range2D(
+    0 to 16 by 4,
+    0 to 16 by 4
+  )
 
-    val samples = Data2D.evaluate(samplingPoints, terrainHeight)
-    Data2D.interpolate(4, 4, samples)
+  inline def makeSampler2D(coords: ColumnRelWorld, inline noise: (Int, Int) => Double): Data2D = {
+    val sx = coords.X.toInt * 16
+    val sz = coords.Z.toInt * 16
+
+    val data = Data2D.evaluate(samplingPoints2D, (cx, cz) => noise(sx + cx, sz + cz))
+    Data2D.interpolate(4, 4, data)
   }
 
-  def makeBlockInterpolator(coords: ChunkRelWorld, noise: (Int, Int, Int) => Double): Data3D = {
-    val samplingPoints = Range3D(
-      0 to 16 by 4,
-      0 to 16 by 4,
-      0 to 16 by 4
-    ).offset(
-      coords.X.toInt * 16,
-      coords.Y.toInt * 16,
-      coords.Z.toInt * 16
-    )
+  private val samplingPoints3D = Range3D(
+    0 to 16 by 4,
+    0 to 16 by 4,
+    0 to 16 by 4
+  )
 
-    val samples = Data3D.evaluate(samplingPoints, noise)
-    Data3D.interpolate(4, 4, 4, samples)
+  inline def makeSampler3D(coords: ChunkRelWorld, inline noise: (Int, Int, Int) => Double): Data3D = {
+    val sx = coords.X.toInt * 16
+    val sy = coords.Y.toInt * 16
+    val sz = coords.Z.toInt * 16
+
+    val data = Data3D.evaluate(samplingPoints3D, (cx, cy, cz) => noise(sx + cx, sy + cy, sz + cz))
+    Data3D.interpolate(4, 4, 4, data)
+  }
+
+  class Pos(val x: Double, val y: Double, val z: Double, radius: Double) {
+    def evalXZ(noise: NoiseGenerator3D): Double = noise.genWrappedNoise(x, z, radius)
+    def evalXYZ(noise: NoiseGenerator4D): Double = noise.genWrappedNoise(x, y, z, radius)
+  }
+
+  object Pos {
+    inline def eval(bc: BlockCoords)(inline f: Pos => Double)(using cylSize: CylinderSize): Double = {
+      val c = bc.toCylCoords
+      f(Pos(c.x, c.y, c.z, cylSize.radius))
+    }
+
+    inline def eval2(inline f: Pos => Double)(using cylSize: CylinderSize): (Int, Int) => Double = { (x, z) =>
+      val bc = BlockCoords(x, 0, z)
+      val c = bc.toCylCoords
+      f(Pos(c.x, c.y, c.z, cylSize.radius))
+    }
   }
 }
