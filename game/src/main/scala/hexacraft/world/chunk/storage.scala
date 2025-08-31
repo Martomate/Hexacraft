@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.util.{Loop, SmartArray}
+import hexacraft.util.Loop
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.BlockRelChunk
 
@@ -28,8 +28,8 @@ sealed abstract class ChunkStorage {
 case class LocalBlockState(coords: BlockRelChunk, block: BlockState)
 
 final class DenseChunkStorage extends ChunkStorage {
-  private val blockTypes = SmartArray.withByteArray(16 * 16 * 16, 0)
-  private val metadata = SmartArray.withByteArray(16 * 16 * 16, 0)
+  private val blockTypes = new Array[Byte](16 * 16 * 16)
+  private val metadata = new Array[Byte](16 * 16 * 16)
   private var _numBlocks = 0
 
   def blockType(coords: BlockRelChunk): Block = Block.byId(blockTypes(coords.value))
@@ -148,5 +148,18 @@ object SparseChunkStorage {
     val result = new SparseChunkStorage
     for LocalBlockState(i, b) <- storage.allBlocks do result.setBlock(i, b)
     result
+  }
+
+  def create(blocks: Array[Byte], metadata: Array[Byte]): SparseChunkStorage = {
+    val storage = new SparseChunkStorage
+
+    for i <- blocks.indices do {
+      val blockType = blocks(i)
+      if blockType != 0 then {
+        storage.setBlock(BlockRelChunk(i), BlockState(Block.byId(blockType), metadata(i)))
+      }
+    }
+
+    storage
   }
 }

@@ -149,12 +149,17 @@ object ChunkData {
   def fromNBT(nbt: Nbt.MapTag)(using CylinderSize): ChunkData = {
     val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
       case Some(blocks) =>
+        val numBlocks = blocks.count(_ != 0)
         val meta = nbt
           .getByteArray("metadata")
           .map(_.unsafeArray)
           .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
 
-        DenseChunkStorage.create(blocks, meta)
+        if numBlocks < 32 then {
+          SparseChunkStorage.create(blocks, meta)
+        } else {
+          DenseChunkStorage.create(blocks, meta)
+        }
       case None =>
         SparseChunkStorage.empty
     }
