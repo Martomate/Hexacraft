@@ -22,6 +22,14 @@ object Loop {
     }
   }
 
+  inline def downTo(from: Int, to: Int)(inline f: Int => Unit): Unit = {
+    var i = from
+    while i >= to do {
+      f(i)
+      i -= 1
+    }
+  }
+
   inline def array[T](arr: collection.IndexedSeq[T])(inline f: T => Unit): Unit = {
     val len = arr.length
     var i = 0

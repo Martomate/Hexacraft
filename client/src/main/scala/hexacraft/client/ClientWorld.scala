@@ -156,19 +156,10 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
       if now.blockType != Block.Air then {
         col.terrainHeight.setHeight(coords.cx, coords.cz, coords.y.toShort)
       } else {
-        val newHeight = LazyList
-          .range((height - 1).toShort, Short.MinValue, -1.toShort)
-          .map(y =>
-            chunks
-              .get(ChunkRelWorld(coords.X.toInt, y >> 4, coords.Z.toInt).value)
-              .map(chunk => (y, chunk.getBlock(BlockRelChunk(coords.cx, y & 15, coords.cz))))
-              .orNull
-          )
-          .takeWhile(_ != null) // stop searching if the chunk is not loaded
-          .collectFirst({ case (y, block) if block.blockType != Block.Air => y })
-          .getOrElse(Short.MinValue)
-
-        col.terrainHeight.setHeight(coords.cx, coords.cz, newHeight)
+        col.terrainHeight.recalculate(
+          coords,
+          Y => this.chunks.get(ChunkRelWorld(coords.X.toInt, Y, coords.Z.toInt).value)
+        )
       }
     }
   }

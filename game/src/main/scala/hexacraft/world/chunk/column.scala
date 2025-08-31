@@ -2,6 +2,10 @@ package hexacraft.world.chunk
 
 import hexacraft.math.noise.Data2D
 import hexacraft.nbt.Nbt
+import hexacraft.util.Loop
+import hexacraft.world.CylinderSize
+import hexacraft.world.block.Block
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld}
 
 import scala.collection.immutable.ArraySeq
 
@@ -36,12 +40,40 @@ class ChunkColumnHeightMap(values: Array[Short]) {
   def setHeight(x: Int, z: Int, height: Short): Unit = {
     values((x << 4) | z) = height
   }
+
+  def recalculate(coords: BlockRelWorld, chunks: Int => Option[Chunk])(using
+      CylinderSize
+  ): Unit = {
+    this.setHeight(coords.cx, coords.cz, findHeightFrom(coords, chunks))
+  }
+
+  private def findHeightFrom(coords: BlockRelWorld, chunks: Int => Option[Chunk]): Short = {
+    val cx = coords.cx
+    val cz = coords.cz
+
+    Loop.downTo((coords.y >> 4) + 1, Short.MinValue >> 4) { Y =>
+      chunks(Y) match {
+        case Some(chunk) =>
+          Loop.downTo(15, 0) { cy =>
+            val block = chunk.getBlock(BlockRelChunk(cx, cy, cz))
+
+            if block.blockType != Block.Air then {
+              return ((Y << 4) | cy).toShort
+            }
+          }
+        case None =>
+          return Short.MinValue // stop searching if the chunk is not loaded
+      }
+    }
+
+    Short.MinValue
+  }
 }
 
 object ChunkColumnHeightMap {
 
   /** @param f a function from (x, z) => height */
-  def from(f: (Int, Int) => Short): ChunkColumnHeightMap = ChunkColumnHeightMap(
+  inline def from(inline f: (Int, Int) => Short): ChunkColumnHeightMap = ChunkColumnHeightMap(
     Array.tabulate(16 * 16)(i => f(i >> 4, i & 15))
   )
 
