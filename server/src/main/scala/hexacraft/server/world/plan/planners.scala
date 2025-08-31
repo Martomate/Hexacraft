@@ -82,8 +82,9 @@ class TreePlanner(world: BlocksInWorldExtended, mainSeed: Long)(using cylSize: C
       val cz = loc.y
 
       val yy = terrainHeight.getHeight(cx, cz)
+      val isDesert = column.isDesert(cx, cz)
 
-      if yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
+      if !isDesert && yy >= coords.Y.toInt * 16 && yy < (coords.Y.toInt + 1) * 16 then {
         generateTree(coords, cx, cz, yy, allowBig)
       }
     }

@@ -668,7 +668,8 @@ class GameClient(
           val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
           if columnNbt != Nbt.emptyMap then {
             val column = ChunkColumnTerrain.create(
-              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+              columnCoords,
+              world.worldGenerator,
               Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
             )
             world.setColumn(columnCoords, column)
