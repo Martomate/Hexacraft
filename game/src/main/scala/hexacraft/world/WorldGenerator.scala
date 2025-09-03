@@ -78,7 +78,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
           val biome = column.biome(i, k)
           if noise > limit then {
             storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo, biome)))
-          } else if biome == Biome.Ocean && groundLevel + yToGo <= 0 then {
+          } else if biome == Biome.Ocean && groundLevel <= 0 && yToGo >= 0 && yToGo < -groundLevel then {
             storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Block.Water))
           }
         }
