@@ -51,7 +51,7 @@ class ChunkColumnHeightMap(values: Array[Short]) {
     val cx = coords.cx
     val cz = coords.cz
 
-    Loop.downTo((coords.y >> 4) + 1, Short.MinValue >> 4) { Y =>
+    Loop.downTo(coords.y >> 4, Short.MinValue >> 4) { Y =>
       chunks(Y) match {
         case Some(chunk) =>
           Loop.downTo(15, 0) { cy =>
