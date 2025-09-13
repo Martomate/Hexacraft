@@ -1,7 +1,7 @@
 mod noise;
 
-use jni::objects::{JIntArray, JLongArray, ReleaseMode};
-use jni::sys::{jclass, jdouble, jlong, jstring};
+use jni::objects::{JClass, JIntArray, JLongArray, ReleaseMode};
+use jni::sys::{jdouble, jlong, jstring};
 use jni::JNIEnv;
 use jni_fn::jni_fn;
 
@@ -10,13 +10,13 @@ struct NoiseState {
 }
 
 #[jni_fn("hexacraft.rs.RustLib")]
-pub fn hello<'local>(env: JNIEnv<'local>, _class: jclass) -> jstring {
+pub fn hello<'local>(env: JNIEnv<'local>, _class: JClass<'local>) -> jstring {
     let s = env.new_string("Hello from Rust!").unwrap();
     s.into_raw()
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
-pub fn storePerms<'local>(mut env: JNIEnv<'local>, _class: jclass, perm: JIntArray<'local>) -> jlong {
+pub fn storePerms<'local>(mut env: JNIEnv<'local>, _class: JClass<'local>, perm: JIntArray<'local>) -> jlong {
     let elements = unsafe {
         env.get_array_elements(&perm, ReleaseMode::NoCopyBack)
             .expect("failed to read from perm array")
@@ -31,7 +31,7 @@ pub fn storePerms<'local>(mut env: JNIEnv<'local>, _class: jclass, perm: JIntArr
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
 pub fn createLayeredNoiseGenerator<'local>(
     mut env: JNIEnv<'local>,
-    _class: jclass,
+    _class: JClass<'local>,
     noiseHandles: JLongArray<'local>,
 ) -> jlong {
     let elements = unsafe {
@@ -46,7 +46,7 @@ pub fn createLayeredNoiseGenerator<'local>(
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
 pub fn genNoise<'local>(
     _env: JNIEnv<'local>,
-    _class: jclass,
+    _class: JClass<'local>,
     genHandle: jlong,
     scale: jdouble,
     x: jdouble,

@@ -4,8 +4,10 @@ import $ivy.`io.github.hoangmaihuy::mill-universal-packager::0.1.4`
 import io.github.hoangmaihuy.mill.packager.archetypes.JavaAppPackagingModule
 import io.github.hoangmaihuy.mill.packager.subPathRw
 import mill._
+import mill.api.MillException
 import mill.scalalib._
 import mill.util.{JarManifest, Jvm}
+import os.{Path, RelPath}
 
 import scala.util.Properties.isMac
 
@@ -65,8 +67,13 @@ object common extends HexacraftModule {
 object native extends HexacraftModule with RustJniModule {
   override def nativeName = "hexacraft-rs"
 
-  override def javacOptions =
-    super.javacOptions() :+ "-h" :+ (rustSourceRoot().head.path / "jni").toString
+  override def rustSourcePaths: Seq[RelPath] = {
+    Seq(
+      os.rel / "src",
+      os.rel / "Cargo.toml",
+      os.rel / "Cargo.lock",
+    )
+  }
 
   object test extends Tests
 }
@@ -249,14 +256,45 @@ trait HexacraftModule extends SbtModule {
 
 trait RustJniModule extends JavaModule {
   /** Name used in Cargo.toml [package].name. */
-  protected def nativeName: T[String]
+  protected def nativeName: String
 
-  def rustSourceRoot = Task.Sources {
-    millSourcePath / "src" / "native"
+  /** Paths to consider when determining if a rebuild is needed */
+  protected def rustSourcePaths: Seq[RelPath]
+
+  /** Directory where the JNI headers will be stored */
+  private def jniHeadersDir: Target[Path] = T {
+    val sourceHash = allSources().map(_.sig).sum
+    T.dest / s"headers-$sourceHash"
+  }
+
+  override def javacOptions =
+    super.javacOptions() :+ "-h" :+ jniHeadersDir().toString
+
+  /** Directory with the JNI headers, automatically regenerated when needed */
+  def jniHeaders: Target[PathRef] = T {
+    compile()
+
+    val headersDir = jniHeadersDir()
+    if (os.list(headersDir).isEmpty) {
+      throw new MillException("No JNI headers were generated. Please do a clean build.")
+    }
+
+    PathRef(headersDir)
+  }
+
+  def crateHome = millSourcePath / "src" / "native"
+
+  private def rustSources = Task.Sources {
+    rustSourcePaths.map(f => PathRef(crateHome / f))
   }
 
   override def compileResources = Task.Sources {
     super.compileResources() :+ compileNative()
+  }
+
+  override def resources = T {
+    checkJni()
+    super.resources()
   }
 
   private val localTarget: String = {
@@ -288,8 +326,9 @@ trait RustJniModule extends JavaModule {
   }
 
   def compileNative = T {
-    val crateHome = rustSourceRoot().head.path
-    val libName = nativeName()
+    rustSources() // recompile if the sources have changed
+
+    val libName = nativeName
     val target = localTarget
 
     val compilation = Task.fork.async(Task.dest / "cargo", "cargo", s"Compiling $libName ($target)") { _ =>
@@ -329,4 +368,146 @@ trait RustJniModule extends JavaModule {
     os.sub / "native" / targetShortName / libFileName
   }
 
+  def checkJni: Target[Unit] = T {
+    T.log.info("Checking JNI")
+    val declarations = jniDeclarationsInHeaders().map(JniFunctionDeclaration.parseFromHeader)
+    val exportedFunctionNames = jniFunctionNamesInRust()
+
+    val result = JniCheckResult(
+      extraJniExports = exportedFunctionNames.filter(name => !declarations.exists(_.mangledName == name)),
+      missingJniDeclarations = declarations.filter(d => !exportedFunctionNames.contains(d.mangledName))
+    )
+
+    if (result.isMismatch) {
+      result.print()
+      throw new MillException("JNI mismatch (see details above)")
+    }
+    T.log.info(s"Found ${declarations.size} JNI functions")
+  }
+
+  private def jniDeclarationsInHeaders: Target[Seq[String]] = T {
+    os.list(jniHeaders().path)
+      .map(os.read.lines)
+      .flatMap(JniExtractors.functionDeclarationsInHeaderFile)
+  }
+
+  private def jniFunctionNamesInRust: Target[Seq[String]] = T {
+    val p = os.proc("cargo", "expand").call(cwd = crateHome)
+    JniExtractors.functionNamesInRustCode(new String(p.out.bytes))
+  }
+}
+
+object JniExtractors {
+  def functionDeclarationsInHeaderFile(headerFileLines: Seq[String]): Seq[String] = {
+    var declarations: List[String] = Nil
+    var funcStr: Option[String] = None
+    for (l <- headerFileLines) {
+      funcStr match {
+        case Some(s) =>
+          if (!l.endsWith(";")) {
+            funcStr = Some(s"$s $l")
+          } else {
+            declarations = s"$s ${l.stripSuffix(";")}" :: declarations
+            funcStr = None
+          }
+        case None =>
+          if (l.startsWith("JNIEXPORT")) {
+            funcStr = Some(l)
+          }
+      }
+    }
+    declarations.reverse
+  }
+
+  def functionNamesInRustCode(expandedSourceCode: String): Seq[String] = {
+    """pub extern "system" fn (Java_[^<]*)""".r
+      .findAllMatchIn(expandedSourceCode)
+      .map(_.group(1))
+      .toSeq
+  }
+}
+
+case class JniCheckResult(extraJniExports: Seq[String], missingJniDeclarations: Seq[JniFunctionDeclaration]) {
+  def isMismatch: Boolean = missingJniDeclarations.nonEmpty
+
+  def print(): Unit = {
+    if (extraJniExports.nonEmpty) {
+      println()
+      println(s"Extra JNI exports:\n${extraJniExports.map(name => s"    $name").mkString("\n")}")
+    }
+
+    if (missingJniDeclarations.nonEmpty) {
+      println()
+      println(s"Missing JNI exports:")
+      for (d <- missingJniDeclarations) {
+        println(s"    ${d.mangledName}")
+      }
+
+      println()
+      println("Example declarations for the missing JNI exports:")
+
+      for (d <- missingJniDeclarations) {
+        println(d.declarationExample)
+      }
+    }
+  }
+}
+
+case class JniFunctionDeclaration(returnType: String, mangledName: String, argTypes: Seq[String]) {
+  def demangledName: (String, String) = {
+    val namespaceLength = "_".r.findAllMatchIn(mangledName).map(_.start).toSeq.findLast { idx =>
+      val rest = mangledName.substring(idx)
+      !rest.startsWith("_1") && !rest.startsWith("_00024")
+    }.get
+
+    val namespace = mangledName.substring(0, namespaceLength)
+      .stripPrefix("Java_")
+      .replace("_1", "_")
+      .replace("_00024", "$")
+      .replace("_", ".")
+
+    val function = mangledName.substring(namespaceLength + 1)
+      .replace("_1", "_")
+
+    (namespace, function)
+  }
+
+  def declarationExample: String = {
+    val (namespace, function) = demangledName
+    val args = argTypes.drop(1).zipWithIndex.map {
+      case (t, i) => (s"p${i + 1}", rustJniArgName(t))
+    }
+
+    s"""
+       |#[jni_fn("$namespace")]
+       |pub fn $function<'local>(
+       |    env: JNIEnv<'local>,
+       |${args.map { case (n, t) => s"    $n: $t," }.mkString("\n")}
+       |) -> $returnType
+       |""".stripMargin
+  }
+
+  private def rustJniArgName(rawName: String): String = {
+    val isRef = rawName == "jclass" || rawName.endsWith("Array")
+    if (isRef) rustJniRefTypeName(rawName) else rawName
+  }
+
+  private def rustJniRefTypeName(name: String): String = {
+    val capitalLetter = (name.charAt(1) - 'a' + 'A').toChar
+    s"J$capitalLetter${name.substring(2)}<'local>"
+  }
+}
+
+object JniFunctionDeclaration {
+  def parseFromHeader(s: String): JniFunctionDeclaration = {
+    val a = """JNIEXPORT (?<returnType>\w+) JNICALL (?<mangledName>\w+)\s+\((?<argsStr>.*?)\)""".r
+      .findFirstMatchIn(s)
+      .getOrElse(throw new RuntimeException(s"Could not parse jni function declaration:\n\t$s"))
+
+    JniFunctionDeclaration(
+      returnType = a.group("returnType"),
+      mangledName = a.group("mangledName"),
+      argTypes = a.group("argsStr").split(",").toSeq.map(_.strip)
+    )
+  }
 }
