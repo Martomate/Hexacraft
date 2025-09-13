@@ -92,6 +92,17 @@ class TallTreeGenStrategy(height: Int)(logBlock: Block, leavesBlock: Block) exte
   }
 }
 
+class RainforestTreeGenStrategy(height: Int)(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
+  override def blocks(rand: Random): Seq[BlockSpec] = {
+    val arr = ArrayBuffer.empty[BlockSpec]
+    val treeTop = Offset(0, height, 0)
+    arr ++= BlobGenerator(rand, 120, 0.25f, 2.0f, 1.5f).generate(treeTop, leavesBlock)
+    arr ++= PlatformGenerator(1).generate(0, height * 2 / 3, 0, leavesBlock)
+    arr ++= PillarGenerator(height - 1).generate(0, 0, 0, logBlock)
+    arr.toSeq
+  }
+}
+
 class ShortTreeGenStrategy(logBlock: Block, leavesBlock: Block) extends TreeGenStrategy {
   override def blocks(rand: Random): Seq[BlockSpec] = {
     Seq(
