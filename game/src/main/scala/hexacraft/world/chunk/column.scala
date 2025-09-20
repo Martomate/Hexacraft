@@ -3,9 +3,9 @@ package hexacraft.world.chunk
 import hexacraft.math.noise.Data2D
 import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.util.Loop
-import hexacraft.world.CylinderSize
+import hexacraft.world.{CylinderSize, WorldGenerator}
 import hexacraft.world.block.Block
-import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld}
+import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ColumnRelWorld}
 
 import scala.collection.immutable.ArraySeq
 
@@ -84,20 +84,52 @@ object ChunkColumnHeightMap {
   def fromData2D(data: Data2D): ChunkColumnHeightMap = from((x, z) => data(x, z).toShort)
 }
 
+enum Biome {
+  case Ocean
+  case Grassland
+  case Desert
+  case Snowland
+  case Rainforest
+  case Tundra
+}
+
 class ChunkColumnTerrain(
+    // regenerated on load
     val originalTerrainHeight: ChunkColumnHeightMap,
+    val humidity: Data2D,
+    val temperature: Data2D,
+    // stored on disk
     val terrainHeight: ChunkColumnHeightMap
-)
+) {
+  def biome(cx: Int, cz: Int): Biome = {
+    // TODO: use better units
+    val h = humidity(cx, cz)
+    val t = temperature(cx, cz)
+    val height = this.originalTerrainHeight.getHeight(cx, cz)
+
+    if height <= 0 then Biome.Ocean
+    else if h < 0.0 && t > 0.0 then Biome.Desert // TODO: deserts should not generate in mountainous regions
+    else if h > 0.0 && t < 0.0 then Biome.Snowland // TODO: this is not correct (cannot have high h and low t)
+    else if h > 0.0 && t > 0.0 then Biome.Rainforest
+    else if h < 0.0 && t < 0.0 then Biome.Tundra
+    else Biome.Grassland // TODO: this cannot currently happen, please fix that
+  }
+}
 
 object ChunkColumnTerrain {
   def create(
-      generatedHeightMap: ChunkColumnHeightMap,
+      coords: ColumnRelWorld,
+      worldGenerator: WorldGenerator,
       columnData: Option[ChunkColumnData]
   ): ChunkColumnTerrain = {
+    val generatedHeightMap = ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords))
+    val humidity = worldGenerator.getHumidityForColumn(coords)
+    val temperature = worldGenerator.getTemperatureForColumn(coords)
+
     val heightMap = columnData
       .flatMap(_.heightMap)
       .getOrElse(ChunkColumnHeightMap.from((x, z) => generatedHeightMap.getHeight(x, z)))
 
-    new ChunkColumnTerrain(generatedHeightMap, heightMap)
+    new ChunkColumnTerrain(generatedHeightMap, humidity, temperature, heightMap)
   }
 }

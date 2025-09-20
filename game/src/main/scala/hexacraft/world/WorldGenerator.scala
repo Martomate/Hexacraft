@@ -5,7 +5,7 @@ import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
 import hexacraft.util.Loop
 import hexacraft.world.WorldGenerator.Pos
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
+import hexacraft.world.chunk.{Biome, ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}
 
 import java.util.Random
@@ -27,6 +27,20 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
 
   private val biomeHeightVariationGenerator =
     new NoiseGenerator3D(random, 4, worldGenSettings.biomeHeightVariationGenScale)
+
+  private val humidityGenerator =
+    new NoiseGenerator3D(random, 2, worldGenSettings.humidityGenScale)
+
+  private val temperatureGenerator =
+    new NoiseGenerator3D(random, 2, worldGenSettings.temperatureGenScale)
+
+  def getHumidityForColumn(coords: ColumnRelWorld): Data2D = {
+    WorldGenerator.makeSampler2D(coords, Pos.eval2(_.evalXZ(humidityGenerator)))
+  }
+
+  def getTemperatureForColumn(coords: ColumnRelWorld): Data2D = {
+    WorldGenerator.makeSampler2D(coords, Pos.eval2(_.evalXZ(temperatureGenerator)))
+  }
 
   def getHeightmapInterpolator(coords: ColumnRelWorld): Data2D = {
     WorldGenerator.makeSampler2D(coords, terrainHeight)
@@ -54,13 +68,18 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     val blockNoise = WorldGenerator.makeSampler3D(coords, this.blockNoise)
 
     Loop.rangeUntil(0, 16) { i =>
-      Loop.rangeUntil(0, 16) { j =>
-        Loop.rangeUntil(0, 16) { k =>
+      Loop.rangeUntil(0, 16) { k =>
+        val groundLevel = column.originalTerrainHeight.getHeight(i, k)
+
+        Loop.rangeUntil(0, 16) { j =>
           val noise = blockNoise(i, j, k)
-          val yToGo = coords.Y.toInt * 16 + j - column.originalTerrainHeight.getHeight(i, k)
+          val yToGo = coords.Y.toInt * 16 + j - groundLevel
           val limit = limitForBlockNoise(yToGo)
+          val biome = column.biome(i, k)
           if noise > limit then {
-            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
+            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo, biome)))
+          } else if biome == Biome.Ocean && groundLevel <= 0 && yToGo >= 0 && yToGo < -groundLevel then {
+            storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Block.Water))
           }
         }
       }
@@ -69,13 +88,28 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     storage
   }
 
-  private def getBlockAtDepth(yToGo: Int) = {
-    if yToGo < -5 then {
-      Block.Stone
-    } else if yToGo < -1 then {
-      Block.Dirt
-    } else {
-      Block.Grass
+  private def getBlockAtDepth(yToGo: Int, biome: Biome) = {
+    biome match {
+      case Biome.Ocean =>
+        if yToGo < -2 then {
+          Block.Stone
+        } else {
+          Block.Sand
+        }
+      case Biome.Desert =>
+        if yToGo < -5 then {
+          Block.Stone
+        } else {
+          Block.Sand
+        }
+      case _ =>
+        if yToGo < -5 then {
+          Block.Stone
+        } else if yToGo < -1 then {
+          Block.Dirt
+        } else {
+          Block.Grass
+        }
     }
   }
 
@@ -83,7 +117,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
     if yToGo < -6 then {
       -0.4
     } else if yToGo < 0 then {
-      -0.4 - (6 + yToGo) * 0.025
+      -0.4 - (6 + yToGo) * 0.25
     } else {
       4
     }

@@ -24,7 +24,9 @@ object Inventory {
       7 -> Block.Planks,
       8 -> Block.BirchLog,
       9 -> Block.BirchLeaves,
-      10 -> Block.Tnt
+      10 -> Block.Tnt,
+      11 -> Block.Glass,
+      12 -> Block.Marble
     )
     Inventory(slots)
   }
