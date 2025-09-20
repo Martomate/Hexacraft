@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.world.block.Block
 
 case class Inventory(slots: Map[Int, Block]) {
@@ -9,19 +9,6 @@ case class Inventory(slots: Map[Int, Block]) {
   def firstEmptySlot: Option[Int] = (0 until 4 * 9).find(i => this(i) == Block.Air)
 
   def updated(idx: Int, block: Block): Inventory = Inventory(slots.updated(idx, block))
-
-  def toNBT: Nbt.MapTag = {
-    Nbt.makeMap("slots" -> Nbt.ListTag(slotsToNbt))
-  }
-
-  private def slotsToNbt: Seq[Nbt.MapTag] = {
-    for (idx, block) <- slots.toSeq if block != Block.Air yield {
-      val idxTag = Nbt.ByteTag(idx.toByte)
-      val blockIdTag = Nbt.ByteTag(block.id)
-
-      Nbt.makeMap("slot" -> idxTag, "id" -> blockIdTag)
-    }
-  }
 }
 
 object Inventory {
@@ -42,24 +29,37 @@ object Inventory {
     Inventory(slots)
   }
 
-  def fromNBT(nbt: Nbt.MapTag): Inventory = {
-    nbt.getList("slots") match {
-      case Some(slotTags) =>
-        val slots = slotTags.flatMap {
-          case s: Nbt.MapTag =>
-            val idx = s.getByte("slot", -1)
-            val id = s.getByte("id", -1)
+  given NbtEncoder[Inventory] with {
+    override def encode(inv: Inventory): Nbt.MapTag = {
+      Nbt.makeMap("slots" -> Nbt.ListTag(for (idx, block) <- inv.slots.toSeq if block != Block.Air yield {
+        val idxTag = Nbt.ByteTag(idx.toByte)
+        val blockIdTag = Nbt.ByteTag(block.id)
 
-            if idx != -1 && id != -1 then {
-              Some(idx.toInt -> Block.byId(id))
-            } else {
-              None
-            }
-          case _ => None
-        }
-        Inventory(Map.from(slots))
-      case None =>
-        Inventory(Map.empty)
+        Nbt.makeMap("slot" -> idxTag, "id" -> blockIdTag)
+      }))
+    }
+  }
+
+  given NbtDecoder[Inventory] with {
+    override def decode(nbt: Nbt.MapTag): Option[Inventory] = {
+      nbt.getList("slots") match {
+        case Some(slotTags) =>
+          val slots = slotTags.flatMap {
+            case s: Nbt.MapTag =>
+              val idx = s.getByte("slot", -1)
+              val id = s.getByte("id", -1)
+
+              if idx != -1 && id != -1 then {
+                Some(idx.toInt -> Block.byId(id))
+              } else {
+                None
+              }
+            case _ => None
+          }
+          Some(Inventory(Map.from(slots)))
+        case None =>
+          Some(Inventory(Map.empty))
+      }
     }
   }
 }

@@ -61,12 +61,12 @@ class GameServer(
   private def savePlayers(): Unit = {
     for d <- players.values do {
       val p = d.player
-      worldProvider.savePlayerData(p.toNBT, p.id)
+      worldProvider.savePlayerData(Nbt.encode(p), p.id)
     }
   }
 
   private def saveWorldInfo(): Unit = {
-    worldProvider.saveWorldData(world.worldInfo.toNbt)
+    worldProvider.saveWorldData(Nbt.encode(world.worldInfo))
   }
 
   private def playerEffectiveViscosity(player: Player): Double = {
@@ -348,7 +348,7 @@ class GameServer(
 
   private def logoutPlayer(playerData: PlayerData): Unit = {
     val player = playerData.player
-    worldProvider.savePlayerData(player.toNBT, player.id)
+    worldProvider.savePlayerData(Nbt.encode(player), player.id)
     world.removeEntity(playerData.entity)
 
     chunksLoadedPerPlayer.synchronized {
@@ -417,7 +417,7 @@ class GameServer(
           } else {
             makePlayer(id, name, world)
           }
-          worldProvider.savePlayerData(player.toNBT, player.id)
+          worldProvider.savePlayerData(Nbt.encode(player), player.id)
 
           val entity = Entity(
             Entity.getNextId,
@@ -470,7 +470,7 @@ class GameServer(
         }
       case GetWorldInfo =>
         val info = worldProvider.getWorldInfo
-        return Some(info.toNbt)
+        return Some(Nbt.encode(info))
       case _ =>
         if !players.contains(clientId) then {
           println("Received message from unknown client")
@@ -496,9 +496,9 @@ class GameServer(
           case None         => Some(Nbt.emptyMap) // TODO: return None
         }
       case LoadWorldData =>
-        Some(world.worldInfo.toNbt)
+        Some(Nbt.encode(world.worldInfo))
       case GetPlayerState =>
-        Some(player.toNBT)
+        Some(Nbt.encode(player))
       case GetEvents =>
         val updates = playerData.blockUpdatesWaitingToBeSent.synchronized {
           val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
@@ -624,7 +624,7 @@ class GameServer(
         None
       case PlayerUpdatedInventory(inv) =>
         player.inventory = inv
-        Some(inv.toNBT)
+        Some(Nbt.encode(inv))
       case PlayerMovedMouse(dist) =>
         playerData.mouseMovement.add(dist)
         None

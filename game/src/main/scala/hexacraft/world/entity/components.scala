@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtDecoder}
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
 
@@ -19,16 +19,18 @@ class TransformComponent(var position: CylCoords, var rotation: Vector3d = new V
 }
 
 object TransformComponent {
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): TransformComponent = {
-    val pos = tag
-      .getMap("pos")
-      .map(t => CylCoords(t.setVector(new Vector3d)))
-      .getOrElse(CylCoords(0, 0, 0))
+  given (using CylinderSize): NbtDecoder[TransformComponent] with {
+    override def decode(tag: Nbt.MapTag): Option[TransformComponent] = {
+      val pos = tag
+        .getMap("pos")
+        .map(t => CylCoords(t.setVector(new Vector3d)))
+        .getOrElse(CylCoords(0, 0, 0))
 
-    val rot = new Vector3d
-    tag.getMap("rotation").foreach(_.setVector(rot))
+      val rot = new Vector3d
+      tag.getMap("rotation").foreach(_.setVector(rot))
 
-    TransformComponent(pos, rot)
+      Some(TransformComponent(pos, rot))
+    }
   }
 }
 
@@ -38,13 +40,15 @@ class MotionComponent(
 ) extends EntityComponent
 
 object MotionComponent {
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): MotionComponent = {
-    val vel = new Vector3d
-    tag.getMap("velocity").foreach(_.setVector(vel))
+  given (using CylinderSize): NbtDecoder[MotionComponent] with {
+    override def decode(tag: Nbt.MapTag): Option[MotionComponent] = {
+      val vel = new Vector3d
+      tag.getMap("velocity").foreach(_.setVector(vel))
 
-    val flying = tag.getBoolean("flying", false)
+      val flying = tag.getBoolean("flying", false)
 
-    MotionComponent(vel, flying)
+      Some(MotionComponent(vel, flying))
+    }
   }
 }
 
@@ -52,11 +56,13 @@ object MotionComponent {
 class HeadDirectionComponent(var direction: Vector3d = new Vector3d) extends EntityComponent
 
 object HeadDirectionComponent {
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): HeadDirectionComponent = {
-    val dir = new Vector3d
-    tag.getMap("head_direction").foreach(_.setVector(dir))
+  given (using CylinderSize): NbtDecoder[HeadDirectionComponent] with {
+    override def decode(tag: Nbt.MapTag): Option[HeadDirectionComponent] = {
+      val dir = new Vector3d
+      tag.getMap("head_direction").foreach(_.setVector(dir))
 
-    HeadDirectionComponent(dir)
+      Some(HeadDirectionComponent(dir))
+    }
   }
 }
 
@@ -65,13 +71,14 @@ class ModelComponent(val model: EntityModel) extends EntityComponent
 class AiComponent(val ai: EntityAI) extends EntityComponent
 
 object AiComponent {
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): AiComponent = {
-    val ai: EntityAI =
-      tag.getMap("ai") match {
-        case Some(t) => SimpleWalkAI.fromNBT(t)
+  given (using CylinderSize): NbtDecoder[AiComponent] with {
+    override def decode(tag: Nbt.MapTag): Option[AiComponent] = {
+      val ai: EntityAI = tag.getMap("ai") match {
+        case Some(t) => Nbt.decode[SimpleWalkAI](t).get
         case None    => SimpleWalkAI.create
       }
-    AiComponent(ai)
+      Some(AiComponent(ai))
+    }
   }
 }
 

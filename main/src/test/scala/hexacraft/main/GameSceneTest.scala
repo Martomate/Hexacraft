@@ -157,7 +157,7 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(storedPlayer.toNBT, "", s"players/${playerId.toString}.dat")
+    worldProvider.saveState(Nbt.encode(storedPlayer), "", s"players/${playerId.toString}.dat")
     worldProvider.saveState(
       Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks)),
       "chunk",
@@ -234,7 +234,7 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(storedPlayer.toNBT, "", s"players/${playerId.toString}.dat")
+    worldProvider.saveState(Nbt.encode(storedPlayer), "", s"players/${playerId.toString}.dat")
     worldProvider.saveState(
       Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks)),
       "chunk",

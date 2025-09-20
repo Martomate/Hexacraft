@@ -1,22 +1,11 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtEncoder}
 
 import java.io.File
 import java.util.Random
 
-case class WorldInfo(private val version: Short, worldName: String, worldSize: CylinderSize, gen: WorldGenSettings) {
-  def toNbt: Nbt.MapTag = {
-    Nbt.makeMap(
-      "version" -> Nbt.ShortTag(version),
-      "general" -> Nbt.makeMap(
-        "worldSize" -> Nbt.ByteTag(worldSize.worldSize.toByte),
-        "name" -> Nbt.StringTag(worldName)
-      ),
-      "gen" -> gen.toNBT
-    )
-  }
-}
+case class WorldInfo(private val version: Short, worldName: String, worldSize: CylinderSize, gen: WorldGenSettings)
 
 object WorldInfo {
   def fromNBT(nbtData: Nbt.MapTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
@@ -33,6 +22,19 @@ object WorldInfo {
       gen = WorldGenSettings.fromNBT(gen, worldSettings)
     )
   }
+
+  given NbtEncoder[WorldInfo] with {
+    override def encode(info: WorldInfo): Nbt.MapTag = {
+      Nbt.makeMap(
+        "version" -> Nbt.ShortTag(info.version),
+        "general" -> Nbt.makeMap(
+          "worldSize" -> Nbt.ByteTag(info.worldSize.worldSize.toByte),
+          "name" -> Nbt.StringTag(info.worldName)
+        ),
+        "gen" -> Nbt.encode(info.gen)
+      )
+    }
+  }
 }
 
 class WorldGenSettings(
@@ -42,17 +44,7 @@ class WorldGenSettings(
     val blockDensityGenScale: Double,
     val biomeHeightMapGenScale: Double,
     val biomeHeightVariationGenScale: Double
-) {
-
-  def toNBT: Nbt.MapTag = Nbt.makeMap(
-    "seed" -> Nbt.LongTag(seed),
-    "blockGenScale" -> Nbt.DoubleTag(blockGenScale),
-    "heightMapGenScale" -> Nbt.DoubleTag(heightMapGenScale),
-    "blockDensityGenScale" -> Nbt.DoubleTag(blockDensityGenScale),
-    "biomeHeightGenScale" -> Nbt.DoubleTag(biomeHeightMapGenScale),
-    "biomeHeightVariationGenScale" -> Nbt.DoubleTag(biomeHeightVariationGenScale)
-  )
-}
+)
 
 object WorldGenSettings {
   def fromNBT(nbt: Nbt.MapTag, defaultSettings: WorldSettings): WorldGenSettings = {
@@ -64,6 +56,19 @@ object WorldGenSettings {
       nbt.getDouble("biomeHeightMapGenScale", 0.002),
       nbt.getDouble("biomeHeightVariationGenScale", 0.002)
     )
+  }
+
+  given NbtEncoder[WorldGenSettings] with {
+    override def encode(s: WorldGenSettings): Nbt.MapTag = {
+      Nbt.makeMap(
+        "seed" -> Nbt.LongTag(s.seed),
+        "blockGenScale" -> Nbt.DoubleTag(s.blockGenScale),
+        "heightMapGenScale" -> Nbt.DoubleTag(s.heightMapGenScale),
+        "blockDensityGenScale" -> Nbt.DoubleTag(s.blockDensityGenScale),
+        "biomeHeightGenScale" -> Nbt.DoubleTag(s.biomeHeightMapGenScale),
+        "biomeHeightVariationGenScale" -> Nbt.DoubleTag(s.biomeHeightVariationGenScale)
+      )
+    }
   }
 }
 

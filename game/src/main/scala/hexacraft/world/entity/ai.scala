@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.world.{BlocksInWorld, CylinderSize, HexBox}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
@@ -31,9 +31,9 @@ class SimpleAIInput(using CylinderSize) {
 
 class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private val movingForce = new Vector3d
-  private var target: CylCoords = CylCoords(0, 0, 0)
+  private[entity] var target: CylCoords = CylCoords(0, 0, 0)
 
-  private var timeout: Int = 0
+  private[entity] var timeout: Int = 0
 
   private val timeLimit: Int = 5 * 60
   private val reach: Double = 5
@@ -91,25 +91,33 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
 
   override def acceleration: Vector3dc = movingForce
 
-  override def toNBT: Nbt.MapTag = Nbt.makeMap(
-    "type" -> Nbt.StringTag("simple"),
-    "targetX" -> Nbt.DoubleTag(target.x),
-    "targetZ" -> Nbt.DoubleTag(target.z),
-    "timeout" -> Nbt.ShortTag(timeout.toShort)
-  )
+  override def toNBT: Nbt.MapTag = Nbt.encode(this)
 }
 
 object SimpleWalkAI {
   def create(using CylinderSize): SimpleWalkAI = new SimpleWalkAI
 
-  def fromNBT(tag: Nbt.MapTag)(using CylinderSize): SimpleWalkAI = {
-    val targetX = tag.getDouble("targetX", 0)
-    val targetZ = tag.getDouble("targetZ", 0)
-    val target = tag.getShort("timeout", 0)
+  given NbtEncoder[SimpleWalkAI] with {
+    override def encode(ai: SimpleWalkAI): Nbt.MapTag = {
+      Nbt.makeMap(
+        "type" -> Nbt.StringTag("simple"),
+        "targetX" -> Nbt.DoubleTag(ai.target.x),
+        "targetZ" -> Nbt.DoubleTag(ai.target.z),
+        "timeout" -> Nbt.ShortTag(ai.timeout.toShort)
+      )
+    }
+  }
 
-    val ai = new SimpleWalkAI
-    ai.target = CylCoords(targetX, 0, targetZ)
-    ai.timeout = target
-    ai
+  given (using CylinderSize): NbtDecoder[SimpleWalkAI] with {
+    override def decode(tag: Nbt.MapTag): Option[SimpleWalkAI] = {
+      val targetX = tag.getDouble("targetX", 0)
+      val targetZ = tag.getDouble("targetZ", 0)
+      val target = tag.getShort("timeout", 0)
+
+      val ai = new SimpleWalkAI
+      ai.target = CylCoords(targetX, 0, targetZ)
+      ai.timeout = target
+      Some(ai)
+    }
   }
 }

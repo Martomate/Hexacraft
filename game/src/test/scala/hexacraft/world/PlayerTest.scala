@@ -15,7 +15,7 @@ class PlayerTest extends FunSuite {
   test("saving should save all the fields as NBT") {
     val player = Player.atStartPos(UUID.randomUUID(), "Some dude", CylCoords(3.2, 4.56, -1.7))
 
-    val nbt = player.toNBT
+    val nbt = Nbt.encode(player)
     assert(nbt.getMap("position").isDefined)
     assert(nbt.getMap("rotation").isDefined)
     assert(nbt.getMap("velocity").isDefined)
@@ -34,7 +34,7 @@ class PlayerTest extends FunSuite {
     playerBefore.selectedItemSlot = 7
     playerBefore.inventory = playerBefore.inventory.updated(3, Block.Stone)
 
-    val playerAfter = Player.fromNBT(UUID.randomUUID(), "Some dude", playerBefore.toNBT)
+    val playerAfter = Player.fromNBT(UUID.randomUUID(), "Some dude", Nbt.encode(playerBefore))
 
     assert(playerAfter.velocity.distance(playerBefore.velocity) < 1e-9)
     assert(playerAfter.position.distance(playerBefore.position) < 1e-9)

@@ -1,6 +1,6 @@
 package hexacraft.game
 
-import hexacraft.nbt.{Nbt, NbtCodec}
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.world.Inventory
 import hexacraft.world.coord.ColumnRelWorld
 
@@ -23,7 +23,7 @@ object ServerMessage {
   }
 
   object Sender {
-    given NbtCodec[Sender] with {
+    given NbtEncoder[Sender] with {
       override def encode(value: Sender): Nbt.MapTag = {
         val kind = value match {
           case Sender.Server       => "server"
@@ -37,7 +37,9 @@ object ServerMessage {
         }
         data.withField("kind", Nbt.StringTag(kind))
       }
+    }
 
+    given NbtDecoder[Sender] with {
       override def decode(tag: Nbt.MapTag): Option[Sender] = {
         tag.getString("kind") match {
           case Some("server") =>
@@ -54,14 +56,16 @@ object ServerMessage {
     }
   }
 
-  given NbtCodec[ServerMessage] with {
+  given NbtEncoder[ServerMessage] with {
     override def encode(value: ServerMessage): Nbt.MapTag = {
       Nbt.makeMap(
         "text" -> Nbt.StringTag(value.text),
         "sender" -> Nbt.encode(value.sender)
       )
     }
+  }
 
+  given NbtDecoder[ServerMessage] with {
     override def decode(tag: Nbt.MapTag): Option[ServerMessage] = {
       for {
         text <- tag.getString("text")
@@ -104,7 +108,7 @@ object NetworkPacket {
     def serialize(): Array[Byte] = Nbt.encode(p).toBinary()
   }
 
-  given NbtCodec[NetworkPacket] with {
+  given NbtDecoder[NetworkPacket] with {
     override def decode(tag: Nbt.MapTag): Option[NetworkPacket] = {
       val (packetName, packetDataTag) = tag.vs.head
       val root = packetDataTag.asMap.get
@@ -151,7 +155,7 @@ object NetworkPacket {
           NetworkPacket.PlayerSetSelectedItemSlot(slot)
         case "inventory_updated" =>
           val inv = root.getMap("inventory").get
-          NetworkPacket.PlayerUpdatedInventory(Inventory.fromNBT(inv))
+          NetworkPacket.PlayerUpdatedInventory(Nbt.decode[Inventory](inv).get)
         case "mouse_moved" =>
           val dx = root.getFloat("dx", 0)
           val dy = root.getFloat("dy", 0)
@@ -171,7 +175,9 @@ object NetworkPacket {
 
       Some(packet)
     }
+  }
 
+  given NbtEncoder[NetworkPacket] with {
     override def encode(p: NetworkPacket): Nbt.MapTag = {
       val name: String = p match {
         case NetworkPacket.Login(_, _)                  => "login"
@@ -218,7 +224,7 @@ object NetworkPacket {
           )
         case NetworkPacket.PlayerUpdatedInventory(inv) =>
           Nbt.makeMap(
-            "inventory" -> inv.toNBT
+            "inventory" -> Nbt.encode(inv)
           )
         case NetworkPacket.PlayerMovedMouse(dist) =>
           Nbt.makeMap(

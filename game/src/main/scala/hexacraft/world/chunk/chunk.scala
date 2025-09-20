@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.{Nbt, NbtCodec}
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.util.Loop
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
@@ -17,11 +17,13 @@ object Chunk {
     new Chunk(ChunkData.fromStorage(generator.generateChunk(coords, column)))
   }
 
-  given (using CylinderSize): NbtCodec[Chunk] with {
+  given NbtEncoder[Chunk] with {
     override def encode(chunk: Chunk): Nbt.MapTag = {
       Nbt.encode(chunk.chunkData)
     }
+  }
 
+  given (using CylinderSize): NbtDecoder[Chunk] with {
     override def decode(tag: Nbt.MapTag): Option[Chunk] = {
       Some(new Chunk(Nbt.decode[ChunkData](tag).get))
     }
@@ -138,7 +140,7 @@ object ChunkData {
     new ChunkData(storage, mutable.ArrayBuffer.empty, false)
   }
 
-  given (using CylinderSize): NbtCodec[ChunkData] with {
+  given NbtEncoder[ChunkData] with {
     def encode(value: ChunkData): Nbt.MapTag = {
       val storageNbt = value.storage.toNBT
 
@@ -149,7 +151,9 @@ object ChunkData {
         "isDecorated" -> Nbt.ByteTag(value.isDecorated)
       )
     }
+  }
 
+  given (using CylinderSize): NbtDecoder[ChunkData] with {
     def decode(nbt: Nbt.MapTag): Option[ChunkData] = {
       val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
         case Some(blocks) =>

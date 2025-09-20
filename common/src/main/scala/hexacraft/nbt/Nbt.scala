@@ -235,5 +235,3 @@ trait NbtEncoder[T] {
 trait NbtDecoder[T] {
   def decode(tag: Nbt.MapTag): Option[T]
 }
-
-trait NbtCodec[T] extends NbtEncoder[T] with NbtDecoder[T]

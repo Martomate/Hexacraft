@@ -78,9 +78,9 @@ object Entity {
       entType match {
         case "player" =>
           val components = Seq(
-            TransformComponent.fromNBT(tag),
-            MotionComponent.fromNBT(tag),
-            HeadDirectionComponent.fromNBT(tag),
+            Nbt.decode[TransformComponent](tag).get,
+            Nbt.decode[MotionComponent](tag).get,
+            Nbt.decode[HeadDirectionComponent](tag).get,
             BoundsComponent(playerBounds),
             ModelComponent(PlayerEntityModel.create("player"))
           )
@@ -88,9 +88,9 @@ object Entity {
 
         case "sheep" =>
           val components = Seq(
-            TransformComponent.fromNBT(tag),
-            MotionComponent.fromNBT(tag),
-            AiComponent.fromNBT(tag),
+            Nbt.decode[TransformComponent](tag).get,
+            Nbt.decode[MotionComponent](tag).get,
+            Nbt.decode[AiComponent](tag).get,
             BoundsComponent(sheepBounds),
             ModelComponent(SheepEntityModel.create("sheep"))
           )

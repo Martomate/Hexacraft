@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtEncoder}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.CylCoords
 
@@ -17,17 +17,6 @@ class Player(val id: UUID, val name: String, var inventory: Inventory) {
   var selectedItemSlot: Int = 0
 
   def blockInHand: Block = inventory(selectedItemSlot)
-
-  def toNBT: Nbt.MapTag = {
-    Nbt.makeMap(
-      "position" -> Nbt.makeVectorTag(position),
-      "rotation" -> Nbt.makeVectorTag(rotation),
-      "velocity" -> Nbt.makeVectorTag(velocity),
-      "flying" -> Nbt.ByteTag(flying),
-      "selectedItemSlot" -> Nbt.ShortTag(selectedItemSlot.toShort),
-      "inventory" -> inventory.toNBT
-    )
-  }
 }
 
 object Player {
@@ -44,7 +33,7 @@ object Player {
   def fromNBT(id: UUID, name: String, tag: Nbt.MapTag): Player = {
     val inventory =
       tag.getMap("inventory") match {
-        case Some(tag) => Inventory.fromNBT(tag)
+        case Some(tag) => Nbt.decode[Inventory](tag).get
         case None      => Inventory.default
       }
 
@@ -58,5 +47,18 @@ object Player {
     player.selectedItemSlot = tag.getShort("selectedItemSlot", 0)
 
     player
+  }
+
+  given NbtEncoder[Player] with {
+    override def encode(p: Player): Nbt.MapTag = {
+      Nbt.makeMap(
+        "position" -> Nbt.makeVectorTag(p.position),
+        "rotation" -> Nbt.makeVectorTag(p.rotation),
+        "velocity" -> Nbt.makeVectorTag(p.velocity),
+        "flying" -> Nbt.ByteTag(p.flying),
+        "selectedItemSlot" -> Nbt.ShortTag(p.selectedItemSlot.toShort),
+        "inventory" -> Nbt.encode(p.inventory)
+      )
+    }
   }
 }

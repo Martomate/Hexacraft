@@ -340,7 +340,7 @@ class GameClient(
             setUseMouse(true)
           case InventoryUpdated(inv) =>
             val invNbt = socket.sendPacketAndWait(NetworkPacket.PlayerUpdatedInventory(inv))
-            val serverInv = Inventory.fromNBT(invNbt.asMap.get)
+            val serverInv = Nbt.decode[Inventory](invNbt.asMap.get).get
             player.inventory = serverInv
             toolbar.onInventoryUpdated(serverInv)
         }
