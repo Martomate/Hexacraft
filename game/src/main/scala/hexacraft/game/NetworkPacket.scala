@@ -92,7 +92,8 @@ enum NetworkPacket {
 
 object NetworkPacket {
   def deserialize(bytes: Array[Byte]): NetworkPacket = {
-    val (packetName, packetDataTag) = Nbt.fromBinary(bytes)
+    val wrapperTag = Nbt.fromBinary(bytes)._2.asMap.get
+    val (packetName, packetDataTag) = wrapperTag.vs.head
     val root = packetDataTag.asMap.get
 
     packetName match {
@@ -228,6 +229,6 @@ object NetworkPacket {
           )
       }
 
-      tag.toBinary(name)
+      Nbt.makeMap(name -> tag).toBinary("")
   }
 }
