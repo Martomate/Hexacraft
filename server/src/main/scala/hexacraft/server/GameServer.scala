@@ -556,7 +556,7 @@ class GameServer(
           .withField("block_updates", Nbt.ListTag(updatesNbt))
           .withField("entity_events", Nbt.makeMap("ids" -> Nbt.ListTag(ids), "events" -> Nbt.ListTag(events)))
           .withField("server_shutting_down", Nbt.ByteTag(isShuttingDown)) // TODO: make proper shutdown feature
-          .withField("messages", Nbt.ListTag(messages.map(m => m.toNbt)))
+          .withField("messages", Nbt.ListTag(messages.map(Nbt.encode)))
 
         Some(response)
       case GetWorldLoadingEvents(maxChunksToLoad) =>

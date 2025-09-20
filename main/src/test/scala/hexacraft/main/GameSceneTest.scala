@@ -1,12 +1,13 @@
 package hexacraft.main
 
 import hexacraft.client.FakeBlockTextureLoader
-import hexacraft.game.{FakeGameKeyboard, GameKeyboard}
+import hexacraft.game.FakeGameKeyboard
 import hexacraft.gui.{Event, MousePosition, TickContext, WindowSize}
-import hexacraft.gui.Event.{KeyEvent, MouseClickEvent}
+import hexacraft.gui.Event.MouseClickEvent
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
+import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player}
 import hexacraft.world.block.{Block, BlockState}
@@ -157,7 +158,11 @@ class GameSceneTest extends FunSuite {
 
     val worldProvider = new FakeWorldProvider(123L)
     worldProvider.saveState(storedPlayer.toNBT, "", s"players/${playerId.toString}.dat")
-    worldProvider.saveState(ChunkData.fromStorage(spawnChunkBlocks).toNBT, "chunk", "data/" + 0 + "/" + 0 + ".dat")
+    worldProvider.saveState(
+      Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks)),
+      "chunk",
+      "data/" + 0 + "/" + 0 + ".dat"
+    )
 
     // Step 2: configure the client
 
@@ -230,7 +235,11 @@ class GameSceneTest extends FunSuite {
 
     val worldProvider = new FakeWorldProvider(123L)
     worldProvider.saveState(storedPlayer.toNBT, "", s"players/${playerId.toString}.dat")
-    worldProvider.saveState(ChunkData.fromStorage(spawnChunkBlocks).toNBT, "chunk", "data/" + 0 + "/" + 0 + ".dat")
+    worldProvider.saveState(
+      Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks)),
+      "chunk",
+      "data/" + 0 + "/" + 0 + ".dat"
+    )
 
     // Step 2: configure the client
 

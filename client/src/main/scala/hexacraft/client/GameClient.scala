@@ -599,7 +599,7 @@ class GameClient(
       val messages = worldEventsNbt.getList("messages").getOrElse(Seq.empty)
       if messages.nonEmpty then {
         for m <- messages do {
-          m.asMap.flatMap(ServerMessage.fromNbt) match {
+          m.asMap.flatMap(Nbt.decode[ServerMessage]) match {
             case Some(m) =>
               this.chatOverlay.addMessage(m)
             case None =>

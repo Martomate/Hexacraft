@@ -1,9 +1,8 @@
 package hexacraft.game
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtCodec}
 import hexacraft.world.Inventory
 import hexacraft.world.coord.ColumnRelWorld
-
 import org.joml.Vector2f
 
 import java.nio.ByteBuffer
@@ -14,56 +13,60 @@ import scala.util.Try
 case class ServerMessage(
     text: String,
     sender: ServerMessage.Sender
-) {
-  def toNbt: Nbt = {
-    Nbt.makeMap(
-      "text" -> Nbt.StringTag(this.text),
-      "sender" -> this.sender.toNbt
-    )
-  }
-}
+)
 
 object ServerMessage {
   enum Sender {
     case Server
     case Player(id: UUID, name: String)
-
-    def toNbt: Nbt = {
-      val kind = this match {
-        case Sender.Server       => "server"
-        case Sender.Player(_, _) => "player"
-      }
-      val data = this match {
-        case Sender.Server =>
-          Nbt.makeMap()
-        case Sender.Player(id, name) =>
-          Nbt.makeMap("id" -> Nbt.StringTag(id.toString), "name" -> Nbt.StringTag(name.toString))
-      }
-      data.withField("kind", Nbt.StringTag(kind))
-    }
   }
 
   object Sender {
-    def fromNbt(tag: Nbt.MapTag): Option[Sender] = {
-      tag.getString("kind") match {
-        case Some("server") =>
-          Some(Sender.Server)
-        case Some("player") =>
-          for {
-            id <- tag.getString("id")
-            id <- Try(UUID.fromString(id)).toOption
-            name <- tag.getString("name")
-          } yield Sender.Player(id, name)
-        case _ => None
+    given NbtCodec[Sender] {
+      override def encode(value: Sender): Nbt.MapTag = {
+        val kind = value match {
+          case Sender.Server => "server"
+          case Sender.Player(_, _) => "player"
+        }
+        val data = value match {
+          case Sender.Server =>
+            Nbt.makeMap()
+          case Sender.Player(id, name) =>
+            Nbt.makeMap("id" -> Nbt.StringTag(id.toString), "name" -> Nbt.StringTag(name))
+        }
+        data.withField("kind", Nbt.StringTag(kind))
+      }
+
+      override def decode(tag: Nbt.MapTag): Option[Sender] = {
+        tag.getString("kind") match {
+          case Some("server") =>
+            Some(Sender.Server)
+          case Some("player") =>
+            for {
+              id <- tag.getString("id")
+              id <- Try(UUID.fromString(id)).toOption
+              name <- tag.getString("name")
+            } yield Sender.Player(id, name)
+          case _ => None
+        }
       }
     }
   }
 
-  def fromNbt(tag: Nbt.MapTag): Option[ServerMessage] = {
-    for {
-      text <- tag.getString("text")
-      sender <- Sender.fromNbt(tag.getMap("sender").getOrElse(Nbt.makeMap()))
-    } yield ServerMessage(text, sender)
+  given NbtCodec[ServerMessage] {
+    override def encode(value: ServerMessage): Nbt.MapTag = {
+      Nbt.makeMap(
+        "text" -> Nbt.StringTag(value.text),
+        "sender" -> Nbt.encode(value.sender)
+      )
+    }
+
+    override def decode(tag: Nbt.MapTag): Option[ServerMessage] = {
+      for {
+        text <- tag.getString("text")
+        sender <- Nbt.decode[Sender](tag.getMap("sender").getOrElse(Nbt.makeMap()))
+      } yield ServerMessage(text, sender)
+    }
   }
 }
 
@@ -92,96 +95,106 @@ enum NetworkPacket {
 
 object NetworkPacket {
   def deserialize(bytes: Array[Byte]): NetworkPacket = {
-    val wrapperTag = Nbt.fromBinary(bytes)._2.asMap.get
-    val (packetName, packetDataTag) = wrapperTag.vs.head
-    val root = packetDataTag.asMap.get
-
-    packetName match {
-      case "login" =>
-        val idBytes = root.getByteArray("id").get
-        val name = root.getString("name").get
-
-        if idBytes.length != 16 then {
-          throw new RuntimeException("UUIDs must be 16 bytes")
-        }
-
-        val bb = ByteBuffer.wrap(idBytes.unsafeArray)
-        val msb = bb.getLong
-        val lsb = bb.getLong
-        val id = new UUID(msb, lsb)
-
-        NetworkPacket.Login(id, name)
-      case "logout" =>
-        NetworkPacket.Logout
-      case "get_world_info" =>
-        NetworkPacket.GetWorldInfo
-      case "load_column_data" =>
-        val coords = ColumnRelWorld(root.getLong("coords", -1))
-        NetworkPacket.LoadColumnData(coords)
-      case "load_world_data" =>
-        NetworkPacket.LoadWorldData
-      case "get_player_state" =>
-        NetworkPacket.GetPlayerState
-      case "get_events" =>
-        NetworkPacket.GetEvents
-      case "get_world_loading_events" =>
-        val maxChunksToLoad = root.getShort("max_chunks", 1)
-        NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad)
-      case "right_mouse_clicked" =>
-        NetworkPacket.PlayerRightClicked
-      case "left_mouse_clicked" =>
-        NetworkPacket.PlayerLeftClicked
-      case "toggle_flying" =>
-        NetworkPacket.PlayerToggledFlying
-      case "set_selected_inventory_slot" =>
-        val slot = root.getShort("slot", 0)
-        NetworkPacket.PlayerSetSelectedItemSlot(slot)
-      case "inventory_updated" =>
-        val inv = root.getMap("inventory").get
-        NetworkPacket.PlayerUpdatedInventory(Inventory.fromNBT(inv))
-      case "mouse_moved" =>
-        val dx = root.getFloat("dx", 0)
-        val dy = root.getFloat("dy", 0)
-        NetworkPacket.PlayerMovedMouse(new Vector2f(dx, dy))
-      case "keys_pressed" =>
-        val keyNames = root.getList("keys").get.map(_.asInstanceOf[Nbt.StringTag].v)
-        val keys = keyNames.map(GameKeyboard.Key.valueOf)
-        NetworkPacket.PlayerPressedKeys(keys)
-      case "run_command" =>
-        val commandNbt = root.getMap("command").get
-        val name = commandNbt.getString("name").get
-        val args = commandNbt.getList("args").get.map(_.asInstanceOf[Nbt.StringTag].v)
-        NetworkPacket.RunCommand(name, args)
-      case _ =>
-        throw new IllegalArgumentException(s"unknown packet type '$packetName'")
-    }
+    val tag = Nbt.fromBinary(bytes)._2.asMap.get
+    Nbt.decode[NetworkPacket](tag).get
   }
 
   extension (p: NetworkPacket) {
-    def serialize(): Array[Byte] =
+    def serialize(): Array[Byte] = Nbt.encode(p).toBinary()
+  }
+
+  given NbtCodec[NetworkPacket] {
+    override def decode(tag: Nbt.MapTag): Option[NetworkPacket] = {
+      val (packetName, packetDataTag) = tag.vs.head
+      val root = packetDataTag.asMap.get
+
+      val packet = packetName match {
+        case "login" =>
+          val idBytes = root.getByteArray("id").get
+          val name = root.getString("name").get
+
+          if idBytes.length != 16 then {
+            throw new RuntimeException("UUIDs must be 16 bytes")
+          }
+
+          val bb = ByteBuffer.wrap(idBytes.unsafeArray)
+          val msb = bb.getLong
+          val lsb = bb.getLong
+          val id = new UUID(msb, lsb)
+
+          NetworkPacket.Login(id, name)
+        case "logout" =>
+          NetworkPacket.Logout
+        case "get_world_info" =>
+          NetworkPacket.GetWorldInfo
+        case "load_column_data" =>
+          val coords = ColumnRelWorld(root.getLong("coords", -1))
+          NetworkPacket.LoadColumnData(coords)
+        case "load_world_data" =>
+          NetworkPacket.LoadWorldData
+        case "get_player_state" =>
+          NetworkPacket.GetPlayerState
+        case "get_events" =>
+          NetworkPacket.GetEvents
+        case "get_world_loading_events" =>
+          val maxChunksToLoad = root.getShort("max_chunks", 1)
+          NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad)
+        case "right_mouse_clicked" =>
+          NetworkPacket.PlayerRightClicked
+        case "left_mouse_clicked" =>
+          NetworkPacket.PlayerLeftClicked
+        case "toggle_flying" =>
+          NetworkPacket.PlayerToggledFlying
+        case "set_selected_inventory_slot" =>
+          val slot = root.getShort("slot", 0)
+          NetworkPacket.PlayerSetSelectedItemSlot(slot)
+        case "inventory_updated" =>
+          val inv = root.getMap("inventory").get
+          NetworkPacket.PlayerUpdatedInventory(Inventory.fromNBT(inv))
+        case "mouse_moved" =>
+          val dx = root.getFloat("dx", 0)
+          val dy = root.getFloat("dy", 0)
+          NetworkPacket.PlayerMovedMouse(new Vector2f(dx, dy))
+        case "keys_pressed" =>
+          val keyNames = root.getList("keys").get.map(_.asInstanceOf[Nbt.StringTag].v)
+          val keys = keyNames.map(GameKeyboard.Key.valueOf)
+          NetworkPacket.PlayerPressedKeys(keys)
+        case "run_command" =>
+          val commandNbt = root.getMap("command").get
+          val name = commandNbt.getString("name").get
+          val args = commandNbt.getList("args").get.map(_.asInstanceOf[Nbt.StringTag].v)
+          NetworkPacket.RunCommand(name, args)
+        case _ =>
+          throw new IllegalArgumentException(s"unknown packet type '$packetName'")
+      }
+
+      Some(packet)
+    }
+
+    override def encode(p: NetworkPacket): Nbt.MapTag = {
       val name: String = p match {
-        case NetworkPacket.Login(_, _)                  => "login"
-        case NetworkPacket.Logout                       => "logout"
-        case NetworkPacket.GetWorldInfo                 => "get_world_info"
-        case NetworkPacket.LoadColumnData(_)            => "load_column_data"
-        case NetworkPacket.LoadWorldData                => "load_world_data"
-        case NetworkPacket.GetPlayerState               => "get_player_state"
-        case NetworkPacket.GetEvents                    => "get_events"
-        case NetworkPacket.GetWorldLoadingEvents(_)     => "get_world_loading_events"
-        case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
-        case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
-        case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
+        case NetworkPacket.Login(_, _) => "login"
+        case NetworkPacket.Logout => "logout"
+        case NetworkPacket.GetWorldInfo => "get_world_info"
+        case NetworkPacket.LoadColumnData(_) => "load_column_data"
+        case NetworkPacket.LoadWorldData => "load_world_data"
+        case NetworkPacket.GetPlayerState => "get_player_state"
+        case NetworkPacket.GetEvents => "get_events"
+        case NetworkPacket.GetWorldLoadingEvents(_) => "get_world_loading_events"
+        case NetworkPacket.PlayerRightClicked => "right_mouse_clicked"
+        case NetworkPacket.PlayerLeftClicked => "left_mouse_clicked"
+        case NetworkPacket.PlayerToggledFlying => "toggle_flying"
         case NetworkPacket.PlayerSetSelectedItemSlot(_) => "set_selected_inventory_slot"
-        case NetworkPacket.PlayerUpdatedInventory(_)    => "inventory_updated"
-        case NetworkPacket.PlayerMovedMouse(_)          => "mouse_moved"
-        case NetworkPacket.PlayerPressedKeys(_)         => "keys_pressed"
-        case NetworkPacket.RunCommand(_, _)             => "run_command"
+        case NetworkPacket.PlayerUpdatedInventory(_) => "inventory_updated"
+        case NetworkPacket.PlayerMovedMouse(_) => "mouse_moved"
+        case NetworkPacket.PlayerPressedKeys(_) => "keys_pressed"
+        case NetworkPacket.RunCommand(_, _) => "run_command"
       }
 
       val tag: Nbt.MapTag = p match {
         case NetworkPacket.Logout | NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData |
-            NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
-            NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
+             NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
+             NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
           Nbt.emptyMap
 
         case NetworkPacket.Login(id, name) =>
@@ -229,6 +242,7 @@ object NetworkPacket {
           )
       }
 
-      Nbt.makeMap(name -> tag).toBinary("")
+      Nbt.makeMap(name -> tag)
+    }
   }
 }

@@ -218,4 +218,17 @@ object Nbt {
               vs.map(_.toRaw("")).toList.asJava
             )
         case tag: Nbt.MapTag => tag.toCompoundTag(name)
+
+  def encode[T: NbtCodec](value: T): Nbt.MapTag = {
+    summon[NbtCodec[T]].encode(value)
+  }
+
+  def decode[T: NbtCodec](tag: Nbt.MapTag): Option[T] = {
+    summon[NbtCodec[T]].decode(tag)
+  }
+}
+
+trait NbtCodec[T] {
+  def encode(value: T): Nbt.MapTag
+  def decode(tag: Nbt.MapTag): Option[T]
 }

@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtCodec}
 import hexacraft.util.Loop
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 object Chunk {
   def fromNbt(loadedTag: Nbt.MapTag)(using CylinderSize): Chunk = {
-    new Chunk(ChunkData.fromNBT(loadedTag))
+    new Chunk(Nbt.decode[ChunkData](loadedTag).get)
   }
 
   def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
@@ -100,7 +100,7 @@ final class Chunk private (chunkData: ChunkData)(using CylinderSize) {
     chunkData.optimizeStorage()
   }
 
-  def toNbt: Nbt.MapTag = chunkData.toNBT
+  def toNbt: Nbt.MapTag = Nbt.encode(chunkData)
 
   def isDecorated: Boolean = chunkData.isDecorated
 
@@ -128,17 +128,6 @@ class ChunkData(
       }
     }
   }
-
-  def toNBT: Nbt.MapTag = {
-    val storageNbt = storage.toNBT
-
-    Nbt.makeMap(
-      "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
-      "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
-      "entities" -> Nbt.ListTag(entities.map(e => e.toNBT).toSeq),
-      "isDecorated" -> Nbt.ByteTag(isDecorated)
-    )
-  }
 }
 
 object ChunkData {
@@ -146,39 +135,50 @@ object ChunkData {
     new ChunkData(storage, mutable.ArrayBuffer.empty, false)
   }
 
-  def fromNBT(nbt: Nbt.MapTag)(using CylinderSize): ChunkData = {
-    val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
-      case Some(blocks) =>
-        val numBlocks = blocks.count(_ != 0)
-        val meta = nbt
-          .getByteArray("metadata")
-          .map(_.unsafeArray)
-          .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
+  given (using CylinderSize): NbtCodec[ChunkData] with {
+    def encode(value: ChunkData): Nbt.MapTag = {
+      val storageNbt = value.storage.toNBT
 
-        if numBlocks < 32 then {
-          SparseChunkStorage.create(blocks, meta)
-        } else {
-          DenseChunkStorage.create(blocks, meta)
-        }
-      case None =>
-        SparseChunkStorage.empty
+      Nbt.makeMap(
+        "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
+        "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
+        "entities" -> Nbt.ListTag(value.entities.map(e => e.toNBT).toSeq),
+        "isDecorated" -> Nbt.ByteTag(value.isDecorated)
+      )
     }
 
-    val entities = mutable.ArrayBuffer.empty[Entity]
-    for {
-      tags <- nbt.getList("entities")
-      tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
-    } do {
-      EntityFactory.fromNbt(tag) match {
-        case Ok(entity)   => entities += entity
-        case Err(message) => println(message)
+    def decode(nbt: Nbt.MapTag): Option[ChunkData] = {
+      val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
+        case Some(blocks) =>
+          val numBlocks = blocks.count(_ != 0)
+          val meta = nbt
+            .getByteArray("metadata")
+            .map(_.unsafeArray)
+            .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
+
+          if numBlocks < 32 then {
+            SparseChunkStorage.create(blocks, meta)
+          } else {
+            DenseChunkStorage.create(blocks, meta)
+          }
+        case None =>
+          SparseChunkStorage.empty
       }
+
+      val entities = mutable.ArrayBuffer.empty[Entity]
+      for {
+        tags <- nbt.getList("entities")
+        tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
+      } do {
+        EntityFactory.fromNbt(tag) match {
+          case Ok(entity)   => entities += entity
+          case Err(message) => println(message)
+        }
+      }
+
+      val isDecorated = nbt.getBoolean("isDecorated", default = false)
+
+      Some(new ChunkData(storage, entities, isDecorated))
     }
-
-    val isDecorated = nbt.getBoolean("isDecorated", default = false)
-
-    new ChunkData(storage, entities, isDecorated)
   }
 }
-
-class ChunkLighting {}
