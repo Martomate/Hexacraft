@@ -3,6 +3,7 @@ package hexacraft.game
 import hexacraft.nbt.{Nbt, NbtCodec}
 import hexacraft.world.Inventory
 import hexacraft.world.coord.ColumnRelWorld
+
 import org.joml.Vector2f
 
 import java.nio.ByteBuffer
@@ -22,10 +23,10 @@ object ServerMessage {
   }
 
   object Sender {
-    given NbtCodec[Sender] {
+    given NbtCodec[Sender] with {
       override def encode(value: Sender): Nbt.MapTag = {
         val kind = value match {
-          case Sender.Server => "server"
+          case Sender.Server       => "server"
           case Sender.Player(_, _) => "player"
         }
         val data = value match {
@@ -53,7 +54,7 @@ object ServerMessage {
     }
   }
 
-  given NbtCodec[ServerMessage] {
+  given NbtCodec[ServerMessage] with {
     override def encode(value: ServerMessage): Nbt.MapTag = {
       Nbt.makeMap(
         "text" -> Nbt.StringTag(value.text),
@@ -103,7 +104,7 @@ object NetworkPacket {
     def serialize(): Array[Byte] = Nbt.encode(p).toBinary()
   }
 
-  given NbtCodec[NetworkPacket] {
+  given NbtCodec[NetworkPacket] with {
     override def decode(tag: Nbt.MapTag): Option[NetworkPacket] = {
       val (packetName, packetDataTag) = tag.vs.head
       val root = packetDataTag.asMap.get
@@ -173,28 +174,28 @@ object NetworkPacket {
 
     override def encode(p: NetworkPacket): Nbt.MapTag = {
       val name: String = p match {
-        case NetworkPacket.Login(_, _) => "login"
-        case NetworkPacket.Logout => "logout"
-        case NetworkPacket.GetWorldInfo => "get_world_info"
-        case NetworkPacket.LoadColumnData(_) => "load_column_data"
-        case NetworkPacket.LoadWorldData => "load_world_data"
-        case NetworkPacket.GetPlayerState => "get_player_state"
-        case NetworkPacket.GetEvents => "get_events"
-        case NetworkPacket.GetWorldLoadingEvents(_) => "get_world_loading_events"
-        case NetworkPacket.PlayerRightClicked => "right_mouse_clicked"
-        case NetworkPacket.PlayerLeftClicked => "left_mouse_clicked"
-        case NetworkPacket.PlayerToggledFlying => "toggle_flying"
+        case NetworkPacket.Login(_, _)                  => "login"
+        case NetworkPacket.Logout                       => "logout"
+        case NetworkPacket.GetWorldInfo                 => "get_world_info"
+        case NetworkPacket.LoadColumnData(_)            => "load_column_data"
+        case NetworkPacket.LoadWorldData                => "load_world_data"
+        case NetworkPacket.GetPlayerState               => "get_player_state"
+        case NetworkPacket.GetEvents                    => "get_events"
+        case NetworkPacket.GetWorldLoadingEvents(_)     => "get_world_loading_events"
+        case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
+        case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
+        case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
         case NetworkPacket.PlayerSetSelectedItemSlot(_) => "set_selected_inventory_slot"
-        case NetworkPacket.PlayerUpdatedInventory(_) => "inventory_updated"
-        case NetworkPacket.PlayerMovedMouse(_) => "mouse_moved"
-        case NetworkPacket.PlayerPressedKeys(_) => "keys_pressed"
-        case NetworkPacket.RunCommand(_, _) => "run_command"
+        case NetworkPacket.PlayerUpdatedInventory(_)    => "inventory_updated"
+        case NetworkPacket.PlayerMovedMouse(_)          => "mouse_moved"
+        case NetworkPacket.PlayerPressedKeys(_)         => "keys_pressed"
+        case NetworkPacket.RunCommand(_, _)             => "run_command"
       }
 
       val tag: Nbt.MapTag = p match {
         case NetworkPacket.Logout | NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData |
-             NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
-             NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
+            NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
+            NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
           Nbt.emptyMap
 
         case NetworkPacket.Login(id, name) =>

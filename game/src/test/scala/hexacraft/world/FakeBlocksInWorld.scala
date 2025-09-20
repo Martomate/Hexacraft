@@ -1,5 +1,6 @@
 package hexacraft.world
 
+import hexacraft.nbt.Nbt
 import hexacraft.world.block.BlockState
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
@@ -31,7 +32,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     } else {
       val col = ChunkColumnTerrain.create(
         ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-        provider.loadColumnData(coords).map(ChunkColumnData.fromNbt)
+        provider.loadColumnData(coords).map(Nbt.decode[ChunkColumnData](_).get)
       )
       cols += coords -> col
       col

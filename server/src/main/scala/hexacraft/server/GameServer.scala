@@ -426,7 +426,7 @@ class GameServer(
               TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),
               MotionComponent(),
               HeadDirectionComponent(Vector3d(player.rotation.x, 0, 0)),
-              BoundsComponent(EntityFactory.playerBounds)
+              BoundsComponent(Entity.playerBounds)
             )
           )
           val camera = new Camera(CameraProjection(70f, 16f / 9f, 0.02f, 100000f))
@@ -445,11 +445,11 @@ class GameServer(
             val (playerId, otherData) = otherPlayer
             if playerId != clientId then {
               otherData.entityEventsWaitingToBeSent.synchronized {
-                otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(entity.toNBT)
+                otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(Nbt.encode(entity))
               }
               playerData.entityEventsWaitingToBeSent.synchronized {
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
-                  otherData.entity.toNBT
+                  Nbt.encode(otherData.entity)
                 )
               }
               otherData.messagesWaitingToBeSent.synchronized {
@@ -492,7 +492,7 @@ class GameServer(
       case GetWorldInfo => None // already handled above
       case LoadColumnData(coords) =>
         world.getColumn(coords) match {
-          case Some(column) => Some(ChunkColumnData(Some(column.terrainHeight)).toNBT)
+          case Some(column) => Some(Nbt.encode(ChunkColumnData(Some(column.terrainHeight))))
           case None         => Some(Nbt.emptyMap) // TODO: return None
         }
       case LoadWorldData =>
@@ -573,7 +573,7 @@ class GameServer(
 
           prio.nextAddableChunk.flatMap(coords => world.getChunk(coords).map(coords -> _)) match {
             case Some(coords -> chunk) =>
-              loadedChunks += ((coords, chunk.toNbt))
+              loadedChunks += ((coords, Nbt.encode(chunk)))
               prio += coords
               chunksLoadCount.synchronized {
                 chunksLoadCount(coords.value) = chunksLoadCount.getOrElse(coords.value, 0) + 1
@@ -656,7 +656,7 @@ class GameServer(
             val entityType = args.head
             val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)
 
-            EntityFactory.atStartPos(Entity.getNextId, pos, entityType) match {
+            Entity.atStartPos(Entity.getNextId, pos, entityType) match {
               case Result.Ok(entity) =>
                 world.addEntity(entity)
                 println(s"Spawned entity of type $entityType at $pos")

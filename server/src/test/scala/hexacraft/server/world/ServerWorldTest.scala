@@ -120,7 +120,10 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
-    provider.saveColumnData(ChunkColumnData(Some(ChunkColumnHeightMap.from((_, _) => 0))).toNBT, ColumnRelWorld(0, 0))
+    provider.saveColumnData(
+      Nbt.encode(ChunkColumnData(Some(ChunkColumnHeightMap.from((_, _) => 0)))),
+      ColumnRelWorld(0, 0)
+    )
     provider.saveChunkData(Nbt.encode(Nbt.decode[ChunkData](Nbt.makeMap()).get), ChunkRelWorld(0, 0, 0))
 
     val world = ServerWorld(provider, provider.getWorldInfo)

@@ -669,7 +669,7 @@ class GameClient(
           if columnNbt != Nbt.emptyMap then {
             val column = ChunkColumnTerrain.create(
               ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
-              Some(ChunkColumnData.fromNbt(columnNbt.asInstanceOf[Nbt.MapTag]))
+              Some(Nbt.decode[ChunkColumnData](columnNbt.asInstanceOf[Nbt.MapTag]).get)
             )
             world.setColumn(columnCoords, column)
           } else {
@@ -678,7 +678,7 @@ class GameClient(
         }
         if success && world.getChunk(chunkCoords).isEmpty then {
           if chunkNbt != Nbt.emptyMap then {
-            val chunk = Chunk.fromNbt(chunkNbt.asInstanceOf[Nbt.MapTag])
+            val chunk = Nbt.decode[Chunk](chunkNbt.asInstanceOf[Nbt.MapTag]).get
             world.setChunk(chunkCoords, chunk)
           } else {
             success = false

@@ -2,28 +2,33 @@ package hexacraft.world.chunk
 
 import hexacraft.nbt.{Nbt, NbtCodec}
 import hexacraft.util.Loop
-import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
-import hexacraft.world.entity.{Entity, EntityFactory}
+import hexacraft.world.entity.Entity
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 object Chunk {
-  def fromNbt(loadedTag: Nbt.MapTag)(using CylinderSize): Chunk = {
-    new Chunk(Nbt.decode[ChunkData](loadedTag).get)
-  }
-
   def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
       CylinderSize
   ) = {
     new Chunk(ChunkData.fromStorage(generator.generateChunk(coords, column)))
   }
+
+  given (using CylinderSize): NbtCodec[Chunk] with {
+    override def encode(chunk: Chunk): Nbt.MapTag = {
+      Nbt.encode(chunk.chunkData)
+    }
+
+    override def decode(tag: Nbt.MapTag): Option[Chunk] = {
+      Some(new Chunk(Nbt.decode[ChunkData](tag).get))
+    }
+  }
 }
 
-final class Chunk private (chunkData: ChunkData)(using CylinderSize) {
+final class Chunk private (private val chunkData: ChunkData)(using CylinderSize) {
   private var _modCount: Long = 0L
   private var _hasEntities: Boolean = chunkData.entities.nonEmpty
 
@@ -100,8 +105,6 @@ final class Chunk private (chunkData: ChunkData)(using CylinderSize) {
     chunkData.optimizeStorage()
   }
 
-  def toNbt: Nbt.MapTag = Nbt.encode(chunkData)
-
   def isDecorated: Boolean = chunkData.isDecorated
 
   def setDecorated(): Unit = {
@@ -142,7 +145,7 @@ object ChunkData {
       Nbt.makeMap(
         "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
         "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
-        "entities" -> Nbt.ListTag(value.entities.map(e => e.toNBT).toSeq),
+        "entities" -> Nbt.ListTag(value.entities.map(e => Nbt.encode(e)).toSeq),
         "isDecorated" -> Nbt.ByteTag(value.isDecorated)
       )
     }
@@ -170,9 +173,9 @@ object ChunkData {
         tags <- nbt.getList("entities")
         tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
       } do {
-        EntityFactory.fromNbt(tag) match {
-          case Ok(entity)   => entities += entity
-          case Err(message) => println(message)
+        Nbt.decode[Entity](tag) match {
+          case Some(entity) => entities += entity
+          case None         => println(s"Could not load entity")
         }
       }
 

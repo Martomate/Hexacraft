@@ -2,13 +2,13 @@ package hexacraft.client
 
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.math.bits.Int12
-import hexacraft.util.{Loop, Result}
-import hexacraft.util.Result.{Err, Ok}
+import hexacraft.nbt.Nbt
+import hexacraft.util.Loop
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, EntityFactory, EntityPhysicsSystem}
+import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -301,12 +301,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
         case None =>
           event match {
             case EntityEvent.Spawned(data) =>
-              val entity = EntityFactory
-                .fromNbt(data)
-                .mapErr(err => s"Could not create entity. Error: $err")
-
-              entity match {
-                case Ok(e) =>
+              Nbt.decode[Entity](data) match {
+                case Some(e) =>
                   addEntity(e) match {
                     case Some(c) =>
                       allEntitiesById(id) = (Some(c), e)
@@ -315,8 +311,8 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
                       allEntitiesById(id) = (None, e)
                       entitiesToSpawnLater += e
                   }
-                case Err(e) =>
-                  println(e)
+                case None =>
+                  println(s"Could not create entity")
               }
             case _ =>
             // println(s"Received entity event for an unknown entity (id: $id, event: $event)")

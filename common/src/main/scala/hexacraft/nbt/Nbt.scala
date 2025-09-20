@@ -219,16 +219,21 @@ object Nbt {
             )
         case tag: Nbt.MapTag => tag.toCompoundTag(name)
 
-  def encode[T: NbtCodec](value: T): Nbt.MapTag = {
-    summon[NbtCodec[T]].encode(value)
+  def encode[T: NbtEncoder](value: T): Nbt.MapTag = {
+    summon[NbtEncoder[T]].encode(value)
   }
 
-  def decode[T: NbtCodec](tag: Nbt.MapTag): Option[T] = {
-    summon[NbtCodec[T]].decode(tag)
+  def decode[T: NbtDecoder](tag: Nbt.MapTag): Option[T] = {
+    summon[NbtDecoder[T]].decode(tag)
   }
 }
 
-trait NbtCodec[T] {
+trait NbtEncoder[T] {
   def encode(value: T): Nbt.MapTag
+}
+
+trait NbtDecoder[T] {
   def decode(tag: Nbt.MapTag): Option[T]
 }
+
+trait NbtCodec[T] extends NbtEncoder[T] with NbtDecoder[T]

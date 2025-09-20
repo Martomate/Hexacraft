@@ -1,7 +1,7 @@
 package hexacraft.world.chunk
 
 import hexacraft.math.noise.Data2D
-import hexacraft.nbt.Nbt
+import hexacraft.nbt.{Nbt, NbtCodec}
 import hexacraft.util.Loop
 import hexacraft.world.CylinderSize
 import hexacraft.world.block.Block
@@ -12,16 +12,18 @@ import scala.collection.immutable.ArraySeq
 class ChunkColumnData(val heightMap: Option[ChunkColumnHeightMap])
 
 object ChunkColumnData {
-  def fromNbt(tag: Nbt.MapTag): ChunkColumnData = {
-    ChunkColumnData(
-      tag
-        .getShortArray("heightMap")
-        .map(heightNbt => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z)))
-    )
-  }
+  given NbtCodec[ChunkColumnData] with {
+    override def decode(tag: Nbt.MapTag): Option[ChunkColumnData] = {
+      Some(
+        ChunkColumnData(
+          tag
+            .getShortArray("heightMap")
+            .map(heightNbt => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z)))
+        )
+      )
+    }
 
-  extension (col: ChunkColumnData) {
-    def toNBT: Nbt.MapTag = {
+    override def encode(col: ChunkColumnData): Nbt.MapTag = {
       Nbt.emptyMap.withOptionalField(
         "heightMap",
         col.heightMap.map(heightMap =>
