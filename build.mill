@@ -23,18 +23,20 @@ object Deps {
   }
 
   private def lwjglDependency(name: String) = {
-    val platforms = Seq(
-      "natives-windows",
-      "natives-windows-arm64",
-      "natives-linux",
-      "natives-linux-arm64",
-      "natives-macos",
-      "natives-macos-arm64"
-    )
+    val os = System.getProperty("os.name").toLowerCase match {
+      case os if os.contains("windows") => "windows"
+      case os if os.startsWith("mac") => "macos"
+      case _ => "linux"
+    }
+    val platform = System.getProperty("os.arch") match {
+      case arch if arch.trim == "aarch64" => s"$os-arm64"
+      case _ => os
+    }
 
-    val base = ivy"org.lwjgl:$name:${versions.lwjgl}"
-    val natives = platforms.map(p => ivy"org.lwjgl:$name:${versions.lwjgl};classifier=$p")
-    base +: natives
+    Seq(
+      ivy"org.lwjgl:$name:${versions.lwjgl}",
+      ivy"org.lwjgl:$name:${versions.lwjgl};classifier=natives-$platform"
+    )
   }
 
   lazy val LwjglSystem = lwjglDependency("lwjgl")
