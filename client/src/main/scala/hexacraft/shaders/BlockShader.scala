@@ -13,7 +13,7 @@ class BlockShader(isSide: Boolean) {
     ShaderConfig()
       .withStage(ShaderType.Vertex, "block/vert.glsl")
       .withStage(ShaderType.Fragment, "block/frag.glsl")
-      .withInputs("position", "texIndex", "normal", "brightness", "texCoords")
+      .withInputs("position", "texIndex", "normal", "lightCloseness", "texCoords")
       .withDefines("isSide" -> (if isSide then "1" else "0"))
   )
 
@@ -75,7 +75,7 @@ object BlockShader {
       position: Vector3i,
       texIndex: Int,
       normal: Vector3f,
-      brightness: Float,
+      lightCloseness: Float,
       texCoords: Vector2f
   ) {
     def fill(buf: ByteBuffer): Unit = {
@@ -89,7 +89,7 @@ object BlockShader {
       buf.putFloat(normal.y)
       buf.putFloat(normal.z)
 
-      buf.putFloat(brightness)
+      buf.putFloat(lightCloseness)
 
       buf.putFloat(texCoords.x)
       buf.putFloat(texCoords.y)

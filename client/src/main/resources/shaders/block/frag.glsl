@@ -8,7 +8,7 @@ struct FragIn {
 	vec3 position;
 	vec2 texCoords;
 	float mult;
-	float brightness;
+	float lightCloseness;
 	vec3 normal;
 };
 
@@ -52,5 +52,10 @@ void main() {
 
 	position = fragIn.position;
 	normal = fragIn.normal;
-	color.rgb *= sqrt(fragIn.brightness) * 0.8 + 0.2;
+    // lightCloseness = 1 - r, so it goes from 1 to 0 linearly
+    // therefore (1-r)^2 is a better fit than d^2/(r+d)^2 which would never reach 0
+    float brightness = fragIn.lightCloseness * fragIn.lightCloseness;
+    color.rgb *= brightness * 0.8 + 0.2;
+
+    // TODO: the ambient occlusion looks too big now, so maybe interpolate that separately
 }
