@@ -1,11 +1,13 @@
+//| mill-version: 1.0.6
+//| mvnDeps:
+//| - io.github.hoangmaihuy::mill-universal-packager::0.2.0
+
 package build
 
-import $ivy.`io.github.hoangmaihuy::mill-universal-packager::0.1.4`
 import io.github.hoangmaihuy.mill.packager.archetypes.JavaAppPackagingModule
-import io.github.hoangmaihuy.mill.packager.subPathRw
-import mill._
-import mill.api.MillException
-import mill.scalalib._
+import mill.*
+import mill.api.{BuildCtx, MillException}
+import mill.scalalib.*
 import mill.util.{JarManifest, Jvm}
 import os.{Path, RelPath}
 
@@ -34,8 +36,8 @@ object Deps {
     }
 
     Seq(
-      ivy"org.lwjgl:$name:${versions.lwjgl}",
-      ivy"org.lwjgl:$name:${versions.lwjgl};classifier=natives-$platform"
+      mvn"org.lwjgl:$name:${versions.lwjgl}",
+      mvn"org.lwjgl:$name:${versions.lwjgl};classifier=natives-$platform"
     )
   }
 
@@ -45,21 +47,21 @@ object Deps {
   lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
   lazy val LwjglStb = lwjglDependency("lwjgl-stb")
 
-  lazy val Joml = ivy"org.joml:joml:${versions.joml}"
-  lazy val FlowNbt = ivy"com.flowpowered:flow-nbt:1.0.0"
-  lazy val ZeroMQ = ivy"org.zeromq:jeromq:${versions.zeromq}"
+  lazy val Joml = mvn"org.joml:joml:${versions.joml}"
+  lazy val FlowNbt = mvn"com.flowpowered:flow-nbt:1.0.0"
+  lazy val ZeroMQ = mvn"org.zeromq:jeromq:${versions.zeromq}"
 
-  lazy val MUnit = ivy"org.scalameta::munit:1.0.0"
-  lazy val Mockito = ivy"org.scalatestplus::mockito-5-8:3.2.17.0"
+  lazy val MUnit = mvn"org.scalameta::munit:1.0.0"
+  lazy val Mockito = mvn"org.scalatestplus::mockito-5-8:3.2.17.0"
   lazy val ArchUnit = Seq(
-    ivy"com.tngtech.archunit:archunit:1.3.0",
-    ivy"org.slf4j:slf4j-nop:2.0.13" // Needed for ArchUnit
+    mvn"com.tngtech.archunit:archunit:1.3.0",
+    mvn"org.slf4j:slf4j-nop:2.0.13" // Needed for ArchUnit
   )
 }
 
 object common extends HexacraftModule {
   override def moduleDeps = super.moduleDeps ++ Seq(native)
-  override def ivyDeps = super.ivyDeps() ++ Agg(
+  override def mvnDeps = super.mvnDeps() ++ Seq(
     Deps.Joml, Deps.FlowNbt
   )
 
@@ -83,8 +85,8 @@ object native extends HexacraftModule with RustJniModule {
 object window extends HexacraftModule {
   override def moduleDeps = Seq(common)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.LwjglGlfw: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Deps.LwjglGlfw*
   )
 
   object test extends Tests
@@ -93,8 +95,8 @@ object window extends HexacraftModule {
 object audio extends HexacraftModule {
   override def moduleDeps = Seq(common, fs)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.LwjglOpenAL ++ Deps.LwjglStb: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Deps.LwjglOpenAL ++ Deps.LwjglStb*
   )
 
   object test extends Tests
@@ -109,8 +111,8 @@ object fs extends HexacraftModule {
 object gpu extends HexacraftModule {
   override def moduleDeps = Seq(common, native)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Deps.LwjglOpenGL: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Deps.LwjglOpenGL*
   )
 
   object test extends Tests
@@ -119,12 +121,12 @@ object gpu extends HexacraftModule {
 object game extends HexacraftModule {
   override def moduleDeps = Seq(common, window, fs)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests {
-    override def ivyDeps = super.ivyDeps() ++ Agg(
+    override def mvnDeps = super.mvnDeps() ++ Seq(
       Deps.Mockito
     )
   }
@@ -133,8 +135,8 @@ object game extends HexacraftModule {
 object client extends HexacraftModule {
   override def moduleDeps = Seq(game, audio, gpu)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests
@@ -143,8 +145,8 @@ object client extends HexacraftModule {
 object server extends HexacraftModule {
   override def moduleDeps = Seq(game)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests {
@@ -155,15 +157,15 @@ object server extends HexacraftModule {
 object main extends HexacraftModule with JavaAppPackagingModule {
   override def moduleDeps = Seq(game, client, server)
 
-  override def ivyDeps = super.ivyDeps() ++ Agg(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem: _*
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
   )
 
   def jdepsModules: T[String] = Task {
     val classPath = runClasspath().map(_.path).filter(os.exists).map(_.toString)
     val res = os.proc(
       Seq(
-        Jvm.jdkTool("jdeps", this.zincWorker().javaHome().map(_.path)),
+        Jvm.jdkTool("jdeps", this.javaHome().map(_.path)),
         "--multi-release", "17",
         "-R",
         "--print-module-deps",
@@ -183,7 +185,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
     Task.log.info(s"Creating Java runtime based on [$modules]")
 
     val args = Seq(
-      Jvm.jdkTool("jlink", this.zincWorker().javaHome().map(_.path)),
+      Jvm.jdkTool("jlink", this.javaHome().map(_.path)),
       "--add-modules",
       modules,
       "--output",
@@ -205,18 +207,16 @@ object main extends HexacraftModule with JavaAppPackagingModule {
   override def packageName = "hexacraft-" + packageVersion()
   override def executableScriptName = "hexacraft"
 
-  def launcherJarManifest = T {
+  def launcherJarManifest = Task {
     JarManifest.MillDefault
       .add("Main-Class" -> finalMainClass())
       .add("Class-Path" -> scriptClasspath().map(name => s"lib/$name").mkString(" "))
   }
 
-  def launcherJar = T {
-    Jvm.createJar(Agg(), launcherJarManifest())
-  }
+  override def universalMappings = Task {
+    val launcherJarPath = Task.dest / "launcher.jar"
+    Jvm.createJar(launcherJarPath, Seq(), launcherJarManifest())
 
-  override def universalMappings = T {
-    val launcherJarPath = launcherJar().path
     val launcherJarMapping = PathRef(launcherJarPath) -> (os.sub / "hexacraft-launcher.jar")
     val jreMapping = jlinkAppImage() -> (os.sub / "runtime")
 
@@ -225,8 +225,8 @@ object main extends HexacraftModule with JavaAppPackagingModule {
 
   object test extends Tests {
     override def moduleDeps = super.moduleDeps ++ Seq(game.test, client.test)
-    override def ivyDeps = super.ivyDeps() ++ Agg(
-      Seq(Deps.Mockito) ++ Deps.ArchUnit: _*
+    override def mvnDeps = super.mvnDeps() ++ Seq(
+      Seq(Deps.Mockito) ++ Deps.ArchUnit*
     )
   }
 }
@@ -243,14 +243,14 @@ trait HexacraftModule extends SbtModule {
     "--release", "17"
   )
 
-  override def compileIvyDeps = Agg(
-    ivy"org.scala-lang::scala2-library-tasty-experimental:${scalaVersion()}"
+  override def compileMvnDeps = Seq(
+    mvn"org.scala-lang::scala2-library-tasty-experimental:${scalaVersion()}"
   )
 
   override def artifactName = "hexacraft-" + super.artifactName()
 
   trait Tests extends SbtTests with TestModule.Munit {
-    override def ivyDeps = super.ivyDeps() ++ Agg(
+    override def mvnDeps = super.mvnDeps() ++ Seq(
       Deps.MUnit
     )
   }
@@ -264,37 +264,38 @@ trait RustJniModule extends JavaModule {
   protected def rustSourcePaths: Seq[RelPath]
 
   /** Directory where the JNI headers will be stored */
-  private def jniHeadersDir: Target[Path] = T {
+  private def jniHeadersDir: Task[Path] = Task {
     val sourceHash = allSources().map(_.sig).sum
-    T.dest / s"headers-$sourceHash"
+    Task.dest / s"headers-$sourceHash"
   }
 
-  override def javacOptions =
+  override def javacOptions = Task {
     super.javacOptions() :+ "-h" :+ jniHeadersDir().toString
+  }
 
-  /** Directory with the JNI headers, automatically regenerated when needed */
-  def jniHeaders: Target[PathRef] = T {
-    compile()
-
+  override def compile = Task {
     val headersDir = jniHeadersDir()
-    if (os.list(headersDir).isEmpty) {
+
+    val res = super.compile()
+
+    if (BuildCtx.withFilesystemCheckerDisabled(os.list(headersDir)).isEmpty) {
       throw new MillException("No JNI headers were generated. Please do a clean build.")
     }
 
-    PathRef(headersDir)
+    res
   }
 
-  def crateHome = millSourcePath / "src" / "native"
+  private def crateHome = moduleDir / "src" / "native"
 
-  private def rustSources = Task.Sources {
+  private def rustSources = Task.Input {
     rustSourcePaths.map(f => PathRef(crateHome / f))
   }
 
-  override def compileResources = Task.Sources {
+  override def compileResources = Task {
     super.compileResources() :+ compileNative()
   }
 
-  override def resources = T {
+  override def resources = Task {
     checkJni()
     super.resources()
   }
@@ -327,28 +328,22 @@ trait RustJniModule extends JavaModule {
     case _ => throw new IllegalArgumentException(s"Rust target $target not supported")
   }
 
-  def compileNative = T {
-    rustSources() // recompile if the sources have changed
-
-    val libName = nativeName
-    val target = localTarget
-
-    val compilation = Task.fork.async(Task.dest / "cargo", "cargo", s"Compiling $libName ($target)") { _ =>
-      val outputFolder = compileRust(crateHome, target)
-      outputFolder / getNativeLibName(target, libName.replace('-', '_'))
-    }
-    val libFile = Task.fork.await(compilation)
-    val libDestPath = getNativeLibEmbedPath(libName, target)
-
-    val resultDir = T.dest / "embed"
-    os.copy(libFile, resultDir / libDestPath, replaceExisting = true, createFolders = true)
-    PathRef(resultDir)
+  private def cargoOutputDir = Task.Source {
+    crateHome / "target" / localTarget
   }
 
-  protected def compileRust(crateHome: os.Path, target: String): os.Path = {
-    os.proc("cargo", "build", "--release", "--target", target).call(cwd = crateHome)
+  private def compileNative = Task {
+    rustSources() // recompile if the sources have changed
 
-    crateHome / "target" / target / "release"
+    os.proc("cargo", "build", "--release", "--target", localTarget).call(cwd = crateHome)
+
+    val libFile = cargoOutputDir().path / "release" / getNativeLibName(localTarget, nativeName.replace('-', '_'))
+
+    val libDestPath = getNativeLibEmbedPath(nativeName, localTarget)
+
+    val resultDir = Task.dest / "embed"
+    os.copy(libFile, resultDir / libDestPath, replaceExisting = true, createFolders = true)
+    PathRef(resultDir)
   }
 
   private def getNativeLibEmbedPath(nativeName: String, target: String): os.SubPath = {
@@ -370,8 +365,8 @@ trait RustJniModule extends JavaModule {
     os.sub / "native" / targetShortName / libFileName
   }
 
-  def checkJni: Target[Unit] = T {
-    T.log.info("Checking JNI")
+  private def checkJni: Task[Unit] = Task {
+    Task.log.info("Checking JNI")
     val declarations = jniDeclarationsInHeaders().map(JniFunctionDeclaration.parseFromHeader)
     val exportedFunctionNames = jniFunctionNamesInRust()
 
@@ -384,16 +379,22 @@ trait RustJniModule extends JavaModule {
       result.print()
       throw new MillException("JNI mismatch (see details above)")
     }
-    T.log.info(s"Found ${declarations.size} JNI functions")
+    Task.log.info(s"Found ${declarations.size} JNI functions")
   }
 
-  private def jniDeclarationsInHeaders: Target[Seq[String]] = T {
-    os.list(jniHeaders().path)
-      .map(os.read.lines)
-      .flatMap(JniExtractors.functionDeclarationsInHeaderFile)
+  private def generatedHeaders = Task {
+    compile()
+    jniHeadersDir()
   }
 
-  private def jniFunctionNamesInRust: Target[Seq[String]] = T {
+  private def jniDeclarationsInHeaders: Task[Seq[String]] = Task {
+    val headerFiles = BuildCtx.withFilesystemCheckerDisabled(
+      os.list(generatedHeaders()).map(os.read.lines)
+    )
+    headerFiles.flatMap(JniExtractors.functionDeclarationsInHeaderFile)
+  }
+
+  private def jniFunctionNamesInRust: Task[Seq[String]] = Task {
     val p = os.proc("cargo", "expand").call(cwd = crateHome)
     JniExtractors.functionNamesInRustCode(new String(p.out.bytes))
   }
