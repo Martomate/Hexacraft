@@ -69,39 +69,6 @@ class GameServer(
     worldProvider.saveWorldData(Nbt.encode(world.worldInfo))
   }
 
-  private def playerEffectiveViscosity(player: Player): Double = {
-    player.bounds
-      .cover(CylCoords(player.position))
-      .map(c => c -> world.getBlock(c))
-      .filter(!_._2.blockType.isSolid)
-      .map((c, b) =>
-        HexBox.approximateVolumeOfIntersection(
-          BlockCoords(c).toCylCoords,
-          b.blockType.bounds(b.metadata),
-          CylCoords(player.position),
-          player.bounds
-        ) * b.blockType.viscosity.toSI
-      )
-      .sum
-  }
-
-  private def playerVolumeSubmergedInWater(player: Player): Double = {
-    val solidBounds = player.bounds.scaledRadially(0.7)
-    solidBounds
-      .cover(CylCoords(player.position))
-      .map(c => c -> world.getBlock(c))
-      .filter((c, b) => b.blockType == Block.Water)
-      .map((c, b) =>
-        HexBox.approximateVolumeOfIntersection(
-          BlockCoords(c).toCylCoords,
-          b.blockType.bounds(b.metadata),
-          CylCoords(player.position),
-          solidBounds
-        )
-      )
-      .sum
-  }
-
   def tick(): Unit = {
     try {
       for (playerId, p) <- players if p.shouldBeKicked do {
@@ -125,7 +92,7 @@ class GameServer(
 
         if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
           val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
-          val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
+          val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
           playerInputHandler.tick(
             player,
@@ -139,8 +106,8 @@ class GameServer(
           playerPhysicsHandler.tick(
             player,
             maxSpeed,
-            playerEffectiveViscosity(player),
-            playerVolumeSubmergedInWater(player)
+            PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
+            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
           )
         }
 

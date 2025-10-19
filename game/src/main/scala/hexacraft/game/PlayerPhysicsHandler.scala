@@ -1,7 +1,9 @@
 package hexacraft.game
 
 import hexacraft.physics.{Density, DragCoefficient, FluidDynamics, Viscosity}
-import hexacraft.world.{CollisionDetector, HexBox, Player}
+import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox, Player}
+import hexacraft.world.block.Block
+import hexacraft.world.coord.{BlockCoords, CylCoords}
 
 import org.joml.Vector3d
 
@@ -62,5 +64,40 @@ class PlayerPhysicsHandler(collisionDetector: CollisionDetector) {
     position.set(pos)
     velocity.set(vel)
     velocity.mul(60)
+  }
+}
+
+object PlayerPhysicsHandler {
+  def playerEffectiveViscosity(player: Player, world: BlocksInWorld)(using CylinderSize): Double = {
+    player.bounds
+      .cover(CylCoords(player.position))
+      .map(c => c -> world.getBlock(c))
+      .filter(!_._2.blockType.isSolid)
+      .map((c, b) =>
+        HexBox.approximateVolumeOfIntersection(
+          BlockCoords(c).toCylCoords,
+          b.blockType.bounds(b.metadata),
+          CylCoords(player.position),
+          player.bounds
+        ) * b.blockType.viscosity.toSI
+      )
+      .sum
+  }
+
+  def playerVolumeSubmergedInWater(player: Player, world: BlocksInWorld)(using CylinderSize): Double = {
+    val solidBounds = player.bounds.scaledRadially(0.7)
+    solidBounds
+      .cover(CylCoords(player.position))
+      .map(c => c -> world.getBlock(c))
+      .filter((c, b) => b.blockType == Block.Water)
+      .map((c, b) =>
+        HexBox.approximateVolumeOfIntersection(
+          BlockCoords(c).toCylCoords,
+          b.blockType.bounds(b.metadata),
+          CylCoords(player.position),
+          solidBounds
+        )
+      )
+      .sum
   }
 }

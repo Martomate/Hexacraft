@@ -501,39 +501,6 @@ class GameClient(
     crosshairRenderer.render(crosshairVAO, crosshairVAO.maxCount)
   }
 
-  private def playerEffectiveViscosity(player: Player): Double = {
-    player.bounds
-      .cover(CylCoords(player.position))
-      .map(c => c -> world.getBlock(c))
-      .filter(!_._2.blockType.isSolid)
-      .map((c, b) =>
-        HexBox.approximateVolumeOfIntersection(
-          BlockCoords(c).toCylCoords,
-          b.blockType.bounds(b.metadata),
-          CylCoords(player.position),
-          player.bounds
-        ) * b.blockType.viscosity.toSI
-      )
-      .sum
-  }
-
-  private def playerVolumeSubmergedInWater(player: Player): Double = {
-    val solidBounds = player.bounds.scaledRadially(0.7)
-    solidBounds
-      .cover(CylCoords(player.position))
-      .map(c => c -> world.getBlock(c))
-      .filter((c, b) => b.blockType == Block.Water)
-      .map((c, b) =>
-        HexBox.approximateVolumeOfIntersection(
-          BlockCoords(c).toCylCoords,
-          b.blockType.bounds(b.metadata),
-          CylCoords(player.position),
-          solidBounds
-        )
-      )
-      .sum
-  }
-
   private def playSoundAt(sound: BufferId, coords: CylCoords): Unit = {
     val baseCoords = CylCoords.Offset(coords.toVector3d)
 
@@ -700,7 +667,7 @@ class GameClient(
         val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
         if !isPaused && !isInPopup then {
           val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
-          val isInFluid = playerEffectiveViscosity(player) > Block.Air.viscosity.toSI * 2
+          val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
           playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
 
@@ -715,8 +682,8 @@ class GameClient(
           playerPhysicsHandler.tick(
             player,
             maxSpeed,
-            playerEffectiveViscosity(player),
-            playerVolumeSubmergedInWater(player)
+            PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
+            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
           )
         }
 
