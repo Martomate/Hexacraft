@@ -594,17 +594,7 @@ class GameClient(
       val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
       val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
       val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
-        val event = eventNbt.getString("type").get match {
-          case "spawned"        => EntityEvent.Spawned(eventNbt.getMap("data").get)
-          case "despawned"      => EntityEvent.Despawned
-          case "position"       => EntityEvent.Position(CylCoords(eventNbt.getMap("pos").get.setVector(new Vector3d)))
-          case "rotation"       => EntityEvent.Rotation(eventNbt.getMap("r").get.setVector(new Vector3d))
-          case "velocity"       => EntityEvent.Velocity(eventNbt.getMap("v").get.setVector(new Vector3d))
-          case "flying"         => EntityEvent.Flying(eventNbt.getBoolean("f", false))
-          case "head_direction" => EntityEvent.HeadDirection(eventNbt.getMap("d").get.setVector(new Vector3d))
-        }
-
-        (UUID.fromString(id), event)
+        (UUID.fromString(id), Nbt.decode[EntityEvent](eventNbt).get)
       }
 
       updateSoundListener()

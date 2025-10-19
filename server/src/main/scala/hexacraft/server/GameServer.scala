@@ -489,29 +489,7 @@ class GameServer(
 
         val ids = entityEvents.map((id, _) => Nbt.StringTag(id.toString))
 
-        val events = for (_, e) <- entityEvents yield {
-          val name = e match {
-            case EntityEvent.Spawned(_)       => "spawned"
-            case EntityEvent.Despawned        => "despawned"
-            case EntityEvent.Position(_)      => "position"
-            case EntityEvent.Rotation(_)      => "rotation"
-            case EntityEvent.Velocity(_)      => "velocity"
-            case EntityEvent.Flying(_)        => "flying"
-            case EntityEvent.HeadDirection(_) => "head_direction"
-          }
-
-          val extraFields: Seq[(String, Nbt)] = e match {
-            case EntityEvent.Spawned(data)    => Seq("data" -> data)
-            case EntityEvent.Despawned        => Seq()
-            case EntityEvent.Position(pos)    => Seq("pos" -> Nbt.makeVectorTag(pos.toVector3d))
-            case EntityEvent.Rotation(r)      => Seq("r" -> Nbt.makeVectorTag(r))
-            case EntityEvent.Velocity(v)      => Seq("v" -> Nbt.makeVectorTag(v))
-            case EntityEvent.Flying(f)        => Seq("f" -> Nbt.ByteTag(f))
-            case EntityEvent.HeadDirection(d) => Seq("d" -> Nbt.makeVectorTag(d))
-          }
-
-          Nbt.makeMap(extraFields*).withField("type", Nbt.StringTag(name))
-        }
+        val events = for (_, e) <- entityEvents yield Nbt.encode(e)
 
         val messages = playerData.messagesWaitingToBeSent.synchronized {
           val messages = playerData.messagesWaitingToBeSent.toSeq
