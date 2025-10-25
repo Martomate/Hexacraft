@@ -217,6 +217,7 @@ class GameServerTest extends FunSuite {
       }
 
       socket2.send(NetworkPacket.Logout)
+      Thread.sleep(10)
 
       {
         socket1.send(NetworkPacket.GetEvents)
