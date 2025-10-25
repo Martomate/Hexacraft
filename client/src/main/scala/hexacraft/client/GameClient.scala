@@ -24,7 +24,7 @@ import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.Random
 
 object GameClient {
@@ -313,13 +313,17 @@ class GameClient(
     setPaused(true)
   }
 
-  private def logout(): Unit = {
+  private def logout(): Future[Unit] = {
+    if isLoggingOut then {
+      return Future.unit
+    }
     if isOnline then {
       println("Logging out...")
     }
     isLoggingOut = true
-    Future(socket.sendPacket(NetworkPacket.Logout)) // use Future to make sure it does not block
+    val logoutFuture = Future(socket.sendPacket(NetworkPacket.Logout)) // use Future to make sure it does not block
     eventHandler.send(GameClient.Event.GameQuit)
+    logoutFuture
   }
 
   private def handleKeyPress(key: KeyboardKey): Unit = key match {
@@ -839,7 +843,7 @@ class GameClient(
   }
 
   def unload(): Unit = {
-    socket.close()
+    Await.ready(logout().andThen(_ => socket.close()), 100.millis)
 
     setMouseCursorInvisible(false)
 
