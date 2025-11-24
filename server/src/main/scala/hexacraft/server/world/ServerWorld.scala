@@ -38,6 +38,8 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
 
+  println(s"Loading world with seed: ${worldInfo.gen.seed}")
+
   private val fsExecutorService = Executors.newFixedThreadPool(8, NamedThreadFactory("server-fs"))
   private val genExecutorService = Executors.newFixedThreadPool(4, NamedThreadFactory("server-gen"))
 
@@ -70,6 +72,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private val columnsLoading: mutable.LongMap[Future[ChunkColumnTerrain]] = mutable.LongMap.empty
 
   private val blocksToUpdate: UniqueLongQueue = new UniqueLongQueue
+  private val chunksToRequestUpdatesFor: UniqueLongQueue = new UniqueLongQueue
 
   private val savedChunkModCounts = mutable.Map.empty[ChunkRelWorld, Long]
 
@@ -172,30 +175,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     requestRenderUpdate(chunkCoords)
     requestRenderUpdateForNeighborChunks(chunkCoords)
 
-    val allBlocks = ch.blocks
-
-    // Add all blocks in the chunk to the update queue
-    val newBlockUpdates = new mutable.ArrayBuffer[Long](allBlocks.length)
-    Loop.array(allBlocks) { block =>
-      newBlockUpdates += BlockRelWorld.fromChunk(block.coords, chunkCoords).value
-    }
-    blocksToUpdate.enqueueMany(newBlockUpdates)
-    newBlockUpdates.clear()
-
-    // Add all blocks in neighboring chunks to the update queue
-    Loop.array(allBlocks) { block =>
-      Loop.rangeUntil(0, 8) { side =>
-        if block.coords.isOnChunkEdge(side) then {
-          val neighCoords = block.coords.neighbor(side)
-          val neighChunkCoords = chunkCoords.offset(ChunkRelWorld.neighborOffsets(side))
-
-          if getChunk(neighChunkCoords).isDefined then {
-            newBlockUpdates += BlockRelWorld.fromChunk(neighCoords, neighChunkCoords).value
-          }
-        }
-      }
-    }
-    blocksToUpdate.enqueueMany(newBlockUpdates)
+    chunksToRequestUpdatesFor.enqueue(chunkCoords.value)
   }
 
   private def updateHeightmapAfterChunkUpdate(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk)(using
@@ -538,16 +518,67 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private def performBlockUpdates(): Seq[BlockRelWorld] = {
     val recordingWorld = RecordingBlockRepository(this)
 
+    {
+      val chunksToCheckNow = mutable.ArrayBuffer.empty[ChunkRelWorld]
+      chunksToRequestUpdatesFor.drainInto(chunksToCheckNow += ChunkRelWorld(_))
+
+      val (ready, notReady) = chunksToCheckNow.partition { c =>
+        getChunk(c).isDefined && c.neighbors.forall(getChunk(_).isDefined)
+      }
+
+      for c <- notReady do {
+        chunksToRequestUpdatesFor.enqueue(c.value)
+      }
+
+      for {
+        chunkCoords <- ready
+        ch <- getChunk(chunkCoords)
+      } do {
+        val allBlocks = ch.blocks
+
+        // Add all blocks in the chunk to the update queue
+        val newBlockUpdates = new mutable.ArrayBuffer[Long](allBlocks.length)
+        Loop.array(allBlocks) { block =>
+          newBlockUpdates += BlockRelWorld.fromChunk(block.coords, chunkCoords).value
+        }
+        blocksToUpdate.enqueueMany(newBlockUpdates)
+        newBlockUpdates.clear()
+
+        // Add all blocks in neighboring chunks to the update queue
+        Loop.array(allBlocks) { block =>
+          Loop.rangeUntil(0, 8) { side =>
+            if block.coords.isOnChunkEdge(side) then {
+              val neighCoords = block.coords.neighbor(side)
+              val neighChunkCoords = chunkCoords.offset(ChunkRelWorld.neighborOffsets(side))
+
+              if getChunk(neighChunkCoords).isDefined then {
+                newBlockUpdates += BlockRelWorld.fromChunk(neighCoords, neighChunkCoords).value
+              }
+            }
+          }
+        }
+        blocksToUpdate.enqueueMany(newBlockUpdates)
+      }
+    }
+
     val blocksToUpdateNow = new ArrayBuffer[Long](blocksToUpdate.size)
     blocksToUpdate.drainInto(value => blocksToUpdateNow += value)
 
+    val chunksReadyForUpdates = mutable.LongMap.empty[Boolean]
+
     Loop.array(blocksToUpdateNow) { v =>
       val c = BlockRelWorld(v)
+      val cc = c.getChunkRelWorld
 
-      val block = getBlock(c).blockType
-      val behaviour = block.behaviour
-      if behaviour.isDefined then {
-        behaviour.get.onUpdated(c, block, recordingWorld)
+      val ready = chunksReadyForUpdates.getOrElseUpdate(cc.value, cc.neighbors.forall(getChunk(_).isDefined))
+      if ready then {
+        val block = getBlock(c).blockType
+        val behaviour = block.behaviour
+        if behaviour.isDefined then {
+          behaviour.get.onUpdated(c, block, recordingWorld)
+        }
+      } else {
+        requestBlockUpdate(c)
       }
     }
 
@@ -593,10 +624,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     }
     for coords <- columnsToLoad do {
       columnsLoading(coords.value) = Future(worldProvider.loadColumnData(coords))(using fsAsync).map(columnData =>
-        ChunkColumnTerrain.create(
-          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-          columnData.map(Nbt.decode[ChunkColumnData](_).get)
-        )
+        ChunkColumnTerrain.create(coords, worldGenerator, columnData.map(Nbt.decode[ChunkColumnData](_).get))
       )(using genAsync)
     }
   }

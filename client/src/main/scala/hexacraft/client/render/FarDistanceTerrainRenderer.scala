@@ -67,13 +67,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
             val col = ColumnRelWorld(cc.X.toInt + dx, cc.Z.toInt + dz)
             columns.put(
               col.value,
-              columnCache.getOrElseUpdate(
-                col.value,
-                ChunkColumnTerrain.create(
-                  ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(col)),
-                  None
-                )
-              )
+              columnCache.getOrElseUpdate(col.value, ChunkColumnTerrain.create(col, worldGenerator, None))
             )
           }
 

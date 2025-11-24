@@ -48,6 +48,16 @@ object MathUtils:
     }
   }
 
+  def clamp(value: Int, lo: Int, hi: Int): Int = {
+    if value < lo then {
+      lo
+    } else if value > hi then {
+      hi
+    } else {
+      value
+    }
+  }
+
   def oppositeSide(s: Int): Int = {
     if s < 2 then {
       1 - s

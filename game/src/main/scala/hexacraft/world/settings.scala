@@ -43,7 +43,9 @@ class WorldGenSettings(
     val heightMapGenScale: Double,
     val blockDensityGenScale: Double,
     val biomeHeightMapGenScale: Double,
-    val biomeHeightVariationGenScale: Double
+    val biomeHeightVariationGenScale: Double,
+    val humidityGenScale: Double,
+    val temperatureGenScale: Double
 )
 
 object WorldGenSettings {
@@ -54,7 +56,9 @@ object WorldGenSettings {
       nbt.getDouble("heightMapGenScale", 0.02),
       nbt.getDouble("blockDensityGenScale", 0.01),
       nbt.getDouble("biomeHeightMapGenScale", 0.002),
-      nbt.getDouble("biomeHeightVariationGenScale", 0.002)
+      nbt.getDouble("biomeHeightVariationGenScale", 0.002),
+      nbt.getDouble("humidityGenScale", 0.002),
+      nbt.getDouble("temperatureGenScale", 0.002)
     )
   }
 
@@ -66,7 +70,9 @@ object WorldGenSettings {
         "heightMapGenScale" -> Nbt.DoubleTag(s.heightMapGenScale),
         "blockDensityGenScale" -> Nbt.DoubleTag(s.blockDensityGenScale),
         "biomeHeightGenScale" -> Nbt.DoubleTag(s.biomeHeightMapGenScale),
-        "biomeHeightVariationGenScale" -> Nbt.DoubleTag(s.biomeHeightVariationGenScale)
+        "biomeHeightVariationGenScale" -> Nbt.DoubleTag(s.biomeHeightVariationGenScale),
+        "humidityGenScale" -> Nbt.DoubleTag(s.humidityGenScale),
+        "temperatureGenScale" -> Nbt.DoubleTag(s.temperatureGenScale)
       )
     }
   }
