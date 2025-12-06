@@ -1,5 +1,6 @@
 package hexacraft.infra.audio
 
+import hexacraft.infra.fs.Bundle
 import hexacraft.util.{EventDispatcher, Tracker}
 
 import org.joml.Vector3f
@@ -85,9 +86,13 @@ class AudioSystem(al: ALWrapper) {
     dispatcher.notify(AudioSystem.Event.StartedPlaying)
   }
 
-  def loadSoundBufferMono16(samples: ShortBuffer, sampleRate: Int): BufferId = {
+  def load(resource: Bundle.Resource, format: AudioFormat): BufferId = {
     val bufferId = al.alGenBuffers()
-    al.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, samples, sampleRate)
+
+    format.decode(resource.readBytes()) match {
+      case SoundBuffer.Mono16(samples, sampleRate) =>
+        al.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, samples, sampleRate)
+    }
 
     BufferId.fromInt(bufferId)
   }

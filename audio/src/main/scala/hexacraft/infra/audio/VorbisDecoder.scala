@@ -1,15 +1,12 @@
 package hexacraft.infra.audio
 
-import hexacraft.infra.audio.AudioSystem.BufferId
-import hexacraft.infra.fs.Bundle
-
 import org.lwjgl.stb.{STBVorbis, STBVorbisInfo}
 import org.lwjgl.system.{MemoryStack, MemoryUtil}
 
-import java.nio.{ByteBuffer, ShortBuffer}
+import java.nio.ByteBuffer
 
-class VorbisFile(bytes: Array[Byte]) {
-  def samples: ShortBuffer = {
+object VorbisDecoder {
+  def decode(bytes: Array[Byte]): SoundBuffer = {
     val data = ByteBuffer.allocateDirect(bytes.length)
     data.put(bytes)
     data.flip()
@@ -28,23 +25,11 @@ class VorbisFile(bytes: Array[Byte]) {
       val pcm = MemoryUtil.memAllocShort(lengthSamples)
       pcm.limit(STBVorbis.stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels)
       STBVorbis.stb_vorbis_close(decoder)
-      pcm
+      SoundBuffer.Mono16(pcm, info.sample_rate())
     } finally {
       if stack != null then {
         stack.close()
       }
     }
-  }
-
-  def load(audioSystem: AudioSystem): BufferId = {
-    audioSystem.loadSoundBufferMono16(this.samples, 44100)
-  }
-}
-
-object VorbisFile {
-  def bundled(fileName: String): VorbisFile = {
-    val bytes = Bundle.locate(fileName).get.readBytes()
-
-    new VorbisFile(bytes)
   }
 }

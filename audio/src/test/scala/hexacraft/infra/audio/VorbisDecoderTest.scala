@@ -1,13 +1,15 @@
 package hexacraft.infra.audio
 
-import hexacraft.util.Tracker
+import hexacraft.infra.fs.Bundle
 
 import munit.FunSuite
 
-class VorbisFileTest extends FunSuite {
-  test("load ogg file") {
-    val buf = VorbisFile.bundled("example_sound.ogg").samples
+class VorbisDecoderTest extends FunSuite {
+  test("decode ogg file") {
+    val SoundBuffer.Mono16(buf, sampleRate) =
+      VorbisDecoder.decode(Bundle.locate("example_sound.ogg").get.readBytes()): @unchecked
 
+    assertEquals(sampleRate, 44100)
     assertEquals(buf.limit(), 11040)
 
     // these act as a regression test
