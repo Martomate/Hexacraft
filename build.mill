@@ -406,6 +406,7 @@ trait RustJniModule extends JavaModule {
   }
 
   private def jniFunctionNamesInRust: Task[Seq[String]] = Task {
+    rustSources() // re-run if code changes
     val p = os.proc("cargo", "expand", "--release").call(cwd = crateHome)
     JniExtractors.functionNamesInRustCode(new String(p.out.bytes))
   }

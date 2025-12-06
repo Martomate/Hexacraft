@@ -15,6 +15,16 @@ public class RustLib {
 
     public static native String hello();
 
+    public static class NoiseGenerator3D {
+        static {
+            RustLib.loadNative();
+        }
+
+        public static native long storePerms(int[] perm);
+        public static native long createLayeredNoiseGenerator(long[] noiseHandles);
+        public static native double genNoise(long genHandle, double scale, double x, double y, double z);
+    }
+
     public static class NoiseGenerator4D {
         static {
             RustLib.loadNative();
