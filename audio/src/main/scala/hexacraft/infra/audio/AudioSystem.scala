@@ -1,12 +1,9 @@
 package hexacraft.infra.audio
 
-import hexacraft.infra.fs.Bundle
 import hexacraft.util.{EventDispatcher, Tracker}
 
 import org.joml.Vector3f
-import org.lwjgl.openal.{AL, AL10, ALC, ALC10, ALCapabilities, ALCCapabilities}
-import org.lwjgl.stb.{STBVorbis, STBVorbisInfo}
-import org.lwjgl.system.{MemoryStack, MemoryUtil}
+import org.lwjgl.openal.*
 
 import java.nio.{ByteBuffer, IntBuffer, ShortBuffer}
 
@@ -88,41 +85,11 @@ class AudioSystem(al: ALWrapper) {
     dispatcher.notify(AudioSystem.Event.StartedPlaying)
   }
 
-  def loadSoundBuffer(filename: String): BufferId = {
-    val bytes = Bundle.locate(filename).get.readBytes()
-    val data = ByteBuffer.allocateDirect(bytes.length)
-    data.put(bytes)
-    data.flip()
-
-    val (info, buf) = readVorbis(data)
-
+  def loadSoundBufferMono16(samples: ShortBuffer, sampleRate: Int): BufferId = {
     val bufferId = al.alGenBuffers()
-    al.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, buf, 44100)
+    al.alBufferData(bufferId, AL10.AL_FORMAT_MONO16, samples, sampleRate)
 
     BufferId.fromInt(bufferId)
-  }
-
-  private def readVorbis(data: ByteBuffer): (STBVorbisInfo, ShortBuffer) = {
-    val stack = MemoryStack.stackPush
-    try {
-      val error = stack.mallocInt(1)
-      val decoder = STBVorbis.stb_vorbis_open_memory(data, error, null)
-      if decoder == 0L then {
-        throw new RuntimeException("Failed to open Ogg Vorbis file. Error: " + error.get(0))
-      }
-      val info = STBVorbisInfo.create()
-      STBVorbis.stb_vorbis_get_info(decoder, info)
-      val channels = info.channels
-      val lengthSamples = STBVorbis.stb_vorbis_stream_length_in_samples(decoder)
-      val pcm = MemoryUtil.memAllocShort(lengthSamples)
-      pcm.limit(STBVorbis.stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels)
-      STBVorbis.stb_vorbis_close(decoder)
-      (info, pcm)
-    } finally {
-      if stack != null then {
-        stack.close()
-      }
-    }
   }
 }
 

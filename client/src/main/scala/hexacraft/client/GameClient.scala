@@ -4,7 +4,7 @@ import hexacraft.client.render.{FarDistanceTerrainRenderer, StandardTerrainRende
 import hexacraft.game.*
 import hexacraft.gui.*
 import hexacraft.gui.comp.Component
-import hexacraft.infra.audio.AudioSystem
+import hexacraft.infra.audio.{AudioSystem, VorbisFile}
 import hexacraft.infra.audio.AudioSystem.BufferId
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.math.MathUtils
@@ -93,10 +93,10 @@ object GameClient {
     val blockInHandRenderer: GuiBlockRenderer =
       makeBlockInHandRenderer(world, camera, blockTextureIndices, initialWindowSize)
 
-    val placeBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
-    val destroyBlockSoundBuffer = audioSystem.loadSoundBuffer("sounds/place_block.ogg")
-    val walkSoundBuffer1 = audioSystem.loadSoundBuffer("sounds/walk1.ogg")
-    val walkSoundBuffer2 = audioSystem.loadSoundBuffer("sounds/walk2.ogg")
+    val placeBlockSoundBuffer = VorbisFile.bundled("sounds/place_block.ogg").load(audioSystem)
+    val destroyBlockSoundBuffer = VorbisFile.bundled("sounds/place_block.ogg").load(audioSystem)
+    val walkSoundBuffer1 = VorbisFile.bundled("sounds/walk1.ogg").load(audioSystem)
+    val walkSoundBuffer2 = VorbisFile.bundled("sounds/walk2.ogg").load(audioSystem)
 
     val (tx, rx) = Channel[Event]()
 

@@ -104,7 +104,11 @@ object audio extends HexacraftModule {
     Deps.LwjglOpenAL ++ Deps.LwjglStb*
   )
 
-  object test extends Tests
+  object test extends Tests {
+    override def mvnDeps = super.mvnDeps() ++ Seq(
+      Deps.LwjglSystem ++ Deps.LwjglStb*
+    )
+  }
 }
 
 object fs extends HexacraftModule {
