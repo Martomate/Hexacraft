@@ -1,13 +1,21 @@
+#[cfg(test)]
+mod tests {
+    mod vorbis;
+}
+
+mod handle;
 mod noise_3d;
 mod noise_4d;
+mod vorbis;
 
-use jni::objects::{JClass, JIntArray, JLongArray, ReleaseMode};
-use jni::sys::{jdouble, jlong, jstring};
+use handle::Handle;
+use jni::objects::{JByteArray, JClass, JIntArray, JLongArray, ReleaseMode};
+use jni::sys::{jdouble, jint, jshortArray, jstring};
 use jni::JNIEnv;
 use jni_fn::jni_fn;
 
-struct NoiseState {
-    perm: Vec<i32>
+pub struct NoiseState {
+    perm: Vec<i32>,
 }
 
 #[jni_fn("hexacraft.rs.RustLib")]
@@ -17,16 +25,20 @@ pub fn hello<'local>(env: JNIEnv<'local>, _class: JClass<'local>) -> jstring {
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator3D")]
-pub fn storePerms<'local>(mut env: JNIEnv<'local>, _class: JClass<'local>, perm: JIntArray<'local>) -> jlong {
+pub fn storePerms<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    perm: JIntArray<'local>,
+) -> Handle<NoiseState> {
     let elements = unsafe {
         env.get_array_elements(&perm, ReleaseMode::NoCopyBack)
             .expect("failed to read from perm array")
     };
 
-    let state = Box::new(NoiseState {
-        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>()
-    });
-    Box::into_raw(state) as jlong
+    let state = NoiseState {
+        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>(),
+    };
+    Handle::create(state)
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator3D")]
@@ -34,45 +46,55 @@ pub fn createLayeredNoiseGenerator<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     noiseHandles: JLongArray<'local>,
-) -> jlong {
+) -> Handle<Vec<Handle<NoiseState>>> {
     let elements = unsafe {
         env.get_array_elements(&noiseHandles, ReleaseMode::NoCopyBack)
             .expect("failed to read from noiseHandles array")
     };
 
-    let genHandle: Vec<i64> = elements.iter().cloned().collect::<Vec<_>>();
-    (Box::into_raw(Box::new(genHandle)) as *mut i32) as jlong
+    let genHandle: Vec<Handle<NoiseState>> = elements
+        .iter()
+        .map(|&h| unsafe { Handle::wrap(h) })
+        .collect::<Vec<_>>();
+    Handle::create(genHandle)
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator3D")]
 pub fn genNoise<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    genHandle: jlong,
+    genHandle: Handle<Vec<Handle<NoiseState>>>,
     scale: jdouble,
     x: jdouble,
     y: jdouble,
     z: jdouble,
 ) -> jdouble {
-    use_handle::<Vec<i64>, _>(genHandle, |noiseStates| {
-        use_handles::<NoiseState, _>(noiseStates.as_slice(), |noise_states| {
-            let perms = noise_states.iter().map(|state| state.perm.as_slice()).collect::<Vec<_>>();
+    genHandle.use_handle(|noise_state_handles| {
+        Handle::use_handles(noise_state_handles, |noise_states| {
+            let perms = noise_states
+                .iter()
+                .map(|state| state.perm.as_slice())
+                .collect::<Vec<_>>();
             noise_3d::noise_with_octaves(perms.as_slice(), scale, x, y, z)
         })
     })
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
-pub fn storePerms<'local>(mut env: JNIEnv<'local>, _class: JClass<'local>, perm: JIntArray<'local>) -> jlong {
+pub fn storePerms<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    perm: JIntArray<'local>,
+) -> Handle<NoiseState> {
     let elements = unsafe {
         env.get_array_elements(&perm, ReleaseMode::NoCopyBack)
             .expect("failed to read from perm array")
     };
 
-    let state = Box::new(NoiseState {
-        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>()
-    });
-    Box::into_raw(state) as jlong
+    let state = NoiseState {
+        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>(),
+    };
+    Handle::create(state)
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
@@ -80,46 +102,37 @@ pub fn createLayeredNoiseGenerator<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     noiseHandles: JLongArray<'local>,
-) -> jlong {
+) -> Handle<Vec<Handle<NoiseState>>> {
     let elements = unsafe {
         env.get_array_elements(&noiseHandles, ReleaseMode::NoCopyBack)
             .expect("failed to read from noiseHandles array")
     };
 
-    let genHandle: Vec<i64> = elements.iter().cloned().collect::<Vec<_>>();
-    (Box::into_raw(Box::new(genHandle)) as *mut i32) as jlong
+    let genHandle: Vec<Handle<NoiseState>> = elements
+        .iter()
+        .map(|&h| unsafe { Handle::wrap(h) })
+        .collect::<Vec<_>>();
+    Handle::create(genHandle)
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator4D")]
 pub fn genNoise<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    genHandle: jlong,
+    genHandle: Handle<Vec<Handle<NoiseState>>>,
     scale: jdouble,
     x: jdouble,
     y: jdouble,
     z: jdouble,
     w: jdouble,
 ) -> jdouble {
-    use_handle::<Vec<i64>, _>(genHandle, |noiseStates| {
-        use_handles::<NoiseState, _>(noiseStates.as_slice(), |noise_states| {
-            let perms = noise_states.iter().map(|state| state.perm.as_slice()).collect::<Vec<_>>();
+    genHandle.use_handle(|noise_state_handles| {
+        Handle::use_handles(noise_state_handles, |noise_states| {
+            let perms = noise_states
+                .iter()
+                .map(|state| state.perm.as_slice())
+                .collect::<Vec<_>>();
             noise_4d::noise_with_octaves(perms.as_slice(), scale, x, y, z, w)
         })
     })
-}
-
-fn use_handle<S, R>(handle: jlong, f: impl FnOnce(&S) -> R) -> R {
-    let state: Box<S> = unsafe { Box::from_raw(handle as *mut S) };
-    let res = f(&state);
-    std::mem::forget(state);
-    res
-}
-
-fn use_handles<S, R>(handles: &[jlong], f: impl FnOnce(&[&S]) -> R) -> R {
-    let state: Vec<Box<S>> = handles.iter().map(|&handle| unsafe { Box::from_raw(handle as *mut S) }).collect();
-    let state_refs: Vec<&S> = state.iter().map(|s| s.as_ref()).collect();
-    let res = f(&state_refs);
-    std::mem::forget(state);
-    res
 }
