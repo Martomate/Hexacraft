@@ -34,4 +34,15 @@ public class RustLib {
         public static native long createLayeredNoiseGenerator(long[] noiseHandles);
         public static native double genNoise(long genHandle, double scale, double x, double y, double z, double w);
     }
+
+    public static class VorbisDecoder {
+        static {
+            RustLib.loadNative();
+        }
+
+        public static native long decode(byte[] bytes);
+        public static native short[] getSamples(long handle);
+        public static native int getSampleRate(long handle);
+        public static native void destroy(long handle);
+    }
 }
