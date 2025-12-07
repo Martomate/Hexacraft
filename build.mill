@@ -45,7 +45,6 @@ object Deps {
   lazy val LwjglGlfw = lwjglDependency("lwjgl-glfw")
   lazy val LwjglOpenGL = lwjglDependency("lwjgl-opengl")
   lazy val LwjglOpenAL = lwjglDependency("lwjgl-openal")
-  lazy val LwjglStb = lwjglDependency("lwjgl-stb")
 
   lazy val Joml = mvn"org.joml:joml:${versions.joml}"
   lazy val FlowNbt = mvn"com.flowpowered:flow-nbt:1.0.0"
@@ -101,14 +100,10 @@ object audio extends HexacraftModule {
   override def moduleDeps = Seq(common, fs)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
-    Deps.LwjglOpenAL ++ Deps.LwjglStb*
+    Deps.LwjglOpenAL*
   )
 
-  object test extends Tests {
-    override def mvnDeps = super.mvnDeps() ++ Seq(
-      Deps.LwjglSystem ++ Deps.LwjglStb*
-    )
-  }
+  object test extends Tests
 }
 
 object fs extends HexacraftModule {
