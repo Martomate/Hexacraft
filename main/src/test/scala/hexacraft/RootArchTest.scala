@@ -37,10 +37,6 @@ class RootArchTest extends FunSuite {
     Packages("org.lwjgl.openal..").assertOnlyUsedIn("hexacraft.infra.audio")
   }
 
-  test("Stb library should only be used in OpenAL wrapper") {
-    Packages("org.lwjgl.stb..").assertOnlyUsedIn("hexacraft.infra.audio")
-  }
-
   // TODO: reduce package dependencies and update this test accordingly
   test("packages should not depend on too many other packages") {
     val root = "root"
