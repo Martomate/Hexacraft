@@ -4,7 +4,7 @@ import mill.*
 import mill.scalalib.*
 
 object Deps {
-  def scalaVersion = "3.6.4"
+  def scalaVersion = "3.7.4"
 
   private object versions {
     val lwjgl = "3.3.5"
