@@ -4,13 +4,13 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum RegistryError {
     #[error("invalid json: {0}")]
-    InvalidJson(#[from] serde_json::Error),
+    InvalidJson(#[from] facet_json::DeserializeError<facet_json::JsonError>),
     #[error("parsing failed: {0}")]
     Parsing(String),
 }
 
 pub fn parse_json_str(data: &str) -> Result<Vec<core::GameVersion>, RegistryError> {
-    let versions: Vec<dto::GameVersion> = serde_json::from_str(data)?;
+    let versions: Vec<dto::GameVersion> = facet_json::from_str(data)?;
     let mut res: Vec<core::GameVersion> = Vec::with_capacity(versions.len());
     for v in versions {
         res.push(v.into_core()?);
@@ -21,9 +21,9 @@ pub fn parse_json_str(data: &str) -> Result<Vec<core::GameVersion>, RegistryErro
 mod dto {
     use crate::core;
     use crate::registry::RegistryError;
-    use serde::Deserialize;
+    use facet::Facet;
 
-    #[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
+    #[derive(Debug, PartialEq, Eq, Clone, Facet)]
     pub struct GameVersion {
         pub id: String,
         pub name: String,
@@ -53,13 +53,13 @@ mod dto {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
+    #[derive(Debug, PartialEq, Eq, Clone, Facet)]
     pub struct Distribution {
         pub platforms: Vec<Platform>,
         pub program: Program,
     }
 
-    #[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
+    #[derive(Debug, PartialEq, Eq, Clone, Facet)]
     pub struct Platform {
         pub os: String,
         pub arch: String,
@@ -85,7 +85,7 @@ mod dto {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
+    #[derive(Debug, PartialEq, Eq, Clone, Facet)]
     pub struct Program {
         pub archive: String,
         pub jar_file: Option<String>,
@@ -121,11 +121,11 @@ mod dto {
 mod tests {
     use super::dto::*;
     use crate::core;
-    use serde_json::json;
+    use facet_value::value;
 
     #[test]
     fn parse_game_version() {
-        let json_body = json!({
+        let json_body = value!({
             "id":           "1.2.3",
             "name":         "V1.2.3",
             "release_date": "2018-10-30T20:40:50+01:00",
@@ -135,7 +135,7 @@ mod tests {
         });
 
         assert_eq!(
-            serde_json::from_value::<GameVersion>(json_body)
+            facet_value::from_value::<GameVersion>(json_body)
                 .unwrap()
                 .into_core()
                 .unwrap(),
@@ -145,41 +145,41 @@ mod tests {
 
     #[test]
     fn parse_game_version_platforms() {
-        fn try_parse(value: serde_json::Value) -> core::Platform {
-            let value: Platform = serde_json::from_value(value).unwrap();
+        fn try_parse(value: facet_value::Value) -> core::Platform {
+            let value: Platform = facet_value::from_value(value).unwrap();
             value.into_core()
         }
 
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "os":   "windows",
                 "arch": "any",
             })),
             core::Platform::any().with_os(core::OS::Windows)
         );
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "os":   "mac",
                 "arch": "any",
             })),
             core::Platform::any().with_os(core::OS::Macos)
         );
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "os":   "linux",
                 "arch": "any",
             })),
             core::Platform::any().with_os(core::OS::Linux)
         );
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "os":   "any",
                 "arch": "x64",
             })),
             core::Platform::any().with_arch(core::Arch::X64)
         );
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "os":   "any",
                 "arch": "arm64",
             })),
@@ -189,13 +189,13 @@ mod tests {
 
     #[test]
     fn parse_game_version_program() {
-        fn try_parse(value: serde_json::Value) -> (String, core::ProgramExe) {
-            let p: Program = serde_json::from_value(value).unwrap();
+        fn try_parse(value: facet_value::Value) -> (String, core::ProgramExe) {
+            let p: Program = facet_value::from_value(value).unwrap();
             (p.archive(), p.exe().unwrap())
         }
 
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "archive":  "http://example.com/v1.2.3.zip",
                 "jar_file": "hexacraft.jar",
                 "java_exe": "jre/bin/java",
@@ -206,7 +206,7 @@ mod tests {
             )
         );
         assert_eq!(
-            try_parse(json!({
+            try_parse(value!({
                 "archive":    "http://example.com/v1.2.3.zip",
                 "executable": "bin/hexacraft",
             })),
