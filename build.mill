@@ -43,44 +43,19 @@ object native extends HexacraftModule with RustJniModule {
   }
 }
 
-object window extends HexacraftModule {
-  override def moduleDeps = Seq(common)
-
-  override def mvnDeps = super.mvnDeps() ++ Seq(
-    Deps.LwjglGlfw*
-  )
-
-  object test extends Tests
-}
-
-object audio extends HexacraftModule {
-  override def moduleDeps = Seq(common, fs)
-
-  override def mvnDeps = super.mvnDeps() ++ Seq(
-    Deps.LwjglOpenAL*
-  )
-
-  object test extends Tests
-}
-
-object fs extends HexacraftModule {
-  override def moduleDeps = Seq(common)
-
-  object test extends Tests
-}
-
-object gpu extends HexacraftModule {
+object infra extends HexacraftModule {
   override def moduleDeps = Seq(common, native)
 
-  override def mvnDeps = super.mvnDeps() ++ Seq(
-    Deps.LwjglOpenGL*
-  )
+  override def mvnDeps = super.mvnDeps() ++
+    Deps.LwjglOpenAL ++
+    Deps.LwjglGlfw ++
+    Deps.LwjglOpenGL
 
   object test extends Tests
 }
 
 object game extends HexacraftModule {
-  override def moduleDeps = Seq(common, window, fs)
+  override def moduleDeps = Seq(common, infra)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
     Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
@@ -94,7 +69,7 @@ object game extends HexacraftModule {
 }
 
 object client extends HexacraftModule {
-  override def moduleDeps = Seq(game, audio, gpu)
+  override def moduleDeps = Seq(game, infra)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
     Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
