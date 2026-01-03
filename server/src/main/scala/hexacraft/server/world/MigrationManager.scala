@@ -1,6 +1,6 @@
 package hexacraft.server.world
 
-import hexacraft.infra.fs.{FileSystem, NbtIO}
+import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 
 import java.io.File
@@ -14,9 +14,8 @@ class MigrationManager(fs: FileSystem) {
   // TODO: write tests for old versions by using nullable infrastructure
 
   def migrateIfNeeded(saveDir: File): Unit = {
-    val nbtIO = new NbtIO(this.fs)
-    val saveFile = new File(saveDir, "world.dat")
-    val (rootName, nbtData) = nbtIO.loadTag(saveFile).getOrElse(("", Nbt.emptyMap))
+    val worldFile = new NbtFile(new File(saveDir, "world.dat"), this.fs)
+    val (rootName, nbtData) = if worldFile.exists then worldFile.readMapTag else ("", Nbt.emptyMap)
     val version = nbtData.getShort("version", 1)
 
     if version > MigrationManager.LatestVersion then {
@@ -29,7 +28,7 @@ class MigrationManager(fs: FileSystem) {
     for v <- version.toInt until MigrationManager.LatestVersion do {
       migrateFrom(v, saveDir)
       val updatedNbt = nbtData.withField("version", Nbt.ShortTag((v + 1).toShort))
-      nbtIO.saveTag(updatedNbt, rootName, saveFile)
+      worldFile.writeMapTag(updatedNbt, rootName)
     }
   }
 

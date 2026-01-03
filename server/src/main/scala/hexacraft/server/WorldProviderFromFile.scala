@@ -1,6 +1,6 @@
 package hexacraft.server
 
-import hexacraft.infra.fs.{FileSystem, NbtIO}
+import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 import hexacraft.server.world.MigrationManager
 import hexacraft.world.{WorldInfo, WorldProvider, WorldSettings}
@@ -15,10 +15,12 @@ class WorldProviderFromFile(saveDir: File, worldSettings: WorldSettings, fs: Fil
   }
 
   def loadState(path: String): Option[Nbt.MapTag] = {
-    NbtIO(fs).loadTag(File(saveDir, path)).map(_._2)
+    val file = NbtFile(File(saveDir, path), fs)
+    Option.when(file.exists)(file.readMapTag._2)
   }
 
   def saveState(tag: Nbt.MapTag, name: String, path: String): Unit = {
-    NbtIO(fs).saveTag(tag, name, File(saveDir, path))
+    val file = NbtFile(File(saveDir, path), fs)
+    file.writeMapTag(tag, name)
   }
 }

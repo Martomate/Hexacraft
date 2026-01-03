@@ -10,7 +10,7 @@ import java.nio.file.Path
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.collection.immutable.ArraySeq
 
-class NbtIOTest extends FunSuite {
+class NbtFileTest extends FunSuite {
 
   extension (bytes: Array[Byte])
     def gzipCompressed: Array[Byte] =
@@ -31,11 +31,10 @@ class NbtIOTest extends FunSuite {
   test("tags can be saved") {
     val fs = FileSystem.createNull()
     val tracker = fs.trackWrites()
-    val nbtIO = new NbtIO(fs)
 
     val file = new File("abc.dat")
     val tag = Nbt.emptyMap
-    nbtIO.saveTag(tag, "tag", file)
+    new NbtFile(file, fs).writeMapTag(tag, "tag")
 
     val bytes = Array[Byte](10, 0, 3, 't', 'a', 'g', 0)
     val compressedBytes = ArraySeq.unsafeWrapArray(GzipAlgorithm.compress(bytes))
@@ -49,10 +48,11 @@ class NbtIOTest extends FunSuite {
 
     val fs = FileSystem.createNull(existingFiles = Map(path -> bytes.gzipCompressed))
     val tracker = fs.trackWrites()
-    val nbtIO = new NbtIO(fs)
 
-    val (name, tag) = nbtIO.loadTag(path.toFile).getOrElse(("", Nbt.emptyMap))
+    val file = new NbtFile(path.toFile, fs)
+    assert(file.exists)
 
+    val (name, tag) = file.readMapTag
     assertEquals(tag, Nbt.emptyMap)
     assertEquals(name, "tag")
   }

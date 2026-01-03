@@ -4,7 +4,7 @@ import hexacraft.client.GameClientSocket
 import hexacraft.game.NetworkPacket
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
-import hexacraft.infra.fs.{FileSystem, NbtIO}
+import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.TextureSingle
 import hexacraft.util.Channel
@@ -32,12 +32,11 @@ object Menus {
 
   object WorldInfo {
     def fromFile(saveFile: File, fs: FileSystem): WorldInfo = {
-      val nbtFile = saveFile.toPath.resolve("world.dat")
-      val io = new NbtIO(fs)
+      val nbtFile = new NbtFile(new File(saveFile, "world.dat"), fs)
 
       val existingName =
         for {
-          (_, tag) <- io.loadTag(nbtFile.toFile)
+          (_, tag) <- Option.when(nbtFile.exists)(nbtFile.readMapTag)
           general <- tag.getMap("general")
           name <- general.getString("name")
         } yield name
