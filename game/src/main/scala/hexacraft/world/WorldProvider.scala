@@ -8,38 +8,47 @@ import java.util.UUID
 trait WorldProvider {
   def getWorldInfo: WorldInfo
 
-  def loadState(path: String): Option[Nbt.MapTag]
-  def saveState(tag: Nbt.MapTag, name: String, path: String): Unit
+  def loadState(path: WorldProvider.Path): Option[Nbt.MapTag]
+  def saveState(tag: Nbt.MapTag, name: String, path: WorldProvider.Path): Unit
 
   final def loadChunkData(coords: ChunkRelWorld): Option[Nbt.MapTag] = {
-    loadState("data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat")
+    loadState(WorldProvider.Path.ChunkData(coords))
   }
 
   final def saveChunkData(tag: Nbt.MapTag, coords: ChunkRelWorld): Unit = {
-    saveState(tag, "chunk", "data/" + coords.getColumnRelWorld.value + "/" + coords.Y.repr.toInt + ".dat")
+    saveState(tag, "chunk", WorldProvider.Path.ChunkData(coords))
   }
 
   final def loadColumnData(coords: ColumnRelWorld): Option[Nbt.MapTag] = {
-    loadState(s"data/${coords.value}/column.dat")
+    loadState(WorldProvider.Path.ColumnData(coords))
   }
 
   final def saveColumnData(tag: Nbt.MapTag, coords: ColumnRelWorld): Unit = {
-    saveState(tag, "column", s"data/${coords.value}/column.dat")
+    saveState(tag, "column", WorldProvider.Path.ColumnData(coords))
   }
 
   final def loadWorldData(): Option[Nbt.MapTag] = {
-    loadState("world.dat")
+    loadState(WorldProvider.Path.WorldData)
   }
 
   final def saveWorldData(tag: Nbt.MapTag): Unit = {
-    saveState(tag, "world", "world.dat")
+    saveState(tag, "world", WorldProvider.Path.WorldData)
   }
 
   final def loadPlayerData(id: UUID): Option[Nbt.MapTag] = {
-    loadState(s"players/${id.toString}.dat")
+    loadState(WorldProvider.Path.PlayerData(id))
   }
 
   final def savePlayerData(tag: Nbt.MapTag, id: UUID): Unit = {
-    saveState(tag, "", s"players/${id.toString}.dat")
+    saveState(tag, "", WorldProvider.Path.PlayerData(id))
+  }
+}
+
+object WorldProvider {
+  enum Path {
+    case ChunkData(coords: ChunkRelWorld)
+    case ColumnData(coords: ColumnRelWorld)
+    case PlayerData(id: UUID)
+    case WorldData
   }
 }

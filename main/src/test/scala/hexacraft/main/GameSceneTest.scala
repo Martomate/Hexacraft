@@ -9,10 +9,10 @@ import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
-import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player}
+import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player, WorldProvider}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkData, SparseChunkStorage}
-import hexacraft.world.coord.BlockRelChunk
+import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 
 import munit.FunSuite
 import org.joml.{Vector2f, Vector2i}
@@ -157,11 +157,11 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(Nbt.encode(storedPlayer), "", s"players/${playerId.toString}.dat")
+    worldProvider.saveState(Nbt.encode(storedPlayer), "", WorldProvider.Path.PlayerData(playerId))
     worldProvider.saveState(
       Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks)),
       "chunk",
-      "data/" + 0 + "/" + 0 + ".dat"
+      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0))
     )
 
     // Step 2: configure the client
@@ -234,11 +234,11 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(Nbt.encode(storedPlayer), "", s"players/${playerId.toString}.dat")
+    worldProvider.saveState(Nbt.encode(storedPlayer), "", WorldProvider.Path.PlayerData(playerId))
     worldProvider.saveState(
       Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks)),
       "chunk",
-      "data/" + 0 + "/" + 0 + ".dat"
+      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0))
     )
 
     // Step 2: configure the client

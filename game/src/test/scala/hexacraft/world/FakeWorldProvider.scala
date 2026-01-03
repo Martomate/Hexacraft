@@ -10,9 +10,9 @@ class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldPr
     new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001)
   )
 
-  private var fs: Map[String, Nbt.MapTag] = Map.empty
+  private var fs: Map[WorldProvider.Path, Nbt.MapTag] = Map.empty
 
-  override def loadState(path: String): Option[Nbt.MapTag] = fs.get(path)
+  override def loadState(path: WorldProvider.Path): Option[Nbt.MapTag] = fs.get(path)
 
-  override def saveState(tag: Nbt.MapTag, name: String, path: String): Unit = fs += path -> tag
+  override def saveState(tag: Nbt.MapTag, name: String, path: WorldProvider.Path): Unit = fs += path -> tag
 }
