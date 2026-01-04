@@ -1,6 +1,5 @@
 package hexacraft.main
 
-import hexacraft.game.*
 import hexacraft.gui.{Event, Scene}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
@@ -9,7 +8,6 @@ import hexacraft.infra.window.*
 import hexacraft.math.GzipAlgorithm
 import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
-import hexacraft.world.WorldSettings
 
 import munit.FunSuite
 
@@ -119,7 +117,7 @@ class MainRouterTest extends FunSuite {
       )
 
       val event = performRouteAndClick(SceneRoute.WorldChooser, (0, 0.6f), fs)
-      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, WorldSettings(None, None, None), true, false, null))
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, true, false, null))
     }
   }
 
@@ -145,7 +143,7 @@ class MainRouterTest extends FunSuite {
       )
 
       val event = performRouteAndClick(SceneRoute.NewWorld, (0.1f, -0.8f))
-      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, WorldSettings(None, None, None), true, false, null))
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, true, false, null))
     }
   }
 
@@ -209,7 +207,7 @@ class MainRouterTest extends FunSuite {
 
   def testGameScene(): Unit = {
     test("Game routes to GameScene".ignore) {
-      val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null))
+      val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, true, false, null))
       assert(scene.isInstanceOf[GameScene])
       scene.unload()
     }
@@ -218,7 +216,7 @@ class MainRouterTest extends FunSuite {
       val clickAt = (0f, -0.4f)
 
       val event = performRouteAndSendEvents(
-        SceneRoute.Game(saveDirPath.toFile, WorldSettings.none, true, false, null),
+        SceneRoute.Game(saveDirPath.toFile, true, false, null),
         Seq(
           Event.KeyEvent(KeyboardKey.Escape, 0, KeyAction.Press, KeyMods.none),
           Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),

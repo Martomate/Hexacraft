@@ -3,13 +3,13 @@ package hexacraft.server
 import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 import hexacraft.server.world.MigrationManager
-import hexacraft.world.{WorldInfo, WorldProvider, WorldSettings}
+import hexacraft.world.WorldProvider
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 import java.io.File
 import java.util.UUID
 
-class WorldProviderFromFile(saveDir: File, worldSettings: WorldSettings, fs: FileSystem) extends WorldProvider {
+class WorldProviderFromFile(saveDir: File, fs: FileSystem) extends WorldProvider {
   new MigrationManager(fs).migrateIfNeeded(saveDir)
 
   def loadState(path: WorldProvider.Path): Option[Nbt.MapTag] = {

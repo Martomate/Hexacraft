@@ -144,11 +144,7 @@ object GameClient {
       return Result.Err(s"failed to login: $errorMessage")
     }
 
-    val worldInfo = WorldInfo.fromNBT(
-      socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asMap.get,
-      null,
-      WorldSettings.none
-    )
+    val worldInfo = Nbt.decode[WorldInfo](socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asMap.get).get
 
     val playerNbt = socket.sendPacketAndWait(NetworkPacket.GetPlayerState)
     val player = Player.fromNBT(playerId, playerName, playerNbt.asMap.get)

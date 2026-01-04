@@ -7,11 +7,10 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.CursorMode
 import hexacraft.main.Menus.ChoosePlayerNameMenu
-import hexacraft.main.SceneRoute.AddServer
 import hexacraft.nbt.Nbt
 import hexacraft.server.WorldProviderFromFile
 import hexacraft.util.{Channel, Result}
-import hexacraft.world.{WorldInfo, WorldSettings}
+import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}
 
 import java.io.File
 import java.util.UUID
@@ -74,8 +73,8 @@ class MainRouter(
       val (scene, rx) = Menus.WorldChooserMenu.create(saveFolder, fs)
 
       rx.onEvent {
-        case Event.StartGame(saveDir, settings) =>
-          route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
+        case Event.StartGame(saveDir) =>
+          route(SceneRoute.Game(saveDir, isHosting = true, isOnline = false, null))
         case Event.CreateNewWorld => route(SceneRoute.NewWorld)
         case Event.GoBack         => route(SceneRoute.Main)
       }
@@ -88,8 +87,17 @@ class MainRouter(
       val (scene, rx) = Menus.NewWorldMenu.create(saveFolder)
 
       rx.onEvent {
-        case Event.StartGame(saveDir, settings) =>
-          route(SceneRoute.Game(saveDir, settings, isHosting = true, isOnline = false, null))
+        case Event.StartGame(saveDir, worldName, worldSize, worldSeed) =>
+          val worldInfo = WorldInfo(
+            0,
+            worldName,
+            CylinderSize(worldSize),
+            WorldGenSettings.fromSeed(worldSeed)
+          )
+          val worldProvider = WorldProviderFromFile(saveDir, fs)
+          worldProvider.saveWorldData(Nbt.encode(worldInfo))
+
+          route(SceneRoute.Game(saveDir, isHosting = true, isOnline = false, null))
         case Event.GoBack => route(SceneRoute.WorldChooser)
       }
 
@@ -120,7 +128,6 @@ class MainRouter(
             SceneRoute.ChoosePlayerName(
               SceneRoute.Game(
                 null,
-                WorldSettings.none,
                 isHosting = false,
                 isOnline = true,
                 (address, port)
@@ -158,7 +165,7 @@ class MainRouter(
           println(s"Hosting world from ${f.saveFile.getName}")
           route(
             SceneRoute.ChoosePlayerName(
-              SceneRoute.Game(f.saveFile, WorldSettings.none, isHosting = true, isOnline = true, null)
+              SceneRoute.Game(f.saveFile, isHosting = true, isOnline = true, null)
             )
           )
         case Event.GoBack => route(SceneRoute.Multiplayer)
@@ -187,7 +194,7 @@ class MainRouter(
     case SceneRoute.Settings =>
       new Menus.SettingsMenu(() => route(SceneRoute.Main))
 
-    case SceneRoute.Game(saveDir, settings, isHosting, isOnline, serverLocation) =>
+    case SceneRoute.Game(saveDir, isHosting, isOnline, serverLocation) =>
       val (serverIp, serverPort) = Option(serverLocation)
         .getOrElse(("127.0.0.1", (Math.random() * 8000 + 2000).toInt))
 
@@ -203,8 +210,8 @@ class MainRouter(
         window.windowSize
       )
       val server = if isHosting then {
-        val worldProvider = WorldProviderFromFile(saveDir, settings, fs)
-        val worldInfo = WorldInfo.fromNBT(worldProvider.loadWorldData().getOrElse(Nbt.emptyMap), saveDir, settings)
+        val worldProvider = WorldProviderFromFile(saveDir, fs)
+        val worldInfo = Nbt.decode[WorldInfo](worldProvider.loadWorldData().get).get
         Some(GameScene.ServerParams(worldInfo, worldProvider))
       } else {
         None

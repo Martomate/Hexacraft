@@ -8,7 +8,6 @@ import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.TextureSingle
 import hexacraft.util.Channel
-import hexacraft.world.WorldSettings
 
 import java.io.File
 import java.net.InetAddress
@@ -312,7 +311,7 @@ object Menus {
 
   object WorldChooserMenu {
     enum Event {
-      case StartGame(saveDir: File, settings: WorldSettings)
+      case StartGame(saveDir: File)
       case CreateNewWorld
       case GoBack
     }
@@ -354,7 +353,7 @@ object Menus {
       val buttonLocation = LocationInfo.from16x9(0.3f, 0.75f - 0.1f * listIndex, 0.4f, 0.075f)
 
       Button(world.name, buttonLocation) {
-        tx.send(Event.StartGame(world.saveFile, WorldSettings.none))
+        tx.send(Event.StartGame(world.saveFile))
       }
     }
   }
@@ -382,7 +381,7 @@ object Menus {
 
   object NewWorldMenu {
     enum Event {
-      case StartGame(saveDir: File, settings: WorldSettings)
+      case StartGame(saveDir: File, worldName: String, worldSize: Byte, worldSeed: Long)
       case GoBack
     }
 
@@ -398,12 +397,14 @@ object Menus {
         try {
           val baseFolder = new File(saveFolder, "saves")
           val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
-          val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20)
+          val worldName = Some(nameTF.text.trim).filter(_.nonEmpty).getOrElse(file.getName)
+          val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20).getOrElse(7.toByte)
           val seed = Some(seedTF.text)
             .filter(_.nonEmpty)
             .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
+            .getOrElse(new Random().nextLong)
 
-          tx.send(Event.StartGame(file, WorldSettings(Some(nameTF.text), size, seed)))
+          tx.send(Event.StartGame(file, worldName, size, seed))
         } catch {
           case _: Exception =>
           // TODO: complain about the input

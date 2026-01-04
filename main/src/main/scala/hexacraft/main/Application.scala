@@ -4,7 +4,6 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.os.OS
 import hexacraft.infra.window.WindowSystem
-import hexacraft.world.WorldSettings
 
 import java.io.File
 import java.nio.file.Files
@@ -63,7 +62,7 @@ class Application(
     config.startWorldName match {
       case Some(startWorldName) =>
         val worldSaveDir = new File(saveFolder, s"saves/$startWorldName")
-        window.setNextScene(SceneRoute.Game(worldSaveDir, WorldSettings.none, true, false, null))
+        window.setNextScene(SceneRoute.Game(worldSaveDir, true, false, null))
       case None =>
     }
   }

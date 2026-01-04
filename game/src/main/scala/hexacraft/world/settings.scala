@@ -1,26 +1,22 @@
 package hexacraft.world
 
-import hexacraft.nbt.{Nbt, NbtEncoder}
-
-import java.io.File
-import java.util.Random
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 
 case class WorldInfo(private val version: Short, worldName: String, worldSize: CylinderSize, gen: WorldGenSettings)
 
 object WorldInfo {
-  def fromNBT(nbtData: Nbt.MapTag, saveDir: File, worldSettings: WorldSettings): WorldInfo = {
-    val generalSettings = nbtData.getMap("general").getOrElse(Nbt.emptyMap)
+  given NbtDecoder[WorldInfo] with {
+    override def decode(nbtData: Nbt.MapTag): Option[WorldInfo] = {
+      val generalSettings = nbtData.getMap("general").getOrElse(Nbt.emptyMap)
 
-    val name = generalSettings.getString("name", worldSettings.name.getOrElse(saveDir.getName))
-    val worldSize = generalSettings.getByte("worldSize", worldSettings.size.getOrElse(7))
-    val gen = nbtData.getMap("gen").getOrElse(Nbt.emptyMap)
-
-    WorldInfo(
-      version = nbtData.getShort("version", 0.toShort),
-      worldName = name,
-      worldSize = CylinderSize(worldSize),
-      gen = WorldGenSettings.fromNBT(gen, worldSettings)
-    )
+      val worldInfo = WorldInfo(
+        version = nbtData.getShort("version", 0.toShort),
+        worldName = generalSettings.getString("name", "World"),
+        worldSize = CylinderSize(generalSettings.getByte("worldSize", 7)),
+        gen = Nbt.decode[WorldGenSettings](nbtData.getMap("gen").getOrElse(Nbt.emptyMap)).get
+      )
+      Some(worldInfo)
+    }
   }
 
   given NbtEncoder[WorldInfo] with {
@@ -47,15 +43,22 @@ class WorldGenSettings(
 )
 
 object WorldGenSettings {
-  def fromNBT(nbt: Nbt.MapTag, defaultSettings: WorldSettings): WorldGenSettings = {
-    new WorldGenSettings(
-      nbt.getLong("seed", defaultSettings.seed.getOrElse(new Random().nextLong)),
-      nbt.getDouble("blockGenScale", 0.1),
-      nbt.getDouble("heightMapGenScale", 0.02),
-      nbt.getDouble("blockDensityGenScale", 0.01),
-      nbt.getDouble("biomeHeightMapGenScale", 0.002),
-      nbt.getDouble("biomeHeightVariationGenScale", 0.002)
-    )
+  def fromSeed(seed: Long): WorldGenSettings = {
+    Nbt.decode(Nbt.makeMap("seed" -> Nbt.LongTag(seed))).get
+  }
+
+  given NbtDecoder[WorldGenSettings] with {
+    override def decode(nbt: Nbt.MapTag): Option[WorldGenSettings] = {
+      val settings = new WorldGenSettings(
+        nbt.getLong("seed", 0),
+        nbt.getDouble("blockGenScale", 0.1),
+        nbt.getDouble("heightMapGenScale", 0.02),
+        nbt.getDouble("blockDensityGenScale", 0.01),
+        nbt.getDouble("biomeHeightMapGenScale", 0.002),
+        nbt.getDouble("biomeHeightVariationGenScale", 0.002)
+      )
+      Some(settings)
+    }
   }
 
   given NbtEncoder[WorldGenSettings] with {
@@ -70,10 +73,4 @@ object WorldGenSettings {
       )
     }
   }
-}
-
-case class WorldSettings(name: Option[String], size: Option[Byte], seed: Option[Long])
-
-object WorldSettings {
-  def none: WorldSettings = WorldSettings(None, None, None)
 }
