@@ -12,10 +12,6 @@ import java.util.UUID
 class WorldProviderFromFile(saveDir: File, worldSettings: WorldSettings, fs: FileSystem) extends WorldProvider {
   new MigrationManager(fs).migrateIfNeeded(saveDir)
 
-  def getWorldInfo: WorldInfo = {
-    WorldInfo.fromNBT(loadWorldData().getOrElse(Nbt.emptyMap), saveDir, worldSettings)
-  }
-
   def loadState(path: WorldProvider.Path): Option[Nbt.MapTag] = {
     val file = NbtFile(File(saveDir, resolvePath(path)), fs)
     Option.when(file.exists)(file.readMapTag._2)

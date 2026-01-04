@@ -8,9 +8,10 @@ import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.CursorMode
 import hexacraft.main.Menus.ChoosePlayerNameMenu
 import hexacraft.main.SceneRoute.AddServer
+import hexacraft.nbt.Nbt
 import hexacraft.server.WorldProviderFromFile
 import hexacraft.util.{Channel, Result}
-import hexacraft.world.WorldSettings
+import hexacraft.world.{WorldInfo, WorldSettings}
 
 import java.io.File
 import java.util.UUID
@@ -202,7 +203,9 @@ class MainRouter(
         window.windowSize
       )
       val server = if isHosting then {
-        Some(GameScene.ServerParams(WorldProviderFromFile(saveDir, settings, fs)))
+        val worldProvider = WorldProviderFromFile(saveDir, settings, fs)
+        val worldInfo = WorldInfo.fromNBT(worldProvider.loadWorldData().getOrElse(Nbt.emptyMap), saveDir, settings)
+        Some(GameScene.ServerParams(worldInfo, worldProvider))
       } else {
         None
       }

@@ -7,7 +7,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
 import hexacraft.util.{Channel, Result}
-import hexacraft.world.WorldProvider
+import hexacraft.world.{WorldInfo, WorldProvider}
 
 import java.util.UUID
 
@@ -29,7 +29,7 @@ object GameScene {
       audioSystem: AudioSystem,
       initialWindowSize: WindowSize
   )
-  case class ServerParams(worldProvider: WorldProvider)
+  case class ServerParams(worldInfo: WorldInfo, worldProvider: WorldProvider)
 
   def create(
       c: ClientParams,
@@ -37,7 +37,7 @@ object GameScene {
   ): Result[(GameScene, Channel.Receiver[GameScene.Event]), String] = {
     val (tx, rx) = Channel[GameScene.Event]()
 
-    val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldProvider))
+    val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldInfo, s.worldProvider))
 
     val client =
       try {

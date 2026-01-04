@@ -6,8 +6,6 @@ import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 import java.util.UUID
 
 trait WorldProvider {
-  def getWorldInfo: WorldInfo
-
   def loadState(path: WorldProvider.Path): Option[Nbt.MapTag]
   def saveState(path: WorldProvider.Path, tag: Nbt.MapTag): Unit
 

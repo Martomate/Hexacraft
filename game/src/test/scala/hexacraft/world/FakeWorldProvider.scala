@@ -3,7 +3,7 @@ package hexacraft.world
 import hexacraft.nbt.Nbt
 
 class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {
-  override def getWorldInfo: WorldInfo = new WorldInfo(
+  val worldInfo = new WorldInfo(
     1,
     "test world",
     cylSize,

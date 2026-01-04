@@ -57,7 +57,7 @@ class GameSceneTest extends FunSuite {
               audioSystem,
               windowSize
             ),
-          Some(GameScene.ServerParams(worldProvider))
+          Some(GameScene.ServerParams(worldProvider.worldInfo, worldProvider))
         )
         .unwrap()
     gameScene1.unload()
@@ -81,7 +81,7 @@ class GameSceneTest extends FunSuite {
             audioSystem,
             windowSize
           ),
-        Some(GameScene.ServerParams(worldProvider))
+        Some(GameScene.ServerParams(worldProvider.worldInfo, worldProvider))
       )
       .unwrap()
     gameScene.unload()
@@ -120,7 +120,7 @@ class GameSceneTest extends FunSuite {
             audioSystem,
             windowSize
           ),
-        Some(GameScene.ServerParams(worldProvider))
+        Some(GameScene.ServerParams(worldProvider.worldInfo, worldProvider))
       )
       .unwrap()
     val gameSceneTracker = Tracker.fromRx(rx)
@@ -183,7 +183,7 @@ class GameSceneTest extends FunSuite {
             audioSystem,
             windowSize
           ),
-        Some(GameScene.ServerParams(worldProvider))
+        Some(GameScene.ServerParams(worldProvider.worldInfo, worldProvider))
       )
       .unwrap()
     val gameSceneTracker = Tracker.fromRx(rx)
@@ -259,7 +259,7 @@ class GameSceneTest extends FunSuite {
             audioSystem,
             windowSize
           ),
-        Some(GameScene.ServerParams(worldProvider))
+        Some(GameScene.ServerParams(worldProvider.worldInfo, worldProvider))
       )
       .unwrap()
     val gameSceneTracker = Tracker.fromRx(rx)

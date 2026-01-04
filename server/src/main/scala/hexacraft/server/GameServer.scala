@@ -18,14 +18,14 @@ import java.util.UUID
 import scala.collection.mutable
 
 object GameServer {
-  def create(isOnline: Boolean, port: Int, worldProvider: WorldProvider): GameServer = {
-    val world = new ServerWorld(worldProvider, worldProvider.getWorldInfo)
+  def create(isOnline: Boolean, port: Int, worldInfo: WorldInfo, worldProvider: WorldProvider): GameServer = {
+    val world = new ServerWorld(worldProvider, worldInfo)
 
     val tcpServer = TcpServer
       .start(port)
       .unwrapWith(m => new IllegalStateException(s"Could not start server: $m"))
 
-    new GameServer(isOnline, tcpServer, worldProvider, world)(using world.size)
+    new GameServer(isOnline, tcpServer, worldInfo, worldProvider, world)(using world.size)
   }
 }
 
@@ -43,6 +43,7 @@ case class PlayerData(player: Player, entity: Entity, camera: Camera) {
 class GameServer(
     isOnline: Boolean,
     server: TcpServer,
+    worldInfo: WorldInfo,
     worldProvider: WorldProvider,
     world: ServerWorld
 )(using CylinderSize) {
@@ -436,8 +437,7 @@ class GameServer(
           )
         }
       case GetWorldInfo =>
-        val info = worldProvider.getWorldInfo
-        return Some(Nbt.encode(info))
+        return Some(Nbt.encode(worldInfo))
       case _ =>
         if !players.contains(clientId) then {
           println("Received message from unknown client")
