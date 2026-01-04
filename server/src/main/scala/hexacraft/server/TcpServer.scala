@@ -19,10 +19,6 @@ object TcpServer {
     val context = ZContext()
     val serverSocket = context.createSocket(SocketType.ROUTER)
 
-    serverSocket.setHeartbeatIvl(1000)
-    serverSocket.setHeartbeatTtl(3000)
-    serverSocket.setHeartbeatTimeout(3000)
-
     if !serverSocket.bind(s"tcp://*:$port") then {
       context.close()
       return Err("Server could not be bound")

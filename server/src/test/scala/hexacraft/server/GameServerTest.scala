@@ -2,13 +2,13 @@ package hexacraft.server
 
 import hexacraft.game.NetworkPacket
 import hexacraft.nbt.Nbt
+import hexacraft.rs.RustLib
 import hexacraft.server.GameServerTest.randomPort
-import hexacraft.world.{CylinderSize, FakeWorldProvider, WorldProvider}
+import hexacraft.world.{CylinderSize, FakeWorldProvider}
 
 import munit.FunSuite
-import org.zeromq.{SocketType, ZContext}
-import org.zeromq.ZMQ.Socket
 
+import java.io.Closeable
 import java.util.UUID
 import scala.util.Random
 
@@ -24,44 +24,29 @@ object GameServerTest {
 class GameServerTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
-  private def makeClientSocket(context: ZContext): Socket = {
-    val socket = context.createSocket(SocketType.DEALER)
-
-    val clientId = (new Random().nextInt(1000000) + 1000000).toString
-
-    socket.setIdentity(clientId.getBytes)
-    socket.setSendTimeOut(3000)
-    socket.setReceiveTimeOut(3000)
-    socket.setReconnectIVL(-1)
-    socket.setHeartbeatIvl(200)
-    socket.setHeartbeatTimeout(1000)
-
-    socket
-  }
-
-  class SimpleSocket(socket: Socket) {
+  class SimpleSocket(socketHandle: Long) extends Closeable {
     @throws[RuntimeException]
     def send(packet: NetworkPacket): Unit = {
-      if !socket.send(packet.serialize()) then {
-        throw new RuntimeException(s"Could not send message: ${socket.errno()}")
-      }
+      RustLib.ClientSocket.send(socketHandle, packet.serialize())
     }
 
     @throws[RuntimeException]
     def receive(): Nbt = {
-      val res = socket.recv(0)
-      if res == null then {
-        throw new RuntimeException(s"Could not receive message: ${socket.errno()}")
-      }
+      val res = RustLib.ClientSocket.receive(socketHandle)
       Nbt.fromBinary(res)._2
+    }
+
+    override def close(): Unit = {
+      RustLib.ClientSocket.close(socketHandle)
     }
   }
 
-  class Session(context: ZContext, val server: GameServer, val port: Int) {
+  class Session(val server: GameServer, val port: Int) {
     def connect(): SimpleSocket = {
-      val socket = makeClientSocket(context)
-      socket.connect(s"tcp://localhost:$port")
-      SimpleSocket(socket)
+      val clientId = (new Random().nextInt(1000000) + 1000000).toString
+      val socketHandle = RustLib.ClientSocket.create(clientId.getBytes())
+      RustLib.ClientSocket.connect(socketHandle, "localhost", port)
+      SimpleSocket(socketHandle)
     }
   }
 
@@ -69,12 +54,10 @@ class GameServerTest extends FunSuite {
     val port = randomPort()
 
     val server = GameServer.create(true, port, worldProvider.worldInfo, worldProvider)
-    val context = ZContext()
 
     try {
-      useServer(Session(context, server, port))
+      useServer(Session(server, port))
     } finally {
-      context.close()
       server.unload()
     }
   }

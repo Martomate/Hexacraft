@@ -11,6 +11,7 @@ import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
+import hexacraft.rs.RustLib
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
@@ -19,7 +20,7 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, Chun
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
-import org.zeromq.*
+import org.zeromq.{SocketType, ZContext, ZMQException}
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
@@ -866,65 +867,50 @@ class GameClient(
 case class MousePickerResult(block: BlockState, coords: BlockRelWorld, side: Option[Int])
 
 class GameClientSocket(serverIp: String, serverPort: Int) {
-  private val context = ZContext()
-  private val socket = context.createSocket(SocketType.DEALER)
-
   private val clientId = (new Random().nextInt(1000000) + 1000000).toString
+  private val socketHandle = RustLib.ClientSocket.create(clientId.getBytes())
 
-  socket.setIdentity(clientId.getBytes)
-  socket.setSendTimeOut(3000)
-  socket.setReceiveTimeOut(3000)
-  socket.setReconnectIVL(-1)
-  socket.setHeartbeatIvl(200)
-  socket.setHeartbeatTimeout(1000)
-  socket.connect(s"tcp://$serverIp:$serverPort")
+  RustLib.ClientSocket.connect(socketHandle, serverIp, serverPort)
 
   def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
-    val message = packet.serialize()
-
-    if !socket.send(message) then {
-      val err = socket.errno()
-      throw new ZMQException("Could not send message", err)
-    }
+    doSend(packet.serialize())
   }
 
   def sendPacketAndWait(packet: NetworkPacket): Nbt = this.synchronized {
-    if !socket.send(packet.serialize()) then {
-      val err = socket.errno()
-      throw new ZMQException("Could not send message", err)
-    }
+    doSend(packet.serialize())
 
-    val response = socket.recv(0)
-    if response == null then {
-      val err = socket.errno()
-      throw new ZMQException("Could not receive message", err)
-    }
-
-    val (_, tag) = Nbt.fromBinary(response)
+    val (_, tag) = Nbt.fromBinary(doReceive())
     tag
   }
 
   def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = this.synchronized {
     for p <- packets do {
-      if !socket.send(p.serialize()) then {
-        val err = socket.errno()
-        throw new ZMQException("Could not send message", err)
-      }
+      doSend(p.serialize())
     }
 
     for i <- packets.indices yield {
-      val response = socket.recv(0)
-      if response == null then {
-        val err = socket.errno()
-        throw new ZMQException(s"Could not receive message ${i + 1}", err)
-      }
-
-      val (_, tag) = Nbt.fromBinary(response)
+      val (_, tag) = Nbt.fromBinary(doReceive())
       tag
     }
   }
 
+  private def doSend(message: Array[Byte]): Unit = {
+    try {
+      RustLib.ClientSocket.send(socketHandle, message)
+    } catch {
+      case e: RuntimeException => throw new ZMQException(s"Could not send message: ${e.getMessage}", 0)
+    }
+  }
+
+  private def doReceive() = {
+    try {
+      RustLib.ClientSocket.receive(socketHandle)
+    } catch {
+      case e: RuntimeException => throw new ZMQException(s"Could not receive message: ${e.getMessage}", 0)
+    }
+  }
+
   def close(): Unit = {
-    context.close()
+    RustLib.ClientSocket.close(socketHandle)
   }
 }

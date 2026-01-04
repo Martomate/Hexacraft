@@ -45,4 +45,16 @@ public class RustLib {
         public static native int getSampleRate(long handle);
         public static native void destroy(long handle);
     }
+
+    public static class ClientSocket {
+        static {
+            RustLib.loadNative();
+        }
+
+        public static native long create(byte[] clientId);
+        public static native void connect(long handle, String host, int port);
+        public static native void send(long handle, byte[] data) throws RuntimeException;
+        public static native byte[] receive(long handle) throws RuntimeException;
+        public static native void close(long handle);
+    }
 }

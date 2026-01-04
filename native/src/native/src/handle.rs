@@ -71,6 +71,7 @@ impl<S: 'static> Handle<S> {
         res
     }
 
+    /// Drops the data and invalidates the handle
     pub fn destroy(self) {
         if DEBUG {
             println!("Destroying handle: {}", self.raw);
