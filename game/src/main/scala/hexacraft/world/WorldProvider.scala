@@ -9,14 +9,14 @@ trait WorldProvider {
   def getWorldInfo: WorldInfo
 
   def loadState(path: WorldProvider.Path): Option[Nbt.MapTag]
-  def saveState(tag: Nbt.MapTag, name: String, path: WorldProvider.Path): Unit
+  def saveState(tag: Nbt.MapTag, path: WorldProvider.Path): Unit
 
   final def loadChunkData(coords: ChunkRelWorld): Option[Nbt.MapTag] = {
     loadState(WorldProvider.Path.ChunkData(coords))
   }
 
   final def saveChunkData(tag: Nbt.MapTag, coords: ChunkRelWorld): Unit = {
-    saveState(tag, "chunk", WorldProvider.Path.ChunkData(coords))
+    saveState(tag, WorldProvider.Path.ChunkData(coords))
   }
 
   final def loadColumnData(coords: ColumnRelWorld): Option[Nbt.MapTag] = {
@@ -24,7 +24,7 @@ trait WorldProvider {
   }
 
   final def saveColumnData(tag: Nbt.MapTag, coords: ColumnRelWorld): Unit = {
-    saveState(tag, "column", WorldProvider.Path.ColumnData(coords))
+    saveState(tag, WorldProvider.Path.ColumnData(coords))
   }
 
   final def loadWorldData(): Option[Nbt.MapTag] = {
@@ -32,7 +32,7 @@ trait WorldProvider {
   }
 
   final def saveWorldData(tag: Nbt.MapTag): Unit = {
-    saveState(tag, "world", WorldProvider.Path.WorldData)
+    saveState(tag, WorldProvider.Path.WorldData)
   }
 
   final def loadPlayerData(id: UUID): Option[Nbt.MapTag] = {
@@ -40,7 +40,7 @@ trait WorldProvider {
   }
 
   final def savePlayerData(tag: Nbt.MapTag, id: UUID): Unit = {
-    saveState(tag, "", WorldProvider.Path.PlayerData(id))
+    saveState(tag, WorldProvider.Path.PlayerData(id))
   }
 }
 

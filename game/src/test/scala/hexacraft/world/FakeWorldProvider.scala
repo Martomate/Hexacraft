@@ -14,5 +14,5 @@ class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldPr
 
   override def loadState(path: WorldProvider.Path): Option[Nbt.MapTag] = fs.get(path)
 
-  override def saveState(tag: Nbt.MapTag, name: String, path: WorldProvider.Path): Unit = fs += path -> tag
+  override def saveState(tag: Nbt.MapTag, path: WorldProvider.Path): Unit = fs += path -> tag
 }
