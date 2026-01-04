@@ -21,7 +21,7 @@ class WorldProviderFromFile(saveDir: File, worldSettings: WorldSettings, fs: Fil
     Option.when(file.exists)(file.readMapTag._2)
   }
 
-  def saveState(tag: Nbt.MapTag, path: WorldProvider.Path): Unit = {
+  def saveState(path: WorldProvider.Path, tag: Nbt.MapTag): Unit = {
     val file = NbtFile(File(saveDir, resolvePath(path)), fs)
     file.writeMapTag(tag, "")
   }

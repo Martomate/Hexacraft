@@ -157,10 +157,10 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(Nbt.encode(storedPlayer), WorldProvider.Path.PlayerData(playerId))
+    worldProvider.saveState(WorldProvider.Path.PlayerData(playerId), Nbt.encode(storedPlayer))
     worldProvider.saveState(
-      Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks)),
-      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0))
+      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0)),
+      Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks))
     )
 
     // Step 2: configure the client
@@ -233,10 +233,10 @@ class GameSceneTest extends FunSuite {
     spawnChunkBlocks.setBlock(BlockRelChunk(0, 0, 0), new BlockState(Block.Dirt, 0))
 
     val worldProvider = new FakeWorldProvider(123L)
-    worldProvider.saveState(Nbt.encode(storedPlayer), WorldProvider.Path.PlayerData(playerId))
+    worldProvider.saveState(WorldProvider.Path.PlayerData(playerId), Nbt.encode(storedPlayer))
     worldProvider.saveState(
-      Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks)),
-      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0))
+      WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0)),
+      Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks))
     )
 
     // Step 2: configure the client
