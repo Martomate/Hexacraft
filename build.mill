@@ -58,7 +58,7 @@ object game extends HexacraftModule {
   override def moduleDeps = Seq(common, infra)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
+    Seq(Deps.Joml) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests {
@@ -72,7 +72,7 @@ object client extends HexacraftModule {
   override def moduleDeps = Seq(game, infra)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
+    Seq(Deps.Joml) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests
@@ -94,7 +94,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
   override def moduleDeps = Seq(game, client, server)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
+    Seq(Deps.Joml) ++ Deps.LwjglSystem*
   )
 
   def jdepsModules: T[String] = Task {

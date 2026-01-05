@@ -1,6 +1,13 @@
 package hexacraft.server
 
-import hexacraft.game.{GameKeyboard, NetworkPacket, PlayerInputHandler, PlayerPhysicsHandler, ServerMessage}
+import hexacraft.game.{
+  GameKeyboard,
+  NetworkException,
+  NetworkPacket,
+  PlayerInputHandler,
+  PlayerPhysicsHandler,
+  ServerMessage
+}
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
 import hexacraft.server.world.ServerWorld
@@ -12,7 +19,6 @@ import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
 import org.joml.{Vector2f, Vector3d}
-import org.zeromq.ZMQException
 
 import java.util.UUID
 import scala.collection.mutable
@@ -165,8 +171,8 @@ class GameServer(
         }
       }
     } catch {
-      case e: ZMQException => println(e)
-      case e               => throw e
+      case e: NetworkException => println(e)
+      case e                   => throw e
     }
   }
 

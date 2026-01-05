@@ -1,6 +1,6 @@
 package hexacraft.server
 
-import hexacraft.game.NetworkPacket
+import hexacraft.game.{NetworkException, NetworkPacket}
 import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
@@ -77,6 +77,8 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
     } catch {
       case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
         throw new InterruptedException()
+      case e: ZMQException =>
+        throw new NetworkException(e.getMessage)
     }
   }
 
@@ -92,6 +94,8 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
     } catch {
       case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
         throw new InterruptedException()
+      case e: ZMQException =>
+        throw new NetworkException(e.getMessage)
     }
   }
 

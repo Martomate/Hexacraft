@@ -20,7 +20,6 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, Chun
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
-import org.zeromq.{SocketType, ZContext, ZMQException}
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
@@ -733,7 +732,7 @@ class GameClient(
         s.tick(ctx)
       }
     } catch {
-      case e: ZMQException =>
+      case e: NetworkException =>
         println(e)
         logout()
       case e: TimeoutException =>
@@ -898,7 +897,7 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
     try {
       RustLib.ClientSocket.send(socketHandle, message)
     } catch {
-      case e: RuntimeException => throw new ZMQException(s"Could not send message: ${e.getMessage}", 0)
+      case e: RuntimeException => throw new NetworkException(s"Could not send message: ${e.getMessage}")
     }
   }
 
@@ -906,7 +905,7 @@ class GameClientSocket(serverIp: String, serverPort: Int) {
     try {
       RustLib.ClientSocket.receive(socketHandle)
     } catch {
-      case e: RuntimeException => throw new ZMQException(s"Could not receive message: ${e.getMessage}", 0)
+      case e: RuntimeException => throw new NetworkException(s"Could not receive message: ${e.getMessage}")
     }
   }
 
