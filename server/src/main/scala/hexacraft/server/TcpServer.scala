@@ -2,11 +2,9 @@ package hexacraft.server
 
 import hexacraft.game.{NetworkException, NetworkPacket}
 import hexacraft.nbt.Nbt
+import hexacraft.rs.RustLib
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
-
-import org.zeromq.{SocketType, ZContext, ZMQ, ZMQException}
-import zmq.ZError
 
 import java.net.{DatagramSocket, InetAddress}
 
@@ -16,19 +14,21 @@ object TcpServer {
   }
 
   def start(port: Int): Result[TcpServer, String] = {
-    val context = ZContext()
-    val serverSocket = context.createSocket(SocketType.ROUTER)
+    val socketHandle = RustLib.ServerSocket.create()
 
-    if !serverSocket.bind(s"tcp://*:$port") then {
-      context.close()
-      return Err("Server could not be bound")
+    try {
+      RustLib.ServerSocket.bind(socketHandle, port)
+    } catch {
+      case e: RuntimeException =>
+        RustLib.ServerSocket.close(socketHandle)
+        return Err(s"Server could not be bound: ${e.getMessage}")
     }
 
-    Ok(new TcpServer(context, serverSocket, port))
+    Ok(new TcpServer(socketHandle, port))
   }
 }
 
-class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localPort: Int) {
+class TcpServer private (socketHandle: Long, val localPort: Int) {
   private var _running = true
 
   def running: Boolean = _running
@@ -45,39 +45,32 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
     }
   }
 
-  private val cancelToken = serverSocket.createCancellationToken()
-
   def receive(): Result[(Long, NetworkPacket), TcpServer.Error] = {
     if !_running then {
       throw new IllegalStateException("The server is not running")
     }
 
+    val identity = doReceive()
+    val bytes = doReceive()
+
+    if identity.isEmpty then {
+      return Err(TcpServer.Error.InvalidPacket("Received an empty identity frame"))
+    }
+    for {
+      clientId <- Result
+        .attempt(String(identity).toLong)
+        .mapErr(_ => TcpServer.Error.InvalidPacket("Client ID was not an integer"))
+      packet <- Result
+        .attempt(NetworkPacket.deserialize(bytes))
+        .mapErr(e => TcpServer.Error.InvalidPacket(e.getMessage))
+    } yield (clientId, packet)
+  }
+
+  private def doReceive(): Array[Byte] = {
     try {
-      val identity = serverSocket.recv(0, cancelToken)
-      if identity == null then {
-        throw new ZMQException(serverSocket.errno())
-      }
-
-      val bytes = serverSocket.recv(0, cancelToken)
-      if bytes == null then {
-        throw new ZMQException(serverSocket.errno())
-      }
-
-      if identity.isEmpty then {
-        return Err(TcpServer.Error.InvalidPacket("Received an empty identity frame"))
-      }
-      for {
-        clientId <- Result
-          .attempt(String(identity).toLong)
-          .mapErr(_ => TcpServer.Error.InvalidPacket("Client ID was not an integer"))
-        packet <- Result
-          .attempt(NetworkPacket.deserialize(bytes))
-          .mapErr(e => TcpServer.Error.InvalidPacket(e.getMessage))
-      } yield (clientId, packet)
+      RustLib.ServerSocket.receive(socketHandle)
     } catch {
-      case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
-        throw new InterruptedException()
-      case e: ZMQException =>
+      case e: RuntimeException =>
         throw new NetworkException(e.getMessage)
     }
   }
@@ -87,14 +80,15 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
       throw new IllegalStateException("The server is not running")
     }
 
+    doSend(clientId, data)
+    Ok(())
+  }
+
+  private def doSend(clientId: Long, data: Nbt): Unit = {
     try {
-      serverSocket.sendMore(clientId.toString)
-      serverSocket.send(data.toBinary(), 0, cancelToken)
-      Ok(())
+      RustLib.ServerSocket.send(socketHandle, clientId.toString.getBytes(), data.toBinary())
     } catch {
-      case e: ZMQException if e.getErrorCode == ZError.ECANCELED =>
-        throw new InterruptedException()
-      case e: ZMQException =>
+      case e: RuntimeException =>
         throw new NetworkException(e.getMessage)
     }
   }
@@ -105,15 +99,12 @@ class TcpServer private (context: ZContext, serverSocket: ZMQ.Socket, val localP
       throw new IllegalStateException("The server is not running")
     }
     _running = false
-
-    context.synchronized {
-      if !context.isClosed then {
-        cancelToken.cancel()
-      }
-    }
+    RustLib.ServerSocket.close(socketHandle)
   }
 
   def unload(): Unit = {
-    context.synchronized(context.destroy())
+    if _running then {
+      stop()
+    }
   }
 }

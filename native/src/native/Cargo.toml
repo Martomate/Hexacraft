@@ -11,5 +11,6 @@ bytes = "1.11.0"
 jni = "0.21.1"
 jni_fn = "0.1.2"
 tokio = "1.49.0"
+tokio-util = "0.7.18"
 vorbis_rs = "0.5.5"
-zeromq = "0.5.0-pre"
+zeromq = { git = "https://github.com/zeromq/zmq.rs.git" }

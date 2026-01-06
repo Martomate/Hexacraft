@@ -52,8 +52,20 @@ public class RustLib {
         }
 
         public static native long create(byte[] clientId);
-        public static native void connect(long handle, String host, int port);
+        public static native void connect(long handle, String host, int port) throws RuntimeException;
         public static native void send(long handle, byte[] data) throws RuntimeException;
+        public static native byte[] receive(long handle) throws RuntimeException;
+        public static native void close(long handle);
+    }
+
+    public static class ServerSocket {
+        static {
+            RustLib.loadNative();
+        }
+
+        public static native long create();
+        public static native void bind(long handle, int port) throws RuntimeException;
+        public static native void send(long handle, byte[] clientId, byte[] data) throws RuntimeException;
         public static native byte[] receive(long handle) throws RuntimeException;
         public static native void close(long handle);
     }
