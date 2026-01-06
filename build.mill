@@ -82,7 +82,7 @@ object server extends HexacraftModule {
   override def moduleDeps = Seq(game)
 
   override def mvnDeps = super.mvnDeps() ++ Seq(
-    Seq(Deps.Joml, Deps.ZeroMQ) ++ Deps.LwjglSystem*
+    Seq(Deps.Joml) ++ Deps.LwjglSystem*
   )
 
   object test extends Tests {

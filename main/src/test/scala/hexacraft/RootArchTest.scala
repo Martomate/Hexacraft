@@ -59,7 +59,6 @@ class RootArchTest extends FunSuite {
     val NbtLib = "NbtLib"
     val JOML = "JOML"
     val LWJGL = "LWJGL"
-    val ZeroMQ = "ZeroMQ"
     val WrappedLibs = "WrappedLibs"
 
     layeredArchitecture()
@@ -85,21 +84,19 @@ class RootArchTest extends FunSuite {
       .optionalLayer(JOML, "org.joml..")
       .optionalLayer(NbtLib, "com.flowpowered.nbt..")
       .optionalLayer(LWJGL, "org.lwjgl", "org.lwjgl.system..") // TODO: wrap this lib
-      .optionalLayer(ZeroMQ, "org.zeromq..")
       .optionalLayer(
         WrappedLibs,
         Seq(
           "org.lwjgl.opengl..",
           "org.lwjgl.openal..",
-          "org.lwjgl.glfw..",
-          "org.lwjgl.stb.."
+          "org.lwjgl.glfw.."
         )*
       )
       .where(Game, _.mayOnlyAccessLayers(Infra, Physics, World, JOML, Nbt))
       // format: off
       .where(Client, _.mayOnlyAccessLayers(Game, Text, GUI, Infra, Math, Renderer, Shaders, Physics, Util, World, JOML, LWJGL, Nbt, Native))
       // format: on
-      .where(Server, _.mayOnlyAccessLayers(Game, Infra, Math, Physics, Util, World, JOML, Nbt, ZeroMQ, Native))
+      .where(Server, _.mayOnlyAccessLayers(Game, Infra, Math, Physics, Util, World, JOML, Nbt, Native))
       .where(GUI, _.mayOnlyAccessLayers(root, Infra, Math, Text, Renderer, Shaders, Util, JOML))
       .where(Infra, _.mayOnlyAccessLayers(Math, Util, JOML, WrappedLibs, LWJGL, Nbt, Native))
       .where(Main, _.mayOnlyAccessLayers(root, Infra, Game, Server, Client, GUI, Renderer, Util, World, JOML, Nbt))
