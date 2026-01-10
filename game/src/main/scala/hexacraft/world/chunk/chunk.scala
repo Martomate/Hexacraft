@@ -63,7 +63,7 @@ final class Chunk private (private val chunkData: ChunkData)(using CylinderSize)
   def initLightingIfNeeded(coords: ChunkRelWorld, lightPropagator: LightPropagator): Unit = {
     if !brightnessInitialized then {
       brightnessInitialized = true
-      lightPropagator.initBrightnesses(coords, this)
+      lightPropagator.initBrightnesses(coords)
     }
   }
 

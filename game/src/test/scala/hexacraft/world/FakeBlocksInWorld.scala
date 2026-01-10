@@ -43,6 +43,10 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     chunks -= coords
   }
 
+  def setChunk(coords: ChunkRelWorld, chunk: Chunk): Unit = {
+    chunks += coords -> chunk
+  }
+
   override def toString: String = {
     val sb = new mutable.StringBuilder
     for (cCoords, ch) <- chunks do {

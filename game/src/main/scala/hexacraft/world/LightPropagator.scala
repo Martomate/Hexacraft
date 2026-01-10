@@ -10,8 +10,11 @@ import scala.collection.mutable
 class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld => Unit)(using CylinderSize) {
   private val chunkCache: ChunkCache = new ChunkCache(world)
 
-  def initBrightnesses(chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
+  def initBrightnesses(chunkCoords: ChunkRelWorld): Unit = {
     chunkCache.clearCache()
+
+    val chunk = chunkCache.getChunk(chunkCoords)
+    require(chunk != null)
 
     val queueTorch = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
     val queueSun15 = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
