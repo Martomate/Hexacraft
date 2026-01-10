@@ -7,8 +7,6 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld}
 
-import scala.collection.immutable.ArraySeq
-
 class ChunkColumnData(val heightMap: Option[ChunkColumnHeightMap])
 
 object ChunkColumnData {
@@ -66,7 +64,7 @@ class ChunkColumnHeightMap(values: Array[Short]) {
             }
           }
         case None =>
-          return Short.MinValue // stop searching if the chunk is not loaded
+          return ((Y << 4) | 15).toShort // stop searching if the chunk is not loaded
       }
     }
 
