@@ -720,6 +720,7 @@ class GameClient(
         debugOverlay.get.updateContent(
           DebugOverlay.Content.fromCamera(
             camera,
+            world.getBrightness(camera.blockCoords),
             world.renderDistance,
             regularFragmentation,
             transmissiveFragmentation,
