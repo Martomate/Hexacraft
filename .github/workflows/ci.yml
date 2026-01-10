@@ -48,3 +48,5 @@ jobs:
       - name: Run tests
         run: ./mill __.test
         shell: bash
+        env:
+          RUST_BACKTRACE: 1
