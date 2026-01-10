@@ -126,7 +126,7 @@ class MainWindow(
 
       if titleTicker > 10 then {
         titleTicker = 0
-        Future(window.setTitle(WindowTitle(fps, msTime, vsyncManager.isVsync).format))
+        Future(window.setTitle(formatWindowTitle(fps, msTime, vsyncManager.isVsync)))
       }
 
       // Put occurred events into event queue
@@ -143,6 +143,13 @@ class MainWindow(
         processCallbackEvent(callbackQueue.synchronized(callbackQueue.dequeue()))
       }
     }
+  }
+
+  private def formatWindowTitle(fps: Int, frameTimeMs: Int, vsync: Boolean): String = {
+    val msString = (if frameTimeMs < 10 then "0" else "") + frameTimeMs
+    val vsyncStr = if vsync then "vsync" else ""
+    val parts = Seq("Hexacraft", s"$fps fps   ms: $msString", vsyncStr)
+    parts.filter(_.nonEmpty).mkString("   |   ")
   }
 
   private def processCallbackEvent(event: CallbackEvent): Unit = event match {
