@@ -419,7 +419,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
     var loadsLeft = chunksToLoadPerTick
     for coords <- requestedLoads do {
       if loadsLeft > 0 then {
-        if !chunksLoading.contains(coords) && !chunksUnloading.contains(coords) then {
+        if !chunksLoading.contains(coords) && !chunksUnloading.contains(coords) && getChunk(coords).isEmpty then {
           // make sure the columns around the chunk are getting loaded
           startLoadingColumnIfNeeded(coords.getColumnRelWorld)
 
