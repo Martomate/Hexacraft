@@ -73,7 +73,7 @@ object FakeBlocksInWorld {
       val chunk = world.chunks.get(chunkCoords) match {
         case Some(c) => c
         case None =>
-          val ch = Chunk.fromGenerator(coords.getChunkRelWorld, col, WorldGenerator(provider.worldInfo.gen))
+          val ch = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(coords.getChunkRelWorld, col))
           world.chunks += chunkCoords -> ch
           ch
       }

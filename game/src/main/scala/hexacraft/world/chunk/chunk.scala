@@ -7,14 +7,11 @@ import hexacraft.world.block.BlockState
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}
 import hexacraft.world.entity.Entity
 
-import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 object Chunk {
-  def fromGenerator(coords: ChunkRelWorld, column: ChunkColumnTerrain, generator: WorldGenerator)(using
-      CylinderSize
-  ) = {
-    new Chunk(ChunkData.fromStorage(generator.generateChunk(coords, column)))
+  def from(storage: ChunkStorage)(using CylinderSize) = {
+    new Chunk(ChunkData.fromStorage(storage))
   }
 
   given NbtEncoder[Chunk] with {

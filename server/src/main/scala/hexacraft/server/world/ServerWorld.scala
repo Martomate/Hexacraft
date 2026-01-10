@@ -430,7 +430,7 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
                 case Some(loadedTag) =>
                   Future((Nbt.decode[Chunk](loadedTag).get, false))(using genAsync)
                 case None =>
-                  Future((Chunk.fromGenerator(coords, column, worldGenerator), true))(using genAsync)
+                  Future((Chunk.from(worldGenerator.generateChunk(coords, column)), true))(using genAsync)
               }(using genAsync)
             case None =>
           }
