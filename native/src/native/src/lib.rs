@@ -1,9 +1,3 @@
-#[cfg(test)]
-mod tests {
-    mod vorbis;
-    mod zmq;
-}
-
 mod handle;
 mod noise_3d;
 mod noise_4d;
