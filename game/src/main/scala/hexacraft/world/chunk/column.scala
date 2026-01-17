@@ -64,7 +64,7 @@ class ChunkColumnHeightMap(values: Array[Short]) {
             }
           }
         case None =>
-          return ((Y << 4) | 15).toShort // stop searching if the chunk is not loaded
+          return Short.MinValue // stop searching if the chunk is not loaded
       }
     }
 
