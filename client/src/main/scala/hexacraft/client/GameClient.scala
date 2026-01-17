@@ -721,6 +721,10 @@ class GameClient(
           DebugOverlay.Content.fromCamera(
             camera,
             world.getBrightness(camera.blockCoords),
+            world
+              .getColumn(camera.blockCoords.getColumnRelWorld)
+              .map(_.terrainHeight.getHeight(camera.blockCoords.cx, camera.blockCoords.cz))
+              .getOrElse(-12345),
             world.renderDistance,
             regularFragmentation,
             transmissiveFragmentation,

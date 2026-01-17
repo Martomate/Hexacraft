@@ -16,6 +16,7 @@ object DebugOverlay {
       cameraChunkCoords: ChunkRelWorld,
       cameraRotation: Vector3f,
       brightness: Float,
+      terrainHeight: Short,
       viewDistance: Double,
       regularChunkBufferFragmentation: IndexedSeq[Float],
       transmissiveChunkBufferFragmentation: IndexedSeq[Float],
@@ -26,6 +27,7 @@ object DebugOverlay {
     def fromCamera(
         camera: Camera,
         brightness: Float,
+        terrainHeight: Short,
         viewDistance: Double,
         regularChunkBufferFragmentation: IndexedSeq[Float],
         transmissiveChunkBufferFragmentation: IndexedSeq[Float],
@@ -36,6 +38,7 @@ object DebugOverlay {
         camera.blockCoords.getChunkRelWorld,
         camera.rotation,
         brightness,
+        terrainHeight,
         viewDistance,
         regularChunkBufferFragmentation,
         transmissiveChunkBufferFragmentation,
@@ -71,6 +74,7 @@ class DebugOverlay {
 
   addLabel("Other")
   addDebugText("brightness", "brightness")
+  addDebugText("terrainHeight", "terrain height")
   addDebugText("viewDist", "view distance")
   addDebugText("renderQueueLength", "render queue")
 
@@ -120,6 +124,7 @@ class DebugOverlay {
       info.renderQueueLength
     )
     setValue("brightness", info.brightness)
+    setValue("terrainHeight", f"${(info.terrainHeight.toFloat + 1.0f) * 0.5f}%.1f")
   }
 
   def render(context: RenderContext): Unit = {
