@@ -159,7 +159,7 @@ class ChunkLoadingEdge(dispatcher: Channel.Sender[ChunkLoadingEdge.Event])(using
 
   def loadChunk(chunk: ChunkRelWorld): Unit = {
     setLoaded(chunk, true)
-    setOnEdge(chunk, true)
+    setOnEdge(chunk, !chunk.neighbors.forall(isLoaded))
     setLoadable(chunk, false)
 
     for n <- chunk.neighbors

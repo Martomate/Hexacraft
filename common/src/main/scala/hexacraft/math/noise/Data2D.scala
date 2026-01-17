@@ -13,6 +13,11 @@ case class Data2D(sizeX: Int, sizeY: Int, values: Array[Double]) {
   inline def map(inline f: Double => Double): Data2D = {
     Data2D.evaluate(sizeX, sizeY)((i, j) => f(this(i, j)))
   }
+
+  override def equals(obj: Any) = obj match {
+    case other: Data2D => this.values.sameElements(other.values)
+    case _             => false
+  }
 }
 
 object Data2D {

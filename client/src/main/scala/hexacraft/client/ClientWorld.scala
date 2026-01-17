@@ -118,12 +118,9 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
   }
 
   def setChunk(chunkCoords: ChunkRelWorld, ch: Chunk): Unit = {
-    getColumn(chunkCoords.getColumnRelWorld) match {
-      case Some(col) =>
-        setChunkAndUpdateHeightmap(col, chunkCoords, ch)
-        updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
-      case None =>
-    }
+    val col = getColumn(chunkCoords.getColumnRelWorld).get
+    setChunkAndUpdateHeightmap(col, chunkCoords, ch)
+    updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
 
     lightPropagator.synchronized {
       ch.initLightingIfNeeded(chunkCoords, lightPropagator)
