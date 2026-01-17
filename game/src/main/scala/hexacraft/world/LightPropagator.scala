@@ -57,7 +57,6 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
           }
 
           if isAboveChunk && shouldEnqueueSunlight(c2c, neighCoords, neigh) then {
-            neigh.setSunlight(c2c, 15)
             queueSun15.enqueue((c2c, neighCoords, neigh))
           }
 
@@ -82,6 +81,40 @@ class LightPropagator(world: BlocksInWorld, requestRenderUpdate: ChunkRelWorld =
     propagateTorchlight(queueTorch)
     propagateSunlight(queueSun15)
     propagateSunlight(queueSunFromNeighbor)
+    propagateSunlight(removeUndergroundSunlight(chunkCoords, chunk))
+  }
+
+  /** Sometimes chunks load out of order which can cause sunlight to spawn underground.
+    * This function first removes sunlight below the chunk (if the block above is not also full sunlight)
+    * and then it propagates the light from this chunk in case there was indirect sunlight from nearby.
+    */
+  private def removeUndergroundSunlight(
+      chunkCoords: ChunkRelWorld,
+      chunk: Chunk
+  ): mutable.Queue[(BlockRelChunk, ChunkRelWorld, Chunk)] = {
+    val queue = mutable.Queue.empty[(BlockRelChunk, ChunkRelWorld, Chunk)]
+
+    val coordsBelow = chunkCoords.offset(0, -1, 0)
+    val chunkBelow = chunkCache.getChunk(coordsBelow)
+
+    if chunkBelow != null then {
+      Loop.rangeUntil(0, 16) { cz =>
+        Loop.rangeUntil(0, 16) { cx =>
+          val bcAbove = BlockRelChunk(cx, 0, cz)
+          val bcBelow = BlockRelChunk(cx, 15, cz)
+
+          val sunAbove = chunk.getSunlight(bcAbove) == 15
+          val sunBelow = chunkBelow.getSunlight(bcBelow) == 15
+
+          if !sunAbove && sunBelow then {
+            removeSunlight(coordsBelow, chunkBelow, bcBelow)
+            queue.enqueue((bcAbove, chunkCoords, chunk))
+          }
+        }
+      }
+    }
+
+    queue
   }
 
   def addTorchlight(chunkCoords: ChunkRelWorld, chunk: Chunk, coords: BlockRelChunk, value: Byte): Unit = {
