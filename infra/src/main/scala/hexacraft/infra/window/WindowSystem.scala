@@ -97,6 +97,10 @@ class WindowSystem(glfw: GlfwWrapper) {
     glfw.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE)
     glfw.glfwWindowHint(GLFW.GLFW_OPENGL_DEBUG_CONTEXT, glfwDebugMode)
     glfw.glfwWindowHint(GLFW.GLFW_SAMPLES, settings.samples)
+    glfw.glfwWindowHint(GLFW.GLFW_RED_BITS, 10)
+    glfw.glfwWindowHint(GLFW.GLFW_GREEN_BITS, 10)
+    glfw.glfwWindowHint(GLFW.GLFW_BLUE_BITS, 10)
+    glfw.glfwWindowHint(GLFW.GLFW_ALPHA_BITS, 2)
 
     // Create the window
     val id = glfw.glfwCreateWindow(settings.width, settings.height, settings.title, 0, 0)

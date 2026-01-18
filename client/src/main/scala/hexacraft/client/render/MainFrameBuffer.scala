@@ -5,7 +5,7 @@ import hexacraft.renderer.{FrameBuffer, TextureSingle}
 
 import org.joml.{Vector2i, Vector2ic}
 
-import java.nio.{ByteBuffer, FloatBuffer}
+import java.nio.FloatBuffer
 
 object MainFrameBuffer {
   def fromSize(width: Int, height: Int): MainFrameBuffer = {
@@ -78,13 +78,13 @@ object MainFrameBuffer {
       glTexImage2D(
         TextureTarget.Texture2D,
         0,
-        TextureInternalFormat.Rgba,
+        TextureInternalFormat.Rgba16f,
         frameBufferWidth,
         frameBufferHeight,
         0,
         TexelDataFormat.Rgba,
-        TexelDataType.UnsignedByte,
-        null.asInstanceOf[ByteBuffer]
+        TexelDataType.Float,
+        null.asInstanceOf[FloatBuffer]
       )
       glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MagFilter(TexMagFilter.Linear))
       glTexParameteri(TextureTarget.Texture2D, TexIntParameter.MinFilter(TexMinFilter.Linear))
