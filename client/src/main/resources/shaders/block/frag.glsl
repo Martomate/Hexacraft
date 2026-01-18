@@ -52,5 +52,5 @@ void main() {
 
 	position = fragIn.position;
 	normal = fragIn.normal;
-	color.rgb *= sqrt(fragIn.brightness) * 0.8 + 0.2;
+	color.rgb *= fragIn.brightness * 0.8 + 0.2;
 }
