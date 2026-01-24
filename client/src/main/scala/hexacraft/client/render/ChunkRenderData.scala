@@ -1,8 +1,12 @@
 package hexacraft.client.render
 
+import hexacraft.shaders.BlockShader
+import hexacraft.util.Loop
 import hexacraft.world.{BlocksInWorld, CylinderSize}
 import hexacraft.world.chunk.LocalBlockState
 import hexacraft.world.coord.ChunkRelWorld
+
+import org.lwjgl.BufferUtils
 
 import java.nio.ByteBuffer
 
@@ -25,8 +29,36 @@ object ChunkRenderData {
     }
 
     new ChunkRenderData(
-      Some(BlockVboData.fromChunk(coords, blocks, world, false, blockTextureIndices)),
-      Some(BlockVboData.fromChunk(coords, blocks, world, true, blockTextureIndices))
+      Some(makeBlockVboData(coords, blocks, world, false, blockTextureIndices)),
+      Some(makeBlockVboData(coords, blocks, world, true, blockTextureIndices))
     )
+  }
+
+  private def makeBlockVboData(
+      chunkCoords: ChunkRelWorld,
+      blocks: Array[LocalBlockState],
+      world: BlocksInWorld,
+      transmissiveBlocks: Boolean,
+      blockTextureIndices: Map[String, IndexedSeq[Int]]
+  )(using CylinderSize): IndexedSeq[ByteBuffer] = {
+    val builder = BlockVertexDataBuilder.fromChunk(chunkCoords, blocks, world, transmissiveBlocks, blockTextureIndices)
+
+    val blocksBuffers = Array.ofDim[ByteBuffer](8)
+
+    Loop.rangeUntil(0, 8) { side =>
+      val vertices = builder.calculateVertices(side)
+
+      val bytesPerBlock = BlockShader.bytesPerVertex(side) * BlockShader.verticesPerBlock(side)
+      val buf = BufferUtils.createByteBuffer(vertices.size * bytesPerBlock)
+
+      Loop.array(vertices) { v =>
+        v.fill(buf)
+      }
+
+      buf.flip()
+      blocksBuffers(side) = buf
+    }
+
+    blocksBuffers.toIndexedSeq
   }
 }
