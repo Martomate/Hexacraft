@@ -8,7 +8,7 @@ import hexacraft.shaders.*
 import hexacraft.util.{Loop, NamedThreadFactory}
 import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.entity.{Entity, EntityModel}
+import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2i, Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
@@ -203,26 +203,26 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     entitySideShader.setViewMatrix(camera.view.matrix)
     entitySideShader.setCameraPosition(camera.position)
 
+    val allEntities = mutable.ArrayBuffer.empty[Entity]
+    world.foreachChunk(allEntities ++= _.entities)
+    allEntities ++= players
+
+    val entityRenderDataPerModel = allEntities
+      .filter(_.model.isDefined)
+      .groupBy(_.model.get.textureName)
+      .view
+      .mapValues(EntityRenderData.fromEntities(_, world))
+      .toMap
+
     Loop.rangeUntil(0, 8) { side =>
       val sh = if side < 2 then entityShader else entitySideShader
       sh.enable()
       sh.setSide(side)
 
-      val entityDataList: mutable.ArrayBuffer[(EntityModel, Seq[EntityShader.InstanceData])] = ArrayBuffer.empty
-      world.foreachChunk { ch =>
-        if ch.hasEntities then {
-          val data = EntityRenderDataFactory.getEntityRenderData(ch.entities, side, world)
-          entityDataList ++= data
+      Loop.iterate(entityRenderDataPerModel.iterator) { case (textureName, data) =>
+        entityRenderers(side).setInstanceData(data.size) { buf =>
+          Loop.array(data)(_.getInstanceData(side).fill(buf))
         }
-      }
-
-      entityDataList ++= EntityRenderDataFactory.getEntityRenderData(players, side, world)
-
-      Loop.iterate(entityDataList.groupBy(_._1.textureName).iterator) { (textureName, partLists) =>
-        val data = partLists.flatMap(_._2)
-
-        entityRenderers(side).setInstanceData(data.size): buf =>
-          data.foreach(_.fill(buf))
 
         val texture = TextureSingle.getTexture("textures/entities/" + textureName)
 

@@ -4,23 +4,28 @@ import hexacraft.shaders.EntityShader
 import hexacraft.util.InlinedIterable
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
-import hexacraft.world.entity.{Entity, EntityModel}
+import hexacraft.world.entity.{Entity, EntityPart}
 
 import org.joml.{Matrix4f, Vector4f}
 
-object EntityRenderDataFactory {
-  def getEntityRenderData(entities: Iterable[Entity], side: Int, world: BlocksInWorld)(using
-      CylinderSize
-  ): Iterable[(EntityModel, Seq[EntityShader.InstanceData])] = {
+import scala.collection.mutable
+
+object EntityRenderData {
+  def fromEntities(
+      entities: Iterable[Entity],
+      world: BlocksInWorld
+  )(using CylinderSize): IndexedSeq[EntityRenderData] = {
     val chunkCache = new ChunkCache(world)
 
     val tr = new Matrix4f
 
-    for ent <- InlinedIterable(entities) if ent.model.isDefined yield {
+    val pieces = mutable.ArrayBuffer.empty[EntityRenderData]
+
+    for ent <- InlinedIterable(entities) if ent.model.isDefined do {
       val baseT = ent.transform.transform
       val model = ent.model.get
 
-      val parts = for part <- InlinedIterable(model.parts) yield {
+      for part <- InlinedIterable(model.parts) do {
         baseT.mul(part.transform, tr)
 
         val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
@@ -37,16 +42,22 @@ object EntityRenderDataFactory {
             0
           }
 
-        EntityShader.InstanceData(
-          modelMatrix = new Matrix4f(tr),
-          texOffset = part.textureOffset(side),
-          texSize = part.textureSize(side),
-          blockTex = part.texture(side),
-          brightness
-        )
+        pieces += EntityRenderData(new Matrix4f(tr), part, brightness)
       }
-
-      (model, parts.toSeq)
     }
+
+    pieces.toIndexedSeq
+  }
+}
+
+class EntityRenderData(tr: Matrix4f, part: EntityPart, brightness: Float) {
+  def getInstanceData(side: Int): EntityShader.InstanceData = {
+    EntityShader.InstanceData(
+      modelMatrix = new Matrix4f(tr),
+      texOffset = part.textureOffset(side),
+      texSize = part.textureSize(side),
+      blockTex = part.texture(side),
+      brightness
+    )
   }
 }
