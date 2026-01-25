@@ -36,6 +36,36 @@ class BlockVertexDataBuilderTest extends FunSuite {
     }
   }
 
+  private def testBrightness(blocks: Offset*)(brightnesses: (Offset, Byte)*)(
+      expectedBrightnesses: ((Int, Int, Int), Float)*
+  ): Unit = {
+    val centerCoords = BlockRelWorld(0, 0, 0)
+
+    val allBlocks = blocks.map { offset =>
+      centerCoords.offset(offset) -> BlockState(Block.Stone)
+    }.toMap
+
+    val world = FakeBlocksInWorld.withBlocks(FakeWorldProvider(1234), allBlocks)
+
+    for (offset, brightness) <- brightnesses do {
+      val c = centerCoords.offset(offset)
+      world.getChunk(c.getChunkRelWorld).get.setSunlight(c.getBlockRelChunk, brightness)
+    }
+
+    val blockTextureIndices = Map("stone" -> IndexedSeq.fill(8)(0))
+    val data = BlockVertexDataBuilder.fromChunk(centerCoords.getChunkRelWorld, world, false, blockTextureIndices)
+
+    for ((x, y, z), brightness) <- expectedBrightnesses do {
+      val relevantVertices = data.calculateVertices(0).filter { v =>
+        v.position.x == x && v.position.y == y && v.position.z == z
+      }
+      val values = relevantVertices.map(_.brightness).toSeq.distinct
+
+      assertEquals(values.size, 1)
+      assertEqualsFloat(values.head, brightness, 1e-6, clue = (x, y, z))
+    }
+  }
+
   private def waterHeight(metadata: Byte): Int = (32 - metadata) * 6
 
   test("water with air around it") {
@@ -88,6 +118,36 @@ class BlockVertexDataBuilderTest extends FunSuite {
       (0, 0) -> waterHeight(7),
       (1, 1) -> (waterHeight(7) + waterHeight(4) + waterHeight(5)) / 3,
       (-1, 1) -> (waterHeight(7) + waterHeight(4)) / 2
+    )
+  }
+
+  test("brightness gradient on flat ground") {
+    testBrightness(
+      Offset(0, 0, 0),
+      Offset(0, 0, 1),
+      Offset(1, 0, 0)
+    )(
+      Offset(0, 1, 0) -> 10,
+      Offset(0, 1, 1) -> 9,
+      Offset(1, 1, 0) -> 9
+    )(
+      (0, 32 * 6, 0) -> 10.0f / 15.0f,
+      (1, 32 * 6, 1) -> (10.0f + 9.0f + 9.0f) / 3.0f / 15.0f
+    )
+  }
+
+  test("brightness gradient on flat ground with obstacle") {
+    val ambientOcclusionFactor = (2 - 1).toFloat / (3 - 1) * 0.2f + 0.8f
+
+    testBrightness(
+      Offset(0, 0, 0),
+      Offset(0, 0, 1),
+      Offset(1, 1, 0)
+    )(
+      Offset(0, 1, 0) -> 10,
+      Offset(0, 1, 1) -> 9
+    )(
+      (1, 32 * 6, 1) -> (10.0f + 9.0f) / 2.0f / 15.0f * ambientOcclusionFactor
     )
   }
 }
