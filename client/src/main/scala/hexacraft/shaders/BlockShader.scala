@@ -71,7 +71,7 @@ object BlockShader {
 
   def bytesPerVertex(side: Int): Int = (4 + 6) * 4
 
-  class BlockVertexData(
+  case class BlockVertexData(
       position: Vector3i,
       texIndex: Int,
       normal: Vector3f,

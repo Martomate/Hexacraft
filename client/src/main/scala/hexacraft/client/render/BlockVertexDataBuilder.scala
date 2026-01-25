@@ -15,12 +15,12 @@ import scala.collection.mutable.ArrayBuffer
 object BlockVertexDataBuilder {
   def fromChunk(
       chunkCoords: ChunkRelWorld,
-      blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       transmissiveBlocks: Boolean,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): BlockVertexDataBuilder = {
     val chunkCache = new ChunkCache(world)
+    val blocks = chunkCache.getChunk(chunkCoords).blocks
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
 

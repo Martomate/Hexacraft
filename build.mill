@@ -75,7 +75,9 @@ object client extends HexacraftModule {
     Seq(Deps.Joml) ++ Deps.LwjglSystem*
   )
 
-  object test extends Tests
+  object test extends Tests {
+    override def moduleDeps = super.moduleDeps ++ Seq(game.test)
+  }
 }
 
 object server extends HexacraftModule {

@@ -20,28 +20,22 @@ object ChunkRenderData {
 
   def apply(
       coords: ChunkRelWorld,
-      blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): ChunkRenderData = {
-    if blocks.isEmpty then {
-      return new ChunkRenderData(None, None)
-    }
-
     new ChunkRenderData(
-      Some(makeBlockVboData(coords, blocks, world, false, blockTextureIndices)),
-      Some(makeBlockVboData(coords, blocks, world, true, blockTextureIndices))
+      Some(makeBlockVboData(coords, world, false, blockTextureIndices)),
+      Some(makeBlockVboData(coords, world, true, blockTextureIndices))
     )
   }
 
   private def makeBlockVboData(
       chunkCoords: ChunkRelWorld,
-      blocks: Array[LocalBlockState],
       world: BlocksInWorld,
       transmissiveBlocks: Boolean,
       blockTextureIndices: Map[String, IndexedSeq[Int]]
   )(using CylinderSize): IndexedSeq[ByteBuffer] = {
-    val builder = BlockVertexDataBuilder.fromChunk(chunkCoords, blocks, world, transmissiveBlocks, blockTextureIndices)
+    val builder = BlockVertexDataBuilder.fromChunk(chunkCoords, world, transmissiveBlocks, blockTextureIndices)
 
     val blocksBuffers = Array.ofDim[ByteBuffer](8)
 

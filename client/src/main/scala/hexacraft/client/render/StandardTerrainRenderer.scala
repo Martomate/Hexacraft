@@ -171,7 +171,11 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
               if coords.neighbors.forall(n => world.getChunk(n).isDefined) then {
                 if !chunksAlreadyUpdating.contains(coords) then {
                   futureRenderData += coords -> Future(
-                    ChunkRenderData(coords, chunk.blocks, world, blockTextureIndices)
+                    if chunk.blocks.isEmpty then {
+                      new ChunkRenderData(None, None)
+                    } else {
+                      ChunkRenderData(coords, world, blockTextureIndices)
+                    }
                   )
                   numUpdatesToPerform -= 1
                 } else {
