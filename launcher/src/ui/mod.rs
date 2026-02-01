@@ -2,8 +2,12 @@
 
 mod actions;
 mod elements;
+mod messages;
 
-use crate::core::GameVersion;
+use crate::{
+    core::GameVersion,
+    ui::{actions::Action, messages::Message},
+};
 use bevy::{
     asset::embedded_asset,
     prelude::*,
@@ -82,6 +86,7 @@ pub fn run<H: UiHandler>(handler: H) {
         }))
         .add_plugins(EmbeddedAssetPlugin)
         .add_event::<Action>()
+        .add_event::<Message>()
         .insert_resource(MainState::default())
         .insert_resource(UiHandlerRes(handler))
         // Only run the app when there is user input. This will significantly reduce CPU/GPU use.
@@ -90,7 +95,8 @@ pub fn run<H: UiHandler>(handler: H) {
         .add_systems(
             Update,
             (
-                handle_http_tasks::<H>,
+                handle_http_tasks,
+                messages::handle_messages::<H>,
                 button_system,
                 actions::perform_actions::<H>,
                 update_available_versions_list,
@@ -105,14 +111,6 @@ struct MainState {
     available_versions: Option<Vec<GameVersion>>,
     selected_version: Option<String>,
     is_downloading: bool,
-}
-
-#[derive(Event, Clone)]
-enum Action {
-    Play,
-    SelectVersion(GameVersion),
-    ShowVersionSelector,
-    HideVersionSelector,
 }
 
 #[derive(Component)]
@@ -130,39 +128,20 @@ struct PlayButton;
 #[derive(Component)]
 struct DownloadProgress(Arc<Mutex<f32>>);
 
-enum HttpTaskResponse {
-    FetchGameVersions(Vec<GameVersion>),
-    FetchGame(GameVersion, Vec<u8>),
-}
-
 #[derive(Component)]
-struct HttpTask(Task<anyhow::Result<HttpTaskResponse>>);
+struct HttpTask(Task<Message>);
 
-fn handle_http_tasks<H: UiHandler>(
+fn handle_http_tasks(
     mut commands: Commands,
     mut http_tasks: Query<(Entity, &mut HttpTask)>,
-    mut main_state: ResMut<MainState>,
-    handler: Res<UiHandlerRes<H>>,
+    mut messages: EventWriter<Message>,
 ) {
     for (entity, mut task) in &mut http_tasks {
         if !task.0.is_finished() {
             continue;
         }
-        if let Some(res) = block_on(poll_once(&mut task.0)) {
-            match res {
-                Ok(HttpTaskResponse::FetchGameVersions(versions)) => {
-                    main_state.available_versions = Some(versions)
-                }
-                Ok(HttpTaskResponse::FetchGame(game_version, data)) => {
-                    println!("Version {} downloaded", game_version.name);
-                    handler.init_from_archive(&game_version, data);
-
-                    main_state.is_downloading = false;
-
-                    start_game(&handler.0, &game_version);
-                }
-                Err(err) => println!("Failed to make http request: {err}"),
-            }
+        if let Some(msg) = block_on(poll_once(&mut task.0)) {
+            messages.send(msg);
             commands.entity(entity).despawn();
         }
     }
@@ -178,7 +157,7 @@ fn setup<H: UiHandler>(
 
     commands.spawn(HttpTask(task_pool.spawn({
         let res = handler.fetch_versions_list();
-        async { Ok(HttpTaskResponse::FetchGameVersions(res.await?)) }
+        async { Message::GotVersions(res.await) }
     })));
 
     commands.spawn(Camera2dBundle::default());

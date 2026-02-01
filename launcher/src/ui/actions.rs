@@ -2,12 +2,20 @@ use crate::{
     UiHandler,
     core::GameVersion,
     ui::{
-        Action, DownloadProgress, HttpTask, HttpTaskResponse, MainState, UiHandlerRes,
-        VersionButton, VersionSelector, start_game,
+        DownloadProgress, HttpTask, MainState, Message, UiHandlerRes, VersionButton,
+        VersionSelector, start_game,
     },
 };
 use bevy::{prelude::*, tasks::AsyncComputeTaskPool};
 use std::sync::{Arc, Mutex, mpsc};
+
+#[derive(Event, Clone)]
+pub enum Action {
+    Play,
+    SelectVersion(GameVersion),
+    ShowVersionSelector,
+    HideVersionSelector,
+}
 
 pub fn perform_actions<H: UiHandler>(
     mut commands: Commands,
@@ -18,7 +26,7 @@ pub fn perform_actions<H: UiHandler>(
     mut state: ResMut<MainState>,
     handler: Res<UiHandlerRes<H>>,
 ) {
-    for action in &mut action_event_reader.read() {
+    for action in action_event_reader.read() {
         match action {
             Action::Play => {
                 if state.is_downloading {
@@ -70,10 +78,7 @@ fn start_download<H: UiHandler>(commands: &mut Commands, handler: &H, game_versi
 
     let download_task = task_pool.spawn({
         let download_task = handler.download(&game_version, progress_tx);
-        async move {
-            let buffer = download_task.await?;
-            Ok(HttpTaskResponse::FetchGame(game_version, buffer))
-        }
+        async move { Message::GotArchive(game_version, download_task.await) }
     });
 
     let download_progress = Arc::new(Mutex::new(0.0));
