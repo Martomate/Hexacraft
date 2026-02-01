@@ -54,7 +54,7 @@ pub fn perform_actions<H: UiHandler>(
 
                 let version_button_children = q_version_button.single();
                 let mut version_button_text = q_text.get_mut(version_button_children[0]).unwrap();
-                version_button_text.sections[0].value = format!("Version: {}", version.name);
+                version_button_text.0 = format!("Version: {}", version.name);
 
                 let mut version_selector = q_version_selector.single_mut();
                 *version_selector = Visibility::Hidden;

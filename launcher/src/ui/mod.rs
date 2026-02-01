@@ -160,16 +160,17 @@ fn setup<H: UiHandler>(
         async { Message::GotVersions(res.await) }
     })));
 
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load(asset_path!("background.png")),
+    commands.spawn(Sprite {
+        image: asset_server.load(asset_path!("background.png")),
         ..Default::default()
     });
 
     commands
-        .spawn(ButtonBundle {
-            style: Style {
+        .spawn((
+            Button,
+            Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
                 justify_content: JustifyContent::SpaceBetween,
@@ -177,8 +178,7 @@ fn setup<H: UiHandler>(
                 flex_direction: FlexDirection::Column,
                 ..default()
             },
-            ..default()
-        })
+        ))
         .insert(Action::HideVersionSelector)
         .with_children(|parent| {
             let verdana_font = asset_server.load(asset_path!("Verdana.ttf"));
@@ -239,7 +239,7 @@ fn update_download_progress(
 
         let play_button_children = q_play_button.single();
         let mut play_button_text = q_text.get_mut(play_button_children[0]).unwrap();
-        play_button_text.sections[0].value = format!("{progress_percent} %");
+        play_button_text.0 = format!("{progress_percent} %");
 
         redraw_request_events.send(RequestRedraw);
     }
