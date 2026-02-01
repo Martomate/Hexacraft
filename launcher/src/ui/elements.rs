@@ -5,25 +5,19 @@ use crate::{
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
 pub fn make_title_text(mut entity: EntityCommands, font: Handle<Font>) {
-    entity
-        .insert(Node { ..default() })
-        .with_children(|parent| {
-            let (outline_bundles, main_bundle) = make_outlined_text(
-                "Hexacraft",
-                TextFont {
-                    font,
-                    font_size: 72.0,
-                    ..default()
-                },
-                Color::WHITE,
-                Color::srgba(0.1, 0.1, 0.1, 1.0),
-            );
-
-            for outline_bundle in outline_bundles {
-                parent.spawn(outline_bundle);
-            }
-            parent.spawn(main_bundle);
-        });
+    entity.insert(Node { ..default() }).with_children(|parent| {
+        spawn_outlined_text(
+            parent,
+            "Hexacraft",
+            TextFont {
+                font,
+                font_size: 72.0,
+                ..default()
+            },
+            Color::WHITE,
+            Color::srgba(0.1, 0.1, 0.1, 1.0),
+        );
+    });
 }
 
 pub fn make_play_button(mut entity: EntityCommands, font: Handle<Font>) {
@@ -144,23 +138,19 @@ pub fn make_version_item(mut entity: EntityCommands, font: Handle<Font>, v: &Gam
         });
 }
 
-fn make_outlined_text(
+fn spawn_outlined_text(
+    parent: &mut ChildBuilder<'_>,
     text: &str,
     font: TextFont,
     color: Color,
     outline_color: Color,
-) -> (
-    Vec<((Text, TextFont, TextColor), Node)>,
-    (Text, TextFont, TextColor),
 ) {
     let outline_text = (Text::new(text), font.clone(), TextColor(outline_color));
-
-    let mut outline_bundles = Vec::new();
 
     for dy in -2..=2 {
         for dx in -2..=2 {
             if (dx != 0 || dy != 0) && dx * dx + dy * dy <= 5 {
-                outline_bundles.push((
+                parent.spawn((
                     outline_text.clone(),
                     Node {
                         position_type: PositionType::Absolute,
@@ -173,7 +163,5 @@ fn make_outlined_text(
         }
     }
 
-    let main_bundle = (Text::new(text), font, TextColor(color));
-
-    (outline_bundles, main_bundle)
+    parent.spawn((Text::new(text), font, TextColor(color)));
 }
