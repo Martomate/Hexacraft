@@ -3,6 +3,8 @@ use crate::ui::UiHandler;
 use crate::{cmd::create_game_command, registry};
 use anyhow::bail;
 use platform_dirs::AppDirs;
+use std::io::Read;
+use std::time::Duration;
 use std::{future::Future, path::PathBuf};
 
 pub struct MainUiHandler {
@@ -35,14 +37,17 @@ impl UiHandler for MainUiHandler {
     fn fetch_versions_list(
         &self,
     ) -> impl Future<Output = Result<Vec<GameVersion>, anyhow::Error>> + Send + 'static {
-        let request = ureq::get(&format!("{}/api/hexacraft/versions", &self.api_url));
+        let request = ureq::get(&format!("{}/api/hexacraft/versions", &self.api_url))
+            .config()
+            .timeout_connect(Some(Duration::from_secs(3)))
+            .build();
 
         let versions_cache = self.versions_dir.join("versions.json");
 
         async {
             let body = request
                 .call()
-                .and_then(|res| Ok(res.into_string()?))
+                .and_then(|res| res.into_body().read_to_string())
                 .or_else(|err| {
                     if versions_cache.exists() {
                         Ok(std::fs::read_to_string(versions_cache.clone())?)
@@ -75,18 +80,23 @@ impl UiHandler for MainUiHandler {
                 .distribution(self.os, self.arch)
                 .unwrap()
                 .archive,
-        );
+        )
+        .config()
+        .timeout_connect(Some(Duration::from_secs(3)))
+        .build();
 
         async move {
-            println!("Fetching {}", request.url());
+            println!("Fetching {}", request.uri_ref().unwrap());
 
             let response = request.call()?;
             let total = response
-                .header("Content-Length")
+                .headers()
+                .get("Content-Length")
+                .and_then(|s| s.to_str().ok())
                 .and_then(|s| s.parse::<usize>().ok())
                 .unwrap_or_default();
 
-            let mut reader = response.into_reader();
+            let mut reader = response.into_body().into_reader();
 
             let mut buffer = Vec::new();
             let mut buf = [0; 1024];
