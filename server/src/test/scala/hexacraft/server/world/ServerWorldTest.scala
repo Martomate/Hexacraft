@@ -24,7 +24,7 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should not crash") {
     val provider = new FakeWorldProvider(1234)
-    val world = ServerWorld(provider, provider.worldInfo)
+    val world = ServerWorld(provider, provider.worldInfo, 10)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     world.tick(Seq(camera), Seq(), Seq())
@@ -50,7 +50,7 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should decorate new chunks") {
     val provider = new FakeWorldProvider(1234)
-    val world = ServerWorld(provider, provider.worldInfo)
+    val world = ServerWorld(provider, provider.worldInfo, 10)
 
     val chunkCoords = ChunkRelWorld(3, -1, -4) // this chunk contains the ground
 
@@ -71,7 +71,7 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should load chunks close to the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = ServerWorld(provider, provider.worldInfo)
+    val world = ServerWorld(provider, provider.worldInfo, 10)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -92,7 +92,7 @@ class ServerWorldTest extends FunSuite {
 
   test("the world should unload chunks far from the camera") {
     val provider = new FakeWorldProvider(1234)
-    val world = ServerWorld(provider, provider.worldInfo)
+    val world = ServerWorld(provider, provider.worldInfo, 10)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val cCoords = ChunkRelWorld(3, 7, -4)
@@ -126,7 +126,7 @@ class ServerWorldTest extends FunSuite {
     )
     provider.saveChunkData(Nbt.encode(Nbt.decode[ChunkData](Nbt.makeMap()).get), ChunkRelWorld(0, 0, 0))
 
-    val world = ServerWorld(provider, provider.worldInfo)
+    val world = ServerWorld(provider, provider.worldInfo, 10)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
 
     val entityPosition = CylCoords(1, 2, 3)

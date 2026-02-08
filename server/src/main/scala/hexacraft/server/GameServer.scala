@@ -24,8 +24,14 @@ import java.util.UUID
 import scala.collection.mutable
 
 object GameServer {
-  def create(isOnline: Boolean, port: Int, worldInfo: WorldInfo, worldProvider: WorldProvider): GameServer = {
-    val world = new ServerWorld(worldProvider, worldInfo)
+  def create(
+      isOnline: Boolean,
+      port: Int,
+      worldInfo: WorldInfo,
+      worldProvider: WorldProvider,
+      renderDistance: Double
+  ): GameServer = {
+    val world = new ServerWorld(worldProvider, worldInfo, renderDistance)
 
     val tcpServer = TcpServer
       .start(port)

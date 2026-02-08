@@ -33,8 +33,11 @@ object ServerWorld {
   )
 }
 
-class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
-    extends BlockRepository
+class ServerWorld(
+    worldProvider: WorldProvider,
+    val worldInfo: WorldInfo,
+    val renderDistance: Double
+) extends BlockRepository
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
 
@@ -49,8 +52,6 @@ class ServerWorld(worldProvider: WorldProvider, val worldInfo: WorldInfo)
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed)
   private val lightPropagator: LightPropagator = new LightPropagator(this, this.requestRenderUpdate)
-
-  val renderDistance: Double = 8 * CylinderSize.y60
 
   val collisionDetector: CollisionDetector = new CollisionDetector(this)
 

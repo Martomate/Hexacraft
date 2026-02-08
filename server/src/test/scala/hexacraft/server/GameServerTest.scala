@@ -53,7 +53,7 @@ class GameServerTest extends FunSuite {
   private def runServer(worldProvider: FakeWorldProvider)(useServer: Session => Unit): Unit = {
     val port = randomPort()
 
-    val server = GameServer.create(true, port, worldProvider.worldInfo, worldProvider)
+    val server = GameServer.create(true, port, worldProvider.worldInfo, worldProvider, 10)
 
     try {
       useServer(Session(server, port))

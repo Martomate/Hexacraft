@@ -1,13 +1,12 @@
 package hexacraft.main
 
 import hexacraft.client.{BlockTextureLoader, GameClient}
-import hexacraft.game.GameKeyboard
 import hexacraft.gui.*
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
 import hexacraft.util.{Channel, Result}
-import hexacraft.world.{WorldInfo, WorldProvider}
+import hexacraft.world.{CylinderSize, WorldInfo, WorldProvider}
 
 import java.util.UUID
 
@@ -26,8 +25,7 @@ object GameScene {
       isOnline: Boolean,
       textureLoader: BlockTextureLoader,
       audioSystem: AudioSystem,
-      initialWindowSize: WindowSize,
-      maxChunksToLoad: Int = 5
+      initialWindowSize: WindowSize
   )
   case class ServerParams(worldInfo: WorldInfo, worldProvider: WorldProvider)
 
@@ -37,7 +35,18 @@ object GameScene {
   ): Result[(GameScene, Channel.Receiver[GameScene.Event]), String] = {
     val (tx, rx) = Channel[GameScene.Event]()
 
-    val server = serverParams.map(s => GameServer.create(c.isOnline, c.serverPort, s.worldInfo, s.worldProvider))
+    val maxChunksToLoad = 5
+    val renderDistance = 8 * CylinderSize.y60
+
+    val server = serverParams.map { s =>
+      GameServer.create(
+        c.isOnline,
+        c.serverPort,
+        s.worldInfo,
+        s.worldProvider,
+        renderDistance
+      )
+    }
 
     val client =
       try {
@@ -50,7 +59,8 @@ object GameScene {
           c.textureLoader,
           c.initialWindowSize,
           c.audioSystem,
-          c.maxChunksToLoad
+          maxChunksToLoad,
+          renderDistance
         ) match {
           case Result.Ok(res) => res
           case Result.Err(message) =>

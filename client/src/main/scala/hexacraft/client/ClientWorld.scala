@@ -20,7 +20,7 @@ object ClientWorld {
   )
 }
 
-class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksInWorld {
+class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends BlockRepository with BlocksInWorld {
   given size: CylinderSize = worldInfo.worldSize
 
   private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
@@ -31,8 +31,6 @@ class ClientWorld(val worldInfo: WorldInfo) extends BlockRepository with BlocksI
 
   private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
   private val lightPropagator: LightPropagator = new LightPropagator(this, this.requestRenderUpdate)
-
-  val renderDistance: Double = 8 * CylinderSize.y60
 
   val collisionDetector = new CollisionDetector(this)
   private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)

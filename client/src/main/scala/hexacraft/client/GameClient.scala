@@ -46,7 +46,8 @@ object GameClient {
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem,
-      maxChunksToLoad: Int
+      maxChunksToLoad: Int,
+      renderDistance: Double
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(serverIp, serverPort)
 
@@ -72,7 +73,7 @@ object GameClient {
     val crosshairVAO: VAO = CrosshairShader.createVao()
     val crosshairRenderer: Renderer = CrosshairShader.createRenderer()
 
-    val world = ClientWorld(worldInfo)
+    val world = ClientWorld(worldInfo, renderDistance)
 
     given CylinderSize = world.size
 
