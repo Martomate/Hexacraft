@@ -26,7 +26,8 @@ object GameScene {
       isOnline: Boolean,
       textureLoader: BlockTextureLoader,
       audioSystem: AudioSystem,
-      initialWindowSize: WindowSize
+      initialWindowSize: WindowSize,
+      maxChunksToLoad: Int = 5
   )
   case class ServerParams(worldInfo: WorldInfo, worldProvider: WorldProvider)
 
@@ -48,7 +49,8 @@ object GameScene {
           c.isOnline,
           c.textureLoader,
           c.initialWindowSize,
-          c.audioSystem
+          c.audioSystem,
+          c.maxChunksToLoad
         ) match {
           case Result.Ok(res) => res
           case Result.Err(message) =>

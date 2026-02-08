@@ -45,7 +45,8 @@ object GameClient {
       isOnline: Boolean,
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
-      audioSystem: AudioSystem
+      audioSystem: AudioSystem,
+      maxChunksToLoad: Int
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(serverIp, serverPort)
 
@@ -120,7 +121,8 @@ object GameClient {
       placeBlockSoundBuffer,
       destroyBlockSoundBuffer,
       walkSoundBuffer1,
-      walkSoundBuffer2
+      walkSoundBuffer2,
+      maxChunksToLoad
     )
 
     client.updateBlockInHandRendererContent()
@@ -232,7 +234,8 @@ class GameClient(
     placeBlockSoundBuffer: AudioSystem.BufferId,
     destroyBlockSoundBuffer: AudioSystem.BufferId,
     walkSoundBuffer1: AudioSystem.BufferId,
-    walkSoundBuffer2: AudioSystem.BufferId
+    walkSoundBuffer2: AudioSystem.BufferId,
+    maxChunksToLoad: Int
 )(using CylinderSize) {
   private val executorService = Executors.newFixedThreadPool(4, NamedThreadFactory("client"))
   given ExecutionContext = ExecutionContext.fromExecutor(executorService)
@@ -533,7 +536,8 @@ class GameClient(
     // Act on the server info requested last tick, and send a new request to be used in the next tick
     val currentTickFut = tickFut
     tickFut = Some(Future {
-      val packets = Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(5))
+      val packets =
+        Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad))
       socket.sendMultiplePacketsAndWait(packets)
     })
     if currentTickFut.isEmpty then return // the first tick has no server data to act on
