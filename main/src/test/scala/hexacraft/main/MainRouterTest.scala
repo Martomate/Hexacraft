@@ -19,15 +19,15 @@ class MainRouterTest extends FunSuite {
   private val saveDirPath = Path.of("abc")
 
   def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene = {
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null, null, AudioSystem.createNull())
+    val router = new MainRouter(saveDirPath.toFile, false, fs, null, AudioSystem.createNull())
     val (s, _) = router.route(route)
     s
   }
 
   def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
       munit.Location
-  ): MainRouter.Event = {
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null, null, AudioSystem.createNull())
+  ): SceneRouter.Event = {
+    val router = new MainRouter(saveDirPath.toFile, true, fs, null, AudioSystem.createNull())
 
     val (s, rx) = router.route(route)
     val tracker = Tracker.fromRx(rx)
@@ -42,7 +42,7 @@ class MainRouterTest extends FunSuite {
 
   def performRouteAndClick(route: SceneRoute, clickAt: (Float, Float), fs: FileSystem = FileSystem.createNull())(using
       munit.Location
-  ): MainRouter.Event = {
+  ): SceneRouter.Event = {
     val events = Seq(
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
       Event.MouseClickEvent(MouseButton.Left, MouseAction.Release, KeyMods.none, clickAt)
@@ -51,16 +51,16 @@ class MainRouterTest extends FunSuite {
     performRouteAndSendEvents(route, events, fs)
   }
 
-  def assertSingleScene(events: Seq[MainRouter.Event], sceneIsOk: SceneRoute => Boolean): Unit = {
+  def assertSingleScene(events: Seq[SceneRouter.Event], sceneIsOk: SceneRoute => Boolean): Unit = {
     val scene = events.collectFirst:
-      case MainRouter.Event.ChangeScene(s) => s
+      case SceneRouter.Event.ChangeScene(s) => s
 
     assert(scene.isDefined)
     assert(sceneIsOk(scene.get))
   }
 
-  def assertSceneChange(event: MainRouter.Event, sceneRoute: SceneRoute): Unit = {
-    assertEquals(event, MainRouter.Event.ChangeScene(sceneRoute))
+  def assertSceneChange(event: SceneRouter.Event, sceneRoute: SceneRoute): Unit = {
+    assertEquals(event, SceneRouter.Event.ChangeScene(sceneRoute))
   }
 
   def testMainMenu(): Unit = {
@@ -86,7 +86,7 @@ class MainRouterTest extends FunSuite {
 
     test("Main with click on Quit causes a QuitRequest") {
       val event = performRouteAndClick(SceneRoute.Main, (0, -0.8f))
-      assertEquals(event, MainRouter.Event.QuitRequested)
+      assertEquals(event, SceneRouter.Event.QuitRequested)
     }
   }
 

@@ -9,6 +9,7 @@ import hexacraft.infra.window.{CallbackEvent, *}
 import hexacraft.renderer.VAO
 import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Loop, Resource, Result}
+import hexacraft.util.Channel.Receiver
 
 import org.joml.{Vector2f, Vector2i}
 
@@ -45,8 +46,6 @@ class MainWindow(
   private var scene: Option[Scene] = None
   private var nextScene: Option[SceneRoute] = Some(SceneRoute.Main)
 
-  private val router = makeSceneRouter()
-
   override def setCursorMode(cursorMode: CursorMode): Unit = {
     window.setCursorMode(cursorMode)
     resetMousePos()
@@ -62,15 +61,15 @@ class MainWindow(
     this.nextScene = Some(scene)
   }
 
-  private def switchSceneIfNeeded(): Unit = {
+  private def switchSceneIfNeeded(router: SceneRouter): Unit = {
     if nextScene.isDefined then {
       val (s, rx) = router.route(nextScene.get)
       nextScene = None
 
       rx.onEvent {
-        case MainRouter.Event.ChangeScene(newRoute) =>
+        case SceneRouter.Event.ChangeScene(newRoute) =>
           setNextScene(newRoute)
-        case MainRouter.Event.QuitRequested =>
+        case SceneRouter.Event.QuitRequested =>
           window.requestClose()
       }
 
@@ -78,7 +77,7 @@ class MainWindow(
     }
   }
 
-  private def loop(): Unit = {
+  private def loop(router: SceneRouter): Unit = {
     var prevTime = System.nanoTime
     var ticks, frames, fps, titleTicker = 0
     var pollingEvents = false
@@ -88,7 +87,7 @@ class MainWindow(
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
 
-      switchSceneIfNeeded()
+      switchSceneIfNeeded(router)
 
       keyboard.refreshPressedKeys()
 
@@ -251,6 +250,7 @@ class MainWindow(
           windowSize = _windowSize,
           currentMousePosition = mouse.currentPos,
           previousMousePosition = mouse.previousPos,
+          keyboard = keyboard,
           readClipboard = () => windowSystem.clipboard
         )
       )
@@ -264,17 +264,13 @@ class MainWindow(
     scene = Some(newScene)
   }
 
-  private def makeSceneRouter(): MainRouter = {
-    MainRouter(saveFolder, multiplayerEnabled, fs, this, keyboard, audioSystem)
-  }
-
-  def run(): Unit = {
+  def run(router: SceneRouter): Unit = {
     initGL()
     audioSystem.init()
 
     try {
       resetMousePos()
-      loop()
+      loop(router)
     } finally {
       destroy()
 

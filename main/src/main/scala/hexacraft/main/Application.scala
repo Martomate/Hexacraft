@@ -22,13 +22,14 @@ class Application(
 
       val gameThread = new Thread(() => {
         val window = new MainWindow(config.isDebug, saveFolder, fs, audioSystem, windowSystem)
+        val router = MainRouter(saveFolder, true, fs, window, audioSystem)
 
         if config.isDebug then {
           this.performShortcuts(saveFolder, window)
         }
 
         try {
-          window.run()
+          window.run(router)
         } finally {
           gameIsRunning = false
         }

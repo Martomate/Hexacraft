@@ -39,9 +39,10 @@ class MainWindowTest extends FunSuite {
     audioSystem.trackEvents(tracker)
 
     val main = MainWindow(false, null, fileSystem, audioSystem, windowSystem)
+    val router = MainRouter(null, true, fileSystem, main, audioSystem)
 
     // the audio system is initialized in the run function
-    main.run()
+    main.run(router)
 
     assertEquals(tracker.events, Seq(AudioSystem.Event.Initialized))
   }

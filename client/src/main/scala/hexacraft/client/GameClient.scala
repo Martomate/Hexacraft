@@ -43,7 +43,6 @@ object GameClient {
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
-      keyboard: GameKeyboard,
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem
@@ -116,7 +115,6 @@ object GameClient {
       camera,
       playerInputHandler,
       playerPhysicsHandler,
-      keyboard,
       toolbar,
       blockInHandRenderer,
       placeBlockSoundBuffer,
@@ -229,7 +227,6 @@ class GameClient(
     val camera: Camera,
     playerInputHandler: PlayerInputHandler,
     playerPhysicsHandler: PlayerPhysicsHandler,
-    keyboard: GameKeyboard,
     toolbar: Toolbar,
     blockInHandRenderer: GuiBlockRenderer,
     placeBlockSoundBuffer: AudioSystem.BufferId,
@@ -654,7 +651,7 @@ class GameClient(
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
-        val pressedKeys = keyboard.pressedKeys
+        val pressedKeys = ctx.keyboard.pressedKeys
         val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
         if !isPaused && !isInPopup then {
           val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f

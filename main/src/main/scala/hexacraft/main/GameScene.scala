@@ -24,7 +24,6 @@ object GameScene {
       serverIp: String,
       serverPort: Int,
       isOnline: Boolean,
-      keyboard: GameKeyboard,
       textureLoader: BlockTextureLoader,
       audioSystem: AudioSystem,
       initialWindowSize: WindowSize
@@ -47,7 +46,6 @@ object GameScene {
           c.serverIp,
           c.serverPort,
           c.isOnline,
-          c.keyboard,
           c.textureLoader,
           c.initialWindowSize,
           c.audioSystem

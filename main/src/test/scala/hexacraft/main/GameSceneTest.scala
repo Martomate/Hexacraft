@@ -39,7 +39,6 @@ class GameSceneTest extends FunSuite {
     val textureLoader = new FakeBlockTextureLoader
 
     // Load and unload the game (to ensure static shaders are loaded)
-    val keyboard = FakeGameKeyboard(Seq.empty)
     val audioSystem = AudioSystem.createNull()
 
     val (gameScene1, _) =
@@ -52,7 +51,6 @@ class GameSceneTest extends FunSuite {
               "localhost",
               19271,
               false,
-              keyboard,
               textureLoader,
               audioSystem,
               windowSize
@@ -76,7 +74,6 @@ class GameSceneTest extends FunSuite {
             "localhost",
             19272,
             false,
-            keyboard,
             textureLoader,
             audioSystem,
             windowSize
@@ -102,7 +99,6 @@ class GameSceneTest extends FunSuite {
     OpenGL._enterTestMode()
 
     val worldProvider = new FakeWorldProvider(123L)
-    val keyboard = FakeGameKeyboard(Seq.empty)
     val textureLoader = new FakeBlockTextureLoader
     val audioSystem = AudioSystem.createNull()
 
@@ -115,7 +111,6 @@ class GameSceneTest extends FunSuite {
             "localhost",
             19273,
             false,
-            keyboard,
             textureLoader,
             audioSystem,
             windowSize
@@ -178,7 +173,6 @@ class GameSceneTest extends FunSuite {
             "localhost",
             19274,
             false,
-            keyboard,
             textureLoader,
             audioSystem,
             windowSize
@@ -191,7 +185,8 @@ class GameSceneTest extends FunSuite {
     // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
-    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), () => "")
+    val tickContext =
+      TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), keyboard, () => "")
     assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
       gameScene.tick(tickContext)
     })
@@ -254,7 +249,6 @@ class GameSceneTest extends FunSuite {
             "localhost",
             19275,
             false,
-            keyboard,
             textureLoader,
             audioSystem,
             windowSize
@@ -267,7 +261,8 @@ class GameSceneTest extends FunSuite {
     // Step 3: perform the test scenario
 
     // ensure the spawn chunk gets loaded
-    val tickContext = TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), () => "")
+    val tickContext =
+      TickContext(windowSize, MousePosition(Vector2f(0, 0)), MousePosition(Vector2f(0, 0)), keyboard, () => "")
     assert(waitFor(20, 10)(gameScene.client.isReadyToPlay) {
       gameScene.tick(tickContext)
     })

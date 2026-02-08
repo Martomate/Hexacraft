@@ -1,7 +1,6 @@
 package hexacraft.main
 
 import hexacraft.client.BlockTextureLoader
-import hexacraft.game.GameKeyboard
 import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
@@ -16,27 +15,19 @@ import java.io.File
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 
-object MainRouter {
-  enum Event {
-    case ChangeScene(route: SceneRoute)
-    case QuitRequested
-  }
-}
-
 class MainRouter(
     saveFolder: File,
     multiplayerEnabled: Boolean,
     fs: FileSystem,
     window: GameWindow,
-    kb: GameKeyboard,
     audioSystem: AudioSystem
-) {
+) extends SceneRouter {
 
   // TODO: persist this state somewhere (in a file probably)
   private val servers: ArrayBuffer[(String, Int)] = ArrayBuffer.empty
 
-  def route(sceneRoute: SceneRoute): (Scene, Channel.Receiver[MainRouter.Event]) = {
-    import MainRouter.Event
+  def route(sceneRoute: SceneRoute): (Scene, Channel.Receiver[SceneRouter.Event]) = {
+    import SceneRouter.Event
 
     val (tx, rx) = Channel[Event]()
     val scene = createScene(
@@ -204,7 +195,6 @@ class MainRouter(
         serverIp,
         serverPort,
         isOnline,
-        kb,
         BlockTextureLoader.instance,
         audioSystem,
         window.windowSize
