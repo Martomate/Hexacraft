@@ -78,10 +78,13 @@ class GameServer(
 
   def tick(): Unit = {
     try {
-      for (playerId, p) <- players if p.shouldBeKicked do {
-        logoutPlayer(p)
+      val players = this.players.synchronized {
+        for (playerId, p) <- this.players if p.shouldBeKicked do {
+          logoutPlayer(p)
+        }
+        this.players.filterInPlace((_, p) => !p.shouldBeKicked)
+        this.players.clone()
       }
-      players.filterInPlace((_, p) => !p.shouldBeKicked)
 
       for (playerId, p) <- players do {
         if System.currentTimeMillis - p.lastSeen > 1000 then {
