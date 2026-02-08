@@ -1,8 +1,9 @@
-package hexacraft.main
+package hexacraft.tool
 
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.WindowSystem
+import hexacraft.main.{MainRouter, MainWindow, SceneRoute}
 import hexacraft.server.{GameServer, WorldProviderFromFile}
 import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}
 

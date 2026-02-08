@@ -1,10 +1,11 @@
-package hexacraft.main
+package hexacraft.tool
 
 import hexacraft.client.{BlockTextureLoader, GameClient}
 import hexacraft.gui.{RenderContext, Scene, TickContext}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.{CursorMode, WindowSystem}
+import hexacraft.main.{MainWindow, SceneRoute, SceneRouter}
 import hexacraft.server.{GameServer, WorldProviderFromFile}
 import hexacraft.util.Channel
 import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}

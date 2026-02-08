@@ -1,4 +1,4 @@
-package hexacraft.main
+package hexacraft.tool
 
 import hexacraft.client.{BlockSpecs, BlockTextureLoader}
 import hexacraft.renderer.PixelArray
