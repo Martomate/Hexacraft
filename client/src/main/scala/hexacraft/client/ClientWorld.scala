@@ -238,43 +238,31 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   }
 
   def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
-    val allEntitiesById = mutable.HashMap.empty[UUID, (Option[ChunkRelWorld], Entity)]
+    val allEntitiesById = mutable.HashMap.empty[UUID, Entity]
 
-    {
-      val chIt = chunks.iterator
-      while chIt.hasNext do {
-        val (chunkCoordsValue, ch) = chIt.next()
-        val chunkCoords = ChunkRelWorld(chunkCoordsValue)
-        val eIt = ch.entities.iterator
-        while eIt.hasNext do {
-          val e = eIt.next()
-          allEntitiesById(e.id) = (Some(chunkCoords), e)
+    Loop.array(chunkList) { ch =>
+      if ch.hasEntities then {
+        Loop.array(ch.entities) { e =>
+          allEntitiesById(e.id) = e
         }
       }
     }
 
-    {
-      val entities = entitiesToSpawnLater.toSeq
-      entitiesToSpawnLater.clear()
-      val eIt = entities.iterator
-      while eIt.hasNext do {
-        val e = eIt.next()
-        if addEntity(e).isEmpty then {
-          allEntitiesById(e.id) = (None, e)
-          entitiesToSpawnLater += e
-          // println(s"Client: not ready to spawn entity ${e.id}")
-        } else {
-          println(s"Client: finally spawned entity ${e.id}")
-        }
+    val newEntities = entitiesToSpawnLater.toArray
+    entitiesToSpawnLater.clear()
+    Loop.array(newEntities) { e =>
+      if addEntity(e).isEmpty then {
+        allEntitiesById(e.id) = e
+        entitiesToSpawnLater += e
+        // println(s"Client: not ready to spawn entity ${e.id}")
+      } else {
+        println(s"Client: finally spawned entity ${e.id}")
       }
     }
 
-    val evIt = entityEvents.iterator
-    while evIt.hasNext do {
-      val (id, event) = evIt.next()
+    Loop.iterate(entityEvents.iterator) { case (id, event) =>
       allEntitiesById.get(id) match {
-        case Some(ent) =>
-          val (_, e) = ent
+        case Some(e) =>
           event match {
             case EntityEvent.Spawned(_) =>
               println(s"Received spawn event for an entity that already exists (id: $id)")
@@ -300,10 +288,10 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
                 case Some(e) =>
                   addEntity(e) match {
                     case Some(c) =>
-                      allEntitiesById(id) = (Some(c), e)
+                      allEntitiesById(id) = e
                       println(s"Client: spawned entity $id")
                     case None =>
-                      allEntitiesById(id) = (None, e)
+                      allEntitiesById(id) = e
                       entitiesToSpawnLater += e
                   }
                 case None =>
@@ -315,15 +303,11 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
       }
     }
 
-    {
-      val chIt = chunkList.iterator
-      while chIt.hasNext do {
-        val ch = chIt.next()
-        ch.optimizeStorage()
+    Loop.array(chunkList) { ch =>
+      ch.optimizeStorage()
 
-        val eIt = ch.entities.iterator
-        while eIt.hasNext do {
-          val e = eIt.next()
+      if ch.hasEntities then {
+        Loop.array(ch.entities) { e =>
           tickEntity(e)
         }
       }
