@@ -24,10 +24,6 @@ class Application(
         val window = new MainWindow(config.isDebug, saveFolder, fs, audioSystem, windowSystem)
         val router = MainRouter(saveFolder, true, fs, window, audioSystem)
 
-        if config.isDebug then {
-          this.performShortcuts(saveFolder, window)
-        }
-
         try {
           window.run(router)
         } finally {
@@ -56,15 +52,6 @@ class Application(
       val folder = new File(OS.current.appdataPath, ".hexacraft")
       folder.mkdir()
       folder
-    }
-  }
-
-  private def performShortcuts(saveFolder: File, window: MainWindow): Unit = {
-    config.startWorldName match {
-      case Some(startWorldName) =>
-        val worldSaveDir = new File(saveFolder, s"saves/$startWorldName")
-        window.setNextScene(SceneRoute.Game(worldSaveDir, true, false, null))
-      case None =>
     }
   }
 
