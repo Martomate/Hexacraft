@@ -116,7 +116,7 @@ object TerrainRenderExperiment {
 
     while running do {
       windowSystem.performCallsAsMainThread()
-      Thread.sleep(1)
+      Thread.sleep(0, 10000)
     }
   }
 }
