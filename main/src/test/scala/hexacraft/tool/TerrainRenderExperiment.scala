@@ -6,9 +6,11 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.{CursorMode, WindowSystem}
 import hexacraft.main.{MainWindow, SceneRoute, SceneRouter}
-import hexacraft.server.{GameServer, WorldProviderFromFile}
+import hexacraft.nbt.Nbt
+import hexacraft.server.GameServer
 import hexacraft.util.Channel
-import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}
+import hexacraft.world.{CylinderSize, FakeWorldProvider, Player, WorldGenSettings, WorldInfo}
+import hexacraft.world.coord.CylCoords
 
 import java.nio.file.Files
 import java.util.UUID
@@ -35,17 +37,28 @@ object TerrainRenderExperiment {
               require(isHosting)
               require(!isOnline)
 
+              given cylSize: CylinderSize = CylinderSize(8)
+
+              val worldProvider = FakeWorldProvider(1234)
+
+              val playerId = UUID.randomUUID
+              val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 50, 0))
+              player.flying = true
+              player.rotation.x = 0.3 // look slightly down to see both the ground and the horizon
+              worldProvider.savePlayerData(Nbt.encode(player), player.id)
+
               val server = GameServer.create(
                 isOnline,
                 1298,
-                WorldInfo(2, "test world", CylinderSize(8), WorldGenSettings.fromSeed(1234)),
-                WorldProviderFromFile(saveDir, fs),
-                renderDistance = 20
+                WorldInfo(2, "test world", cylSize, WorldGenSettings.fromSeed(1234)),
+                worldProvider,
+                renderDistance = 20,
+                maxChunksToLoadPerTick = 20
               )
 
               val (client, rx) = GameClient
                 .create(
-                  UUID.randomUUID,
+                  playerId,
                   "",
                   "127.0.0.1",
                   1298,
@@ -53,7 +66,7 @@ object TerrainRenderExperiment {
                   BlockTextureLoader.instance,
                   window.windowSize,
                   audioSystem,
-                  maxChunksToLoad = 20,
+                  maxChunksToLoad = 50,
                   renderDistance = 20
                 )
                 .unwrap()

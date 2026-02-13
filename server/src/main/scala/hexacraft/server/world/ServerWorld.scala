@@ -36,7 +36,8 @@ object ServerWorld {
 class ServerWorld(
     worldProvider: WorldProvider,
     val worldInfo: WorldInfo,
-    val renderDistance: Double
+    val renderDistance: Double,
+    maxChunksToLoadPerTick: Int = 4
 ) extends BlockRepository
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
@@ -393,8 +394,8 @@ class ServerWorld(
       requestedLoads: Seq[ChunkRelWorld],
       requestedUnloads: Seq[ChunkRelWorld]
   ): (Seq[ChunkRelWorld], Seq[ChunkRelWorld]) = {
-    val chunksToLoadPerTick = if ServerWorld.shouldChillChunkLoader then 1 else 4
-    val chunksToUnloadPerTick = if ServerWorld.shouldChillChunkLoader then 2 else 6
+    val chunksToLoadPerTick = if ServerWorld.shouldChillChunkLoader then 1 else maxChunksToLoadPerTick
+    val chunksToUnloadPerTick = if ServerWorld.shouldChillChunkLoader then 2 else maxChunksToLoadPerTick * 3 / 2
 
     var unloadsLeft = chunksToUnloadPerTick
     for coords <- requestedUnloads do {

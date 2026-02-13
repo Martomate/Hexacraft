@@ -29,9 +29,10 @@ object GameServer {
       port: Int,
       worldInfo: WorldInfo,
       worldProvider: WorldProvider,
-      renderDistance: Double
+      renderDistance: Double,
+      maxChunksToLoadPerTick: Int = 4
   ): GameServer = {
-    val world = new ServerWorld(worldProvider, worldInfo, renderDistance)
+    val world = new ServerWorld(worldProvider, worldInfo, renderDistance, maxChunksToLoadPerTick)
 
     val tcpServer = TcpServer
       .start(port)
@@ -143,7 +144,7 @@ class GameServer(
         chunksLoadCount.synchronized {
           val tickResult = world.tick(
             players.values.map(_.camera).toSeq,
-            SeqUtils.roundRobin(chunksLoadedPerPlayer.values.map(_.nextAddableChunks(15)).toSeq),
+            SeqUtils.roundRobin(chunksLoadedPerPlayer.values.map(_.nextAddableChunks(50)).toSeq),
             chunksLoadCount.filter((coords, count) => count == 0).keys.map(ChunkRelWorld(_)).toSeq
           )
           for coords <- tickResult.chunksRemoved do {
