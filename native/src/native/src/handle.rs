@@ -1,5 +1,6 @@
 use std::{
     any::TypeId,
+    backtrace::Backtrace,
     collections::HashMap,
     marker::PhantomData,
     sync::{Arc, LazyLock, Mutex},
@@ -33,7 +34,7 @@ impl<S: 'static> Handle<S> {
         if DEBUG {
             println!("Wrapped handle: {raw}");
         }
-        assert_handle_type::<S>(HANDLES.lock().unwrap().get(&raw)).unwrap();
+        assert_handle_type::<S>(HANDLES.lock().unwrap().get(&raw));
         Self {
             raw,
             _phantom: PhantomData {},
@@ -44,7 +45,7 @@ impl<S: 'static> Handle<S> {
         if DEBUG {
             println!("Using handle: {}", self.raw);
         }
-        assert_handle_type::<S>(HANDLES.lock().unwrap().get(&self.raw)).unwrap();
+        assert_handle_type::<S>(HANDLES.lock().unwrap().get(&self.raw));
         let state: Box<S> = unsafe { Box::from_raw(self.raw as *mut S) };
         let res = f(&state);
         std::mem::forget(state);
@@ -59,7 +60,7 @@ impl<S: 'static> Handle<S> {
             );
         }
         for h in handles {
-            assert_handle_type::<S>(HANDLES.lock().unwrap().get(&h.raw)).unwrap();
+            assert_handle_type::<S>(HANDLES.lock().unwrap().get(&h.raw));
         }
         let state: Vec<Box<S>> = handles
             .iter()
@@ -78,7 +79,7 @@ impl<S: 'static> Handle<S> {
         }
 
         let mut type_map = HANDLES.lock().unwrap();
-        assert_handle_type::<S>(type_map.get(&self.raw)).unwrap();
+        assert_handle_type::<S>(type_map.get(&self.raw));
         type_map.remove(&self.raw);
 
         let state: Box<S> = unsafe { Box::from_raw(self.raw as *mut S) };
@@ -86,12 +87,13 @@ impl<S: 'static> Handle<S> {
     }
 }
 
-fn assert_handle_type<S: 'static>(raw_type: Option<&TypeId>) -> Result<(), &'static str> {
+fn assert_handle_type<S: 'static>(raw_type: Option<&TypeId>) {
     let Some(type_id) = raw_type else {
-        return Err("handle does not exist");
+        eprintln!("handle does not exist\n{}", Backtrace::force_capture());
+        std::process::abort();
     };
     if *type_id != TypeId::of::<S>() {
-        return Err("handle has wrong type");
+        eprintln!("handle has wrong type\n{}", Backtrace::force_capture());
+        std::process::abort();
     }
-    Ok(())
 }
