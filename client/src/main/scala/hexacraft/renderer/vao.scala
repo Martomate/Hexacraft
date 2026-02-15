@@ -1,6 +1,6 @@
 package hexacraft.renderer
 
-import hexacraft.infra.gpu.OpenGL
+import hexacraft.infra.gpu.{OpenGL, VboUsage, VertexBufferLayout}
 import hexacraft.util.Resource
 
 import org.lwjgl.BufferUtils
@@ -13,14 +13,13 @@ object VAO {
 
   def unbindVAO(): Unit = {
     boundVAO = null
-    OpenGL.glBindVertexArray(OpenGL.VertexArrayId.none)
+    OpenGL.unbindVertexArray()
   }
 
   private case class VboTemplate(
       count: Int,
-      divisor: Int,
-      vboUsage: OpenGL.VboUsage,
-      layout: VboLayout,
+      vboUsage: VboUsage,
+      layout: VertexBufferLayout,
       fillVbo: VBO => Any
   )
 
@@ -33,46 +32,46 @@ object VAO {
   class Builder private[VAO] {
     private val vboTemplates: ArrayBuffer[VboTemplate] = new ArrayBuffer(1)
 
-    def addVertexVbo(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw)(
-        buildLayout: VboLayout.Builder => VboLayout.Builder,
+    def addVertexVbo(count: Int, vboUsage: VboUsage = VboUsage.StaticDraw)(
+        buildLayout: VertexBufferLayout.Builder => VertexBufferLayout.Builder,
         fillVbo: VBO => Any = _ => ()
     ): Builder = {
-      addVbo(count, vboUsage, 0)(buildLayout, fillVbo)
+      addVbo(count, vboUsage, false)(buildLayout, fillVbo)
     }
 
-    def addInstanceVbo(count: Int, vboUsage: OpenGL.VboUsage = OpenGL.VboUsage.StaticDraw)(
-        buildLayout: VboLayout.Builder => VboLayout.Builder,
+    def addInstanceVbo(count: Int, vboUsage: VboUsage = VboUsage.StaticDraw)(
+        buildLayout: VertexBufferLayout.Builder => VertexBufferLayout.Builder,
         fillVbo: VBO => Any = _ => ()
     ): Builder = {
-      addVbo(count, vboUsage, 1)(buildLayout, fillVbo)
+      addVbo(count, vboUsage, true)(buildLayout, fillVbo)
     }
 
-    private def addVbo(count: Int, vboUsage: OpenGL.VboUsage, divisor: Int)(
-        buildLayout: VboLayout.Builder => VboLayout.Builder,
+    private def addVbo(count: Int, vboUsage: VboUsage, instanced: Boolean)(
+        buildLayout: VertexBufferLayout.Builder => VertexBufferLayout.Builder,
         fillVbo: VBO => Any
     ): Builder = {
-      this.vboTemplates += VboTemplate(count, divisor, vboUsage, VboLayout.build(buildLayout), fillVbo)
+      this.vboTemplates += VboTemplate(
+        count,
+        vboUsage,
+        VertexBufferLayout.build(buildLayout, instanced),
+        fillVbo
+      )
       this
     }
 
     private[VAO] def finish(maxCount: Int): VAO = {
-      val vaoID: OpenGL.VertexArrayId = OpenGL.glGenVertexArrays()
-      OpenGL.glBindVertexArray(vaoID)
+      val bufferLayouts = this.vboTemplates.map(_.layout).toSeq
 
-      val vbos = ArrayBuffer.empty[VBO]
+      val (vaoId, vboIds) = OpenGL.createVertexArray(bufferLayouts)
 
-      for VboTemplate(count, divisor, vboUsage, layout, fillVbo) <- this.vboTemplates do {
-        val vboID: OpenGL.VertexBufferId = OpenGL.glGenBuffers()
-        val vbo = new VBO(vboID, layout.stride, vboUsage)
-
+      val vbos = for (VboTemplate(count, vboUsage, layout, fillVbo), vboId) <- this.vboTemplates.zip(vboIds) yield {
+        val vbo = new VBO(vboId, layout.stride, vboUsage)
         vbo.resize(count)
-        layout.upload(divisor)
         fillVbo(vbo)
-
-        vbos += vbo
+        vbo
       }
 
-      new VAO(vaoID, maxCount, vbos.toSeq)
+      new VAO(vaoId, maxCount, vbos.toSeq)
     }
   }
 }
@@ -81,43 +80,30 @@ class VAO(val id: OpenGL.VertexArrayId, val maxCount: Int, val vbos: Seq[VBO]) e
   def bind(): Unit = {
     if VAO.boundVAO != this then {
       VAO.boundVAO = this
-      OpenGL.glBindVertexArray(id)
+      OpenGL.bindVertexArray(id)
     }
   }
 
   protected def unload(): Unit = {
-    OpenGL.glDeleteVertexArrays(id)
+    OpenGL.deleteVertexArray(id)
     for vbo <- vbos do {
       vbo.unload()
     }
   }
 }
 
-object VBO {
-  private var boundVBO: VBO = null.asInstanceOf[VBO]
-}
-
-class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: OpenGL.VboUsage) {
+class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: VboUsage) {
   private var count: Int = 0
 
   def capacity: Int = count
 
-  def bind(): Unit = {
-    if VBO.boundVBO != this then {
-      VBO.boundVBO = this
-      OpenGL.glBindBuffer(OpenGL.VertexBufferTarget.ArrayBuffer, id)
-    }
-  }
-
   def resize(newCount: Int): Unit = {
     count = newCount
-    bind()
-    OpenGL.glBufferData(OpenGL.VertexBufferTarget.ArrayBuffer, count * stride, vboUsage)
+    OpenGL.reallocateVertexBuffer(id, count * stride, vboUsage)
   }
 
   def fill(start: Int, content: ByteBuffer): VBO = {
-    bind()
-    OpenGL.glBufferSubData(OpenGL.VertexBufferTarget.ArrayBuffer, start * stride, content)
+    OpenGL.writeVertexBufferData(id, start * stride, content)
     this
   }
 
@@ -152,7 +138,7 @@ class VBO(private val id: OpenGL.VertexBufferId, val stride: Int, vboUsage: Open
   }
 
   def unload(): Unit = {
-    OpenGL.glDeleteBuffers(id)
+    OpenGL.deleteVertexBuffer(id)
   }
 }
 
@@ -160,68 +146,4 @@ trait VertexData {
   def bytesPerVertex: Int
 
   def fill(buf: ByteBuffer): Unit
-}
-
-case class VboLayout(attributes: Seq[VboAttribute]) {
-  val stride: Int = attributes.map(_.width).sum
-
-  def upload(divisor: Int): Unit = {
-    var offset = 0
-    for ch <- attributes do {
-      ch.upload(offset, stride, divisor)
-      offset += ch.width
-    }
-  }
-}
-
-object VboLayout {
-  def build(f: Builder => Any): VboLayout = {
-    val b = Builder()
-    f(b)
-    b.build()
-  }
-
-  class Builder private[VboLayout] {
-    private val attributes: ArrayBuffer[VboAttribute] = ArrayBuffer.empty
-
-    def ints(index: Int, dims: Int): Builder = {
-      this.attributes += VboAttribute(index, dims, 4, VboAttribute.Format.Int)
-      this
-    }
-
-    def floats(index: Int, dims: Int): Builder = {
-      this.attributes += VboAttribute(index, dims, 4, VboAttribute.Format.Float)
-      this
-    }
-
-    def floatsArray(index: Int, dims: Int)(size: Int): Builder = {
-      for i <- 0 until size do this.floats(index + i, dims)
-      this
-    }
-
-    private[VboLayout] def build(): VboLayout = VboLayout(this.attributes.toSeq)
-  }
-}
-
-case class VboAttribute(index: Int, dims: Int, elementSize: Int, format: VboAttribute.Format) {
-  def width: Int = dims * elementSize
-
-  def upload(offset: Int, stride: Int, divisor: Int): Unit = {
-    format match {
-      case VboAttribute.Format.Float =>
-        OpenGL.glVertexAttribPointer(index, dims, OpenGL.VertexAttributeDataType.Float, false, stride, offset)
-      case VboAttribute.Format.Int =>
-        OpenGL.glVertexAttribIPointer(index, dims, OpenGL.VertexIntAttributeDataType.Int, stride, offset)
-    }
-
-    OpenGL.glVertexAttribDivisor(index, divisor)
-    OpenGL.glEnableVertexAttribArray(index)
-  }
-}
-
-object VboAttribute {
-  enum Format {
-    case Int
-    case Float
-  }
 }

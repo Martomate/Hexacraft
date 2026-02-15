@@ -1,7 +1,7 @@
 package hexacraft.shaders
 
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
+import hexacraft.infra.gpu.VboUsage
 import hexacraft.renderer.{Shader, ShaderConfig, VAO, VertexData}
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -67,14 +67,14 @@ class EntityShader(isSide: Boolean) {
 object EntityShader {
   def createVao(side: Int): VAO = {
     VAO.build(verticesPerInstance(side))(
-      _.addVertexVbo(verticesPerInstance(side), OpenGL.VboUsage.StaticDraw)(
+      _.addVertexVbo(verticesPerInstance(side), VboUsage.StaticDraw)(
         _.floats(0, 3)
           .floats(1, 2)
           .floats(2, 3)
           .ints(3, 1)
           .ints(4, 1),
         _.fill(0, setupBlockVBO(side))
-      ).addInstanceVbo(0, OpenGL.VboUsage.DynamicDraw)(
+      ).addInstanceVbo(0, VboUsage.DynamicDraw)(
         _.floatsArray(5, 4)(4)
           .ints(9, 2)
           .ints(10, 2)

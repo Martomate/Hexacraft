@@ -47,7 +47,7 @@ class FontRenderer {
   }
 
   private def renderText(text: Text, xOffset: Float, yOffset: Float): Unit = {
-    OpenGL.glBindVertexArray(text.getMesh)
+    OpenGL.bindVertexArray(text.getMesh)
 
     if text.hasShadow then {
       val dist = 0.001f * (if text.bold then 2 else 1)

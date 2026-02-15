@@ -1,6 +1,6 @@
 package hexacraft.shaders
 
-import hexacraft.infra.gpu.OpenGL
+import hexacraft.infra.gpu.{OpenGL, VboUsage}
 import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.renderer.{InstancedRenderer, Shader, ShaderConfig, VAO}
 import hexacraft.world.block.BlockState
@@ -63,7 +63,7 @@ object SelectedBlockShader {
       _.addVertexVbo(25)(
         _.floats(0, 3),
         _.fillFloats(0, vertexData)
-      ).addInstanceVbo(1, OpenGL.VboUsage.DynamicDraw)(
+      ).addInstanceVbo(1, VboUsage.DynamicDraw)(
         _.ints(1, 3).floats(2, 3).floats(3, 1)
       )
     )

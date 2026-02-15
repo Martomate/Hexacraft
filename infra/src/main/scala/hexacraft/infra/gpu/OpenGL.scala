@@ -470,115 +470,72 @@ object OpenGL {
   // Vertex arrays
 
   opaque type VertexArrayId = Int
-  object VertexArrayId {
-    def none: VertexArrayId = 0
+  opaque type VertexBufferId = Int
+
+  def createVertexArray(bufferLayouts: Seq[VertexBufferLayout]): (VertexArrayId, Seq[VertexBufferId]) = {
+    val vaoId = gl.glGenVertexArrays()
+    gl.glBindVertexArray(vaoId)
+
+    val vboIds = for layout <- bufferLayouts yield {
+      val vboId = gl.glGenBuffers()
+      gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId)
+      setVertexBufferLayout(layout)
+      vboId
+    }
+
+    gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)
+    gl.glBindVertexArray(0)
+
+    (vaoId, vboIds)
   }
 
-  def glGenVertexArrays(): VertexArrayId = {
-    gl.glGenVertexArrays()
+  private def setVertexBufferLayout(layout: VertexBufferLayout): Unit = {
+    var offset = 0
+
+    for a <- layout.attributes do {
+      gl.glEnableVertexAttribArray(a.index)
+      gl.glVertexAttribDivisor(a.index, if layout.instanced then 1 else 0)
+      a.dataType match {
+        case VertexAttribute.DataType.Float =>
+          gl.glVertexAttribPointer(a.index, a.dims, GL11.GL_FLOAT, false, layout.stride, offset)
+        case VertexAttribute.DataType.Int =>
+          gl.glVertexAttribIPointer(a.index, a.dims, GL11.GL_INT, layout.stride, offset)
+      }
+      offset += a.width
+    }
   }
 
-  def glBindVertexArray(array: VertexArrayId): Unit = {
+  def bindVertexArray(array: VertexArrayId): Unit = {
     gl.glBindVertexArray(array)
   }
 
-  def glDeleteVertexArrays(array: VertexArrayId): Unit = {
+  def unbindVertexArray(): Unit = {
+    gl.glBindVertexArray(0)
+  }
+
+  def deleteVertexArray(array: VertexArrayId): Unit = {
     gl.glDeleteVertexArrays(array)
   }
 
-  // Vertex buffers
-
-  opaque type VertexBufferId = Int
-
-  enum VertexBufferTarget {
-    case ArrayBuffer
-    case CopyReadBuffer
-    case CopyWriteBuffer
-
-    def toGL: Int = this match {
-      case VertexBufferTarget.ArrayBuffer     => GL15.GL_ARRAY_BUFFER
-      case VertexBufferTarget.CopyReadBuffer  => GL31.GL_COPY_READ_BUFFER
-      case VertexBufferTarget.CopyWriteBuffer => GL31.GL_COPY_WRITE_BUFFER
-    }
-  }
-
-  enum VboUsage {
-    case StaticDraw
-    case DynamicDraw
-
-    def toGL: Int = this match {
+  def reallocateVertexBuffer(buffer: VertexBufferId, size: Long, usage: VboUsage): Unit = {
+    val usageValue = usage match {
       case VboUsage.StaticDraw  => GL15.GL_STATIC_DRAW
       case VboUsage.DynamicDraw => GL15.GL_DYNAMIC_DRAW
     }
+
+    gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, buffer)
+    gl.glBufferData(GL15.GL_ARRAY_BUFFER, size, usageValue)
+    gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)
   }
 
-  def glGenBuffers(): VertexBufferId = {
-    gl.glGenBuffers()
+  def writeVertexBufferData(buffer: VertexBufferId, offset: Long, data: ByteBuffer): Unit = {
+    gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, buffer)
+    gl.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, data)
+    gl.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)
   }
 
-  def glBindBuffer(target: VertexBufferTarget, buffer: VertexBufferId): Unit = {
-    gl.glBindBuffer(target.toGL, buffer)
-  }
-
-  def glBufferData(target: VertexBufferTarget, size: Long, usage: VboUsage): Unit = {
-    gl.glBufferData(target.toGL, size, usage.toGL)
-  }
-
-  def glBufferSubData(target: VertexBufferTarget, offset: Long, data: ByteBuffer): Unit = {
-    gl.glBufferSubData(target.toGL, offset, data)
-  }
-
-  def glDeleteBuffers(buffer: VertexBufferId): Unit = {
+  def deleteVertexBuffer(buffer: VertexBufferId): Unit = {
     gl.glDeleteBuffers(buffer)
-  }
-
-  // Vertex attributes
-
-  def glEnableVertexAttribArray(index: Int): Unit = {
-    gl.glEnableVertexAttribArray(index)
-  }
-
-  enum VertexAttributeDataType {
-    case Int
-    case Float
-
-    def toGL: Int = this match {
-      case VertexAttributeDataType.Int   => GL11.GL_INT
-      case VertexAttributeDataType.Float => GL11.GL_FLOAT
-    }
-  }
-
-  enum VertexIntAttributeDataType {
-    case Int
-
-    def toGL: Int = this match {
-      case VertexIntAttributeDataType.Int => GL11.GL_INT
-    }
-  }
-
-  def glVertexAttribPointer(
-      index: Int,
-      size: Int,
-      dataType: VertexAttributeDataType,
-      normalized: Boolean,
-      stride: Int,
-      pointer: Long
-  ): Unit = {
-    gl.glVertexAttribPointer(index, size, dataType.toGL, normalized, stride, pointer)
-  }
-
-  def glVertexAttribIPointer(
-      index: Int,
-      size: Int,
-      dataType: VertexIntAttributeDataType,
-      stride: Int,
-      pointer: Long
-  ): Unit = {
-    gl.glVertexAttribIPointer(index, size, dataType.toGL, stride, pointer)
-  }
-
-  def glVertexAttribDivisor(index: Int, divisor: Int): Unit = {
-    gl.glVertexAttribDivisor(index, divisor)
   }
 
   // Misc

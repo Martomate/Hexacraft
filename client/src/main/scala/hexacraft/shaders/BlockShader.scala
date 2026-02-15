@@ -1,7 +1,7 @@
 package hexacraft.shaders
 
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType
+import hexacraft.infra.gpu.VboUsage
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
 import org.joml.*
@@ -51,7 +51,7 @@ object BlockShader {
     val verticesPerInstance = verticesPerBlock(side)
 
     VAO.build(maxVertices)(
-      _.addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
+      _.addVertexVbo(maxVertices, VboUsage.DynamicDraw)(
         _.ints(0, 3)
           .ints(1, 1)
           .floats(2, 3)

@@ -1,7 +1,7 @@
 package hexacraft.shaders
 
-import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.gpu.OpenGL.ShaderType
+import hexacraft.infra.gpu.VboUsage
 import hexacraft.renderer.{Shader, ShaderConfig, VAO}
 
 import org.joml.*
@@ -48,7 +48,7 @@ class TerrainShader {
 object TerrainShader {
   def createVao(maxVertices: Int): VAO = {
     VAO.build(maxVertices)(
-      _.addVertexVbo(maxVertices, OpenGL.VboUsage.DynamicDraw)(
+      _.addVertexVbo(maxVertices, VboUsage.DynamicDraw)(
         _.ints(0, 3).floats(1, 3)
       )
     )
