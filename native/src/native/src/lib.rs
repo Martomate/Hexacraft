@@ -24,12 +24,6 @@ pub struct NoiseState {
     perm: Vec<i32>,
 }
 
-#[jni_fn("hexacraft.rs.RustLib")]
-pub fn hello<'local>(env: JNIEnv<'local>, _class: JClass<'local>) -> jstring {
-    let s = env.new_string("Hello from Rust!").unwrap();
-    s.into_raw()
-}
-
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 pub extern "system" fn JNI_OnLoad(_vm: JavaVM, _: *mut c_void) -> jint {

@@ -13,8 +13,6 @@ public class RustLib {
         RustLib.loadNative();
     }
 
-    public static native String hello();
-
     public static class NoiseGenerator3D {
         static {
             RustLib.loadNative();
