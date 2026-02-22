@@ -1,15 +1,20 @@
 use std::{ffi::c_void, time::Duration};
 
 use jni::{
-    JNIEnv, JavaVM,
-    strings::JNIString,
+    JavaVM,
     sys::{JNI_VERSION_1_1, jint},
 };
 
-mod client_socket;
-mod noise;
-mod server_socket;
-mod vorbis;
+mod ffi {
+    mod client_socket;
+    mod noise;
+    mod server_socket;
+    mod vorbis;
+}
+mod handle;
+mod util;
+
+use util::*;
 
 static RT: std::sync::Mutex<Option<tokio::runtime::Runtime>> = std::sync::Mutex::new(None);
 
@@ -31,16 +36,6 @@ pub extern "system" fn JNI_OnLoad(_vm: JavaVM, _: *mut c_void) -> jint {
 pub extern "system" fn JNI_OnUnload(_vm: JavaVM, _: *mut c_void) {
     let mut rt = RT.lock().unwrap();
     rt.take().unwrap(); // this will drop the runtime which will shut it down
-}
-
-fn throw_rte<'local>(env: &mut JNIEnv<'local>, err: impl Into<JNIString>) {
-    env.throw_new("java/lang/RuntimeException", err)
-        .expect("failed to throw exception");
-}
-
-fn throw_ie<'local>(env: &mut JNIEnv<'local>, err: impl Into<JNIString>) {
-    env.throw_new("java/lang/InterruptedException", err)
-        .expect("failed to throw exception");
 }
 
 fn run_with_timeout<R: Send + 'static>(

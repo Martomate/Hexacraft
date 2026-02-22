@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::ffi::*;
 use crate::handle::Handle;
+use crate::{run_with_timeout, throw_rte};
 
 use jni::JNIEnv;
 use jni::objects::{AsJArrayRaw, JByteArray, JClass, JObject, JString};
@@ -14,19 +14,19 @@ pub fn create<'local>(
     env: JNIEnv<'local>,
     _class: JClass<'local>,
     client_id: JByteArray<'local>,
-) -> Handle<Arc<crate::zmq::ClientSocket>> {
+) -> Handle<Arc<hexacraft::zmq::ClientSocket>> {
     let client_id = env
         .convert_byte_array(client_id)
         .expect("failed to convert byte array");
 
-    Handle::create(Arc::new(crate::zmq::ClientSocket::new(client_id)))
+    Handle::create(Arc::new(hexacraft::zmq::ClientSocket::new(client_id)))
 }
 
 #[jni_fn("hexacraft.rs.RustLib$ClientSocket")]
 pub fn connect<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ClientSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ClientSocket>>,
     host: JString<'local>,
     port: jint,
 ) {
@@ -51,7 +51,7 @@ pub fn connect<'local>(
 pub fn send<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ClientSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ClientSocket>>,
     data: JByteArray<'local>,
 ) {
     let data = env
@@ -74,7 +74,7 @@ pub fn send<'local>(
 pub fn receive<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ClientSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ClientSocket>>,
 ) -> jbyteArray {
     match handle.use_handle(|socket| {
         let socket = socket.clone();
@@ -101,7 +101,7 @@ pub fn receive<'local>(
 pub fn close<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ClientSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ClientSocket>>,
 ) {
     handle.destroy();
 }

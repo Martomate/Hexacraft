@@ -10,7 +10,7 @@ pub fn decode<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     bytes: JByteArray<'local>,
-) -> Handle<crate::vorbis::VorbisData> {
+) -> Handle<hexacraft::vorbis::VorbisData> {
     let elements = unsafe {
         env.get_array_elements(&bytes, ReleaseMode::NoCopyBack)
             .expect("failed to read from bytes array")
@@ -21,7 +21,7 @@ pub fn decode<'local>(
         .map(|b| b as u8)
         .collect::<Vec<_>>();
 
-    let state: crate::vorbis::VorbisData = crate::vorbis::decode(&bytes).unwrap();
+    let state: hexacraft::vorbis::VorbisData = hexacraft::vorbis::decode(&bytes).unwrap();
     Handle::create(state)
 }
 
@@ -29,7 +29,7 @@ pub fn decode<'local>(
 pub fn getSamples<'local>(
     env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<crate::vorbis::VorbisData>,
+    handle: Handle<hexacraft::vorbis::VorbisData>,
 ) -> jshortArray {
     handle.use_handle(|data| {
         let samples = &data.samples;
@@ -46,7 +46,7 @@ pub fn getSamples<'local>(
 pub fn getSampleRate<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<crate::vorbis::VorbisData>,
+    handle: Handle<hexacraft::vorbis::VorbisData>,
 ) -> jint {
     handle.use_handle(|data| data.sample_rate)
 }
@@ -55,7 +55,7 @@ pub fn getSampleRate<'local>(
 pub fn destroy<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<crate::vorbis::VorbisData>,
+    handle: Handle<hexacraft::vorbis::VorbisData>,
 ) {
     handle.destroy();
 }

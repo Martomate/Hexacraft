@@ -1,28 +1,28 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::ffi::*;
 use crate::handle::Handle;
+use crate::{run_and_wait, run_with_timeout, throw_ie, throw_rte};
 
+use hexacraft::ZmqError;
 use jni::JNIEnv;
 use jni::objects::{AsJArrayRaw, JByteArray, JClass, JObject};
 use jni::sys::{jbyteArray, jint};
 use jni_fn::jni_fn;
-use zeromq::ZmqError;
 
 #[jni_fn("hexacraft.rs.RustLib$ServerSocket")]
 pub fn create<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-) -> Handle<Arc<crate::zmq::ServerSocket>> {
-    Handle::create(Arc::new(crate::zmq::ServerSocket::new()))
+) -> Handle<Arc<hexacraft::zmq::ServerSocket>> {
+    Handle::create(Arc::new(hexacraft::zmq::ServerSocket::new()))
 }
 
 #[jni_fn("hexacraft.rs.RustLib$ServerSocket")]
 pub fn bind<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ServerSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ServerSocket>>,
     port: jint,
 ) {
     assert!((0..1 << 16).contains(&port), "port is out of range");
@@ -43,7 +43,7 @@ pub fn bind<'local>(
 pub fn send<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ServerSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ServerSocket>>,
     client_id: JByteArray<'local>,
     data: JByteArray<'local>,
 ) {
@@ -78,7 +78,7 @@ pub fn send<'local>(
 pub fn receive<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ServerSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ServerSocket>>,
 ) -> jbyteArray {
     match handle.use_handle(|socket| {
         let socket = socket.clone();
@@ -103,7 +103,7 @@ pub fn receive<'local>(
 pub fn close<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
-    handle: Handle<Arc<crate::zmq::ServerSocket>>,
+    handle: Handle<Arc<hexacraft::zmq::ServerSocket>>,
 ) {
     handle.use_handle(|socket| socket.cancel());
     handle.destroy();

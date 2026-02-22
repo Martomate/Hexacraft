@@ -1,0 +1,13 @@
+[package]
+name = "hexacraft-rs"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+hexacraft = { path = "../core", package = "hexacraft-core" }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+jni = "0.21.1"
+jni_fn = "0.1.2"

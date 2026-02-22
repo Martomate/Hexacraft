@@ -60,7 +60,7 @@ pub fn genNoise<'local>(
                 .iter()
                 .map(|state| state.perm.as_slice())
                 .collect::<Vec<_>>();
-            crate::noise_3d::noise_with_octaves(perms.as_slice(), scale, x, y, z)
+            hexacraft::noise_3d::noise_with_octaves(perms.as_slice(), scale, x, y, z)
         })
     })
 }
@@ -117,7 +117,7 @@ pub fn genNoise<'local>(
                 .iter()
                 .map(|state| state.perm.as_slice())
                 .collect::<Vec<_>>();
-            crate::noise_4d::noise_with_octaves(perms.as_slice(), scale, x, y, z, w)
+            hexacraft::noise_4d::noise_with_octaves(perms.as_slice(), scale, x, y, z, w)
         })
     })
 }

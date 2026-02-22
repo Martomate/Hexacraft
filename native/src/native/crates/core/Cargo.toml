@@ -1,0 +1,10 @@
+[package]
+name = "hexacraft-core"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+bytes = "1.11.0"
+vorbis_rs = "0.5.5"
+zeromq = "0.5.0"
