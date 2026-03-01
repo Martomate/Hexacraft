@@ -1,13 +1,6 @@
 package hexacraft.server
 
-import hexacraft.game.{
-  GameKeyboard,
-  NetworkException,
-  NetworkPacket,
-  PlayerInputHandler,
-  PlayerPhysicsHandler,
-  ServerMessage
-}
+import hexacraft.game.*
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
 import hexacraft.server.world.ServerWorld
@@ -40,17 +33,6 @@ object GameServer {
 
     new GameServer(isOnline, tcpServer, worldInfo, worldProvider, world)(using world.size)
   }
-}
-
-case class PlayerData(player: Player, entity: Entity, camera: Camera) {
-  var pressedKeys: Seq[GameKeyboard.Key] = Seq.empty
-  var mouseMovement: Vector2f = new Vector2f
-  val blockUpdatesWaitingToBeSent: mutable.ArrayBuffer[(BlockRelWorld, BlockState)] = mutable.ArrayBuffer.empty
-  val entityEventsWaitingToBeSent: mutable.ArrayBuffer[(UUID, EntityEvent)] = mutable.ArrayBuffer.empty
-  val messagesWaitingToBeSent: mutable.ArrayBuffer[ServerMessage] = mutable.ArrayBuffer.empty
-
-  var lastSeen: Long = System.currentTimeMillis
-  var shouldBeKicked: Boolean = false
 }
 
 class GameServer(
