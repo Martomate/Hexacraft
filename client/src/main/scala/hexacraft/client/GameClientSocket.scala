@@ -53,25 +53,38 @@ object NetworkChannel {
 }
 
 class GameClientSocket(channel: NetworkChannel) {
-  def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
-    channel.send(packet.serialize())
+  private val sendLock = new Object()
+  private val receiveLock = new Object()
+
+  def sendPacket(packet: NetworkPacket): Unit = {
+    sendLock.synchronized {
+      channel.send(packet.serialize())
+    }
   }
 
-  def sendPacketAndWait(packet: NetworkPacket): Nbt = this.synchronized {
-    channel.send(packet.serialize())
-
-    val (_, tag) = Nbt.fromBinary(channel.receive())
-    tag
-  }
-
-  def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = this.synchronized {
-    for p <- packets do {
-      channel.send(p.serialize())
+  def sendPacketAndWait(packet: NetworkPacket): Nbt = {
+    sendLock.synchronized {
+      channel.send(packet.serialize())
     }
 
-    for i <- packets.indices yield {
+    receiveLock.synchronized {
       val (_, tag) = Nbt.fromBinary(channel.receive())
       tag
+    }
+  }
+
+  def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = {
+    sendLock.synchronized {
+      for p <- packets do {
+        channel.send(p.serialize())
+      }
+    }
+
+    receiveLock.synchronized {
+      for i <- packets.indices yield {
+        val (_, tag) = Nbt.fromBinary(channel.receive())
+        tag
+      }
     }
   }
 
