@@ -61,10 +61,10 @@ object HighLatencyExperiment {
               var mainChannelClosed = false
               val channel = new NetworkChannel {
                 private val queue = mutable.Queue[(Long, Array[Byte])]()
-                private var isClosed = false
+                private var _isClosed = false
 
                 new Thread(() => {
-                  while !isClosed || queue.nonEmpty do {
+                  while !_isClosed || queue.nonEmpty do {
                     val item = queue.synchronized {
                       if queue.nonEmpty && queue.head._1 < System.currentTimeMillis then {
                         Some(queue.dequeue())
@@ -97,7 +97,11 @@ object HighLatencyExperiment {
                 override def close(): Unit = {
                   mainChannelClosed = true
                   mainChannel.close()
-                  isClosed = true
+                  _isClosed = true
+                }
+
+                override def isClosed = {
+                  _isClosed
                 }
               }
 

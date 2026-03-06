@@ -10,9 +10,10 @@ trait NetworkChannel {
   def send(data: Array[Byte]): Unit
   def tryReceive(): Option[Array[Byte]]
   def close(): Unit
+  def isClosed: Boolean
 
   def receive(): Array[Byte] = {
-    while true do {
+    while !isClosed do {
       this.tryReceive() match {
         case Some(data) =>
           return data
@@ -20,7 +21,7 @@ trait NetworkChannel {
           Thread.sleep(1)
       }
     }
-    null
+    throw new RuntimeException("Channel is closed")
   }
 }
 
@@ -29,6 +30,8 @@ object NetworkChannel {
     private val clientId = (new Random().nextInt(1000000) + 1000000).toString
     private val socketHandle = RustLib.ClientSocket.create(clientId.getBytes())
     RustLib.ClientSocket.connect(socketHandle, serverIp, serverPort)
+
+    private var _isClosed = false
 
     override def send(data: Array[Byte]): Unit = {
       try {
@@ -48,7 +51,10 @@ object NetworkChannel {
 
     override def close(): Unit = {
       RustLib.ClientSocket.close(socketHandle)
+      _isClosed = true
     }
+
+    override def isClosed: Boolean = _isClosed
   }
 }
 
