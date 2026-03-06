@@ -29,7 +29,7 @@ object native extends HexacraftModule with RustJniModule {
 
   override def rustSourcePaths: Seq[RelPath] = {
     Seq(
-      os.rel / "src",
+      os.rel / "crates",
       os.rel / "Cargo.toml",
       os.rel / "Cargo.lock",
     )
@@ -166,5 +166,7 @@ object main extends HexacraftModule with JavaAppPackagingModule {
     override def mvnDeps = super.mvnDeps() ++ Seq(
       Seq(Deps.Mockito) ++ Deps.ArchUnit*
     )
+
+    override def forkArgs = super.forkArgs() ++ (if (isMac) Some("-XstartOnFirstThread") else None).toSeq
   }
 }

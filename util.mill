@@ -38,7 +38,9 @@ trait RustJniModule extends JavaModule {
   /** Directory where the JNI headers will be stored */
   private def jniHeadersDir: Task[Path] = Task {
     val sourceHash = allSources().map(_.sig).sum
-    Task.dest / s"headers-$sourceHash"
+    val dir = Task.dest / s"headers-$sourceHash"
+    os.makeDir(dir)
+    dir
   }
 
   override def javacOptions = Task {
