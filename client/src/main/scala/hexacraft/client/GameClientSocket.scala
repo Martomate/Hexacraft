@@ -6,51 +6,76 @@ import hexacraft.rs.RustLib
 
 import scala.util.Random
 
-class GameClientSocket(serverIp: String, serverPort: Int) {
-  private val clientId = (new Random().nextInt(1000000) + 1000000).toString
-  private val socketHandle = RustLib.ClientSocket.create(clientId.getBytes())
+trait NetworkChannel {
+  def send(data: Array[Byte]): Unit
+  def tryReceive(): Option[Array[Byte]]
+  def close(): Unit
 
-  RustLib.ClientSocket.connect(socketHandle, serverIp, serverPort)
+  def receive(): Array[Byte] = {
+    while true do {
+      this.tryReceive() match {
+        case Some(data) =>
+          return data
+        case None =>
+          Thread.sleep(1)
+      }
+    }
+    null
+  }
+}
 
+object NetworkChannel {
+  def client(serverIp: String, serverPort: Int): NetworkChannel = new NetworkChannel {
+    private val clientId = (new Random().nextInt(1000000) + 1000000).toString
+    private val socketHandle = RustLib.ClientSocket.create(clientId.getBytes())
+    RustLib.ClientSocket.connect(socketHandle, serverIp, serverPort)
+
+    override def send(data: Array[Byte]): Unit = {
+      try {
+        RustLib.ClientSocket.send(socketHandle, data)
+      } catch {
+        case e: RuntimeException => throw new NetworkException(s"Could not send message: ${e.getMessage}")
+      }
+    }
+
+    override def tryReceive() = {
+      try {
+        Option(RustLib.ClientSocket.tryReceive(socketHandle))
+      } catch {
+        case e: RuntimeException => throw new NetworkException(s"Could not receive message: ${e.getMessage}")
+      }
+    }
+
+    override def close(): Unit = {
+      RustLib.ClientSocket.close(socketHandle)
+    }
+  }
+}
+
+class GameClientSocket(channel: NetworkChannel) {
   def sendPacket(packet: NetworkPacket): Unit = this.synchronized {
-    doSend(packet.serialize())
+    channel.send(packet.serialize())
   }
 
   def sendPacketAndWait(packet: NetworkPacket): Nbt = this.synchronized {
-    doSend(packet.serialize())
+    channel.send(packet.serialize())
 
-    val (_, tag) = Nbt.fromBinary(doReceive())
+    val (_, tag) = Nbt.fromBinary(channel.receive())
     tag
   }
 
   def sendMultiplePacketsAndWait(packets: Seq[NetworkPacket]): Seq[Nbt] = this.synchronized {
     for p <- packets do {
-      doSend(p.serialize())
+      channel.send(p.serialize())
     }
 
     for i <- packets.indices yield {
-      val (_, tag) = Nbt.fromBinary(doReceive())
+      val (_, tag) = Nbt.fromBinary(channel.receive())
       tag
     }
   }
 
-  private def doSend(message: Array[Byte]): Unit = {
-    try {
-      RustLib.ClientSocket.send(socketHandle, message)
-    } catch {
-      case e: RuntimeException => throw new NetworkException(s"Could not send message: ${e.getMessage}")
-    }
-  }
-
-  private def doReceive() = {
-    try {
-      RustLib.ClientSocket.receive(socketHandle)
-    } catch {
-      case e: RuntimeException => throw new NetworkException(s"Could not receive message: ${e.getMessage}")
-    }
-  }
-
   def close(): Unit = {
-    RustLib.ClientSocket.close(socketHandle)
+    channel.close()
   }
 }

@@ -1,11 +1,10 @@
 package hexacraft.main
 
-import hexacraft.client.GameClientSocket
+import hexacraft.client.{GameClientSocket, NetworkChannel}
 import hexacraft.game.NetworkPacket
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
 import hexacraft.infra.fs.{FileSystem, NbtFile}
-import hexacraft.nbt.Nbt
 import hexacraft.renderer.TextureSingle
 import hexacraft.util.Channel
 
@@ -153,7 +152,8 @@ object Menus {
 
       for ((address, port), idx) <- servers.zipWithIndex do {
         Future {
-          val socket = GameClientSocket(address, port)
+          val channel = NetworkChannel.client(address, port)
+          val socket = GameClientSocket(channel)
           val res = for {
             res <- Try(socket.sendPacketAndWait(NetworkPacket.GetWorldInfo).asMap.get).toOption
             general <- res.getMap("general")

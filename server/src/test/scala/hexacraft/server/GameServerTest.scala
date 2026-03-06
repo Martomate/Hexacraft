@@ -32,8 +32,15 @@ class GameServerTest extends FunSuite {
 
     @throws[RuntimeException]
     def receive(): Nbt = {
-      val res = RustLib.ClientSocket.receive(socketHandle)
-      Nbt.fromBinary(res)._2
+      while true do {
+        RustLib.ClientSocket.tryReceive(socketHandle) match {
+          case null =>
+            Thread.sleep(1)
+          case res =>
+            return Nbt.fromBinary(res)._2
+        }
+      }
+      null
     }
 
     override def close(): Unit = {

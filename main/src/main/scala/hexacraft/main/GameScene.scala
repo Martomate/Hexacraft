@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.client.{BlockTextureLoader, GameClient}
+import hexacraft.client.{BlockTextureLoader, GameClient, NetworkChannel}
 import hexacraft.gui.*
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
@@ -50,11 +50,11 @@ object GameScene {
 
     val client =
       try {
+        val channel = NetworkChannel.client(c.serverIp, c.serverPort)
         val (client, clientEvents) = GameClient.create(
           c.playerId,
           c.playerName,
-          c.serverIp,
-          c.serverPort,
+          channel,
           c.isOnline,
           c.textureLoader,
           c.initialWindowSize,

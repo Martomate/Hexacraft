@@ -38,8 +38,7 @@ object GameClient {
   def create(
       playerId: UUID,
       playerName: String,
-      serverIp: String,
-      serverPort: Int,
+      channel: NetworkChannel,
       isOnline: Boolean,
       blockLoader: BlockTextureLoader,
       initialWindowSize: WindowSize,
@@ -47,7 +46,7 @@ object GameClient {
       maxChunksToLoad: Int,
       renderDistance: Double
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
-    val socket = GameClientSocket(serverIp, serverPort)
+    val socket = GameClientSocket(channel)
 
     val (worldInfo, player) = fetchWorldInfo(socket, playerId, playerName) match {
       case Result.Ok(value) => value

@@ -1,6 +1,6 @@
 package hexacraft.tool
 
-import hexacraft.client.{BlockTextureLoader, GameClient}
+import hexacraft.client.{BlockTextureLoader, GameClient, NetworkChannel}
 import hexacraft.gui.{RenderContext, Scene, TickContext}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
@@ -56,12 +56,12 @@ object TerrainRenderExperiment {
                 maxChunksToLoadPerTick = 20
               )
 
+              val channel = NetworkChannel.client("127.0.0.1", 1298)
               val (client, rx) = GameClient
                 .create(
                   playerId,
                   "",
-                  "127.0.0.1",
-                  1298,
+                  channel,
                   isOnline,
                   BlockTextureLoader.instance,
                   window.windowSize,

@@ -38,7 +38,9 @@ pub fn connect<'local>(
     match handle.use_handle(|socket| {
         let socket = socket.clone();
         run_with_timeout(Duration::from_millis(3000), async move {
-            socket.connect(&host, port as u16).await
+            let res = socket.connect(&host, port as u16).await;
+            tokio::spawn(socket.clone().run_receiver());
+            res
         })
     }) {
         None => throw_rte(&mut env, "timed out connecting to server"),
@@ -71,7 +73,7 @@ pub fn send<'local>(
 }
 
 #[jni_fn("hexacraft.rs.RustLib$ClientSocket")]
-pub fn receive<'local>(
+pub fn tryReceive<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     handle: Handle<Arc<hexacraft::zmq::ClientSocket>>,
@@ -79,18 +81,17 @@ pub fn receive<'local>(
     match handle.use_handle(|socket| {
         let socket = socket.clone();
         run_with_timeout(Duration::from_millis(3000), async move {
-            socket.receive().await
+            socket.try_receive().await
         })
     }) {
         None => {
             throw_rte(&mut env, "timed out receiving");
             *JObject::null()
         }
-        Some(Err(err)) => {
-            throw_rte(&mut env, format!("failed to receive data: {err}"));
+        Some(None) => {
             *JObject::null()
         }
-        Some(Ok(data)) => env
+        Some(Some(data)) => env
             .byte_array_from_slice(&data)
             .expect("failed to create byte array")
             .as_jarray_raw(),
