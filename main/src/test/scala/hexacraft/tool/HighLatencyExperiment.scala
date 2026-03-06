@@ -18,7 +18,7 @@ import java.util.UUID
 import scala.collection.mutable
 
 object HighLatencyExperiment {
-  private val LatencyMs = 10
+  private val LatencyMs = 20
 
   def main(args: Array[String]): Unit = {
     val saveDir = Files.createTempDirectory("hexacraft_world_")
