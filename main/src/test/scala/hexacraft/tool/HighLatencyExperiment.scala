@@ -14,11 +14,12 @@ import hexacraft.world.*
 import hexacraft.world.coord.CylCoords
 
 import java.nio.file.Files
-import java.time.Instant
 import java.util.UUID
 import scala.collection.mutable
 
 object HighLatencyExperiment {
+  private val LatencyMs = 10
+
   def main(args: Array[String]): Unit = {
     val saveDir = Files.createTempDirectory("hexacraft_world_")
 
@@ -59,13 +60,13 @@ object HighLatencyExperiment {
               val mainChannel = NetworkChannel.client("127.0.0.1", 1298)
               var mainChannelClosed = false
               val channel = new NetworkChannel {
-                private val queue = mutable.Queue[(Instant, Array[Byte])]()
+                private val queue = mutable.Queue[(Long, Array[Byte])]()
                 private var isClosed = false
 
                 new Thread(() => {
                   while !isClosed || queue.nonEmpty do {
                     val item = queue.synchronized {
-                      if queue.nonEmpty && queue.head._1.isBefore(Instant.now) then {
+                      if queue.nonEmpty && queue.head._1 < System.currentTimeMillis then {
                         Some(queue.dequeue())
                       } else {
                         None
@@ -82,7 +83,7 @@ object HighLatencyExperiment {
                 }).start()
 
                 override def send(data: Array[Byte]): Unit = {
-                  queue.synchronized(queue.enqueue((Instant.now.plusMillis(10), data)))
+                  queue.synchronized(queue.enqueue((System.currentTimeMillis + LatencyMs, data)))
                 }
 
                 override def tryReceive() = {
