@@ -17,7 +17,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object TerrainVboData {
-  private val topBottomVertexIndices = Seq(1, 6, 0, 6, 1, 2, 2, 3, 6, 4, 6, 3, 6, 4, 5, 5, 0, 6)
+  private val topBottomVertexIndices = Seq(1, 2, 0, 3, 0, 2, 5, 0, 3, 4, 5, 3)
   private val sideVertexIndices = Seq(0, 1, 3, 2, 0, 3)
   private val cornerOffsets = Seq((2, 0), (1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1))
 
@@ -83,7 +83,7 @@ object TerrainVboData {
           }
 
           if side < 2 then {
-            Loop.rangeUntil(0, 6 * 3) { i =>
+            Loop.rangeUntil(0, 4 * 3) { i =>
               val faceIndex = i / 3
               val vertexId = i % 3
               val a = topBottomVertexIndices(i)
