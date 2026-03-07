@@ -33,8 +33,6 @@ object GameClient {
     case CursorReleased
   }
 
-  private val useFarDistanceRenderer = false
-
   def create(
       playerId: UUID,
       playerName: String,
@@ -44,7 +42,8 @@ object GameClient {
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem,
       maxChunksToLoad: Int,
-      renderDistance: Double
+      renderDistance: Double,
+      useFarDistanceRenderer: Boolean = false
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(channel)
 
