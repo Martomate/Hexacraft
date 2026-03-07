@@ -41,7 +41,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
   }
 
   private def performTerrainUpdates(camera: Camera): Unit = {
-    val terrainUpdates = mutable.ArrayBuffer.empty[(ChunkRelWorld, ByteBuffer)]
+    val terrainUpdates = mutable.ArrayBuffer.empty[(ChunkRelWorld, Seq[(Vector3f, ByteBuffer)])]
     terrainLoadingPrio.tick(Pose(CylCoords(camera.view.position), camera.view.forward))
 
     val terrainRemovals = mutable.ArrayBuffer.empty[ChunkRelWorld]
@@ -94,7 +94,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
           }
 
           val data = TerrainVboData.fromChunk(coords, chunks, blockTextureColors)
-          if data.hasRemaining then {
+          if data.nonEmpty then {
             terrainUpdates += coords -> data
           }
           terrainLoadingPrio += coords
@@ -138,7 +138,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
     val sh = terrainShader
     sh.enable()
     Loop.iterate(terrainRenderers.valuesIterator) { r =>
-      r.render()
+      r.render(sh)
     }
   }
 

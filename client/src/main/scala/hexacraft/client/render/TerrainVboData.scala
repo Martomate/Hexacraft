@@ -1,6 +1,6 @@
 package hexacraft.client.render
 
-import hexacraft.shaders.BlockShader
+import hexacraft.shaders.TerrainShader
 import hexacraft.shaders.TerrainShader.TerrainVertexData
 import hexacraft.util.Loop
 import hexacraft.world.CylinderSize
@@ -25,11 +25,10 @@ object TerrainVboData {
       chunkCoords: ChunkRelWorld,
       chunks: mutable.LongMap[ChunkStorage],
       blockTextureColors: Map[String, IndexedSeq[Vector3f]]
-  )(using CylinderSize): ByteBuffer = {
+  )(using CylinderSize): Seq[(Vector3f, ByteBuffer)] = {
     val blocks = chunks(chunkCoords.value).allBlocks
 
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
-    val sidesCount = Array.ofDim[Int](8)
 
     Loop.rangeUntil(0, 8) { s =>
       val shouldRender = sidesToRender(s)
@@ -47,12 +46,10 @@ object TerrainVboData {
 
             if !bs.blockType.isCovering(bs.metadata, otherSide) || bs.blockType.isTransmissive then {
               shouldRender.set(c.value)
-              sidesCount(s) += 1
 
               // render the top side
               if s > 1 && !b.blockType.isCovering(b.metadata, s) then {
                 shouldRenderTop.set(c.value)
-                sidesCount(0) += 1
               }
             }
           }
@@ -60,7 +57,9 @@ object TerrainVboData {
       }
     }
 
-    val blocksBuffers = new Array[ByteBuffer](8)
+    val vertices = blockTextureColors.values.flatten.toSeq.distinct
+      .map(_ -> new mutable.ArrayBuffer[TerrainVertexData](blocks.length))
+      .toMap
 
     Loop.rangeUntil(0, 8) { side =>
       val shouldRender = sidesToRender(side)
@@ -70,8 +69,6 @@ object TerrainVboData {
       }
 
       val cornersPerBlock = if side < 2 then 7 else 4
-
-      val vertices = new mutable.ArrayBuffer[TerrainVertexData](blocks.length)
 
       Loop.array(blocks) { case LocalBlockState(localCoords, block) =>
         if shouldRender.get(localCoords.value) then {
@@ -107,7 +104,7 @@ object TerrainVboData {
                 worldCoords.z * 2 + worldCoords.x + z
               )
 
-              vertices += TerrainVertexData(pos, color)
+              vertices(color) += TerrainVertexData(pos)
             }
           } else {
             Loop.rangeUntil(0, 2 * 3) { i =>
@@ -123,28 +120,22 @@ object TerrainVboData {
                 worldCoords.z * 2 + worldCoords.x + z
               )
 
-              vertices += TerrainVertexData(pos, color)
+              vertices(color) += TerrainVertexData(pos)
             }
           }
         }
       }
+    }
 
-      val bytesPerBlock = BlockShader.bytesPerVertex(side) * BlockShader.verticesPerBlock(side)
-      val buf = BufferUtils.createByteBuffer(sidesCount(side) * bytesPerBlock)
+    vertices.toSeq.filter(_._2.nonEmpty).map { (color, vertices) =>
+      val buf = BufferUtils.createByteBuffer(vertices.size * TerrainShader.bytesPerVertex)
       Loop.array(vertices) { v =>
         v.fill(buf)
       }
 
       buf.flip()
-      blocksBuffers(side) = buf
+      color -> buf
     }
-
-    val finalBuffer = BufferUtils.createByteBuffer(blocksBuffers.map(_.remaining).sum)
-    Loop.array(blocksBuffers) { b =>
-      finalBuffer.put(b)
-    }
-    finalBuffer.flip()
-    finalBuffer
   }
 
   private def calculateCornerHeight(

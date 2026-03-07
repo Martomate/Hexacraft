@@ -13,7 +13,7 @@ class TerrainShader {
     ShaderConfig()
       .withStage(ShaderType.Vertex, "terrain/vert.glsl")
       .withStage(ShaderType.Fragment, "terrain/frag.glsl")
-      .withInputs("position", "color")
+      .withInputs("position")
   )
 
   def setTotalSize(totalSize: Int): Unit = {
@@ -36,6 +36,10 @@ class TerrainShader {
     shader.setUniformMat4("viewMatrix", matrix)
   }
 
+  def setColor(color: Vector3f): Unit = {
+    shader.setUniform3f("color", color.x, color.y, color.z)
+  }
+
   def enable(): Unit = {
     shader.activate()
   }
@@ -49,22 +53,18 @@ object TerrainShader {
   def createVao(maxVertices: Int): VAO = {
     VAO.build(maxVertices)(
       _.addVertexVbo(maxVertices, VboUsage.DynamicDraw)(
-        _.ints(0, 3).floats(1, 3)
+        _.ints(0, 3)
       )
     )
   }
 
-  def bytesPerVertex: Int = 6 * 4
+  def bytesPerVertex: Int = 3 * 4
 
-  class TerrainVertexData(position: Vector3i, color: Vector3f) {
+  class TerrainVertexData(position: Vector3i) {
     def fill(buf: ByteBuffer): Unit = {
       buf.putInt(position.x)
       buf.putInt(position.y)
       buf.putInt(position.z)
-
-      buf.putFloat(color.x)
-      buf.putFloat(color.y)
-      buf.putFloat(color.z)
     }
   }
 }
