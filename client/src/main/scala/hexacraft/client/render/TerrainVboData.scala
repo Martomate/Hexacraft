@@ -31,12 +31,12 @@ object TerrainVboData {
     val sidesToRender = Array.tabulate[util.BitSet](8)(_ => new util.BitSet(16 * 16 * 16))
     val sidesCount = Array.ofDim[Int](8)
 
-    for s <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { s =>
       val shouldRender = sidesToRender(s)
       val shouldRenderTop = sidesToRender(0)
       val otherSide = oppositeSide(s)
 
-      for LocalBlockState(c, b) <- blocks do {
+      Loop.array(blocks) { case LocalBlockState(c, b) =>
         if b.blockType.canBeRendered then {
           if !b.blockType.isTransmissive then {
             val c2w = c.globalNeighbor(s, chunkCoords)
@@ -60,7 +60,9 @@ object TerrainVboData {
       }
     }
 
-    val blocksBuffers = for side <- 0 until 8 yield {
+    val blocksBuffers = new Array[ByteBuffer](8)
+
+    Loop.rangeUntil(0, 8) { side =>
       val shouldRender = sidesToRender(side)
 
       val blockAtFn = (coords: BlockRelWorld) => {
@@ -71,72 +73,74 @@ object TerrainVboData {
 
       val vertices = new mutable.ArrayBuffer[TerrainVertexData](blocks.length)
 
-      for LocalBlockState(localCoords, block) <- blocks if shouldRender.get(localCoords.value) do {
-        val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
-        val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
-        val color = blockTextureColors(block.blockType.name)(side)
+      Loop.array(blocks) { case LocalBlockState(localCoords, block) =>
+        if shouldRender.get(localCoords.value) then {
+          val worldCoords = BlockRelWorld.fromChunk(localCoords, chunkCoords)
+          val neighborWorldCoords = localCoords.globalNeighbor(side, chunkCoords)
+          val color = blockTextureColors(block.blockType.name)(side)
 
-        val cornerHeights = Array.ofDim[Float](7)
+          val cornerHeights = Array.ofDim[Float](7)
 
-        for cornerIdx <- 0 until cornersPerBlock do {
-          cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAtFn, cornerIdx, side)
-        }
-
-        if side < 2 then {
-          for i <- 0 until 6 * 3 do {
-            val faceIndex = i / 3
-            val vertexId = i % 3
-            val a = topBottomVertexIndices(i)
-
-            val (x, z) =
-              if a == 6 then {
-                (0, 0)
-              } else {
-                val (x, z) = cornerOffsets(a)
-                if side == 0 then (-x, z) else (x, z)
-              }
-
-            val height = cornerHeights(a)
-
-            val pos = Vector3i(
-              worldCoords.x * 3 + x,
-              worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt,
-              worldCoords.z * 2 + worldCoords.x + z
-            )
-
-            vertices += TerrainVertexData(pos, color)
+          Loop.rangeUntil(0, cornersPerBlock) { cornerIdx =>
+            cornerHeights(cornerIdx) = calculateCornerHeight(block, worldCoords, blockAtFn, cornerIdx, side)
           }
-        } else {
-          for i <- 0 until 2 * 3 do {
-            val a = sideVertexIndices(i)
-            val v = (side - 2 + a % 2) % 6
-            val (x, z) = cornerOffsets(v)
 
-            val height = cornerHeights(a)
+          if side < 2 then {
+            Loop.rangeUntil(0, 6 * 3) { i =>
+              val faceIndex = i / 3
+              val vertexId = i % 3
+              val a = topBottomVertexIndices(i)
 
-            val pos = Vector3i(
-              worldCoords.x * 3 + x,
-              worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt,
-              worldCoords.z * 2 + worldCoords.x + z
-            )
+              val (x, z) =
+                if a == 6 then {
+                  (0, 0)
+                } else {
+                  val (x, z) = cornerOffsets(a)
+                  if side == 0 then (-x, z) else (x, z)
+                }
 
-            vertices += TerrainVertexData(pos, color)
+              val height = cornerHeights(a)
+
+              val pos = Vector3i(
+                worldCoords.x * 3 + x,
+                worldCoords.y * 32 * 6 + ((1 - side) * 32 * 6 * height).toInt,
+                worldCoords.z * 2 + worldCoords.x + z
+              )
+
+              vertices += TerrainVertexData(pos, color)
+            }
+          } else {
+            Loop.rangeUntil(0, 2 * 3) { i =>
+              val a = sideVertexIndices(i)
+              val v = (side - 2 + a % 2) % 6
+              val (x, z) = cornerOffsets(v)
+
+              val height = cornerHeights(a)
+
+              val pos = Vector3i(
+                worldCoords.x * 3 + x,
+                worldCoords.y * 32 * 6 + ((1 - a / 2) * 32 * 6 * height).toInt,
+                worldCoords.z * 2 + worldCoords.x + z
+              )
+
+              vertices += TerrainVertexData(pos, color)
+            }
           }
         }
       }
 
       val bytesPerBlock = BlockShader.bytesPerVertex(side) * BlockShader.verticesPerBlock(side)
       val buf = BufferUtils.createByteBuffer(sidesCount(side) * bytesPerBlock)
-      for v <- vertices do {
+      Loop.array(vertices) { v =>
         v.fill(buf)
       }
 
       buf.flip()
-      buf
+      blocksBuffers(side) = buf
     }
 
     val finalBuffer = BufferUtils.createByteBuffer(blocksBuffers.map(_.remaining).sum)
-    for b <- blocksBuffers do {
+    Loop.array(blocksBuffers) { b =>
       finalBuffer.put(b)
     }
     finalBuffer.flip()

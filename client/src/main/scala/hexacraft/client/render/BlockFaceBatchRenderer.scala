@@ -1,6 +1,6 @@
 package hexacraft.client.render
 
-import hexacraft.util.KeyedSegment
+import hexacraft.util.{KeyedSegment, Loop}
 import hexacraft.world.coord.ChunkRelWorld
 
 import java.nio.ByteBuffer
@@ -17,21 +17,21 @@ class BlockFaceBatchRenderer(bufferHandler: BufferHandler[?]) {
   }
 
   def update(
-      chunksToClear: collection.Seq[ChunkRelWorld],
-      chunksToUpdate: collection.Seq[(ChunkRelWorld, ByteBuffer)]
+      chunksToClear: IndexedSeq[ChunkRelWorld],
+      chunksToUpdate: IndexedSeq[(ChunkRelWorld, ByteBuffer)]
   ): Unit = {
     // Step 1: mark old data as unused
-    for coords <- chunksToClear do {
+    Loop.array(chunksToClear) { coords =>
       memorySegments.clear(coords)
     }
-    for (coords, _) <- chunksToUpdate do {
+    Loop.array(chunksToUpdate) { case (coords, _) =>
       memorySegments.clear(coords)
     }
 
     // Step 2: fill data into the space of the old data and push the rest at the end
-    for (coords, data) <- chunksToUpdate do {
+    Loop.array(chunksToUpdate) { case (coords, data) =>
       val segments = memorySegments.allocate(coords, data.remaining())
-      for s <- segments do {
+      Loop.iterate(segments.iterator) { s =>
         bufferHandler.set(s, data)
       }
     }

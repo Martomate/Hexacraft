@@ -3,6 +3,7 @@ package hexacraft.client
 import hexacraft.client.render.BlockRenderer
 import hexacraft.renderer.*
 import hexacraft.shaders.GuiBlockShader
+import hexacraft.util.Loop
 import hexacraft.world.CameraProjection
 import hexacraft.world.block.Block
 
@@ -52,7 +53,7 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
 
     blockTexture.bind()
 
-    for side <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { side =>
       val sh = if side < 2 then guiBlockShader else guiBlockSideShader
       sh.enable()
       sh.setSide(side)
@@ -61,11 +62,11 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
   }
 
   def updateContent(xOff: Float, yOff: Float, blocks: Seq[Block]): Unit = {
-    for side <- 0 until 8 do {
+    Loop.rangeUntil(0, 8) { side =>
       val data = new mutable.ArrayBuffer[GuiBlockShader.InstanceData](h * w)
 
-      for y <- 0 until h do {
-        for x <- 0 until w do {
+      Loop.rangeUntil(0, h) { y =>
+        Loop.rangeUntil(0, w) { x =>
           val blockToDraw = blocks(x + y * w)
           if blockToDraw.canBeRendered then {
             val blockPos = Vector2f(x * separation + xOff, y * separation + yOff)
@@ -75,13 +76,14 @@ class GuiBlockRenderer(w: Int, h: Int, separation: Float = 0.2f)(blockTextureInd
         }
       }
 
-      guiBlockRenderers(side).setInstanceData(data.size): buf =>
+      guiBlockRenderers(side).setInstanceData(data.size) { buf =>
         data.foreach(_.fill(buf))
+      }
     }
   }
 
   def unload(): Unit = {
-    for r <- guiBlockRenderers do {
+    Loop.array(guiBlockRenderers) { r =>
       r.unload()
     }
   }

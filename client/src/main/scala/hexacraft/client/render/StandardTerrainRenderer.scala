@@ -106,7 +106,7 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
       for (g, clear, update) <- InlinedIterable(groupData) do {
         val r = batchRenderers.getOrElseUpdate(g, new BlockFaceBatchRenderer(makeBufferHandler(s, gpuState)))
 
-        r.update(clear, update.map((c, data) => c -> data(s)))
+        r.update(clear.toIndexedSeq, update.map((c, data) => c -> data(s)).toIndexedSeq)
 
         if r.isEmpty then {
           r.unload()

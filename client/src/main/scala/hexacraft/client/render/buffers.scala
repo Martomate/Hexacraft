@@ -2,8 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
-import hexacraft.shaders.BlockShader
-import hexacraft.util.{Segment, SegmentSet}
+import hexacraft.util.{Loop, Segment, SegmentSet}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
@@ -23,7 +22,7 @@ class BufferHandler[T <: RenderBuffer[T]](
     val endBuf = (seg.start + seg.length - 1) / bufSize
     var left = seg.length
     var pos = seg.start
-    for i <- startBuf to endBuf do {
+    Loop.rangeTo(startBuf, endBuf) { i =>
       val start = pos % bufSize
       val amt = math.min(left, bufSize - start)
 
@@ -44,11 +43,11 @@ class BufferHandler[T <: RenderBuffer[T]](
   }
 
   def render(segments: SegmentSet): Unit = {
-    for s <- segments do {
+    Loop.iterate(segments.iterator) { s =>
       if s.length > 0 then {
         val lo = s.start
         val hi = s.start + s.length
-        for i <- lo / bufSize to (hi - 1) / bufSize do {
+        Loop.rangeTo(lo / bufSize, (hi - 1) / bufSize) { i =>
           val start = math.max(lo - i * bufSize, 0)
           val end = math.min(hi - i * bufSize, bufSize)
           val len = end - start
@@ -59,7 +58,7 @@ class BufferHandler[T <: RenderBuffer[T]](
   }
 
   def unload(): Unit = {
-    for b <- buffers do {
+    Loop.array(buffers) { b =>
       b.unload()
     }
   }

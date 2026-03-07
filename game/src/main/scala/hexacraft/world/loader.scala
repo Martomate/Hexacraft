@@ -1,6 +1,6 @@
 package hexacraft.world
 
-import hexacraft.util.{Channel, TickableTimer}
+import hexacraft.util.{Channel, Loop, TickableTimer}
 import hexacraft.world.coord.*
 
 import scala.collection.mutable
@@ -162,8 +162,7 @@ class ChunkLoadingEdge(dispatcher: Channel.Sender[ChunkLoadingEdge.Event])(using
     setOnEdge(chunk, !chunk.neighbors.forall(isLoaded))
     setLoadable(chunk, false)
 
-    for n <- chunk.neighbors
-    do {
+    Loop.array(chunk.neighbors) { n =>
       if n.neighbors.forall(isLoaded) then {
         setOnEdge(n, false)
       }
@@ -178,8 +177,7 @@ class ChunkLoadingEdge(dispatcher: Channel.Sender[ChunkLoadingEdge.Event])(using
     setOnEdge(chunk, false)
     setLoadable(chunk, chunk.neighbors.exists(isLoaded))
 
-    for n <- chunk.neighbors
-    do {
+    Loop.array(chunk.neighbors) { n =>
       if !n.neighbors.exists(isLoaded) then {
         setLoadable(n, false)
       }

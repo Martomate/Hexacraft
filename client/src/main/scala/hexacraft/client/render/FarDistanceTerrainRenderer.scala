@@ -3,6 +3,7 @@ package hexacraft.client.render
 import hexacraft.client.ClientWorld.WorldTickResult
 import hexacraft.renderer.GpuState
 import hexacraft.shaders.TerrainShader
+import hexacraft.util.Loop
 import hexacraft.world.*
 import hexacraft.world.chunk.{ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage}
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld, CylCoords}
@@ -53,44 +54,43 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
           doneRemoving = true
       }
     }
-    for _ <- 0 until 10 do {
+    Loop.rangeUntil(0, 10) { _ =>
       terrainLoadingPrio.nextAddableChunk match {
         case Some(coords) =>
           val columnCoords = coords.getColumnRelWorld
           val cc = columnCoords
 
           val columns = mutable.LongMap.empty[ChunkColumnTerrain]
-          for {
-            dx <- -1 to 1
-            dz <- -1 to 1
-          } do {
-            val col = ColumnRelWorld(cc.X.toInt + dx, cc.Z.toInt + dz)
-            columns.put(
-              col.value,
-              columnCache.getOrElseUpdate(
+          Loop.rangeTo(-1, 1) { dx =>
+            Loop.rangeTo(-1, 1) { dz =>
+              val col = ColumnRelWorld(cc.X.toInt + dx, cc.Z.toInt + dz)
+              columns.put(
                 col.value,
-                ChunkColumnTerrain.create(
-                  ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(col)),
-                  None
+                columnCache.getOrElseUpdate(
+                  col.value,
+                  ChunkColumnTerrain.create(
+                    ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(col)),
+                    None
+                  )
                 )
               )
-            )
+            }
           }
 
           val chunks = mutable.LongMap.empty[ChunkStorage]
-          for {
-            dx <- -1 to 1
-            dy <- -1 to 1
-            dz <- -1 to 1
-          } do {
-            val ch = ChunkRelWorld(coords.X.toInt + dx, coords.Y.toInt + dy, coords.Z.toInt + dz)
-            chunks.put(
-              ch.value,
-              chunkCache.getOrElseUpdate(
-                ch.value,
-                worldGenerator.generateChunk(ch, columns(ch.getColumnRelWorld.value))
-              )
-            )
+          Loop.rangeTo(-1, 1) { dx =>
+            Loop.rangeTo(-1, 1) { dy =>
+              Loop.rangeTo(-1, 1) { dz =>
+                val ch = ChunkRelWorld(coords.X.toInt + dx, coords.Y.toInt + dy, coords.Z.toInt + dz)
+                chunks.put(
+                  ch.value,
+                  chunkCache.getOrElseUpdate(
+                    ch.value,
+                    worldGenerator.generateChunk(ch, columns(ch.getColumnRelWorld.value))
+                  )
+                )
+              }
+            }
           }
 
           val data = TerrainVboData.fromChunk(coords, chunks, blockTextureColors)
@@ -105,13 +105,13 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
     for (g, removals) <- terrainRemovals.toSeq.groupBy(c => chunkGroup(c)) do {
       terrainRenderers
         .getOrElseUpdate(g, new TerrainBatchRenderer(makeTerrainBufferHandler()))
-        .update(removals, Seq())
+        .update(removals.toIndexedSeq, IndexedSeq.empty)
     }
 
     for (g, updates) <- terrainUpdates.toSeq.groupBy((c, _) => chunkGroup(c)) do {
       terrainRenderers
         .getOrElseUpdate(g, new TerrainBatchRenderer(makeTerrainBufferHandler()))
-        .update(Seq(), updates)
+        .update(IndexedSeq.empty, updates.toIndexedSeq)
     }
   }
 
@@ -137,7 +137,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
   private def renderTerrain(): Unit = {
     val sh = terrainShader
     sh.enable()
-    for r <- terrainRenderers.values do {
+    Loop.iterate(terrainRenderers.valuesIterator) { r =>
       r.render()
     }
   }
@@ -151,7 +151,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
   }
 
   def unload(): Unit = {
-    for r <- terrainRenderers.values do {
+    Loop.iterate(terrainRenderers.valuesIterator) { r =>
       r.unload()
     }
 

@@ -141,7 +141,7 @@ object ChunkRelWorld {
   def apply(chunk: Int12, column: ColumnRelWorld): ChunkRelWorld =
     ChunkRelWorld(column.value << 12L | chunk.repr.toInt)
 
-  val neighborOffsets: Seq[Offset] = Seq(
+  val neighborOffsets: Array[Offset] = Array(
     Offset(0, 1, 0),
     Offset(1, 0, 0),
     Offset(0, 0, 1),
@@ -160,7 +160,7 @@ case class ChunkRelWorld(value: Long) extends AnyVal { // XXXXXZZZZZYYY
   def Z: Int20 = Int20.truncate(value >> 12)
   def Y: Int12 = Int12.truncate(value)
 
-  def neighbors(using CylinderSize): Seq[ChunkRelWorld] =
+  def neighbors(using CylinderSize): Array[ChunkRelWorld] =
     ChunkRelWorld.neighborOffsets.map(offset)
 
   def extendedNeighbors(radius: Int)(using CylinderSize): ExtendedNeighbors = {

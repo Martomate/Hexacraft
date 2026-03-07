@@ -147,7 +147,7 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
 
     val expectedEvents = Event.ChunkOnEdge(coords, true) +: coords.neighbors.map(n => Event.ChunkLoadable(n, true))
 
-    assertEquals(tracker.events, expectedEvents)
+    assertEquals(tracker.events, expectedEvents.toSeq)
   }
 
   test("event trackers should be notified when a chunk is unloaded") {
@@ -166,6 +166,6 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
     edge.unloadChunk(coords)
 
     val expectedEvents = Event.ChunkOnEdge(coords, false) +: coords.neighbors.map(n => Event.ChunkLoadable(n, false))
-    assertEquals(tracker.events, expectedEvents)
+    assertEquals(tracker.events, expectedEvents.toSeq)
   }
 }
