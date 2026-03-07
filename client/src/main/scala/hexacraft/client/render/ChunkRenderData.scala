@@ -42,8 +42,7 @@ object ChunkRenderData {
     Loop.rangeUntil(0, 8) { side =>
       val vertices = builder.calculateVertices(side)
 
-      val bytesPerBlock = BlockShader.bytesPerVertex(side) * BlockShader.verticesPerBlock(side)
-      val buf = BufferUtils.createByteBuffer(vertices.size * bytesPerBlock)
+      val buf = BufferUtils.createByteBuffer(vertices.size * BlockShader.bytesPerVertex(side))
 
       Loop.array(vertices) { v =>
         v.fill(buf)

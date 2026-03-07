@@ -48,8 +48,6 @@ class BlockShader(isSide: Boolean) {
 
 object BlockShader {
   def createVao(side: Int, maxVertices: Int): VAO = {
-    val verticesPerInstance = verticesPerBlock(side)
-
     VAO.build(maxVertices)(
       _.addVertexVbo(maxVertices, VboUsage.DynamicDraw)(
         _.ints(0, 3)
@@ -59,14 +57,6 @@ object BlockShader {
           .floats(4, 2)
       )
     )
-  }
-
-  def verticesPerBlock(side: Int): Int = {
-    if side < 2 then {
-      3 * 6
-    } else {
-      3 * 2
-    }
   }
 
   def bytesPerVertex(side: Int): Int = (4 + 6) * 4
