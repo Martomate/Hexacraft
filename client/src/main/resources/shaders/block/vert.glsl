@@ -4,7 +4,7 @@
 in ivec3 position;
 in int texIndex;
 in vec3 normal;
-in float brightness;
+in float lightCloseness; // 1 = at the light (from the sun), 0 = too far away
 in vec2 texCoords;
 
 struct FragInFlat {
@@ -15,7 +15,7 @@ struct FragIn {
     vec3 position;
     vec2 texCoords;
     float mult;
-    float brightness;
+    float lightCloseness;
     vec3 normal;
 };
 
@@ -55,5 +55,5 @@ void main() {
 
     fragIn.mult = mult;
     fragInFlat.texIndex = texIndex;
-    fragIn.brightness = brightness * brightness;
+    fragIn.lightCloseness = lightCloseness;
 }
