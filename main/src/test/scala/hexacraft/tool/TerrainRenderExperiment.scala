@@ -1,15 +1,15 @@
 package hexacraft.tool
 
 import hexacraft.client.{BlockTextureLoader, GameClient, NetworkChannel}
-import hexacraft.gui.{RenderContext, Scene, TickContext}
+import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.{CursorMode, WindowSystem}
-import hexacraft.main.{MainWindow, SceneRoute, SceneRouter}
+import hexacraft.main.{GameScene, MainWindow, SceneRoute, SceneRouter}
 import hexacraft.nbt.Nbt
 import hexacraft.server.GameServer
 import hexacraft.util.Channel
-import hexacraft.world.{CylinderSize, FakeWorldProvider, Player, WorldGenSettings, WorldInfo}
+import hexacraft.world.*
 import hexacraft.world.coord.CylCoords
 
 import java.nio.file.Files
@@ -87,35 +87,7 @@ object TerrainRenderExperiment {
                   window.setCursorMode(CursorMode.Normal)
               }
 
-              new Scene {
-                override def handleEvent(event: hexacraft.gui.Event): Boolean = {
-                  client.handleEvent(event)
-                }
-
-                override def windowFocusChanged(focused: Boolean): Unit = {
-                  client.windowFocusChanged(focused)
-                }
-
-                override def windowResized(width: Int, height: Int): Unit = {
-                  client.windowResized(width, height)
-                }
-
-                override def frameBufferResized(width: Int, height: Int): Unit = {
-                  client.frameBufferResized(width, height)
-                }
-
-                override def render(context: RenderContext): Unit = {
-                  client.render(context)
-                }
-
-                override def tick(ctx: TickContext): Unit = {
-                  client.tick(ctx)
-                }
-
-                override def unload(): Unit = {
-                  client.unload()
-                }
-              }
+              new GameScene(client, None)
             case _ =>
               throw new IllegalStateException("missing route")
           }

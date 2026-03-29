@@ -1,11 +1,11 @@
 package hexacraft.tool
 
 import hexacraft.client.{BlockTextureLoader, GameClient, NetworkChannel}
-import hexacraft.gui.{RenderContext, Scene, TickContext}
+import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.window.{CursorMode, WindowSystem}
-import hexacraft.main.{MainWindow, SceneRoute, SceneRouter}
+import hexacraft.main.{GameScene, MainWindow, SceneRoute, SceneRouter}
 import hexacraft.nbt.Nbt
 import hexacraft.server.{GameServer, TcpServer}
 import hexacraft.server.world.ServerWorld
@@ -64,53 +64,7 @@ object HighLatencyExperiment {
               require(isHosting)
               require(!isOnline)
 
-              val mainChannel = NetworkChannel.client("127.0.0.1", 1298)
-              var mainChannelClosed = false
-              val channel = new NetworkChannel {
-                private val queue = mutable.Queue[(Long, Array[Byte])]()
-                private var _isClosed = false
-
-                new Thread(() => {
-                  while !_isClosed || queue.nonEmpty do {
-                    val item = queue.synchronized {
-                      if queue.nonEmpty && queue.head._1 < System.currentTimeMillis then {
-                        Some(queue.dequeue())
-                      } else {
-                        None
-                      }
-                    }
-                    item match {
-                      case Some((_, data)) =>
-                        if !mainChannelClosed then {
-                          mainChannel.send(data)
-                        }
-                      case None =>
-                    }
-                  }
-                }).start()
-
-                override def send(data: Array[Byte]): Unit = {
-                  queue.synchronized(queue.enqueue((System.currentTimeMillis + LatencyMs, data)))
-                }
-
-                override def tryReceive() = {
-                  if !mainChannelClosed then {
-                    mainChannel.tryReceive()
-                  } else {
-                    None
-                  }
-                }
-
-                override def close(): Unit = {
-                  mainChannelClosed = true
-                  mainChannel.close()
-                  _isClosed = true
-                }
-
-                override def isClosed = {
-                  _isClosed
-                }
-              }
+              val channel = new HighLatencyNetworkChannel(NetworkChannel.client("127.0.0.1", 1298), LatencyMs)
 
               val (client, rx) = GameClient
                 .create(
@@ -135,35 +89,7 @@ object HighLatencyExperiment {
                   window.setCursorMode(CursorMode.Normal)
               }
 
-              new Scene {
-                override def handleEvent(event: hexacraft.gui.Event): Boolean = {
-                  client.handleEvent(event)
-                }
-
-                override def windowFocusChanged(focused: Boolean): Unit = {
-                  client.windowFocusChanged(focused)
-                }
-
-                override def windowResized(width: Int, height: Int): Unit = {
-                  client.windowResized(width, height)
-                }
-
-                override def frameBufferResized(width: Int, height: Int): Unit = {
-                  client.frameBufferResized(width, height)
-                }
-
-                override def render(context: RenderContext): Unit = {
-                  client.render(context)
-                }
-
-                override def tick(ctx: TickContext): Unit = {
-                  client.tick(ctx)
-                }
-
-                override def unload(): Unit = {
-                  client.unload()
-                }
-              }
+              new GameScene(client, None)
             case _ =>
               throw new IllegalStateException("missing route")
           }
@@ -181,6 +107,53 @@ object HighLatencyExperiment {
     while running do {
       windowSystem.performCallsAsMainThread()
       Thread.sleep(0, 10000)
+    }
+  }
+
+  class HighLatencyNetworkChannel(mainChannel: NetworkChannel, latencyMs: Int) extends NetworkChannel {
+    private val queue = mutable.Queue[(Long, Array[Byte])]()
+    private var _isClosed = false
+    private var mainChannelClosed = false
+
+    new Thread(() => {
+      while !_isClosed || queue.nonEmpty do {
+        val item = queue.synchronized {
+          if queue.nonEmpty && queue.head._1 < System.currentTimeMillis then {
+            Some(queue.dequeue())
+          } else {
+            None
+          }
+        }
+        item match {
+          case Some((_, data)) =>
+            if !mainChannelClosed then {
+              mainChannel.send(data)
+            }
+          case None =>
+        }
+      }
+    }).start()
+
+    override def send(data: Array[Byte]): Unit = {
+      queue.synchronized(queue.enqueue((System.currentTimeMillis + latencyMs, data)))
+    }
+
+    override def tryReceive() = {
+      if !mainChannelClosed then {
+        mainChannel.tryReceive()
+      } else {
+        None
+      }
+    }
+
+    override def close(): Unit = {
+      mainChannelClosed = true
+      mainChannel.close()
+      _isClosed = true
+    }
+
+    override def isClosed = {
+      _isClosed
     }
   }
 }

@@ -85,7 +85,7 @@ object GameScene {
   }
 }
 
-class GameScene private (val client: GameClient, server: Option[GameServer]) extends Scene {
+class GameScene(val client: GameClient, server: Option[GameServer]) extends Scene {
   override def handleEvent(event: Event): Boolean = {
     client.handleEvent(event)
   }
