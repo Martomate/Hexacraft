@@ -15,10 +15,6 @@ trait HexacraftModule extends SbtModule {
     "--release", "17"
   )
 
-  override def compileMvnDeps = Seq(
-    mvn"org.scala-lang::scala2-library-tasty-experimental:${scalaVersion()}"
-  )
-
   override def artifactName = "hexacraft-" + super.artifactName()
 
   trait Tests extends SbtTests with TestModule.Munit {
