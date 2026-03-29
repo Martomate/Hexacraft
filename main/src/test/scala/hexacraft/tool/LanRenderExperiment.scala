@@ -22,14 +22,13 @@ object LanRenderExperiment {
     val worldInfo = WorldInfo(2, "test world", CylinderSize(8), WorldGenSettings.fromSeed(1234))
     val worldProvider = WorldProviderFromFile(saveDir.resolve("test_world").toFile, fs)
     val server = GameServer.create(true, 1298, worldInfo, worldProvider, 8 * CylinderSize.y60)
-    val serverThread = new Thread(() => {
-      runAtSteadyFps(60)(running) {
+
+    new Thread(() => {
+      ToolUtils.runAtSteadyFps(60)(running) {
         server.tick()
       }
       server.unload()
-    })
-
-    serverThread.start()
+    }).start()
 
     val gameThread = new Thread(() => {
       val window = MainWindow(true, saveDir.toFile, fs, audioSystem, windowSystem)
@@ -47,18 +46,6 @@ object LanRenderExperiment {
     while running do {
       windowSystem.performCallsAsMainThread()
       Thread.sleep(0, 10000)
-    }
-  }
-
-  def runAtSteadyFps(fps: Int)(running: => Boolean)(tick: => Unit): Unit = {
-    while running do {
-      val before = System.currentTimeMillis()
-      tick
-      val after = System.currentTimeMillis()
-      val sleepTime = before + 1000 / fps - after
-      if sleepTime > 0 then {
-        Thread.sleep(sleepTime)
-      }
     }
   }
 }

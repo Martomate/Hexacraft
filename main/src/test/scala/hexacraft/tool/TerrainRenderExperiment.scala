@@ -25,7 +25,33 @@ object TerrainRenderExperiment {
 
     var running = true
 
-    val gameThread = new Thread(() => {
+    given cylSize: CylinderSize = CylinderSize(8)
+
+    val worldProvider = FakeWorldProvider(1234)
+
+    val playerId = UUID.randomUUID
+    val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 50, 0))
+    player.flying = true
+    player.rotation.x = 0.3 // look slightly down to see both the ground and the horizon
+    worldProvider.savePlayerData(Nbt.encode(player), player.id)
+
+    val server = GameServer.create(
+      false,
+      1298,
+      WorldInfo(2, "test world", cylSize, WorldGenSettings.fromSeed(1234)),
+      worldProvider,
+      renderDistance = 20,
+      maxChunksToLoadPerTick = 20
+    )
+
+    new Thread(() => {
+      ToolUtils.runAtSteadyFps(60)(running) {
+        server.tick()
+      }
+      server.unload()
+    }).start()
+
+    new Thread(() => {
       val window = MainWindow(true, saveDir.toFile, fs, audioSystem, windowSystem)
       window.setNextScene(SceneRoute.Game(saveDir.resolve("test_world").toFile, true, false, null))
 
@@ -36,25 +62,6 @@ object TerrainRenderExperiment {
             case SceneRoute.Game(saveDir, isHosting, isOnline, _) =>
               require(isHosting)
               require(!isOnline)
-
-              given cylSize: CylinderSize = CylinderSize(8)
-
-              val worldProvider = FakeWorldProvider(1234)
-
-              val playerId = UUID.randomUUID
-              val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 50, 0))
-              player.flying = true
-              player.rotation.x = 0.3 // look slightly down to see both the ground and the horizon
-              worldProvider.savePlayerData(Nbt.encode(player), player.id)
-
-              val server = GameServer.create(
-                isOnline,
-                1298,
-                WorldInfo(2, "test world", cylSize, WorldGenSettings.fromSeed(1234)),
-                worldProvider,
-                renderDistance = 20,
-                maxChunksToLoadPerTick = 20
-              )
 
               val channel = NetworkChannel.client("127.0.0.1", 1298)
               val (client, rx) = GameClient
@@ -102,13 +109,11 @@ object TerrainRenderExperiment {
                 }
 
                 override def tick(ctx: TickContext): Unit = {
-                  server.tick()
                   client.tick(ctx)
                 }
 
                 override def unload(): Unit = {
                   client.unload()
-                  server.unload()
                 }
               }
             case _ =>
@@ -123,9 +128,7 @@ object TerrainRenderExperiment {
       } finally {
         running = false
       }
-    })
-
-    gameThread.start()
+    }).start()
 
     while running do {
       windowSystem.performCallsAsMainThread()
