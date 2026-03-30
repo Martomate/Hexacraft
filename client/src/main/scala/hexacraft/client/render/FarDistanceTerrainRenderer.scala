@@ -19,7 +19,7 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
 ) extends TerrainRenderer {
   private val terrainShader = new TerrainShader()
   private val terrainRenderers: mutable.LongMap[TerrainBatchRenderer] = mutable.LongMap.empty
-  private val terrainLoadingPrio = new ChunkLoadingPrioritizer(20)
+  private val terrainLoadingPrio = new ChunkLoadingPrioritizer(50)
   private val columnCache: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
   private val chunkCache: mutable.LongMap[ChunkStorage] = mutable.LongMap.empty
   private val terrainGpuState = GpuState.build(_.blend(false).cullFace(true))
@@ -54,9 +54,14 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
           doneRemoving = true
       }
     }
-    Loop.rangeUntil(0, 10) { _ =>
+    var loaded = 0
+    var skipped = 0
+    while loaded < 10 && skipped < 1000 do {
       terrainLoadingPrio.nextAddableChunk match {
-        case Some(coords) =>
+        case Some(coords)
+            if Math.abs(
+              worldGenerator.getHeightmapInterpolator(coords.getColumnRelWorld).values.head - coords.Y.toInt * 16
+            ) < 3 * 16 =>
           val columnCoords = coords.getColumnRelWorld
           val cc = columnCoords
 
@@ -98,7 +103,12 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
             terrainUpdates += coords -> data
           }
           terrainLoadingPrio += coords
+          loaded += 1
+        case Some(coords) => // skip it
+          terrainLoadingPrio += coords
+          skipped += 1
         case None =>
+          skipped += 1000
       }
     }
 
@@ -140,6 +150,8 @@ class FarDistanceTerrainRenderer(worldGenerator: WorldGenerator, blockTextureCol
     Loop.iterate(terrainRenderers.valuesIterator) { r =>
       r.render(sh)
     }
+
+    println(s"Render data: ${terrainRenderers.values.map(_.totalBytes.toLong).sum / 1_000_000} MB")
   }
 
   def onTotalSizeChanged(totalSize: Int): Unit = {

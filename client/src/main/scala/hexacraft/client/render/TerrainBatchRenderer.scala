@@ -18,6 +18,8 @@ class TerrainBatchRenderer(bufferHandlerFactory: => BufferHandler[?]) {
     val count = memorySegmentsPerColor.map(s => s._2.numKeys).sum
     total / count
   }
+  
+  def totalBytes = memorySegmentsPerColor.values.map(_.usedSegments.totalLength).sum
 
   def isEmpty: Boolean = memorySegmentsPerColor.forall(_._2.isEmpty)
 

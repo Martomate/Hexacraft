@@ -30,9 +30,9 @@ object FarRenderExperiment {
     val worldProvider = FakeWorldProvider(1234)
 
     val playerId = UUID.randomUUID
-    val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 50, 0))
+    val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 300, 0))
     player.flying = true
-    player.rotation.x = 0.3 // look slightly down to see both the ground and the horizon
+    player.rotation.x = 0.8 // look slightly down to see both the ground and the horizon
     worldProvider.savePlayerData(Nbt.encode(player), player.id)
 
     val server = GameServer.create(
@@ -72,7 +72,7 @@ object FarRenderExperiment {
                   BlockTextureLoader.instance,
                   window.windowSize,
                   audioSystem,
-                  maxChunksToLoad = 5,
+                  maxChunksToLoad = 0, // the far distance renderer is not using this data, so let's not load it
                   renderDistance = 10,
                   useFarDistanceRenderer = true
                 )

@@ -82,14 +82,16 @@ object GameClient {
 
     val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
 
-    val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
+    val camera: Camera = new Camera(
+      makeCameraProjection(initialWindowSize, world.size.worldSize, useFarDistanceRenderer)
+    )
 
     val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
     val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world.collisionDetector)
 
     val toolbar: Toolbar = makeToolbar(player, initialWindowSize, blockTextureIndices)
     val blockInHandRenderer: GuiBlockRenderer =
-      makeBlockInHandRenderer(world, camera, blockTextureIndices, initialWindowSize)
+      makeBlockInHandRenderer(world, blockTextureIndices, initialWindowSize)
 
     val placeBlockSoundBuffer = audioSystem.load(Bundle.locate("sounds/place_block.ogg").get, AudioFormat.Vorbis)
     val destroyBlockSoundBuffer = audioSystem.load(Bundle.locate("sounds/place_block.ogg").get, AudioFormat.Vorbis)
@@ -169,7 +171,6 @@ object GameClient {
 
   private def makeBlockInHandRenderer(
       world: ClientWorld,
-      camera: Camera,
       blockTextureIndices: Map[String, IndexedSeq[Int]],
       initialWindowSize: WindowSize
   ): GuiBlockRenderer = {
@@ -192,12 +193,15 @@ object GameClient {
     toolbar
   }
 
-  private def makeCameraProjection(windowSize: WindowSize, worldSize: Int) = {
-    val far = worldSize match {
-      case 0 => 100000f
-      case 1 => 10000f
-      case _ => 1000f
-    }
+  private def makeCameraProjection(windowSize: WindowSize, worldSize: Int, useFarDistanceRenderer: Boolean) = {
+    val far = if useFarDistanceRenderer then {
+      10000f
+    } else
+      worldSize match {
+        case 0 => 100000f
+        case 1 => 10000f
+        case _ => 1000f
+      }
 
     new CameraProjection(70f, windowSize.logicalAspectRatio, 0.02f, far)
   }
