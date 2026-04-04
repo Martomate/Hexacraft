@@ -13,7 +13,6 @@ import hexacraft.util.{Loop, Resource, Result}
 import org.joml.{Vector2f, Vector2i}
 
 import java.io.File
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -31,11 +30,9 @@ class MainWindow(
 
   def windowSize: WindowSize = _windowSize
 
-  private val vsyncManager = new VsyncManager(50, 80, onUpdateVsync)
-
   setupWindowSystem(windowSystem)
   private val window: Window = initWindow(_windowSize.logicalSize.x, _windowSize.logicalSize.y)
-
+  private val vsyncManager = new VsyncManager(50, 80, window.isVsync, window.setVsync)
   private val fullscreenManager = new FullscreenManager(window, windowSystem)
 
   private val mouse: GameMouse = new GameMouse
@@ -85,57 +82,57 @@ class MainWindow(
       val delta = ((currentTime - prevTime) * 1e-9 * 60).toInt
       val realPrevTime = currentTime
 
-      window.activateContext()
-
       // Process events in event queue
-      {
+      window.useContext { // TODO: refactor to not need context
         var event = window.nextEvent
         while event.isDefined do {
           processCallbackEvent(event.get)
           event = window.nextEvent
         }
-      }
 
-      switchSceneIfNeeded(router)
+        switchSceneIfNeeded(router)
 
-      keyboard.refreshPressedKeys()
+        keyboard.refreshPressedKeys()
 
-      Loop.rangeUntil(0, delta) { _ =>
-        tick()
-        ticks += 1
-        titleTicker += 1
-        if ticks % 60 == 0 then {
-          fps = frames
-          vsyncManager.handleVsync(fps)
-          ServerWorld.shouldChillChunkLoader = fps < 20
-          frames = 0
+        Loop.rangeUntil(0, delta) { _ =>
+          tick()
+          ticks += 1
+          titleTicker += 1
+          if ticks % 60 == 0 then {
+            fps = frames
+            vsyncManager.handleVsync(fps)
+            ServerWorld.shouldChillChunkLoader = fps < 20
+            frames = 0
+          }
+          prevTime += 1e9.toLong / 60
         }
-        prevTime += 1e9.toLong / 60
       }
 
-      OpenGL.lockContext()
+      val msTime = window.useContext {
+        OpenGL.lockContext()
 
-      OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
-      render()
+        OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
+        render()
 
-      OpenGL.glGetError() match {
-        case Some(error) => println("OpenGL error: " + error)
-        case None        =>
+        OpenGL.glGetError() match {
+          case Some(error) => println("OpenGL error: " + error)
+          case None        =>
+        }
+
+        frames += 1
+
+        val realDeltaTime = System.nanoTime - realPrevTime
+        val msTime = (realDeltaTime * 1e-6).toInt
+
+        window.swapBuffers()
+
+        OpenGL.unlockContext()
+        msTime
       }
-
-      frames += 1
-
-      val realDeltaTime = System.nanoTime - realPrevTime
-      val msTime = (realDeltaTime * 1e-6).toInt
-
-      window.swapBuffers()
-
-      OpenGL.unlockContext()
-      window.deactivateContext()
 
       if titleTicker > 10 then {
         titleTicker = 0
-        Future(window.setTitle(formatWindowTitle(fps, msTime, vsyncManager.isVsync)))
+        Future(window.setTitle(formatWindowTitle(fps, msTime, window.isVsync)))
       }
 
       // Put occurred events into event queue
@@ -228,10 +225,6 @@ class MainWindow(
     System.err.println(s"OpenGL debug: $messageStr")
   }
 
-  private def onUpdateVsync(vsync: Boolean): Unit = {
-    windowSystem.setVsync(vsync)
-  }
-
   private def render(): Unit = {
     if scene.isDefined then {
       scene.get.render(
@@ -270,7 +263,9 @@ class MainWindow(
   }
 
   def run(router: SceneRouter): Unit = {
-    initGL()
+    window.useContext {
+      initGL()
+    }
     audioSystem.init()
 
     try {
@@ -309,8 +304,9 @@ class MainWindow(
 
     centerWindow(window)
 
-    window.activateContext()
-    windowSystem.setVsync(vsyncManager.isVsync)
+    window.useContext {
+      window.setVsync(true)
+    }
     window.show()
     window
   }

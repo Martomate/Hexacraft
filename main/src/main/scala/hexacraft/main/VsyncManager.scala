@@ -1,15 +1,12 @@
 package hexacraft.main
 
-class VsyncManager(lo: Int, hi: Int, onUpdate: Boolean => Unit) {
-  private var vsync = true
+class VsyncManager(lo: Int, hi: Int, value: => Boolean, setValue: Boolean => Unit) {
   private var consecutiveToggleAttempts = 0
 
-  def isVsync: Boolean = vsync
-
   def handleVsync(fps: Int): Unit = {
-    val newVsync = shouldUseVsync(fps)
+    val newValue = shouldUseVsync(fps)
 
-    if newVsync != vsync then {
+    if newValue != value then {
       consecutiveToggleAttempts += 1
     } else {
       consecutiveToggleAttempts = 0
@@ -18,8 +15,7 @@ class VsyncManager(lo: Int, hi: Int, onUpdate: Boolean => Unit) {
     if consecutiveToggleAttempts >= 3
     then {
       consecutiveToggleAttempts = 0
-      vsync = newVsync
-      onUpdate(vsync)
+      setValue(newValue)
     }
   }
 
@@ -29,7 +25,7 @@ class VsyncManager(lo: Int, hi: Int, onUpdate: Boolean => Unit) {
     } else if fps < lo then {
       false
     } else {
-      vsync
+      value
     }
   }
 }

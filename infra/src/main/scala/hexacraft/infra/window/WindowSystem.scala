@@ -58,11 +58,6 @@ class WindowSystem(glfw: GlfwWrapper) {
     glfw.glfwPollEvents()
   }
 
-  /** Enables/disables vsync for the current context */
-  def setVsync(enabled: Boolean): Unit = {
-    glfw.glfwSwapInterval(if enabled then 1 else 0)
-  }
-
   def primaryMonitor: Monitor = {
     new Monitor(Monitor.Id(glfw.glfwGetPrimaryMonitor()), glfw)
   }

@@ -17,6 +17,7 @@ object Window {
 class Window(val id: Window.Id, glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
   private val eventQueue = mutable.Queue.empty[CallbackEvent]
+  private var vsyncEnabled = false
 
   def position: (Int, Int) = pointerWrapper.synchronized {
     pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(id.toLong, px, py))
@@ -43,8 +44,12 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
     glfw.glfwDestroyWindow(id.toLong)
   }
 
-  def activateContext(): Unit = glfw.glfwMakeContextCurrent(id.toLong)
-  def deactivateContext(): Unit = glfw.glfwMakeContextCurrent(0)
+  def useContext[R](run: => R): R = {
+    glfw.glfwMakeContextCurrent(id.toLong)
+    val value = run
+    glfw.glfwMakeContextCurrent(0)
+    value
+  }
 
   def show(): Unit = glfw.glfwShowWindow(id.toLong)
 
@@ -67,6 +72,14 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
 
   def enterWindowedMode(x: Int, y: Int, width: Int, height: Int): Unit = {
     glfw.glfwSetWindowMonitor(id.toLong, 0, x, y, width, height, GLFW.GLFW_DONT_CARE)
+  }
+
+  def isVsync: Boolean = vsyncEnabled
+
+  /** Enables/disables vsync for the current context */
+  def setVsync(enabled: Boolean): Unit = {
+    vsyncEnabled = enabled
+    glfw.glfwSwapInterval(if enabled then 1 else 0)
   }
 
   private[window] def addEvent(event: CallbackEvent): Unit = {
