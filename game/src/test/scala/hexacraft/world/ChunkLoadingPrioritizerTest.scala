@@ -186,7 +186,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     assert(chunks.isEmpty)
   }
 
-  test("nextAddableChunk should retain order when origin is moved") {
+  test("nextAddableChunk should return the chunk closest to the origin") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin)
     prio += prio.nextAddableChunk.get
@@ -205,8 +205,6 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     }
   }
 
-  test("nextAddableChunk should retain order when origin is rotated".ignore) {}
-
   test("nextRemovableChunk should return chunks in farthest-first order") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin)
@@ -223,7 +221,7 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
     assertEquals(prio.nextRemovableChunk, None)
   }
 
-  test("nextRemovableChunk should retain order when origin is moved") {
+  test("nextRemovableChunk should return the chunk farthest await from the origin") {
     val origin = makePos(0, 0, 0)
     val prio = make(origin, maxDist = 1)
     prio += ChunkRelWorld(0, 0, 0)
@@ -247,6 +245,4 @@ class ChunkLoadingPrioritizerTest extends FunSuite {
       prio.nextRemovableChunk
     }
   }
-
-  test("nextRemovableChunk should retain order when origin is rotated".ignore) {}
 }

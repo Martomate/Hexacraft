@@ -1,6 +1,6 @@
 package hexacraft.main
 
-import hexacraft.gui.{Event, Scene}
+import hexacraft.gui.{Event, Scene, WindowSize}
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
 import hexacraft.infra.gpu.OpenGL
@@ -10,16 +10,23 @@ import hexacraft.nbt.Nbt
 import hexacraft.util.Tracker
 
 import munit.FunSuite
+import org.joml.Vector2i
 
 import java.nio.file.Path
+import java.util.UUID
 
 class MainRouterTest extends FunSuite {
   override def beforeEach(context: BeforeEach): Unit = OpenGL._enterTestMode()
 
   private val saveDirPath = Path.of("abc")
 
+  private def makeWindow = new GameWindow {
+    override def windowSize = WindowSize(Vector2i(1000, 600), Vector2i(2000, 1200))
+    override def setCursorMode(cursorMode: CursorMode): Unit = ()
+  }
+
   def performSingleRoute(route: SceneRoute, fs: FileSystem = FileSystem.createNull()): Scene = {
-    val router = new MainRouter(saveDirPath.toFile, false, fs, null, AudioSystem.createNull())
+    val router = new MainRouter(saveDirPath.toFile, false, fs, makeWindow, AudioSystem.createNull())
     val (s, _) = router.route(route)
     s
   }
@@ -27,7 +34,7 @@ class MainRouterTest extends FunSuite {
   def performRouteAndSendEvents(route: SceneRoute, events: Seq[Event], fs: FileSystem)(using
       munit.Location
   ): SceneRouter.Event = {
-    val router = new MainRouter(saveDirPath.toFile, true, fs, null, AudioSystem.createNull())
+    val router = new MainRouter(saveDirPath.toFile, true, fs, makeWindow, AudioSystem.createNull())
 
     val (s, rx) = router.route(route)
     val tracker = Tracker.fromRx(rx)
@@ -106,7 +113,7 @@ class MainRouterTest extends FunSuite {
       assertSceneChange(event, SceneRoute.NewWorld)
     }
 
-    test("WorldChooser with click on one of the worlds routes to GameScene".ignore) {
+    test("WorldChooser with click on one of the worlds routes to GameScene") {
       val fs = FileSystem.createNull(
         Map(
           saveDirPath.resolve("saves") -> Array(),
@@ -117,7 +124,7 @@ class MainRouterTest extends FunSuite {
       )
 
       val event = performRouteAndClick(SceneRoute.WorldChooser, (0, 0.6f), fs)
-      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, true, false, null))
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.resolve("saves/world_1").toFile, true, false, null))
     }
   }
 
@@ -132,18 +139,9 @@ class MainRouterTest extends FunSuite {
       assertSceneChange(event, SceneRoute.WorldChooser)
     }
 
-    test("NewWorld with click on Create world routes to GameScene".ignore) {
-      val fs = FileSystem.createNull(
-        Map(
-          saveDirPath.resolve("saves") -> Array(),
-          saveDirPath.resolve("saves/world_1") -> Array(),
-          saveDirPath.resolve("saves/world_1/world.dat") ->
-            GzipAlgorithm.compress(Nbt.makeMap().toBinary())
-        )
-      )
-
+    test("NewWorld with click on Create world routes to GameScene") {
       val event = performRouteAndClick(SceneRoute.NewWorld, (0.1f, -0.8f))
-      assertSceneChange(event, SceneRoute.Game(saveDirPath.toFile, true, false, null))
+      assertSceneChange(event, SceneRoute.Game(saveDirPath.resolve("saves/New World").toFile, true, false, null))
     }
   }
 
@@ -206,13 +204,21 @@ class MainRouterTest extends FunSuite {
   }
 
   def testGameScene(): Unit = {
-    test("Game routes to GameScene".ignore) {
-      val scene = performSingleRoute(SceneRoute.Game(saveDirPath.toFile, true, false, null))
+    test("Game routes to GameScene") {
+      val scene = performSingleRoute(
+        SceneRoute.Game(saveDirPath.toFile, true, false, null),
+        FileSystem.createNull(
+          Map(
+            saveDirPath.resolve("userid.txt") -> UUID.randomUUID.toString.getBytes,
+            saveDirPath.resolve("world.dat") -> GzipAlgorithm.compress(Nbt.makeMap().toBinary())
+          )
+        )
+      )
       assert(scene.isInstanceOf[GameScene])
       scene.unload()
     }
 
-    test("Game with Escape key and click on Back to menu routes to MainMenu".ignore) {
+    test("Game with Escape key and click on Back to menu routes to MainMenu") {
       val clickAt = (0f, -0.4f)
 
       val event = performRouteAndSendEvents(
@@ -222,7 +228,12 @@ class MainRouterTest extends FunSuite {
           Event.MouseClickEvent(MouseButton.Left, MouseAction.Press, KeyMods.none, clickAt),
           Event.MouseClickEvent(MouseButton.Left, MouseAction.Release, KeyMods.none, clickAt)
         ),
-        FileSystem.createNull()
+        FileSystem.createNull(
+          Map(
+            saveDirPath.resolve("userid.txt") -> UUID.randomUUID.toString.getBytes,
+            saveDirPath.resolve("world.dat") -> GzipAlgorithm.compress(Nbt.makeMap().toBinary())
+          )
+        )
       )
       assertSceneChange(event, SceneRoute.Main)
     }
