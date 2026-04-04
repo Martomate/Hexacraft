@@ -4,6 +4,8 @@ import hexacraft.util.PointerWrapper
 
 import org.lwjgl.glfw.GLFW
 
+import scala.collection.mutable
+
 object Window {
   opaque type Id <: AnyVal = Long
   object Id {
@@ -14,6 +16,7 @@ object Window {
 
 class Window(val id: Window.Id, glfw: GlfwWrapper) {
   private val pointerWrapper = new PointerWrapper()
+  private val eventQueue = mutable.Queue.empty[CallbackEvent]
 
   def position: (Int, Int) = pointerWrapper.synchronized {
     pointerWrapper.ints((px, py) => glfw.glfwGetWindowPos(id.toLong, px, py))
@@ -40,7 +43,8 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
     glfw.glfwDestroyWindow(id.toLong)
   }
 
-  def makeContextCurrent(): Unit = glfw.glfwMakeContextCurrent(id.toLong)
+  def activateContext(): Unit = glfw.glfwMakeContextCurrent(id.toLong)
+  def deactivateContext(): Unit = glfw.glfwMakeContextCurrent(0)
 
   def show(): Unit = glfw.glfwShowWindow(id.toLong)
 
@@ -65,76 +69,15 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
     glfw.glfwSetWindowMonitor(id.toLong, 0, x, y, width, height, GLFW.GLFW_DONT_CARE)
   }
 
-  def setKeyCallback(callback: CallbackEvent.KeyPressed => Unit): Unit = {
-    glfw.glfwSetKeyCallback(
-      id.toLong,
-      (_, key, scancode, action, mods) =>
-        callback(
-          CallbackEvent.KeyPressed(
-            this,
-            KeyboardKey.fromGlfw(key),
-            scancode,
-            KeyAction.fromGlfw(action),
-            KeyMods.fromGlfw(mods)
-          )
-        )
-    )
+  private[window] def addEvent(event: CallbackEvent): Unit = {
+    eventQueue.synchronized {
+      eventQueue.enqueue(event)
+    }
   }
 
-  def setCharCallback(callback: CallbackEvent.CharTyped => Unit): Unit = {
-    glfw.glfwSetCharCallback(
-      id.toLong,
-      (_, character) => callback(CallbackEvent.CharTyped(this, character))
-    )
-  }
-
-  def setMouseButtonCallback(callback: CallbackEvent.MouseClicked => Unit): Unit = {
-    glfw.glfwSetMouseButtonCallback(
-      id.toLong,
-      (_, button, action, mods) =>
-        callback(
-          CallbackEvent.MouseClicked(
-            this,
-            MouseButton.fromGlfw(button),
-            MouseAction.fromGlfw(action),
-            KeyMods.fromGlfw(mods)
-          )
-        )
-    )
-  }
-
-  def setCursorPosCallback(callback: CallbackEvent.MousePosition => Unit): Unit = {
-    glfw.glfwSetCursorPosCallback(
-      id.toLong,
-      (_, x, y) => callback(CallbackEvent.MousePosition(this, x, y))
-    )
-  }
-
-  def setWindowSizeCallback(callback: CallbackEvent.WindowResized => Unit): Unit = {
-    glfw.glfwSetWindowSizeCallback(
-      id.toLong,
-      (_, width, height) => callback(CallbackEvent.WindowResized(this, width, height))
-    )
-  }
-
-  def setWindowFocusCallback(callback: CallbackEvent.WindowFocusChanged => Unit): Unit = {
-    glfw.glfwSetWindowFocusCallback(
-      id.toLong,
-      (_, focused) => callback(CallbackEvent.WindowFocusChanged(this, focused))
-    )
-  }
-
-  def setFrameBufferSizeCallback(callback: CallbackEvent.FrameBufferResized => Unit): Unit = {
-    glfw.glfwSetFramebufferSizeCallback(
-      id.toLong,
-      (_, width, height) => callback(CallbackEvent.FrameBufferResized(this, width, height))
-    )
-  }
-
-  def setScrollCallback(callback: CallbackEvent.MouseScrolled => Unit): Unit = {
-    glfw.glfwSetScrollCallback(
-      id.toLong,
-      (_, dx, dy) => callback(CallbackEvent.MouseScrolled(this, dx, dy))
-    )
+  def nextEvent: Option[CallbackEvent] = {
+    eventQueue.synchronized {
+      if eventQueue.nonEmpty then Some(eventQueue.dequeue) else None
+    }
   }
 }

@@ -107,10 +107,70 @@ class WindowSystem(glfw: GlfwWrapper) {
     if id != 0 then {
       dispatcher.notify(WindowSystem.Event.WindowCreated(settings.width, settings.height))
 
-      Some(new Window(Window.Id(id), glfw))
+      val window = new Window(Window.Id(id), glfw)
+      setWindowEventCallbacks(id, window.addEvent)
+
+      Some(window)
     } else {
       None
     }
+  }
+
+  private def setWindowEventCallbacks(windowId: Long, callback: CallbackEvent => Unit): Unit = {
+    glfw.glfwSetKeyCallback(
+      windowId,
+      (_, key, scancode, action, mods) =>
+        callback(
+          CallbackEvent.KeyPressed(
+            KeyboardKey.fromGlfw(key),
+            scancode,
+            KeyAction.fromGlfw(action),
+            KeyMods.fromGlfw(mods)
+          )
+        )
+    )
+
+    glfw.glfwSetCharCallback(
+      windowId,
+      (_, character) => callback(CallbackEvent.CharTyped(character))
+    )
+
+    glfw.glfwSetMouseButtonCallback(
+      windowId,
+      (_, button, action, mods) =>
+        callback(
+          CallbackEvent.MouseClicked(
+            MouseButton.fromGlfw(button),
+            MouseAction.fromGlfw(action),
+            KeyMods.fromGlfw(mods)
+          )
+        )
+    )
+
+    glfw.glfwSetCursorPosCallback(
+      windowId,
+      (_, x, y) => callback(CallbackEvent.MousePosition(x, y))
+    )
+
+    glfw.glfwSetWindowSizeCallback(
+      windowId,
+      (_, width, height) => callback(CallbackEvent.WindowResized(width, height))
+    )
+
+    glfw.glfwSetWindowFocusCallback(
+      windowId,
+      (_, focused) => callback(CallbackEvent.WindowFocusChanged(focused))
+    )
+
+    glfw.glfwSetFramebufferSizeCallback(
+      windowId,
+      (_, width, height) => callback(CallbackEvent.FrameBufferResized(width, height))
+    )
+
+    glfw.glfwSetScrollCallback(
+      windowId,
+      (_, dx, dy) => callback(CallbackEvent.MouseScrolled(dx, dy))
+    )
   }
 }
 
