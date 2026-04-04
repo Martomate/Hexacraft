@@ -7,6 +7,7 @@ use jni::{
 
 mod ffi {
     mod client_socket;
+    mod game_server;
     mod noise;
     mod server_socket;
     mod vorbis;

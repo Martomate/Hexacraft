@@ -67,4 +67,13 @@ public class RustLib {
         public static native byte[] receive(long handle) throws RuntimeException;
         public static native void close(long handle);
     }
+    
+    public static class GameServer {
+        static {
+            RustLib.loadNative();
+        }
+        
+        public static native long start(boolean isOnline, int port, String path);
+        public static native void stop(long handle);
+    }
 }

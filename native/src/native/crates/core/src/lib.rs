@@ -1,5 +1,6 @@
 pub mod noise_3d;
 pub mod noise_4d;
+pub mod server;
 pub mod vorbis;
 pub mod zmq;
 
