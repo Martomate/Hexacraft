@@ -12,11 +12,16 @@ trait NetworkChannel {
   def isClosed: Boolean
 
   def receive(): Array[Byte] = {
+    val startTime = System.currentTimeMillis
     while !isClosed do {
       this.tryReceive() match {
         case Some(data) =>
           return data
         case None =>
+          val timeMs = System.currentTimeMillis - startTime
+          if timeMs > 1000 then {
+            throw new RuntimeException(s"Timed out receiving data after $timeMs ms")
+          }
           Thread.sleep(1)
       }
     }
