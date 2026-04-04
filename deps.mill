@@ -7,7 +7,7 @@ object Deps {
   def scalaVersion = "3.8.2"
 
   private object versions {
-    val lwjgl = "3.3.5"
+    val lwjgl = "3.4.1"
     val joml = "1.10.7"
   }
 
