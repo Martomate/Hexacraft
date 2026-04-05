@@ -20,12 +20,12 @@ trait NetworkChannel {
         case None =>
           val timeMs = System.currentTimeMillis - startTime
           if timeMs > 1000 then {
-            throw new RuntimeException(s"Timed out receiving data after $timeMs ms")
+            throw new NetworkException(s"Timed out receiving data after $timeMs ms")
           }
           Thread.sleep(1)
       }
     }
-    throw new RuntimeException("Channel is closed")
+    throw new NetworkException("Channel is closed")
   }
 }
 
