@@ -38,5 +38,8 @@ pub fn start<'local>(
 
 #[jni_fn("hexacraft.rs.RustLib$GameServer")]
 pub fn stop<'local>(_env: JNIEnv<'local>, _class: JClass<'local>, handle: Handle<Arc<GameServer>>) {
-    handle.destroy();
+    handle.use_handle(|server| {
+        let _ = run_with_timeout(Duration::from_millis(1000), server.clone().shutdown());
+    });
+    handle.destroy(); // this stops the server
 }

@@ -81,7 +81,6 @@ enum NetworkPacket {
 
   case GetWorldInfo
   case LoadColumnData(coords: ColumnRelWorld)
-  case LoadWorldData
 
   case GetPlayerState
   case GetEvents
@@ -135,8 +134,6 @@ object NetworkPacket {
         case "load_column_data" =>
           val coords = ColumnRelWorld(root.getLong("coords", -1))
           NetworkPacket.LoadColumnData(coords)
-        case "load_world_data" =>
-          NetworkPacket.LoadWorldData
         case "get_player_state" =>
           NetworkPacket.GetPlayerState
         case "get_events" =>
@@ -184,7 +181,6 @@ object NetworkPacket {
         case NetworkPacket.Logout                       => "logout"
         case NetworkPacket.GetWorldInfo                 => "get_world_info"
         case NetworkPacket.LoadColumnData(_)            => "load_column_data"
-        case NetworkPacket.LoadWorldData                => "load_world_data"
         case NetworkPacket.GetPlayerState               => "get_player_state"
         case NetworkPacket.GetEvents                    => "get_events"
         case NetworkPacket.GetWorldLoadingEvents(_)     => "get_world_loading_events"
@@ -199,9 +195,9 @@ object NetworkPacket {
       }
 
       val tag: Nbt.MapTag = p match {
-        case NetworkPacket.Logout | NetworkPacket.GetWorldInfo | NetworkPacket.LoadWorldData |
-            NetworkPacket.PlayerRightClicked | NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState |
-            NetworkPacket.PlayerToggledFlying | NetworkPacket.GetEvents =>
+        case NetworkPacket.Logout | NetworkPacket.GetWorldInfo | NetworkPacket.PlayerRightClicked |
+            NetworkPacket.PlayerLeftClicked | NetworkPacket.GetPlayerState | NetworkPacket.PlayerToggledFlying |
+            NetworkPacket.GetEvents =>
           Nbt.emptyMap
 
         case NetworkPacket.Login(id, name) =>

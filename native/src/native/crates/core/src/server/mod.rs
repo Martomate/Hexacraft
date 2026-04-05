@@ -1,11 +1,135 @@
-use std::{collections::HashMap, mem::transmute, sync::Arc};
+use std::{collections::HashMap, f64::consts::PI, mem::transmute, sync::Arc};
+
+use tokio::sync::Mutex;
 
 use crate::zmq::ServerSocket;
+
+const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 
 pub struct GameServer {
     is_online: bool,
     socket: Arc<ServerSocket>,
     path: String,
+
+    is_shutting_down: Mutex<bool>,
+    world_info: WorldInfo,
+}
+
+struct WorldInfo {
+    version: u16,
+    world_name: String,
+    world_size: CylinderSize,
+    _gen: WorldGenSettings,
+}
+
+struct WorldGenSettings {
+    seed: u64,
+    block_gen_scale: f64,
+    height_map_gen_scale: f64,
+    block_density_gen_scale: f64,
+    biome_height_map_gen_scale: f64,
+    biome_height_variation_gen_scale: f64,
+}
+
+/// The real cylinder size (the number of chunks around the cylinder) is:<br> <code>ringSize =
+/// 2&#94;sizeExponent</code>
+///
+/// @param worldSize
+///   the size exponent, <b>max-value: 20</b>
+#[derive(Clone, Copy)]
+struct CylinderSize(u8);
+
+impl CylinderSize {
+    const Y60: f64 = SQRT_3 / 2.0;
+
+    /** The number of chunks around the cylinder */
+    fn ring_size(self) -> u32 {
+        1 << self.0
+    }
+
+    /** ringSize - 1 */
+    fn ring_size_mask(self) -> u32 {
+        self.ring_size() - 1
+    }
+
+    /** The number of blocks around the cylinder */
+    fn total_size(self) -> u32 {
+        16 * self.ring_size()
+    }
+
+    /** totalSize - 1 */
+    fn total_size_mask(self) -> u32 {
+        self.total_size() - 1
+    }
+
+    /** The angle (in radians) of half a block seen from the center of the cylinder */
+    fn hex_angle(self) -> f64 {
+        (2.0 * PI) / self.total_size() as f64
+    }
+
+    /** The radius of the cylinder */
+    fn radius(self) -> f64 {
+        CylinderSize::Y60 / self.hex_angle()
+    }
+
+    /** The circumference of the cylinder.<br><br>This is NOT the number of blocks, for that see
+     * <code>totalSize</code>.
+     */
+    fn circumference(self) -> f64 {
+        self.total_size() as f64 * CylinderSize::Y60
+    }
+}
+
+struct HexBox {
+    radius: f32,
+    bottom: f32,
+    top: f32,
+}
+
+type UUID = u128;
+type Block = u8;
+type Vector3d = [f64; 3];
+type Inventory = HashMap<u8, Block>;
+
+const AIR: Block = 0;
+
+struct Player {
+    id: UUID,
+    name: String,
+    inventory: Inventory,
+    bounds: HexBox,
+    velocity: Vector3d,
+    position: Vector3d,
+    rotation: Vector3d,
+    flying: bool,
+    selected_item_slot: u8,
+}
+
+impl Player {
+    fn new(id: UUID, name: String, inventory: Inventory) -> Self {
+        Self {
+            id,
+            name,
+            inventory,
+            bounds: HexBox {
+                radius: 0.2,
+                bottom: -1.65,
+                top: 0.1,
+            },
+            velocity: [0.0; 3],
+            position: [0.0; 3],
+            rotation: [0.0; 3],
+            flying: false,
+            selected_item_slot: 0,
+        }
+    }
+
+    fn block_in_hand(&self) -> Block {
+        self.inventory
+            .get(&self.selected_item_slot)
+            .cloned()
+            .unwrap_or(AIR)
+    }
 }
 
 impl GameServer {
@@ -16,12 +140,37 @@ impl GameServer {
             is_online,
             socket: Arc::new(socket),
             path: path.to_string(),
+
+            is_shutting_down: Mutex::new(false),
+            world_info: WorldInfo {
+                version: 2,
+                world_name: "Test 123".to_string(),
+                world_size: CylinderSize(8),
+                _gen: WorldGenSettings {
+                    seed: 42,
+                    block_gen_scale: 0.1,
+                    height_map_gen_scale: 0.02,
+                    block_density_gen_scale: 0.01,
+                    biome_height_map_gen_scale: 0.002,
+                    biome_height_variation_gen_scale: 0.002,
+                },
+            },
         }
     }
 
+    pub async fn shutdown(self: Arc<Self>) {
+        {
+            let mut is_shutting_down = self.is_shutting_down.lock().await;
+            *is_shutting_down = true;
+        }
+        // TODO: wait for clients to get disconnected (max N seconds), then shut down
+    }
+
     pub async fn run_receiver(self: Arc<Self>) {
+        let mut players: HashMap<u64, Player> = HashMap::new();
+
         loop {
-            let client_id = self.socket.receive().await.unwrap();
+            let client_id_bytes = self.socket.receive().await.unwrap();
             let message = self.socket.receive().await.unwrap();
 
             match nbt::Tag::from_binary(&message).and_then(|(_, tag)| match tag {
@@ -30,80 +179,206 @@ impl GameServer {
                         return Err("packet did not have exactly 1 field")?;
                     }
                     let (name, tag) = &vs[0];
-                    NetworkPacket::decode(name, tag.clone())
+                    let client_id = String::from_utf8(client_id_bytes.clone())
+                        .map_err(|_| "client id was not utf8")?
+                        .parse::<u64>()
+                        .map_err(|_| "client id was not a positive integer")?;
+                    Ok((client_id, NetworkPacket::decode(name, tag.clone())?))
                 }
                 _ => Err("packet was not a Map tag")?,
             }) {
                 Err(err) => eprintln!("Got invalid message: {err}"),
-                Ok(packet) => {
+                Ok((client_id, packet)) => {
                     let response: Option<nbt::Tag> = match packet {
                         NetworkPacket::Login { id, name } => {
-                            println!("User {name} is trying to login with id {id}");
-
+                            let is_shutting_down = { *self.is_shutting_down.lock().await };
+                            if is_shutting_down {
+                                Some(
+                                    nbt::MapTag::new()
+                                        .set("success", nbt::Tag::Byte(0))
+                                        .set(
+                                            "error",
+                                            nbt::Tag::String("server is shutting down".to_string()),
+                                        )
+                                        .build(),
+                                )
+                                // TODO: handle more cases
+                            } else {
+                                players.insert(
+                                    client_id,
+                                    Player::new(
+                                        id,
+                                        name,
+                                        Inventory::new(), // TODO: load from disk
+                                    ),
+                                );
+                                Some(nbt::MapTag::new().set("success", nbt::Tag::Byte(1)).build())
+                            }
+                        }
+                        NetworkPacket::Logout => {
+                            players.remove(&client_id);
+                            None
+                        }
+                        NetworkPacket::GetWorldInfo => {
+                            let info = &self.world_info;
                             Some(
                                 nbt::MapTag::new()
-                                    .set("success", nbt::Tag::Byte(0))
+                                    .set("version", nbt::Tag::Short(info.version as i16))
                                     .set(
-                                        "error",
-                                        nbt::Tag::String("server is shutting down".to_string()),
+                                        "general",
+                                        nbt::MapTag::new()
+                                            .set(
+                                                "worldSize",
+                                                nbt::Tag::Byte(info.world_size.0 as i8),
+                                            )
+                                            .set("name", nbt::Tag::String(info.world_name.clone()))
+                                            .build(),
                                     )
+                                    .set("gen", {
+                                        let s = &info._gen;
+                                        nbt::MapTag::new()
+                                            .set("seed", nbt::Tag::Long(s.seed as i64))
+                                            .set(
+                                                "blockGenScale",
+                                                nbt::Tag::Double(s.block_gen_scale),
+                                            )
+                                            .set(
+                                                "heightMapGenScale",
+                                                nbt::Tag::Double(s.height_map_gen_scale),
+                                            )
+                                            .set(
+                                                "blockDensityGenScale",
+                                                nbt::Tag::Double(s.block_density_gen_scale),
+                                            )
+                                            .set(
+                                                "biomeHeightGenScale",
+                                                nbt::Tag::Double(s.biome_height_map_gen_scale),
+                                            )
+                                            .set(
+                                                "biomeHeightVariationGenScale",
+                                                nbt::Tag::Double(
+                                                    s.biome_height_variation_gen_scale,
+                                                ),
+                                            )
+                                            .build()
+                                    })
                                     .build(),
                             )
                         }
-                        NetworkPacket::Logout => {
-                            todo!()
-                        }
-                        NetworkPacket::GetWorldInfo => {
-                            todo!()
-                        }
                         NetworkPacket::LoadColumnData { coords } => {
-                            todo!()
+                            Some(nbt::MapTag::new().build())
                         }
-                        NetworkPacket::LoadWorldData => {
-                            todo!()
-                        }
-                        NetworkPacket::GetPlayerState => {
-                            todo!()
-                        }
+                        NetworkPacket::GetPlayerState => players.get(&client_id).map(|p| {
+                            nbt::MapTag::new()
+                                .set("position", nbt::make_vector_tag(p.position))
+                                .set("rotation", nbt::make_vector_tag(p.rotation))
+                                .set("velocity", nbt::make_vector_tag(p.velocity))
+                                .set("flying", nbt::Tag::Byte(if p.flying { 1 } else { 0 }))
+                                .set(
+                                    "selectedItemSlot",
+                                    nbt::Tag::Short(p.selected_item_slot as i16),
+                                )
+                                .set("inventory", {
+                                    encode_inventory(&p.inventory)
+                                })
+                                .build()
+                        }),
                         NetworkPacket::GetEvents => {
-                            todo!()
+                            Some(
+                                nbt::MapTag::new()
+                                    .set("block_updates", nbt::Tag::List(Vec::new()))
+                                    .set(
+                                        "entity_events",
+                                        nbt::MapTag::new()
+                                            .set("ids", nbt::Tag::List(Vec::new()))
+                                            .set("events", nbt::Tag::List(Vec::new()))
+                                            .build(),
+                                    )
+                                    .set(
+                                        "server_shutting_down",
+                                        nbt::Tag::Byte(if *self.is_shutting_down.lock().await {
+                                            1
+                                        } else {
+                                            0
+                                        }),
+                                    ) // TODO: make proper shutdown feature
+                                    .set("messages", nbt::Tag::List(Vec::new()))
+                                    .build(),
+                            )
                         }
-                        NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => {
-                            todo!()
-                        }
+                        NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => Some(
+                            nbt::MapTag::new()
+                                .set("chunks_loaded", nbt::Tag::List(Vec::new()))
+                                .set("chunks_unloaded", nbt::Tag::List(Vec::new()))
+                                .build(),
+                        ),
                         NetworkPacket::PlayerRightClicked => {
-                            todo!()
+                            None
                         }
                         NetworkPacket::PlayerLeftClicked => {
-                            todo!()
+                            None
                         }
                         NetworkPacket::PlayerToggledFlying => {
-                            todo!()
+                            if let Some(p) = players.get_mut(&client_id) {
+                                p.flying = !p.flying
+                            }
+                            None
                         }
                         NetworkPacket::PlayerSetSelectedItemSlot { slot } => {
-                            todo!()
+                            if let Some(p) = players.get_mut(&client_id) {
+                                p.selected_item_slot = slot as u8;
+                            }
+                            None
                         }
                         NetworkPacket::PlayerUpdatedInventory { inventory } => {
-                            todo!()
+                            if let Some(p) = players.get_mut(&client_id) {
+                                p.inventory = inventory;
+                                Some(encode_inventory(&p.inventory))
+                            } else {
+                                None
+                            }
                         }
                         NetworkPacket::PlayerMovedMouse { distance } => {
-                            todo!()
+                            None
                         }
                         NetworkPacket::PlayerPressedKeys { keys } => {
-                            todo!()
+                            None
                         }
                         NetworkPacket::RunCommand { command, args } => {
-                            todo!()
+                            println!("Received command '{command}' with args: {args:?}");
+                            None
                         }
                     };
 
                     if let Some(data) = response {
-                        self.socket.send(client_id, data.to_binary()).await.unwrap();
+                        self.socket
+                            .send(client_id_bytes, data.to_binary())
+                            .await
+                            .unwrap();
                     }
                 }
             }
         }
     }
+}
+
+fn encode_inventory(inventory: &Inventory) -> nbt::Tag {
+    nbt::MapTag::new()
+        .set(
+            "slots",
+            nbt::Tag::List(
+                inventory
+                    .iter()
+                    .map(|(&slot, &block)| {
+                        nbt::MapTag::new()
+                            .set("slot", nbt::Tag::Byte(slot as i8))
+                            .set("id", nbt::Tag::Byte(block as i8))
+                            .build()
+                    })
+                    .collect(),
+            ),
+        )
+        .build()
 }
 
 enum NetworkPacket {
@@ -112,11 +387,10 @@ enum NetworkPacket {
 
     GetWorldInfo,
     LoadColumnData { coords: u64 },
-    LoadWorldData,
 
     GetPlayerState,
     GetEvents,
-    GetWorldLoadingEvents { max_chunks_to_load: u32 },
+    GetWorldLoadingEvents { max_chunks_to_load: u16 },
 
     PlayerRightClicked,
     PlayerLeftClicked,
@@ -152,56 +426,128 @@ impl NetworkPacket {
                 };
                 NetworkPacket::Login { id, name }
             }
-            "logout" => {
-                todo!()
-            }
-            "get_world_info" => {
-                todo!()
-            }
-            "load_column_data" => {
-                todo!()
-            }
-            "load_world_data" => {
-                todo!()
-            }
-            "get_player_state" => {
-                todo!()
-            }
-            "get_events" => {
-                todo!()
-            }
-            "get_world_loading_events" => {
-                todo!()
-            }
-            "right_mouse_clicked" => {
-                todo!()
-            }
-            "left_mouse_clicked" => {
-                todo!()
-            }
-            "toggle_flying" => {
-                todo!()
-            }
-            "set_selected_inventory_slot" => {
-                todo!()
-            }
-            "inventory_updated" => {
-                todo!()
-            }
-            "mouse_moved" => {
-                todo!()
-            }
-            "keys_pressed" => {
-                todo!()
-            }
-            "run_command" => {
-                todo!()
-            }
+            "logout" => NetworkPacket::Logout,
+            "get_world_info" => NetworkPacket::GetWorldInfo,
+            "load_column_data" => NetworkPacket::LoadColumnData {
+                coords: match tag.get("coords").ok_or("missing field coords")? {
+                    nbt::Tag::Long(v) => *v as u64,
+                    _ => return Err("wrong type for coords field")?,
+                },
+            },
+            "get_player_state" => NetworkPacket::GetPlayerState,
+            "get_events" => NetworkPacket::GetEvents,
+            "get_world_loading_events" => NetworkPacket::GetWorldLoadingEvents {
+                max_chunks_to_load: match tag.get("max_chunks").ok_or("missing max_chunks")? {
+                    nbt::Tag::Short(v) => *v as u16,
+                    _ => return Err("wrong type for max_chunks field")?,
+                },
+            },
+            "right_mouse_clicked" => NetworkPacket::PlayerRightClicked,
+            "left_mouse_clicked" => NetworkPacket::PlayerLeftClicked,
+            "toggle_flying" => NetworkPacket::PlayerToggledFlying,
+            "set_selected_inventory_slot" => NetworkPacket::PlayerSetSelectedItemSlot {
+                slot: match tag.get("slot").ok_or("missing field slot")? {
+                    nbt::Tag::Short(v) => *v as u16,
+                    _ => return Err("wrong type for slot field")?,
+                },
+            },
+            "inventory_updated" => match tag.get("inventory").ok_or("missing field inventory")? {
+                nbt::Tag::Map(vs) => {
+                    let inventory = match vs
+                        .iter()
+                        .find(|(name, _)| name == "slots")
+                        .ok_or("missing field slots")?
+                    {
+                        (_, nbt::Tag::List(vs)) => vs
+                            .iter()
+                            .map(|key| match key {
+                                nbt::Tag::Map(vs) => aa(vs.as_slice()),
+                                _ => Err("wrong type for slots item".into()),
+                            })
+                            .collect::<Result<HashMap<_, _>, _>>()?,
+                        _ => return Err("wrong type for slots field")?,
+                    };
+                    NetworkPacket::PlayerUpdatedInventory { inventory }
+                }
+                _ => return Err("wrong type for inventory field")?,
+            },
+            "mouse_moved" => NetworkPacket::PlayerMovedMouse {
+                distance: (
+                    match tag.get("dx").ok_or("missing dx")? {
+                        nbt::Tag::Float(v) => *v,
+                        _ => return Err("wrong type for dx field")?,
+                    },
+                    match tag.get("dy").ok_or("missing dy")? {
+                        nbt::Tag::Float(v) => *v,
+                        _ => return Err("wrong type for dy field")?,
+                    },
+                ),
+            },
+            "keys_pressed" => NetworkPacket::PlayerPressedKeys {
+                keys: match tag.get("keys").ok_or("missing field keys")? {
+                    nbt::Tag::List(vs) => vs
+                        .iter()
+                        .map(|key| match key {
+                            nbt::Tag::String(v) => Ok(v.clone()),
+                            _ => Err("wrong type for key"),
+                        })
+                        .collect::<Result<Vec<_>, _>>()?,
+                    _ => return Err("wrong type for keys field")?,
+                },
+            },
+            "run_command" => match tag.get("command").ok_or("missing field command")? {
+                nbt::Tag::Map(vs) => {
+                    let command = match vs
+                        .iter()
+                        .find(|(name, _)| name == "name")
+                        .ok_or("missing name field")?
+                    {
+                        (_, nbt::Tag::String(v)) => v.clone(),
+                        _ => return Err("wrong type for name field")?,
+                    };
+                    let args = match vs
+                        .iter()
+                        .find(|(name, _)| name == "args")
+                        .ok_or("missing args field")?
+                    {
+                        (_, nbt::Tag::List(vs)) => vs
+                            .iter()
+                            .map(|key| match key {
+                                nbt::Tag::String(v) => Ok(v.clone()),
+                                _ => Err("wrong type for arg"),
+                            })
+                            .collect::<Result<Vec<_>, _>>()?,
+                        _ => return Err("wrong type for args field")?,
+                    };
+                    NetworkPacket::RunCommand { command, args }
+                }
+                _ => return Err("wrong type for command field")?,
+            },
             _ => return Err(format!("Got unknown packet: {name}"))?,
         };
 
         Ok(packet)
     }
+}
+
+fn aa(vs: &[(String, nbt::Tag)]) -> Result<(u8, u8), String> {
+    let slot = match vs
+        .iter()
+        .find(|(name, _)| name == "slot")
+        .ok_or("missing field slot")?
+    {
+        (_, nbt::Tag::Byte(v)) => *v as u8,
+        _ => return Err("wrong type for slot")?,
+    };
+    let id = match vs
+        .iter()
+        .find(|(name, _)| name == "id")
+        .ok_or("missing field id")?
+    {
+        (_, nbt::Tag::Byte(v)) => *v as u8,
+        _ => return Err("wrong type for id")?,
+    };
+    Ok((slot, id))
 }
 
 mod nbt {
@@ -254,6 +600,14 @@ mod nbt {
         pub fn from_binary(data: &[u8]) -> Result<(String, Tag), String> {
             TagInputStream { data }.read_tag()
         }
+    }
+
+    pub fn make_vector_tag([x, y, z]: [f64; 3]) -> Tag {
+        MapTag::new()
+            .set("x", Tag::Double(x))
+            .set("y", Tag::Double(y))
+            .set("z", Tag::Double(z))
+            .build()
     }
 
     pub struct MapTag {

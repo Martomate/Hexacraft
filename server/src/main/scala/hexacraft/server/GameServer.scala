@@ -460,8 +460,6 @@ class GameServer(
           case Some(column) => Some(Nbt.encode(ChunkColumnData(Some(column.terrainHeight))))
           case None         => Some(Nbt.emptyMap) // TODO: return None
         }
-      case LoadWorldData =>
-        Some(Nbt.encode(world.worldInfo))
       case GetPlayerState =>
         Some(Nbt.encode(player))
       case GetEvents =>
