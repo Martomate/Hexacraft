@@ -59,6 +59,15 @@ impl GameState {
             players: Mutex::new(HashMap::new()),
         }
     }
+
+    fn access_player_state<R>(
+        &self,
+        client_id: u64,
+        access: impl FnOnce(&mut PlayerConnectionState) -> R,
+    ) -> Option<R> {
+        let mut players = self.players.lock().unwrap();
+        players.get_mut(&client_id).map(access)
+    }
 }
 
 impl RequestHandler for GameState {
@@ -94,20 +103,16 @@ impl RequestHandler for GameState {
                 }
             }
             NetworkPacket::Logout => {
-                let removed_player_data = {
-                    let mut players = self.players.lock().unwrap();
-                    players.remove(&client_id).map(|p| p.player.name)
-                };
-                if let Some(removed_player_name) = removed_player_data {
-                    let message = ServerMessage {
-                        text: format!("{} logged out", removed_player_name),
-                        sender: ServerMessageSender::Server,
-                    };
+                let message = self.access_player_state(client_id, |p| ServerMessage {
+                    text: format!("{} logged out", p.player.name),
+                    sender: ServerMessageSender::Server,
+                })?;
 
-                    let mut players = self.players.lock().unwrap();
-                    for (_, p) in players.iter_mut() {
-                        p.messages_to_send.push_back(message.clone());
-                    }
+                let mut players = self.players.lock().unwrap();
+                players.remove(&client_id);
+
+                for (_, p) in players.iter_mut() {
+                    p.messages_to_send.push_back(message.clone());
                 }
 
                 None
@@ -119,29 +124,22 @@ impl RequestHandler for GameState {
                 .into(),
             ),
             NetworkPacket::LoadColumnData { coords } => Some(nbt::MapTag::new().build()),
-            NetworkPacket::GetPlayerState => self
-                .players
-                .lock()
-                .unwrap()
-                .get(&client_id)
-                .map(|p| GetPlayerStateResponse { player: &p.player }.into()),
+            NetworkPacket::GetPlayerState => self.access_player_state(client_id, |p| {
+                GetPlayerStateResponse { player: &p.player }.into()
+            }),
             NetworkPacket::GetEvents => {
-                let player_data = {
-                    let mut players = self.players.lock().unwrap();
+                let new_messages = self.access_player_state(client_id, |p| {
+                    p.messages_to_send.drain(..).collect::<Vec<_>>()
+                })?;
 
-                    players
-                        .get_mut(&client_id)
-                        .map(|p| p.messages_to_send.drain(..).collect::<Vec<_>>())
-                };
-
-                player_data.map(|new_messages| {
+                Some(
                     GetEventsResponse {
                         // TODO: make proper shutdown feature
                         server_shutting_down: *self.is_shutting_down.lock().unwrap(),
                         new_messages,
                     }
-                    .into()
-                })
+                    .into(),
+                )
             }
             NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => {
                 Some(GetWorldLoadingEventsResponse {}.into())
@@ -155,32 +153,29 @@ impl RequestHandler for GameState {
                 None
             }
             NetworkPacket::PlayerToggledFlying => {
-                if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                self.access_player_state(client_id, |p| {
                     let p = &mut p.player;
                     p.flying = !p.flying
-                }
+                });
                 None
             }
             NetworkPacket::PlayerSetSelectedItemSlot { slot } => {
-                if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                self.access_player_state(client_id, |p| {
                     let p = &mut p.player;
                     p.selected_item_slot = slot as u8;
-                }
+                });
                 None
             }
             NetworkPacket::PlayerUpdatedInventory { inventory } => {
-                if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                self.access_player_state(client_id, |p| {
                     let p = &mut p.player;
                     p.inventory = inventory;
-                    Some(
-                        PlayerUpdatedInventoryResponse {
-                            inventory: &p.inventory,
-                        }
-                        .into(),
-                    )
-                } else {
-                    None
-                }
+
+                    PlayerUpdatedInventoryResponse {
+                        inventory: &p.inventory,
+                    }
+                    .into()
+                })
             }
             NetworkPacket::PlayerMovedMouse { distance } => {
                 // TODO: player mouse moved
@@ -191,37 +186,29 @@ impl RequestHandler for GameState {
                 None
             }
             NetworkPacket::RunCommand { command, args } => {
-                let sender_data = {
-                    let players = self.players.lock().unwrap();
+                let sender_name = self.access_player_state(client_id, |p| p.player.name.clone())?;
 
-                    players.get(&client_id).map(|p| p.player.name.clone())
-                };
-
-                if let Some(sender_name) = sender_data {
-                    match command.as_str() {
-                        "chat" => {
-                            if args.len() != 1 {
-                                println!(
-                                    "Wrong number of arguments to chat command: {}",
-                                    args.len()
-                                );
-                            } else {
-                                let message = &args[0];
-                                for (_, p) in self.players.lock().unwrap().iter_mut() {
-                                    p.messages_to_send.push_back(ServerMessage {
-                                        text: message.to_string(),
-                                        sender: ServerMessageSender::Player {
-                                            name: sender_name.clone(),
-                                        },
-                                    });
-                                }
+                match command.as_str() {
+                    "chat" => {
+                        if args.len() != 1 {
+                            println!("Wrong number of arguments to chat command: {}", args.len());
+                        } else {
+                            let message = &args[0];
+                            for (_, p) in self.players.lock().unwrap().iter_mut() {
+                                p.messages_to_send.push_back(ServerMessage {
+                                    text: message.to_string(),
+                                    sender: ServerMessageSender::Player {
+                                        name: sender_name.clone(),
+                                    },
+                                });
                             }
                         }
-                        "spawn" => todo!(),
-                        "kill" => todo!(),
-                        _ => println!("Received unknown command: {command}"),
                     }
+                    "spawn" => todo!(),
+                    "kill" => todo!(),
+                    _ => println!("Received unknown command: {command}"),
                 }
+
                 None
             }
         }
