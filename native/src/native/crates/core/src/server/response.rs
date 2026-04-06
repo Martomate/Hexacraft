@@ -1,4 +1,7 @@
-use crate::server::{Inventory, Player, WorldInfo, nbt};
+use crate::server::{
+    nbt,
+    world::{Inventory, Player, WorldInfo},
+};
 
 pub struct LoginResponse<'r> {
     pub success: bool,

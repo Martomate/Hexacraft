@@ -146,7 +146,7 @@ use std::mem::transmute;
                 }
                 Tag::Map(v) => {
                     for (name, tag) in v {
-                        self.write_tag(&name, tag);
+                        self.write_tag(name, tag);
                     }
                     self.data.put_u8(Tag::End.tag_id());
                 }
