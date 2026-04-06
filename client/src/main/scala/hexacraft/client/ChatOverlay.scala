@@ -98,18 +98,18 @@ class ChatOverlay(eventHandler: Channel.Sender[ChatOverlay.Event]) extends Compo
 
   def makeText(m: ServerMessage, index: Int): (Text, LocationInfo, Int) = {
     val prefix = m.sender match {
-      case Sender.Server          => ""
-      case Sender.Player(_, name) => s"$name: "
+      case Sender.Server       => ""
+      case Sender.Player(name) => s"$name: "
     }
 
     val color = m.sender match {
-      case Sender.Server       => Vector3f(0.9f, 0.9f, 0.2f)
-      case Sender.Player(_, _) => Vector3f(0.9f, 0.9f, 0.9f)
+      case Sender.Server    => Vector3f(0.9f, 0.9f, 0.2f)
+      case Sender.Player(_) => Vector3f(0.9f, 0.9f, 0.9f)
     }
 
     val bold = m.sender match {
-      case Sender.Server       => true
-      case Sender.Player(_, _) => false
+      case Sender.Server    => true
+      case Sender.Player(_) => false
     }
 
     val location1 = LocationInfo.from16x9(0.01f, -0.03f * index, 0.3f, 0.03f).inAspectRatio(16f / 9f, windowAspectRatio)

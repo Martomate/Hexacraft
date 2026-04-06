@@ -19,21 +19,21 @@ case class ServerMessage(
 object ServerMessage {
   enum Sender {
     case Server
-    case Player(id: UUID, name: String)
+    case Player(name: String)
   }
 
   object Sender {
     given NbtEncoder[Sender] with {
       override def encode(value: Sender): Nbt.MapTag = {
         val kind = value match {
-          case Sender.Server       => "server"
-          case Sender.Player(_, _) => "player"
+          case Sender.Server    => "server"
+          case Sender.Player(_) => "player"
         }
         val data = value match {
           case Sender.Server =>
             Nbt.makeMap()
-          case Sender.Player(id, name) =>
-            Nbt.makeMap("id" -> Nbt.StringTag(id.toString), "name" -> Nbt.StringTag(name))
+          case Sender.Player(name) =>
+            Nbt.makeMap("name" -> Nbt.StringTag(name))
         }
         data.withField("kind", Nbt.StringTag(kind))
       }
@@ -46,10 +46,8 @@ object ServerMessage {
             Some(Sender.Server)
           case Some("player") =>
             for {
-              id <- tag.getString("id")
-              id <- Try(UUID.fromString(id)).toOption
               name <- tag.getString("name")
-            } yield Sender.Player(id, name)
+            } yield Sender.Player(name)
           case _ => None
         }
       }

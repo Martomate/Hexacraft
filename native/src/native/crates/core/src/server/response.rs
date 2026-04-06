@@ -1,5 +1,6 @@
 use crate::server::{
     nbt,
+    state::{ServerMessage, ServerMessageSender},
     world::{Inventory, Player, WorldInfo},
 };
 
@@ -104,6 +105,7 @@ impl<'r> From<GetPlayerStateResponse<'r>> for nbt::Tag {
 
 pub struct GetEventsResponse {
     pub server_shutting_down: bool,
+    pub new_messages: Vec<ServerMessage>,
 }
 
 impl From<GetEventsResponse> for nbt::Tag {
@@ -121,7 +123,32 @@ impl From<GetEventsResponse> for nbt::Tag {
                 "server_shutting_down",
                 nbt::Tag::Byte(if res.server_shutting_down { 1 } else { 0 }),
             )
-            .set("messages", nbt::Tag::List(Vec::new()))
+            .set(
+                "messages",
+                nbt::Tag::List(
+                    res.new_messages
+                        .iter()
+                        .map(|m| {
+                            let text = nbt::Tag::String(m.text.clone());
+                            let sender = {
+                                let (kind, tag) = match &m.sender {
+                                    ServerMessageSender::Server => ("server", nbt::MapTag::new()),
+                                    ServerMessageSender::Player { name } => (
+                                        "player",
+                                        nbt::MapTag::new()
+                                            .set("name", nbt::Tag::String(name.to_string())),
+                                    ),
+                                };
+                                tag.set("kind", nbt::Tag::String(kind.to_string())).build()
+                            };
+                            nbt::MapTag::new()
+                                .set("text", text)
+                                .set("sender", sender)
+                                .build()
+                        })
+                        .collect(),
+                ),
+            )
             .build()
     }
 }

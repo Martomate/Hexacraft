@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Mutex,
+};
 
 use crate::server::{
     RequestHandler, nbt,
@@ -13,7 +16,24 @@ pub struct GameState {
 
     is_shutting_down: Mutex<bool>,
     world_info: WorldInfo,
-    players: Mutex<HashMap<u64, Player>>,
+    players: Mutex<HashMap<u64, PlayerConnectionState>>,
+}
+
+struct PlayerConnectionState {
+    player: Player,
+    messages_to_send: VecDeque<ServerMessage>,
+}
+
+#[derive(Clone)]
+pub struct ServerMessage {
+    pub text: String,
+    pub sender: ServerMessageSender,
+}
+
+#[derive(Clone)]
+pub enum ServerMessageSender {
+    Server,
+    Player { name: String },
 }
 
 impl GameState {
@@ -50,13 +70,25 @@ impl RequestHandler for GameState {
                     Some(LoginResponse::failure("server is shutting down").into())
                     // TODO: handle more cases
                 } else {
-                    self.players.lock().unwrap().insert(
+                    let message = ServerMessage {
+                        text: format!("{} logged in", name),
+                        sender: ServerMessageSender::Server,
+                    };
+
+                    let mut players = self.players.lock().unwrap();
+                    for (_, p) in players.iter_mut() {
+                        p.messages_to_send.push_back(message.clone());
+                    }
+                    players.insert(
                         client_id,
-                        Player::new(
-                            id,
-                            name,
-                            Inventory::new(), // TODO: load from disk
-                        ),
+                        PlayerConnectionState {
+                            player: Player::new(
+                                id,
+                                name,
+                                Inventory::new(), // TODO: load from disk
+                            ),
+                            messages_to_send: VecDeque::new(),
+                        },
                     );
                     Some(LoginResponse::success().into())
                 }
@@ -77,15 +109,24 @@ impl RequestHandler for GameState {
                 .lock()
                 .unwrap()
                 .get(&client_id)
-                .map(|p| GetPlayerStateResponse { player: p }.into()),
+                .map(|p| GetPlayerStateResponse { player: &p.player }.into()),
             NetworkPacket::GetEvents => {
-                Some(
+                let player_data = {
+                    let mut players = self.players.lock().unwrap();
+
+                    players
+                        .get_mut(&client_id)
+                        .map(|p| p.messages_to_send.drain(..).collect::<Vec<_>>())
+                };
+
+                player_data.map(|new_messages| {
                     GetEventsResponse {
                         // TODO: make proper shutdown feature
                         server_shutting_down: *self.is_shutting_down.lock().unwrap(),
+                        new_messages,
                     }
-                    .into(),
-                )
+                    .into()
+                })
             }
             NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => {
                 Some(GetWorldLoadingEventsResponse {}.into())
@@ -94,18 +135,21 @@ impl RequestHandler for GameState {
             NetworkPacket::PlayerLeftClicked => None,
             NetworkPacket::PlayerToggledFlying => {
                 if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                    let p = &mut p.player;
                     p.flying = !p.flying
                 }
                 None
             }
             NetworkPacket::PlayerSetSelectedItemSlot { slot } => {
                 if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                    let p = &mut p.player;
                     p.selected_item_slot = slot as u8;
                 }
                 None
             }
             NetworkPacket::PlayerUpdatedInventory { inventory } => {
                 if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
+                    let p = &mut p.player;
                     p.inventory = inventory;
                     Some(
                         PlayerUpdatedInventoryResponse {
@@ -120,7 +164,37 @@ impl RequestHandler for GameState {
             NetworkPacket::PlayerMovedMouse { distance } => None,
             NetworkPacket::PlayerPressedKeys { keys } => None,
             NetworkPacket::RunCommand { command, args } => {
-                println!("Received command '{command}' with args: {args:?}");
+                let sender_data = {
+                    let players = self.players.lock().unwrap();
+
+                    players.get(&client_id).map(|p| p.player.name.clone())
+                };
+
+                if let Some(sender_name) = sender_data {
+                    match command.as_str() {
+                        "chat" => {
+                            if args.len() != 1 {
+                                println!(
+                                    "Wrong number of arguments to chat command: {}",
+                                    args.len()
+                                );
+                            } else {
+                                let message = &args[0];
+                                for (_, p) in self.players.lock().unwrap().iter_mut() {
+                                    p.messages_to_send.push_back(ServerMessage {
+                                        text: message.to_string(),
+                                        sender: ServerMessageSender::Player {
+                                            name: sender_name.clone(),
+                                        },
+                                    });
+                                }
+                            }
+                        }
+                        "spawn" => todo!(),
+                        "kill" => todo!(),
+                        _ => println!("Received unknown command: {command}"),
+                    }
+                }
                 None
             }
         }

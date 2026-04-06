@@ -585,7 +585,7 @@ class GameServer(
               p.messagesWaitingToBeSent.synchronized {
                 p.messagesWaitingToBeSent += ServerMessage(
                   text = message,
-                  sender = ServerMessage.Sender.Player(player.id, player.name)
+                  sender = ServerMessage.Sender.Player(player.name)
                 )
               }
             }
