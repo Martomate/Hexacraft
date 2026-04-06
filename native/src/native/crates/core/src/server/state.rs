@@ -24,6 +24,7 @@ struct PlayerConnectionState {
     player: Player,
     messages_to_send: VecDeque<ServerMessage>,
     mouse_movement: (f32, f32),
+    pressed_keys: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -85,7 +86,14 @@ impl GameState {
         {
             let mut players = self.players.lock().unwrap();
             for (_, p) in players.iter_mut() {
-                input::update_player(&mut p.player, p.mouse_movement);
+                input::update_player(
+                    &mut p.player,
+                    p.mouse_movement,
+                    &p.pressed_keys
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
                 p.mouse_movement = (0.0, 0.0);
             }
         }
@@ -120,6 +128,7 @@ impl RequestHandler for GameState {
                             ),
                             messages_to_send: VecDeque::new(),
                             mouse_movement: (0.0, 0.0),
+                            pressed_keys: Vec::new(),
                         },
                     );
                     Some(LoginResponse::success().into())
@@ -208,7 +217,9 @@ impl RequestHandler for GameState {
                 None
             }
             NetworkPacket::PlayerPressedKeys { keys } => {
-                // TODO: player pressed keys
+                self.access_player_state(client_id, |p| {
+                    p.pressed_keys = keys;
+                })?;
                 None
             }
             NetworkPacket::RunCommand { command, args } => {

@@ -557,7 +557,7 @@ class GameClient(
       player.position.add(positionDiff.mul(0.1))
       val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
       rotationDiff.y = MathUtils.absmin(rotationDiff.y, math.Pi * 2)
-      //    player.rotation.add(rotationDiff.mul(0.1))
+      player.rotation.add(rotationDiff.mul(0.1))
       player.flying = syncedPlayer.flying
 
       val worldEventsNbt = worldEventsNbtPacket.asMap.get
@@ -656,7 +656,7 @@ class GameClient(
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       val isInLoadedChunk = world.getChunk(playerCoords.getChunkRelWorld).isDefined
-      val pressedKeys = if isInLoadedChunk then ctx.keyboard.pressedKeys else Seq()
+      val pressedKeys = ctx.keyboard.pressedKeys
       val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
       if !isPaused && !isInPopup then {
         val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
