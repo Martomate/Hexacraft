@@ -94,7 +94,22 @@ impl RequestHandler for GameState {
                 }
             }
             NetworkPacket::Logout => {
-                self.players.lock().unwrap().remove(&client_id);
+                let removed_player_data = {
+                    let mut players = self.players.lock().unwrap();
+                    players.remove(&client_id).map(|p| p.player.name)
+                };
+                if let Some(removed_player_name) = removed_player_data {
+                    let message = ServerMessage {
+                        text: format!("{} logged out", removed_player_name),
+                        sender: ServerMessageSender::Server,
+                    };
+
+                    let mut players = self.players.lock().unwrap();
+                    for (_, p) in players.iter_mut() {
+                        p.messages_to_send.push_back(message.clone());
+                    }
+                }
+
                 None
             }
             NetworkPacket::GetWorldInfo => Some(
