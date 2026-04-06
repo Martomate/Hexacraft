@@ -655,37 +655,34 @@ class GameClient(
 
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
-      if world.getChunk(playerCoords.getChunkRelWorld).isDefined then {
-        val pressedKeys = ctx.keyboard.pressedKeys
-        val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
-        if !isPaused && !isInPopup then {
-          val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
-          val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
+      val isInLoadedChunk = world.getChunk(playerCoords.getChunkRelWorld).isDefined
+      val pressedKeys = if isInLoadedChunk then ctx.keyboard.pressedKeys else Seq()
+      val maxSpeed = playerInputHandler.determineMaxSpeed(pressedKeys)
+      if !isPaused && !isInPopup then {
+        val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
+        val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
-          playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
+        playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
 
-          socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
-          socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
-        } else {
-          socket.sendPacket(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
-          socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
-        }
-
-        if !isPaused || isOnline then {
-          playerPhysicsHandler.tick(
-            player,
-            maxSpeed,
-            PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
-            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
-          )
-        }
-
-        if !isPaused then {
-          walkSoundTimer.enabled = !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01
-        }
+        socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
+        socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
       } else {
         socket.sendPacket(NetworkPacket.PlayerMovedMouse(Vector2f(0, 0)))
         socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
+      }
+
+      if (!isPaused || isOnline) && isInLoadedChunk then {
+        playerPhysicsHandler.tick(
+          player,
+          maxSpeed,
+          PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
+          PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
+        )
+      }
+
+      if !isPaused then {
+        walkSoundTimer.enabled =
+          !player.flying && player.velocity.y == 0 && player.velocity.lengthSquared() > 0.01 && isInLoadedChunk
       }
 
       if walkSoundTimer.tick() then {

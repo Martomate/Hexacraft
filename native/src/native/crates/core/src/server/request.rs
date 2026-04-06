@@ -83,7 +83,7 @@ impl NetworkPacket {
                         (_, nbt::Tag::List(vs)) => vs
                             .iter()
                             .map(|key| match key {
-                                nbt::Tag::Map(vs) => aa(vs.as_slice()),
+                                nbt::Tag::Map(vs) => decode_inventory_slot(vs.as_slice()),
                                 _ => Err("wrong type for slots item".into()),
                             })
                             .collect::<Result<HashMap<_, _>, _>>()?,
@@ -152,7 +152,7 @@ impl NetworkPacket {
     }
 }
 
-fn aa(vs: &[(String, nbt::Tag)]) -> Result<(u8, u8), String> {
+fn decode_inventory_slot(vs: &[(String, nbt::Tag)]) -> Result<(u8, u8), String> {
     let slot = match vs
         .iter()
         .find(|(name, _)| name == "slot")

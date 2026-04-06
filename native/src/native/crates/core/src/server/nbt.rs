@@ -2,7 +2,7 @@ use std::mem::transmute;
 
     use bytes::BufMut;
 
-    #[derive(Clone)]
+    #[derive(Debug, Clone)]
     pub enum Tag {
         End,
         Byte(i8),

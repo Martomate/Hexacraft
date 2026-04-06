@@ -1,10 +1,11 @@
 use std::{
     collections::{HashMap, VecDeque},
     sync::Mutex,
+    time::Duration,
 };
 
 use crate::server::{
-    GracefulShutdown, RequestHandler, nbt,
+    GracefulShutdown, RequestHandler, input, nbt,
     request::NetworkPacket,
     response::*,
     world::{CylinderSize, Inventory, Player, WorldGenSettings, WorldInfo},
@@ -22,6 +23,7 @@ pub struct GameState {
 struct PlayerConnectionState {
     player: Player,
     messages_to_send: VecDeque<ServerMessage>,
+    mouse_movement: (f32, f32),
 }
 
 #[derive(Clone)]
@@ -68,6 +70,26 @@ impl GameState {
         let mut players = self.players.lock().unwrap();
         players.get_mut(&client_id).map(access)
     }
+
+    pub async fn run_ticks(&self) {
+        let mut interval = tokio::time::interval(Duration::from_millis(1000 / 60));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay); // Skip would be fine too
+
+        while !{ *self.is_shutting_down.lock().unwrap() } {
+            interval.tick().await;
+            self.tick();
+        }
+    }
+
+    fn tick(&self) {
+        {
+            let mut players = self.players.lock().unwrap();
+            for (_, p) in players.iter_mut() {
+                input::update_player(&mut p.player, p.mouse_movement);
+                p.mouse_movement = (0.0, 0.0);
+            }
+        }
+    }
 }
 
 impl RequestHandler for GameState {
@@ -97,6 +119,7 @@ impl RequestHandler for GameState {
                                 Inventory::new(), // TODO: load from disk
                             ),
                             messages_to_send: VecDeque::new(),
+                            mouse_movement: (0.0, 0.0),
                         },
                     );
                     Some(LoginResponse::success().into())
@@ -177,8 +200,11 @@ impl RequestHandler for GameState {
                     .into()
                 })
             }
-            NetworkPacket::PlayerMovedMouse { distance } => {
-                // TODO: player mouse moved
+            NetworkPacket::PlayerMovedMouse { distance: (dx, dy) } => {
+                self.access_player_state(client_id, |p| {
+                    let (x, y) = p.mouse_movement;
+                    p.mouse_movement = (x + dx, y + dy);
+                })?;
                 None
             }
             NetworkPacket::PlayerPressedKeys { keys } => {

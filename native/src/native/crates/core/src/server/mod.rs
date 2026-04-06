@@ -5,6 +5,7 @@ use std::time::Duration;
 
 pub use state::GameState;
 
+mod input;
 mod nbt;
 mod request;
 mod response;
@@ -22,11 +23,11 @@ pub trait GracefulShutdown {
 
 pub struct GameServer<H> {
     socket: Arc<ServerSocket>,
-    handler: H,
+    handler: Arc<H>,
 }
 
 impl<H> GameServer<H> {
-    pub async fn start(port: u16, handler: H) -> Self {
+    pub async fn start(port: u16, handler: Arc<H>) -> Self {
         let socket = ServerSocket::new();
         socket.bind(port).await.unwrap();
         Self {

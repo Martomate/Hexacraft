@@ -27,7 +27,12 @@ pub fn start<'local>(
     let path = path.to_str().expect("invalid utf8").to_string();
 
     let server = run_with_timeout(Duration::from_millis(1000), async move {
-        let server = Arc::new(GameServer::start(port, GameState::create(is_online, path)).await);
+        let state = Arc::new(GameState::create(is_online, path));
+        let server = Arc::new(GameServer::start(port, state.clone()).await);
+        tokio::spawn({
+            let state = state.clone();
+            async move { state.run_ticks().await }
+        });
         tokio::spawn({
             let server = server.clone();
             async move { server.run_receiver().await }
