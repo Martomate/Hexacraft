@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::server::{
-    RequestHandler, nbt,
+    GracefulShutdown, RequestHandler, nbt,
     request::NetworkPacket,
     response::*,
     world::{CylinderSize, Inventory, Player, WorldGenSettings, WorldInfo},
@@ -131,8 +131,14 @@ impl RequestHandler for GameState {
             NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => {
                 Some(GetWorldLoadingEventsResponse {}.into())
             }
-            NetworkPacket::PlayerRightClicked => None,
-            NetworkPacket::PlayerLeftClicked => None,
+            NetworkPacket::PlayerRightClicked => {
+                // TODO: player right clicked
+                None
+            }
+            NetworkPacket::PlayerLeftClicked => {
+                // TODO: player left clicked
+                None
+            }
             NetworkPacket::PlayerToggledFlying => {
                 if let Some(p) = self.players.lock().unwrap().get_mut(&client_id) {
                     let p = &mut p.player;
@@ -161,8 +167,14 @@ impl RequestHandler for GameState {
                     None
                 }
             }
-            NetworkPacket::PlayerMovedMouse { distance } => None,
-            NetworkPacket::PlayerPressedKeys { keys } => None,
+            NetworkPacket::PlayerMovedMouse { distance } => {
+                // TODO: player mouse moved
+                None
+            }
+            NetworkPacket::PlayerPressedKeys { keys } => {
+                // TODO: player pressed keys
+                None
+            }
             NetworkPacket::RunCommand { command, args } => {
                 let sender_data = {
                     let players = self.players.lock().unwrap();
@@ -199,12 +211,23 @@ impl RequestHandler for GameState {
             }
         }
     }
+}
 
-    async fn shutdown(&self) {
-        {
-            let mut is_shutting_down = self.is_shutting_down.lock().unwrap();
-            *is_shutting_down = true;
+impl GracefulShutdown for GameState {
+    fn initiate(&self) {
+        let mut is_shutting_down = self.is_shutting_down.lock().unwrap();
+        *is_shutting_down = true;
+    }
+
+    fn done(&self) -> bool {
+        let is_shutting_down = { *self.is_shutting_down.lock().unwrap() };
+        if !is_shutting_down {
+            return false;
         }
-        // TODO: wait for clients to get disconnected (max N seconds), then shut down
+        let has_no_players = { self.players.lock().unwrap().is_empty() };
+        if !has_no_players {
+            return false;
+        }
+        true
     }
 }

@@ -1,6 +1,7 @@
 use crate::server::request::NetworkPacket;
 use crate::zmq::ServerSocket;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub use state::GameState;
 
@@ -12,7 +13,11 @@ mod world;
 
 pub trait RequestHandler {
     fn handle(&self, client_id: u64, packet: NetworkPacket) -> Option<nbt::Tag>;
-    fn shutdown(&self) -> impl Future<Output = ()> + Send;
+}
+
+pub trait GracefulShutdown {
+    fn initiate(&self);
+    fn done(&self) -> bool;
 }
 
 pub struct GameServer<H> {
@@ -31,11 +36,19 @@ impl<H> GameServer<H> {
     }
 }
 
-impl<H: RequestHandler> GameServer<H> {
+impl<H: GracefulShutdown> GameServer<H> {
     pub async fn shutdown(&self) {
-        self.handler.shutdown().await;
+        self.handler.initiate();
+        loop {
+            if self.handler.done() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
     }
+}
 
+impl<H: RequestHandler> GameServer<H> {
     pub async fn run_receiver(&self) {
         loop {
             let client_id_bytes = self.socket.receive().await.unwrap();

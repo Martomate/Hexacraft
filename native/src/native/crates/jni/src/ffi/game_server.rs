@@ -46,10 +46,13 @@ pub fn stop<'local>(
     handle: Handle<Arc<GameServer<GameState>>>,
 ) {
     handle.use_handle(|server| {
-        let _ = run_with_timeout(Duration::from_millis(1000), {
+        let shutdown_task = {
             let server = server.clone();
             async move { server.shutdown().await }
-        });
+        };
+        if run_with_timeout(Duration::from_millis(1000), shutdown_task).is_none() {
+            eprintln!("Server shutdown timed out. The server will now be forced to shut down.");
+        }
     });
     handle.destroy(); // this stops the server
 }
