@@ -4,7 +4,7 @@ use std::time::Duration;
 use crate::handle::Handle;
 use crate::run_with_timeout;
 
-use hexacraft::server::GameServer;
+use hexacraft::server::{GameServer, GameState};
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jint};
@@ -17,7 +17,7 @@ pub fn start<'local>(
     is_online: jboolean,
     port: jint,
     path: JString<'local>,
-) -> Handle<Arc<GameServer>> {
+) -> Handle<Arc<GameServer<GameState>>> {
     let is_online = is_online == 1;
 
     assert!((0..1 << 16).contains(&port), "port is out of range");
@@ -27,8 +27,11 @@ pub fn start<'local>(
     let path = path.to_str().expect("invalid utf8").to_string();
 
     let server = run_with_timeout(Duration::from_millis(1000), async move {
-        let server = Arc::new(hexacraft::server::GameServer::start(is_online, port, path).await);
-        tokio::spawn(server.clone().run_receiver());
+        let server = Arc::new(GameServer::start(port, GameState::create(is_online, path)).await);
+        tokio::spawn({
+            let server = server.clone();
+            async move { server.run_receiver().await }
+        });
         server
     })
     .unwrap();
@@ -37,9 +40,16 @@ pub fn start<'local>(
 }
 
 #[jni_fn("hexacraft.rs.RustLib$GameServer")]
-pub fn stop<'local>(_env: JNIEnv<'local>, _class: JClass<'local>, handle: Handle<Arc<GameServer>>) {
+pub fn stop<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    handle: Handle<Arc<GameServer<GameState>>>,
+) {
     handle.use_handle(|server| {
-        let _ = run_with_timeout(Duration::from_millis(1000), server.clone().shutdown());
+        let _ = run_with_timeout(Duration::from_millis(1000), {
+            let server = server.clone();
+            async move { server.shutdown().await }
+        });
     });
     handle.destroy(); // this stops the server
 }
