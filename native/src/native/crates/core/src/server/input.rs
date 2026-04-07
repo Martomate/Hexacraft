@@ -1,14 +1,16 @@
 use std::f64::consts::PI;
 
-use crate::server::world::{Player, Vector3d};
+use glam::{DVec3, Vec2};
 
-pub fn update_player(player: &mut Player, mouse_movement: (f32, f32), pressed_keys: &[&str]) {
+use crate::server::world::{Player, };
+
+pub fn update_player(player: &mut Player, mouse_movement: Vec2, pressed_keys: &[&str]) {
     update_rotation(&mut player.rotation, mouse_movement, pressed_keys, 0.05);
 }
 
 fn update_rotation(
-    rotation: &mut Vector3d,
-    mouse_movement: (f32, f32),
+    rotation: &mut DVec3,
+    mouse_movement: Vec2,
     pressed_keys: &[&str],
     r_speed: f32,
 ) {
@@ -31,11 +33,11 @@ fn update_rotation(
         rotation[2] += r_speed as f64;
     }
     if pressed_keys.contains(&"ResetRotation") {
-        *rotation = [0.0, 0.0, 0.0];
+        *rotation = DVec3::ZERO;
     }
 
-    rotation[1] += (mouse_movement.0 * r_speed * 0.05) as f64;
-    rotation[0] -= (mouse_movement.1 * r_speed * 0.05) as f64;
+    rotation[1] += (mouse_movement.x * r_speed * 0.05) as f64;
+    rotation[0] -= (mouse_movement.y * r_speed * 0.05) as f64;
 
     rotation[0] = rotation[0].clamp(-PI / 2.0, PI / 2.0);
 

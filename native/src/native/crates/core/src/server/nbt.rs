@@ -1,6 +1,7 @@
 use std::mem::transmute;
 
     use bytes::BufMut;
+    use glam::DVec3;
 
     #[derive(Debug, Clone)]
     pub enum Tag {
@@ -49,11 +50,11 @@ use std::mem::transmute;
         }
     }
 
-    pub fn make_vector_tag([x, y, z]: [f64; 3]) -> Tag {
+    pub fn make_vector_tag(d: DVec3) -> Tag {
         MapTag::new()
-            .set("x", Tag::Double(x))
-            .set("y", Tag::Double(y))
-            .set("z", Tag::Double(z))
+            .set("x", Tag::Double(d.x))
+            .set("y", Tag::Double(d.y))
+            .set("z", Tag::Double(d.z))
             .build()
     }
 

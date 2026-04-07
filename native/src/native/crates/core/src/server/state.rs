@@ -4,6 +4,8 @@ use std::{
     time::Duration,
 };
 
+use glam::Vec2;
+
 use crate::server::{
     GracefulShutdown, RequestHandler, input, nbt,
     request::NetworkPacket,
@@ -23,7 +25,7 @@ pub struct GameState {
 struct PlayerConnectionState {
     player: Player,
     messages_to_send: VecDeque<ServerMessage>,
-    mouse_movement: (f32, f32),
+    mouse_movement: Vec2,
     pressed_keys: Vec<String>,
 }
 
@@ -94,7 +96,7 @@ impl GameState {
                         .map(|s| s.as_str())
                         .collect::<Vec<_>>(),
                 );
-                p.mouse_movement = (0.0, 0.0);
+                p.mouse_movement = Vec2::new(0.0, 0.0);
             }
         }
     }
@@ -127,7 +129,7 @@ impl RequestHandler for GameState {
                                 Inventory::new(), // TODO: load from disk
                             ),
                             messages_to_send: VecDeque::new(),
-                            mouse_movement: (0.0, 0.0),
+                            mouse_movement: Vec2::new(0.0, 0.0),
                             pressed_keys: Vec::new(),
                         },
                     );
@@ -209,10 +211,10 @@ impl RequestHandler for GameState {
                     .into()
                 })
             }
-            NetworkPacket::PlayerMovedMouse { distance: (dx, dy) } => {
+            NetworkPacket::PlayerMovedMouse { distance: d } => {
                 self.access_player_state(client_id, |p| {
-                    let (x, y) = p.mouse_movement;
-                    p.mouse_movement = (x + dx, y + dy);
+                    let m = p.mouse_movement;
+                    p.mouse_movement = Vec2::new(m.x + d.x, m.y + d.y);
                 })?;
                 None
             }

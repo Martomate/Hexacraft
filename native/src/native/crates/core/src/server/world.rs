@@ -1,5 +1,8 @@
 use std::{collections::HashMap, f64::consts::PI};
 
+use glam::DVec3;
+use uuid::Uuid;
+
 const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 
 pub struct WorldInfo {
@@ -73,27 +76,25 @@ pub struct HexBox {
     pub top: f32,
 }
 
-pub type UUID = u128;
 pub type Block = u8;
-pub type Vector3d = [f64; 3];
 pub type Inventory = HashMap<u8, Block>;
 
 const AIR: Block = 0;
 
 pub struct Player {
-    pub id: UUID,
+    pub id: Uuid,
     pub name: String,
     pub inventory: Inventory,
     pub bounds: HexBox,
-    pub velocity: Vector3d,
-    pub position: Vector3d,
-    pub rotation: Vector3d,
+    pub velocity: DVec3,
+    pub position: DVec3,
+    pub rotation: DVec3,
     pub flying: bool,
     pub selected_item_slot: u8,
 }
 
 impl Player {
-    pub fn new(id: UUID, name: String, inventory: Inventory) -> Self {
+    pub fn new(id: Uuid, name: String, inventory: Inventory) -> Self {
         Self {
             id,
             name,
@@ -103,9 +104,9 @@ impl Player {
                 bottom: -1.65,
                 top: 0.1,
             },
-            velocity: [0.0; 3],
-            position: [0.0; 3],
-            rotation: [0.0; 3],
+            velocity: DVec3::ZERO,
+            position: DVec3::ZERO,
+            rotation: DVec3::ZERO,
             flying: false,
             selected_item_slot: 0,
         }

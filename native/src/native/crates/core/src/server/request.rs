@@ -1,10 +1,13 @@
 use std::{collections::HashMap, mem::transmute};
 
+use glam::Vec2;
+use uuid::Uuid;
+
 use crate::server::nbt;
 
 
 pub enum NetworkPacket {
-    Login { id: u128, name: String },
+    Login { id: Uuid, name: String },
     Logout,
 
     GetWorldInfo,
@@ -19,7 +22,7 @@ pub enum NetworkPacket {
     PlayerToggledFlying,
     PlayerSetSelectedItemSlot { slot: u16 },
     PlayerUpdatedInventory { inventory: HashMap<u8, u8> },
-    PlayerMovedMouse { distance: (f32, f32) },
+    PlayerMovedMouse { distance: Vec2 },
     PlayerPressedKeys { keys: Vec<String> },
 
     RunCommand { command: String, args: Vec<String> },
@@ -38,7 +41,7 @@ impl NetworkPacket {
                     nbt::Tag::ByteArray(v) => {
                         let bytes: [i8; 16] = *v.as_array().ok_or("invalid id: not 16 bytes")?;
                         let bytes: [u8; 16] = unsafe { transmute(bytes) };
-                        u128::from_be_bytes(bytes)
+                        Uuid::from_bytes(bytes)
                     }
                     _ => return Err("wrong type for id field")?,
                 };
@@ -94,7 +97,7 @@ impl NetworkPacket {
                 _ => return Err("wrong type for inventory field")?,
             },
             "mouse_moved" => NetworkPacket::PlayerMovedMouse {
-                distance: (
+                distance: Vec2::new(
                     match tag.get("dx").ok_or("missing dx")? {
                         nbt::Tag::Float(v) => *v,
                         _ => return Err("wrong type for dx field")?,
