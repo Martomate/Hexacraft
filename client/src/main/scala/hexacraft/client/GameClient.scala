@@ -557,7 +557,7 @@ class GameClient(
       player.position.add(positionDiff.mul(0.1))
       val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
       rotationDiff.y = MathUtils.absmin(rotationDiff.y, math.Pi * 2)
-      player.rotation.add(rotationDiff.mul(0.1))
+      // player.rotation.add(rotationDiff.mul(0.1))
       player.flying = syncedPlayer.flying
 
       val worldEventsNbt = worldEventsNbtPacket.asMap.get
