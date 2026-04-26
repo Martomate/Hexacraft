@@ -77,7 +77,7 @@ trait EmittingLight extends Block {
 class BlockLeaves(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
   override def isCovering(metadata: Byte, side: Int): Boolean = false
 
-  override def isTransmissive: Boolean = true
+  override def isTransmissive: Boolean = false
 }
 
 class BlockGlass(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
