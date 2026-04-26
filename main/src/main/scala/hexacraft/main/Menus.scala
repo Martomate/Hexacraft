@@ -398,7 +398,7 @@ object Menus {
           val baseFolder = new File(saveFolder, "saves")
           val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
           val worldName = Some(nameTF.text.trim).filter(_.nonEmpty).getOrElse(file.getName)
-          val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20).getOrElse(7.toByte)
+          val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20).getOrElse(10.toByte)
           val seed = Some(seedTF.text)
             .filter(_.nonEmpty)
             .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
