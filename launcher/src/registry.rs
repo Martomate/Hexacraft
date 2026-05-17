@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum RegistryError {
     #[error("invalid json: {0}")]
-    InvalidJson(#[from] facet_json::DeserializeError<facet_json::JsonError>),
+    InvalidJson(#[from] facet_json::DeserializeError),
     #[error("parsing failed: {0}")]
     Parsing(String),
 }
