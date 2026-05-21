@@ -85,13 +85,13 @@ object BlockCoords {
 
 class CylCoords private (_x: Double, _y: Double, _z: Double) extends AbstractCoords[CylCoords](_x, _y, _z) {
   def toNormalCoords(ref: CylCoords)(using cylSize: CylinderSize): NormalCoords = {
-    val mult = math.exp((this.y - ref.y) / cylSize.radius)
+    val mult = math.exp(-(this.y - ref.y) / cylSize.radius)
     val v = (this.z - ref.z) / CylinderSize.y60 * cylSize.hexAngle
     val z = math.sin(v)
-    val y = math.cos(v)
+    val y = -math.cos(v)
 
     val scale = cylSize.radius // / math.sqrt(z * z + y * y)
-    NormalCoords((this.x - ref.x) * mult, y * scale * mult - cylSize.radius, z * scale * mult)
+    NormalCoords((this.x - ref.x) * mult, y * scale * mult + cylSize.radius, z * scale * mult)
   }
 
   def toSkewCylCoords(using CylinderSize): SkewCylCoords = SkewCylCoords(

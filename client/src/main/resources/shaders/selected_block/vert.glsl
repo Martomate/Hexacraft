@@ -26,15 +26,15 @@ void main() {
 
     vec3 pos = vec3(blockPos.x * 0.75 + position.x, blockPos.y * 0.5 + position.y * blockHeight, (blockPos.x * 0.5 + blockPos.z) + position.z / y60);
     pos.z -= cam.z / y60;
-    float mult = exp((pos.y - cam.y) / radius);
+    float mult = exp(-(pos.y - cam.y) / radius);
     float v = pos.z * angleHalfHexagon;
     float z = sin(v);
-    float y = cos(v);
+    float y = -cos(v);
 
     y *= radius;
     z *= radius;
     pos = vec3(pos.x - cam.x, y, z) * mult;
-    pos.y -= radius;
+    pos.y += radius;
     gl_Position = matrix * vec4(pos, 1);
 
     fragPos = pos;

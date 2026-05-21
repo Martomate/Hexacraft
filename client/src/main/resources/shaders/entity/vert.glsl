@@ -49,10 +49,10 @@ void main() {
     trPos.z /= y60;
     vec3 pos = trPos.xyz;//vec3(blockPos.x * 1.5 + position.x, blockPos.y + position.y * blockHeight, (blockPos.x + 2 * blockPos.z) + position.z / y60) / 2;
     pos.z -= cam.z / y60;
-    float mult = exp((pos.y - cam.y) / radius);
+    float mult = exp(-(pos.y - cam.y) / radius);
     float v = pos.z * hexAngle;
     float z = sin(v);
-    float y = cos(v);
+    float y = -cos(v);
 
     fragIn.normal = (modelMatrix * vec4(normal.x, mat2(y, z, -z, y) * normal.yz, 0)).xyz;
     fragIn.normal /= length(fragIn.normal);
@@ -60,7 +60,7 @@ void main() {
     y *= radius;
     z *= radius;
     pos = vec3(pos.x - cam.x, y, z) * mult;
-    pos.y -= radius;
+    pos.y += radius;
     gl_Position = matrix * vec4(pos, 1);
 
     fragIn.position = pos;
