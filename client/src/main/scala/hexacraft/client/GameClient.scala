@@ -85,6 +85,9 @@ object GameClient {
     val camera: Camera = new Camera(
       makeCameraProjection(initialWindowSize, world.size.worldSize, useFarDistanceRenderer)
     )
+    val freeFlyCamera: Camera = new Camera(
+      makeCameraProjection(initialWindowSize, world.size.worldSize, useFarDistanceRenderer)
+    )
 
     val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
     val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world.collisionDetector)
@@ -113,6 +116,7 @@ object GameClient {
       player,
       worldRenderer,
       camera,
+      freeFlyCamera,
       playerInputHandler,
       playerPhysicsHandler,
       toolbar,
@@ -227,7 +231,8 @@ class GameClient(
     world: ClientWorld,
     val player: Player,
     worldRenderer: WorldRenderer,
-    val camera: Camera,
+    camera: Camera,
+    freeFlyCamera: Camera,
     playerInputHandler: PlayerInputHandler,
     playerPhysicsHandler: PlayerPhysicsHandler,
     toolbar: Toolbar,
@@ -258,6 +263,10 @@ class GameClient(
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val leftMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
   private val walkSoundTimer: TickableTimer = TickableTimer(20, initEnabled = false)
+
+  private var freeFly = false
+  private val freeFlyInputHandler = new FreeFlyInputHandler
+  private val freeFlyOrigin = Vector3d()
 
   def isReadyToPlay: Boolean = {
     this.world.getChunk(this.camera.blockCoords.getChunkRelWorld).isDefined
@@ -374,6 +383,11 @@ class GameClient(
       socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
     case KeyboardKey.Letter('K') =>
       socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
+    case KeyboardKey.Letter('I') =>
+      freeFlyCamera.setPositionAndRotation(player.position, player.rotation)
+      freeFlyOrigin.set(player.position)
+      freeFly = !freeFly
+      isInPopup = freeFly // TODO: replace this hack with proper solution for disabling player movement
     case _ =>
   }
 
@@ -478,7 +492,11 @@ class GameClient(
   }
 
   def render(context: RenderContext): Unit = {
-    worldRenderer.render(camera, new Vector3f(0, 1, -1), selectedBlockAndSide)
+    worldRenderer.render(
+      if freeFly then freeFlyCamera else camera,
+      new Vector3f(0, 1, -1),
+      selectedBlockAndSide
+    )
 
     renderCrosshair()
 
@@ -694,6 +712,14 @@ class GameClient(
       camera.setPositionAndRotation(player.position, player.rotation)
       camera.updateCoords()
       camera.updateViewMatrix(camera.view.position)
+
+      if !isPaused && freeFly then {
+        val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)
+        freeFlyOrigin.add(velocity.div(60.0))
+        freeFlyInputHandler.updateRotation(pressedKeys, freeFlyCamera.rotation, ctx.mouseMovement)
+
+        freeFlyCamera.updateViewMatrix(freeFlyOrigin)
+      }
 
       updateBlockInHandRendererContent()
 

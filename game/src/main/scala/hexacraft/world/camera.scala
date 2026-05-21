@@ -86,10 +86,10 @@ class CameraView {
   def updateViewMatrix(origin: Vector3d): Unit = {
     val pos = position.sub(origin, new Vector3d)
     matrix.identity()
-    matrix.translation(pos.x.toFloat, pos.y.toFloat, pos.z.toFloat)
     matrix.rotate(rotation.z, CameraView.unitZ)
     matrix.rotate(rotation.x, CameraView.unitX)
     matrix.rotate(rotation.y, CameraView.unitY)
+    matrix.translate(pos.x.toFloat, pos.y.toFloat, pos.z.toFloat)
     matrix.invert(invMatrix)
   }
 
