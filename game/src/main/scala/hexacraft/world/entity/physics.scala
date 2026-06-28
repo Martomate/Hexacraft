@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.physics.Density
+import hexacraft.physics.{Density, DragCoefficient, FluidDynamics}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockCoords, CylCoords}
@@ -12,6 +12,13 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
 ) {
   def update(transform: TransformComponent, motion: MotionComponent, boundingBox: HexBox): Unit = {
     applyBuoyancy(motion.velocity, 75, volumeSubmergedInWater(boundingBox, transform.position), Density.water)
+
+    val isMoving = motion.velocity.lengthSquared > 0
+    if isMoving then {
+      val totalArea = boundingBox.projectedAreaInDirection(motion.velocity)
+      val adjustedArea = totalArea * (volumeSubmergedInWater(boundingBox, transform.position) / boundingBox.volume)
+      applyDrag(motion.velocity, 75, adjustedArea)
+    }
 
     if !motion.flying then {
       motion.velocity.y -= 9.82 / 60
@@ -27,6 +34,13 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
     motion.velocity.set(vel)
 
     motion.velocity.mul(60)
+  }
+
+  private def applyDrag(velocity: Vector3d, objectMass: Double, objectProjectedArea: Double): Unit = {
+    val drag = FluidDynamics.dragForce(velocity, DragCoefficient.human, objectProjectedArea, Density.water)
+
+    // dv = a * dt = (F / m) * (1 / 60) = F / (m * 60)
+    velocity.add(drag.div(objectMass * 60))
   }
 
   private def volumeSubmergedInWater(bounds: HexBox, position: CylCoords): Double = {
