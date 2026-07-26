@@ -1,4 +1,4 @@
-use std::mem::transmute;
+use std::{collections::HashMap, mem::transmute};
 
     use bytes::BufMut;
     use glam::DVec3;
@@ -18,6 +18,53 @@ use std::mem::transmute;
         Map(Vec<(String, Tag)>),
         IntArray(Vec<i32>),
         ShortArray(Vec<i16>),
+    }
+
+    impl Tag {
+        pub fn as_byte(&self) -> Option<i8> {
+            match self {
+                Tag::Byte(v) => Some(*v),
+                _ => None,
+            }
+        }
+
+        pub fn as_short(&self) -> Option<i16> {
+            match self {
+                Tag::Short(v) => Some(*v),
+                _ => None,
+            }
+        }
+        
+        pub fn as_double(&self) -> Option<f64> {
+            match self {
+                Tag::Double(v) => Some(*v),
+                _ => None,
+            }
+        }
+
+        pub fn as_map(&self) -> Option<HashMap<&str, &Tag>> {
+            match self {
+                Tag::Map(v) => Some(HashMap::from_iter(v.iter().map(|(k, v)| (k.as_str(), v)))),
+                _ => None,
+            }
+        }
+
+        pub fn as_list(&self) -> Option<Vec<&Tag>> {
+            match self {
+                Tag::List(v) => Some(v.iter().collect()),
+                _ => None,
+            }
+        }
+
+        pub fn as_vector(&self) -> Option<DVec3> {
+            let tag = self.as_map()?;
+
+            Some(DVec3::new(
+                tag.get("x")?.as_double()?,
+                tag.get("y")?.as_double()?,
+                tag.get("z")?.as_double()?,
+            ))
+        }
     }
 
     impl Tag {

@@ -10,7 +10,7 @@ mod nbt;
 mod request;
 mod response;
 mod state;
-mod world;
+pub mod world;
 
 pub trait RequestHandler {
     fn handle(&self, client_id: u64, packet: NetworkPacket) -> Option<nbt::Tag>;

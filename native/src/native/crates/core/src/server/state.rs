@@ -4,22 +4,28 @@ use std::{
     time::Duration,
 };
 
-use glam::Vec2;
+use glam::{DVec3, Vec2};
 
 use crate::server::{
     GracefulShutdown, RequestHandler, input, nbt,
     request::NetworkPacket,
     response::*,
-    world::{CylinderSize, Inventory, Player, WorldGenSettings, WorldInfo},
+    world::{
+        BlockCoords, CylCoords, CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player,
+        World, WorldGenSettings, WorldInfo, WorldProvider, WorldProviderPath,
+    },
 };
 
-pub struct GameState {
+pub struct GameState<P> {
     is_online: bool,
     path: String,
 
     is_shutting_down: Mutex<bool>,
     world_info: WorldInfo,
     players: Mutex<HashMap<u64, PlayerConnectionState>>,
+
+    world: World,
+    world_provider: Mutex<P>,
 }
 
 struct PlayerConnectionState {
@@ -41,8 +47,8 @@ pub enum ServerMessageSender {
     Player { name: String },
 }
 
-impl GameState {
-    pub fn create(is_online: bool, path: String) -> Self {
+impl<P: WorldProvider> GameState<P> {
+    pub fn create(is_online: bool, path: String, world_provider: P) -> Self {
         Self {
             is_online,
             path: path.to_string(),
@@ -62,6 +68,9 @@ impl GameState {
                 },
             },
             players: Mutex::new(HashMap::new()),
+
+            world: World {},
+            world_provider: Mutex::new(world_provider),
         }
     }
 
@@ -102,7 +111,7 @@ impl GameState {
     }
 }
 
-impl RequestHandler for GameState {
+impl<P: WorldProvider> RequestHandler for GameState<P> {
     fn handle(&self, client_id: u64, packet: NetworkPacket) -> Option<nbt::Tag> {
         match packet {
             NetworkPacket::Login { id, name } => {
@@ -120,23 +129,60 @@ impl RequestHandler for GameState {
                     for (_, p) in players.iter_mut() {
                         p.messages_to_send.push_back(message.clone());
                     }
-                    players.insert(
-                        client_id,
-                        PlayerConnectionState {
-                            player: Player::new(
-                                id,
-                                name,
-                                Inventory::new(), // TODO: load from disk
-                            ),
-                            messages_to_send: VecDeque::new(),
-                            mouse_movement: Vec2::new(0.0, 0.0),
-                            pressed_keys: Vec::new(),
-                        },
-                    );
-                    Some(LoginResponse::success().into())
+                    let player = if let Some(tag) = self
+                        .world_provider
+                        .lock()
+                        .unwrap()
+                        .load_state(WorldProviderPath::PlayerData(id))
+                    {
+                        Player::decode(&tag)
+                    } else {
+                        let start_x = rand::random_range(-5..=5);
+                        let start_z = rand::random_range(-5..=5);
+                        let start_y = self.world.height(start_x, start_z) + 4;
+
+                        let start_pos = CylCoords::from(BlockCoords::from(DVec3::new(
+                            start_x as f64,
+                            start_y as f64,
+                            start_z as f64,
+                        )));
+
+                        Ok(Player {
+                            position: DVec3::from(start_pos),
+                            ..Player::new(id, name, Inventory::default())
+                        })
+                    };
+
+                    match player {
+                        Ok(player) => {
+                            self.world_provider
+                                .lock()
+                                .unwrap()
+                                .save_state(WorldProviderPath::PlayerData(id), player.encode());
+
+                            players.insert(
+                                client_id,
+                                PlayerConnectionState {
+                                    player,
+                                    messages_to_send: VecDeque::new(),
+                                    mouse_movement: Vec2::new(0.0, 0.0),
+                                    pressed_keys: Vec::new(),
+                                },
+                            );
+                            Some(LoginResponse::success().into())
+                        }
+                        Err(msg) => Some(LoginResponse::failure(&msg).into()),
+                    }
                 }
             }
             NetworkPacket::Logout => {
+                self.access_player_state(client_id, |p| {
+                    self.world_provider.lock().unwrap().save_state(
+                        WorldProviderPath::PlayerData(p.player.id),
+                        p.player.encode(),
+                    );
+                })?;
+
                 let message = self.access_player_state(client_id, |p| ServerMessage {
                     text: format!("{} logged out", p.player.name),
                     sender: ServerMessageSender::Server,
@@ -203,7 +249,7 @@ impl RequestHandler for GameState {
             NetworkPacket::PlayerUpdatedInventory { inventory } => {
                 self.access_player_state(client_id, |p| {
                     let p = &mut p.player;
-                    p.inventory = inventory;
+                    p.inventory = Inventory::from(inventory);
 
                     PlayerUpdatedInventoryResponse {
                         inventory: &p.inventory,
@@ -254,10 +300,19 @@ impl RequestHandler for GameState {
     }
 }
 
-impl GracefulShutdown for GameState {
+impl<P: WorldProvider> GracefulShutdown for GameState<P> {
     fn initiate(&self) {
         let mut is_shutting_down = self.is_shutting_down.lock().unwrap();
         *is_shutting_down = true;
+
+        {
+            for (_, p) in self.players.lock().unwrap().iter() {
+                self.world_provider.lock().unwrap().save_state(
+                    WorldProviderPath::PlayerData(p.player.id),
+                    p.player.encode(),
+                );
+            }
+        }
     }
 
     fn done(&self) -> bool {

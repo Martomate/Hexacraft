@@ -180,11 +180,11 @@ fn encode_inventory(inventory: &Inventory) -> nbt::Tag {
             "slots",
             nbt::Tag::List(
                 inventory
-                    .iter()
-                    .map(|(&slot, &block)| {
+                    .slots()
+                    .map(|(slot, block)| {
                         nbt::MapTag::new()
                             .set("slot", nbt::Tag::Byte(slot as i8))
-                            .set("id", nbt::Tag::Byte(block as i8))
+                            .set("id", nbt::Tag::Byte(block.id() as i8))
                             .build()
                     })
                     .collect(),
