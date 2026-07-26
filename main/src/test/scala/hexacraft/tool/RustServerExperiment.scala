@@ -10,15 +10,16 @@ import java.nio.file.Files
 
 object RustServerExperiment {
   def main(args: Array[String]): Unit = {
-    val saveDir = Files.createTempDirectory("hexacraft_world_")
-
     val windowSystem = WindowSystem.create()
     val audioSystem = AudioSystem.createNull()
     val fs = FileSystem.create()
 
     var running = true
 
-    val server = RustGameServer.start(true, 1298, saveDir.resolve("test_world"))
+    val server = {
+      val saveDir = Files.createTempDirectory("hexacraft_server_")
+      RustGameServer.start(true, 1298, saveDir.resolve("test_world"))
+    }
 
     new Thread(() => {
       ToolUtils.runAtSteadyFps(1)(running) {
@@ -28,6 +29,9 @@ object RustServerExperiment {
     }).start()
 
     val gameThread = new Thread(() => {
+      val saveDir = Files.createTempDirectory("hexacraft_client_")
+      fs.writeBytes(saveDir.resolve("username.txt"), "Test player".getBytes)
+
       val window = MainWindow(true, saveDir.toFile, fs, audioSystem, windowSystem)
       window.setNextScene(SceneRoute.Game(null, false, true, ("127.0.0.1", 1298)))
       val router = MainRouter(saveDir.toFile, true, fs, window, audioSystem)
