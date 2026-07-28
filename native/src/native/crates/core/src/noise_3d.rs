@@ -1,12 +1,12 @@
 // Based on "Improved Perlin Noise" (https://cs.nyu.edu/~perlin/noise)
 
-fn int_comps(i: f64) -> (i32, f64, f64) {
+fn int_comps(i: f64) -> (u8, f64, f64) {
     let int_part = i.floor();
     let rest = i - int_part;
-    (int_part as i32 & 255, rest, fade(rest))
+    (int_part as i32 as u8, rest, fade(rest))
 }
 
-fn grad(hash: i32, x: f64, y: f64, z: f64) -> f64 {
+fn grad(hash: u8, x: f64, y: f64, z: f64) -> f64 {
     let h = hash & 15;
     let u = if h < 8 { x } else { y };
     let v = if h < 4 {
@@ -31,24 +31,24 @@ fn lerp(a: f64, b: f64, t: f64) -> f64 {
     a + (b - a) * t
 }
 
-fn permutate(perm: &[i32], iw: i32) -> (i32, i32) {
+fn permutate(perm: &[u8], iw: u16) -> (u8, u8) {
     (perm[(iw) as usize], perm[(iw + 1) as usize])
 }
 
-pub fn noise(perm: &[i32], xx: f64, yy: f64, zz: f64) -> f64 {
+pub fn noise(perm: &[u8], xx: f64, yy: f64, zz: f64) -> f64 {
     let (ix, x, tx) = int_comps(xx);
     let (iy, y, ty) = int_comps(yy);
     let (iz, z, tz) = int_comps(zz);
 
-    let (a0, a1) = permutate(perm, ix);
+    let (a0, a1) = permutate(perm, ix as u16);
 
-    let (a00, a10) = permutate(perm, a0 + iy);
-    let (a01, a11) = permutate(perm, a1 + iy);
+    let (a00, a10) = permutate(perm, a0 as u16 + iy as u16);
+    let (a01, a11) = permutate(perm, a1 as u16 + iy as u16);
 
-    let (a000, a100) = permutate(perm, a00 + iz);
-    let (a001, a101) = permutate(perm, a01 + iz);
-    let (a010, a110) = permutate(perm, a10 + iz);
-    let (a011, a111) = permutate(perm, a11 + iz);
+    let (a000, a100) = permutate(perm, a00 as u16 + iz as u16);
+    let (a001, a101) = permutate(perm, a01 as u16 + iz as u16);
+    let (a010, a110) = permutate(perm, a10 as u16 + iz as u16);
+    let (a011, a111) = permutate(perm, a11 as u16 + iz as u16);
 
     let [g00, g01, g10, g11] = [
         [
@@ -76,7 +76,7 @@ pub fn noise(perm: &[i32], xx: f64, yy: f64, zz: f64) -> f64 {
     lerp(g0, g1, tz)
 }
 
-pub fn noise_with_octaves(perms: &[&[i32]], scale: f64, x: f64, y: f64, z: f64) -> f64 {
+pub fn noise_with_octaves(perms: &[&[u8]], scale: f64, x: f64, y: f64, z: f64) -> f64 {
     let mut amp = 1.0;
     let mut result = 0.0;
     for perm in perms {

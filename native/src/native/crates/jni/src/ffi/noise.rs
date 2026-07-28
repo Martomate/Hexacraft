@@ -6,7 +6,7 @@ use jni::sys::jdouble;
 use jni_fn::jni_fn;
 
 pub struct NoiseState {
-    perm: Vec<i32>,
+    perm: Vec<u8>,
 }
 
 #[jni_fn("hexacraft.rs.RustLib$NoiseGenerator3D")]
@@ -21,7 +21,7 @@ pub fn storePerms<'local>(
     };
 
     let state = NoiseState {
-        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>(),
+        perm: (0..512).map(|i| elements[i] as u8).collect::<Vec<_>>(),
     };
     Handle::create(state)
 }
@@ -77,7 +77,7 @@ pub fn storePerms<'local>(
     };
 
     let state = NoiseState {
-        perm: (0..512).map(|i| elements[i]).collect::<Vec<_>>(),
+        perm: (0..512).map(|i| elements[i] as u8).collect::<Vec<_>>(),
     };
     Handle::create(state)
 }
