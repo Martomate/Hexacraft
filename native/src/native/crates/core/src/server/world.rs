@@ -3,7 +3,7 @@ use std::{collections::HashMap, f64::consts::PI};
 use glam::DVec3;
 use uuid::Uuid;
 
-use crate::server::nbt;
+use crate::{noise_3d, server::nbt};
 
 const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 
@@ -14,6 +14,7 @@ pub struct WorldInfo {
     pub _gen: WorldGenSettings,
 }
 
+#[derive(Clone, Copy)]
 pub struct WorldGenSettings {
     pub seed: u64,
     pub block_gen_scale: f64,
@@ -110,7 +111,7 @@ impl From<HashMap<u8, u8>> for Inventory {
 }
 
 impl Inventory {
-    pub fn default() -> Self {
+    pub fn initial() -> Self {
         Self(HashMap::from_iter([
             (0, Block::Dirt),
             (1, Block::Grass),
@@ -197,7 +198,7 @@ impl NbtDecoder for Player {
 
         let inventory = match tag.get("inventory") {
             Some(tag) => Inventory::decode(tag)?,
-            None => Inventory::default(),
+            None => Inventory::initial(),
         };
 
         let mut player = Player::new(Uuid::nil(), "".to_string(), inventory);
@@ -246,17 +247,19 @@ impl NbtDecoder for Inventory {
         let tag = tag.as_map().ok_or("not a map")?;
 
         match tag.get("slots").and_then(|t| t.as_list()) {
-            Some(slot_tags) =>{
-                let slots = HashMap::from_iter(slot_tags.iter().filter_map(|s| s.as_map()).filter_map(|s| {
-                    let idx = s.get("slot").and_then(|t| t.as_byte()).unwrap_or(-1);
-                    let id = s.get("id").and_then(|t| t.as_byte()).unwrap_or(-1);
+            Some(slot_tags) => {
+                let slots = HashMap::from_iter(
+                    slot_tags.iter().filter_map(|s| s.as_map()).filter_map(|s| {
+                        let idx = s.get("slot").and_then(|t| t.as_byte()).unwrap_or(-1);
+                        let id = s.get("id").and_then(|t| t.as_byte()).unwrap_or(-1);
 
-                    if idx != -1 && id != -1 {
-                        Some((idx as u8, Block(id as u8)))
-                    } else {
-                        None
-                    }
-                }));
+                        if idx != -1 && id != -1 {
+                            Some((idx as u8, Block(id as u8)))
+                        } else {
+                            None
+                        }
+                    }),
+                );
                 Ok(Inventory(slots))
             }
             None => Ok(Inventory(HashMap::new())),
@@ -310,12 +313,144 @@ impl WorldProvider for InMemoryWorldProvider {
     }
 }
 
-pub struct World {}
+pub struct World {
+    generator: WorldGenerator,
+}
 
 impl World {
-    pub fn height(&self, x: i32, z: i32) -> i32 {
-        17 // todo!()
+    pub fn new(_gen: WorldGenSettings, cyl: CylinderSize) -> Self {
+        Self {
+            generator: WorldGenerator::new(_gen, cyl),
+        }
     }
+
+    pub fn height(&self, x: i32, z: i32) -> i16 {
+        let column_coords = ColumnRelWorld::new(x >> 4, z >> 4);
+        let column_heights = self.generator.height_map_of_column(column_coords);
+        column_heights[z as usize - (z as usize >> 4)][x as usize - (x as usize >> 4)]
+    }
+
+    pub fn height_map_of_column(&self, coords: ColumnRelWorld) -> Option<[[i16; 16]; 16]> {
+        Some(self.generator.height_map_of_column(coords))
+    }
+}
+
+struct WorldGenerator {
+    biome_height_variation_generator: NoiseGenerator3D,
+    biome_height_generator: NoiseGenerator3D,
+    height_map_generator: NoiseGenerator3D,
+    cyl: CylinderSize,
+}
+
+impl WorldGenerator {
+    pub fn new(settings: WorldGenSettings, cyl: CylinderSize) -> Self {
+        // TODO: use settings.seed
+        Self {
+            biome_height_variation_generator: NoiseGenerator3D::new(
+                4,
+                settings.biome_height_variation_gen_scale,
+            ),
+            biome_height_generator: NoiseGenerator3D::new(4, settings.biome_height_map_gen_scale),
+            height_map_generator: NoiseGenerator3D::new(8, settings.height_map_gen_scale),
+            cyl,
+        }
+    }
+
+    pub fn height_map_of_column(&self, coords: ColumnRelWorld) -> [[i16; 16]; 16] {
+        let grid_heights: [[f64; 5]; 5] = std::array::from_fn(|iz| {
+            std::array::from_fn(|ix| {
+                let x = (coords.x << 4) | ((ix as i32) << 2);
+                let z = (coords.z << 4) | ((iz as i32) << 2);
+                self.raw_height(x, z, self.cyl)
+            })
+        });
+        std::array::from_fn(|dz| {
+            std::array::from_fn(|dx| {
+                let iz = dz >> 2;
+                let ix = dx >> 2;
+                let az = (dz - (iz << 2)) as f64 * 0.25;
+                let ax = (dx - (ix << 2)) as f64 * 0.25;
+
+                let h00 = grid_heights[iz][ix];
+                let h01 = grid_heights[iz][ix + 1];
+                let h10 = grid_heights[iz + 1][ix];
+                let h11 = grid_heights[iz + 1][ix + 1];
+
+                lerp(lerp(h00, h01, ax), lerp(h10, h11, ax), az) as i16
+            })
+        })
+    }
+
+    fn raw_height(&self, x: i32, z: i32, cyl: CylinderSize) -> f64 {
+        let c = CylCoords::from(BlockCoords::new(x as f64, 0.0, z as f64));
+
+        let biome_height = self
+            .biome_height_generator
+            .gen_wrapped_noise(c.x, c.z, cyl.radius());
+        let biome_height_variation =
+            self.biome_height_variation_generator
+                .gen_wrapped_noise(c.x, c.z, cyl.radius());
+        let height_map = self
+            .height_map_generator
+            .gen_wrapped_noise(c.x, c.z, cyl.radius());
+
+        height_map * biome_height_variation * 1000. + biome_height * 100.0
+    }
+}
+
+struct NoiseGenerator3D {
+    perms: Vec<[u8; 512]>,
+    octaves: u8,
+    scale: f64,
+}
+
+impl NoiseGenerator3D {
+    pub fn new(octaves: u8, scale: f64) -> Self {
+        Self {
+            perms: (0..octaves).map(|_| make_perm()).collect(),
+            octaves,
+            scale,
+        }
+    }
+
+    pub fn gen_wrapped_noise(&self, x: f64, z: f64, radius: f64) -> f64 {
+        let perms = self
+            .perms
+            .iter()
+            .map(|perm| perm.as_slice())
+            .collect::<Vec<_>>();
+
+        let angle = z / radius;
+        noise_3d::noise_with_octaves(
+            perms.as_slice(),
+            self.scale,
+            x,
+            angle.sin() * radius,
+            angle.cos() * radius,
+        )
+    }
+}
+
+fn make_perm() -> [u8; 512] {
+    let mut perm: [u8; 256] = std::array::from_fn(|i| i as u8);
+
+    shuffle_array(&mut perm);
+
+    let mut res = [0; 512];
+    res[..256].copy_from_slice(&perm);
+    res[256..].copy_from_slice(&perm);
+    res
+}
+
+fn shuffle_array<T, const N: usize>(arr: &mut [T; N]) {
+    let len = arr.len();
+    for i in 0..len {
+        arr.swap(i, rand::random_range(0..(len - i)) + i);
+    }
+}
+
+fn lerp(from: f64, to: f64, a: f64) -> f64 {
+    from + (to - from) * a
 }
 
 #[derive(PartialEq, Eq, Hash)]
@@ -331,8 +466,38 @@ pub struct ColumnRelWorld {
     z: i32,
 }
 
+impl ColumnRelWorld {
+    pub fn new(x: i32, z: i32) -> Self {
+        Self { x, z }
+    }
+}
+
 pub struct BlockCoords(DVec3);
-pub struct CylCoords(DVec3);
+
+impl BlockCoords {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self(DVec3 { x, y, z })
+    }
+}
+
+pub struct CylCoords {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+impl From<u64> for ColumnRelWorld {
+    fn from(value: u64) -> Self {
+        Self {
+            x: i20_to_i32((value >> 20) & 0xFFFFF),
+            z: i20_to_i32(value & 0xFFFFF),
+        }
+    }
+}
+
+fn i20_to_i32(value: u64) -> i32 {
+    (value as i32) << 12 >> 12
+}
 
 impl From<DVec3> for BlockCoords {
     fn from(value: DVec3) -> Self {
@@ -342,13 +507,19 @@ impl From<DVec3> for BlockCoords {
 
 impl From<BlockCoords> for CylCoords {
     fn from(block: BlockCoords) -> Self {
-        Self(conversion::skew_to_cyl(conversion::block_to_skew(block.0)))
+        Self::from(conversion::skew_to_cyl(conversion::block_to_skew(block.0)))
     }
 }
 
 impl From<CylCoords> for DVec3 {
-    fn from(value: CylCoords) -> Self {
-        value.0
+    fn from(CylCoords { x, y, z }: CylCoords) -> Self {
+        Self { x, y, z }
+    }
+}
+
+impl From<DVec3> for CylCoords {
+    fn from(DVec3 { x, y, z }: DVec3) -> Self {
+        Self { x, y, z }
     }
 }
 

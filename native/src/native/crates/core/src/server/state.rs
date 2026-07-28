@@ -11,8 +11,9 @@ use crate::server::{
     request::NetworkPacket,
     response::*,
     world::{
-        BlockCoords, CylCoords, CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player,
-        World, WorldGenSettings, WorldInfo, WorldProvider, WorldProviderPath,
+        BlockCoords, ColumnRelWorld, CylCoords, CylinderSize, Inventory, NbtDecoder as _,
+        NbtEncoder as _, Player, World, WorldGenSettings, WorldInfo, WorldProvider,
+        WorldProviderPath,
     },
 };
 
@@ -49,27 +50,29 @@ pub enum ServerMessageSender {
 
 impl<P: WorldProvider> GameState<P> {
     pub fn create(is_online: bool, path: String, world_provider: P) -> Self {
+        let gen_settings = WorldGenSettings {
+            seed: 42,
+            block_gen_scale: 0.1,
+            height_map_gen_scale: 0.02,
+            block_density_gen_scale: 0.01,
+            biome_height_map_gen_scale: 0.002,
+            biome_height_variation_gen_scale: 0.002,
+        };
+        let world_size = CylinderSize(8);
         Self {
             is_online,
             path: path.to_string(),
-
+        
             is_shutting_down: Mutex::new(false),
             world_info: WorldInfo {
                 version: 2,
                 world_name: "Test 123".to_string(),
-                world_size: CylinderSize(8),
-                _gen: WorldGenSettings {
-                    seed: 42,
-                    block_gen_scale: 0.1,
-                    height_map_gen_scale: 0.02,
-                    block_density_gen_scale: 0.01,
-                    biome_height_map_gen_scale: 0.002,
-                    biome_height_variation_gen_scale: 0.002,
-                },
+                world_size,
+                _gen: gen_settings,
             },
             players: Mutex::new(HashMap::new()),
-
-            world: World {},
+        
+            world: World::new(gen_settings, world_size),
             world_provider: Mutex::new(world_provider),
         }
     }
@@ -139,17 +142,13 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                     } else {
                         let start_x = rand::random_range(-5..=5);
                         let start_z = rand::random_range(-5..=5);
-                        let start_y = self.world.height(start_x, start_z) + 4;
+                        let start_y = (self.world.height(start_x, start_z) as f64) + 4.0;
 
-                        let start_pos = CylCoords::from(BlockCoords::from(DVec3::new(
-                            start_x as f64,
-                            start_y as f64,
-                            start_z as f64,
-                        )));
+                        let start_pos = BlockCoords::new(start_x as f64, start_y, start_z as f64);
 
                         Ok(Player {
-                            position: DVec3::from(start_pos),
-                            ..Player::new(id, name, Inventory::default())
+                            position: DVec3::from(CylCoords::from(start_pos)),
+                            ..Player::new(id, name, Inventory::initial())
                         })
                     };
 
@@ -203,7 +202,24 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                 }
                 .into(),
             ),
-            NetworkPacket::LoadColumnData { coords } => Some(nbt::MapTag::new().build()),
+            NetworkPacket::LoadColumnData { coords } => {
+                match self
+                    .world
+                    .height_map_of_column(ColumnRelWorld::from(coords))
+                {
+                    Some(height_map) => Some(
+                        nbt::MapTag::new()
+                            .set(
+                                "heightMap",
+                                nbt::Tag::ShortArray(
+                                    (0..16 * 16).map(|i| height_map[i % 4][i / 4]).collect(),
+                                ),
+                            )
+                            .build(),
+                    ),
+                    None => Some(nbt::MapTag::new().build()),
+                }
+            }
             NetworkPacket::GetPlayerState => self.access_player_state(client_id, |p| {
                 GetPlayerStateResponse { player: &p.player }.into()
             }),
