@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     sync::Mutex,
     time::Duration,
 };
@@ -11,9 +11,9 @@ use crate::server::{
     request::NetworkPacket,
     response::*,
     world::{
-        BlockCoords, ColumnRelWorld, CylCoords, CylinderSize, Inventory, NbtDecoder as _,
-        NbtEncoder as _, Player, World, WorldGenSettings, WorldInfo, WorldProvider,
-        WorldProviderPath,
+        BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords, CylinderSize, Inventory,
+        NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings, WorldInfo,
+        WorldProvider, WorldProviderPath,
     },
 };
 
@@ -34,6 +34,10 @@ struct PlayerConnectionState {
     messages_to_send: VecDeque<ServerMessage>,
     mouse_movement: Vec2,
     pressed_keys: Vec<String>,
+
+    chunks_loaded: HashSet<ChunkRelWorld>,
+    new_chunks_loaded: Vec<ChunkRelWorld>,
+    new_chunks_unloaded: Vec<ChunkRelWorld>,
 }
 
 #[derive(Clone)]
@@ -62,7 +66,7 @@ impl<P: WorldProvider> GameState<P> {
         Self {
             is_online,
             path: path.to_string(),
-        
+
             is_shutting_down: Mutex::new(false),
             world_info: WorldInfo {
                 version: 2,
@@ -71,7 +75,7 @@ impl<P: WorldProvider> GameState<P> {
                 _gen: gen_settings,
             },
             players: Mutex::new(HashMap::new()),
-        
+
             world: World::new(gen_settings, world_size),
             world_provider: Mutex::new(world_provider),
         }
@@ -109,6 +113,25 @@ impl<P: WorldProvider> GameState<P> {
                         .collect::<Vec<_>>(),
                 );
                 p.mouse_movement = Vec2::new(0.0, 0.0);
+
+                // Temporary:
+                {
+                    let d = 6;
+                    let s = 2 * d + 1;
+                    let first_chunks_to_load: Vec<_> = (0..s*s*s).map(|i| {
+                        let dx = (i % s) - d;
+                        let dy = (i / s % s) - d;
+                        let dz = (i / s / s) - d;
+                        ChunkRelWorld::new(dx, dy, (dz as u32 & self.world_info.world_size.ring_size_mask()) as i32)
+                    }).collect();
+
+                    if !p.chunks_loaded.contains(&first_chunks_to_load[0]) {
+                        for &c in &first_chunks_to_load {
+                            p.chunks_loaded.insert(c);
+                            p.new_chunks_loaded.push(c);
+                        }
+                    }
+                }
             }
         }
     }
@@ -166,6 +189,9 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                                     messages_to_send: VecDeque::new(),
                                     mouse_movement: Vec2::new(0.0, 0.0),
                                     pressed_keys: Vec::new(),
+                                    chunks_loaded: HashSet::new(),
+                                    new_chunks_loaded: Vec::new(),
+                                    new_chunks_unloaded: Vec::new(),
                                 },
                             );
                             Some(LoginResponse::success().into())
@@ -205,14 +231,14 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
             NetworkPacket::LoadColumnData { coords } => {
                 match self
                     .world
-                    .height_map_of_column(ColumnRelWorld::from(coords))
+                    .height_map_of_column(ColumnRelWorld::decode(coords))
                 {
                     Some(height_map) => Some(
                         nbt::MapTag::new()
                             .set(
                                 "heightMap",
                                 nbt::Tag::ShortArray(
-                                    (0..16 * 16).map(|i| height_map[i % 4][i / 4]).collect(),
+                                    (0..16 * 16).map(|i| height_map[i % 16][i / 16]).collect(),
                                 ),
                             )
                             .build(),
@@ -238,7 +264,27 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                 )
             }
             NetworkPacket::GetWorldLoadingEvents { max_chunks_to_load } => {
-                Some(GetWorldLoadingEventsResponse {}.into())
+                let (loaded, unloaded) = self.access_player_state(client_id, |p| {
+                    (
+                        p.new_chunks_loaded.drain(..).collect::<Vec<_>>(),
+                        p.new_chunks_unloaded.drain(..).collect::<Vec<_>>(),
+                    )
+                })?;
+                let loaded = loaded
+                    .iter()
+                    .map(|&c| {
+                        let (blocks, metadata) = self.world.generate_chunk(c);
+                        LoadedChunk {
+                        coords: c,
+                        data: LoadedChunkData {
+                            blocks: blocks.into_iter().collect(),
+                            metadata: metadata.into_iter().collect(),
+                            entities: Vec::new(),
+                            is_decorated: true,
+                        },
+                    }})
+                    .collect();
+                Some(GetWorldLoadingEventsResponse { loaded, unloaded }.into())
             }
             NetworkPacket::PlayerRightClicked => {
                 // TODO: player right clicked

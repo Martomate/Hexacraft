@@ -3,7 +3,10 @@ use std::{collections::HashMap, f64::consts::PI};
 use glam::DVec3;
 use uuid::Uuid;
 
-use crate::{noise_3d, server::nbt};
+use crate::server::{
+    nbt,
+    noise::{NoiseGenerator3D, NoiseGenerator4D},
+};
 
 const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 
@@ -327,15 +330,24 @@ impl World {
     pub fn height(&self, x: i32, z: i32) -> i16 {
         let column_coords = ColumnRelWorld::new(x >> 4, z >> 4);
         let column_heights = self.generator.height_map_of_column(column_coords);
-        column_heights[z as usize - (z as usize >> 4)][x as usize - (x as usize >> 4)]
+        column_heights[z as usize & 15][x as usize & 15]
     }
 
     pub fn height_map_of_column(&self, coords: ColumnRelWorld) -> Option<[[i16; 16]; 16]> {
         Some(self.generator.height_map_of_column(coords))
     }
+
+    pub fn generate_chunk(
+        &self,
+        coords: ChunkRelWorld,
+    ) -> ([u8; 16 * 16 * 16], [u8; 16 * 16 * 16]) {
+        self.generator.generate_chunk(coords)
+    }
 }
 
 struct WorldGenerator {
+    block_generator: NoiseGenerator4D,
+    block_density_generator: NoiseGenerator4D,
     biome_height_variation_generator: NoiseGenerator3D,
     biome_height_generator: NoiseGenerator3D,
     height_map_generator: NoiseGenerator3D,
@@ -346,6 +358,8 @@ impl WorldGenerator {
     pub fn new(settings: WorldGenSettings, cyl: CylinderSize) -> Self {
         // TODO: use settings.seed
         Self {
+            block_generator: NoiseGenerator4D::new(8, settings.block_gen_scale),
+            block_density_generator: NoiseGenerator4D::new(4, settings.block_density_gen_scale),
             biome_height_variation_generator: NoiseGenerator3D::new(
                 4,
                 settings.biome_height_variation_gen_scale,
@@ -359,8 +373,8 @@ impl WorldGenerator {
     pub fn height_map_of_column(&self, coords: ColumnRelWorld) -> [[i16; 16]; 16] {
         let grid_heights: [[f64; 5]; 5] = std::array::from_fn(|iz| {
             std::array::from_fn(|ix| {
-                let x = (coords.x << 4) | ((ix as i32) << 2);
-                let z = (coords.z << 4) | ((iz as i32) << 2);
+                let x = (coords.x << 4) + ((ix as i32) << 2);
+                let z = (coords.z << 4) + ((iz as i32) << 2);
                 self.raw_height(x, z, self.cyl)
             })
         });
@@ -368,8 +382,8 @@ impl WorldGenerator {
             std::array::from_fn(|dx| {
                 let iz = dz >> 2;
                 let ix = dx >> 2;
-                let az = (dz - (iz << 2)) as f64 * 0.25;
-                let ax = (dx - (ix << 2)) as f64 * 0.25;
+                let az = (dz & 3) as f64 * 0.25;
+                let ax = (dx & 3) as f64 * 0.25;
 
                 let h00 = grid_heights[iz][ix];
                 let h01 = grid_heights[iz][ix + 1];
@@ -394,58 +408,105 @@ impl WorldGenerator {
             .height_map_generator
             .gen_wrapped_noise(c.x, c.z, cyl.radius());
 
-        height_map * biome_height_variation * 1000. + biome_height * 100.0
+        height_map * biome_height_variation * 100.0 + biome_height * 100.0
     }
-}
 
-struct NoiseGenerator3D {
-    perms: Vec<[u8; 512]>,
-    octaves: u8,
-    scale: f64,
-}
+    pub fn generate_chunk(
+        &self,
+        coords: ChunkRelWorld,
+    ) -> ([u8; 16 * 16 * 16], [u8; 16 * 16 * 16]) {
+        let grid_noise: [[[f64; 5]; 5]; 5] = std::array::from_fn(|iz| {
+            std::array::from_fn(|iy| {
+                std::array::from_fn(|ix| {
+                    let x = (coords.x << 4) + ((ix as i32) << 2);
+                    let y = (coords.y << 4) + ((iy as i32) << 2);
+                    let z = (coords.z << 4) + ((iz as i32) << 2);
+                    self.raw_block_noise(x, y, z, self.cyl)
+                })
+            })
+        });
+        let noise: [[[f64; 16]; 16]; 16] = std::array::from_fn(|dz| {
+            std::array::from_fn(|dy| {
+                std::array::from_fn(|dx| {
+                    let iz = dz >> 2;
+                    let iy = dy >> 2;
+                    let ix = dx >> 2;
+                    let az = (dz & 3) as f64 * 0.25;
+                    let ay = (dy & 3) as f64 * 0.25;
+                    let ax = (dx & 3) as f64 * 0.25;
 
-impl NoiseGenerator3D {
-    pub fn new(octaves: u8, scale: f64) -> Self {
-        Self {
-            perms: (0..octaves).map(|_| make_perm()).collect(),
-            octaves,
-            scale,
+                    let h000 = grid_noise[iz][iy][ix];
+                    let h001 = grid_noise[iz][iy][ix + 1];
+                    let h010 = grid_noise[iz][iy + 1][ix];
+                    let h011 = grid_noise[iz][iy + 1][ix + 1];
+                    let h100 = grid_noise[iz + 1][iy][ix];
+                    let h101 = grid_noise[iz + 1][iy][ix + 1];
+                    let h110 = grid_noise[iz + 1][iy + 1][ix];
+                    let h111 = grid_noise[iz + 1][iy + 1][ix + 1];
+
+                    lerp(
+                        lerp(lerp(h000, h001, ax), lerp(h010, h011, ax), ay),
+                        lerp(lerp(h100, h101, ax), lerp(h110, h111, ax), ay),
+                        az,
+                    )
+                })
+            })
+        });
+
+        let mut block_type = [0; 16 * 16 * 16];
+        let metadata = [0; 16 * 16 * 16];
+
+        let height_map = self.height_map_of_column(ColumnRelWorld::new(coords.x, coords.z));
+
+        for z in 0..16 {
+            for y in 0..16 {
+                for x in 0..16 {
+                    let n = noise[z][y][x];
+                    let y_to_go = coords.y * 16 + y as i32 - height_map[z][x] as i32;
+                    let limit = self.limit_for_block_noise(y_to_go);
+                    if n > limit {
+                        block_type
+                            [BlockRelChunk::new(x as u8, y as u8, z as u8).encoded() as usize] =
+                            self.get_block_at_depth(y_to_go).id();
+                    }
+                }
+            }
+        }
+
+        (block_type, metadata)
+    }
+
+    fn limit_for_block_noise(&self, y_to_go: i32) -> f64 {
+        if y_to_go < -6 {
+            -0.4
+        } else if y_to_go < 0 {
+            -0.4 - (6.0 + y_to_go as f64) * 0.025
+        } else {
+            4.0
         }
     }
 
-    pub fn gen_wrapped_noise(&self, x: f64, z: f64, radius: f64) -> f64 {
-        let perms = self
-            .perms
-            .iter()
-            .map(|perm| perm.as_slice())
-            .collect::<Vec<_>>();
-
-        let angle = z / radius;
-        noise_3d::noise_with_octaves(
-            perms.as_slice(),
-            self.scale,
-            x,
-            angle.sin() * radius,
-            angle.cos() * radius,
-        )
+    fn get_block_at_depth(&self, y_to_go: i32) -> Block {
+        if y_to_go < -5 {
+            Block::Stone
+        } else if y_to_go < -1 {
+            Block::Dirt
+        } else {
+            Block::Grass
+        }
     }
-}
 
-fn make_perm() -> [u8; 512] {
-    let mut perm: [u8; 256] = std::array::from_fn(|i| i as u8);
+    fn raw_block_noise(&self, x: i32, y: i32, z: i32, cyl: CylinderSize) -> f64 {
+        let c = CylCoords::from(BlockCoords::new(x as f64, y as f64, z as f64));
 
-    shuffle_array(&mut perm);
+        let n1 = self
+            .block_generator
+            .gen_wrapped_noise(c.x, c.y, c.z, cyl.radius());
+        let n2 = self
+            .block_density_generator
+            .gen_wrapped_noise(c.x, c.y, c.z, cyl.radius());
 
-    let mut res = [0; 512];
-    res[..256].copy_from_slice(&perm);
-    res[256..].copy_from_slice(&perm);
-    res
-}
-
-fn shuffle_array<T, const N: usize>(arr: &mut [T; N]) {
-    let len = arr.len();
-    for i in 0..len {
-        arr.swap(i, rand::random_range(0..(len - i)) + i);
+        n1 + n2 * 0.4
     }
 }
 
@@ -453,14 +514,47 @@ fn lerp(from: f64, to: f64, a: f64) -> f64 {
     from + (to - from) * a
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct BlockRelChunk {
+    x: u8,
+    y: u8,
+    z: u8,
+}
+
+impl BlockRelChunk {
+    pub fn new(x: u8, y: u8, z: u8) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn encoded(&self) -> u16 {
+        let x = (self.x & 0xf) as u16;
+        let y = (self.y & 0xf) as u16;
+        let z = (self.z & 0xf) as u16;
+        x << 8 | y << 4 | z
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct ChunkRelWorld {
     x: i32,
     y: i32,
     z: i32,
 }
 
-#[derive(PartialEq, Eq, Hash)]
+impl ChunkRelWorld {
+    pub fn new(x: i32, y: i32, z: i32) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn encoded(&self) -> u64 {
+        let x = (self.x & 0xfffff) as u64;
+        let z = (self.z & 0xfffff) as u64;
+        let y = (self.y & 0xfff) as u64;
+        x << 32 | z << 12 | y
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct ColumnRelWorld {
     x: i32,
     z: i32,
@@ -469,6 +563,13 @@ pub struct ColumnRelWorld {
 impl ColumnRelWorld {
     pub fn new(x: i32, z: i32) -> Self {
         Self { x, z }
+    }
+
+    pub fn decode(value: u64) -> Self {
+        Self {
+            x: i20_to_i32((value >> 20) & 0xFFFFF),
+            z: i20_to_i32(value & 0xFFFFF),
+        }
     }
 }
 
@@ -484,15 +585,6 @@ pub struct CylCoords {
     x: f64,
     y: f64,
     z: f64,
-}
-
-impl From<u64> for ColumnRelWorld {
-    fn from(value: u64) -> Self {
-        Self {
-            x: i20_to_i32((value >> 20) & 0xFFFFF),
-            z: i20_to_i32(value & 0xFFFFF),
-        }
-    }
 }
 
 fn i20_to_i32(value: u64) -> i32 {

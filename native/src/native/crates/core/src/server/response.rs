@@ -1,7 +1,9 @@
+use glam::DVec3;
+
 use crate::server::{
     nbt,
     state::{ServerMessage, ServerMessageSender},
-    world::{Inventory, Player, WorldInfo},
+    world::{ChunkRelWorld, CylCoords, Inventory, Player, WorldInfo},
 };
 
 pub struct LoginResponse<'r> {
@@ -153,13 +155,111 @@ impl From<GetEventsResponse> for nbt::Tag {
     }
 }
 
-pub struct GetWorldLoadingEventsResponse {}
+pub struct GetWorldLoadingEventsResponse {
+    pub loaded: Vec<LoadedChunk>,
+    pub unloaded: Vec<ChunkRelWorld>,
+}
+
+pub struct LoadedChunk {
+    pub coords: ChunkRelWorld,
+    pub data: LoadedChunkData,
+}
+
+impl From<LoadedChunk> for nbt::Tag {
+    fn from(c: LoadedChunk) -> Self {
+        nbt::MapTag::new()
+            .set("coords", nbt::Tag::Long(c.coords.encoded() as i64))
+            .set("data", nbt::Tag::from(c.data))
+            .build()
+    }
+}
+
+pub struct LoadedChunkData {
+    pub blocks: Vec<u8>,
+    pub metadata: Vec<u8>,
+    pub entities: Vec<LoadedChunkEntity>,
+    pub is_decorated: bool,
+}
+
+impl From<LoadedChunkData> for nbt::Tag {
+    fn from(data: LoadedChunkData) -> Self {
+        let blocks = unsafe { std::mem::transmute::<Vec<u8>, Vec<i8>>(data.blocks) };
+        let metadata = unsafe { std::mem::transmute::<Vec<u8>, Vec<i8>>(data.metadata) };
+        let entities = data.entities.into_iter().map(nbt::Tag::from).collect();
+        let is_decorated = if data.is_decorated { 1 } else { 0 };
+
+        nbt::MapTag::new()
+            .set("blocks", nbt::Tag::ByteArray(blocks))
+            .set("metadata", nbt::Tag::ByteArray(metadata))
+            .set("entities", nbt::Tag::List(entities))
+            .set("isDecorated", nbt::Tag::Byte(is_decorated))
+            .build()
+    }
+}
+
+pub struct LoadedChunkEntity {
+    pub _type: String,
+    pub id: String,
+    pub pos: CylCoords,
+    pub velocity: DVec3,
+    pub rotation: DVec3,
+    pub ai: Option<LoadedChunkEntityAI>,
+}
+
+impl From<LoadedChunkEntity> for nbt::Tag {
+    fn from(e: LoadedChunkEntity) -> Self {
+        nbt::MapTag::new()
+            .set("type", nbt::Tag::String(e._type))
+            .set("id", nbt::Tag::String(e.id))
+            .set("pos", nbt::make_vector_tag(e.pos.into()))
+            .set("velocity", nbt::make_vector_tag(e.velocity))
+            .set("rotation", nbt::make_vector_tag(e.rotation))
+            .set_opt("ai", e.ai.map(nbt::Tag::from))
+            .build()
+    }
+}
+
+pub enum LoadedChunkEntityAI {
+    Simple {
+        target_x: f64,
+        target_z: f64,
+        timeout: i16,
+    },
+}
+
+impl From<LoadedChunkEntityAI> for nbt::Tag {
+    fn from(ai: LoadedChunkEntityAI) -> Self {
+        match ai {
+            LoadedChunkEntityAI::Simple {
+                target_x,
+                target_z,
+                timeout,
+            } => nbt::MapTag::new()
+                .set("type", nbt::Tag::String("simple".to_string()))
+                .set("targetX", nbt::Tag::Double(target_x))
+                .set("targetZ", nbt::Tag::Double(target_z))
+                .set("timeout", nbt::Tag::Short(timeout))
+                .build(),
+        }
+    }
+}
 
 impl From<GetWorldLoadingEventsResponse> for nbt::Tag {
-    fn from(_res: GetWorldLoadingEventsResponse) -> Self {
+    fn from(res: GetWorldLoadingEventsResponse) -> Self {
         nbt::MapTag::new()
-            .set("chunks_loaded", nbt::Tag::List(Vec::new()))
-            .set("chunks_unloaded", nbt::Tag::List(Vec::new()))
+            .set(
+                "chunks_loaded",
+                nbt::Tag::List(res.loaded.into_iter().map(nbt::Tag::from).collect()),
+            )
+            .set(
+                "chunks_unloaded",
+                nbt::Tag::List(
+                    res.unloaded
+                        .into_iter()
+                        .map(|c| nbt::Tag::Long(c.encoded() as i64))
+                        .collect(),
+                ),
+            )
             .build()
     }
 }
