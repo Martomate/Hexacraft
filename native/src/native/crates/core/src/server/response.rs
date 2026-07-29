@@ -1,9 +1,10 @@
 use glam::DVec3;
 
 use crate::server::{
+    coords::{ChunkRelWorld, CylCoords},
     nbt,
     state::{ServerMessage, ServerMessageSender},
-    world::{ChunkRelWorld, CylCoords, Inventory, Player, WorldInfo},
+    world::{Inventory, Player, WorldInfo},
 };
 
 pub struct LoginResponse<'r> {

@@ -5,9 +5,10 @@ use std::time::Duration;
 
 pub use state::GameState;
 
-mod noise;
+mod coords;
 mod input;
 mod nbt;
+mod noise;
 mod request;
 mod response;
 mod state;

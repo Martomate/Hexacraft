@@ -7,13 +7,14 @@ use std::{
 use glam::{DVec3, Vec2};
 
 use crate::server::{
-    GracefulShutdown, RequestHandler, input, nbt,
+    GracefulShutdown, RequestHandler,
+    coords::{BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords},
+    input, nbt,
     request::NetworkPacket,
     response::*,
     world::{
-        BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords, CylinderSize, Inventory,
-        NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings, WorldInfo,
-        WorldProvider, WorldProviderPath,
+        CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings,
+        WorldInfo, WorldProvider, WorldProviderPath,
     },
 };
 
@@ -118,12 +119,18 @@ impl<P: WorldProvider> GameState<P> {
                 {
                     let d = 6;
                     let s = 2 * d + 1;
-                    let first_chunks_to_load: Vec<_> = (0..s*s*s).map(|i| {
-                        let dx = (i % s) - d;
-                        let dy = (i / s % s) - d;
-                        let dz = (i / s / s) - d;
-                        ChunkRelWorld::new(dx, dy, (dz as u32 & self.world_info.world_size.ring_size_mask()) as i32)
-                    }).collect();
+                    let first_chunks_to_load: Vec<_> = (0..s * s * s)
+                        .map(|i| {
+                            let dx = (i % s) - d;
+                            let dy = (i / s % s) - d;
+                            let dz = (i / s / s) - d;
+                            ChunkRelWorld::new(
+                                dx,
+                                dy,
+                                (dz as u32 & self.world_info.world_size.ring_size_mask()) as i32,
+                            )
+                        })
+                        .collect();
 
                     if !p.chunks_loaded.contains(&first_chunks_to_load[0]) {
                         for &c in &first_chunks_to_load {
@@ -275,14 +282,15 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                     .map(|&c| {
                         let (blocks, metadata) = self.world.generate_chunk(c);
                         LoadedChunk {
-                        coords: c,
-                        data: LoadedChunkData {
-                            blocks: blocks.into_iter().collect(),
-                            metadata: metadata.into_iter().collect(),
-                            entities: Vec::new(),
-                            is_decorated: true,
-                        },
-                    }})
+                            coords: c,
+                            data: LoadedChunkData {
+                                blocks: blocks.into_iter().collect(),
+                                metadata: metadata.into_iter().collect(),
+                                entities: Vec::new(),
+                                is_decorated: true,
+                            },
+                        }
+                    })
                     .collect();
                 Some(GetWorldLoadingEventsResponse { loaded, unloaded }.into())
             }
