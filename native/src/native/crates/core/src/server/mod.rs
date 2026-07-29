@@ -9,6 +9,7 @@ mod coords;
 mod input;
 mod nbt;
 mod noise;
+mod random;
 mod request;
 mod response;
 mod state;

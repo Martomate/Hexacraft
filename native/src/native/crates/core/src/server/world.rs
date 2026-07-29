@@ -1,12 +1,14 @@
 use std::{collections::HashMap, f64::consts::PI};
 
 use glam::DVec3;
+use rand::SeedableRng as _;
 use uuid::Uuid;
 
 use crate::server::{
     coords::{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld, CylCoords},
     nbt,
     noise::{NoiseGenerator3D, NoiseGenerator4D},
+    random::Random,
 };
 
 pub(crate) const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
@@ -357,16 +359,29 @@ struct WorldGenerator {
 
 impl WorldGenerator {
     pub fn new(settings: WorldGenSettings, cyl: CylinderSize) -> Self {
-        // TODO: use settings.seed
+        let mut rand = Random::from_seed(settings.seed ^ 8347658734289375837);
         Self {
-            block_generator: NoiseGenerator4D::new(8, settings.block_gen_scale),
-            block_density_generator: NoiseGenerator4D::new(4, settings.block_density_gen_scale),
+            block_generator: NoiseGenerator4D::new(&mut rand, 8, settings.block_gen_scale),
+            block_density_generator: NoiseGenerator4D::new(
+                &mut rand,
+                4,
+                settings.block_density_gen_scale,
+            ),
             biome_height_variation_generator: NoiseGenerator3D::new(
+                &mut rand,
                 4,
                 settings.biome_height_variation_gen_scale,
             ),
-            biome_height_generator: NoiseGenerator3D::new(4, settings.biome_height_map_gen_scale),
-            height_map_generator: NoiseGenerator3D::new(8, settings.height_map_gen_scale),
+            biome_height_generator: NoiseGenerator3D::new(
+                &mut rand,
+                4,
+                settings.biome_height_map_gen_scale,
+            ),
+            height_map_generator: NoiseGenerator3D::new(
+                &mut rand,
+                8,
+                settings.height_map_gen_scale,
+            ),
             cyl,
         }
     }
