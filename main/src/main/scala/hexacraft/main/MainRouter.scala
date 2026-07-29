@@ -14,6 +14,7 @@ import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}
 import java.io.File
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 class MainRouter(
     saveFolder: File,
@@ -78,12 +79,12 @@ class MainRouter(
       val (scene, rx) = Menus.NewWorldMenu.create(saveFolder)
 
       rx.onEvent {
-        case Event.StartGame(saveDir, worldName, worldSize, worldSeed) =>
+        case Event.StartGame(saveDir, worldName, worldSize) =>
           val worldInfo = WorldInfo(
             0,
             worldName,
             CylinderSize(worldSize),
-            WorldGenSettings.fromSeed(worldSeed)
+            WorldGenSettings.fromSeed(new Random().nextLong)
           )
           val worldProvider = WorldProviderFromFile(saveDir, fs)
           worldProvider.saveWorldData(Nbt.encode(worldInfo))

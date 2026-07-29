@@ -381,7 +381,7 @@ object Menus {
 
   object NewWorldMenu {
     enum Event {
-      case StartGame(saveDir: File, worldName: String, worldSize: Byte, worldSeed: Long)
+      case StartGame(saveDir: File, worldName: String, worldSize: Byte)
       case GoBack
     }
 
@@ -391,7 +391,6 @@ object Menus {
 
       val nameTF = new TextField(LocationInfo.from16x9(0.3f, 0.7f, 0.4f, 0.075f), maxFontSize = 2.5f)
       val sizeTF = new TextField(LocationInfo.from16x9(0.3f, 0.55f, 0.4f, 0.075f), maxFontSize = 2.5f)
-      val seedTF = new TextField(LocationInfo.from16x9(0.3f, 0.4f, 0.4f, 0.075f), maxFontSize = 2.5f)
 
       val createWorld = () => {
         try {
@@ -399,12 +398,8 @@ object Menus {
           val file = uniqueFile(baseFolder, cleanupFileName(nameTF.text))
           val worldName = Some(nameTF.text.trim).filter(_.nonEmpty).getOrElse(file.getName)
           val size = sizeTF.text.toByteOption.filter(s => s >= 0 && s <= 20).getOrElse(10.toByte)
-          val seed = Some(seedTF.text)
-            .filter(_.nonEmpty)
-            .map(s => s.toLongOption.getOrElse(new Random(s.##.toLong << 32 | s.reverse.##).nextLong()))
-            .getOrElse(new Random().nextLong)
 
-          tx.send(Event.StartGame(file, worldName, size, seed))
+          tx.send(Event.StartGame(file, worldName, size))
         } catch {
           case _: Exception =>
           // TODO: complain about the input
@@ -415,17 +410,12 @@ object Menus {
         .withColor(1, 1, 1)
       val sizeLabel = Label("World size", LocationInfo.from16x9(0.3f, 0.55f + 0.075f, 0.2f, 0.05f), 3f, false)
         .withColor(1, 1, 1)
-      val seedLabel = Label("World seed", LocationInfo.from16x9(0.3f, 0.4f + 0.075f, 0.2f, 0.05f), 3f, false)
-        .withColor(1, 1, 1)
 
       menu.addComponent(nameLabel)
       menu.addComponent(nameTF)
 
       menu.addComponent(sizeLabel)
       menu.addComponent(sizeTF)
-
-      menu.addComponent(seedLabel)
-      menu.addComponent(seedTF)
 
       menu.addComponent(Button("Cancel", LocationInfo.from16x9(0.3f, 0.05f, 0.19f, 0.1f)) {
         tx.send(Event.GoBack)
