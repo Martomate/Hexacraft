@@ -1,9 +1,8 @@
-use std::{ffi::c_void, time::Duration};
+use std::ffi::c_void;
+use std::time::Duration;
 
-use jni::{
-    JavaVM,
-    sys::{JNI_VERSION_1_1, jint},
-};
+use jni::JavaVM;
+use jni::sys::{JNI_VERSION_1_1, jint};
 
 mod ffi {
     mod client_socket;

@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
-use rand::rngs::Xoshiro128PlusPlus;
 use rand::SeedableRng as _;
+use rand::rngs::Xoshiro128PlusPlus;
 
 type Rng = Xoshiro128PlusPlus;
 

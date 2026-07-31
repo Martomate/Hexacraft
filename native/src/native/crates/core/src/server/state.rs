@@ -1,22 +1,17 @@
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    sync::Mutex,
-    time::Duration,
-};
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::sync::Mutex;
+use std::time::Duration;
 
 use glam::{DVec3, Vec2};
 
-use crate::server::{
-    GracefulShutdown, RequestHandler,
-    coords::{BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords},
-    input, nbt,
-    request::NetworkPacket,
-    response::*,
-    world::{
-        CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings,
-        WorldInfo, WorldProvider, WorldProviderPath,
-    },
+use crate::server::coords::{BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords};
+use crate::server::request::NetworkPacket;
+use crate::server::response::*;
+use crate::server::world::{
+    CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings,
+    WorldInfo, WorldProvider, WorldProviderPath,
 };
+use crate::server::{GracefulShutdown, RequestHandler, input, nbt};
 
 pub struct GameState<P> {
     is_online: bool,

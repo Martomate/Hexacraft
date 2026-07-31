@@ -1,9 +1,10 @@
-use crate::server::request::NetworkPacket;
-use crate::zmq::ServerSocket;
 use std::sync::Arc;
 use std::time::Duration;
 
 pub use state::GameState;
+
+use crate::server::request::NetworkPacket;
+use crate::zmq::ServerSocket;
 
 mod coords;
 mod input;

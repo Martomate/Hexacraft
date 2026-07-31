@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::handle::Handle;
-use crate::{run_and_wait, run_with_timeout, throw_ie, throw_rte};
-
 use hexacraft::ZmqError;
 use jni::JNIEnv;
 use jni::objects::{AsJArrayRaw, JByteArray, JClass, JObject};
 use jni::sys::{jbyteArray, jint};
 use jni_fn::jni_fn;
+
+use crate::handle::Handle;
+use crate::{run_and_wait, run_with_timeout, throw_ie, throw_rte};
 
 #[jni_fn("hexacraft.rs.RustLib$ServerSocket")]
 pub fn create<'local>(

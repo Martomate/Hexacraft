@@ -1,9 +1,9 @@
-use crate::handle::Handle;
-
 use jni::JNIEnv;
 use jni::objects::{JClass, JIntArray, JLongArray, ReleaseMode};
 use jni::sys::jdouble;
 use jni_fn::jni_fn;
+
+use crate::handle::Handle;
 
 pub struct NoiseState {
     perm: Vec<u8>,

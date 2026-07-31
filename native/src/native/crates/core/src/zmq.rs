@@ -1,10 +1,13 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::collections::VecDeque;
+use std::sync::Arc;
 
 use bytes::Bytes;
 use tokio::sync::Mutex;
+use zeromq::prelude::*;
+use zeromq::util::PeerIdentity;
 use zeromq::{
     DealerRecvHalf, DealerSendHalf, DealerSocket, RouterSocket, SocketOptions, ZmqError,
-    ZmqMessage, ZmqResult, prelude::*, util::PeerIdentity,
+    ZmqMessage, ZmqResult,
 };
 
 enum ClientSocketState {
@@ -163,7 +166,8 @@ impl ServerSocket {
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::Arc, time::Duration};
+    use std::sync::Arc;
+    use std::time::Duration;
 
     use zeromq::{ZmqError, ZmqResult};
 

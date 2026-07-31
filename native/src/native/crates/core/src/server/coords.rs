@@ -1,6 +1,5 @@
 use glam::DVec3;
 
-
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct BlockRelChunk {
     pub x: u8,
@@ -103,8 +102,9 @@ impl From<DVec3> for CylCoords {
 }
 
 mod conversion {
-    use crate::server::world::SQRT_3;
     use glam::DVec3;
+
+    use crate::server::world::SQRT_3;
 
     const Y60: f64 = SQRT_3 / 2.0;
 

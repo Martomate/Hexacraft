@@ -1,15 +1,15 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::handle::Handle;
-use crate::run_with_timeout;
-
 use hexacraft::server::world::InMemoryWorldProvider;
 use hexacraft::server::{GameServer, GameState};
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jint};
 use jni_fn::jni_fn;
+
+use crate::handle::Handle;
+use crate::run_with_timeout;
 
 type WorldProvider = InMemoryWorldProvider;
 

@@ -1,6 +1,7 @@
 use rand::RngExt as _;
 
-use crate::{noise_3d, noise_4d, server::random::Random};
+use crate::server::random::Random;
+use crate::{noise_3d, noise_4d};
 
 pub struct NoiseGenerator3D {
     perms: Vec<[u8; 512]>,
@@ -85,11 +86,11 @@ fn shuffle_array<T, const N: usize>(arr: &mut [T; N], rand: &mut Random) {
 
 #[cfg(test)]
 mod tests_3d {
+    use rand::RngExt;
+
     use super::NoiseGenerator3D;
     use super::test_utils::*;
-
     use crate::server::random::Random;
-    use rand::RngExt;
 
     #[test]
     fn fixed_for_same_input() {
@@ -170,11 +171,11 @@ mod tests_3d {
 
 #[cfg(test)]
 mod tests_4d {
+    use rand::RngExt;
+
     use super::NoiseGenerator4D;
     use super::test_utils::*;
-
     use crate::server::random::Random;
-    use rand::RngExt;
 
     #[test]
     fn fixed_for_same_input() {
@@ -261,8 +262,9 @@ mod tests_4d {
 
 #[cfg(test)]
 mod test_utils {
-    use crate::server::random::Random;
     use rand::RngExt;
+
+    use crate::server::random::Random;
 
     pub fn next_double(rand: &mut Random, scale: f64) -> f64 {
         rand.random::<f64>() * scale

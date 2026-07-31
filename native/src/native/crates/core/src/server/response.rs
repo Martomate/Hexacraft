@@ -1,11 +1,9 @@
 use glam::DVec3;
 
-use crate::server::{
-    coords::{ChunkRelWorld, CylCoords},
-    nbt,
-    state::{ServerMessage, ServerMessageSender},
-    world::{Inventory, Player, WorldInfo},
-};
+use crate::server::coords::{ChunkRelWorld, CylCoords};
+use crate::server::nbt;
+use crate::server::state::{ServerMessage, ServerMessageSender};
+use crate::server::world::{Inventory, Player, WorldInfo};
 
 pub struct LoginResponse<'r> {
     pub success: bool,

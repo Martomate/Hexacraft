@@ -1,10 +1,10 @@
-use std::{collections::HashMap, mem::transmute};
+use std::collections::HashMap;
+use std::mem::transmute;
 
 use glam::Vec2;
 use uuid::Uuid;
 
 use crate::server::nbt;
-
 
 pub enum NetworkPacket {
     Login { id: Uuid, name: String },

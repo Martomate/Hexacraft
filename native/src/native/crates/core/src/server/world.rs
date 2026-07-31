@@ -1,15 +1,14 @@
-use std::{collections::HashMap, f64::consts::PI};
+use std::collections::HashMap;
+use std::f64::consts::PI;
 
 use glam::DVec3;
 use rand::SeedableRng as _;
 use uuid::Uuid;
 
-use crate::server::{
-    coords::{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld, CylCoords},
-    nbt,
-    noise::{NoiseGenerator3D, NoiseGenerator4D},
-    random::Random,
-};
+use crate::server::coords::{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld, CylCoords};
+use crate::server::nbt;
+use crate::server::noise::{NoiseGenerator3D, NoiseGenerator4D};
+use crate::server::random::Random;
 
 pub(crate) const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 

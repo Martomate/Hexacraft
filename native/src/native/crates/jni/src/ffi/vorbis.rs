@@ -1,9 +1,9 @@
-use crate::handle::Handle;
-
 use jni::JNIEnv;
 use jni::objects::{JByteArray, JClass, ReleaseMode};
 use jni::sys::{jint, jshortArray};
 use jni_fn::jni_fn;
+
+use crate::handle::Handle;
 
 #[jni_fn("hexacraft.rs.RustLib$VorbisDecoder")]
 pub fn decode<'local>(

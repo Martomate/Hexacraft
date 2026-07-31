@@ -9,7 +9,7 @@ pub struct VorbisData {
 
 pub fn decode(bytes: &[u8]) -> Result<VorbisData, VorbisError> {
     let mut decoder = VorbisDecoder::new(Cursor::new(bytes))?;
-    
+
     let sample_rate: i32 = decoder.sampling_frequency().cast_signed().into();
 
     let mut samples = Vec::new();

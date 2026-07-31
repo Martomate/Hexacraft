@@ -1,13 +1,13 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::handle::Handle;
-use crate::{run_with_timeout, throw_rte};
-
 use jni::JNIEnv;
 use jni::objects::{AsJArrayRaw, JByteArray, JClass, JObject, JString};
 use jni::sys::{jbyteArray, jint};
 use jni_fn::jni_fn;
+
+use crate::handle::Handle;
+use crate::{run_with_timeout, throw_rte};
 
 #[jni_fn("hexacraft.rs.RustLib$ClientSocket")]
 pub fn create<'local>(
@@ -88,9 +88,7 @@ pub fn tryReceive<'local>(
             throw_rte(&mut env, "timed out receiving");
             *JObject::null()
         }
-        Some(None) => {
-            *JObject::null()
-        }
+        Some(None) => *JObject::null(),
         Some(Some(data)) => env
             .byte_array_from_slice(&data)
             .expect("failed to create byte array")
