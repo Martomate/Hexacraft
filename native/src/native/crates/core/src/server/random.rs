@@ -1,9 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
 use rand::SeedableRng as _;
-use rand::rngs::Xoshiro128PlusPlus;
 
-type Rng = Xoshiro128PlusPlus;
+type Rng = rand::rngs::Xoshiro256PlusPlus;
 
 pub struct Random(Rng);
 
