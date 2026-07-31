@@ -3,12 +3,12 @@ use rand::RngExt as _;
 use crate::server::random::Random;
 use crate::{noise_3d, noise_4d};
 
-pub struct NoiseGenerator3D {
+pub struct NoiseGenerator {
     perms: Vec<[u8; 512]>,
     scale: f64,
 }
 
-impl NoiseGenerator3D {
+impl NoiseGenerator {
     pub fn new(rand: &mut Random, octaves: u8, scale: f64) -> Self {
         Self {
             perms: (0..octaves).map(|_| make_perm(rand)).collect(),
@@ -16,7 +16,7 @@ impl NoiseGenerator3D {
         }
     }
 
-    pub fn gen_wrapped_noise(&self, x: f64, z: f64, radius: f64) -> f64 {
+    pub fn gen_wrapped_noise_xz(&self, x: f64, z: f64, radius: f64) -> f64 {
         let perms = self
             .perms
             .iter()
@@ -32,22 +32,8 @@ impl NoiseGenerator3D {
             angle.cos() * radius,
         )
     }
-}
 
-pub struct NoiseGenerator4D {
-    perms: Vec<[u8; 512]>,
-    scale: f64,
-}
-
-impl NoiseGenerator4D {
-    pub fn new(rand: &mut Random, octaves: u8, scale: f64) -> Self {
-        Self {
-            perms: (0..octaves).map(|_| make_perm(rand)).collect(),
-            scale,
-        }
-    }
-
-    pub fn gen_wrapped_noise(&self, x: f64, y: f64, z: f64, radius: f64) -> f64 {
+    pub fn gen_wrapped_noise_xyz(&self, x: f64, y: f64, z: f64, radius: f64) -> f64 {
         let perms = self
             .perms
             .iter()
@@ -88,7 +74,7 @@ fn shuffle_array<T, const N: usize>(arr: &mut [T; N], rand: &mut Random) {
 mod tests_3d {
     use rand::RngExt;
 
-    use super::NoiseGenerator3D;
+    use super::NoiseGenerator;
     use super::test_utils::*;
     use crate::server::random::Random;
 
@@ -112,7 +98,7 @@ mod tests_3d {
 
         // These assertions act as regression tests
         assert_eq!(
-            coords.map(|(x, z)| _gen.gen_wrapped_noise(x, z, 1234.0)),
+            coords.map(|(x, z)| _gen.gen_wrapped_noise_xz(x, z, 1234.0)),
             expected_noise
         );
     }
@@ -130,8 +116,8 @@ mod tests_3d {
             let z = next_double(&mut rand, scale);
 
             assert_eq!(
-                gen1.gen_wrapped_noise(x, z, 123.0),
-                gen2.gen_wrapped_noise(x, z, 123.0)
+                gen1.gen_wrapped_noise_xz(x, z, 123.0),
+                gen2.gen_wrapped_noise_xz(x, z, 123.0)
             );
         }
     }
@@ -142,8 +128,8 @@ mod tests_3d {
         let _gen = make_gen(seed);
 
         assert_ne!(
-            _gen.gen_wrapped_noise(0.1, 0.2, 1.234),
-            _gen.gen_wrapped_noise(0.1, 0.2, 2.234),
+            _gen.gen_wrapped_noise_xz(0.1, 0.2, 1.234),
+            _gen.gen_wrapped_noise_xz(0.1, 0.2, 2.234),
         );
     }
 
@@ -158,14 +144,14 @@ mod tests_3d {
             let x = next_double(&mut rand, scale);
             let z = next_double(&mut rand, scale);
 
-            _gen.gen_wrapped_noise(x, z, 123.4)
+            _gen.gen_wrapped_noise_xz(x, z, 123.4)
         }));
 
         assert!(values.len() > 1);
     }
 
-    fn make_gen(seed: u64) -> NoiseGenerator3D {
-        NoiseGenerator3D::new(&mut Random::from_seed(seed), 4, 0.01)
+    fn make_gen(seed: u64) -> NoiseGenerator {
+        NoiseGenerator::new(&mut Random::from_seed(seed), 4, 0.01)
     }
 }
 
@@ -173,7 +159,7 @@ mod tests_3d {
 mod tests_4d {
     use rand::RngExt;
 
-    use super::NoiseGenerator4D;
+    use super::NoiseGenerator;
     use super::test_utils::*;
     use crate::server::random::Random;
 
@@ -201,7 +187,7 @@ mod tests_4d {
 
         // These assertions act as regression tests
         assert_eq!(
-            coords.map(|(x, y, z)| _gen.gen_wrapped_noise(x, y, z, 1234.0)),
+            coords.map(|(x, y, z)| _gen.gen_wrapped_noise_xyz(x, y, z, 1234.0)),
             expected_noise
         );
     }
@@ -220,8 +206,8 @@ mod tests_4d {
             let z = next_double(&mut rand, scale);
 
             assert_eq!(
-                gen1.gen_wrapped_noise(x, y, z, 123.0),
-                gen2.gen_wrapped_noise(x, y, z, 123.0)
+                gen1.gen_wrapped_noise_xyz(x, y, z, 123.0),
+                gen2.gen_wrapped_noise_xyz(x, y, z, 123.0)
             );
         }
     }
@@ -232,8 +218,8 @@ mod tests_4d {
         let _gen = make_gen(seed);
 
         assert_ne!(
-            _gen.gen_wrapped_noise(0.1, 0.2, 0.3, 1.234),
-            _gen.gen_wrapped_noise(0.1, 0.2, 0.3, 2.234),
+            _gen.gen_wrapped_noise_xyz(0.1, 0.2, 0.3, 1.234),
+            _gen.gen_wrapped_noise_xyz(0.1, 0.2, 0.3, 2.234),
         );
     }
 
@@ -249,14 +235,14 @@ mod tests_4d {
             let y = next_double(&mut rand, scale);
             let z = next_double(&mut rand, scale);
 
-            _gen.gen_wrapped_noise(x, y, z, 123.4)
+            _gen.gen_wrapped_noise_xyz(x, y, z, 123.4)
         }));
 
         assert!(values.len() > 1);
     }
 
-    fn make_gen(seed: u64) -> NoiseGenerator4D {
-        NoiseGenerator4D::new(&mut Random::from_seed(seed), 4, 0.01)
+    fn make_gen(seed: u64) -> NoiseGenerator {
+        NoiseGenerator::new(&mut Random::from_seed(seed), 4, 0.01)
     }
 }
 

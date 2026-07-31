@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 
 use glam::DVec3;
-use rand::SeedableRng as _;
 use uuid::Uuid;
 
 use crate::server::coords::{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld, CylCoords};
 use crate::server::nbt;
-use crate::server::noise::{NoiseGenerator3D, NoiseGenerator4D};
+use crate::server::noise::NoiseGenerator;
 use crate::server::random::Random;
 
 pub(crate) const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
@@ -348,11 +347,11 @@ impl World {
 }
 
 struct WorldGenerator {
-    block_generator: NoiseGenerator4D,
-    block_density_generator: NoiseGenerator4D,
-    biome_height_variation_generator: NoiseGenerator3D,
-    biome_height_generator: NoiseGenerator3D,
-    height_map_generator: NoiseGenerator3D,
+    block_generator: NoiseGenerator,
+    block_density_generator: NoiseGenerator,
+    biome_height_variation_generator: NoiseGenerator,
+    biome_height_generator: NoiseGenerator,
+    height_map_generator: NoiseGenerator,
     cyl: CylinderSize,
 }
 
@@ -360,23 +359,23 @@ impl WorldGenerator {
     pub fn new(settings: WorldGenSettings, cyl: CylinderSize) -> Self {
         let mut rand = Random::from_seed(settings.seed ^ 8347658734289375837);
         Self {
-            block_generator: NoiseGenerator4D::new(&mut rand, 8, settings.block_gen_scale),
-            block_density_generator: NoiseGenerator4D::new(
+            block_generator: NoiseGenerator::new(&mut rand, 8, settings.block_gen_scale),
+            block_density_generator: NoiseGenerator::new(
                 &mut rand,
                 4,
                 settings.block_density_gen_scale,
             ),
-            biome_height_variation_generator: NoiseGenerator3D::new(
+            biome_height_variation_generator: NoiseGenerator::new(
                 &mut rand,
                 4,
                 settings.biome_height_variation_gen_scale,
             ),
-            biome_height_generator: NoiseGenerator3D::new(
+            biome_height_generator: NoiseGenerator::new(
                 &mut rand,
                 4,
                 settings.biome_height_map_gen_scale,
             ),
-            height_map_generator: NoiseGenerator3D::new(
+            height_map_generator: NoiseGenerator::new(
                 &mut rand,
                 8,
                 settings.height_map_gen_scale,
@@ -415,13 +414,13 @@ impl WorldGenerator {
 
         let biome_height = self
             .biome_height_generator
-            .gen_wrapped_noise(c.x, c.z, cyl.radius());
+            .gen_wrapped_noise_xz(c.x, c.z, cyl.radius());
         let biome_height_variation =
             self.biome_height_variation_generator
-                .gen_wrapped_noise(c.x, c.z, cyl.radius());
+                .gen_wrapped_noise_xz(c.x, c.z, cyl.radius());
         let height_map = self
             .height_map_generator
-            .gen_wrapped_noise(c.x, c.z, cyl.radius());
+            .gen_wrapped_noise_xz(c.x, c.z, cyl.radius());
 
         height_map * biome_height_variation * 100.0 + biome_height * 100.0
     }
@@ -516,10 +515,10 @@ impl WorldGenerator {
 
         let n1 = self
             .block_generator
-            .gen_wrapped_noise(c.x, c.y, c.z, cyl.radius());
+            .gen_wrapped_noise_xyz(c.x, c.y, c.z, cyl.radius());
         let n2 = self
             .block_density_generator
-            .gen_wrapped_noise(c.x, c.y, c.z, cyl.radius());
+            .gen_wrapped_noise_xyz(c.x, c.y, c.z, cyl.radius());
 
         n1 + n2 * 0.4
     }
