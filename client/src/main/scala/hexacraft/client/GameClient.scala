@@ -8,7 +8,6 @@ import hexacraft.infra.audio.{AudioFormat, AudioSystem}
 import hexacraft.infra.audio.AudioSystem.BufferId
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
-import hexacraft.math.MathUtils
 import hexacraft.nbt.Nbt
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
@@ -20,11 +19,18 @@ import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.concurrent.duration.{Duration, DurationInt}
+
+enum UserInteraction {
+  case ReplaceBlock(coords: BlockRelWorld, block: BlockState)
+  case MovePlayer(distance: CylCoords.Offset)
+  case RotatePlayerHead(angles: Vector3d)
+}
 
 object GameClient {
   enum Event {
@@ -267,6 +273,8 @@ class GameClient(
   private var freeFly = false
   private val freeFlyInputHandler = new FreeFlyInputHandler
   private val freeFlyOrigin = Vector3d()
+
+  private val userInteractionUndo = mutable.Stack.empty[(Instant, UserInteraction)]
 
   def isReadyToPlay: Boolean = {
     this.world.getChunk(this.camera.blockCoords.getChunkRelWorld).isDefined
@@ -533,7 +541,7 @@ class GameClient(
     }
   }
 
-  private var tickFut: Option[Future[Seq[Nbt]]] = None
+  private var tickFut: Option[Future[(Instant, Seq[Nbt])]] = None
 
   def tick(ctx: TickContext): Unit = {
     if isLoggingOut then return
@@ -557,25 +565,46 @@ class GameClient(
     tickFut = Some(Future {
       val packets =
         Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad))
-      socket.sendMultiplePacketsAndWait(packets)
+      Instant.now -> socket.sendMultiplePacketsAndWait(packets)
     })
     if currentTickFut.isEmpty then return // the first tick has no server data to act on
 
     var serverIsShuttingDown = false
 
     try {
-      val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) =
+      val (time, Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt)) =
         Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
 
+      val userInteractionRedo = mutable.Stack.empty[(Instant, UserInteraction)]
+      for (ts, undo) <- userInteractionUndo.popAll do {
+        undo match {
+          case UserInteraction.ReplaceBlock(coords, state) =>
+            world.setBlock(coords, state)
+          case UserInteraction.MovePlayer(distance) =>
+            player.position.set(CylCoords(player.position).offset(distance).toVector3d)
+          case UserInteraction.RotatePlayerHead(angles) =>
+            player.rotation.add(angles)
+        }
+
+        if ts.isAfter(time) then {
+          val redo = undo match {
+            case UserInteraction.ReplaceBlock(coords, state) =>
+              UserInteraction.ReplaceBlock(coords, world.getBlock(coords))
+            case UserInteraction.MovePlayer(distance) =>
+              UserInteraction.MovePlayer(-distance)
+            case UserInteraction.RotatePlayerHead(angles) =>
+              UserInteraction.RotatePlayerHead(angles.negate(Vector3d()))
+          }
+
+          userInteractionRedo.push(ts -> redo)
+          userInteractionUndo.push(ts -> undo)
+        }
+      }
+      userInteractionUndo.pushAll(userInteractionUndo.popAll.reverse)
+
       val syncedPlayer = Player.fromNBT(player.id, player.name, playerNbt.asInstanceOf[Nbt.MapTag])
-      // println(syncedPlayer.position)
-      if player.position.sub(syncedPlayer.position, new Vector3d).length() > 10.0 then {}
-      val positionDiff = syncedPlayer.position.sub(player.position, new Vector3d)
-      positionDiff.z = MathUtils.absmin(positionDiff.z, world.size.circumference)
-      player.position.add(positionDiff.mul(0.1))
-      val rotationDiff = syncedPlayer.rotation.sub(player.rotation, new Vector3d)
-      rotationDiff.y = MathUtils.absmin(rotationDiff.y, math.Pi * 2)
-      // player.rotation.add(rotationDiff.mul(0.1))
+      player.position.set(syncedPlayer.position)
+      player.rotation.set(syncedPlayer.rotation)
       player.flying = syncedPlayer.flying
 
       val worldEventsNbt = worldEventsNbtPacket.asMap.get
@@ -671,6 +700,17 @@ class GameClient(
         world.removeChunk(chunkCoords)
       }
 
+      for (_, redo) <- userInteractionRedo.popAll do {
+        redo match {
+          case UserInteraction.ReplaceBlock(coords, state) =>
+            world.setBlock(coords, state)
+          case UserInteraction.MovePlayer(distance) =>
+            player.position.set(CylCoords(player.position).offset(distance).toVector3d)
+          case UserInteraction.RotatePlayerHead(angles) =>
+            player.rotation.add(angles)
+        }
+      }
+
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       val isInLoadedChunk = world.getChunk(playerCoords.getChunkRelWorld).isDefined
@@ -680,7 +720,15 @@ class GameClient(
         val mouseMovement = if moveWithMouse then ctx.mouseMovement else new Vector2f
         val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
+        val positionBefore = Vector3d(player.position)
+        val rotationBefore = Vector3d(player.rotation)
         playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
+        userInteractionUndo.push(
+          time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
+        )
+        userInteractionUndo.push(
+          time -> UserInteraction.RotatePlayerHead(rotationBefore.sub(player.rotation, Vector3d()))
+        )
 
         socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
         socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
@@ -690,11 +738,19 @@ class GameClient(
       }
 
       if (!isPaused || isOnline) && isInLoadedChunk then {
+        val positionBefore = Vector3d(player.position)
+        val rotationBefore = Vector3d(player.rotation)
         playerPhysicsHandler.tick(
           player,
           maxSpeed,
           PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
           PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
+        )
+        userInteractionUndo.push(
+          time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
+        )
+        userInteractionUndo.push(
+          time -> UserInteraction.RotatePlayerHead(rotationBefore.sub(player.rotation, Vector3d()))
         )
       }
 
@@ -727,11 +783,11 @@ class GameClient(
 
       if rightMouseButtonTimer.tick() then {
         socket.sendPacket(NetworkPacket.PlayerRightClicked)
-        performRightMouseClick()
+        performRightMouseClick(time)
       }
       if leftMouseButtonTimer.tick() then {
         socket.sendPacket(NetworkPacket.PlayerLeftClicked)
-        performLeftMouseClick()
+        performLeftMouseClick(time)
       }
 
       val worldTickResult = world.tick(Seq(camera), entityEvents)
@@ -807,11 +863,12 @@ class GameClient(
     yield MousePickerResult(world.getBlock(hit._1), hit._1, hit._2)
   }
 
-  private def performLeftMouseClick(): Unit = {
+  private def performLeftMouseClick(time: Instant): Unit = {
     selectedBlockAndSide match {
       case Some(MousePickerResult(state, coords, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
+          userInteractionUndo.push(time -> UserInteraction.ReplaceBlock(coords, state))
 
           playSoundAt(destroyBlockSoundBuffer, BlockCoords(coords).toCylCoords)
         }
@@ -819,20 +876,20 @@ class GameClient(
     }
   }
 
-  private def performRightMouseClick(): Unit = {
+  private def performRightMouseClick(time: Instant): Unit = {
     selectedBlockAndSide match {
       case Some(MousePickerResult(state, coords, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, player)
+          case _         => tryPlacingBlockAt(coordsInFront, time)
         }
       case _ =>
     }
   }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
+  private def tryPlacingBlockAt(coords: BlockRelWorld, time: Instant): Unit = {
     if world.getBlock(coords).blockType.isSolid then {
       return
     }
@@ -853,6 +910,7 @@ class GameClient(
 
     if !collides then {
       world.setBlock(coords, state)
+      userInteractionUndo.push(time -> UserInteraction.ReplaceBlock(coords, BlockState.Air))
 
       playSoundAt(placeBlockSoundBuffer, BlockCoords(coords).toCylCoords)
     }

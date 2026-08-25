@@ -157,6 +157,8 @@ object CylCoords {
       CylCoords.Offset(x + dx, y + dy, z + dz)
 
     def offset(v: Vector3d): CylCoords.Offset = offset(v.x, v.y, v.z)
+
+    def unary_- : CylCoords.Offset = CylCoords.Offset(-x, -y, -z)
   }
   object Offset:
     def apply(vec: Vector3d): Offset = Offset(vec.x, vec.y, vec.z)
