@@ -171,7 +171,7 @@ class CollisionDetector(world: BlocksInWorld)(using cylSize: CylinderSize) {
   /** Returns the distance to the other object along the vector `vec`. Also returns the side of the
     * other object that will be collided with.
     *
-    * If the objects are already intersecting, it will return (dist: 1, side: -1) The maximum
+    * If the objects are already intersecting, it will return (dist: 0, side: -1) The maximum
     * distance returned is 1 (meaning the full length of `vec`). If no collision is found within
     * that distance it will return (dist: 1, side: -1) Otherwise it will return (dist: 'distance in
     * units of `vec.length`, side: 'side of collision')

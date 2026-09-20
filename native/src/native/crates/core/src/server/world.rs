@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 use std::f64::consts::PI;
 
-use glam::DVec3;
+use glam::{DMat2, DMat3, DVec2, DVec3};
+use ordered_float::NotNan;
 use uuid::Uuid;
 
-use crate::server::coords::{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld, CylCoords};
-use crate::server::nbt;
+use crate::server::coords::{
+    BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords, Y60,
+};
 use crate::server::noise::NoiseGenerator;
 use crate::server::random::Random;
+use crate::server::{nbt, physics};
 
 pub(crate) const SQRT_3: f64 = 1.732050807568877293527446341505872367_f64;
 
@@ -77,22 +80,290 @@ impl CylinderSize {
     }
 }
 
+#[derive(PartialEq, Clone, Copy)]
 pub struct HexBox {
     pub radius: f32,
     pub bottom: f32,
     pub top: f32,
 }
 
-#[derive(Clone, Copy, PartialEq)]
-pub struct Block(u8);
+impl HexBox {
+    pub fn scaledRadially(&self, scale: f32) -> Self {
+        Self {
+            radius: self.radius * scale,
+            ..*self
+        }
+    }
+
+    pub fn smallRadius(&self) -> f32 {
+        (self.radius as f64 * Y60) as f32
+    }
+
+    pub fn base_area(&self) -> f64 {
+        self.radius as f64 * self.radius as f64 * CylinderSize::Y60 * 3.0
+    }
+
+    pub fn volume(&self) -> f64 {
+        self.base_area() * (self.top as f64 - self.bottom as f64)
+    }
+
+    pub fn projected_area_in_direction(&self, dir: DVec3) -> f64 {
+        let projection = OrthogonalProjection::inDirection(dir).unwrap();
+        let projected_vertices: Vec<_> = self
+            .vertices()
+            .into_iter()
+            .map(|v| projection.project(v))
+            .collect();
+        let polygon = calculate_convex_hull(&projected_vertices);
+        polygon.area()
+    }
+
+    fn vertices(&self) -> Vec<DVec3> {
+        let mut result = Vec::<DVec3>::with_capacity(12);
+
+        for s in 0..2 {
+            for i in 0..6 {
+                let v = i as f64 * PI / 3.0;
+                let x = v.cos();
+                let z = v.sin();
+
+                result.push(DVec3::new(
+                    x * self.radius as f64,
+                    (1 - s) as f64 * (self.top - self.bottom) as f64 + self.bottom as f64,
+                    z * self.radius as f64,
+                ))
+            }
+        }
+        result
+    }
+
+    /** Returns all blocks spaces that would intersect with this HexBox when placed at the given position */
+    pub fn cover(&self, pos: CylCoords, cyl_size: CylinderSize) -> Vec<BlockRelWorld> {
+        let y_lo = ((pos.y + self.bottom as f64) * 2.0).floor() as i64;
+        let y_hi = ((pos.y + self.top as f64) * 2.0).floor() as i64;
+
+        let mut result = Vec::<BlockRelWorld>::new();
+
+        for y in y_lo..=y_hi {
+            // TODO: improve this implementation to be more correct (the HexBox radius might be too big)
+            for i in 0..9 {
+                let dx = (i % 3) - 1;
+                let dz = (i / 3) - 1;
+
+                if dx * dz != 1 {
+                    // remove corners
+                    let origin = BlockCoords::from(pos).offset(dx as f64, 0.0, dz as f64);
+                    result.push(
+                        CoordUtils::getEnclosingBlock(
+                            BlockCoords::new(origin.x, y as f64, origin.z),
+                            cyl_size,
+                        )
+                        .0,
+                    );
+                }
+            }
+        }
+        result
+    }
+
+    pub fn approximateVolumeOfIntersection(
+        pos1: CylCoords,
+        box1: HexBox,
+        pos2: CylCoords,
+        box2: HexBox,
+    ) -> f64 {
+        if box1.radius < box2.radius {
+            return HexBox::approximateVolumeOfIntersection(pos2, box2, pos1, box1);
+        }
+
+        let r1 = box1.radius;
+        let r2 = box2.radius;
+        let d = (pos1.x - pos2.x).hypot(pos1.z - pos2.z);
+        let a2 = box2.base_area();
+
+        let base_area =
+            math_utils::smoothstep(math_utils::remap(r1 - r2, r1 + r2, 1.0, 0.0, d as f32) as f64)
+                * a2;
+
+        let t1 = pos1.y + box1.top as f64;
+        let b1 = pos1.y + box1.bottom as f64;
+        let t2 = pos2.y + box2.top as f64;
+        let b2 = pos2.y + box2.bottom as f64;
+
+        let height = (t1.min(t2) - b1.max(b2)).max(0.0);
+
+        base_area * height
+    }
+}
+
+pub mod CoordUtils {
+    use glam::{DVec3, IVec3};
+
+    use crate::server::coords::{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords};
+    use crate::server::world::CylinderSize;
+
+    pub fn getEnclosingBlock(vec: BlockCoords, cylSize: CylinderSize) -> (BlockRelWorld, DVec3) {
+        let (x, y, z) = (vec.x, vec.y, vec.z);
+
+        fn find_block_pos(x: f64, z: f64, x_int: i32, z_int: i32) -> (i32, i32) {
+            let xx = x - x_int as f64;
+            let zz = z - z_int as f64;
+
+            let xp = xx + 0.5 * zz;
+            let zp = zz + 0.5 * xx;
+            let wp = zp - xp;
+
+            if xp > 0.5 {
+                find_block_pos(x, z, x_int + 1, z_int)
+            } else if xp < -0.5 {
+                find_block_pos(x, z, x_int - 1, z_int)
+            } else if zp > 0.5 {
+                find_block_pos(x, z, x_int, z_int + 1)
+            } else if zp < -0.5 {
+                find_block_pos(x, z, x_int, z_int - 1)
+            } else if wp > 0.5 {
+                find_block_pos(x, z, x_int - 1, z_int + 1)
+            } else if wp < -0.5 {
+                find_block_pos(x, z, x_int + 1, z_int - 1)
+            } else {
+                (x_int, z_int)
+            }
+        }
+
+        let (x_int, z_int) = find_block_pos(x, z, x.round() as i32, z.round() as i32);
+
+        let xx = x - x_int as f64;
+        let zz = z - z_int as f64;
+        let y_int = y.floor() as i32;
+
+        (
+            BlockRelWorld::new(x_int, y_int, z_int),
+            DVec3::new(xx, y - y_int as f64, zz),
+        )
+    }
+
+    fn approximateIntCoords(coords: BlockCoords, cyl_size: CylinderSize) -> BlockRelWorld {
+        let X = coords.x.round() as i32;
+        let Y = coords.y.round() as i32;
+        let Z = coords.z.round() as i32;
+        BlockRelWorld::new(X, Y, Z)
+    }
+
+    fn approximateChunkCoords(coords: CylCoords, cyl_size: CylinderSize) -> ChunkRelWorld {
+        ChunkRelWorld::from(approximateIntCoords(BlockCoords::from(coords), cyl_size))
+    }
+
+    fn vectorToOffset(vec: DVec3) -> IVec3 {
+        let blockCoords = BlockCoords::from(CylCoords::from(vec));
+        IVec3::new(
+            blockCoords.x.round() as i32,
+            blockCoords.y.round() as i32,
+            blockCoords.z.round() as i32,
+        )
+    }
+}
+
+mod math_utils {
+    use glam::FloatExt as _;
+
+    pub fn remap(from_lo: f32, from_hi: f32, to_lo: f32, to_hi: f32, value: f32) -> f32 {
+        let t = (value - from_lo) / (from_hi - from_lo);
+        to_lo.lerp(to_hi, t)
+    }
+
+    pub fn smoothstep(x: f64) -> f64 {
+        let t = x.clamp(0.0, 1.0);
+        ((3.0 - 2.0 * t) * t * t).clamp(0.0, 1.0)
+    }
+}
+
+struct OrthogonalProjection(DMat3);
+
+impl OrthogonalProjection {
+    pub fn inDirection(dir: DVec3) -> Option<Self> {
+        if dir.length_squared() == 0.0 {
+            // fail fast instead of producing NaN results
+            return None;
+        }
+        let up = unitVectorDifferentFrom(dir);
+        let m = DMat3::look_to_rh(dir, up);
+        Some(Self(m))
+    }
+
+    pub fn project(&self, v: DVec3) -> DVec2 {
+        let p = self.0 * v;
+        DVec2::new(p.x, p.y)
+    }
+}
+
+fn unitVectorDifferentFrom(v: DVec3) -> DVec3 {
+    if DVec3::X.dot(v).abs() < DVec3::Y.dot(v).abs() {
+        DVec3::X
+    } else {
+        DVec3::Y
+    }
+}
+
+fn calculate_convex_hull(points: &[DVec2]) -> SimplePolygon {
+    let lowest_point = *points
+        .iter()
+        .min_by_key(|v| (NotNan::new(v.y).unwrap(), NotNan::new(v.x).unwrap()))
+        .unwrap();
+    let sorted_points = {
+        let mut pts: Vec<_> = points.iter().collect();
+        pts.sort_by_key(|&&p| {
+            if p != lowest_point {
+                let v = p - lowest_point;
+                NotNan::new(v.y.atan2(v.x)).unwrap()
+            } else {
+                NotNan::new(-1.0).unwrap()
+            }
+        });
+        pts
+    };
+
+    let mut hull = Vec::<DVec2>::new();
+    hull.push(lowest_point);
+    for &p in sorted_points.iter().skip(1) {
+        let mut i = hull.len() - 1;
+        while i > 0 && DMat2::from_cols(hull[i - 1] - hull[i], p - hull[i]).determinant() > 0.0 {
+            hull.remove(i);
+            i -= 1;
+        }
+        hull.push(*p);
+    }
+
+    SimplePolygon(hull)
+}
+
+struct SimplePolygon(Vec<DVec2>);
+
+impl SimplePolygon {
+    pub fn area(&self) -> f64 {
+        let mut a = 0.0;
+        let root = self.0[0];
+        let mut prev = self.0[1] - root;
+
+        for i in 2..self.0.len() {
+            let now = self.0[i] - root;
+            a += now.y * prev.x - now.x * prev.y;
+            prev = now;
+        }
+
+        (a / 2.0).abs()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Block(pub u8);
 
 impl Block {
     const Air: Block = Block(0);
     const Stone: Block = Block(1);
     const Grass: Block = Block(2);
-    const Dirt: Block = Block(3);
+    pub const Dirt: Block = Block(3);
     const Sand: Block = Block(4);
-    const Water: Block = Block(5);
+    pub const Water: Block = Block(5);
     const OakLog: Block = Block(6);
     const OakLeaves: Block = Block(7);
     const Planks: Block = Block(8);
@@ -103,6 +374,34 @@ impl Block {
 
     pub fn id(&self) -> u8 {
         self.0
+    }
+
+    pub fn bounds(self, metadata: u8) -> HexBox {
+        let block_height = match self {
+            Block::Water => 1.0 - (metadata & 0x1f) as f32 / (0x1f + 1) as f32,
+            _ => 1.0,
+        };
+        HexBox {
+            radius: 0.5,
+            bottom: 0.0,
+            top: 0.5 * block_height,
+        }
+    }
+
+    pub fn is_solid(self) -> bool {
+        match self {
+            Block::Air => false,
+            Block::Water => false,
+            _ => true,
+        }
+    }
+
+    pub fn viscosity(self) -> f64 {
+        match self {
+            Block::Air => physics::viscosity::AIR,
+            Block::Water => physics::viscosity::WATER,
+            _ => 0.0,
+        }
     }
 }
 
@@ -318,35 +617,82 @@ impl WorldProvider for InMemoryWorldProvider {
 }
 
 pub struct World {
-    generator: WorldGenerator,
+    chunks: HashMap<ChunkRelWorld, ChunkData>,
 }
 
 impl World {
-    pub fn new(_gen: WorldGenSettings, cyl: CylinderSize) -> Self {
+    pub fn new() -> Self {
         Self {
-            generator: WorldGenerator::new(_gen, cyl),
+            chunks: HashMap::new(),
         }
     }
 
-    pub fn height(&self, x: i32, z: i32) -> i16 {
-        let column_coords = ColumnRelWorld::new(x >> 4, z >> 4);
-        let column_heights = self.generator.height_map_of_column(column_coords);
-        column_heights[z as usize & 15][x as usize & 15]
+    pub fn set_chunk(&mut self, coords: ChunkRelWorld, data: ChunkData) {
+        self.chunks.insert(coords, data);
     }
 
-    pub fn height_map_of_column(&self, coords: ColumnRelWorld) -> Option<[[i16; 16]; 16]> {
-        Some(self.generator.height_map_of_column(coords))
-    }
-
-    pub fn generate_chunk(
-        &self,
-        coords: ChunkRelWorld,
-    ) -> ([u8; 16 * 16 * 16], [u8; 16 * 16 * 16]) {
-        self.generator.generate_chunk(coords)
+    pub fn get_block(&self, coords: BlockRelWorld) -> Option<BlockState> {
+        self.chunks.get(&ChunkRelWorld::from(coords)).map(|chunk| {
+            let b = BlockRelChunk::from(coords);
+            let idx = b.encoded() as usize;
+            BlockState {
+                block_type: Block(chunk.block_type[idx]),
+                metadata: chunk.metadata[idx],
+            }
+        })
     }
 }
 
-struct WorldGenerator {
+#[derive(Clone)]
+pub struct ChunkData {
+    pub block_type: [u8; 16 * 16 * 16],
+    pub metadata: [u8; 16 * 16 * 16],
+}
+
+impl ChunkData {
+    pub fn getBlock(&self, coords: BlockRelChunk) -> BlockState {
+        let idx = coords.encoded() as usize;
+        BlockState {
+            block_type: Block(self.block_type[idx]),
+            metadata: self.metadata[idx],
+        }
+    }
+
+    pub fn from_blocks(blocks: impl IntoIterator<Item = (BlockRelChunk, BlockState)>) -> Self {
+        let mut block_type = [0; 16 * 16 * 16];
+        let mut metadata = [0; 16 * 16 * 16];
+
+        for (c, b) in blocks {
+            let c = c.encoded() as usize;
+            block_type[c] = b.block_type.id();
+            metadata[c] = b.metadata;
+        }
+
+        Self { block_type, metadata }
+    }
+}
+
+#[derive(Debug)]
+pub struct BlockState {
+    pub block_type: Block,
+    pub metadata: u8,
+}
+
+impl BlockState {
+    pub const AIR: Self = Self {
+        block_type: Block::Air,
+        metadata: 0,
+    };
+
+    pub fn of(block_type: Block) -> Self {
+        Self {
+            block_type,
+            metadata: 0,
+        }
+    }
+}
+
+pub struct WorldGenerator {
     block_generator: NoiseGenerator,
     block_density_generator: NoiseGenerator,
     biome_height_variation_generator: NoiseGenerator,
@@ -375,11 +721,7 @@ impl WorldGenerator {
                 4,
                 settings.biome_height_map_gen_scale,
             ),
-            height_map_generator: NoiseGenerator::new(
-                &mut rand,
-                8,
-                settings.height_map_gen_scale,
-            ),
+            height_map_generator: NoiseGenerator::new(&mut rand, 8, settings.height_map_gen_scale),
             cyl,
         }
     }
@@ -425,10 +767,7 @@ impl WorldGenerator {
         height_map * biome_height_variation * 100.0 + biome_height * 100.0
     }
 
-    pub fn generate_chunk(
-        &self,
-        coords: ChunkRelWorld,
-    ) -> ([u8; 16 * 16 * 16], [u8; 16 * 16 * 16]) {
+    pub fn generate_chunk(&self, coords: ChunkRelWorld) -> ChunkData {
         let grid_noise: [[[f64; 5]; 5]; 5] = std::array::from_fn(|iz| {
             std::array::from_fn(|iy| {
                 std::array::from_fn(|ix| {
@@ -487,7 +826,10 @@ impl WorldGenerator {
             }
         }
 
-        (block_type, metadata)
+        ChunkData {
+            block_type,
+            metadata,
+        }
     }
 
     fn limit_for_block_noise(&self, y_to_go: i32) -> f64 {

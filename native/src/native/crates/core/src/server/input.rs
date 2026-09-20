@@ -16,28 +16,9 @@ pub fn update_player(player: &mut Player, mouse_movement: Vec2, pressed_keys: &[
         pressed_keys,
     );
     update_rotation(&mut player.rotation, mouse_movement, pressed_keys, 0.05);
-
-    let vel_len = player.velocity.x.hypot(player.velocity.z);
-    if vel_len > max_speed {
-        player.velocity.x *= max_speed / vel_len;
-        player.velocity.z *= max_speed / vel_len;
-    }
-
-    if player.flying {
-        player.position += player.velocity / 60.0;
-
-        player.velocity.x *= 0.8;
-        player.velocity.z *= 0.8;
-    } else {
-        let friction_factor = 0.8;
-        player.velocity.x *= friction_factor;
-        player.velocity.z *= friction_factor;
-
-        player.position += player.velocity / 60.0;
-    }
 }
 
-fn determine_max_speed(pressed_keys: &[&str]) -> f64 {
+pub fn determine_max_speed(pressed_keys: &[&str]) -> f64 {
     if pressed_keys.contains(&"MoveSlowly") {
         0.075
     } else if pressed_keys.contains(&"MoveFast") {

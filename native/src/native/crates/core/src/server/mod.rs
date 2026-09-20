@@ -6,10 +6,12 @@ pub use state::GameState;
 use crate::server::request::NetworkPacket;
 use crate::zmq::ServerSocket;
 
+mod collision;
 mod coords;
 mod input;
 mod nbt;
 mod noise;
+mod physics;
 mod random;
 mod request;
 mod response;

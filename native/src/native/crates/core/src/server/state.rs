@@ -4,14 +4,15 @@ use std::time::Duration;
 
 use glam::{DVec3, Vec2};
 
+use crate::server::collision::CollisionDetector;
 use crate::server::coords::{BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords};
 use crate::server::request::NetworkPacket;
-use crate::server::response::*;
 use crate::server::world::{
-    CylinderSize, Inventory, NbtDecoder as _, NbtEncoder as _, Player, World, WorldGenSettings,
-    WorldInfo, WorldProvider, WorldProviderPath,
+    Block, BlockState, CylinderSize, HexBox, Inventory, NbtDecoder as _, NbtEncoder as _, Player,
+    World, WorldGenSettings, WorldGenerator, WorldInfo, WorldProvider, WorldProviderPath,
 };
 use crate::server::{GracefulShutdown, RequestHandler, input, nbt};
+use crate::server::{physics, response::*};
 
 pub struct GameState<P> {
     is_online: bool,
@@ -21,7 +22,8 @@ pub struct GameState<P> {
     world_info: WorldInfo,
     players: Mutex<HashMap<u64, PlayerConnectionState>>,
 
-    world: World,
+    world: Mutex<World>,
+    world_gen: WorldGenerator,
     world_provider: Mutex<P>,
 }
 
@@ -72,7 +74,8 @@ impl<P: WorldProvider> GameState<P> {
             },
             players: Mutex::new(HashMap::new()),
 
-            world: World::new(gen_settings, world_size),
+            world: Mutex::new(World::new()),
+            world_gen: WorldGenerator::new(gen_settings, world_size),
             world_provider: Mutex::new(world_provider),
         }
     }
@@ -96,19 +99,84 @@ impl<P: WorldProvider> GameState<P> {
         }
     }
 
+    fn player_effective_viscosity(&self, player: &Player) -> f64 {
+        player
+            .bounds
+            .cover(CylCoords::from(player.position), self.world_info.world_size)
+            .into_iter()
+            .map(|c| {
+                (
+                    c,
+                    self.world
+                        .lock()
+                        .unwrap()
+                        .get_block(c)
+                        .unwrap_or(BlockState::AIR),
+                )
+            })
+            .filter(|a| !a.1.block_type.is_solid())
+            .map(|(c, b)| {
+                HexBox::approximateVolumeOfIntersection(
+                    CylCoords::from(BlockCoords::from(c)),
+                    b.block_type.bounds(b.metadata),
+                    CylCoords::from(player.position),
+                    player.bounds,
+                ) * b.block_type.viscosity()
+            })
+            .sum()
+    }
+
+    fn player_volume_submerged_in_water(&self, player: &Player) -> f64 {
+        let solid_bounds = player.bounds.scaledRadially(0.7);
+        solid_bounds
+            .cover(CylCoords::from(player.position), self.world_info.world_size)
+            .into_iter()
+            .map(|c| {
+                (
+                    c,
+                    self.world
+                        .lock()
+                        .unwrap()
+                        .get_block(c)
+                        .unwrap_or(BlockState::AIR),
+                )
+            })
+            .filter(|(c, b)| b.block_type == Block::Water)
+            .map(|(c, b)| {
+                HexBox::approximateVolumeOfIntersection(
+                    CylCoords::from(BlockCoords::from(c)),
+                    b.block_type.bounds(b.metadata),
+                    CylCoords::from(player.position),
+                    solid_bounds,
+                )
+            })
+            .sum()
+    }
+
     fn tick(&self) {
         {
             let mut players = self.players.lock().unwrap();
             for (_, p) in players.iter_mut() {
-                input::update_player(
-                    &mut p.player,
-                    p.mouse_movement,
-                    &p.pressed_keys
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect::<Vec<_>>(),
-                );
+                let pressed_keys = p
+                    .pressed_keys
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>();
+
+                input::update_player(&mut p.player, p.mouse_movement, &pressed_keys);
                 p.mouse_movement = Vec2::new(0.0, 0.0);
+
+                let max_speed = input::determine_max_speed(&pressed_keys);
+                let effective_viscosity = self.player_effective_viscosity(&p.player);
+                let volume_submerged_in_water = self.player_volume_submerged_in_water(&p.player);
+                physics::tick(
+                    &self.world.lock().unwrap(),
+                    &mut p.player,
+                    max_speed,
+                    effective_viscosity,
+                    volume_submerged_in_water,
+                    CollisionDetector::new(self.world_info.world_size),
+                );
 
                 // Temporary:
                 {
@@ -136,6 +204,12 @@ impl<P: WorldProvider> GameState<P> {
                 }
             }
         }
+    }
+
+    fn world_height(&self, x: i32, z: i32) -> i16 {
+        let column_coords = ColumnRelWorld::new(x >> 4, z >> 4);
+        let column_heights = self.world_gen.height_map_of_column(column_coords);
+        column_heights[z as usize & 15][x as usize & 15]
     }
 }
 
@@ -167,7 +241,7 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                     } else {
                         let start_x = rand::random_range(-5..=5);
                         let start_z = rand::random_range(-5..=5);
-                        let start_y = (self.world.height(start_x, start_z) as f64) + 4.0;
+                        let start_y = (self.world_height(start_x, start_z) as f64) + 4.0;
 
                         let start_pos = BlockCoords::new(start_x as f64, start_y, start_z as f64);
 
@@ -231,22 +305,20 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                 .into(),
             ),
             NetworkPacket::LoadColumnData { coords } => {
-                match self
-                    .world
-                    .height_map_of_column(ColumnRelWorld::decode(coords))
-                {
-                    Some(height_map) => Some(
-                        nbt::MapTag::new()
-                            .set(
-                                "heightMap",
-                                nbt::Tag::ShortArray(
-                                    (0..16 * 16).map(|i| height_map[i % 16][i / 16]).collect(),
-                                ),
-                            )
-                            .build(),
-                    ),
-                    None => Some(nbt::MapTag::new().build()),
-                }
+                let height_map = self
+                    .world_gen
+                    .height_map_of_column(ColumnRelWorld::decode(coords));
+
+                Some(
+                    nbt::MapTag::new()
+                        .set(
+                            "heightMap",
+                            nbt::Tag::ShortArray(
+                                (0..16 * 16).map(|i| height_map[i % 16][i / 16]).collect(),
+                            ),
+                        )
+                        .build(),
+                )
             }
             NetworkPacket::GetPlayerState => self.access_player_state(client_id, |p| {
                 GetPlayerStateResponse { player: &p.player }.into()
@@ -272,21 +344,21 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                         p.new_chunks_unloaded.drain(..).collect::<Vec<_>>(),
                     )
                 })?;
-                let loaded = loaded
-                    .iter()
-                    .map(|&c| {
-                        let (blocks, metadata) = self.world.generate_chunk(c);
-                        LoadedChunk {
-                            coords: c,
-                            data: LoadedChunkData {
-                                blocks: blocks.into_iter().collect(),
-                                metadata: metadata.into_iter().collect(),
-                                entities: Vec::new(),
-                                is_decorated: true,
-                            },
-                        }
-                    })
-                    .collect();
+                let loaded_coords = loaded;
+                let mut loaded = Vec::new();
+                for c in loaded_coords {
+                    let chunk = self.world_gen.generate_chunk(c);
+                    self.world.lock().unwrap().set_chunk(c, chunk.clone());
+                    loaded.push(LoadedChunk {
+                        coords: c,
+                        data: LoadedChunkData {
+                            blocks: chunk.block_type.into_iter().collect(),
+                            metadata: chunk.metadata.into_iter().collect(),
+                            entities: Vec::new(),
+                            is_decorated: true,
+                        },
+                    });
+                }
                 Some(GetWorldLoadingEventsResponse { loaded, unloaded }.into())
             }
             NetworkPacket::PlayerRightClicked => {
