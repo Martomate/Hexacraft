@@ -6,7 +6,7 @@ use ordered_float::NotNan;
 use uuid::Uuid;
 
 use crate::server::coords::{
-    BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords, Y60,
+    self, BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords, Y60,
 };
 use crate::server::noise::NoiseGenerator;
 use crate::server::random::Random;
@@ -152,7 +152,7 @@ impl HexBox {
 
                 if dx * dz != 1 {
                     // remove corners
-                    let origin = BlockCoords::from(pos).offset(dx as f64, 0.0, dz as f64);
+                    let origin = (pos.convert() as BlockCoords).offset(dx as f64, 0.0, dz as f64);
                     result.push(
                         CoordUtils::getEnclosingBlock(
                             BlockCoords::new(origin.x, y as f64, origin.z),
@@ -250,11 +250,11 @@ pub mod CoordUtils {
     }
 
     fn approximateChunkCoords(coords: CylCoords, cyl_size: CylinderSize) -> ChunkRelWorld {
-        ChunkRelWorld::from(approximateIntCoords(BlockCoords::from(coords), cyl_size))
+        approximateIntCoords(coords.convert(), cyl_size).convert()
     }
 
     fn vectorToOffset(vec: DVec3) -> IVec3 {
-        let blockCoords = BlockCoords::from(CylCoords::from(vec));
+        let blockCoords: BlockCoords = CylCoords::from(vec).convert();
         IVec3::new(
             blockCoords.x.round() as i32,
             blockCoords.y.round() as i32,
@@ -632,7 +632,7 @@ impl World {
     }
 
     pub fn get_block(&self, coords: BlockRelWorld) -> Option<BlockState> {
-        self.chunks.get(&ChunkRelWorld::from(coords)).map(|chunk| {
+        self.chunks.get(&coords.convert()).map(|chunk| {
             let b = BlockRelChunk::from(coords);
             let idx = b.encoded() as usize;
             BlockState {
@@ -752,7 +752,7 @@ impl WorldGenerator {
     }
 
     fn raw_height(&self, x: i32, z: i32, cyl: CylinderSize) -> f64 {
-        let c = CylCoords::from(BlockCoords::new(x as f64, 0.0, z as f64));
+        let c: CylCoords = BlockCoords::new(x as f64, 0.0, z as f64).convert();
 
         let biome_height = self
             .biome_height_generator
@@ -853,7 +853,7 @@ impl WorldGenerator {
     }
 
     fn raw_block_noise(&self, x: i32, y: i32, z: i32, cyl: CylinderSize) -> f64 {
-        let c = CylCoords::from(BlockCoords::new(x as f64, y as f64, z as f64));
+        let c: CylCoords = BlockCoords::new(x as f64, y as f64, z as f64).convert();
 
         let n1 = self
             .block_generator

@@ -1,6 +1,8 @@
 use glam::DVec3;
 
-use crate::server::coords::{BlockCoords, BlockRelWorld, CylCoords, Offset, SkewCylCoords, Y60};
+use crate::server::coords::{
+    self, BlockCoords, BlockRelWorld, CylCoords, SkewCylCoords, Vec3, Y60,
+};
 use crate::server::world::{CoordUtils, CylinderSize, HexBox, World};
 
 struct MovingBox {
@@ -20,20 +22,19 @@ impl CollisionDetector {
 }
 
 impl CollisionDetector {
-    const REFLECTION_DIRS: [Offset; 8] = [
-        Offset::new(0, -1, 0),
-        Offset::new(0, 1, 0),
-        Offset::new(-1, 0, 0),
-        Offset::new(1, 0, 0),
-        Offset::new(0, 0, -1),
-        Offset::new(0, 0, 1),
-        Offset::new(1, 0, -1),
-        Offset::new(-1, 0, 1),
+    const REFLECTION_DIRS: [Vec3<i32, coords::systems::SkewCylCoords>; 8] = [
+        Vec3::new(0, -1, 0),
+        Vec3::new(0, 1, 0),
+        Vec3::new(-1, 0, 0),
+        Vec3::new(1, 0, 0),
+        Vec3::new(0, 0, -1),
+        Vec3::new(0, 0, 1),
+        Vec3::new(1, 0, -1),
+        Vec3::new(-1, 0, 1),
     ];
 
     fn refl_dirs_cyl(i: usize) -> CylCoords {
-        let Offset { dx, dy, dz } = Self::REFLECTION_DIRS[i];
-        CylCoords::from(SkewCylCoords::new(dx as f64, dy as f64, dz as f64))
+        Self::REFLECTION_DIRS[i].map_coords(|c| c as f64).convert() as CylCoords
     }
 
     pub fn collides(
@@ -48,9 +49,12 @@ impl CollisionDetector {
             pos: object_coords,
             velocity: CylCoords::new(0.0, 0.0, 0.0),
         };
-        self.distance_to_collision(&_box, target_bounds, SkewCylCoords::from(target_coords))
-            .0
-            == 0.0
+        self.distance_to_collision(
+            &_box,
+            target_bounds,
+            target_coords.convert() as SkewCylCoords,
+        )
+        .0 == 0.0
     }
 
     /** pos and velocity should be CylCoords in vector form. Velocity is per tick. */
@@ -94,7 +98,7 @@ impl CollisionDetector {
             return (DVec3::from(_box.pos), DVec3::from(_box.velocity));
         }
 
-        let future_coords = BlockCoords::from(_box.pos + _box.velocity);
+        let future_coords = (_box.pos + _box.velocity).convert() as BlockCoords;
         let (bc, _) = CoordUtils::getEnclosingBlock(future_coords, self.cyl_size);
 
         match self.min_dist_and_reflection_dir(world, _box, bc) {
@@ -171,10 +175,7 @@ impl CollisionDetector {
         target_block: BlockRelWorld,
     ) -> Option<(f64, i32)> {
         let Some(block_state) = world.get_block(if target_block.z < 0 {
-            BlockRelWorld {
-                z: target_block.z + self.cyl_size.total_size() as i32,
-                ..target_block
-            }
+            target_block + BlockRelWorld::new(0, 0, self.cyl_size.total_size() as i32)
         } else {
             target_block
         }) else {
@@ -186,7 +187,7 @@ impl CollisionDetector {
         }
 
         let target_bounds = block_state.block_type.bounds(block_state.metadata);
-        let target_coords = SkewCylCoords::from(BlockCoords::from(target_block));
+        let target_coords = BlockCoords::from(target_block).convert() as SkewCylCoords;
 
         Some(self.distance_to_collision(_box, target_bounds, target_coords))
     }
@@ -249,8 +250,8 @@ impl CollisionDetector {
         box2: HexBox,
         _pos2: SkewCylCoords,
     ) -> (f64, i32) {
-        let vel1 = SkewCylCoords::from(box1.velocity);
-        let pos1 = SkewCylCoords::from(box1.pos) + vel1; // pos after moving
+        let vel1 = box1.velocity.convert() as SkewCylCoords;
+        let pos1 = box1.pos.convert() as SkewCylCoords + vel1; // pos after moving
         // The following line ensures that the code works when z is close to 0
         let pos2 = SkewCylCoords::new(
             _pos2.x,
@@ -305,7 +306,7 @@ impl CollisionDetector {
 
         for i in 0..8 {
             let t = Self::REFLECTION_DIRS[i];
-            let vel_dist = t.dx as f64 * vx + t.dy as f64 * vy + t.dz as f64 * vz; // the length of v along the normals
+            let vel_dist = t.x as f64 * vx + t.y as f64 * vy + t.z as f64 * vz; // the length of v along the normals
             let dist_after = ((vel_dist - distances[i]) * 1.0e9) as i64 as f64 / 1.0e9;
 
             if vel_dist > 0.0 && dist_after >= 0.0 {
@@ -338,19 +339,14 @@ fn absmin(x: f64, circumference: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use approx::{RelativeEq, assert_relative_eq};
+    use approx::assert_relative_eq;
     use glam::DVec3;
 
     use crate::server::collision::CollisionDetector;
     use crate::server::coords::{
-        BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords,
-        SkewCylCoords,
+        BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, CylCoords, SkewCylCoords,
     };
-    use crate::server::world::{
-        Block, BlockState, ChunkData, CylinderSize, HexBox, World, WorldGenSettings, WorldGenerator,
-    };
+    use crate::server::world::{Block, BlockState, ChunkData, CylinderSize, HexBox, World};
 
     const cylSize: CylinderSize = CylinderSize(8);
 
@@ -377,22 +373,18 @@ mod tests {
     fn collides_should_work_in_the_y_direction() {
         let detector = CollisionDetector::new(cylSize);
 
-        let pos2a = CylCoords::from(
-            pos.toSkewCylCoords()
-                + SkewCylCoords::new(0.0, (box1.top - box2.bottom - 0.001) as f64, 0.0),
-        );
-        let pos2b = CylCoords::from(
-            pos.toSkewCylCoords()
-                + SkewCylCoords::new(0.0, (box1.top - box2.bottom + 0.001) as f64, 0.0),
-        );
-        let pos2c = CylCoords::from(
-            pos.toSkewCylCoords()
-                + SkewCylCoords::new(0.0, (box1.bottom - box2.top + 0.001) as f64, 0.0),
-        );
-        let pos2d = CylCoords::from(
-            pos.toSkewCylCoords()
-                + SkewCylCoords::new(0.0, (box1.bottom - box2.top - 0.001) as f64, 0.0),
-        );
+        let pos2a = (pos.toSkewCylCoords()
+            + SkewCylCoords::new(0.0, (box1.top - box2.bottom - 0.001) as f64, 0.0))
+        .convert() as CylCoords;
+        let pos2b = (pos.toSkewCylCoords()
+            + SkewCylCoords::new(0.0, (box1.top - box2.bottom + 0.001) as f64, 0.0))
+        .convert() as CylCoords;
+        let pos2c = (pos.toSkewCylCoords()
+            + SkewCylCoords::new(0.0, (box1.bottom - box2.top + 0.001) as f64, 0.0))
+        .convert() as CylCoords;
+        let pos2d = (pos.toSkewCylCoords()
+            + SkewCylCoords::new(0.0, (box1.bottom - box2.top - 0.001) as f64, 0.0))
+        .convert() as CylCoords;
 
         assert!(detector.collides(box1, pos, box2, pos2a));
         assert!(!detector.collides(box1, pos, box2, pos2b));
@@ -406,14 +398,14 @@ mod tests {
 
         let d = box1.smallRadius() as f64 + box2.smallRadius() as f64;
 
-        let pos2a =
-            CylCoords::from(pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, d - 0.001));
-        let pos2b =
-            CylCoords::from(pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, d + 0.001));
-        let pos2c =
-            CylCoords::from(pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, -d + 0.001));
-        let pos2d =
-            CylCoords::from(pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, -d - 0.001));
+        let pos2a = (pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, d - 0.001)).convert()
+            as CylCoords;
+        let pos2b = (pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, d + 0.001)).convert()
+            as CylCoords;
+        let pos2c = (pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, -d + 0.001)).convert()
+            as CylCoords;
+        let pos2d = (pos.toSkewCylCoords() + SkewCylCoords::new(0.0, 0.0, -d - 0.001)).convert()
+            as CylCoords;
 
         assert!(detector.collides(box1, pos, box2, pos2a));
         assert!(!detector.collides(box1, pos, box2, pos2b));
@@ -427,14 +419,14 @@ mod tests {
 
         let d = box1.smallRadius() as f64 + box2.smallRadius() as f64;
 
-        let pos2a =
-            CylCoords::from(SkewCylCoords::from(pos) + SkewCylCoords::new(d - 0.001, 0.0, 0.0));
-        let pos2b =
-            CylCoords::from(SkewCylCoords::from(pos) + SkewCylCoords::new(d + 0.001, 0.0, 0.0));
-        let pos2c =
-            CylCoords::from(SkewCylCoords::from(pos) + SkewCylCoords::new(-d + 0.001, 0.0, 0.0));
-        let pos2d =
-            CylCoords::from(SkewCylCoords::from(pos) + SkewCylCoords::new(-d - 0.001, 0.0, 0.0));
+        let pos2a = (pos.convert() as SkewCylCoords + SkewCylCoords::new(d - 0.001, 0.0, 0.0))
+            .convert() as CylCoords;
+        let pos2b = (pos.convert() as SkewCylCoords + SkewCylCoords::new(d + 0.001, 0.0, 0.0))
+            .convert() as CylCoords;
+        let pos2c = (pos.convert() as SkewCylCoords + SkewCylCoords::new(-d + 0.001, 0.0, 0.0))
+            .convert() as CylCoords;
+        let pos2d = (pos.convert() as SkewCylCoords + SkewCylCoords::new(-d - 0.001, 0.0, 0.0))
+            .convert() as CylCoords;
 
         assert!(detector.collides(box1, pos, box2, pos2a));
         assert!(!detector.collides(box1, pos, box2, pos2b));
@@ -448,18 +440,18 @@ mod tests {
 
         let d = box1.smallRadius() as f64 + box2.smallRadius() as f64;
 
-        let pos2a = CylCoords::from(
-            SkewCylCoords::from(pos) + SkewCylCoords::new(d - 0.001, 0.0, -(d - 0.001)),
-        );
-        let pos2b = CylCoords::from(
-            SkewCylCoords::from(pos) + SkewCylCoords::new(d + 0.001, 0.0, -(d + 0.001)),
-        );
-        let pos2c = CylCoords::from(
-            SkewCylCoords::from(pos) + SkewCylCoords::new(-d + 0.001, 0.0, -(-d + 0.001)),
-        );
-        let pos2d = CylCoords::from(
-            SkewCylCoords::from(pos) + SkewCylCoords::new(-d - 0.001, 0.0, -(-d - 0.001)),
-        );
+        let pos2a = (pos.convert() as SkewCylCoords
+            + SkewCylCoords::new(d - 0.001, 0.0, -(d - 0.001)))
+        .convert() as CylCoords;
+        let pos2b = (pos.convert() as SkewCylCoords
+            + SkewCylCoords::new(d + 0.001, 0.0, -(d + 0.001)))
+        .convert() as CylCoords;
+        let pos2c = (pos.convert() as SkewCylCoords
+            + SkewCylCoords::new(-d + 0.001, 0.0, -(-d + 0.001)))
+        .convert() as CylCoords;
+        let pos2d = (pos.convert() as SkewCylCoords
+            + SkewCylCoords::new(-d - 0.001, 0.0, -(-d - 0.001)))
+        .convert() as CylCoords;
 
         assert!(detector.collides(box1, pos, box2, pos2a));
         assert!(!detector.collides(box1, pos, box2, pos2b));
@@ -478,8 +470,8 @@ mod tests {
         let (new_pos, new_vel) = detector.position_and_velocity_after_collision(
             world,
             _box,
-            CylCoords::from(_pos).to_vec3(),
-            CylCoords::from(velocity).to_vec3(),
+            (_pos.convert() as CylCoords).to_vec3(),
+            (velocity.convert() as CylCoords).to_vec3(),
         );
 
         let (expected_new_pos, expected_new_vel) = match should_stop_after {
@@ -488,12 +480,12 @@ mod tests {
         };
 
         assert_relative_eq!(
-            new_pos.distance(CylCoords::from(expected_new_pos).to_vec3()),
+            new_pos.distance((expected_new_pos.convert() as CylCoords).to_vec3()),
             0.0,
             epsilon = 1e-6
         );
         assert_relative_eq!(
-            new_vel.distance(CylCoords::from(expected_new_vel).to_vec3()),
+            new_vel.distance((expected_new_vel.convert() as CylCoords).to_vec3()),
             0.0,
             epsilon = 1e-6
         );
@@ -505,7 +497,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks([(BlockRelChunk::from(coords), BlockState::AIR)]),
         );
 
@@ -518,7 +510,7 @@ mod tests {
             detector.position_and_velocity_after_collision(
                 &world,
                 box1,
-                CylCoords::from(BlockCoords::from(coords)).to_vec3(),
+                (BlockCoords::from(coords).convert() as CylCoords).to_vec3(),
                 DVec3::ZERO
             ),
             (
@@ -534,7 +526,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks([(BlockRelChunk::from(coords), BlockState::of(Block::Dirt))]),
         );
         let detector = CollisionDetector::new(cylSize);
@@ -543,7 +535,7 @@ mod tests {
         assert!(world.get_block(coords).is_some());
 
         // Check for collision (it should not move)
-        let position = SkewCylCoords::from(BlockCoords::from(coords));
+        let position = BlockCoords::from(coords).convert() as SkewCylCoords;
         let velocity = SkewCylCoords::new(3.2, 1.4, -0.9);
         let zero_movement = SkewCylCoords::new(0.0, 0.0, 0.0);
         check_collision(
@@ -566,7 +558,7 @@ mod tests {
         assert!(world.get_block(coords).is_none());
 
         // Check for collision (it should not move)
-        let position = SkewCylCoords::from(BlockCoords::from(coords));
+        let position = BlockCoords::from(coords).convert() as SkewCylCoords;
         let velocity = SkewCylCoords::new(3.2, 1.4, -0.9);
         let zero_movement = SkewCylCoords::new(0.0, 0.0, 0.0);
         check_collision(
@@ -586,7 +578,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks(
                 (-1..=1)
                     .flat_map(|dz| {
@@ -610,14 +602,14 @@ mod tests {
             bottom: 0.1,
             top: 0.3,
         };
-        let velocity = SkewCylCoords::from(BlockCoords::new(0.2, 0.39, 0.71));
+        let velocity = BlockCoords::new(0.2, 0.39, 0.71).convert() as SkewCylCoords;
         let detector = CollisionDetector::new(cylSize);
 
         check_collision(
             &detector,
             &world,
             _box,
-            SkewCylCoords::from(BlockCoords::from(coords)),
+            BlockCoords::from(coords).convert() as SkewCylCoords,
             velocity,
             None,
         );
@@ -629,7 +621,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks((-1..=3).map(|dx| {
                 let b = match dx {
                     -1 | 3 => BlockState::of(Block::Dirt),
@@ -653,8 +645,8 @@ mod tests {
         };
 
         // Check for collision forward
-        let back = SkewCylCoords::from(BlockCoords::from(coords)); // right at the beginning of the first Air
-        let forward_max = SkewCylCoords::from(BlockCoords::new(2.5, 0.0, 0.0))
+        let back = BlockCoords::from(coords).convert() as SkewCylCoords; // right at the beginning of the first Air
+        let forward_max = BlockCoords::new(2.5, 0.0, 0.0).convert() as SkewCylCoords
             + SkewCylCoords::new(-_box.smallRadius() as f64, 0.0, 0.0); // maximal movement from back to upper Dirt
 
         // Just before colliding
@@ -678,9 +670,9 @@ mod tests {
         );
 
         // Check for collision backward
-        let front =
-            SkewCylCoords::from(BlockCoords::from(coords) + BlockCoords::new(2.0, 0.0, 0.0)); // right at the beginning of the last Air
-        let backward_max = SkewCylCoords::from(BlockCoords::new(-2.5, 0.0, 0.0))
+        let front = (BlockCoords::from(coords) + BlockCoords::new(2.0, 0.0, 0.0)).convert()
+            as SkewCylCoords; // right at the beginning of the last Air
+        let backward_max = BlockCoords::new(-2.5, 0.0, 0.0).convert() as SkewCylCoords
             + SkewCylCoords::new(_box.smallRadius() as f64, 0.0, 0.0); // maximal movement from front to lower Dirt
 
         // Just before colliding
@@ -710,7 +702,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks((-1..=3).map(|dy| {
                 let b = match dy {
                     -1 | 3 => BlockState::of(Block::Dirt),
@@ -734,8 +726,8 @@ mod tests {
         };
 
         // Check for collision up
-        let bottom = SkewCylCoords::from(BlockCoords::from(coords)); // right at the beginning of the first Air
-        let up_max = SkewCylCoords::from(BlockCoords::new(0.0, 3.0, 0.0))
+        let bottom = BlockCoords::from(coords).convert() as SkewCylCoords; // right at the beginning of the first Air
+        let up_max = BlockCoords::new(0.0, 3.0, 0.0).convert() as SkewCylCoords
             + SkewCylCoords::new(0.0, -0.3, 0.0); // maximal movement from back to upper Dirt
 
         // Just before colliding
@@ -759,8 +751,9 @@ mod tests {
         );
 
         // Check for collision down
-        let top = SkewCylCoords::from(BlockCoords::from(coords) + BlockCoords::new(0.0, 2.0, 0.0)); // right at the beginning of the last Air
-        let down_max = SkewCylCoords::from(BlockCoords::new(0.0, -2.0, 0.0))
+        let top = (BlockCoords::from(coords) + BlockCoords::new(0.0, 2.0, 0.0)).convert()
+            as SkewCylCoords; // right at the beginning of the last Air
+        let down_max = BlockCoords::new(0.0, -2.0, 0.0).convert() as SkewCylCoords
             + SkewCylCoords::new(0.0, -0.1, 0.0); // maximal movement from front to lower Dirt
 
         // Just before colliding
@@ -790,7 +783,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks((-1..=3).map(|dz| {
                 let b = match dz {
                     -1 | 3 => BlockState::of(Block::Dirt),
@@ -814,8 +807,8 @@ mod tests {
         };
 
         // Check for collision forward
-        let back = SkewCylCoords::from(BlockCoords::from(coords)); // right at the beginning of the first Air
-        let forward_max = SkewCylCoords::from(BlockCoords::new(0.0, 0.0, 2.5))
+        let back = BlockCoords::from(coords).convert() as SkewCylCoords; // right at the beginning of the first Air
+        let forward_max = BlockCoords::new(0.0, 0.0, 2.5).convert() as SkewCylCoords
             + SkewCylCoords::new(0.0, 0.0, -_box.smallRadius() as f64); // maximal movement from back to upper Dirt
 
         // Just before colliding
@@ -839,9 +832,9 @@ mod tests {
         );
 
         // Check for collision backward
-        let front =
-            SkewCylCoords::from(BlockCoords::from(coords) + BlockCoords::new(0.0, 0.0, 2.0)); // right at the beginning of the last Air
-        let backward_max = SkewCylCoords::from(BlockCoords::new(0.0, 0.0, -2.5))
+        let front = (BlockCoords::from(coords) + BlockCoords::new(0.0, 0.0, 2.0)).convert()
+            as SkewCylCoords; // right at the beginning of the last Air
+        let backward_max = BlockCoords::new(0.0, 0.0, -2.5).convert() as SkewCylCoords
             + SkewCylCoords::new(0.0, 0.0, _box.smallRadius() as f64); // maximal movement from front to lower Dirt
 
         // Just before colliding
@@ -871,7 +864,7 @@ mod tests {
 
         let mut world = World::new();
         world.set_chunk(
-            ChunkRelWorld::from(coords),
+            coords.convert() as ChunkRelWorld,
             ChunkData::from_blocks((-1..=3).map(|dw| {
                 let b = match dw {
                     -1 | 3 => BlockState::of(Block::Dirt),
@@ -895,8 +888,8 @@ mod tests {
         };
 
         // Check for collision forward
-        let back = SkewCylCoords::from(BlockCoords::from(coords)); // right at the beginning of the first Air
-        let forward_max = SkewCylCoords::from(BlockCoords::new(2.5, 0.0, -2.5))
+        let back = BlockCoords::from(coords).convert() as SkewCylCoords; // right at the beginning of the first Air
+        let forward_max = BlockCoords::new(2.5, 0.0, -2.5).convert() as SkewCylCoords
             + SkewCylCoords::new(-_box.smallRadius() as f64, 0.0, _box.smallRadius() as f64); // maximal movement from back to upper Dirt
 
         // Just before colliding
@@ -920,9 +913,9 @@ mod tests {
         );
 
         // Check for collision backward
-        let front =
-            SkewCylCoords::from(BlockCoords::from(coords) + BlockCoords::new(2.0, 0.0, -2.0)); // right at the beginning of the last Air
-        let backward_max = SkewCylCoords::from(BlockCoords::new(-2.5, 0.0, 2.5))
+        let front = (BlockCoords::from(coords) + BlockCoords::new(2.0, 0.0, -2.0)).convert()
+            as SkewCylCoords; // right at the beginning of the last Air
+        let backward_max = BlockCoords::new(-2.5, 0.0, 2.5).convert() as SkewCylCoords
             + SkewCylCoords::new(_box.smallRadius() as f64, 0.0, -_box.smallRadius() as f64); // maximal movement from front to lower Dirt
 
         // Just before colliding

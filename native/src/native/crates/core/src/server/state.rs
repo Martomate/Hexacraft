@@ -117,7 +117,7 @@ impl<P: WorldProvider> GameState<P> {
             .filter(|a| !a.1.block_type.is_solid())
             .map(|(c, b)| {
                 HexBox::approximateVolumeOfIntersection(
-                    CylCoords::from(BlockCoords::from(c)),
+                    BlockCoords::from(c).convert() as CylCoords,
                     b.block_type.bounds(b.metadata),
                     CylCoords::from(player.position),
                     player.bounds,
@@ -144,7 +144,7 @@ impl<P: WorldProvider> GameState<P> {
             .filter(|(c, b)| b.block_type == Block::Water)
             .map(|(c, b)| {
                 HexBox::approximateVolumeOfIntersection(
-                    CylCoords::from(BlockCoords::from(c)),
+                    BlockCoords::from(c).convert() as CylCoords,
                     b.block_type.bounds(b.metadata),
                     CylCoords::from(player.position),
                     solid_bounds,
@@ -246,7 +246,7 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                         let start_pos = BlockCoords::new(start_x as f64, start_y, start_z as f64);
 
                         Ok(Player {
-                            position: DVec3::from(CylCoords::from(start_pos)),
+                            position: DVec3::from(start_pos.convert() as CylCoords),
                             ..Player::new(id, name, Inventory::initial())
                         })
                     };
