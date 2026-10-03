@@ -23,9 +23,10 @@ object GameServer {
       worldInfo: WorldInfo,
       worldProvider: WorldProvider,
       renderDistance: Double,
-      maxChunksToLoadPerTick: Int = 4
+      maxChunksToLoadPerTick: Int = 4,
+      enableWaterPhysics: Boolean = true
   ): GameServer = {
-    val world = new ServerWorld(worldProvider, worldInfo, renderDistance, maxChunksToLoadPerTick)
+    val world = new ServerWorld(worldProvider, worldInfo, renderDistance, maxChunksToLoadPerTick, enableWaterPhysics)
 
     val tcpServer = TcpServer
       .start(port)

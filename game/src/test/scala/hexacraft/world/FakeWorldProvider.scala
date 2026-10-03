@@ -2,12 +2,13 @@ package hexacraft.world
 
 import hexacraft.nbt.Nbt
 
-class FakeWorldProvider(seed: Long)(using cylSize: CylinderSize) extends WorldProvider {
+class FakeWorldProvider(seed: Long, generateOceans: Boolean = false)(using cylSize: CylinderSize)
+    extends WorldProvider {
   val worldInfo = new WorldInfo(
     1,
     "test world",
     cylSize,
-    new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001)
+    new WorldGenSettings(seed, 0.1, 0.01, 0.01, 0.001, 0.001, generateOceans)
   )
 
   private var fs: Map[WorldProvider.Path, Nbt.MapTag] = Map.empty
