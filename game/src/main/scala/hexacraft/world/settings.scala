@@ -33,13 +33,14 @@ object WorldInfo {
   }
 }
 
-class WorldGenSettings(
+case class WorldGenSettings(
     val seed: Long,
     val blockGenScale: Double,
     val heightMapGenScale: Double,
     val blockDensityGenScale: Double,
     val biomeHeightMapGenScale: Double,
-    val biomeHeightVariationGenScale: Double
+    val biomeHeightVariationGenScale: Double,
+    val generateOceans: Boolean
 )
 
 object WorldGenSettings {
@@ -55,7 +56,8 @@ object WorldGenSettings {
         nbt.getDouble("heightMapGenScale", 0.02),
         nbt.getDouble("blockDensityGenScale", 0.01),
         nbt.getDouble("biomeHeightMapGenScale", 0.002),
-        nbt.getDouble("biomeHeightVariationGenScale", 0.002)
+        nbt.getDouble("biomeHeightVariationGenScale", 0.002),
+        nbt.getBoolean("generateOceans", false)
       )
       Some(settings)
     }
@@ -69,7 +71,8 @@ object WorldGenSettings {
         "heightMapGenScale" -> Nbt.DoubleTag(s.heightMapGenScale),
         "blockDensityGenScale" -> Nbt.DoubleTag(s.blockDensityGenScale),
         "biomeHeightGenScale" -> Nbt.DoubleTag(s.biomeHeightMapGenScale),
-        "biomeHeightVariationGenScale" -> Nbt.DoubleTag(s.biomeHeightVariationGenScale)
+        "biomeHeightVariationGenScale" -> Nbt.DoubleTag(s.biomeHeightVariationGenScale),
+        "generateOceans" -> Nbt.ByteTag(s.generateOceans)
       )
     }
   }

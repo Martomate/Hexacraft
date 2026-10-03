@@ -5,7 +5,7 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.coord.{BlockRelWorld, NeighborOffsets}
 
 class BlockFluid(_id: Byte, _name: String, _displayName: String) extends Block(_id, _name, _displayName) {
-  override val behaviour: Option[BlockBehaviour] = None // Some(new BlockBehaviourFluid)
+  override val behaviour: Option[BlockBehaviour] = Some(new BlockBehaviourFluid)
 
   override def isCovering(metadata: Byte, side: Int): Boolean = false
 

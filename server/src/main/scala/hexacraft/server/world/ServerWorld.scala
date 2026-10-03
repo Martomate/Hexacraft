@@ -5,7 +5,7 @@ import hexacraft.server.world.ServerWorld.WorldTickResult
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
 import hexacraft.world.*
-import hexacraft.world.block.{Block, BlockRepository, BlockState}
+import hexacraft.world.block.{Block, BlockBehaviourFluid, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
 import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
@@ -37,7 +37,8 @@ class ServerWorld(
     worldProvider: WorldProvider,
     val worldInfo: WorldInfo,
     val renderDistance: Double,
-    maxChunksToLoadPerTick: Int = 4
+    maxChunksToLoadPerTick: Int = 4,
+    enableWaterPhysics: Boolean = true
 ) extends BlockRepository
     with BlocksInWorldExtended {
   given size: CylinderSize = worldInfo.worldSize
@@ -549,7 +550,9 @@ class ServerWorld(
       val block = getBlock(c).blockType
       val behaviour = block.behaviour
       if behaviour.isDefined then {
-        behaviour.get.onUpdated(c, block, recordingWorld)
+        if enableWaterPhysics || !behaviour.get.isInstanceOf[BlockBehaviourFluid] then {
+          behaviour.get.onUpdated(c, block, recordingWorld)
+        }
       }
     }
 
