@@ -1,6 +1,7 @@
 package hexacraft.game
 
 import hexacraft.world.Player
+import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2fc, Vector3d, Vector3dc}
 
@@ -24,10 +25,73 @@ class PlayerInputHandler:
       pressedKeys: Seq[GameKeyboard.Key],
       mouseMovement: Vector2fc,
       maxSpeed: Double,
-      isInFluid: Boolean
+      isInFluid: Boolean,
+      mounts: Seq[Entity]
   ): Unit = {
-    updateVelocity(pressedKeys, player.velocity, player.rotation, player.flying, maxSpeed, isInFluid)
-    updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
+    if mounts.nonEmpty then {
+      updateMount(player, mounts.head, pressedKeys, mouseMovement, maxSpeed, 0.02)
+      updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
+    } else {
+      updateVelocity(pressedKeys, player.velocity, player.rotation, player.flying, maxSpeed, isInFluid)
+      updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
+    }
+  }
+
+  private def updateMount(
+      player: Player,
+      mount: Entity,
+      pressedKeys: Seq[GameKeyboard.Key],
+      mouseMovement: Vector2fc,
+      maxSpeed: Double,
+      rSpeed: Double
+  ): Unit = {
+    import GameKeyboard.Key.*
+
+    val cosMove = Math.cos(-mount.transform.rotation.y) * maxSpeed * 0.5
+    val sinMove = Math.sin(-mount.transform.rotation.y) * maxSpeed * 0.5
+
+    if pressedKeys.contains(MoveForward) then {
+      mount.motion.velocity.z -= cosMove
+      mount.motion.velocity.x += sinMove
+    }
+
+    if pressedKeys.contains(MoveBackward) then {
+      mount.motion.velocity.z += cosMove
+      mount.motion.velocity.x -= sinMove
+    }
+
+    if pressedKeys.contains(MoveRight) then {
+      mount.transform.rotation.y -= rSpeed
+      player.rotation.y += rSpeed
+    }
+
+    if pressedKeys.contains(MoveLeft) then {
+      mount.transform.rotation.y += rSpeed
+      player.rotation.y -= rSpeed
+    }
+
+    /*
+    mount.transform.rotation.y *= -1
+    updateVelocity(
+      pressedKeys,
+      mount.motion.velocity,
+      mount.transform.rotation,
+      mount.motion.flying,
+      maxSpeed,
+      false
+    )
+    updateRotation(pressedKeys, mount.transform.rotation, mouseMovement, 0.05)
+    mount.transform.rotation.y *= -1
+    mount.transform.rotation.x = 0
+
+    val newPlayerRotation = Vector3d(player.rotation)
+    updateRotation(pressedKeys, newPlayerRotation, mouseMovement, 0.05)
+
+    player.position.set(mount.transform.position.toVector3d.add(0, -player.bounds.bottom, 0))
+    player.rotation.set(newPlayerRotation.x, -mount.transform.rotation.y, mount.transform.rotation.z)
+    player.velocity.set(mount.motion.velocity)
+    player.flying = true
+     */
   }
 
   private def updateVelocity(

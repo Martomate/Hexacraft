@@ -17,7 +17,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler()
 
     assert(player.velocity.length() == 0)
-    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
+    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false, Seq.empty)
     assert(player.velocity.length() > 0)
   }
 
@@ -27,7 +27,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler()
 
     assert(player.velocity.length() == 0)
-    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
+    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false, Seq.empty)
     assert(player.velocity.length() == 0)
   }
 
@@ -37,7 +37,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
-    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false)
+    handler.tick(player, keyboard.pressedKeys, new Vector2f, 1.0, false, Seq.empty)
 
     assertEqualsDouble(player.rotation.x, 0.1, 1e-6)
     assertEqualsDouble(player.rotation.y, 0.2, 1e-6)
@@ -50,7 +50,7 @@ class PlayerInputHandlerTest extends FunSuite {
     val handler = new PlayerInputHandler()
 
     player.rotation.set(0.1, 0.2, 0.3)
-    handler.tick(player, keyboard.pressedKeys, new Vector2f(1, 2), 1.0, false)
+    handler.tick(player, keyboard.pressedKeys, new Vector2f(1, 2), 1.0, false, Seq.empty)
 
     assertEqualsDouble(player.rotation.x, 0.095, 1e-6)
     assertEqualsDouble(player.rotation.y, 0.2025, 1e-6)

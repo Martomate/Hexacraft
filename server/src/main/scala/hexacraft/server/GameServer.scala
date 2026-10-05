@@ -94,12 +94,15 @@ class GameServer(
           val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
           val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
+          val mounts = this.world.entitiesMountedBy(player.id)
+
           playerInputHandler.tick(
             player,
             p.pressedKeys,
             p.mouseMovement,
             maxSpeed,
-            isInFluid
+            isInFluid,
+            mounts
           )
           p.mouseMovement.set(0)
 
@@ -107,7 +110,8 @@ class GameServer(
             player,
             maxSpeed,
             PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
-            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
+            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world),
+            mounts
           )
         }
 
@@ -600,7 +604,13 @@ class GameServer(
 
             Entity.atStartPos(Entity.getNextId, pos, entityType) match {
               case Result.Ok(entity) =>
-                world.addEntity(entity)
+                world.addEntity(
+                  // temporarily mounts the player on the boat
+                  // TODO: do this on left click instead
+                  if entityType == "boat" then {
+                    entity.withMount(player.id)
+                  } else entity
+                )
                 println(s"Spawned entity of type $entityType at $pos")
               case Result.Err(e) =>
                 println(s"Failed to spawn entity: $e")

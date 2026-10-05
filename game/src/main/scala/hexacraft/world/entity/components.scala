@@ -1,10 +1,12 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.{Nbt, NbtDecoder}
+import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
 
 import org.joml.{Matrix4f, Vector3d}
+
+import java.util.UUID
 
 trait EntityComponent
 
@@ -83,3 +85,23 @@ object AiComponent {
 }
 
 class BoundsComponent(val bounds: HexBox) extends EntityComponent
+
+class MountComponent(val mountedEntity: UUID) extends EntityComponent
+
+object MountComponent {
+  given NbtDecoder[MountComponent] with {
+    override def decode(tag: Nbt.MapTag): Option[MountComponent] = {
+      for {
+        id <- tag.getString("id")
+      } yield MountComponent(UUID.fromString(id))
+    }
+  }
+
+  given NbtEncoder[MountComponent] with {
+    override def encode(c: MountComponent) = {
+      Nbt.makeMap(
+        "id" -> Nbt.StringTag(c.mountedEntity.toString)
+      )
+    }
+  }
+}

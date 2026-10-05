@@ -9,6 +9,7 @@ import hexacraft.infra.audio.AudioSystem.BufferId
 import hexacraft.infra.fs.Bundle
 import hexacraft.infra.window.{KeyAction, KeyboardKey, MouseAction, MouseButton}
 import hexacraft.nbt.Nbt
+import hexacraft.physics.Viscosity
 import hexacraft.renderer.{PixelArray, Renderer, TextureArray, VAO}
 import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
@@ -264,6 +265,7 @@ class GameClient(
   private val chatOverlay: ChatOverlay = makeChatOverlay()
 
   private var selectedBlockAndSide: Option[MousePickerResult] = None
+  private var selectedBlockAndSideIncludingWater: Option[MousePickerResult] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer(chatOverlay)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -389,6 +391,11 @@ class GameClient(
       val pos = CylCoords(player.position)
       val spawnArgs = Seq("sheep", pos.x.toString, pos.y.toString, pos.z.toString)
       socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
+    case KeyboardKey.Letter('B') =>
+      selectedBlockAndSideIncludingWater.map(_.coords).map(BlockCoords(_).toCylCoords).foreach { pos =>
+        val spawnArgs = Seq("boat", pos.x.toString, (pos.y + 0.25).toString, pos.z.toString)
+        socket.sendPacket(NetworkPacket.RunCommand("spawn", spawnArgs))
+      }
     case KeyboardKey.Letter('K') =>
       socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
     case KeyboardKey.Letter('I') =>
@@ -605,6 +612,7 @@ class GameClient(
       val syncedPlayer = Player.fromNBT(player.id, player.name, playerNbt.asInstanceOf[Nbt.MapTag])
       player.position.set(syncedPlayer.position)
       player.rotation.set(syncedPlayer.rotation)
+      player.velocity.set(syncedPlayer.velocity)
       player.flying = syncedPlayer.flying
 
       val worldEventsNbt = worldEventsNbtPacket.asMap.get
@@ -722,7 +730,7 @@ class GameClient(
 
         val positionBefore = Vector3d(player.position)
         val rotationBefore = Vector3d(player.rotation)
-        playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid)
+        playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid, Seq.empty)
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
         )
@@ -744,7 +752,8 @@ class GameClient(
           player,
           maxSpeed,
           PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
-          PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
+          PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world),
+          Seq.empty
         )
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
@@ -779,7 +788,8 @@ class GameClient(
 
       updateBlockInHandRendererContent()
 
-      selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition)
+      selectedBlockAndSide = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition, false)
+      selectedBlockAndSideIncludingWater = updatedMousePicker(ctx.windowSize, ctx.currentMousePosition, true)
 
       if rightMouseButtonTimer.tick() then {
         socket.sendPacket(NetworkPacket.PlayerRightClicked)
@@ -843,7 +853,8 @@ class GameClient(
 
   private def updatedMousePicker(
       windowSize: WindowSize,
-      mouse: MousePosition
+      mouse: MousePosition,
+      includeWater: Boolean
   ): Option[MousePickerResult] = {
     if isPaused || isInPopup then {
       return None
@@ -856,10 +867,15 @@ class GameClient(
         mouse.normalizedScreenCoords(windowSize.logicalSize)
       }
 
-    // TODO: make it possible to place water on top of a water block (maybe by performing an extra ray trace)
+    val hitCheck: BlockState => Boolean = if includeWater then { b =>
+      b.blockType.viscosity.toSI > Viscosity.air.toSI
+    } else {
+      _.blockType.isSolid
+    }
+
     for
       ray <- Ray.fromScreen(camera, screenCoords)
-      hit <- new RayTracer(camera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      hit <- new RayTracer(camera, 7).trace(ray, c => Some(world.getBlock(c)).filter(hitCheck))
     yield MousePickerResult(world.getBlock(hit._1), hit._1, hit._2)
   }
 

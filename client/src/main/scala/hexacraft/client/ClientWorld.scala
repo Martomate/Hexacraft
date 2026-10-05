@@ -320,18 +320,6 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   }
 
   private def tickEntity(e: Entity): Unit = {
-    e.ai match {
-      case Some(ai) =>
-        ai.tick(this, e.transform, e.motion, e.boundingBox)
-        e.motion.velocity.add(ai.acceleration)
-      case None =>
-    }
-
-    e.motion.velocity.x *= 0.9
-    e.motion.velocity.z *= 0.9
-
-    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
-
     val vel = e.motion.velocity
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
     if e.model.isDefined then {

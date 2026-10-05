@@ -32,9 +32,33 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
     .find(_.isInstanceOf[ModelComponent])
     .map(_.asInstanceOf[ModelComponent].model)
 
+  val mountedEntities: Seq[MountComponent] = components
+    .filter(_.isInstanceOf[MountComponent])
+    .map(_.asInstanceOf[MountComponent])
+
   val ai: Option[EntityAI] = components
     .find(_.isInstanceOf[AiComponent])
     .map(_.asInstanceOf[AiComponent].ai)
+
+  def withMount(id: UUID): Entity =
+    new Entity(
+      id,
+      typeName,
+      components.filter {
+        case c: MountComponent if c.mountedEntity == id => false
+        case _                                          => true
+      } :+ MountComponent(id)
+    )
+
+  def withoutMount(id: UUID): Entity =
+    new Entity(
+      id,
+      typeName,
+      components.filter {
+        case c: MountComponent if c.mountedEntity == id => false
+        case _                                          => true
+      }
+    )
 }
 
 object Entity {
@@ -45,6 +69,7 @@ object Entity {
 
   val playerBounds = new HexBox(0.2f, 0, 1.75f)
   private val sheepBounds = new HexBox(0.4f, 0, 0.75f)
+  private val boatBounds = new HexBox(0.8f, 0, 0.1f)
 
   def atStartPos(id: UUID, pos: CylCoords, entityType: String)(using CylinderSize): Result[Entity, String] = {
     Nbt.decode[Entity](Nbt.makeMap("type" -> Nbt.StringTag(entityType), "id" -> Nbt.StringTag(id.toString))) match {
@@ -67,6 +92,12 @@ object Entity {
           "rotation" -> Nbt.makeVectorTag(e.transform.rotation)
         )
         .withOptionalField("ai", e.ai.map(_.toNBT))
+        .withOptionalField(
+          "mounts",
+          Option.when(e.mountedEntities.nonEmpty) {
+            Nbt.ListTag(e.mountedEntities.map(Nbt.encode))
+          }
+        )
     }
   }
 
@@ -75,29 +106,48 @@ object Entity {
       val id = tag.getString("id").map(UUID.fromString).getOrElse(UUID.randomUUID())
       val entType = tag.getString("type", "")
 
-      entType match {
-        case "player" =>
-          val components = Seq(
-            Nbt.decode[TransformComponent](tag).get,
-            Nbt.decode[MotionComponent](tag).get,
-            Nbt.decode[HeadDirectionComponent](tag).get,
-            BoundsComponent(playerBounds),
-            ModelComponent(PlayerEntityModel.create("player"))
-          )
-          Some(Entity(id, "player", components))
+      val serverComponents: Seq[EntityComponent] = Seq(
+        Nbt.decode[TransformComponent](tag),
+        Nbt.decode[MotionComponent](tag),
+        entType match {
+          case "sheep" => Nbt.decode[AiComponent](tag)
+          case _       => None
+        },
+        entType match {
+          case "player" => Nbt.decode[HeadDirectionComponent](tag)
+          case _        => None
+        },
+        tag
+          .getList("mounts")
+          .getOrElse(Seq.empty)
+          .flatMap(_.asMap)
+          .flatMap(Nbt.decode[MountComponent])
+      ).flatten
 
-        case "sheep" =>
-          val components = Seq(
-            Nbt.decode[TransformComponent](tag).get,
-            Nbt.decode[MotionComponent](tag).get,
-            Nbt.decode[AiComponent](tag).get,
-            BoundsComponent(sheepBounds),
-            ModelComponent(SheepEntityModel.create("sheep"))
-          )
-          Some(Entity(id, "sheep", components))
-
-        case _ => None
+      val clientComponents: Seq[EntityComponent] = {
+        val bounds = entType match {
+          case "player" => Some(playerBounds)
+          case "sheep"  => Some(sheepBounds)
+          case "boat"   => Some(boatBounds)
+          case _        => None
+        }
+        val model = entType match {
+          case "player" =>
+            Some(PlayerEntityModel.create("player"))
+          case "sheep" =>
+            Some(SheepEntityModel.create("sheep"))
+          case "boat" =>
+            Some(BoatEntityModel.create("boat"))
+          case _ =>
+            None
+        }
+        Seq(
+          bounds.map(BoundsComponent(_)),
+          model.map(ModelComponent(_))
+        ).flatten
       }
+
+      Some(Entity(id, entType, serverComponents ++ clientComponents))
     }
   }
 }
