@@ -223,7 +223,7 @@ class GameServer(
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
+          case _         => tryPlacingBlockAt(coordsInFront, player)
         }
       case _ =>
     }
@@ -269,7 +269,7 @@ class GameServer(
     c
   }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player, playerCamera: Camera): Unit = {
+  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
     if world.getBlock(coords).blockType.isSolid then {
       return
     }
@@ -281,7 +281,7 @@ class GameServer(
       blockType.bounds(state.metadata),
       BlockCoords(coords).toCylCoords,
       player.bounds,
-      CylCoords(playerCamera.position)
+      CylCoords(player.position)
     )
 
     if !collides then {
