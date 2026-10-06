@@ -186,13 +186,13 @@ class GameServer(
     val otherCamera = cameraForPlayer(player, playerCamera)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
 
-    findClosestBlock(otherCamera, ray).map(_._1) match {
+    findClosestHit(otherCamera, ray) match {
       case Some(Hit.OnBlock(coords, state, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
           notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
         }
-      case _ =>
+      case _ => // nothing to do (yet) when clicking on an entity
     }
   }
 
@@ -207,21 +207,7 @@ class GameServer(
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
     val otherCamera = cameraForPlayer(player, playerCamera)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-    val closestBlock = findClosestBlock(otherCamera, ray)
-
-    val closestEntity = world
-      .filterMapEntities { e =>
-        val coords = e.transform.position.toBlockCoords
-        val points = PointHexagon.fromHexBox(e.boundingBox, coords, otherCamera)
-        points
-          .distanceToBox(ray)
-          .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
-      }
-      .map((e, d) => (Hit.OnEntity(e), d))
-      .minByOption(_._2)
-
-    val hitCandidates = Seq(closestEntity, closestBlock).flatten
-    val closestHit = hitCandidates.minByOption(_._2).map(_._1)
+    val closestHit = findClosestHit(otherCamera, ray)
 
     closestHit match {
       case Some(Hit.OnEntity(entity)) =>
@@ -243,8 +229,28 @@ class GameServer(
     }
   }
 
+  /** Finds the closest block or entity that the ray hits within reach */
+  private def findClosestHit(camera: Camera, ray: Ray): Option[Hit] = {
+    val candidates = Seq(findClosestEntity(camera, ray), findClosestBlock(camera, ray)).flatten
+    candidates.minByOption(_._2).map(_._1)
+  }
+
+  /** Finds the closest entity that the ray hits within reach, together with the distance to it */
+  private def findClosestEntity(camera: Camera, ray: Ray): Option[(Hit, Double)] = {
+    world
+      .filterMapEntities { e =>
+        val coords = e.transform.position.toBlockCoords
+        val points = PointHexagon.fromHexBox(e.boundingBox, coords, camera)
+        points
+          .distanceToBox(ray)
+          .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
+      }
+      .map((e, d) => (Hit.OnEntity(e), d))
+      .minByOption(_._2)
+  }
+
   /** Finds the closest solid block that the ray hits within reach, together with the distance to it */
-  private def findClosestBlock(camera: Camera, ray: Ray): Option[(Hit.OnBlock, Double)] = {
+  private def findClosestBlock(camera: Camera, ray: Ray): Option[(Hit, Double)] = {
     new RayTracer(camera, ReachDistance)
       .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
       .flatMap { case (coords, side) =>
