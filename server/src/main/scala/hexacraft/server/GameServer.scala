@@ -180,15 +180,17 @@ class GameServer(
   }
 
   private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val blockAndSide =
-      val otherCamera = Camera(playerCamera.proj)
-      otherCamera.setPositionAndRotation(player.position, player.rotation)
-      otherCamera.updateCoords()
-      otherCamera.updateViewMatrix(playerCamera.view.position)
-      for
-        ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-        hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      yield (world.getBlock(hit._1), hit._1, hit._2)
+    val blockAndSide = {
+      val otherCamera = cameraForPlayer(player, playerCamera)
+      val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
+      val tracer = new RayTracer(otherCamera, 7)
+
+      tracer
+        .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+        .map { case (coords, side) =>
+          (world.getBlock(coords), coords, side)
+        }
+    }
 
     blockAndSide match {
       case Some((state, coords, _)) =>
@@ -209,27 +211,21 @@ class GameServer(
   }
 
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val otherCamera = Camera(playerCamera.proj)
-    otherCamera.setPositionAndRotation(player.position, player.rotation)
-    otherCamera.updateCoords()
-    otherCamera.updateViewMatrix(playerCamera.view.position)
+    val otherCamera = cameraForPlayer(player, playerCamera)
+    val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
+    val tracer = new RayTracer(otherCamera, 7)
 
-    val blockAndSide = for {
-      ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-      hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      b = world.getBlock(hit._1)
-      blockDistance <- {
-        val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-        PointHexagon
-          .fromHexBox(b.blockType.bounds(b.metadata), BlockCoords(hit._1), otherCamera)
-          .distanceToBox(ray)
+    val blockAndSide = tracer
+      .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      .flatMap { case (coords, side) =>
+        val block = world.getBlock(coords)
+        val bounds = block.blockType.bounds(block.metadata)
+        val points = PointHexagon.fromHexBox(bounds, BlockCoords(coords), otherCamera)
+        points.distanceToBox(ray).map((block, coords, side, _))
       }
-
-    } yield (b, hit._1, hit._2, blockDistance)
 
     val closestEntity = world
       .filterMapEntities { e =>
-        val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
         PointHexagon
           .fromHexBox(e.boundingBox, e.transform.position.toBlockCoords, otherCamera)
           .distanceToBox(ray)
@@ -268,6 +264,15 @@ class GameServer(
         }
       case _ =>
     }
+  }
+
+  // TODO: clarify why we need both player and playerCamera to make the camera for the player
+  private def cameraForPlayer(player: Player, playerCamera: Camera) = {
+    val c = Camera(playerCamera.proj)
+    c.setPositionAndRotation(player.position, player.rotation)
+    c.updateCoords()
+    c.updateViewMatrix(playerCamera.view.position)
+    c
   }
 
   private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player, playerCamera: Camera): Unit = {
