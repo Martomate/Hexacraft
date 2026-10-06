@@ -115,14 +115,7 @@ object Entity {
           .getList("mounts")
           .getOrElse(Seq.empty)
           .flatMap(_.asMap)
-          .flatMap(Nbt.decode[MountComponent]),
-        // TODO: the model is only needed on the client
-        entType match {
-          case "player" => Some(ModelComponent(PlayerEntityModel.create("player")))
-          case "sheep"  => Some(ModelComponent(SheepEntityModel.create("sheep")))
-          case "boat"   => Some(ModelComponent(BoatEntityModel.create("boat")))
-          case _        => None
-        }
+          .flatMap(Nbt.decode[MountComponent])
       ).flatten
 
       Some(Entity(id, entType, components))
