@@ -238,16 +238,21 @@ class GameServer(
       .minByOption(_._2)
 
     val choice = (closestEntity, blockAndSide) match {
-      case (Some((_, eDist)), Some((_, _, _, bDist))) =>
-        if eDist < bDist then 1 else 2
-      case (Some(_), None) => 1
-      case (None, Some(_)) => 2
-      case _               => 0
+      case (Some((entity, eDist)), Some((blockState, blockCoords, blockSide, bDist))) =>
+        if eDist < bDist then {
+          Some(Hit.OnEntity(entity))
+        } else {
+          Some(Hit.OnBlock(blockCoords, blockState, blockSide))
+        }
+      case (Some((entity, _)), None) =>
+        Some(Hit.OnEntity(entity))
+      case (None, Some((blockState, blockCoords, blockSide, _))) =>
+        Some(Hit.OnBlock(blockCoords, blockState, blockSide))
+      case _ =>
+        None
     }
     choice match {
-      case 1 =>
-        val entity = closestEntity.get._1
-
+      case Some(Hit.OnEntity(entity)) =>
         entity.typeName match {
           case "boat" =>
             world.removeEntity(entity)
@@ -255,16 +260,12 @@ class GameServer(
           case t =>
             println(s"Clicked on entity of type $t")
         }
-      case 2 =>
-        blockAndSide match {
-          case Some((state, coords, Some(side), _)) =>
-            val coordsInFront = coords.offset(NeighborOffsets(side))
+      case Some(Hit.OnBlock(coords, state, Some(side))) =>
+        val coordsInFront = coords.offset(NeighborOffsets(side))
 
-            state.blockType match {
-              case Block.Tnt => explode(coords)
-              case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
-            }
-          case _ =>
+        state.blockType match {
+          case Block.Tnt => explode(coords)
+          case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
         }
       case _ =>
     }
@@ -686,4 +687,10 @@ class GameServer(
     server.stop()
     serverThread.join()
   }
+}
+
+/** Something the player's crosshair points at, with the distance to it (in meters) */
+private enum Hit {
+  case OnBlock(coords: BlockRelWorld, state: BlockState, side: Option[Int])
+  case OnEntity(entity: Entity)
 }
