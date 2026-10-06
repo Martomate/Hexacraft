@@ -693,7 +693,8 @@ class GameClient(
         }
         if success && world.getChunk(chunkCoords).isEmpty then {
           if chunkNbt != Nbt.emptyMap then {
-            val chunk = Nbt.decode[Chunk](chunkNbt.asInstanceOf[Nbt.MapTag]).get
+            // the entities are sent separately from the chunk
+            val chunk = Chunk.decodeWithoutEntities(chunkNbt.asInstanceOf[Nbt.MapTag])
             world.setChunk(chunkCoords, chunk)
           } else {
             success = false

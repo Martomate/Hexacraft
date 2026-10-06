@@ -19,6 +19,11 @@ object Chunk {
     ChunkData.encode(chunk.chunkData, includeEntities = false)
   }
 
+  /** Decodes a chunk, ignoring any entities in the data. For chunks from `encodeWithoutEntities`. */
+  def decodeWithoutEntities(tag: Nbt.MapTag)(using CylinderSize): Chunk = {
+    new Chunk(ChunkData.decode(tag, includeEntities = false))
+  }
+
   given NbtEncoder[Chunk] with {
     override def encode(chunk: Chunk): Nbt.MapTag = {
       Nbt.encode(chunk.chunkData)
@@ -159,25 +164,29 @@ object ChunkData {
   }
 
   given (using CylinderSize): NbtDecoder[ChunkData] with {
-    def decode(nbt: Nbt.MapTag): Option[ChunkData] = {
-      val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
-        case Some(blocks) =>
-          val numBlocks = blocks.count(_ != 0)
-          val meta = nbt
-            .getByteArray("metadata")
-            .map(_.unsafeArray)
-            .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
+    def decode(nbt: Nbt.MapTag): Option[ChunkData] = Some(ChunkData.decode(nbt, includeEntities = true))
+  }
 
-          if numBlocks < 32 then {
-            SparseChunkStorage.create(blocks, meta)
-          } else {
-            DenseChunkStorage.create(blocks, meta)
-          }
-        case None =>
-          SparseChunkStorage.empty
-      }
+  private[chunk] def decode(nbt: Nbt.MapTag, includeEntities: Boolean)(using CylinderSize): ChunkData = {
+    val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
+      case Some(blocks) =>
+        val numBlocks = blocks.count(_ != 0)
+        val meta = nbt
+          .getByteArray("metadata")
+          .map(_.unsafeArray)
+          .getOrElse(Array.fill(16 * 16 * 16)(0.toByte))
 
-      val entities = mutable.ArrayBuffer.empty[Entity]
+        if numBlocks < 32 then {
+          SparseChunkStorage.create(blocks, meta)
+        } else {
+          DenseChunkStorage.create(blocks, meta)
+        }
+      case None =>
+        SparseChunkStorage.empty
+    }
+
+    val entities = mutable.ArrayBuffer.empty[Entity]
+    if includeEntities then {
       for {
         tags <- nbt.getList("entities")
         tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
@@ -187,10 +196,10 @@ object ChunkData {
           case None         => println(s"Could not load entity")
         }
       }
-
-      val isDecorated = nbt.getBoolean("isDecorated", default = false)
-
-      Some(new ChunkData(storage, entities, isDecorated))
     }
+
+    val isDecorated = nbt.getBoolean("isDecorated", default = false)
+
+    new ChunkData(storage, entities, isDecorated)
   }
 }
