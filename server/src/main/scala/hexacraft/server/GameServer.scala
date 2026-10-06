@@ -121,6 +121,7 @@ class GameServer(
             val mount = mounts.head
             world.removeEntity(mount)
             world.addEntity(mount.withoutMount(player.id))
+            player.position.y += 1
           }
         }
 
@@ -275,6 +276,8 @@ class GameServer(
     }
 
     val blockType = player.blockInHand
+    if blockType == Block.Air then return
+
     val state = new BlockState(blockType)
 
     val collides = world.collisionDetector.collides(
