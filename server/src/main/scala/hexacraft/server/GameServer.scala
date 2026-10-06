@@ -7,7 +7,7 @@ import hexacraft.server.world.ServerWorld
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.ChunkColumnData
+import hexacraft.world.chunk.{Chunk, ChunkColumnData}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
@@ -573,7 +573,13 @@ class GameServer(
 
           prio.nextAddableChunk.flatMap(coords => world.getChunk(coords).map(coords -> _)) match {
             case Some(coords -> chunk) =>
-              loadedChunks += ((coords, Nbt.encode(chunk)))
+              // The entities are sent separately from the chunk
+              loadedChunks += ((coords, Chunk.encodeWithoutEntities(chunk)))
+              playerData.entityEventsWaitingToBeSent.synchronized {
+                for e <- chunk.entities do {
+                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(Nbt.encode(e))
+                }
+              }
               prio += coords
               chunksLoadCount.synchronized {
                 chunksLoadCount(coords.value) = chunksLoadCount.getOrElse(coords.value, 0) + 1
@@ -588,6 +594,12 @@ class GameServer(
           prio.popChunkToRemove() match {
             case Some(coords) =>
               unloadedChunks += coords
+              // The chunk is still loaded by the server since this player is still counted as one of its users
+              playerData.entityEventsWaitingToBeSent.synchronized {
+                for chunk <- world.getChunk(coords); e <- chunk.entities do {
+                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Despawned
+                }
+              }
               chunksLoadCount.synchronized {
                 chunksLoadCount(coords.value) -= 1
               }

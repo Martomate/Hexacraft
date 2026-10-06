@@ -14,6 +14,11 @@ object Chunk {
     new Chunk(ChunkData.fromStorage(storage))
   }
 
+  /** Encodes the chunk without its entities, for clients that get their entities separately. */
+  def encodeWithoutEntities(chunk: Chunk): Nbt.MapTag = {
+    ChunkData.encode(chunk.chunkData, includeEntities = false)
+  }
+
   given NbtEncoder[Chunk] with {
     override def encode(chunk: Chunk): Nbt.MapTag = {
       Nbt.encode(chunk.chunkData)
@@ -137,17 +142,20 @@ object ChunkData {
     new ChunkData(storage, mutable.ArrayBuffer.empty, false)
   }
 
-  given NbtEncoder[ChunkData] with {
-    def encode(value: ChunkData): Nbt.MapTag = {
-      val storageNbt = value.storage.toNBT
+  private[chunk] def encode(value: ChunkData, includeEntities: Boolean): Nbt.MapTag = {
+    val storageNbt = value.storage.toNBT
+    val entities = if includeEntities then value.entities.map(e => Nbt.encode(e)).toSeq else Seq.empty
 
-      Nbt.makeMap(
-        "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
-        "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
-        "entities" -> Nbt.ListTag(value.entities.map(e => Nbt.encode(e)).toSeq),
-        "isDecorated" -> Nbt.ByteTag(value.isDecorated)
-      )
-    }
+    Nbt.makeMap(
+      "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
+      "metadata" -> Nbt.ByteArrayTag.of(storageNbt.metadata),
+      "entities" -> Nbt.ListTag(entities),
+      "isDecorated" -> Nbt.ByteTag(value.isDecorated)
+    )
+  }
+
+  given NbtEncoder[ChunkData] with {
+    def encode(value: ChunkData): Nbt.MapTag = ChunkData.encode(value, includeEntities = true)
   }
 
   given (using CylinderSize): NbtDecoder[ChunkData] with {
