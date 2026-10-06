@@ -95,7 +95,8 @@ class GameServerTest extends FunSuite {
             "heightMapGenScale" -> Nbt.DoubleTag(0.01),
             "blockDensityGenScale" -> Nbt.DoubleTag(0.01),
             "biomeHeightGenScale" -> Nbt.DoubleTag(0.001),
-            "biomeHeightVariationGenScale" -> Nbt.DoubleTag(0.001)
+            "biomeHeightVariationGenScale" -> Nbt.DoubleTag(0.001),
+            "generateOceans" -> Nbt.ByteTag(false)
           )
         )
       )
