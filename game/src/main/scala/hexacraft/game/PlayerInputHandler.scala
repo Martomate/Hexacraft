@@ -69,29 +69,6 @@ class PlayerInputHandler:
       mount.transform.rotation.y += rSpeed
       player.rotation.y -= rSpeed
     }
-
-    /*
-    mount.transform.rotation.y *= -1
-    updateVelocity(
-      pressedKeys,
-      mount.motion.velocity,
-      mount.transform.rotation,
-      mount.motion.flying,
-      maxSpeed,
-      false
-    )
-    updateRotation(pressedKeys, mount.transform.rotation, mouseMovement, 0.05)
-    mount.transform.rotation.y *= -1
-    mount.transform.rotation.x = 0
-
-    val newPlayerRotation = Vector3d(player.rotation)
-    updateRotation(pressedKeys, newPlayerRotation, mouseMovement, 0.05)
-
-    player.position.set(mount.transform.position.toVector3d.add(0, -player.bounds.bottom, 0))
-    player.rotation.set(newPlayerRotation.x, -mount.transform.rotation.y, mount.transform.rotation.z)
-    player.velocity.set(mount.motion.velocity)
-    player.flying = true
-     */
   }
 
   private def updateVelocity(
