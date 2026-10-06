@@ -44,7 +44,7 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
 
   def withMount(id: UUID): Entity =
     new Entity(
-      id,
+      this.id,
       typeName,
       components.filter {
         case c: MountComponent if c.mountedEntity == id => false
@@ -54,7 +54,7 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
 
   def withoutMount(id: UUID): Entity =
     new Entity(
-      id,
+      this.id,
       typeName,
       components.filter {
         case c: MountComponent if c.mountedEntity == id => false
