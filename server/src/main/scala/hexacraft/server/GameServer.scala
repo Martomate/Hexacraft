@@ -120,7 +120,10 @@ class GameServer(
           if mounts.nonEmpty && p.pressedKeys.contains(GameKeyboard.Key.Sneak) then {
             val mount = mounts.head
             world.removeEntity(mount)
-            world.addEntity(mount.withoutMount(player.id))
+            world.addEntity(mount.withoutComponents {
+              case c: MountComponent => c.mountedEntity == player.id
+              case _                 => false
+            })
             player.position.y += 1
           }
         }
@@ -215,7 +218,7 @@ class GameServer(
         entity.typeName match {
           case "boat" =>
             world.removeEntity(entity)
-            world.addEntity(entity.withMount(player.id))
+            world.addEntity(entity.withComponent(MountComponent(player.id)))
           case t =>
             println(s"Clicked on entity of type $t")
         }

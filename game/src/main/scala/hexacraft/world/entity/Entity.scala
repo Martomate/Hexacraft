@@ -42,25 +42,11 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
     .find(_.isInstanceOf[AiComponent])
     .map(_.asInstanceOf[AiComponent].ai)
 
-  def withMount(id: UUID): Entity =
-    new Entity(
-      this.id,
-      typeName,
-      components.filter {
-        case c: MountComponent if c.mountedEntity == id => false
-        case _                                          => true
-      } :+ MountComponent(id)
-    )
+  def withComponent(component: EntityComponent): Entity =
+    new Entity(id, typeName, components :+ component)
 
-  def withoutMount(id: UUID): Entity =
-    new Entity(
-      this.id,
-      typeName,
-      components.filter {
-        case c: MountComponent if c.mountedEntity == id => false
-        case _                                          => true
-      }
-    )
+  def withoutComponents(predicate: EntityComponent => Boolean): Entity =
+    new Entity(id, typeName, components.filterNot(predicate))
 }
 
 object Entity {
