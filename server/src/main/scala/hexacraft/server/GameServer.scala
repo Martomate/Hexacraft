@@ -113,6 +113,12 @@ class GameServer(
             PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world),
             mounts
           )
+
+          if mounts.nonEmpty && p.pressedKeys.contains(GameKeyboard.Key.Sneak) then {
+            val mount = mounts.head
+            world.removeEntity(mount)
+            world.addEntity(mount.withoutMount(player.id))
+          }
         }
 
         camera.setPositionAndRotation(player.position, player.rotation)
@@ -203,23 +209,76 @@ class GameServer(
   }
 
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val blockAndSide =
-      val otherCamera = Camera(playerCamera.proj)
-      otherCamera.setPositionAndRotation(player.position, player.rotation)
-      otherCamera.updateCoords()
-      otherCamera.updateViewMatrix(playerCamera.view.position)
-      for
-        ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-        hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      yield (world.getBlock(hit._1), hit._1, hit._2)
+    val otherCamera = Camera(playerCamera.proj)
+    otherCamera.setPositionAndRotation(player.position, player.rotation)
+    otherCamera.updateCoords()
+    otherCamera.updateViewMatrix(playerCamera.view.position)
 
-    blockAndSide match {
-      case Some((state, coords, Some(side))) =>
-        val coordsInFront = coords.offset(NeighborOffsets(side))
+    val blockAndSide = for {
+      ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
+      hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      b = world.getBlock(hit._1)
+      blockDistance <- {
+        val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
+        val hex = PointHexagon.fromHexBox(
+          b.blockType.bounds(b.metadata),
+          BlockCoords(hit._1),
+          otherCamera
+        )
+        (0 until 8)
+          .flatMap(side => {
+            hex.distanceToFace(ray, BlockFace.fromInt(side))
+          })
+          .minOption
+      }
 
-        state.blockType match {
-          case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
+    } yield (b, hit._1, hit._2, blockDistance)
+
+    val closestEntity = world
+      .filterMapEntities { e =>
+        val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
+        val hex = PointHexagon.fromHexBox(
+          e.boundingBox,
+          e.transform.position.toBlockCoords,
+          otherCamera
+        )
+        (0 until 8)
+          .flatMap(side => {
+            hex.distanceToFace(ray, BlockFace.fromInt(side))
+          })
+          .filter(_ < 7)
+          .minOption
+      }
+      .minByOption(_._2)
+
+    val choice = (closestEntity, blockAndSide) match {
+      case (Some((_, eDist)), Some((_, _, _, bDist))) =>
+        if eDist < bDist then 1 else 2
+      case (Some(_), None) => 1
+      case (None, Some(_)) => 2
+      case _               => 0
+    }
+    choice match {
+      case 1 =>
+        val entity = closestEntity.get._1
+
+        entity.typeName match {
+          case "boat" =>
+            world.removeEntity(entity)
+            world.addEntity(entity.withMount(player.id))
+          case t =>
+            println(s"Clicked on entity of type $t")
+        }
+      case 2 =>
+        blockAndSide match {
+          case Some((state, coords, Some(side), _)) =>
+            val coordsInFront = coords.offset(NeighborOffsets(side))
+
+            state.blockType match {
+              case Block.Tnt => explode(coords)
+              case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
+            }
+          case _ =>
         }
       case _ =>
     }
@@ -604,13 +663,7 @@ class GameServer(
 
             Entity.atStartPos(Entity.getNextId, pos, entityType) match {
               case Result.Ok(entity) =>
-                world.addEntity(
-                  // temporarily mounts the player on the boat
-                  // TODO: do this on left click instead
-                  if entityType == "boat" then {
-                    entity.withMount(player.id)
-                  } else entity
-                )
+                world.addEntity(entity)
                 println(s"Spawned entity of type $entityType at $pos")
               case Result.Err(e) =>
                 println(s"Failed to spawn entity: $e")

@@ -83,6 +83,10 @@ class ServerWorld(
   def entitiesMountedBy(id: UUID): Seq[Entity] =
     getAllEntities.filter(_.mountedEntities.exists(_.mountedEntity == id)).toSeq
 
+  def filterMapEntities[T](filterMap: Entity => Option[T]): Seq[(Entity, T)] = {
+    getAllEntities.map(e => filterMap(e).map(e -> _)).filter(_.isDefined).map(_.get).toSeq
+  }
+
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
   }

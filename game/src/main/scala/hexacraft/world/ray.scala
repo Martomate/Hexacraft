@@ -29,7 +29,7 @@ class RayTracer(camera: Camera, maxDistance: Double)(using CylinderSize) {
       return None
     }
 
-    val points = PointHexagon.fromHexBox(BlockState.boundingBox, current, camera)
+    val points = PointHexagon.fromHexBox(BlockState.boundingBox, BlockCoords(current), camera)
 
     val (slice, region) = points.intersectionSide(ray)
     val normal = points.normal(slice, region)
@@ -69,7 +69,7 @@ class RayTracer(camera: Camera, maxDistance: Double)(using CylinderSize) {
         (0 until 8).exists(side => {
           val boundingBox = block.blockType.bounds(block.metadata)
           PointHexagon
-            .fromHexBox(boundingBox, hitBlockCoords, camera)
+            .fromHexBox(boundingBox, BlockCoords(hitBlockCoords), camera)
             .intersectsFace(ray, BlockFace.fromInt(side))
         })
       case _ =>
@@ -128,9 +128,9 @@ object Ray {
 }
 
 object PointHexagon {
-  def fromHexBox(hexBox: HexBox, location: BlockRelWorld, camera: Camera)(using CylinderSize): PointHexagon = {
+  def fromHexBox(hexBox: HexBox, location: BlockCoords, camera: Camera)(using CylinderSize): PointHexagon = {
     val points = hexBox.vertices.map(v =>
-      BlockCoords(location).toCylCoords
+      location.toCylCoords
         .offset(v)
         .toNormalCoords(CylCoords(camera.view.position))
         .toVector3d
@@ -171,6 +171,26 @@ class PointHexagon(val up: Array[Vector3d], val down: Array[Vector3d]) {
     }
 
     (index, region)
+  }
+
+  def distanceToFace(ray: Ray, face: BlockFace): Option[Double] = {
+    if !intersectsFace(ray, face) then {
+      return None
+    }
+
+    val (pointOnFace, normal) = face match {
+      case BlockFace.Top     => (this.up(0), this.normal(0, Region.Ceiling))
+      case BlockFace.Bottom  => (this.down(0), this.normal(0, Region.Floor))
+      case BlockFace.Side(s) => (this.down(s), this.normal(s, Region.Wall))
+    }
+
+    val denominator = ray.v.dot(normal)
+    if denominator == 0 then { // the ray is parallel to the face
+      return None
+    }
+
+    val distance = pointOnFace.dot(normal) / denominator
+    if distance >= 0 then Some(distance) else None
   }
 
   def intersectsFace(ray: Ray, face: BlockFace): Boolean = {
