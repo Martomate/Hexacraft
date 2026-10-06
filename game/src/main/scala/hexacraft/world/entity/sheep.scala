@@ -1,7 +1,6 @@
 package hexacraft.world.entity
 
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.coord.BlockCoords
 
 import org.joml.{Vector3d, Vector3f}
 
@@ -42,13 +41,7 @@ class SheepAnimation(model: SheepEntityModel) {
 }
 
 object SheepEntityModel {
-  private def makeHexBox(r: Int, b: Float, h: Int): HexBox = {
-    HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
-  }
-
-  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset = {
-    BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
-  }
+  import ModelUnits.*
 
   def create(textureName: String): SheepEntityModel = {
     val legLength = 32
@@ -60,30 +53,27 @@ object SheepEntityModel {
 
     val headOffset = 2
     val headYOffset = 2
-    val legOffset = bodyRadius * 0.25f / CylinderSize.y60
+    val legSideOffset = 0.5 * bodyRadius
     val legYOffset = 3
-
-    val px = 2.0 / 3
-    val pz = 1.0 / 3
 
     val headBounds = makeHexBox(headRadius, -headDepth / 2f, headDepth)
     val bodyBounds = makeHexBox(bodyRadius, 0, bodyLength)
     val legBounds = makeHexBox(legRadius, 0, legLength)
 
-    val headDistXZ = 0.5 * bodyLength + headOffset
-    val bodyDist = 0.5 * bodyLength
-    val legDist = 0.5 * bodyLength - legRadius
+    val headDistX = 0.5 * bodyLength + headOffset
+    val bodyDistX = 0.5 * bodyLength
+    val legDistX = 0.5 * bodyLength - legRadius
 
     val headY = legLength + legYOffset + (headRadius + headYOffset) * CylinderSize.y60
     val bodyY = legLength + legYOffset
     val legY = legLength
 
-    val headPos = makePartPosition(headDistXZ * px, headY, -headDistXZ * pz).toCylCoordsOffset
-    val bodyPos = makePartPosition(-bodyDist * px, bodyY, bodyDist * pz).toCylCoordsOffset
-    val frontRightLegPos = makePartPosition(legDist * px, legY, legOffset - legDist * pz).toCylCoordsOffset
-    val frontLeftLegPos = makePartPosition(legDist * px, legY, -legOffset - legDist * pz).toCylCoordsOffset
-    val backRightLegPos = makePartPosition(-legDist * px, legY, legOffset + legDist * pz).toCylCoordsOffset
-    val backLeftLegPos = makePartPosition(-legDist * px, legY, -legOffset + legDist * pz).toCylCoordsOffset
+    val headPos = cylOffset(headDistX, headY, 0)
+    val bodyPos = cylOffset(-bodyDistX, bodyY, 0)
+    val frontRightLegPos = cylOffset(legDistX, legY, legSideOffset)
+    val frontLeftLegPos = cylOffset(legDistX, legY, -legSideOffset)
+    val backRightLegPos = cylOffset(-legDistX, legY, legSideOffset)
+    val backLeftLegPos = cylOffset(-legDistX, legY, -legSideOffset)
 
     val pi = math.Pi.toFloat
 

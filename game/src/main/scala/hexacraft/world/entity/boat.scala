@@ -16,16 +16,7 @@ class BoatEntityModel(
 }
 
 object BoatEntityModel {
-
-  /** Converts a length in model pixels (1/32 of a block) to cylinder coordinates. */
-  private def px(n: Double): Double = n / 32 * 0.5
-
-  private def makeHexBox(r: Int, b: Float, h: Float): HexBox = {
-    HexBox(px(r).toFloat, px(b).toFloat, px(h + b).toFloat)
-  }
-
-  private def cylOffset(x: Double, y: Double, z: Double): CylCoords.Offset =
-    CylCoords.Offset(px(x), px(y), px(z))
+  import ModelUnits.*
 
   def create(textureName: String): BoatEntityModel = {
     val rodLength = 64
@@ -33,7 +24,7 @@ object BoatEntityModel {
     val crossRodLength = 8 * rodRadius * CylinderSize.y60.toFloat
 
     // Distances between the centers of neighbouring hexagonal rods
-    val rodSpacing = rodRadius * CylinderSize.y60 * 2 // within a row
+    val rodSpacing = hexStep(rodRadius) // within a row
     val rowHeight = 1.5 * rodRadius // between rows (each row is shifted half a rod sideways)
 
     val rodBounds = makeHexBox(rodRadius, 0, rodLength.toFloat)

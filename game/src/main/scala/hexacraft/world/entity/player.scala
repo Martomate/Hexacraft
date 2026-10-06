@@ -1,7 +1,6 @@
 package hexacraft.world.entity
 
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.coord.BlockCoords
 
 import org.joml.{Vector3d, Vector3f}
 
@@ -46,13 +45,7 @@ class PlayerAnimation(model: PlayerEntityModel) {
 }
 
 object PlayerEntityModel {
-  private def makeHexBox(r: Int, b: Float, h: Int): HexBox = {
-    HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
-  }
-
-  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset = {
-    BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
-  }
+  import ModelUnits.*
 
   def create(textureName: String): PlayerEntityModel = {
     val legLength = 48
@@ -66,27 +59,30 @@ object PlayerEntityModel {
 
     val headBounds = makeHexBox(headRadius, -headDepth / 2f, headDepth)
     val bodyBounds = makeHexBox(bodyRadius, 0, bodyLength)
-    val armBounds = makeHexBox(armRadius, -armRadius * CylinderSize.y60.toFloat, armLength)
+    val armBounds = makeHexBox(armRadius, -armRadius * CylinderSize.y60, armLength)
     val legBounds = makeHexBox(legRadius, 0, legLength)
 
     val headBaseY = bodyLength + legLength
     val headY = headRadius * CylinderSize.y60
-    val headBasePos = makePartPosition(0, headBaseY, 0).toCylCoordsOffset
-    val headPos = makePartPosition(0, headY, 0).toCylCoordsOffset
+    val headBasePos = cylOffset(0, headBaseY, 0)
+    val headPos = cylOffset(0, headY, 0)
 
-    val rightBodyPos = makePartPosition(0, legLength, 0.5 * bodyRadius).toCylCoordsOffset
-    val leftBodyPos = makePartPosition(0, legLength, -0.5 * bodyRadius).toCylCoordsOffset
+    // The body halves are neighbouring hexagons, so are the arms and the body
+    val rightBodyPos = cylOffset(0, legLength, 0.5 * hexStep(bodyRadius))
+    val leftBodyPos = cylOffset(0, legLength, -0.5 * hexStep(bodyRadius))
 
     val armY = legLength + bodyLength - armRadius * CylinderSize.y60
-    val rightArmPos = makePartPosition(0, armY, bodyRadius + 0.5 * armRadius).toCylCoordsOffset
-    val leftArmPos = makePartPosition(0, armY, -bodyRadius - 0.5 * armRadius).toCylCoordsOffset
+    val rightArmPos = cylOffset(0, armY, hexStep(bodyRadius + 0.5 * armRadius))
+    val leftArmPos = cylOffset(0, armY, -hexStep(bodyRadius + 0.5 * armRadius))
 
-    val rightLegPos = makePartPosition(0, legLength, 0.5 * legRadius).offset(0, 0, 0.001f).toCylCoordsOffset
-    val leftLegPos = makePartPosition(0, legLength, -0.5 * legRadius).offset(0, 0, -0.001).toCylCoordsOffset
+    // The legs are moved a tiny bit apart to avoid z-fighting
+    val legGap = 0.001
+    val rightLegPos = cylOffset(0, legLength, 0.5 * hexStep(legRadius)).offset(0, 0, legGap)
+    val leftLegPos = cylOffset(0, legLength, -0.5 * hexStep(legRadius)).offset(0, 0, -legGap)
 
     val pi = math.Pi.toFloat
 
-    val base = BasicEntityPart(HexBox(0, 0, 0), makePartPosition(0, 0, 0).toCylCoordsOffset, Vector3f(0, pi / 2, 0))
+    val base = BasicEntityPart(HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(0, pi / 2, 0))
 
     val headBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f(), parentPart = base)
     val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), parentPart = headBase)
