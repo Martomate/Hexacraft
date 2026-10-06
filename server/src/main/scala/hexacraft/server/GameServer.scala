@@ -44,6 +44,9 @@ class GameServer(
     world: ServerWorld
 )(using CylinderSize) {
 
+  /** How far away (in blocks) the player can reach when clicking on blocks and entities */
+  private val ReachDistance: Int = 7
+
   private var isShuttingDown: Boolean = false
 
   private val players: mutable.LongMap[PlayerData] = mutable.LongMap.empty
@@ -183,7 +186,7 @@ class GameServer(
     val blockAndSide = {
       val otherCamera = cameraForPlayer(player, playerCamera)
       val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-      val tracer = new RayTracer(otherCamera, 7)
+      val tracer = new RayTracer(otherCamera, ReachDistance)
 
       tracer
         .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
@@ -213,7 +216,7 @@ class GameServer(
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
     val otherCamera = cameraForPlayer(player, playerCamera)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-    val tracer = new RayTracer(otherCamera, 7)
+    val tracer = new RayTracer(otherCamera, ReachDistance)
 
     val blockAndSide = tracer
       .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
@@ -229,7 +232,7 @@ class GameServer(
         PointHexagon
           .fromHexBox(e.boundingBox, e.transform.position.toBlockCoords, otherCamera)
           .distanceToBox(ray)
-          .filter(_ < 7)
+          .filter(_ < ReachDistance)
       }
       .minByOption(_._2)
 
