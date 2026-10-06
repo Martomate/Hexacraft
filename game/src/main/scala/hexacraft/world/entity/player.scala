@@ -86,18 +86,20 @@ object PlayerEntityModel {
 
     val pi = math.Pi.toFloat
 
-    val headBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f())
-    val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), headBase)
+    val base = BasicEntityPart(HexBox(0, 0, 0), makePartPosition(0, 0, 0).toCylCoordsOffset, Vector3f(0, pi / 2, 0))
+
+    val headBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f(), parentPart = base)
+    val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), parentPart = headBase)
 
     PlayerEntityModel(
       headBase = headBase,
       head = head,
-      leftBodyHalf = BasicEntityPart(bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120)),
-      rightBodyHalf = BasicEntityPart(bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120)),
-      rightArm = BasicEntityPart(armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64)),
-      leftArm = BasicEntityPart(armBounds, leftArmPos, Vector3f(pi, 0, 0), (0, 64)),
-      rightLeg = BasicEntityPart(legBounds, rightLegPos, Vector3f(pi, 0, 0), (48, 0)),
-      leftLeg = BasicEntityPart(legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0)),
+      leftBodyHalf = BasicEntityPart(bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120), parentPart = base),
+      rightBodyHalf = BasicEntityPart(bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120), parentPart = base),
+      rightArm = BasicEntityPart(armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64), parentPart = base),
+      leftArm = BasicEntityPart(armBounds, leftArmPos, Vector3f(pi, 0, 0), (0, 64), parentPart = base),
+      rightLeg = BasicEntityPart(legBounds, rightLegPos, Vector3f(pi, 0, 0), (48, 0), parentPart = base),
+      leftLeg = BasicEntityPart(legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0), parentPart = base),
       textureName
     )
   }

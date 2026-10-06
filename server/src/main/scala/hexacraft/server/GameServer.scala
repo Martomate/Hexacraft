@@ -131,7 +131,7 @@ class GameServer(
 
         entity.transform.position = CylCoords(player.position)
           .offset(0, player.bounds.bottom.toDouble, 0)
-        entity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
+        entity.transform.rotation.set(entityRotationFacingLikePlayer(player))
         entity.motion.velocity.set(player.velocity)
         entity.motion.flying = player.flying
         entity.headDirection.foreach(_.direction.set(player.rotation.x, 0, 0))
@@ -269,6 +269,10 @@ class GameServer(
     c.updateViewMatrix()
     c
   }
+
+  /** The rotation an entity needs to face the same way as the player */
+  private def entityRotationFacingLikePlayer(player: Player): Vector3d =
+    Vector3d(0, -player.rotation.y, 0)
 
   private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
     if world.getBlock(coords).blockType.isSolid then {
@@ -649,7 +653,12 @@ class GameServer(
             val entityType = args.head
             val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)
 
-            Entity.atStartPos(Entity.getNextId, pos, entityType) match {
+            Entity.atStartPos(
+              Entity.getNextId,
+              pos,
+              entityType,
+              entityRotationFacingLikePlayer(player)
+            ) match {
               case Result.Ok(entity) =>
                 world.addEntity(entity)
                 println(s"Spawned entity of type $entityType at $pos")

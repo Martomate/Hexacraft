@@ -6,6 +6,8 @@ import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
 
+import org.joml.Vector3d
+
 import java.util.UUID
 
 class Entity(val id: UUID, val typeName: String, private val components: Seq[EntityComponent] = Nil) {
@@ -71,10 +73,16 @@ object Entity {
   private val sheepBounds = new HexBox(0.4f, 0, 0.75f)
   private val boatBounds = new HexBox(0.8f, 0, 0.1f)
 
-  def atStartPos(id: UUID, pos: CylCoords, entityType: String)(using CylinderSize): Result[Entity, String] = {
+  def atStartPos(
+      id: UUID,
+      pos: CylCoords,
+      entityType: String,
+      rotation: Vector3d = new Vector3d
+  )(using CylinderSize): Result[Entity, String] = {
     Nbt.decode[Entity](Nbt.makeMap("type" -> Nbt.StringTag(entityType), "id" -> Nbt.StringTag(id.toString))) match {
       case Some(e) =>
         e.transform.position = pos
+        e.transform.rotation.set(rotation)
         Ok(e)
       case None =>
         Err(s"Entity-type '$entityType' not found")
