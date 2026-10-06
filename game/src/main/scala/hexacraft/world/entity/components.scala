@@ -75,11 +75,7 @@ class AiComponent(val ai: EntityAI) extends EntityComponent
 object AiComponent {
   given (using CylinderSize): NbtDecoder[AiComponent] with {
     override def decode(tag: Nbt.MapTag): Option[AiComponent] = {
-      val ai: EntityAI = tag.getMap("ai") match {
-        case Some(t) => Nbt.decode[SimpleWalkAI](t).get
-        case None    => SimpleWalkAI.create
-      }
-      Some(AiComponent(ai))
+      tag.getMap("ai").flatMap(Nbt.decode[EntityAI]).map(AiComponent(_))
     }
   }
 }

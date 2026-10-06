@@ -80,13 +80,6 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
     }
 
     timeout -= 1
-
-    /*    val speed = 40
-    val velLen = math.hypot(player.velocity.x, player.velocity.z)
-    if (velLen > speed) {
-      velocity.x *= speed / velLen
-      velocity.z *= speed / velLen
-    }*/
   }
 
   override def acceleration: Vector3dc = movingForce
@@ -94,13 +87,26 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
   override def toNBT: Nbt.MapTag = Nbt.encode(this)
 }
 
+object EntityAI {
+  given (using CylinderSize): NbtDecoder[EntityAI] with {
+    override def decode(tag: Nbt.MapTag): Option[EntityAI] = {
+      tag.getString("type", "") match {
+        case SimpleWalkAI.typeName => Nbt.decode[SimpleWalkAI](tag)
+        case _                     => None
+      }
+    }
+  }
+}
+
 object SimpleWalkAI {
+  val typeName = "simple"
+
   def create(using CylinderSize): SimpleWalkAI = new SimpleWalkAI
 
   given NbtEncoder[SimpleWalkAI] with {
     override def encode(ai: SimpleWalkAI): Nbt.MapTag = {
       Nbt.makeMap(
-        "type" -> Nbt.StringTag("simple"),
+        "type" -> Nbt.StringTag(typeName),
         "targetX" -> Nbt.DoubleTag(ai.target.x),
         "targetZ" -> Nbt.DoubleTag(ai.target.z),
         "timeout" -> Nbt.ShortTag(ai.timeout.toShort)
@@ -112,11 +118,11 @@ object SimpleWalkAI {
     override def decode(tag: Nbt.MapTag): Option[SimpleWalkAI] = {
       val targetX = tag.getDouble("targetX", 0)
       val targetZ = tag.getDouble("targetZ", 0)
-      val target = tag.getShort("timeout", 0)
+      val timeout = tag.getShort("timeout", 0)
 
       val ai = new SimpleWalkAI
       ai.target = CylCoords(targetX, 0, targetZ)
-      ai.timeout = target
+      ai.timeout = timeout
       Some(ai)
     }
   }
