@@ -218,13 +218,13 @@ class GameServer(
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
     val tracer = new RayTracer(otherCamera, ReachDistance)
 
-    val blockAndSide = tracer
+    val closestBlock = tracer
       .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
       .flatMap { case (coords, side) =>
         val block = world.getBlock(coords)
         val bounds = block.blockType.bounds(block.metadata)
         val points = PointHexagon.fromHexBox(bounds, BlockCoords(coords), otherCamera)
-        points.distanceToBox(ray).map((block, coords, side, _))
+        points.distanceToBox(ray).map((Hit.OnBlock(coords, block, side), _))
       }
 
     val closestEntity = world
@@ -235,23 +235,13 @@ class GameServer(
           .distanceToBox(ray)
           .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
       }
+      .map((e, d) => (Hit.OnEntity(e), d))
       .minByOption(_._2)
 
-    val choice = (closestEntity, blockAndSide) match {
-      case (Some((entity, eDist)), Some((blockState, blockCoords, blockSide, bDist))) =>
-        if eDist < bDist then {
-          Some(Hit.OnEntity(entity))
-        } else {
-          Some(Hit.OnBlock(blockCoords, blockState, blockSide))
-        }
-      case (Some((entity, _)), None) =>
-        Some(Hit.OnEntity(entity))
-      case (None, Some((blockState, blockCoords, blockSide, _))) =>
-        Some(Hit.OnBlock(blockCoords, blockState, blockSide))
-      case _ =>
-        None
-    }
-    choice match {
+    val hitCandidates = Seq(closestEntity, closestBlock).flatten
+    val closestHit = hitCandidates.minByOption(_._2).map(_._1)
+
+    closestHit match {
       case Some(Hit.OnEntity(entity)) =>
         entity.typeName match {
           case "boat" =>
