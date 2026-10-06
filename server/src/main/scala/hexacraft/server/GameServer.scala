@@ -232,7 +232,7 @@ class GameServer(
         PointHexagon
           .fromHexBox(e.boundingBox, e.transform.position.toBlockCoords, otherCamera)
           .distanceToBox(ray)
-          .filter(_ < ReachDistance)
+          .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
       }
       .minByOption(_._2)
 
