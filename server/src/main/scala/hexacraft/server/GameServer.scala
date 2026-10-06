@@ -182,11 +182,11 @@ class GameServer(
     }
   }
 
-  private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val otherCamera = cameraForPlayer(player, playerCamera.proj)
-    val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
+  private def performLeftMouseClick(player: Player, proj: CameraProjection): Unit = {
+    val camera = cameraForPlayer(player, proj)
+    val ray = Ray.fromScreen(camera, Vector2f(0, 0)).get
 
-    findClosestHit(otherCamera, ray) match {
+    findClosestHit(camera, ray) match {
       case Some(Hit.OnBlock(coords, state, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
@@ -204,10 +204,10 @@ class GameServer(
     }
   }
 
-  private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val otherCamera = cameraForPlayer(player, playerCamera.proj)
-    val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-    val closestHit = findClosestHit(otherCamera, ray)
+  private def performRightMouseClick(player: Player, proj: CameraProjection): Unit = {
+    val camera = cameraForPlayer(player, proj)
+    val ray = Ray.fromScreen(camera, Vector2f(0, 0)).get
+    val closestHit = findClosestHit(camera, ray)
 
     closestHit match {
       case Some(Hit.OnEntity(entity)) =>
@@ -601,10 +601,10 @@ class GameServer(
           )
         )
       case PlayerRightClicked =>
-        performRightMouseClick(player, playerCamera)
+        performRightMouseClick(player, playerCamera.proj)
         None
       case PlayerLeftClicked =>
-        performLeftMouseClick(player, playerCamera)
+        performLeftMouseClick(player, playerCamera.proj)
         None
       case PlayerToggledFlying =>
         player.flying = !player.flying
