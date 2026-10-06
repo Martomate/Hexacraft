@@ -80,6 +80,13 @@ class ServerWorld(
 
   private val entityEventsSinceLastTick = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
 
+  def entitiesMountedBy(id: UUID): Seq[Entity] =
+    getAllEntities.filter(_.mountedEntities.exists(_.mountedEntity == id)).toSeq
+
+  def filterMapEntities[T](filterMap: Entity => Option[T]): Seq[(Entity, T)] = {
+    getAllEntities.map(e => filterMap(e).map(e -> _)).filter(_.isDefined).map(_.get).toSeq
+  }
+
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
   }
@@ -533,6 +540,14 @@ class ServerWorld(
 
     if e.model.isDefined then {
       e.model.get.tick(e.motion.velocity.lengthSquared() > 0.1, e.headDirection.map(_.direction))
+    }
+
+    entityEventsSinceLastTick += e.id -> EntityEvent.Position(e.transform.position)
+    entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)
+    entityEventsSinceLastTick += e.id -> EntityEvent.Velocity(e.motion.velocity)
+    entityEventsSinceLastTick += e.id -> EntityEvent.Flying(e.motion.flying)
+    e.headDirection.foreach { comp =>
+      entityEventsSinceLastTick += e.id -> EntityEvent.HeadDirection(comp.direction)
     }
   }
 

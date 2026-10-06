@@ -3,6 +3,7 @@ package hexacraft.world
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld}
+
 import munit.FunSuite
 import org.joml.Vector2f
 
@@ -35,7 +36,7 @@ class RayTracerTest extends FunSuite {
     val camera = new Camera(makeCameraProjection)
     camera.position.set(BlockCoords(location).offset(0, 0.5, 0).toCylCoords.toVector3d)
     camera.updateCoords()
-    camera.updateViewMatrix(camera.view.position)
+    camera.updateViewMatrix()
 
     // Create a ray
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get
@@ -59,7 +60,7 @@ class RayTracerTest extends FunSuite {
     val camera = new Camera(makeCameraProjection)
     camera.position.set(BlockCoords(location).offset(0, 0.5, 0).toCylCoords.toVector3d)
     camera.updateCoords()
-    camera.updateViewMatrix(camera.view.position)
+    camera.updateViewMatrix()
 
     // Look outside of the screen
     assertEquals(Ray.fromScreen(camera, new Vector2f(1.2f, 0)), None)
@@ -84,7 +85,7 @@ class RayTracerTest extends FunSuite {
     camera.position.set(BlockCoords(0, 0.5, 0).toCylCoords.toVector3d)
     camera.rotation.set(0, math.Pi.toFloat, 0)
     camera.updateCoords()
-    camera.updateViewMatrix(camera.view.position)
+    camera.updateViewMatrix()
 
     // Create a ray
     val ray = Ray.fromScreen(camera, new Vector2f(0, 0)).get

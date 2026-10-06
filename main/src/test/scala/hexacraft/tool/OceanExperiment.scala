@@ -30,7 +30,7 @@ object OceanExperiment {
     val worldProvider = FakeWorldProvider(1234, generateOceans = true)
 
     val playerId = UUID.randomUUID
-    val player = Player.atStartPos(playerId, "Dude", CylCoords(0, 0, 0))
+    val player = Player.atStartPos(playerId, "Dude", CylCoords(0, -1.5, 0))
     worldProvider.savePlayerData(Nbt.encode(player), player.id)
 
     val server = GameServer.create(

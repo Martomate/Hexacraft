@@ -44,6 +44,9 @@ class GameServer(
     world: ServerWorld
 )(using CylinderSize) {
 
+  /** How far away (in blocks) the player can reach when clicking on blocks and entities */
+  private val ReachDistance: Int = 7
+
   private var isShuttingDown: Boolean = false
 
   private val players: mutable.LongMap[PlayerData] = mutable.LongMap.empty
@@ -94,12 +97,15 @@ class GameServer(
           val maxSpeed = playerInputHandler.determineMaxSpeed(p.pressedKeys)
           val isInFluid = PlayerPhysicsHandler.playerEffectiveViscosity(player, world) > Block.Air.viscosity.toSI * 2
 
+          val mounts = this.world.entitiesMountedBy(player.id)
+
           playerInputHandler.tick(
             player,
             p.pressedKeys,
             p.mouseMovement,
             maxSpeed,
-            isInFluid
+            isInFluid,
+            mounts
           )
           p.mouseMovement.set(0)
 
@@ -107,17 +113,28 @@ class GameServer(
             player,
             maxSpeed,
             PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
-            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world)
+            PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world),
+            mounts
           )
+
+          if mounts.nonEmpty && p.pressedKeys.contains(GameKeyboard.Key.Sneak) then {
+            val mount = mounts.head
+            world.removeEntity(mount)
+            world.addEntity(mount.withoutComponents {
+              case c: MountComponent => c.mountedEntity == player.id
+              case _                 => false
+            })
+            player.position.y += 1
+          }
         }
 
         camera.setPositionAndRotation(player.position, player.rotation)
         camera.updateCoords()
-        camera.updateViewMatrix(camera.view.position)
+        camera.updateViewMatrix()
 
         entity.transform.position = CylCoords(player.position)
           .offset(0, player.bounds.bottom.toDouble, 0)
-        entity.transform.rotation.set(0, math.Pi * 0.5 - player.rotation.y, 0)
+        entity.transform.rotation.set(entityRotationFacingLikePlayer(player))
         entity.motion.velocity.set(player.velocity)
         entity.motion.flying = player.flying
         entity.headDirection.foreach(_.direction.set(player.rotation.x, 0, 0))
@@ -169,24 +186,17 @@ class GameServer(
     }
   }
 
-  private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val blockAndSide =
-      val otherCamera = Camera(playerCamera.proj)
-      otherCamera.setPositionAndRotation(player.position, player.rotation)
-      otherCamera.updateCoords()
-      otherCamera.updateViewMatrix(playerCamera.view.position)
-      for
-        ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-        hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      yield (world.getBlock(hit._1), hit._1, hit._2)
+  private def performLeftMouseClick(player: Player, proj: CameraProjection): Unit = {
+    val camera = cameraForPlayer(player, proj)
+    val ray = Ray.fromScreen(camera, Vector2f(0, 0)).get
 
-    blockAndSide match {
-      case Some((state, coords, _)) =>
+    findClosestHit(camera, ray) match {
+      case Some(Hit.OnBlock(coords, state, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
           notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
         }
-      case _ =>
+      case _ => // nothing to do (yet) when clicking on an entity
     }
   }
 
@@ -198,42 +208,90 @@ class GameServer(
     }
   }
 
-  private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val blockAndSide =
-      val otherCamera = Camera(playerCamera.proj)
-      otherCamera.setPositionAndRotation(player.position, player.rotation)
-      otherCamera.updateCoords()
-      otherCamera.updateViewMatrix(playerCamera.view.position)
-      for
-        ray <- Ray.fromScreen(otherCamera, Vector2f(0, 0))
-        hit <- new RayTracer(otherCamera, 7).trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      yield (world.getBlock(hit._1), hit._1, hit._2)
+  private def performRightMouseClick(player: Player, proj: CameraProjection): Unit = {
+    val camera = cameraForPlayer(player, proj)
+    val ray = Ray.fromScreen(camera, Vector2f(0, 0)).get
+    val closestHit = findClosestHit(camera, ray)
 
-    blockAndSide match {
-      case Some((state, coords, Some(side))) =>
+    closestHit match {
+      case Some(Hit.OnEntity(entity)) =>
+        entity.typeName match {
+          case "boat" =>
+            world.removeEntity(entity)
+            world.addEntity(entity.withComponent(MountComponent(player.id)))
+          case t =>
+            println(s"Clicked on entity of type $t")
+        }
+      case Some(Hit.OnBlock(coords, state, Some(side))) =>
         val coordsInFront = coords.offset(NeighborOffsets(side))
 
         state.blockType match {
           case Block.Tnt => explode(coords)
-          case _         => tryPlacingBlockAt(coordsInFront, player, playerCamera)
+          case _         => tryPlacingBlockAt(coordsInFront, player)
         }
       case _ =>
     }
   }
 
-  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player, playerCamera: Camera): Unit = {
+  /** Finds the closest block or entity that the ray hits within reach */
+  private def findClosestHit(camera: Camera, ray: Ray): Option[Hit] = {
+    val candidates = Seq(findClosestEntity(camera, ray), findClosestBlock(camera, ray)).flatten
+    candidates.minByOption(_._2).map(_._1)
+  }
+
+  /** Finds the closest entity that the ray hits within reach, together with the distance to it */
+  private def findClosestEntity(camera: Camera, ray: Ray): Option[(Hit, Double)] = {
+    world
+      .filterMapEntities { e =>
+        val coords = e.transform.position.toBlockCoords
+        val points = PointHexagon.fromHexBox(e.boundingBox, coords, camera)
+        points
+          .distanceToBox(ray)
+          .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
+      }
+      .map((e, d) => (Hit.OnEntity(e), d))
+      .minByOption(_._2)
+  }
+
+  /** Finds the closest solid block that the ray hits within reach, together with the distance to it */
+  private def findClosestBlock(camera: Camera, ray: Ray): Option[(Hit, Double)] = {
+    new RayTracer(camera, ReachDistance)
+      .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      .flatMap { case (coords, side) =>
+        val block = world.getBlock(coords)
+        val bounds = block.blockType.bounds(block.metadata)
+        val points = PointHexagon.fromHexBox(bounds, BlockCoords(coords), camera)
+        points.distanceToBox(ray).map((Hit.OnBlock(coords, block, side), _))
+      }
+  }
+
+  private def cameraForPlayer(player: Player, proj: CameraProjection) = {
+    val c = Camera(proj)
+    c.setPositionAndRotation(player.position, player.rotation)
+    c.updateCoords()
+    c.updateViewMatrix()
+    c
+  }
+
+  /** The rotation an entity needs to face the same way as the player */
+  private def entityRotationFacingLikePlayer(player: Player): Vector3d =
+    Vector3d(0, -player.rotation.y, 0)
+
+  private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
     if world.getBlock(coords).blockType.isSolid then {
       return
     }
 
     val blockType = player.blockInHand
+    if blockType == Block.Air then return
+
     val state = new BlockState(blockType)
 
     val collides = world.collisionDetector.collides(
       blockType.bounds(state.metadata),
       BlockCoords(coords).toCylCoords,
       player.bounds,
-      CylCoords(playerCamera.position)
+      CylCoords(player.position)
     )
 
     if !collides then {
@@ -553,10 +611,10 @@ class GameServer(
           )
         )
       case PlayerRightClicked =>
-        performRightMouseClick(player, playerCamera)
+        performRightMouseClick(player, playerCamera.proj)
         None
       case PlayerLeftClicked =>
-        performLeftMouseClick(player, playerCamera)
+        performLeftMouseClick(player, playerCamera.proj)
         None
       case PlayerToggledFlying =>
         player.flying = !player.flying
@@ -598,7 +656,12 @@ class GameServer(
             val entityType = args.head
             val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)
 
-            Entity.atStartPos(Entity.getNextId, pos, entityType) match {
+            Entity.atStartPos(
+              Entity.getNextId,
+              pos,
+              entityType,
+              entityRotationFacingLikePlayer(player)
+            ) match {
               case Result.Ok(entity) =>
                 world.addEntity(entity)
                 println(s"Spawned entity of type $entityType at $pos")
@@ -628,4 +691,10 @@ class GameServer(
     server.stop()
     serverThread.join()
   }
+}
+
+/** Something the player's crosshair points at */
+private enum Hit {
+  case OnBlock(coords: BlockRelWorld, state: BlockState, side: Option[Int])
+  case OnEntity(entity: Entity)
 }

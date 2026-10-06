@@ -4,11 +4,24 @@ import hexacraft.physics.{Density, DragCoefficient, FluidDynamics, Viscosity}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox, Player}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.entity.Entity
 
 import org.joml.Vector3d
 
 class PlayerPhysicsHandler(collisionDetector: CollisionDetector) {
-  def tick(player: Player, maxSpeed: Double, effectiveViscosity: Double, volumeSubmergedInWater: Double): Unit = {
+  def tick(
+      player: Player,
+      maxSpeed: Double,
+      effectiveViscosity: Double,
+      volumeSubmergedInWater: Double,
+      mounts: Seq[Entity]
+  ): Unit = {
+    mounts.headOption.foreach { mount =>
+      val offsetY = -player.bounds.bottom * 0.5
+      player.position.set(mount.transform.position.toVector3d.add(0, offsetY, 0))
+      player.velocity.set(mount.motion.velocity)
+    }
+
     val velLen = math.hypot(player.velocity.x, player.velocity.z)
     if velLen > maxSpeed then {
       player.velocity.x *= maxSpeed / velLen
