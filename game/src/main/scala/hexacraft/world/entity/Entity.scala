@@ -11,36 +11,26 @@ import org.joml.Vector3d
 import java.util.UUID
 
 class Entity(val id: UUID, val typeName: String, private val components: Seq[EntityComponent] = Nil) {
-  val transform: TransformComponent = components
-    .find(_.isInstanceOf[TransformComponent])
-    .map(_.asInstanceOf[TransformComponent])
-    .orNull
+  val transform: TransformComponent =
+    components.collectFirst { case c: TransformComponent => c }.get
 
-  val motion: MotionComponent = components
-    .find(_.isInstanceOf[MotionComponent])
-    .map(_.asInstanceOf[MotionComponent])
-    .orNull
+  val motion: MotionComponent =
+    components.collectFirst { case c: MotionComponent => c }.get
 
-  val headDirection: Option[HeadDirectionComponent] = components
-    .find(_.isInstanceOf[HeadDirectionComponent])
-    .map(_.asInstanceOf[HeadDirectionComponent])
+  val headDirection: Option[HeadDirectionComponent] =
+    components.collectFirst { case c: HeadDirectionComponent => c }
 
-  val boundingBox: HexBox = components
-    .find(_.isInstanceOf[BoundsComponent])
-    .map(_.asInstanceOf[BoundsComponent].bounds)
-    .orNull
+  val boundingBox: HexBox =
+    components.collectFirst { case c: BoundsComponent => c.bounds }.get
 
-  val model: Option[EntityModel] = components
-    .find(_.isInstanceOf[ModelComponent])
-    .map(_.asInstanceOf[ModelComponent].model)
+  val model: Option[EntityModel] =
+    components.collectFirst { case c: ModelComponent => c.model }
 
-  val mountedEntities: Seq[MountComponent] = components
-    .filter(_.isInstanceOf[MountComponent])
-    .map(_.asInstanceOf[MountComponent])
+  val mountedEntities: Seq[MountComponent] =
+    components.collect { case c: MountComponent => c }
 
-  val ai: Option[EntityAI] = components
-    .find(_.isInstanceOf[AiComponent])
-    .map(_.asInstanceOf[AiComponent].ai)
+  val ai: Option[EntityAI] =
+    components.collectFirst { case c: AiComponent => c.ai }
 
   def withComponent(component: EntityComponent): Entity =
     new Entity(id, typeName, components :+ component)
@@ -141,7 +131,10 @@ object Entity {
         ).flatten
       }
 
-      Some(Entity(id, entType, serverComponents ++ clientComponents))
+      // An entity without bounds (i.e. of an unknown type) is not a valid entity
+      Option.when(clientComponents.exists(_.isInstanceOf[BoundsComponent])) {
+        Entity(id, entType, serverComponents ++ clientComponents)
+      }
     }
   }
 }
