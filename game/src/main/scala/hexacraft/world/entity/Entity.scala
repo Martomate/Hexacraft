@@ -94,7 +94,16 @@ object Entity {
       val id = tag.getString("id").map(UUID.fromString).getOrElse(UUID.randomUUID())
       val entType = tag.getString("type", "")
 
-      val serverComponents: Seq[EntityComponent] = Seq(
+      // An entity of unknown type is not a valid entity
+      val bounds = entType match {
+        case "player" => playerBounds
+        case "sheep"  => sheepBounds
+        case "boat"   => boatBounds
+        case _        => return None
+      }
+
+      val components: Seq[EntityComponent] = Seq(
+        Some(BoundsComponent(bounds)),
         Nbt.decode[TransformComponent](tag),
         Nbt.decode[MotionComponent](tag),
         Nbt.decode[AiComponent](tag),
@@ -106,36 +115,17 @@ object Entity {
           .getList("mounts")
           .getOrElse(Seq.empty)
           .flatMap(_.asMap)
-          .flatMap(Nbt.decode[MountComponent])
-      ).flatten
-
-      val clientComponents: Seq[EntityComponent] = {
-        val bounds = entType match {
-          case "player" => Some(playerBounds)
-          case "sheep"  => Some(sheepBounds)
-          case "boat"   => Some(boatBounds)
+          .flatMap(Nbt.decode[MountComponent]),
+        // TODO: the model is only needed on the client
+        entType match {
+          case "player" => Some(ModelComponent(PlayerEntityModel.create("player")))
+          case "sheep"  => Some(ModelComponent(SheepEntityModel.create("sheep")))
+          case "boat"   => Some(ModelComponent(BoatEntityModel.create("boat")))
           case _        => None
         }
-        val model = entType match {
-          case "player" =>
-            Some(PlayerEntityModel.create("player"))
-          case "sheep" =>
-            Some(SheepEntityModel.create("sheep"))
-          case "boat" =>
-            Some(BoatEntityModel.create("boat"))
-          case _ =>
-            None
-        }
-        Seq(
-          bounds.map(BoundsComponent(_)),
-          model.map(ModelComponent(_))
-        ).flatten
-      }
+      ).flatten
 
-      // An entity without bounds (i.e. of an unknown type) is not a valid entity
-      Option.when(clientComponents.exists(_.isInstanceOf[BoundsComponent])) {
-        Entity(id, entType, serverComponents ++ clientComponents)
-      }
+      Some(Entity(id, entType, components))
     }
   }
 }

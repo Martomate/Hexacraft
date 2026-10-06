@@ -538,10 +538,6 @@ class ServerWorld(
 
     entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
 
-    if e.model.isDefined then {
-      e.model.get.tick(e.motion.velocity.lengthSquared() > 0.1, e.headDirection.map(_.direction))
-    }
-
     entityEventsSinceLastTick += e.id -> EntityEvent.Position(e.transform.position)
     entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)
     entityEventsSinceLastTick += e.id -> EntityEvent.Velocity(e.motion.velocity)
