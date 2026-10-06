@@ -776,7 +776,7 @@ class GameClient(
 
       camera.setPositionAndRotation(player.position, player.rotation)
       camera.updateCoords()
-      camera.updateViewMatrix(camera.view.position)
+      camera.updateViewMatrix()
 
       if !isPaused && freeFly then {
         val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)

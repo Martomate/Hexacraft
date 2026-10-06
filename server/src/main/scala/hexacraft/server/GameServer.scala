@@ -126,7 +126,7 @@ class GameServer(
 
         camera.setPositionAndRotation(player.position, player.rotation)
         camera.updateCoords()
-        camera.updateViewMatrix(camera.view.position)
+        camera.updateViewMatrix()
 
         entity.transform.position = CylCoords(player.position)
           .offset(0, player.bounds.bottom.toDouble, 0)
@@ -183,7 +183,7 @@ class GameServer(
   }
 
   private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val otherCamera = cameraForPlayer(player, playerCamera)
+    val otherCamera = cameraForPlayer(player, playerCamera.proj)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
 
     findClosestHit(otherCamera, ray) match {
@@ -205,7 +205,7 @@ class GameServer(
   }
 
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val otherCamera = cameraForPlayer(player, playerCamera)
+    val otherCamera = cameraForPlayer(player, playerCamera.proj)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
     val closestHit = findClosestHit(otherCamera, ray)
 
@@ -261,12 +261,11 @@ class GameServer(
       }
   }
 
-  // TODO: clarify why we need both player and playerCamera to make the camera for the player
-  private def cameraForPlayer(player: Player, playerCamera: Camera) = {
-    val c = Camera(playerCamera.proj)
+  private def cameraForPlayer(player: Player, proj: CameraProjection) = {
+    val c = Camera(proj)
     c.setPositionAndRotation(player.position, player.rotation)
     c.updateCoords()
-    c.updateViewMatrix(playerCamera.view.position)
+    c.updateViewMatrix()
     c
   }
 
