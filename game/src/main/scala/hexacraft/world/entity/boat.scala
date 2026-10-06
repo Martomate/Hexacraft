@@ -1,7 +1,7 @@
 package hexacraft.world.entity
 
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.coord.CylCoords
 
 import org.joml.{Vector3d, Vector3f}
 
@@ -16,24 +16,30 @@ class BoatEntityModel(
 }
 
 object BoatEntityModel {
-  private def makeHexBox(r: Int, b: Float, h: Int): HexBox = {
-    HexBox(r / 32f * 0.5f, b / 32f * 0.5f, (h + b) / 32f * 0.5f)
+
+  /** Converts a length in model pixels (1/32 of a block) to cylinder coordinates. */
+  private def px(n: Double): Double = n / 32 * 0.5
+
+  private def makeHexBox(r: Int, b: Float, h: Float): HexBox = {
+    HexBox(px(r).toFloat, px(b).toFloat, px(h + b).toFloat)
   }
 
-  private def makePartPosition(xp: Double, yp: Double, zp: Double): BlockCoords.Offset = {
-    BlockCoords.Offset(xp / 32.0, yp / 32.0, zp / 32.0)
-  }
+  private def cylOffset(x: Double, y: Double, z: Double): CylCoords.Offset =
+    CylCoords.Offset(px(x), px(y), px(z))
 
   def create(textureName: String): BoatEntityModel = {
     val rodLength = 64
     val rodRadius = 4
+    val crossRodLength = 8 * rodRadius * CylinderSize.y60.toFloat
 
-    val px = 2.0 / 3
-    val pz = 1.0 / 3
+    // Distances between the centers of neighbouring hexagonal rods
+    val rodSpacing = rodRadius * CylinderSize.y60 * 2 // within a row
+    val rowHeight = 1.5 * rodRadius // between rows (each row is shifted half a rod sideways)
 
-    val rodBounds = makeHexBox(rodRadius, 0, rodLength)
+    val rodBounds = makeHexBox(rodRadius, 0, rodLength.toFloat)
+    val crossRodBounds = makeHexBox(rodRadius, -0.5f * crossRodLength, crossRodLength)
 
-    val elevation = 6f // a hack that ensures that no water is in the boat
+    val elevation = 6 // a hack that ensures that no water is in the boat
 
     val rodPositions = Seq(
       (-3, 1),
@@ -43,23 +49,34 @@ object BoatEntityModel {
       (1, 0),
       (2, 0),
       (2, 1)
-    ).map { case (dx, dz) =>
-      makePartPosition(
-        -0.5 * rodLength * px,
-        1.5 * rodRadius * dz,
-        0.5 * rodLength * pz + rodRadius * dx + 0.5 * rodRadius * dz
-      ).toCylCoordsOffset
+    ).map { case (col, row) =>
+      cylOffset(
+        -0.5 * rodLength, // centered along the rod's length
+        rowHeight * row,
+        rodSpacing * (col + 0.5 * row)
+      )
     }
 
     val pi = math.Pi.toFloat
 
-    val body =
-      BasicEntityPart(HexBox(0, 0, 0), makePartPosition(0, elevation, 0).toCylCoordsOffset, Vector3f(0, pi / 2, 0))
+    val body = BasicEntityPart(
+      HexBox(0, 0, 0),
+      cylOffset(0, elevation, 0),
+      Vector3f(0, pi / 2, 0)
+    )
+    val crossBody = BasicEntityPart(
+      HexBox(0, 0, 0),
+      cylOffset(0, 8 - 4 * CylinderSize.y60, 0),
+      Vector3f(0, pi / 2, 0),
+      parentPart = body
+    )
 
     val rods = rodPositions.map { pos =>
       BasicEntityPart(rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), parentPart = body)
+    } ++ Seq(-0.5 * rodLength + rodRadius * 0.5, 0.5 * rodLength - rodRadius * 0.5).map { d =>
+      val pos = cylOffset(0, 0, d)
+      BasicEntityPart(crossRodBounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), parentPart = crossBody)
     }
-    // TODO: add a cross rod in the front and back
 
     new BoatEntityModel(
       body = body,
