@@ -906,7 +906,8 @@ class GameClient(
   }
 
   private def tryPlacingBlockAt(coords: BlockRelWorld, time: Instant): Unit = {
-    if world.getBlock(coords).blockType.isSolid then {
+    val currentBlock = world.getBlock(coords)
+    if currentBlock.blockType.isSolid then {
       return
     }
 
@@ -926,7 +927,7 @@ class GameClient(
 
     if !collides then {
       world.setBlock(coords, state)
-      userInteractionUndo.push(time -> UserInteraction.ReplaceBlock(coords, BlockState.Air))
+      userInteractionUndo.push(time -> UserInteraction.ReplaceBlock(coords, currentBlock))
 
       playSoundAt(placeBlockSoundBuffer, BlockCoords(coords).toCylCoords)
     }
