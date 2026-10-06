@@ -220,16 +220,9 @@ class GameServer(
       b = world.getBlock(hit._1)
       blockDistance <- {
         val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-        val hex = PointHexagon.fromHexBox(
-          b.blockType.bounds(b.metadata),
-          BlockCoords(hit._1),
-          otherCamera
-        )
-        (0 until 8)
-          .flatMap(side => {
-            hex.distanceToFace(ray, BlockFace.fromInt(side))
-          })
-          .minOption
+        PointHexagon
+          .fromHexBox(b.blockType.bounds(b.metadata), BlockCoords(hit._1), otherCamera)
+          .distanceToBox(ray)
       }
 
     } yield (b, hit._1, hit._2, blockDistance)
@@ -237,17 +230,10 @@ class GameServer(
     val closestEntity = world
       .filterMapEntities { e =>
         val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-        val hex = PointHexagon.fromHexBox(
-          e.boundingBox,
-          e.transform.position.toBlockCoords,
-          otherCamera
-        )
-        (0 until 8)
-          .flatMap(side => {
-            hex.distanceToFace(ray, BlockFace.fromInt(side))
-          })
+        PointHexagon
+          .fromHexBox(e.boundingBox, e.transform.position.toBlockCoords, otherCamera)
+          .distanceToBox(ray)
           .filter(_ < 7)
-          .minOption
       }
       .minByOption(_._2)
 

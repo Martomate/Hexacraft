@@ -193,6 +193,12 @@ class PointHexagon(val up: Array[Vector3d], val down: Array[Vector3d]) {
     if distance >= 0 then Some(distance) else None
   }
 
+  def distanceToBox(ray: Ray): Option[Double] = {
+    (0 until 8)
+      .flatMap(side => distanceToFace(ray, BlockFace.fromInt(side)))
+      .minOption
+  }
+
   def intersectsFace(ray: Ray, face: BlockFace): Boolean = {
     val rightSeq = face match {
       case BlockFace.Top    => (0 until 6).map(index => ray.toTheRight(this.up(index), this.up(index.inc)))
