@@ -229,8 +229,9 @@ class GameServer(
 
     val closestEntity = world
       .filterMapEntities { e =>
-        PointHexagon
-          .fromHexBox(e.boundingBox, e.transform.position.toBlockCoords, otherCamera)
+        val coords = e.transform.position.toBlockCoords
+        val points = PointHexagon.fromHexBox(e.boundingBox, coords, otherCamera)
+        points
           .distanceToBox(ray)
           .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
       }
