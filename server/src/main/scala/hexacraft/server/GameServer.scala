@@ -183,20 +183,11 @@ class GameServer(
   }
 
   private def performLeftMouseClick(player: Player, playerCamera: Camera): Unit = {
-    val blockAndSide = {
-      val otherCamera = cameraForPlayer(player, playerCamera)
-      val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-      val tracer = new RayTracer(otherCamera, ReachDistance)
+    val otherCamera = cameraForPlayer(player, playerCamera)
+    val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
 
-      tracer
-        .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-        .map { case (coords, side) =>
-          (world.getBlock(coords), coords, side)
-        }
-    }
-
-    blockAndSide match {
-      case Some((state, coords, _)) =>
+    findClosestBlock(otherCamera, ray).map(_._1) match {
+      case Some(Hit.OnBlock(coords, state, _)) =>
         if state.blockType != Block.Air then {
           world.removeBlock(coords)
           notifyPlayersAboutBlockUpdate(coords, BlockState.Air)
@@ -216,16 +207,7 @@ class GameServer(
   private def performRightMouseClick(player: Player, playerCamera: Camera): Unit = {
     val otherCamera = cameraForPlayer(player, playerCamera)
     val ray = Ray.fromScreen(otherCamera, Vector2f(0, 0)).get
-    val tracer = new RayTracer(otherCamera, ReachDistance)
-
-    val closestBlock = tracer
-      .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
-      .flatMap { case (coords, side) =>
-        val block = world.getBlock(coords)
-        val bounds = block.blockType.bounds(block.metadata)
-        val points = PointHexagon.fromHexBox(bounds, BlockCoords(coords), otherCamera)
-        points.distanceToBox(ray).map((Hit.OnBlock(coords, block, side), _))
-      }
+    val closestBlock = findClosestBlock(otherCamera, ray)
 
     val closestEntity = world
       .filterMapEntities { e =>
@@ -259,6 +241,18 @@ class GameServer(
         }
       case _ =>
     }
+  }
+
+  /** Finds the closest solid block that the ray hits within reach, together with the distance to it */
+  private def findClosestBlock(camera: Camera, ray: Ray): Option[(Hit.OnBlock, Double)] = {
+    new RayTracer(camera, ReachDistance)
+      .trace(ray, c => Some(world.getBlock(c)).filter(_.blockType.isSolid))
+      .flatMap { case (coords, side) =>
+        val block = world.getBlock(coords)
+        val bounds = block.blockType.bounds(block.metadata)
+        val points = PointHexagon.fromHexBox(bounds, BlockCoords(coords), camera)
+        points.distanceToBox(ray).map((Hit.OnBlock(coords, block, side), _))
+      }
   }
 
   // TODO: clarify why we need both player and playerCamera to make the camera for the player
@@ -679,7 +673,7 @@ class GameServer(
   }
 }
 
-/** Something the player's crosshair points at, with the distance to it (in meters) */
+/** Something the player's crosshair points at */
 private enum Hit {
   case OnBlock(coords: BlockRelWorld, state: BlockState, side: Option[Int])
   case OnEntity(entity: Entity)
