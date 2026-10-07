@@ -1,13 +1,7 @@
 package hexacraft.client
 
-import hexacraft.world.entity.{
-  BoatEntityModel,
-  Entity,
-  EntityModel,
-  ModelComponent,
-  PlayerEntityModel,
-  SheepEntityModel
-}
+import hexacraft.client.entity.{BoatEntityModel, PlayerEntityModel, SheepEntityModel}
+import hexacraft.world.entity.{Entity, EntityModel, ModelComponent}
 
 /** The models are only needed by the client, so entities are decoded without them and get them from here. */
 object EntityModels {
