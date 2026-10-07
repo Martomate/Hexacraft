@@ -3,7 +3,7 @@ package hexacraft.server
 import hexacraft.game.*
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
-import hexacraft.server.world.{ChunkLoadingPrioritizer, ServerWorld, WorldProvider}
+import hexacraft.server.world.{ChunkLoadingPrioritizer, EntityFactory, ServerWorld, WorldProvider}
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
@@ -672,7 +672,7 @@ class GameServer(
             val entityType = args.head
             val pos = CylCoords(args(1).toDouble, args(2).toDouble, args(3).toDouble)
 
-            Entity.atStartPos(
+            EntityFactory.atStartPos(
               Entity.getNextId,
               pos,
               entityType,

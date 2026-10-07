@@ -1,6 +1,6 @@
 package hexacraft.server.world.plan
 
-import hexacraft.server.world.BlocksInWorldExtended
+import hexacraft.server.world.{BlocksInWorldExtended, EntityFactory}
 import hexacraft.util.{InlinedIterable, LongSet}
 import hexacraft.world.CylinderSize
 import hexacraft.world.chunk.Chunk
@@ -10,7 +10,7 @@ import hexacraft.world.entity.Entity
 class WorldPlanner(world: BlocksInWorldExtended, mainSeed: Long)(using CylinderSize) {
   private val planners: Seq[WorldFeaturePlanner] = Seq(
     new TreePlanner(world, mainSeed),
-    new EntityGroupPlanner(world, pos => Entity.atStartPos(Entity.getNextId, pos, "sheep").unwrap(), mainSeed)
+    new EntityGroupPlanner(world, pos => EntityFactory.atStartPos(Entity.getNextId, pos, "sheep").unwrap(), mainSeed)
   )
 
   private val chunksPlanned: LongSet = new LongSet

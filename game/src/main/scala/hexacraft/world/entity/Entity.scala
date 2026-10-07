@@ -55,11 +55,9 @@ object Entity {
       entityType: String,
       rotation: Vector3d = new Vector3d
   )(using CylinderSize): Result[Entity, String] = {
-    val tag = Nbt
-      .makeMap("type" -> Nbt.StringTag(entityType), "id" -> Nbt.StringTag(id.toString))
-      .withOptionalField("ai", Option.when(entityType == "sheep")(SimpleWalkAI.create.toNBT))
+    val tag = Nbt.makeMap("type" -> Nbt.StringTag(entityType), "id" -> Nbt.StringTag(id.toString))
 
-    Entity.decode(tag, includeAi = true) match {
+    Entity.decode(tag, includeAi = false) match {
       case Some(e) =>
         e.transform.position = pos
         e.transform.rotation.set(rotation)
