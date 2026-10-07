@@ -1,6 +1,6 @@
 package hexacraft.world.entity
 
-import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
+import hexacraft.nbt.Nbt
 import hexacraft.util.Result
 import hexacraft.util.Result.{Err, Ok}
 import hexacraft.world.{CylinderSize, HexBox}
@@ -59,7 +59,7 @@ object Entity {
       .makeMap("type" -> Nbt.StringTag(entityType), "id" -> Nbt.StringTag(id.toString))
       .withOptionalField("ai", Option.when(entityType == "sheep")(SimpleWalkAI.create.toNBT))
 
-    Nbt.decode[Entity](tag) match {
+    Entity.decode(tag, includeAi = true) match {
       case Some(e) =>
         e.transform.position = pos
         e.transform.rotation.set(rotation)
@@ -69,25 +69,7 @@ object Entity {
     }
   }
 
-  /** Encodes the entity without its AI, for clients that don't need it. */
-  def encodeWithoutAi(e: Entity): Nbt.MapTag = {
-    Entity.encode(e, includeAi = false)
-  }
-
-  /** Decodes an entity, ignoring any AI in the data. For entities from `encodeWithoutAi`. */
-  def decodeWithoutAi(tag: Nbt.MapTag)(using CylinderSize): Option[Entity] = {
-    Entity.decode(tag, includeAi = false)
-  }
-
-  given NbtEncoder[Entity] with {
-    override def encode(e: Entity): Nbt.MapTag = Entity.encode(e, includeAi = true)
-  }
-
-  given (using CylinderSize): NbtDecoder[Entity] with {
-    override def decode(tag: Nbt.MapTag): Option[Entity] = Entity.decode(tag, includeAi = true)
-  }
-
-  private def encode(e: Entity, includeAi: Boolean): Nbt.MapTag = {
+  def encode(e: Entity, includeAi: Boolean): Nbt.MapTag = {
     Nbt
       .makeMap(
         "type" -> Nbt.StringTag(e.typeName),
@@ -105,7 +87,7 @@ object Entity {
       )
   }
 
-  private def decode(tag: Nbt.MapTag, includeAi: Boolean)(using CylinderSize): Option[Entity] = {
+  def decode(tag: Nbt.MapTag, includeAi: Boolean)(using CylinderSize): Option[Entity] = {
     val id = tag.getString("id").map(UUID.fromString).getOrElse(UUID.randomUUID())
     val entType = tag.getString("type", "")
 

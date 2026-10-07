@@ -471,12 +471,12 @@ class GameServer(
             if playerId != clientId then {
               otherData.entityEventsWaitingToBeSent.synchronized {
                 otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(
-                  Entity.encodeWithoutAi(entity)
+                  Entity.encode(entity, includeAi = false)
                 )
               }
               playerData.entityEventsWaitingToBeSent.synchronized {
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
-                  Entity.encodeWithoutAi(otherData.entity)
+                  Entity.encode(otherData.entity, includeAi = false)
                 )
               }
               otherData.messagesWaitingToBeSent.synchronized {
@@ -579,7 +579,9 @@ class GameServer(
               loadedChunks += ((coords, Chunk.encodeWithoutEntities(chunk)))
               playerData.entityEventsWaitingToBeSent.synchronized {
                 for e <- chunk.entities do {
-                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(Entity.encodeWithoutAi(e))
+                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(
+                    Entity.encode(e, includeAi = false)
+                  )
                 }
               }
               prio += coords

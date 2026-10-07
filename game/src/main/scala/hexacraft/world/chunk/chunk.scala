@@ -149,7 +149,9 @@ object ChunkData {
 
   private[chunk] def encode(value: ChunkData, includeEntities: Boolean): Nbt.MapTag = {
     val storageNbt = value.storage.toNBT
-    val entities = if includeEntities then value.entities.map(e => Nbt.encode(e)).toSeq else Seq.empty
+    val entities = if includeEntities then {
+      value.entities.map(e => Entity.encode(e, includeAi = true)).toSeq
+    } else Seq.empty
 
     Nbt.makeMap(
       "blocks" -> Nbt.ByteArrayTag.of(storageNbt.blocks),
@@ -191,7 +193,7 @@ object ChunkData {
         tags <- nbt.getList("entities")
         tag <- tags.map(_.asInstanceOf[Nbt.MapTag])
       } do {
-        Nbt.decode[Entity](tag) match {
+        Entity.decode(tag, includeAi = true) match {
           case Some(entity) => entities += entity
           case None         => println(s"Could not load entity")
         }
