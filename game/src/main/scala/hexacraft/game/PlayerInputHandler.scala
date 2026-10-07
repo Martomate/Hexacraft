@@ -47,8 +47,8 @@ class PlayerInputHandler:
   ): Unit = {
     import GameKeyboard.Key.*
 
-    val cosMove = Math.cos(-mount.transform.rotation.y) * maxSpeed * 0.5
-    val sinMove = Math.sin(-mount.transform.rotation.y) * maxSpeed * 0.5
+    val cosMove = Math.cos(-mount.transform.rotation.y) * maxSpeed * 0.05
+    val sinMove = Math.sin(-mount.transform.rotation.y) * maxSpeed * 0.05
 
     if pressedKeys.contains(MoveForward) then {
       mount.motion.velocity.z -= cosMove

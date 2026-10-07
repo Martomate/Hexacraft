@@ -1,6 +1,7 @@
 package hexacraft.server.world
 
 import hexacraft.nbt.Nbt
+import hexacraft.physics.DragCoefficient
 import hexacraft.server.world.ServerWorld.WorldTickResult
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
@@ -531,10 +532,13 @@ class ServerWorld(
       e.motion.velocity.add(ai.acceleration)
     }
 
-    e.motion.velocity.x *= 0.9
-    e.motion.velocity.z *= 0.9
+    val friction = if e.typeName == "boat" then 0.99 else 0.9
+    val drag = if e.typeName == "boat" then DragCoefficient.boat else DragCoefficient.human
 
-    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox)
+    e.motion.velocity.x *= friction
+    e.motion.velocity.z *= friction
+
+    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox, drag)
 
     entityEventsSinceLastTick += e.id -> EntityEvent.Position(e.transform.position)
     entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)

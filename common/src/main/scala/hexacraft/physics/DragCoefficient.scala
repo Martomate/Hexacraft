@@ -11,6 +11,7 @@ object DragCoefficient {
 
   /** Cd = 1 is a good approximation for humans */
   val human: DragCoefficient = 1
+  val boat: DragCoefficient = 0.2
 
   extension (d: DragCoefficient) {
     def toDouble: Double = d

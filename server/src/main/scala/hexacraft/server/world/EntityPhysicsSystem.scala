@@ -11,14 +11,19 @@ import org.joml.Vector3d
 class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using
     CylinderSize
 ) {
-  def update(transform: TransformComponent, motion: MotionComponent, boundingBox: HexBox): Unit = {
+  def update(
+      transform: TransformComponent,
+      motion: MotionComponent,
+      boundingBox: HexBox,
+      coefficient: DragCoefficient
+  ): Unit = {
     applyBuoyancy(motion.velocity, 75, volumeSubmergedInWater(boundingBox, transform.position), Density.water)
 
     val isMoving = motion.velocity.lengthSquared > 0
     if isMoving then {
       val totalArea = boundingBox.projectedAreaInDirection(motion.velocity)
       val adjustedArea = totalArea * (volumeSubmergedInWater(boundingBox, transform.position) / boundingBox.volume)
-      applyDrag(motion.velocity, 75, adjustedArea)
+      applyDrag(motion.velocity, coefficient, 75, adjustedArea)
     }
 
     if !motion.flying then {
@@ -37,8 +42,13 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
     motion.velocity.mul(60)
   }
 
-  private def applyDrag(velocity: Vector3d, objectMass: Double, objectProjectedArea: Double): Unit = {
-    val drag = FluidDynamics.dragForce(velocity, DragCoefficient.human, objectProjectedArea, Density.water)
+  private def applyDrag(
+      velocity: Vector3d,
+      coefficient: DragCoefficient,
+      objectMass: Double,
+      objectProjectedArea: Double
+  ): Unit = {
+    val drag = FluidDynamics.dragForce(velocity, coefficient, objectProjectedArea, Density.water)
 
     // dv = a * dt = (F / m) * (1 / 60) = F / (m * 60)
     velocity.add(drag.div(objectMass * 60))
