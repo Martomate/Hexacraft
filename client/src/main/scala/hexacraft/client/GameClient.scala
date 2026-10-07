@@ -15,7 +15,7 @@ import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkData}
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -678,7 +678,7 @@ class GameClient(
         if success && world.getChunk(chunkCoords).isEmpty then {
           if chunkNbt != Nbt.emptyMap then {
             // the entities are sent separately from the chunk
-            val chunk = Chunk.decodeWithoutEntities(chunkNbt.asInstanceOf[Nbt.MapTag])
+            val chunk = Chunk(ChunkData.decode(chunkNbt.asInstanceOf[Nbt.MapTag], includeEntities = false))
             world.setChunk(chunkCoords, chunk)
           } else {
             success = false

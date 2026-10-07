@@ -1,6 +1,6 @@
 package hexacraft.world.chunk
 
-import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
+import hexacraft.nbt.Nbt
 import hexacraft.util.Loop
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
@@ -13,31 +13,9 @@ object Chunk {
   def from(storage: ChunkStorage)(using CylinderSize) = {
     new Chunk(ChunkData.fromStorage(storage))
   }
-
-  /** Encodes the chunk without its entities, for clients that get their entities separately. */
-  def encodeWithoutEntities(chunk: Chunk): Nbt.MapTag = {
-    ChunkData.encode(chunk.chunkData, includeEntities = false)
-  }
-
-  /** Decodes a chunk, ignoring any entities in the data. For chunks from `encodeWithoutEntities`. */
-  def decodeWithoutEntities(tag: Nbt.MapTag)(using CylinderSize): Chunk = {
-    new Chunk(ChunkData.decode(tag, includeEntities = false))
-  }
-
-  given NbtEncoder[Chunk] with {
-    override def encode(chunk: Chunk): Nbt.MapTag = {
-      Nbt.encode(chunk.chunkData)
-    }
-  }
-
-  given (using CylinderSize): NbtDecoder[Chunk] with {
-    override def decode(tag: Nbt.MapTag): Option[Chunk] = {
-      Some(new Chunk(Nbt.decode[ChunkData](tag).get))
-    }
-  }
 }
 
-final class Chunk private (private val chunkData: ChunkData)(using CylinderSize) {
+final class Chunk(val chunkData: ChunkData)(using CylinderSize) {
   private var _modCount: Long = 0L
   private var _hasEntities: Boolean = chunkData.entities.nonEmpty
 
@@ -147,7 +125,7 @@ object ChunkData {
     new ChunkData(storage, mutable.ArrayBuffer.empty, false)
   }
 
-  private[chunk] def encode(value: ChunkData, includeEntities: Boolean): Nbt.MapTag = {
+  def encode(value: ChunkData, includeEntities: Boolean): Nbt.MapTag = {
     val storageNbt = value.storage.toNBT
     val entities = if includeEntities then {
       value.entities.map(e => Entity.encode(e, includeAi = true)).toSeq
@@ -161,15 +139,7 @@ object ChunkData {
     )
   }
 
-  given NbtEncoder[ChunkData] with {
-    def encode(value: ChunkData): Nbt.MapTag = ChunkData.encode(value, includeEntities = true)
-  }
-
-  given (using CylinderSize): NbtDecoder[ChunkData] with {
-    def decode(nbt: Nbt.MapTag): Option[ChunkData] = Some(ChunkData.decode(nbt, includeEntities = true))
-  }
-
-  private[chunk] def decode(nbt: Nbt.MapTag, includeEntities: Boolean)(using CylinderSize): ChunkData = {
+  def decode(nbt: Nbt.MapTag, includeEntities: Boolean)(using CylinderSize): ChunkData = {
     val storage = nbt.getByteArray("blocks").map(_.unsafeArray) match {
       case Some(blocks) =>
         val numBlocks = blocks.count(_ != 0)

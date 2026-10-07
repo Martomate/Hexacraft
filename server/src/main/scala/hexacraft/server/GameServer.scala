@@ -7,7 +7,7 @@ import hexacraft.server.world.{ChunkLoadingPrioritizer, EntityFactory, ServerWor
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkData}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.*
 
@@ -576,7 +576,7 @@ class GameServer(
           prio.nextAddableChunk.flatMap(coords => world.getChunk(coords).map(coords -> _)) match {
             case Some(coords -> chunk) =>
               // The entities are sent separately from the chunk
-              loadedChunks += ((coords, Chunk.encodeWithoutEntities(chunk)))
+              loadedChunks += ((coords, ChunkData.encode(chunk.chunkData, includeEntities = false)))
               playerData.entityEventsWaitingToBeSent.synchronized {
                 for e <- chunk.entities do {
                   playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(

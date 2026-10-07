@@ -156,7 +156,7 @@ class GameSceneTest extends FunSuite {
     worldProvider.saveState(WorldProvider.Path.PlayerData(playerId), Nbt.encode(storedPlayer))
     worldProvider.saveState(
       WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0)),
-      Nbt.encode(ChunkData.fromStorage(spawnChunkBlocks))
+      ChunkData.encode(ChunkData.fromStorage(spawnChunkBlocks), includeEntities = true)
     )
 
     // Step 2: configure the client
@@ -232,7 +232,7 @@ class GameSceneTest extends FunSuite {
     worldProvider.saveState(WorldProvider.Path.PlayerData(playerId), Nbt.encode(storedPlayer))
     worldProvider.saveState(
       WorldProvider.Path.ChunkData(ChunkRelWorld(0, 0, 0)),
-      Nbt.encode[ChunkData](ChunkData.fromStorage(spawnChunkBlocks))
+      ChunkData.encode(ChunkData.fromStorage(spawnChunkBlocks), includeEntities = true)
     )
 
     // Step 2: configure the client

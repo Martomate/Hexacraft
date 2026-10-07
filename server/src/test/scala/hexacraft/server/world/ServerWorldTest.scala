@@ -3,7 +3,7 @@ package hexacraft.server.world
 import hexacraft.nbt.Nbt
 import hexacraft.world.{Camera, CameraProjection, CylinderSize, HexBox}
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkData}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkData, SparseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, ColumnRelWorld, CylCoords}
 import hexacraft.world.entity.{BoundsComponent, Entity, MotionComponent, TransformComponent}
 
@@ -124,7 +124,10 @@ class ServerWorldTest extends FunSuite {
       Nbt.encode(ChunkColumnData(ChunkColumnHeightMap.from((_, _) => 0))),
       ColumnRelWorld(0, 0)
     )
-    provider.saveChunkData(Nbt.encode(Nbt.decode[ChunkData](Nbt.makeMap()).get), ChunkRelWorld(0, 0, 0))
+    provider.saveChunkData(
+      ChunkData.encode(ChunkData.fromStorage(new SparseChunkStorage), includeEntities = true),
+      ChunkRelWorld(0, 0, 0)
+    )
 
     val world = ServerWorld(provider, provider.worldInfo, 10)
     val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
