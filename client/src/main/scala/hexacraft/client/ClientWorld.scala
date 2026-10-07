@@ -27,13 +27,10 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
   private val chunkList: mutable.ArrayBuffer[Chunk] = mutable.ArrayBuffer.empty
 
-  val worldGenerator = new WorldGenerator(worldInfo.gen)
-
   private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
   private val lightPropagator: LightPropagator = new LightPropagator(this, this.requestRenderUpdate)
 
   val collisionDetector = new CollisionDetector(this)
-  private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
 
   /** The entities are loaded separately from the chunks, so they are stored here rather than in the chunks */
   private val entities = mutable.ArrayBuffer.empty[Entity]

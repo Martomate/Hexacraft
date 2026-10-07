@@ -80,9 +80,11 @@ object GameClient {
 
     given CylinderSize = world.size
 
+    val worldGenerator = new WorldGenerator(worldInfo.gen)
+
     val terrainRenderer: TerrainRenderer =
       if useFarDistanceRenderer then {
-        FarDistanceTerrainRenderer(world.worldGenerator, blockTextureColors)
+        FarDistanceTerrainRenderer(worldGenerator, blockTextureColors)
       } else {
         StandardTerrainRenderer(world, blockTextureIndices)
       }
@@ -120,6 +122,7 @@ object GameClient {
       crosshairVAO,
       crosshairRenderer,
       world,
+      worldGenerator,
       player,
       worldRenderer,
       camera,
@@ -236,6 +239,7 @@ class GameClient(
     crosshairVAO: VAO,
     crosshairRenderer: Renderer,
     world: ClientWorld,
+    worldGenerator: WorldGenerator,
     val player: Player,
     worldRenderer: WorldRenderer,
     camera: Camera,
@@ -683,7 +687,7 @@ class GameClient(
           val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
           if columnNbt != Nbt.emptyMap then {
             val column = ChunkColumnTerrain.create(
-              ChunkColumnHeightMap.fromData2D(world.worldGenerator.getHeightmapInterpolator(columnCoords)),
+              ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(columnCoords)),
               Some(Nbt.decode[ChunkColumnData](columnNbt.asInstanceOf[Nbt.MapTag]).get)
             )
             world.setColumn(columnCoords, column)
