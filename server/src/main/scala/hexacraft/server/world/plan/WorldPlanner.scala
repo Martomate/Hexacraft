@@ -1,7 +1,8 @@
 package hexacraft.server.world.plan
 
+import hexacraft.server.world.BlocksInWorldExtended
 import hexacraft.util.{InlinedIterable, LongSet}
-import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
+import hexacraft.world.CylinderSize
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.coord.ChunkRelWorld
 import hexacraft.world.entity.Entity

@@ -8,6 +8,7 @@ import hexacraft.infra.window.{CursorMode, WindowSystem}
 import hexacraft.main.{GameScene, MainWindow, SceneRoute, SceneRouter}
 import hexacraft.nbt.Nbt
 import hexacraft.server.GameServer
+import hexacraft.server.world.FakeWorldProvider
 import hexacraft.util.Channel
 import hexacraft.world.*
 import hexacraft.world.coord.CylCoords

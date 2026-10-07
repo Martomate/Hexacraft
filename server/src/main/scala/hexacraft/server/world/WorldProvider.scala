@@ -1,4 +1,4 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.nbt.Nbt
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}

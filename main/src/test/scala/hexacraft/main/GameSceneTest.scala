@@ -8,8 +8,9 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.infra.window.*
 import hexacraft.nbt.Nbt
+import hexacraft.server.world.{FakeWorldProvider, WorldProvider}
 import hexacraft.util.Tracker
-import hexacraft.world.{CylinderSize, FakeWorldProvider, Inventory, Player, WorldProvider}
+import hexacraft.world.{CylinderSize, Inventory, Player}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkData, SparseChunkStorage}
 import hexacraft.world.coord.{BlockRelChunk, ChunkRelWorld}

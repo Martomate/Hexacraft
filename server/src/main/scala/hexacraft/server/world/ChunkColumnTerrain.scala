@@ -1,4 +1,6 @@
-package hexacraft.world.chunk
+package hexacraft.server.world
+
+import hexacraft.world.chunk.ChunkColumnHeightMap
 
 class ChunkColumnTerrain(
     val originalTerrainHeight: ChunkColumnHeightMap,

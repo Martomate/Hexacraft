@@ -1,9 +1,10 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.math.{Range2D, Range3D}
 import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
+import hexacraft.server.world.WorldGenerator.Pos
 import hexacraft.util.Loop
-import hexacraft.world.WorldGenerator.Pos
+import hexacraft.world.{CylinderSize, WorldGenSettings}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkColumnHeightMap, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}

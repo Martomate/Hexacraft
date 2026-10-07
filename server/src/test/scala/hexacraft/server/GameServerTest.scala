@@ -4,7 +4,8 @@ import hexacraft.game.NetworkPacket
 import hexacraft.nbt.Nbt
 import hexacraft.rs.RustLib
 import hexacraft.server.GameServerTest.randomPort
-import hexacraft.world.{CylinderSize, FakeWorldProvider}
+import hexacraft.server.world.FakeWorldProvider
+import hexacraft.world.CylinderSize
 
 import munit.FunSuite
 

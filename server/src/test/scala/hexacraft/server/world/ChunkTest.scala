@@ -1,6 +1,7 @@
-package hexacraft.world.chunk
+package hexacraft.server.world
 
-import hexacraft.world.{CylinderSize, FakeWorldProvider, WorldGenerator}
+import hexacraft.world.CylinderSize
+import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap}
 import hexacraft.world.coord.ChunkRelWorld
 
 import munit.FunSuite

@@ -5,8 +5,9 @@ import hexacraft.gui.*
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
+import hexacraft.server.world.WorldProvider
 import hexacraft.util.{Channel, Result}
-import hexacraft.world.{CylinderSize, WorldInfo, WorldProvider}
+import hexacraft.world.{CylinderSize, WorldInfo}
 
 import java.util.UUID
 

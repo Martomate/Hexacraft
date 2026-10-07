@@ -3,7 +3,7 @@ package hexacraft.server
 import hexacraft.infra.fs.{FileSystem, NbtFile}
 import hexacraft.nbt.Nbt
 import hexacraft.server.world.MigrationManager
-import hexacraft.world.WorldProvider
+import hexacraft.server.world.WorldProvider
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 import java.io.File
