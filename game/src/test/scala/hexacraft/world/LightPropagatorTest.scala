@@ -1,46 +1,36 @@
 package hexacraft.world
 
-import hexacraft.world.chunk.Chunk
-import hexacraft.world.coord.{BlockRelWorld, ColumnRelWorld}
+import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld}
 
 import munit.FunSuite
 
 class LightPropagatorTest extends FunSuite {
   given CylinderSize = CylinderSize(4)
 
-  // TODO: reduce the amount of setup code needed for this kind of test
   test("init works") {
-    val seed = 123L
-    val provider = FakeWorldProvider(seed)
-    val world = FakeBlocksInWorld.empty(provider)
+    val chunkCoords = ChunkRelWorld(0, -1, 0) // contains y from -16 to -1
+    val groundLevel = -6
+
+    // flat ground covering the bottom part of the chunk
+    val ground = for {
+      x <- 0 until 16
+      z <- 0 until 16
+      y <- -16 to groundLevel
+    } yield BlockRelWorld(x, y, z) -> BlockState(Block.Dirt)
+
+    val world = FakeBlocksInWorld.withBlocks(ground.toMap)
     val light = LightPropagator(world, _ => ())
-
-    val colCoords = ColumnRelWorld(0, 0)
-    val column = world.provideColumn(colCoords)
-    val chunkCoords = BlockRelWorld(0, column.terrainHeight.getHeight(0, 0), 0).getChunkRelWorld
-
-    world.setChunk(
-      chunkCoords,
-      Chunk.from(
-        WorldGenerator(WorldGenSettings.fromSeed(seed)).generateChunk(chunkCoords, column.originalTerrainHeight)
-      )
-    )
 
     light.initBrightnesses(chunkCoords)
 
-    assertEquals(column.terrainHeight.getHeight(1, 3), -5.toShort)
+    assertEquals(world.getColumn(chunkCoords.getColumnRelWorld).get.getHeight(1, 3), groundLevel.toShort)
 
-    {
-      val blockCoords = BlockRelWorld(1, -5, 3)
-      val chunk = world.getChunk(blockCoords.getChunkRelWorld).get
-      val brightness = chunk.getBrightness(blockCoords.getBlockRelChunk)
-      assertEqualsFloat(brightness, 1.0f, 1e-6)
+    def brightnessAt(coords: BlockRelWorld): Float = {
+      world.getChunk(coords.getChunkRelWorld).get.getBrightness(coords.getBlockRelChunk)
     }
-    {
-      val blockCoords = BlockRelWorld(1, -6, 3)
-      val chunk = world.getChunk(blockCoords.getChunkRelWorld).get
-      val brightness = chunk.getBrightness(blockCoords.getBlockRelChunk)
-      assertEqualsFloat(brightness, 0.0f, 1e-6)
-    }
+
+    assertEqualsFloat(brightnessAt(BlockRelWorld(1, groundLevel + 1, 3)), 1.0f, 1e-6)
+    assertEqualsFloat(brightnessAt(BlockRelWorld(1, groundLevel - 1, 3)), 0.0f, 1e-6)
   }
 }

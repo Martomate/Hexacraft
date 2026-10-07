@@ -12,9 +12,7 @@ class ChunkCacheTest extends FunSuite {
   test("the cache should return chunks from the world") {
     val coords = ChunkRelWorld(2, -7, 3)
 
-    val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(BlockRelWorld(9, 8, 7, coords) -> BlockState(Block.Dirt))
     )
     val chunk = world.getChunk(coords).get
@@ -28,9 +26,7 @@ class ChunkCacheTest extends FunSuite {
   test("the cache should work at the origin") {
     val coords = ChunkRelWorld(0, 0, 0)
 
-    val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(BlockRelWorld(9, 8, 7, coords) -> BlockState(Block.Dirt))
     )
     val chunk = world.getChunk(coords).get
@@ -44,9 +40,7 @@ class ChunkCacheTest extends FunSuite {
   test("the cache can be cleared") {
     val coords = ChunkRelWorld(2, -7, 3)
 
-    val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(BlockRelWorld(9, 8, 7, coords) -> BlockState(Block.Dirt))
     )
     val chunk = world.getChunk(coords).get

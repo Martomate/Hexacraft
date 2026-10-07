@@ -23,10 +23,8 @@ class RayTracerTest extends FunSuite {
   }
 
   test("the raytracer should return a block if the camera is in it") {
-    val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(
         location -> new BlockState(Block.Dirt)
       )
@@ -47,10 +45,8 @@ class RayTracerTest extends FunSuite {
   }
 
   test("the raytracer should return None if the mouse is not on the screen") {
-    val provider = new FakeWorldProvider(1289)
     val location = BlockRelWorld(-37, 3, 1)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(
         location -> new BlockState(Block.Dirt)
       )
@@ -71,9 +67,7 @@ class RayTracerTest extends FunSuite {
   }
 
   test("the raytracer should return a block right in front of the camera") {
-    val provider = new FakeWorldProvider(1289)
     val world: BlocksInWorld = FakeBlocksInWorld.withBlocks(
-      provider,
       Map(
         BlockRelWorld(0, 0, 0) -> new BlockState(Block.Air),
         BlockRelWorld(0, 0, 1) -> new BlockState(Block.Dirt)
