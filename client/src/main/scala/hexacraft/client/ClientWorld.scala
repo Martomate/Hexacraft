@@ -35,7 +35,8 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   val collisionDetector = new CollisionDetector(this)
   private val entityPhysicsSystem = EntityPhysicsSystem(this, collisionDetector)
 
-  private val entitiesToSpawnLater = mutable.ArrayBuffer.empty[Entity]
+  /** The entities are loaded separately from the chunks, so they are stored here rather than in the chunks */
+  private val entities = mutable.ArrayBuffer.empty[Entity]
 
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
     columns.get(coords.value)
@@ -45,8 +46,8 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     chunks.get(coords.value)
   }
 
-  inline def foreachChunk(inline f: Chunk => Unit): Unit = {
-    Loop.array(chunkList)(f)
+  inline def foreachEntity(inline f: Entity => Unit): Unit = {
+    Loop.array(entities)(f)
   }
 
   def getBlock(coords: BlockRelWorld): BlockState = {
@@ -74,36 +75,19 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     }
   }
 
-  def addEntity(entity: Entity): Option[ChunkRelWorld] = {
-    val chunkCoords = chunkOfEntity(entity)
-    getChunk(chunkCoords) match {
-      case Some(chunk) =>
-        chunk.addEntity(entity)
-        Some(chunkCoords)
-      case None =>
-        None
-    }
+  private def addEntity(entity: Entity): Unit = {
+    entities += entity
   }
 
-  def removeEntity(entity: Entity): Unit = {
-    chunkList.find(_.entities.exists(_.id == entity.id)) match {
-      case Some(chunk) =>
-        chunk.removeEntity(entity)
-      case None =>
+  private def removeEntity(entity: Entity): Unit = {
+    val idx = entities.indexWhere(_.id == entity.id)
+    if idx != -1 then {
+      // remove the entity by replacing it with the last element
+      val last = entities.remove(entities.size - 1)
+      if idx != entities.size then {
+        entities(idx) = last
+      }
     }
-  }
-
-  def removeAllEntities(): Unit = {
-    for {
-      ch <- chunks.values
-      e <- ch.entities.toSeq
-    } do {
-      ch.removeEntity(e)
-    }
-  }
-
-  private def chunkOfEntity(entity: Entity): ChunkRelWorld = {
-    CoordUtils.approximateChunkCoords(entity.transform.position)
   }
 
   def getHeight(x: Int, z: Int): Option[Int] = {
@@ -239,25 +223,8 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
 
   def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
     val allEntitiesById = mutable.HashMap.empty[UUID, Entity]
-
-    Loop.array(chunkList) { ch =>
-      if ch.hasEntities then {
-        Loop.array(ch.entities) { e =>
-          allEntitiesById(e.id) = e
-        }
-      }
-    }
-
-    val newEntities = entitiesToSpawnLater.toArray
-    entitiesToSpawnLater.clear()
-    Loop.array(newEntities) { e =>
-      if addEntity(e).isEmpty then {
-        allEntitiesById(e.id) = e
-        entitiesToSpawnLater += e
-        // println(s"Client: not ready to spawn entity ${e.id}")
-      } else {
-        println(s"Client: finally spawned entity ${e.id}")
-      }
+    Loop.array(entities) { e =>
+      allEntitiesById(e.id) = e
     }
 
     Loop.iterate(entityEvents.iterator) { case (id, event) =>
@@ -286,14 +253,9 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
             case EntityEvent.Spawned(data) =>
               Nbt.decode[Entity](data).map(EntityModels.addModel) match {
                 case Some(e) =>
-                  addEntity(e) match {
-                    case Some(c) =>
-                      allEntitiesById(id) = e
-                      println(s"Client: spawned entity $id")
-                    case None =>
-                      allEntitiesById(id) = e
-                      entitiesToSpawnLater += e
-                  }
+                  addEntity(e)
+                  allEntitiesById(id) = e
+                  println(s"Client: spawned entity $id")
                 case None =>
                   println(s"Could not create entity")
               }
@@ -305,12 +267,10 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
 
     Loop.array(chunkList) { ch =>
       ch.optimizeStorage()
+    }
 
-      if ch.hasEntities then {
-        Loop.array(ch.entities) { e =>
-          tickEntity(e)
-        }
-      }
+    Loop.array(entities) { e =>
+      tickEntity(e)
     }
 
     val r = chunksNeedingRenderUpdate.toSeq
@@ -348,6 +308,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   }
 
   def unload(): Unit = {
+    entities.clear()
     chunkList.clear()
     chunks.clear()
     columns.clear()

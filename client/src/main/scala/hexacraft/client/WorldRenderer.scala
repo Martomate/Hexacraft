@@ -204,7 +204,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     entitySideShader.setCameraPosition(camera.position)
 
     val allEntities = mutable.ArrayBuffer.empty[Entity]
-    world.foreachChunk(allEntities ++= _.entities)
+    world.foreachEntity(allEntities += _)
     allEntities ++= players
 
     val entityRenderDataPerModel = allEntities
