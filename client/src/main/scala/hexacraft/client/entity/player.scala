@@ -1,6 +1,7 @@
-package hexacraft.world.entity
+package hexacraft.client.entity
 
 import hexacraft.world.{CylinderSize, HexBox}
+import hexacraft.world.entity.{BasicEntityPart, EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3f}
 
