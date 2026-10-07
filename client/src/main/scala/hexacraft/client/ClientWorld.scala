@@ -248,7 +248,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
         case None =>
           event match {
             case EntityEvent.Spawned(data) =>
-              Nbt.decode[Entity](data).map(EntityModels.addModel) match {
+              Entity.decodeWithoutAi(data).map(EntityModels.addModel) match {
                 case Some(e) =>
                   addEntity(e)
                   allEntitiesById(id) = e

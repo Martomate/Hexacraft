@@ -123,7 +123,7 @@ class ServerWorld(
     chunkOfEntity(entity) match {
       case Some(chunk) =>
         chunk.addEntity(entity)
-        entityEventsSinceLastTick += entity.id -> EntityEvent.Spawned(Nbt.encode(entity))
+        entityEventsSinceLastTick += entity.id -> EntityEvent.Spawned(Entity.encodeWithoutAi(entity))
       case None =>
     }
   }

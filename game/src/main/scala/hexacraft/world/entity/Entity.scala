@@ -69,56 +69,70 @@ object Entity {
     }
   }
 
+  /** Encodes the entity without its AI, for clients that don't need it. */
+  def encodeWithoutAi(e: Entity): Nbt.MapTag = {
+    Entity.encode(e, includeAi = false)
+  }
+
+  /** Decodes an entity, ignoring any AI in the data. For entities from `encodeWithoutAi`. */
+  def decodeWithoutAi(tag: Nbt.MapTag)(using CylinderSize): Option[Entity] = {
+    Entity.decode(tag, includeAi = false)
+  }
+
   given NbtEncoder[Entity] with {
-    override def encode(e: Entity): Nbt.MapTag = {
-      Nbt
-        .makeMap(
-          "type" -> Nbt.StringTag(e.typeName),
-          "id" -> Nbt.StringTag(e.id.toString),
-          "pos" -> Nbt.makeVectorTag(e.transform.position.toVector3d),
-          "velocity" -> Nbt.makeVectorTag(e.motion.velocity),
-          "rotation" -> Nbt.makeVectorTag(e.transform.rotation)
-        )
-        .withOptionalField("ai", e.ai.map(_.toNBT))
-        .withOptionalField(
-          "mounts",
-          Option.when(e.mountedEntities.nonEmpty) {
-            Nbt.ListTag(e.mountedEntities.map(Nbt.encode))
-          }
-        )
-    }
+    override def encode(e: Entity): Nbt.MapTag = Entity.encode(e, includeAi = true)
   }
 
   given (using CylinderSize): NbtDecoder[Entity] with {
-    override def decode(tag: Nbt.MapTag): Option[Entity] = {
-      val id = tag.getString("id").map(UUID.fromString).getOrElse(UUID.randomUUID())
-      val entType = tag.getString("type", "")
+    override def decode(tag: Nbt.MapTag): Option[Entity] = Entity.decode(tag, includeAi = true)
+  }
 
-      // An entity of unknown type is not a valid entity
-      val bounds = entType match {
-        case "player" => playerBounds
-        case "sheep"  => sheepBounds
-        case "boat"   => boatBounds
-        case _        => return None
-      }
+  private def encode(e: Entity, includeAi: Boolean): Nbt.MapTag = {
+    Nbt
+      .makeMap(
+        "type" -> Nbt.StringTag(e.typeName),
+        "id" -> Nbt.StringTag(e.id.toString),
+        "pos" -> Nbt.makeVectorTag(e.transform.position.toVector3d),
+        "velocity" -> Nbt.makeVectorTag(e.motion.velocity),
+        "rotation" -> Nbt.makeVectorTag(e.transform.rotation)
+      )
+      .withOptionalField("ai", if includeAi then e.ai.map(_.toNBT) else None)
+      .withOptionalField(
+        "mounts",
+        Option.when(e.mountedEntities.nonEmpty) {
+          Nbt.ListTag(e.mountedEntities.map(Nbt.encode))
+        }
+      )
+  }
 
-      val components: Seq[EntityComponent] = Seq(
-        Some(BoundsComponent(bounds)),
-        Nbt.decode[TransformComponent](tag),
-        Nbt.decode[MotionComponent](tag),
-        Nbt.decode[AiComponent](tag),
-        entType match {
-          case "player" => Nbt.decode[HeadDirectionComponent](tag)
-          case _        => None
-        },
-        tag
-          .getList("mounts")
-          .getOrElse(Seq.empty)
-          .flatMap(_.asMap)
-          .flatMap(Nbt.decode[MountComponent])
-      ).flatten
+  private def decode(tag: Nbt.MapTag, includeAi: Boolean)(using CylinderSize): Option[Entity] = {
+    val id = tag.getString("id").map(UUID.fromString).getOrElse(UUID.randomUUID())
+    val entType = tag.getString("type", "")
 
-      Some(Entity(id, entType, components))
+    // An entity of unknown type is not a valid entity
+    val bounds = entType match {
+      case "player" => playerBounds
+      case "sheep"  => sheepBounds
+      case "boat"   => boatBounds
+      case _        => return None
     }
+
+    val components: Seq[EntityComponent] = Seq(
+      Some(BoundsComponent(bounds)),
+      Nbt.decode[TransformComponent](tag),
+      Nbt.decode[MotionComponent](tag),
+      if includeAi then Nbt.decode[AiComponent](tag) else None,
+      entType match {
+        case "player" => Nbt.decode[HeadDirectionComponent](tag)
+        case _        => None
+      },
+      tag
+        .getList("mounts")
+        .getOrElse(Seq.empty)
+        .flatMap(_.asMap)
+        .flatMap(Nbt.decode[MountComponent])
+    ).flatten
+
+    Some(Entity(id, entType, components))
   }
 }

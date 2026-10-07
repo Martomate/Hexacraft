@@ -470,11 +470,13 @@ class GameServer(
             val (playerId, otherData) = otherPlayer
             if playerId != clientId then {
               otherData.entityEventsWaitingToBeSent.synchronized {
-                otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(Nbt.encode(entity))
+                otherData.entityEventsWaitingToBeSent += entity.id -> EntityEvent.Spawned(
+                  Entity.encodeWithoutAi(entity)
+                )
               }
               playerData.entityEventsWaitingToBeSent.synchronized {
                 playerData.entityEventsWaitingToBeSent += otherData.entity.id -> EntityEvent.Spawned(
-                  Nbt.encode(otherData.entity)
+                  Entity.encodeWithoutAi(otherData.entity)
                 )
               }
               otherData.messagesWaitingToBeSent.synchronized {
@@ -577,7 +579,7 @@ class GameServer(
               loadedChunks += ((coords, Chunk.encodeWithoutEntities(chunk)))
               playerData.entityEventsWaitingToBeSent.synchronized {
                 for e <- chunk.entities do {
-                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(Nbt.encode(e))
+                  playerData.entityEventsWaitingToBeSent += e.id -> EntityEvent.Spawned(Entity.encodeWithoutAi(e))
                 }
               }
               prio += coords
