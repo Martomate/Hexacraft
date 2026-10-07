@@ -75,8 +75,3 @@ object ChunkColumnHeightMap {
 
   def fromData2D(data: Data2D): ChunkColumnHeightMap = from((x, z) => data(x, z).toShort)
 }
-
-class ChunkColumnTerrain(
-    val originalTerrainHeight: ChunkColumnHeightMap,
-    val terrainHeight: ChunkColumnHeightMap
-)
