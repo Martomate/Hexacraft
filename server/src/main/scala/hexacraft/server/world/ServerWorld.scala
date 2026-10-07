@@ -27,7 +27,6 @@ object ServerWorld {
   class WorldTickResult(
       val chunksAdded: Seq[ChunkRelWorld],
       val chunksRemoved: Seq[ChunkRelWorld],
-      val chunksNeedingRenderUpdate: Seq[ChunkRelWorld],
       val blocksUpdated: Seq[BlockRelWorld],
       val entityEvents: Seq[(UUID, EntityEvent)]
   )
@@ -53,7 +52,7 @@ class ServerWorld(
 
   private val worldGenerator = new WorldGenerator(worldInfo.gen)
   private val worldPlanner: WorldPlanner = WorldPlanner(this, worldInfo.gen.seed)
-  private val lightPropagator: LightPropagator = new LightPropagator(this, this.requestRenderUpdate)
+  private val lightPropagator: LightPropagator = new LightPropagator(this, _ => ())
 
   val collisionDetector: CollisionDetector = new CollisionDetector(this)
 
@@ -65,8 +64,6 @@ class ServerWorld(
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
   private val chunkList: mutable.ArrayBuffer[Chunk] = mutable.ArrayBuffer.empty // used for iteration
 
-  private val chunkLoadingPrioritizer = new ChunkLoadingPrioritizer(renderDistance)
-
   private val chunksLoading: mutable.Map[ChunkRelWorld, Future[(Chunk, Boolean)]] = mutable.Map.empty
   private val chunksUnloading: mutable.Map[ChunkRelWorld, Future[Unit]] = mutable.Map.empty
 
@@ -75,8 +72,6 @@ class ServerWorld(
   private val blocksToUpdate: UniqueLongQueue = new UniqueLongQueue
 
   private val savedChunkModCounts = mutable.Map.empty[ChunkRelWorld, Long]
-
-  private val chunksNeedingRenderUpdate = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
   private val entityEventsSinceLastTick = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
 
@@ -178,9 +173,6 @@ class ServerWorld(
     lightPropagator.synchronized {
       ch.initLightingIfNeeded(chunkCoords, lightPropagator)
     }
-
-    requestRenderUpdate(chunkCoords)
-    requestRenderUpdateForNeighborChunks(chunkCoords)
 
     val allBlocks = ch.blocks
 
@@ -338,7 +330,6 @@ class ServerWorld(
           backgroundTasks += Future(worldProvider.saveChunkData(removedChunkNbt, chunkCoords))(using fsAsync)
           savedChunkModCounts -= chunkCoords
         }
-        requestRenderUpdateForNeighborChunks(chunkCoords)
       }
 
       if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
@@ -372,10 +363,7 @@ class ServerWorld(
     entityEvents ++= entityEventsSinceLastTick
     entityEventsSinceLastTick.clear()
 
-    val r = chunksNeedingRenderUpdate.toSeq
-    chunksNeedingRenderUpdate.clear()
-
-    new WorldTickResult(chunksAdded, chunksRemoved, r, blocksUpdated, entityEvents.toSeq)
+    new WorldTickResult(chunksAdded, chunksRemoved, blocksUpdated, entityEvents.toSeq)
   }
 
   private def tickChunks(): Unit = {
@@ -590,15 +578,6 @@ class ServerWorld(
     }
   }
 
-  private def requestRenderUpdateForNeighborChunks(coords: ChunkRelWorld): Unit = {
-    Loop.rangeUntil(0, 8) { side =>
-      val nCoords = coords.offset(NeighborOffsets(side))
-      if getChunk(nCoords).isDefined then {
-        requestRenderUpdate(nCoords)
-      }
-    }
-  }
-
   private def startLoadingColumnIfNeeded(here: ColumnRelWorld): Unit = {
     val columnsToLoad = mutable.ArrayBuffer.empty[ColumnRelWorld]
     if !columns.contains(here.value) && !columnsLoading.contains(here.value) then {
@@ -648,10 +627,6 @@ class ServerWorld(
       case Some(c) => c.getBrightness(block.getBlockRelChunk)
       case None    => 1.0f
     }
-  }
-
-  private def requestRenderUpdate(chunkCoords: ChunkRelWorld): Unit = {
-    chunksNeedingRenderUpdate += chunkCoords
   }
 
   def unload(): Unit = {
@@ -721,7 +696,6 @@ class ServerWorld(
     for c <- getChunk(cCoords) do {
       handleLightingOnSetBlock(cCoords, c, bCoords, block)
 
-      requestRenderUpdate(cCoords)
       requestBlockUpdate(coords)
 
       for s <- 0 until 8 do {
@@ -730,7 +704,6 @@ class ServerWorld(
 
         if neighChunkCoords != cCoords then {
           for n <- getChunk(neighChunkCoords) do {
-            requestRenderUpdate(neighChunkCoords)
             requestBlockUpdate(neighCoords)
           }
         } else {
