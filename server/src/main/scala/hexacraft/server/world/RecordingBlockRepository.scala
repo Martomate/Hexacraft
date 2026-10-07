@@ -1,4 +1,4 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.world.block.{BlockRepository, BlockState}
 import hexacraft.world.coord.BlockRelWorld
