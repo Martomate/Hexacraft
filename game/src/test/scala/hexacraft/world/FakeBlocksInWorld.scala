@@ -1,19 +1,18 @@
 package hexacraft.world
 
-import hexacraft.nbt.Nbt
-import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.block.{Block, BlockState}
+import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, DenseChunkStorage}
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import scala.collection.mutable
 
-class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize) extends BlocksInWorldExtended {
-  private val worldGenerator = new WorldGenerator(provider.worldInfo.gen)
-  private var cols: Map[ColumnRelWorld, ChunkColumnTerrain] = Map.empty
+/** A world containing only the blocks placed in it. Chunks are created on demand and are filled with air. */
+class FakeBlocksInWorld private (using CylinderSize) extends BlocksInWorld {
+  private var cols: Map[ColumnRelWorld, ChunkColumnHeightMap] = Map.empty
   private var chunks: Map[ChunkRelWorld, Chunk] = Map.empty
 
   override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] = {
-    cols.get(coords).map(_.terrainHeight)
+    cols.get(coords)
   }
 
   override def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
@@ -26,18 +25,33 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
       .getOrElse(BlockState.Air)
   }
 
-  override def provideColumn(coords: ColumnRelWorld): ChunkColumnTerrain = {
-    if cols.contains(coords) then {
-      cols(coords)
-    } else {
-      val generatedTerrain = ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords))
-      val storedTerrain = provider.loadColumnData(coords).flatMap(Nbt.decode[ChunkColumnData](_))
-      val terrain = storedTerrain.map(_.heightMap).getOrElse {
-        ChunkColumnHeightMap.from((x, z) => generatedTerrain.getHeight(x, z))
-      }
-      val col = new ChunkColumnTerrain(generatedTerrain, terrain)
-      cols += coords -> col
-      col
+  /** Returns the column, creating an empty one (with no blocks in it) if needed */
+  def provideColumn(coords: ColumnRelWorld): ChunkColumnHeightMap = {
+    cols.get(coords) match {
+      case Some(col) => col
+      case None =>
+        val col = ChunkColumnHeightMap.from((_, _) => Short.MinValue)
+        cols += coords -> col
+        col
+    }
+  }
+
+  /** Places a block, creating an empty chunk if needed, and updates the height map */
+  def setBlock(coords: BlockRelWorld, block: BlockState): Unit = {
+    val col = provideColumn(coords.getColumnRelWorld)
+
+    val chunkCoords = coords.getChunkRelWorld
+    val chunk = chunks.get(chunkCoords) match {
+      case Some(c) => c
+      case None =>
+        val ch = Chunk.from(new DenseChunkStorage)
+        chunks += chunkCoords -> ch
+        ch
+    }
+    chunk.setBlock(coords.getBlockRelChunk, block)
+
+    if block.blockType != Block.Air && coords.y > col.getHeight(coords.cx, coords.cz) then {
+      col.setHeight(coords.cx, coords.cz, coords.y.toShort)
     }
   }
 
@@ -46,6 +60,7 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
   }
 
   def setChunk(coords: ChunkRelWorld, chunk: Chunk): Unit = {
+    provideColumn(coords.getColumnRelWorld)
     chunks += coords -> chunk
   }
 
@@ -60,28 +75,15 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
 }
 
 object FakeBlocksInWorld {
-  def empty(provider: FakeWorldProvider)(using CylinderSize): FakeBlocksInWorld = {
-    new FakeBlocksInWorld(provider)
+  def empty(using CylinderSize): FakeBlocksInWorld = {
+    new FakeBlocksInWorld
   }
 
-  def withBlocks(provider: FakeWorldProvider, blocks: Map[BlockRelWorld, BlockState])(using
-      CylinderSize
-  ): FakeBlocksInWorld = {
-    val world = new FakeBlocksInWorld(provider)
+  /** Creates a world where the chunks containing `blocks` are loaded. All other blocks in those chunks are air. */
+  def withBlocks(blocks: Map[BlockRelWorld, BlockState])(using CylinderSize): FakeBlocksInWorld = {
+    val world = new FakeBlocksInWorld
     for coords -> block <- blocks do {
-      val col = world.provideColumn(coords.getColumnRelWorld)
-
-      val chunkCoords = coords.getChunkRelWorld
-      val chunk = world.chunks.get(chunkCoords) match {
-        case Some(c) => c
-        case None =>
-          val ch = Chunk.from(
-            WorldGenerator(provider.worldInfo.gen).generateChunk(coords.getChunkRelWorld, col.originalTerrainHeight)
-          )
-          world.chunks += chunkCoords -> ch
-          ch
-      }
-      chunk.setBlock(coords.getBlockRelChunk, block)
+      world.setBlock(coords, block)
     }
     world
   }

@@ -1,6 +1,6 @@
 package hexacraft.client.render
 
-import hexacraft.world.{CylinderSize, FakeBlocksInWorld, FakeWorldProvider}
+import hexacraft.world.{CylinderSize, FakeBlocksInWorld}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.*
 
@@ -25,7 +25,7 @@ class BlockVertexDataBuilderTest extends FunSuite {
     }.toMap
 
     // TODO: make it possible to create a fake world with only air so we don't need the air above
-    val world = FakeBlocksInWorld.withBlocks(FakeWorldProvider(1234), allBlocks)
+    val world = FakeBlocksInWorld.withBlocks(allBlocks)
 
     val blockTextureIndices = Map("water" -> IndexedSeq.fill(8)(0))
     val data = BlockVertexDataBuilder.fromChunk(centerCoords.getChunkRelWorld, world, true, blockTextureIndices)
@@ -45,7 +45,7 @@ class BlockVertexDataBuilderTest extends FunSuite {
       centerCoords.offset(offset) -> BlockState(Block.Stone)
     }.toMap
 
-    val world = FakeBlocksInWorld.withBlocks(FakeWorldProvider(1234), allBlocks)
+    val world = FakeBlocksInWorld.withBlocks(allBlocks)
 
     for (offset, brightness) <- brightnesses do {
       val c = centerCoords.offset(offset)
