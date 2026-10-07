@@ -1,9 +1,10 @@
-package hexacraft.world.entity
+package hexacraft.server.world
 
 import hexacraft.physics.{Density, DragCoefficient, FluidDynamics}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.entity.{MotionComponent, TransformComponent}
 
 import org.joml.Vector3d
 

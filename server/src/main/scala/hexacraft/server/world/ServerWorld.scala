@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockBehaviourFluid, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
+import hexacraft.world.entity.Entity
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
