@@ -1,6 +1,7 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.util.SeqUtils
+import hexacraft.world.{CylinderSize, Pose}
 import hexacraft.world.coord.{BlockCoords, ChunkRelWorld, CylCoords}
 
 import munit.FunSuite

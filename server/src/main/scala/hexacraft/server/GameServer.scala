@@ -3,7 +3,7 @@ package hexacraft.server
 import hexacraft.game.*
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
-import hexacraft.server.world.{ServerWorld, WorldProvider}
+import hexacraft.server.world.{ChunkLoadingPrioritizer, ServerWorld, WorldProvider}
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
