@@ -99,3 +99,5 @@ project/metals.sbt
 .DS_Store
 
 .task
+
+.claude/worktrees
