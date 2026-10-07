@@ -1,6 +1,7 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.util.{Channel, Loop, TickableTimer}
+import hexacraft.world.{CylinderSize, Pose}
 import hexacraft.world.coord.*
 
 import scala.collection.mutable

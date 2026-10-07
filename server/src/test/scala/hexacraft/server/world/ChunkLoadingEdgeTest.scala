@@ -1,6 +1,7 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.util.{Channel, Tracker}
+import hexacraft.world.CylinderSize
 import hexacraft.world.coord.ChunkRelWorld
 
 import munit.FunSuite
@@ -135,7 +136,7 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("event trackers should be notified when a chunk is loaded") {
-    import hexacraft.world.ChunkLoadingEdge.Event
+    import hexacraft.server.world.ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
 
@@ -151,7 +152,7 @@ class ChunkLoadingEdgeTest extends FunSuite with MockitoSugar {
   }
 
   test("event trackers should be notified when a chunk is unloaded") {
-    import hexacraft.world.ChunkLoadingEdge.Event
+    import hexacraft.server.world.ChunkLoadingEdge.Event
 
     val coords = ChunkRelWorld(2, 4, 3)
 
