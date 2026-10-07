@@ -447,7 +447,7 @@ class GameServer(
           worldProvider.savePlayerData(Nbt.encode(player), player.id)
 
           val entity = Entity(
-            Entity.getNextId,
+            id,
             "player",
             Seq(
               TransformComponent(CylCoords(player.position).offset(-2, -2, -1)),

@@ -12,7 +12,7 @@ class BoatEntityModel(
 ) extends EntityModel {
   override val parts: Seq[EntityPart] = body +: rods
 
-  override def tick(walking: Boolean, headDirection: Option[Vector3d]): Unit = {}
+  override def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit = {}
 }
 
 object BoatEntityModel {

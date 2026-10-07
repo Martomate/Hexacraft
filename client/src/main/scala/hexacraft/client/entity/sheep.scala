@@ -18,7 +18,7 @@ class SheepEntityModel(
 
   private val animation = new SheepAnimation(this)
 
-  override def tick(walking: Boolean, headDirection: Option[Vector3d]): Unit = {
+  override def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit = {
     animation.tick(walking)
   }
 }

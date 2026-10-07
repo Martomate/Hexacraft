@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, HeadDirectionComponent, ModelComponent}
+import hexacraft.world.entity.{Entity, HeadDirectionComponent, ModelComponent, MountComponent}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -266,8 +266,12 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
       ch.optimizeStorage()
     }
 
+    val mounts = entities
+      .flatMap(e => e.accessComponents { case c: MountComponent => c.mountedEntity }.map(_ -> e))
+      .toMap
+
     Loop.array(entities) { e =>
-      tickEntity(e)
+      tickEntity(e, mounts.get(e.id))
     }
 
     val r = chunksNeedingRenderUpdate.toSeq
@@ -276,12 +280,12 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     new WorldTickResult(r)
   }
 
-  private def tickEntity(e: Entity): Unit = {
+  private def tickEntity(e: Entity, mountedOn: Option[Entity]): Unit = {
     val vel = e.motion.velocity
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
     val headDirection = e.accessComponent { case c: HeadDirectionComponent => c.direction }
     e.accessComponent { case c: ModelComponent =>
-      c.model.tick(horizontalSpeedSq > 0.1, headDirection)
+      c.model.tick(horizontalSpeedSq > 0.1, headDirection, mountedOn.nonEmpty)
     }
   }
 

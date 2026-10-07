@@ -20,15 +20,17 @@ class PlayerEntityModel(
 
   private val animation = new PlayerAnimation(this)
 
-  override def tick(walking: Boolean, headDirection: Option[Vector3d]): Unit = {
-    animation.tick(walking, headDirection.getOrElse(new Vector3d))
+  override def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit = {
+    animation.tick(walking, headDirection.getOrElse(new Vector3d), sitting)
   }
 }
 
 class PlayerAnimation(model: PlayerEntityModel) {
   private var time = 0
 
-  def tick(walking: Boolean, headDirection: Vector3d): Unit = {
+  def tick(walking: Boolean, headDirection: Vector3d, sitting: Boolean): Unit = {
+    println(sitting)
+
     if walking || time % 30 != 0 then {
       time += 1
     }
@@ -38,8 +40,13 @@ class PlayerAnimation(model: PlayerEntityModel) {
     model.rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
     model.leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
 
-    model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
-    model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+    if sitting then {
+      model.rightLeg.rotation.z = math.Pi.toFloat * 0.5f
+      model.leftLeg.rotation.z = math.Pi.toFloat * 0.5f
+    } else {
+      model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
+      model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+    }
 
     model.headBase.rotation.z = -headDirection.x.toFloat
   }
