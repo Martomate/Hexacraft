@@ -17,7 +17,7 @@ class PlayerPhysicsHandler(collisionDetector: CollisionDetector) {
       mounts: Seq[Entity]
   ): Unit = {
     mounts.headOption.foreach { mount =>
-      val offsetY = -player.bounds.bottom * 0.5
+      val offsetY = -player.bounds.bottom * 0.5 + 0.25
       player.position.set(mount.transform.position.toVector3d.add(0, offsetY, 0))
       player.velocity.set(mount.motion.velocity)
     }

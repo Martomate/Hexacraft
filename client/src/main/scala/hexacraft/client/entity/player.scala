@@ -29,8 +29,6 @@ class PlayerAnimation(model: PlayerEntityModel) {
   private var time = 0
 
   def tick(walking: Boolean, headDirection: Vector3d, sitting: Boolean): Unit = {
-    println(sitting)
-
     if walking || time % 30 != 0 then {
       time += 1
     }

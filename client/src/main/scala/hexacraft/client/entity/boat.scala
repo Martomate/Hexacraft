@@ -42,7 +42,7 @@ object BoatEntityModel {
       (2, 1)
     ).map { case (col, row) =>
       cylOffset(
-        -0.5 * rodLength, // centered along the rod's length
+        -0.2 * rodLength, // centered along the rod's length
         rowHeight * row,
         rodSpacing * (col + 0.5 * row)
       )
@@ -64,7 +64,7 @@ object BoatEntityModel {
 
     val rods = rodPositions.map { pos =>
       BasicEntityPart(rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), parentPart = body)
-    } ++ Seq(-0.5 * rodLength + rodRadius * 0.5, 0.5 * rodLength - rodRadius * 0.5).map { d =>
+    } ++ Seq(-0.2 * rodLength + rodRadius * 0.5, 0.8 * rodLength - rodRadius * 0.5).map { d =>
       val pos = cylOffset(0, 0, d)
       BasicEntityPart(crossRodBounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), parentPart = crossBody)
     }
