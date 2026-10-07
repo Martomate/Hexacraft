@@ -36,8 +36,10 @@ class FakeBlocksInWorld private (using CylinderSize) extends BlocksInWorld {
     }
   }
 
-  /** Places a block, creating an empty chunk if needed, and updates the height map */
-  def setBlock(coords: BlockRelWorld, block: BlockState): Unit = {
+  /** Places a block, creating an empty chunk if needed, and updates the height map.
+    * Removing a block (by setting it to air) is not supported since it would require more advanced heightmap logic.
+    */
+  def addBlock(coords: BlockRelWorld, block: BlockState): Unit = {
     val col = provideColumn(coords.getColumnRelWorld)
 
     val chunkCoords = coords.getChunkRelWorld
@@ -48,6 +50,12 @@ class FakeBlocksInWorld private (using CylinderSize) extends BlocksInWorld {
         chunks += chunkCoords -> ch
         ch
     }
+
+    val currentBlock = chunk.getBlock(coords.getBlockRelChunk)
+    if block.blockType == Block.Air && currentBlock.blockType != Block.Air then {
+      throw new IllegalArgumentException("removing blocks is not supported because height map could become wrong")
+    }
+
     chunk.setBlock(coords.getBlockRelChunk, block)
 
     if block.blockType != Block.Air && coords.y > col.getHeight(coords.cx, coords.cz) then {
@@ -83,7 +91,7 @@ object FakeBlocksInWorld {
   def withBlocks(blocks: Map[BlockRelWorld, BlockState])(using CylinderSize): FakeBlocksInWorld = {
     val world = new FakeBlocksInWorld
     for coords -> block <- blocks do {
-      world.setBlock(coords, block)
+      world.addBlock(coords, block)
     }
     world
   }
