@@ -2,11 +2,12 @@ package hexacraft.tool
 
 import hexacraft.client.{BlockSpecs, BlockTextureLoader}
 import hexacraft.renderer.PixelArray
+import hexacraft.server.world.{BlocksInWorldExtended, ChunkColumnTerrain, WorldGenerator}
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.Loop
 import hexacraft.world.*
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 import org.joml.Vector3f

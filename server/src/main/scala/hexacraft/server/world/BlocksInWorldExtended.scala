@@ -1,6 +1,6 @@
-package hexacraft.world
+package hexacraft.server.world
 
-import hexacraft.world.chunk.ChunkColumnTerrain
+import hexacraft.world.BlocksInWorld
 import hexacraft.world.coord.ColumnRelWorld
 
 trait BlocksInWorldExtended extends BlocksInWorld {

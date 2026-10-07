@@ -1,5 +1,6 @@
-package hexacraft.world
+package hexacraft.server.world
 
+import hexacraft.world.CylinderSize
 import hexacraft.world.coord.{ChunkRelWorld, ColumnRelWorld}
 
 import munit.FunSuite

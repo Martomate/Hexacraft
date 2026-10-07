@@ -1,10 +1,11 @@
 package hexacraft.server.world.plan
 
+import hexacraft.server.world.{BlocksInWorldExtended, ChunkColumnTerrain}
 import hexacraft.server.world.plan.tree.{HugeTreeGenStrategy, ShortTreeGenStrategy, TallTreeGenStrategy}
 import hexacraft.util.{LongSet, Loop}
-import hexacraft.world.{BlocksInWorldExtended, CylinderSize}
+import hexacraft.world.CylinderSize
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain, LocalBlockState}
+import hexacraft.world.chunk.{Chunk, LocalBlockState}
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, ChunkRelWorld, CylCoords}
 import hexacraft.world.entity.Entity
 

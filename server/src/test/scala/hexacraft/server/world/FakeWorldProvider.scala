@@ -1,6 +1,7 @@
-package hexacraft.world
+package hexacraft.server.world
 
 import hexacraft.nbt.Nbt
+import hexacraft.world.{CylinderSize, WorldGenSettings, WorldInfo}
 
 class FakeWorldProvider(seed: Long, generateOceans: Boolean = false)(using cylSize: CylinderSize)
     extends WorldProvider {
