@@ -1,6 +1,6 @@
 package hexacraft.client
 
-import hexacraft.client.render.{StandardTerrainRenderer, TerrainRenderer}
+import hexacraft.client.render.{FarDistanceTerrainRenderer, StandardTerrainRenderer, TerrainRenderer}
 import hexacraft.game.*
 import hexacraft.gui.*
 import hexacraft.gui.comp.Component
@@ -49,7 +49,8 @@ object GameClient {
       initialWindowSize: WindowSize,
       audioSystem: AudioSystem,
       maxChunksToLoad: Int,
-      renderDistance: Double
+      renderDistance: Double,
+      useFarDistanceRenderer: Boolean = false
   ): Result[(GameClient, Channel.Receiver[GameClient.Event]), String] = {
     val socket = GameClientSocket(channel)
 
@@ -81,12 +82,21 @@ object GameClient {
 
     val worldGenerator = new WorldGenerator(worldInfo.gen)
 
-    val terrainRenderer: TerrainRenderer = StandardTerrainRenderer(world, blockTextureIndices)
+    val terrainRenderer: TerrainRenderer =
+      if useFarDistanceRenderer then {
+        FarDistanceTerrainRenderer(worldGenerator, blockTextureColors)
+      } else {
+        StandardTerrainRenderer(world, blockTextureIndices)
+      }
 
     val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
 
-    val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
-    val freeFlyCamera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
+    val camera: Camera = new Camera(
+      makeCameraProjection(initialWindowSize, world.size.worldSize, useFarDistanceRenderer)
+    )
+    val freeFlyCamera: Camera = new Camera(
+      makeCameraProjection(initialWindowSize, world.size.worldSize, useFarDistanceRenderer)
+    )
 
     val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
     val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(world.collisionDetector)
@@ -197,8 +207,10 @@ object GameClient {
     toolbar
   }
 
-  private def makeCameraProjection(windowSize: WindowSize, worldSize: Int) = {
-    val far =
+  private def makeCameraProjection(windowSize: WindowSize, worldSize: Int, useFarDistanceRenderer: Boolean) = {
+    val far = if useFarDistanceRenderer then {
+      10000f
+    } else
       worldSize match {
         case 0 => 100000f
         case 1 => 10000f
