@@ -5,7 +5,7 @@ import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
 import hexacraft.util.Loop
 import hexacraft.world.WorldGenerator.Pos
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
+import hexacraft.world.chunk.{ChunkColumnHeightMap, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}
 
 import java.util.Random
