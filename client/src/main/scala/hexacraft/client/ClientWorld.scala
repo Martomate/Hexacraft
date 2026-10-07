@@ -233,7 +233,6 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
             case EntityEvent.Despawned =>
               removeEntity(e)
               allEntitiesById -= id
-              println(s"Client: despawned entity $id")
             case EntityEvent.Position(pos) =>
               e.transform.position = pos
             case EntityEvent.Rotation(r) =>
@@ -252,7 +251,6 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
                 case Some(e) =>
                   addEntity(e)
                   allEntitiesById(id) = e
-                  println(s"Client: spawned entity $id")
                 case None =>
                   println(s"Could not create entity")
               }

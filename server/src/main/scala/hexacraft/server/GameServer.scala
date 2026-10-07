@@ -682,7 +682,6 @@ class GameServer(
             ) match {
               case Result.Ok(entity) =>
                 world.addEntity(entity)
-                println(s"Spawned entity of type $entityType at $pos")
               case Result.Err(e) =>
                 println(s"Failed to spawn entity: $e")
             }
