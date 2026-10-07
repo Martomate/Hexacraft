@@ -164,7 +164,7 @@ class ServerWorld(
     worldPlanner.decorate(chunkCoords, ch)
 
     if ch.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-      val chunkNbt = ChunkData.encode(ch.chunkData, includeEntities = true)
+      val chunkNbt = encodeChunkForDisk(ch)
       backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))(using fsAsync)
       savedChunkModCounts(chunkCoords) = ch.modCount
       updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
@@ -326,7 +326,7 @@ class ServerWorld(
         chunkWasRemoved = true
 
         if removedChunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-          val removedChunkNbt = ChunkData.encode(removedChunk.chunkData, includeEntities = true)
+          val removedChunkNbt = encodeChunkForDisk(removedChunk)
           backgroundTasks += Future(worldProvider.saveChunkData(removedChunkNbt, chunkCoords))(using fsAsync)
           savedChunkModCounts -= chunkCoords
         }
@@ -404,7 +404,7 @@ class ServerWorld(
                 savedChunkModCounts(coords) = chunk.modCount
 
                 unloadsLeft -= 1
-                val chunkNbt = ChunkData.encode(chunk.chunkData, includeEntities = true)
+                val chunkNbt = encodeChunkForDisk(chunk)
                 chunksUnloading(coords) = Future(worldProvider.saveChunkData(chunkNbt, coords))(using fsAsync)
               } else { // The chunk has not changed, so no need to save it to disk, but still unload it
                 chunksUnloading(coords) = Future.successful(())
@@ -427,7 +427,7 @@ class ServerWorld(
               loadsLeft -= 1
               chunksLoading(coords) = Future(worldProvider.loadChunkData(coords))(using fsAsync).flatMap {
                 case Some(loadedTag) =>
-                  Future((Chunk(ChunkData.decode(loadedTag, includeEntities = true)), false))(using genAsync)
+                  Future((decodeChunkFromDisk(loadedTag), false))(using genAsync)
                 case None =>
                   Future((Chunk.from(worldGenerator.generateChunk(coords, column.originalTerrainHeight)), true))(using
                     genAsync
@@ -514,6 +514,14 @@ class ServerWorld(
 
   private def saveColumn(columnCoords: ColumnRelWorld, col: ChunkColumnTerrain): Unit = {
     worldProvider.saveColumnData(Nbt.encode(ChunkColumnData(col.terrainHeight)), columnCoords)
+  }
+
+  private def encodeChunkForDisk(chunk: Chunk): Nbt.MapTag = {
+    ChunkData.encode(chunk.chunkData, includeEntities = true)
+  }
+
+  private def decodeChunkFromDisk(tag: Nbt.MapTag): Chunk = {
+    Chunk(ChunkData.decode(tag, includeEntities = true))
   }
 
   private def tickEntity(e: Entity): Unit = {
@@ -637,7 +645,7 @@ class ServerWorld(
       val chunkCoords = ChunkRelWorld(chunkKey)
 
       if chunk.modCount != savedChunkModCounts.getOrElse(chunkCoords, -1L) then {
-        val chunkNbt = ChunkData.encode(chunk.chunkData, includeEntities = true)
+        val chunkNbt = encodeChunkForDisk(chunk)
         backgroundTasks += Future(worldProvider.saveChunkData(chunkNbt, chunkCoords))(using fsAsync)
       }
     }
