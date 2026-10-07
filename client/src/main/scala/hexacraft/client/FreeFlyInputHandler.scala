@@ -1,4 +1,6 @@
-package hexacraft.game
+package hexacraft.client
+
+import hexacraft.game.GameKeyboard
 
 import org.joml.{Vector2fc, Vector3d, Vector3f}
 
