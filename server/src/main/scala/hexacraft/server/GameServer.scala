@@ -137,7 +137,9 @@ class GameServer(
         entity.transform.rotation.set(entityRotationFacingLikePlayer(player))
         entity.motion.velocity.set(player.velocity)
         entity.motion.flying = player.flying
-        entity.headDirection.foreach(_.direction.set(player.rotation.x, 0, 0))
+        entity.accessComponent { case c: HeadDirectionComponent =>
+          c.direction.set(player.rotation.x, 0, 0)
+        }
       }
 
       val tickResult = chunksLoadedPerPlayer.synchronized {
@@ -173,8 +175,8 @@ class GameServer(
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Rotation(p2.entity.transform.rotation)
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Velocity(p2.entity.motion.velocity)
               p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.Flying(p2.entity.motion.flying)
-              p2.entity.headDirection.foreach { comp =>
-                p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.HeadDirection(comp.direction)
+              p2.entity.accessComponent { case c: HeadDirectionComponent =>
+                p.entityEventsWaitingToBeSent += p2.entity.id -> EntityEvent.HeadDirection(c.direction)
               }
             }
           }

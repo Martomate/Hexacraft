@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, HeadDirectionComponent, ModelComponent}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -243,7 +243,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
             case EntityEvent.Flying(f) =>
               e.motion.flying = f
             case EntityEvent.HeadDirection(d) =>
-              e.headDirection.foreach(_.direction = d)
+              e.accessComponent { case c: HeadDirectionComponent => c.direction = d }
           }
         case None =>
           event match {
@@ -279,8 +279,9 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   private def tickEntity(e: Entity): Unit = {
     val vel = e.motion.velocity
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
-    if e.model.isDefined then {
-      e.model.get.tick(horizontalSpeedSq > 0.1, e.headDirection.map(_.direction))
+    val headDirection = e.accessComponent { case c: HeadDirectionComponent => c.direction }
+    e.accessComponent { case c: ModelComponent =>
+      c.model.tick(horizontalSpeedSq > 0.1, headDirection)
     }
   }
 

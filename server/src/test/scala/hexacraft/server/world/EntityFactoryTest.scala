@@ -11,12 +11,12 @@ class EntityFactoryTest extends FunSuite {
 
   test("a sheep should get a SimpleWalkAI") {
     val sheep = EntityFactory.atStartPos(Entity.getNextId, CylCoords(0, 0, 0), "sheep").unwrap()
-    assert(sheep.accessComponent { case e: AiComponent => e }.get.ai.isInstanceOf[SimpleWalkAI])
+    assert(sheep.accessComponent { case c: AiComponent => c }.get.ai.isInstanceOf[SimpleWalkAI])
   }
 
   test("a boat should not get any AI") {
     val boat = EntityFactory.atStartPos(Entity.getNextId, CylCoords(0, 0, 0), "boat").unwrap()
-    assertEquals(boat.accessComponent { case e: AiComponent => e }, None)
+    assertEquals(boat.accessComponent { case c: AiComponent => c }, None)
   }
 
   test("an unknown entity type should fail") {

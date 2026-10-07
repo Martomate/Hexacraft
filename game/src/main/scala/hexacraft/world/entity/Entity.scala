@@ -17,14 +17,8 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
   val motion: MotionComponent =
     components.collectFirst { case c: MotionComponent => c }.get
 
-  val headDirection: Option[HeadDirectionComponent] =
-    components.collectFirst { case c: HeadDirectionComponent => c }
-
   val boundingBox: HexBox =
     components.collectFirst { case c: BoundsComponent => c.bounds }.get
-
-  val model: Option[EntityModel] =
-    components.collectFirst { case c: ModelComponent => c.model }
 
   def accessComponent[T](selector: PartialFunction[EntityComponent, T]): Option[T] =
     components.collectFirst(selector)

@@ -4,7 +4,7 @@ import hexacraft.shaders.EntityShader
 import hexacraft.util.InlinedIterable
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
-import hexacraft.world.entity.{Entity, EntityPart}
+import hexacraft.world.entity.{Entity, EntityPart, ModelComponent}
 
 import org.joml.{Matrix4f, Vector4f}
 
@@ -21,9 +21,11 @@ object EntityRenderData {
 
     val pieces = mutable.ArrayBuffer.empty[EntityRenderData]
 
-    for ent <- InlinedIterable(entities) if ent.model.isDefined do {
+    for {
+      ent <- InlinedIterable(entities)
+      model <- ent.accessComponent { case c: ModelComponent => c.model }
+    } do {
       val baseT = ent.transform.transform
-      val model = ent.model.get
 
       for part <- InlinedIterable(model.parts) do {
         baseT.mul(part.transform, tr)

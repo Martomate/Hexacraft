@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockBehaviourFluid, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{AiComponent, Entity, MountComponent}
+import hexacraft.world.entity.{AiComponent, Entity, HeadDirectionComponent, MountComponent}
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
@@ -540,8 +540,8 @@ class ServerWorld(
     entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)
     entityEventsSinceLastTick += e.id -> EntityEvent.Velocity(e.motion.velocity)
     entityEventsSinceLastTick += e.id -> EntityEvent.Flying(e.motion.flying)
-    e.headDirection.foreach { comp =>
-      entityEventsSinceLastTick += e.id -> EntityEvent.HeadDirection(comp.direction)
+    e.accessComponent { case c: HeadDirectionComponent =>
+      entityEventsSinceLastTick += e.id -> EntityEvent.HeadDirection(c.direction)
     }
   }
 

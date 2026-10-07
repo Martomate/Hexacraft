@@ -25,7 +25,7 @@ class EntityTest extends FunSuite {
 
   test("atStartPos should not give the entity any AI") {
     val entity = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
-    assertEquals(entity.accessComponent { case e: AiComponent => e }, None)
+    assertEquals(entity.accessComponent { case c: AiComponent => c }, None)
   }
 
   test("atStartPos should fail for an unknown entity type") {
@@ -65,7 +65,7 @@ class EntityTest extends FunSuite {
   test("decode should restore the AI if includeAi is true") {
     val tag = Entity.encode(makeSheepWithAi(), includeAi = true)
     val entity = Entity.decode(tag, includeAi = true).get
-    val aiComponent = entity.accessComponent { case e: AiComponent => e }.get
+    val aiComponent = entity.accessComponent { case c: AiComponent => c }.get
     val ai = aiComponent.ai.asInstanceOf[SimpleWalkAI]
 
     assertEquals(ai.target.toVector3d, new Vector3d(3.5, 0, 2.25))
@@ -75,7 +75,7 @@ class EntityTest extends FunSuite {
   test("decode should ignore the AI in the data if includeAi is false") {
     val tag = Entity.encode(makeSheepWithAi(), includeAi = true)
     val entity = Entity.decode(tag, includeAi = false).get
-    assertEquals(entity.accessComponent { case e: AiComponent => e }, None)
+    assertEquals(entity.accessComponent { case c: AiComponent => c }, None)
   }
 
   test("encode should not include mounts if there are none") {

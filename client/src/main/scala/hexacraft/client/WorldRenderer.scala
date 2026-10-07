@@ -8,7 +8,7 @@ import hexacraft.shaders.*
 import hexacraft.util.{Loop, NamedThreadFactory}
 import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{Entity, ModelComponent}
 
 import org.joml.{Vector2i, Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
@@ -208,11 +208,12 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     allEntities ++= players
 
     val entityRenderDataPerModel = allEntities
-      .filter(_.model.isDefined)
-      .groupBy(_.model.get.textureName)
-      .view
-      .mapValues(EntityRenderData.fromEntities(_, world))
-      .toMap
+      .groupBy {
+        _.accessComponent { case c: ModelComponent => c.model.textureName }
+      }
+      .collect { case (Some(t), es) =>
+        (t, EntityRenderData.fromEntities(es, world))
+      }
 
     Loop.rangeUntil(0, 8) { side =>
       val sh = if side < 2 then entityShader else entitySideShader
