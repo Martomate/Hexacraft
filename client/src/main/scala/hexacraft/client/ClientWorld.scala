@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, EntityPhysicsSystem}
+import hexacraft.world.entity.Entity
 
 import java.util.UUID
 import scala.collection.mutable
@@ -23,7 +23,7 @@ object ClientWorld {
 class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends BlockRepository with BlocksInWorld {
   given size: CylinderSize = worldInfo.worldSize
 
-  private val columns: mutable.LongMap[ChunkColumnTerrain] = mutable.LongMap.empty
+  private val columns: mutable.LongMap[ChunkColumnHeightMap] = mutable.LongMap.empty
   private val chunks: mutable.LongMap[Chunk] = mutable.LongMap.empty
   private val chunkList: mutable.ArrayBuffer[Chunk] = mutable.ArrayBuffer.empty
 
@@ -35,7 +35,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   /** The entities are loaded separately from the chunks, so they are stored here rather than in the chunks */
   private val entities = mutable.ArrayBuffer.empty[Entity]
 
-  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
+  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] = {
     columns.get(coords.value)
   }
 
@@ -89,15 +89,15 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
 
   def getHeight(x: Int, z: Int): Option[Int] = {
     val coords = ColumnRelWorld(x >> 4, z >> 4)
-    getColumn(coords).map(_.terrainHeight.getHeight(x & 15, z & 15))
+    columns.get(coords.value).map(_.getHeight(x & 15, z & 15))
   }
 
-  def setColumn(coords: ColumnRelWorld, column: ChunkColumnTerrain): Unit = {
+  def setColumn(coords: ColumnRelWorld, column: ChunkColumnHeightMap): Unit = {
     columns(coords.value) = column
   }
 
   def setChunk(chunkCoords: ChunkRelWorld, ch: Chunk): Unit = {
-    val col = getColumn(chunkCoords.getColumnRelWorld).get
+    val col = columns(chunkCoords.getColumnRelWorld.value)
     setChunkAndUpdateHeightmap(col, chunkCoords, ch)
     updateHeightmapAfterChunkUpdate(col, chunkCoords, ch)
 
@@ -109,7 +109,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     requestRenderUpdateForNeighborChunks(chunkCoords)
   }
 
-  private def updateHeightmapAfterChunkUpdate(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk)(using
+  private def updateHeightmapAfterChunkUpdate(col: ChunkColumnHeightMap, chunkCoords: ChunkRelWorld, chunk: Chunk)(using
       CylinderSize
   ): Unit = {
     for {
@@ -125,14 +125,18 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     }
   }
 
-  private def updateHeightmapAfterBlockUpdate(col: ChunkColumnTerrain, coords: BlockRelWorld, now: BlockState): Unit = {
-    val height = col.terrainHeight.getHeight(coords.cx, coords.cz)
+  private def updateHeightmapAfterBlockUpdate(
+      col: ChunkColumnHeightMap,
+      coords: BlockRelWorld,
+      now: BlockState
+  ): Unit = {
+    val height = col.getHeight(coords.cx, coords.cz)
 
     if coords.y >= height then {
       if now.blockType != Block.Air then {
-        col.terrainHeight.setHeight(coords.cx, coords.cz, coords.y.toShort)
+        col.setHeight(coords.cx, coords.cz, coords.y.toShort)
       } else {
-        col.terrainHeight.recalculate(
+        col.recalculate(
           coords,
           Y => this.chunks.get(ChunkRelWorld(coords.X.toInt, Y, coords.Z.toInt).value)
         )
@@ -162,16 +166,16 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     }
   }
 
-  private def setChunkAndUpdateHeightmap(col: ChunkColumnTerrain, chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
+  private def setChunkAndUpdateHeightmap(col: ChunkColumnHeightMap, chunkCoords: ChunkRelWorld, chunk: Chunk): Unit = {
     chunks.put(chunkCoords.value, chunk) match {
       case Some(`chunk`) => // the chunk is not new so nothing needs to be done
       case Some(oldChunk) =>
         val oldIdx = this.chunkList.indexOfRef(oldChunk)
         this.chunkList(oldIdx) = chunk
-        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+        updateHeightmapAfterChunkReplaced(col, chunkCoords, chunk)
       case None =>
         chunkList += chunk
-        updateHeightmapAfterChunkReplaced(col.terrainHeight, chunkCoords, chunk)
+        updateHeightmapAfterChunkReplaced(col, chunkCoords, chunk)
     }
   }
 
@@ -189,30 +193,26 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
 
     var chunkWasRemoved = false
 
-    columns.get(columnCoords.value) match {
-      case Some(col) =>
-        chunks.remove(chunkCoords.value) match {
-          case Some(removedChunk) =>
-            {
-              // remove `removedChunk` from `chunkList` by replacing it with the last element
-              val dst = this.chunkList.indexOf(removedChunk)
-              val src = this.chunkList.size - 1
-              val removed = this.chunkList.remove(src)
-              if dst != src then {
-                this.chunkList(dst) = removed
-              }
-            }
-
-            chunkWasRemoved = true
-            requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
-            requestRenderUpdateForNeighborChunks(chunkCoords)
-          case None =>
+    chunks.remove(chunkCoords.value) match {
+      case Some(removedChunk) =>
+        {
+          // remove `removedChunk` from `chunkList` by replacing it with the last element
+          val dst = this.chunkList.indexOf(removedChunk)
+          val src = this.chunkList.size - 1
+          val removed = this.chunkList.remove(src)
+          if dst != src then {
+            this.chunkList(dst) = removed
+          }
         }
 
-        if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
-          columns.remove(columnCoords.value)
-        }
+        chunkWasRemoved = true
+        requestRenderUpdate(chunkCoords) // this will remove the render data for the chunk
+        requestRenderUpdateForNeighborChunks(chunkCoords)
       case None =>
+    }
+
+    if chunks.keys.count(v => ChunkRelWorld(v).getColumnRelWorld == columnCoords) == 0 then {
+      columns.remove(columnCoords.value)
     }
 
     chunkWasRemoved

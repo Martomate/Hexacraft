@@ -1,11 +1,11 @@
 package hexacraft.world
 
 import hexacraft.world.block.BlockState
-import hexacraft.world.chunk.{Chunk, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnHeightMap, ChunkColumnTerrain}
 import hexacraft.world.coord.{BlockRelWorld, ChunkRelWorld, ColumnRelWorld}
 
 trait BlocksInWorld {
-  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain]
+  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap]
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk]
 

@@ -5,7 +5,7 @@ import hexacraft.math.noise.{Data2D, Data3D, NoiseGenerator3D, NoiseGenerator4D}
 import hexacraft.util.Loop
 import hexacraft.world.WorldGenerator.Pos
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
+import hexacraft.world.chunk.{ChunkColumnHeightMap, ChunkColumnTerrain, ChunkStorage, DenseChunkStorage}
 import hexacraft.world.coord.{BlockCoords, BlockRelChunk, ChunkRelWorld, ColumnRelWorld}
 
 import java.util.Random
@@ -49,7 +49,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
       heightMap * heightVariation * 100 + biomeHeight * 100
     }
 
-  def generateChunk(coords: ChunkRelWorld, column: ChunkColumnTerrain): ChunkStorage = {
+  def generateChunk(coords: ChunkRelWorld, originalTerrainHeight: ChunkColumnHeightMap): ChunkStorage = {
     val storage: ChunkStorage = new DenseChunkStorage
     val blockNoise = WorldGenerator.makeSampler3D(coords, this.blockNoise)
 
@@ -58,7 +58,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
         Loop.rangeUntil(0, 16) { k =>
           val noise = blockNoise(i, j, k)
           val y = coords.Y.toInt * 16 + j
-          val yToGo = y - column.originalTerrainHeight.getHeight(i, k)
+          val yToGo = y - originalTerrainHeight.getHeight(i, k)
           val limit = limitForBlockNoise(yToGo)
           if noise > limit then {
             storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))

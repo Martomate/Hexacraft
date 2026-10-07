@@ -21,7 +21,9 @@ class LightPropagatorTest extends FunSuite {
 
     world.setChunk(
       chunkCoords,
-      Chunk.from(WorldGenerator(WorldGenSettings.fromSeed(seed)).generateChunk(chunkCoords, column))
+      Chunk.from(
+        WorldGenerator(WorldGenSettings.fromSeed(seed)).generateChunk(chunkCoords, column.originalTerrainHeight)
+      )
     )
 
     light.initBrightnesses(chunkCoords)

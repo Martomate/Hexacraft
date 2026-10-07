@@ -7,28 +7,22 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld}
 
-class ChunkColumnData(val heightMap: Option[ChunkColumnHeightMap])
+class ChunkColumnData(val heightMap: ChunkColumnHeightMap)
 
 object ChunkColumnData {
   given NbtDecoder[ChunkColumnData] with {
     override def decode(tag: Nbt.MapTag): Option[ChunkColumnData] = {
-      Some(
-        ChunkColumnData(
-          tag
-            .getShortArray("heightMap")
-            .map(heightNbt => ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z)))
-        )
-      )
+      tag
+        .getShortArray("heightMap")
+        .map(heightNbt => ChunkColumnData(ChunkColumnHeightMap.from((x, z) => heightNbt((x << 4) | z))))
     }
   }
 
   given NbtEncoder[ChunkColumnData] with {
     override def encode(col: ChunkColumnData): Nbt.MapTag = {
-      Nbt.emptyMap.withOptionalField(
+      Nbt.emptyMap.withField(
         "heightMap",
-        col.heightMap.map(heightMap =>
-          Nbt.ShortArrayTag.of(Array.tabulate(16 * 16)(i => heightMap.getHeight(i >> 4, i & 0xf)))
-        )
+        Nbt.ShortArrayTag.of(Array.tabulate(16 * 16)(i => col.heightMap.getHeight(i >> 4, i & 0xf)))
       )
     }
   }
@@ -86,16 +80,3 @@ class ChunkColumnTerrain(
     val originalTerrainHeight: ChunkColumnHeightMap,
     val terrainHeight: ChunkColumnHeightMap
 )
-
-object ChunkColumnTerrain {
-  def create(
-      generatedHeightMap: ChunkColumnHeightMap,
-      columnData: Option[ChunkColumnData]
-  ): ChunkColumnTerrain = {
-    val heightMap = columnData
-      .flatMap(_.heightMap)
-      .getOrElse(ChunkColumnHeightMap.from((x, z) => generatedHeightMap.getHeight(x, z)))
-
-    new ChunkColumnTerrain(generatedHeightMap, heightMap)
-  }
-}

@@ -516,7 +516,7 @@ class GameServer(
       case GetWorldInfo => None // already handled above
       case LoadColumnData(coords) =>
         world.getColumn(coords) match {
-          case Some(column) => Some(Nbt.encode(ChunkColumnData(Some(column.terrainHeight))))
+          case Some(column) => Some(Nbt.encode(ChunkColumnData(column)))
           case None         => Some(Nbt.emptyMap) // TODO: return None
         }
       case GetPlayerState =>

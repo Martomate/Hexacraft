@@ -70,18 +70,17 @@ object TerrainGenExporter {
       private val chunks = memoized[Long, Chunk] { k =>
         val coords = ChunkRelWorld(k)
         val terrain = this.provideColumn(coords.getColumnRelWorld)
-        Chunk.from(gen.generateChunk(coords, terrain))
+        Chunk.from(gen.generateChunk(coords, terrain.originalTerrainHeight))
       }
 
       override def provideColumn(coords: ColumnRelWorld): ChunkColumnTerrain = {
-        columns.getOrElseUpdate(
-          coords.value,
-          ChunkColumnTerrain.create(ChunkColumnHeightMap.fromData2D(gen.getHeightmapInterpolator(coords)), None)
-        )
+        val generatedTerrain = ChunkColumnHeightMap.fromData2D(gen.getHeightmapInterpolator(coords))
+        val terrain = ChunkColumnHeightMap.from((x, z) => generatedTerrain.getHeight(x, z))
+        columns.getOrElseUpdate(coords.value, new ChunkColumnTerrain(generatedTerrain, terrain))
       }
 
-      override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] =
-        columns.get(coords.value)
+      override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] =
+        columns.get(coords.value).map(_.terrainHeight)
 
       override def getChunk(coords: ChunkRelWorld): Option[Chunk] =
         Some(chunks(coords.value))

@@ -15,7 +15,7 @@ import hexacraft.shaders.CrosshairShader
 import hexacraft.util.{Channel, NamedThreadFactory, Result, TickableTimer}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
-import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkColumnHeightMap, ChunkColumnTerrain}
+import hexacraft.world.chunk.{Chunk, ChunkColumnData}
 import hexacraft.world.coord.*
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
@@ -79,8 +79,6 @@ object GameClient {
 
     given CylinderSize = world.size
 
-    val worldGenerator = new WorldGenerator(worldInfo.gen)
-
     val terrainRenderer: TerrainRenderer = StandardTerrainRenderer(world, blockTextureIndices)
 
     val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
@@ -112,7 +110,6 @@ object GameClient {
       crosshairVAO,
       crosshairRenderer,
       world,
-      worldGenerator,
       player,
       worldRenderer,
       camera,
@@ -227,7 +224,6 @@ class GameClient(
     crosshairVAO: VAO,
     crosshairRenderer: Renderer,
     world: ClientWorld,
-    worldGenerator: WorldGenerator,
     val player: Player,
     worldRenderer: WorldRenderer,
     camera: Camera,
@@ -674,11 +670,7 @@ class GameClient(
         if world.getColumn(columnCoords).isEmpty then {
           val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
           if columnNbt != Nbt.emptyMap then {
-            val column = ChunkColumnTerrain.create(
-              ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(columnCoords)),
-              Some(Nbt.decode[ChunkColumnData](columnNbt.asInstanceOf[Nbt.MapTag]).get)
-            )
-            world.setColumn(columnCoords, column)
+            world.setColumn(columnCoords, Nbt.decode[ChunkColumnData](columnNbt.asInstanceOf[Nbt.MapTag]).get.heightMap)
           } else {
             success = false
           }
@@ -807,7 +799,7 @@ class GameClient(
             world.getBrightness(camera.blockCoords),
             world
               .getColumn(camera.blockCoords.getColumnRelWorld)
-              .map(_.terrainHeight.getHeight(camera.blockCoords.cx, camera.blockCoords.cz))
+              .map(_.getHeight(camera.blockCoords.cx, camera.blockCoords.cz))
               .getOrElse(-12345),
             world.renderDistance,
             regularFragmentation,

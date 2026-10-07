@@ -12,8 +12,8 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
   private var cols: Map[ColumnRelWorld, ChunkColumnTerrain] = Map.empty
   private var chunks: Map[ChunkRelWorld, Chunk] = Map.empty
 
-  override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
-    cols.get(coords)
+  override def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] = {
+    cols.get(coords).map(_.terrainHeight)
   }
 
   override def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
@@ -30,10 +30,12 @@ class FakeBlocksInWorld private (provider: FakeWorldProvider)(using CylinderSize
     if cols.contains(coords) then {
       cols(coords)
     } else {
-      val col = ChunkColumnTerrain.create(
-        ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-        provider.loadColumnData(coords).map(Nbt.decode[ChunkColumnData](_).get)
-      )
+      val generatedTerrain = ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords))
+      val storedTerrain = provider.loadColumnData(coords).flatMap(Nbt.decode[ChunkColumnData](_))
+      val terrain = storedTerrain.map(_.heightMap).getOrElse {
+        ChunkColumnHeightMap.from((x, z) => generatedTerrain.getHeight(x, z))
+      }
+      val col = new ChunkColumnTerrain(generatedTerrain, terrain)
       cols += coords -> col
       col
     }
@@ -73,7 +75,9 @@ object FakeBlocksInWorld {
       val chunk = world.chunks.get(chunkCoords) match {
         case Some(c) => c
         case None =>
-          val ch = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(coords.getChunkRelWorld, col))
+          val ch = Chunk.from(
+            WorldGenerator(provider.worldInfo.gen).generateChunk(coords.getChunkRelWorld, col.originalTerrainHeight)
+          )
           world.chunks += chunkCoords -> ch
           ch
       }

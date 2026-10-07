@@ -87,8 +87,8 @@ class ServerWorld(
     getAllEntities.map(e => filterMap(e).map(e -> _)).filter(_.isDefined).map(_.get).toSeq
   }
 
-  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnTerrain] = {
-    columns.get(coords.value)
+  def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] = {
+    columns.get(coords.value).map(_.terrainHeight)
   }
 
   def getChunk(coords: ChunkRelWorld): Option[Chunk] = {
@@ -440,7 +440,9 @@ class ServerWorld(
                 case Some(loadedTag) =>
                   Future((Nbt.decode[Chunk](loadedTag).get, false))(using genAsync)
                 case None =>
-                  Future((Chunk.from(worldGenerator.generateChunk(coords, column)), true))(using genAsync)
+                  Future((Chunk.from(worldGenerator.generateChunk(coords, column.originalTerrainHeight)), true))(using
+                    genAsync
+                  )
               }(using genAsync)
             case None =>
           }
@@ -522,7 +524,7 @@ class ServerWorld(
   }
 
   private def saveColumn(columnCoords: ColumnRelWorld, col: ChunkColumnTerrain): Unit = {
-    worldProvider.saveColumnData(Nbt.encode(ChunkColumnData(Some(col.terrainHeight))), columnCoords)
+    worldProvider.saveColumnData(Nbt.encode(ChunkColumnData(col.terrainHeight)), columnCoords)
   }
 
   private def tickEntity(e: Entity): Unit = {
@@ -608,12 +610,14 @@ class ServerWorld(
       }
     }
     for coords <- columnsToLoad do {
-      columnsLoading(coords.value) = Future(worldProvider.loadColumnData(coords))(using fsAsync).map(columnData =>
-        ChunkColumnTerrain.create(
-          ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords)),
-          columnData.map(Nbt.decode[ChunkColumnData](_).get)
-        )
-      )(using genAsync)
+      columnsLoading(coords.value) = Future(worldProvider.loadColumnData(coords))(using fsAsync).map { columnData =>
+        val generatedTerrain = ChunkColumnHeightMap.fromData2D(worldGenerator.getHeightmapInterpolator(coords))
+        val terrain = columnData
+          .flatMap(Nbt.decode[ChunkColumnData](_))
+          .map(_.heightMap)
+          .getOrElse(ChunkColumnHeightMap.from((x, z) => generatedTerrain.getHeight(x, z)))
+        new ChunkColumnTerrain(generatedTerrain, terrain)
+      }(using genAsync)
     }
   }
 

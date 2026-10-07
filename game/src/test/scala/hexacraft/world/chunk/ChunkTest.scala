@@ -13,6 +13,6 @@ class ChunkTest extends FunSuite {
     val provider = new FakeWorldProvider(1289)
     val world = FakeBlocksInWorld.empty(provider)
     val col = world.provideColumn(coords.getColumnRelWorld)
-    Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(coords, col))
+    Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(coords, col.originalTerrainHeight))
   }
 }

@@ -34,7 +34,7 @@ class ServerWorldTest extends FunSuite {
     // Set a chunk in the world
     assertEquals(world.getChunk(cCoords), None)
     val col = world.provideColumn(cCoords.getColumnRelWorld)
-    val chunk = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(cCoords, col))
+    val chunk = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(cCoords, col.originalTerrainHeight))
     world.setChunk(cCoords, chunk)
     assertEquals(world.getChunk(cCoords), Some(chunk))
 
@@ -56,7 +56,7 @@ class ServerWorldTest extends FunSuite {
 
     // Set a chunk in the world
     val col = world.provideColumn(chunkCoords.getColumnRelWorld)
-    val chunk = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(chunkCoords, col))
+    val chunk = Chunk.from(WorldGenerator(provider.worldInfo.gen).generateChunk(chunkCoords, col.originalTerrainHeight))
     world.setChunk(chunkCoords, chunk)
 
     // The planner should have decorated the chunk
@@ -121,7 +121,7 @@ class ServerWorldTest extends FunSuite {
   test("the world should allow entities to be added to and removed from a loaded chunk") {
     val provider = new FakeWorldProvider(1234)
     provider.saveColumnData(
-      Nbt.encode(ChunkColumnData(Some(ChunkColumnHeightMap.from((_, _) => 0)))),
+      Nbt.encode(ChunkColumnData(ChunkColumnHeightMap.from((_, _) => 0))),
       ColumnRelWorld(0, 0)
     )
     provider.saveChunkData(Nbt.encode(Nbt.decode[ChunkData](Nbt.makeMap()).get), ChunkRelWorld(0, 0, 0))
