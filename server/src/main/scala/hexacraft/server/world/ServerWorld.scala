@@ -8,7 +8,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockBehaviourFluid, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.Entity
+import hexacraft.world.entity.{AiComponent, Entity, MountComponent}
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
@@ -76,7 +76,7 @@ class ServerWorld(
   private val entityEventsSinceLastTick = mutable.ArrayBuffer.empty[(UUID, EntityEvent)]
 
   def entitiesMountedBy(id: UUID): Seq[Entity] =
-    getAllEntities.filter(_.mountedEntities.exists(_.mountedEntity == id)).toSeq
+    getAllEntities.filter(_.accessComponents { case c: MountComponent => c.mountedEntity }.contains(id)).toSeq
 
   def filterMapEntities[T](filterMap: Entity => Option[T]): Seq[(Entity, T)] = {
     getAllEntities.map(e => filterMap(e).map(e -> _)).filter(_.isDefined).map(_.get).toSeq
@@ -525,11 +525,10 @@ class ServerWorld(
   }
 
   private def tickEntity(e: Entity): Unit = {
-    e.ai match {
-      case Some(ai) =>
-        ai.tick(this, e.transform, e.motion, e.boundingBox)
-        e.motion.velocity.add(ai.acceleration)
-      case None =>
+    e.accessComponent { case c: AiComponent =>
+      val ai = c.ai
+      ai.tick(this, e.transform, e.motion, e.boundingBox)
+      e.motion.velocity.add(ai.acceleration)
     }
 
     e.motion.velocity.x *= 0.9

@@ -26,11 +26,11 @@ class Entity(val id: UUID, val typeName: String, private val components: Seq[Ent
   val model: Option[EntityModel] =
     components.collectFirst { case c: ModelComponent => c.model }
 
-  val mountedEntities: Seq[MountComponent] =
-    components.collect { case c: MountComponent => c }
+  def accessComponent[T](selector: PartialFunction[EntityComponent, T]): Option[T] =
+    components.collectFirst(selector)
 
-  val ai: Option[EntityAI] =
-    components.collectFirst { case c: AiComponent => c.ai }
+  def accessComponents[T](selector: PartialFunction[EntityComponent, T]): Seq[T] =
+    components.collect(selector)
 
   def withComponent(component: EntityComponent): Entity =
     new Entity(id, typeName, components :+ component)
@@ -68,6 +68,8 @@ object Entity {
   }
 
   def encode(e: Entity, includeAi: Boolean): Nbt.MapTag = {
+    val mounts = e.accessComponents { case c: MountComponent => Nbt.encode(c) }
+
     Nbt
       .makeMap(
         "type" -> Nbt.StringTag(e.typeName),
@@ -76,13 +78,13 @@ object Entity {
         "velocity" -> Nbt.makeVectorTag(e.motion.velocity),
         "rotation" -> Nbt.makeVectorTag(e.transform.rotation)
       )
-      .withOptionalField("ai", if includeAi then e.ai.map(_.toNBT) else None)
       .withOptionalField(
-        "mounts",
-        Option.when(e.mountedEntities.nonEmpty) {
-          Nbt.ListTag(e.mountedEntities.map(Nbt.encode))
-        }
+        "ai",
+        if includeAi then {
+          e.accessComponent { case c: AiComponent => c.ai.toNBT }
+        } else None
       )
+      .withOptionalField("mounts", Option.when(mounts.nonEmpty)(Nbt.ListTag(mounts)))
   }
 
   def decode(tag: Nbt.MapTag, includeAi: Boolean)(using CylinderSize): Option[Entity] = {

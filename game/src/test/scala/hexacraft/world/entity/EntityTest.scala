@@ -25,7 +25,7 @@ class EntityTest extends FunSuite {
 
   test("atStartPos should not give the entity any AI") {
     val entity = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
-    assertEquals(entity.ai, None)
+    assertEquals(entity.accessComponent { case e: AiComponent => e }, None)
   }
 
   test("atStartPos should fail for an unknown entity type") {
@@ -64,7 +64,9 @@ class EntityTest extends FunSuite {
 
   test("decode should restore the AI if includeAi is true") {
     val tag = Entity.encode(makeSheepWithAi(), includeAi = true)
-    val ai = Entity.decode(tag, includeAi = true).get.ai.get.asInstanceOf[SimpleWalkAI]
+    val entity = Entity.decode(tag, includeAi = true).get
+    val aiComponent = entity.accessComponent { case e: AiComponent => e }.get
+    val ai = aiComponent.ai.asInstanceOf[SimpleWalkAI]
 
     assertEquals(ai.target.toVector3d, new Vector3d(3.5, 0, 2.25))
     assertEquals(ai.timeout, 42)
@@ -72,6 +74,22 @@ class EntityTest extends FunSuite {
 
   test("decode should ignore the AI in the data if includeAi is false") {
     val tag = Entity.encode(makeSheepWithAi(), includeAi = true)
-    assertEquals(Entity.decode(tag, includeAi = false).get.ai, None)
+    val entity = Entity.decode(tag, includeAi = false).get
+    assertEquals(entity.accessComponent { case e: AiComponent => e }, None)
+  }
+
+  test("encode should not include mounts if there are none") {
+    val entity = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "boat").unwrap()
+    assertEquals(Entity.encode(entity, includeAi = true).getList("mounts"), None)
+  }
+
+  test("encode and decode should preserve the mounts") {
+    val riders = Seq(UUID.randomUUID(), UUID.randomUUID())
+    val boat = riders.foldLeft(Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "boat").unwrap()) {
+      (e, rider) => e.withComponent(MountComponent(rider))
+    }
+
+    val after = Entity.decode(Entity.encode(boat, includeAi = true), includeAi = true).get
+    assertEquals(after.accessComponents { case c: MountComponent => c.mountedEntity }, riders)
   }
 }
