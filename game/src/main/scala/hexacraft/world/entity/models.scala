@@ -3,12 +3,23 @@ package hexacraft.world.entity
 import hexacraft.world.HexBox
 import hexacraft.world.coord.CylCoords
 
-import org.joml.{Matrix4f, Vector3d, Vector3f}
+import org.joml.{Matrix4f, Vector3d, Vector3dc, Vector3f}
 
 trait EntityModel {
   def parts: Seq[EntityPart]
   def textureName: String
-  def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit
+
+  /** @param rotation
+    *   the rotation of the entity (i.e. the direction it is looking)
+    * @param mountRotation
+    *   the rotation of the entity this entity is sitting on, if any
+    */
+  def tick(
+      walking: Boolean,
+      headDirection: Option[Vector3d],
+      rotation: Vector3dc,
+      mountRotation: Option[Vector3dc]
+  ): Unit
 }
 
 trait EntityPart {

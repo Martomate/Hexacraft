@@ -1,11 +1,14 @@
 package hexacraft.client.entity
 
+import hexacraft.game.PlayerInputHandler
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.entity.{BasicEntityPart, EntityModel, EntityPart}
 
-import org.joml.{Vector3d, Vector3f}
+import org.joml.{Vector3d, Vector3dc, Vector3f}
 
 class PlayerEntityModel(
+    val base: BasicEntityPart, // not rendered
+    val headYawBase: BasicEntityPart, // not rendered
     val headBase: BasicEntityPart, // not rendered
     val head: BasicEntityPart,
     val leftBodyHalf: BasicEntityPart,
@@ -20,15 +23,22 @@ class PlayerEntityModel(
 
   private val animation = new PlayerAnimation(this)
 
-  override def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit = {
-    animation.tick(walking, headDirection.getOrElse(new Vector3d), sitting)
+  override def tick(
+      walking: Boolean,
+      headDirection: Option[Vector3d],
+      rotation: Vector3dc,
+      mountRotation: Option[Vector3dc]
+  ): Unit = {
+    animation.tick(walking, headDirection.getOrElse(new Vector3d), rotation, mountRotation)
   }
 }
 
 class PlayerAnimation(model: PlayerEntityModel) {
   private var time = 0
 
-  def tick(walking: Boolean, headDirection: Vector3d, sitting: Boolean): Unit = {
+  def tick(walking: Boolean, headDirection: Vector3d, rotation: Vector3dc, mountRotation: Option[Vector3dc]): Unit = {
+    val sitting = mountRotation.isDefined
+
     if walking || time % 30 != 0 then {
       time += 1
     }
@@ -45,6 +55,16 @@ class PlayerAnimation(model: PlayerEntityModel) {
       model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
       model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
     }
+
+    // While sitting, the body faces the same way as the mount and only the head follows the look direction
+    val headYaw = mountRotation match {
+      case Some(mountRot) =>
+        val maxYaw = PlayerInputHandler.MaxHeadYawWhenMounted
+        math.max(-maxYaw, math.min(maxYaw, PlayerInputHandler.wrapAngle(rotation.y - mountRot.y)))
+      case None => 0.0
+    }
+    model.base.rotation.y = (math.Pi / 2 - headYaw).toFloat
+    model.headYawBase.rotation.y = headYaw.toFloat
 
     model.headBase.rotation.z = -headDirection.x.toFloat
   }
@@ -90,10 +110,13 @@ object PlayerEntityModel {
 
     val base = BasicEntityPart(HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(0, pi / 2, 0))
 
-    val headBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f(), parentPart = base)
+    val headYawBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f(), parentPart = base)
+    val headBase = BasicEntityPart(HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parentPart = headYawBase)
     val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), parentPart = headBase)
 
     PlayerEntityModel(
+      base = base,
+      headYawBase = headYawBase,
       headBase = headBase,
       head = head,
       leftBodyHalf = BasicEntityPart(bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120), parentPart = base),

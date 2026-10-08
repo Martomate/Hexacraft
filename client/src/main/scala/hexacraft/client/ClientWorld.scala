@@ -283,7 +283,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     val horizontalSpeedSq = vel.x * vel.x + vel.z * vel.z
     val headDirection = e.accessComponent { case c: HeadDirectionComponent => c.direction }
     e.accessComponent { case c: ModelComponent =>
-      c.model.tick(horizontalSpeedSq > 0.1, headDirection, mountedOn.nonEmpty)
+      c.model.tick(horizontalSpeedSq > 0.1, headDirection, e.transform.rotation, mountedOn.map(_.transform.rotation))
     }
   }
 

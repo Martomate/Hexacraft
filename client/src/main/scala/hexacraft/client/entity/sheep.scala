@@ -3,7 +3,7 @@ package hexacraft.client.entity
 import hexacraft.world.CylinderSize
 import hexacraft.world.entity.{BasicEntityPart, EntityModel, EntityPart}
 
-import org.joml.{Vector3d, Vector3f}
+import org.joml.{Vector3d, Vector3dc, Vector3f}
 
 class SheepEntityModel(
     val head: BasicEntityPart,
@@ -18,7 +18,12 @@ class SheepEntityModel(
 
   private val animation = new SheepAnimation(this)
 
-  override def tick(walking: Boolean, headDirection: Option[Vector3d], sitting: Boolean): Unit = {
+  override def tick(
+      walking: Boolean,
+      headDirection: Option[Vector3d],
+      rotation: Vector3dc,
+      mountRotation: Option[Vector3dc]
+  ): Unit = {
     animation.tick(walking)
   }
 }

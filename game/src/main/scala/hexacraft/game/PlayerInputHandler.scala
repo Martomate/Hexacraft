@@ -29,8 +29,10 @@ class PlayerInputHandler:
       mounts: Seq[Entity]
   ): Unit = {
     if mounts.nonEmpty then {
-      updateMount(player, mounts.head, pressedKeys, mouseMovement, maxSpeed, 0.02)
+      val mount = mounts.head
+      updateMount(player, mount, pressedKeys, mouseMovement, maxSpeed, 0.02)
       updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
+      limitYawRelativeToMount(player.rotation, mount.transform.rotation, PlayerInputHandler.MaxHeadYawWhenMounted)
     } else {
       updateVelocity(pressedKeys, player.velocity, player.rotation, player.flying, maxSpeed, isInFluid)
       updateRotation(pressedKeys, player.rotation, mouseMovement, 0.05)
@@ -68,6 +70,20 @@ class PlayerInputHandler:
     if pressedKeys.contains(MoveLeft) then {
       mount.transform.rotation.y += rSpeed
       player.rotation.y -= rSpeed
+    }
+  }
+
+  /** Keeps the player looking roughly in the direction of the mount, since only the head can turn while sitting */
+  private def limitYawRelativeToMount(rotation: Vector3d, mountRotation: Vector3dc, maxYaw: Double): Unit = {
+    // The player faces the same way as the mount when `rotation.y == -mountRotation.y`
+    val relativeYaw = PlayerInputHandler.wrapAngle(rotation.y + mountRotation.y)
+    val limitedYaw = math.max(-maxYaw, math.min(maxYaw, relativeYaw))
+
+    if limitedYaw != relativeYaw then {
+      rotation.y = PlayerInputHandler.wrapAngle(limitedYaw - mountRotation.y)
+      if rotation.y < 0 then {
+        rotation.y += math.Pi * 2
+      }
     }
   }
 
@@ -178,3 +194,13 @@ class PlayerInputHandler:
       rotation.z -= (math.Pi * 2)
     }
   }
+
+object PlayerInputHandler {
+  val MaxHeadYawWhenMounted: Double = math.Pi / 2
+
+  /** Returns the given angle wrapped into the range [-pi, pi) */
+  def wrapAngle(angle: Double): Double = {
+    val twoPi = math.Pi * 2
+    angle - twoPi * math.floor((angle + math.Pi) / twoPi)
+  }
+}
