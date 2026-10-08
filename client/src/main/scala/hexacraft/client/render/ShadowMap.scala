@@ -1,7 +1,7 @@
 package hexacraft.client.render
 
 import hexacraft.infra.gpu.OpenGL
-import hexacraft.renderer.{FrameBuffer, TextureSingle}
+import hexacraft.renderer.{FrameBuffer, TextureArray}
 
 import java.nio.ByteBuffer
 
@@ -12,7 +12,8 @@ class ShadowMap(val resolution: Int, val numCascades: Int) {
 
     val texID = glGenTextures()
 
-    TextureSingle.unbind()
+    // this changes which texture array is bound, so the cache in TextureArray has to be reset
+    TextureArray.unbind()
     glBindTexture(TextureTarget.Texture2DArray, texID)
     glTexImage3D(
       TextureTarget.Texture2DArray,
@@ -34,7 +35,7 @@ class ShadowMap(val resolution: Int, val numCascades: Int) {
     glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.TextureWrapT(TexWrap.ClampToEdge))
     glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.CompareRefToTexture)
     glTexParameteri(TextureTarget.Texture2DArray, TexIntParameter.CompareFunc(DepthFunc.LessThanOrEqual))
-    glBindTexture(TextureTarget.Texture2DArray, TextureId.none)
+    TextureArray.unbind()
 
     texID
   }
