@@ -221,6 +221,12 @@ class GameServer(
           case "boat" =>
             world.removeEntity(entity)
             world.addEntity(entity.withComponent(MountComponent(player.id)))
+
+            // Look in the forward direction of the boat
+            player.rotation.y = PlayerInputHandler.wrapAngle(-entity.transform.rotation.y)
+            if player.rotation.y < 0 then {
+              player.rotation.y += math.Pi * 2
+            }
           case t =>
             println(s"Clicked on entity of type $t")
         }
