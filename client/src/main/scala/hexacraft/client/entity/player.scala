@@ -2,7 +2,7 @@ package hexacraft.client.entity
 
 import hexacraft.game.PlayerInputHandler
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.entity.{EntityAnimation, EntityModel, EntityPart}
+import hexacraft.world.entity.{EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
@@ -59,7 +59,20 @@ class PlayerAnimation(model: EntityModel) extends EntityAnimation {
 object PlayerEntityModel {
   import ModelUnits.*
 
-  def create(textureName: String): EntityModel = {
+  val skin: EntitySkin = EntitySkin(
+    "player",
+    Map(
+      "head" -> (0, 176),
+      "leftBodyHalf" -> (0, 120),
+      "rightBodyHalf" -> (48, 120),
+      "rightArm" -> (48, 64),
+      "leftArm" -> (0, 64),
+      "rightLeg" -> (48, 0),
+      "leftLeg" -> (0, 0)
+    )
+  )
+
+  def create(): EntityModel = {
     val legLength = 48
     val legRadius = 8
     val bodyLength = 40
@@ -100,18 +113,17 @@ object PlayerEntityModel {
     val headBase = EntityPart("headBase", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parent = Some(headYawBase))
 
     EntityModel(
-      textureName,
       Seq(
         base,
         headYawBase,
         headBase,
-        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), Some(headBase)),
-        EntityPart("leftBodyHalf", bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120), Some(base)),
-        EntityPart("rightBodyHalf", bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120), Some(base)),
-        EntityPart("rightArm", armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64), Some(base)),
-        EntityPart("leftArm", armBounds, leftArmPos, Vector3f(pi, 0, 0), (0, 64), Some(base)),
-        EntityPart("rightLeg", legBounds, rightLegPos, Vector3f(pi, 0, 0), (48, 0), Some(base)),
-        EntityPart("leftLeg", legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0), Some(base))
+        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2), Some(headBase)),
+        EntityPart("leftBodyHalf", bodyBounds, leftBodyPos, Vector3f(0, 0, 0), Some(base)),
+        EntityPart("rightBodyHalf", bodyBounds, rightBodyPos, Vector3f(0, 0, 0), Some(base)),
+        EntityPart("rightArm", armBounds, rightArmPos, Vector3f(pi, 0, 0), Some(base)),
+        EntityPart("leftArm", armBounds, leftArmPos, Vector3f(pi, 0, 0), Some(base)),
+        EntityPart("rightLeg", legBounds, rightLegPos, Vector3f(pi, 0, 0), Some(base)),
+        EntityPart("leftLeg", legBounds, leftLegPos, Vector3f(pi, 0, 0), Some(base))
       )
     )
   }

@@ -1,6 +1,7 @@
 package hexacraft.client
 
 import hexacraft.client.ClientWorld.WorldTickResult
+import hexacraft.client.entity.ModelComponent
 import hexacraft.math.bits.Int12
 import hexacraft.nbt.Nbt
 import hexacraft.util.Loop
@@ -8,7 +9,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, HeadDirectionComponent, ModelComponent, MountComponent}
+import hexacraft.world.entity.{Entity, HeadDirectionComponent, MountComponent}
 
 import java.util.UUID
 import scala.collection.mutable

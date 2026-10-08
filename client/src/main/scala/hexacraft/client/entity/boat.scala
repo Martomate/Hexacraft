@@ -8,7 +8,9 @@ import org.joml.Vector3f
 object BoatEntityModel {
   import ModelUnits.*
 
-  def create(textureName: String): EntityModel = {
+  val skin: EntitySkin = EntitySkin("boat", Map.empty) // all parts use the same part of the texture
+
+  def create(): EntityModel = {
     val rodLength = 128
     val rodRadius = 4
     val bottomRodCount = 9 // should be odd so that the boat is symmetric
@@ -57,7 +59,7 @@ object BoatEntityModel {
     )
 
     val rods = rodPositions.map { (name, pos) =>
-      EntityPart(name, rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), Some(body))
+      EntityPart(name, rodBounds, pos, Vector3f(0, 0, -pi / 2), Some(body))
     } ++ (0 until sideRowCount).flatMap { row =>
       val length = crossRodLength(row)
       val bounds = makeHexBox(rodRadius, -0.5f * length, length)
@@ -67,10 +69,10 @@ object BoatEntityModel {
         "front" -> (0.8 * rodLength - rodRadius * 0.5)
       ).map { (end, d) =>
         val pos = cylOffset(0, rowHeight * row, d)
-        EntityPart(s"${end}CrossRod_$row", bounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), Some(crossBody))
+        EntityPart(s"${end}CrossRod_$row", bounds, pos, Vector3f(0, pi / 2, -pi / 2), Some(crossBody))
       }
     }
 
-    EntityModel(textureName, Seq(body, crossBody) ++ rods)
+    EntityModel(Seq(body, crossBody) ++ rods)
   }
 }

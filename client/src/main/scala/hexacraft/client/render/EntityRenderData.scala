@@ -1,10 +1,11 @@
 package hexacraft.client.render
 
+import hexacraft.client.entity.{EntitySkin, ModelComponent}
 import hexacraft.shaders.EntityShader
 import hexacraft.util.InlinedIterable
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
-import hexacraft.world.entity.{Entity, EntityPart, ModelComponent}
+import hexacraft.world.entity.{Entity, EntityPart}
 
 import org.joml.{Matrix4f, Vector4f}
 
@@ -23,11 +24,11 @@ object EntityRenderData {
 
     for {
       ent <- InlinedIterable(entities)
-      model <- ent.accessComponent { case c: ModelComponent => c.model }
+      modelComponent <- ent.accessComponent { case c: ModelComponent => c }
     } do {
       val baseT = ent.transform.transform
 
-      for part <- InlinedIterable(model.parts) if part.isVisible do {
+      for part <- InlinedIterable(modelComponent.model.parts) if part.isVisible do {
         baseT.mul(part.transform, tr)
 
         val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
@@ -44,7 +45,7 @@ object EntityRenderData {
             0
           }
 
-        pieces += EntityRenderData(new Matrix4f(tr), part, brightness)
+        pieces += EntityRenderData(new Matrix4f(tr), part, modelComponent.skin, brightness)
       }
     }
 
@@ -52,13 +53,13 @@ object EntityRenderData {
   }
 }
 
-class EntityRenderData(tr: Matrix4f, part: EntityPart, brightness: Float) {
+class EntityRenderData(tr: Matrix4f, part: EntityPart, skin: EntitySkin, brightness: Float) {
   def getInstanceData(side: Int): EntityShader.InstanceData = {
     EntityShader.InstanceData(
       modelMatrix = new Matrix4f(tr),
-      texOffset = part.textureOffset(side),
-      texSize = part.textureSize(side),
-      blockTex = part.texture(side),
+      texOffset = skin.textureOffset(part, side),
+      texSize = skin.textureSize(part, side),
+      blockTex = skin.texture(side),
       brightness
     )
   }

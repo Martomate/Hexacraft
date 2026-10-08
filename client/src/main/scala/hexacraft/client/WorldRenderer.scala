@@ -1,6 +1,7 @@
 package hexacraft.client
 
 import hexacraft.client.ClientWorld.WorldTickResult
+import hexacraft.client.entity.ModelComponent
 import hexacraft.client.render.*
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureSingle, VAO}
@@ -8,7 +9,7 @@ import hexacraft.shaders.*
 import hexacraft.util.{Loop, NamedThreadFactory}
 import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
-import hexacraft.world.entity.{Entity, ModelComponent}
+import hexacraft.world.entity.Entity
 
 import org.joml.{Vector2i, Vector2ic, Vector3f}
 import org.lwjgl.BufferUtils
@@ -209,7 +210,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
 
     val entityRenderDataPerModel = allEntities
       .groupBy {
-        _.accessComponent { case c: ModelComponent => c.model.textureName }
+        _.accessComponent { case c: ModelComponent => c.skin.textureName }
       }
       .collect { case (Some(t), es) =>
         (t, EntityRenderData.fromEntities(es, world))

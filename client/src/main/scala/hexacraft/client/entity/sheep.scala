@@ -1,7 +1,7 @@
 package hexacraft.client.entity
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.entity.{EntityAnimation, EntityModel, EntityPart}
+import hexacraft.world.entity.{EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
@@ -36,7 +36,19 @@ class SheepAnimation(model: EntityModel) extends EntityAnimation {
 object SheepEntityModel {
   import ModelUnits.*
 
-  def create(textureName: String): EntityModel = {
+  val skin: EntitySkin = EntitySkin(
+    "sheep",
+    Map(
+      "head" -> (0, 168),
+      "body" -> (0, 88),
+      "frontRightLeg" -> (36, 44),
+      "frontLeftLeg" -> (0, 44),
+      "backRightLeg" -> (36, 0),
+      "backLeftLeg" -> (0, 0)
+    )
+  )
+
+  def create(): EntityModel = {
     val legLength = 32
     val legRadius = 6
     val bodyLength = 48
@@ -71,14 +83,13 @@ object SheepEntityModel {
     val pi = math.Pi.toFloat
 
     EntityModel(
-      textureName,
       Seq(
-        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 168)),
-        EntityPart("body", bodyBounds, bodyPos, Vector3f(0, pi / 2, -pi / 2), (0, 88)),
-        EntityPart("frontRightLeg", legBounds, frontRightLegPos, Vector3f(pi, 0, 0), (36, 44)),
-        EntityPart("frontLeftLeg", legBounds, frontLeftLegPos, Vector3f(pi, 0, 0), (0, 44)),
-        EntityPart("backRightLeg", legBounds, backRightLegPos, Vector3f(pi, 0, 0), (36, 0)),
-        EntityPart("backLeftLeg", legBounds, backLeftLegPos, Vector3f(pi, 0, 0), (0, 0))
+        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2)),
+        EntityPart("body", bodyBounds, bodyPos, Vector3f(0, pi / 2, -pi / 2)),
+        EntityPart("frontRightLeg", legBounds, frontRightLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("frontLeftLeg", legBounds, frontLeftLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("backRightLeg", legBounds, backRightLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("backLeftLeg", legBounds, backLeftLegPos, Vector3f(pi, 0, 0))
       )
     )
   }
