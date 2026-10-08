@@ -1,7 +1,7 @@
 package hexacraft.main
 
 import hexacraft.client.{GameClientSocket, NetworkChannel}
-import hexacraft.game.NetworkPacket
+import hexacraft.game.{LanDiscovery, NetworkPacket}
 import hexacraft.gui.{LocationInfo, RenderContext, Scene}
 import hexacraft.gui.comp.*
 import hexacraft.infra.fs.{FileSystem, NbtFile}
@@ -48,7 +48,12 @@ object Menus {
   // These classes exist because the router tests use an "instance of" check. Those tests should really be checking for something else.
   class MainMenu private extends MenuScene
   class HostWorldChooserMenu private extends MenuScene
-  class JoinWorldChooserMenu private extends MenuScene
+  class JoinWorldChooserMenu private (lanListener: LanDiscovery.Listener) extends MenuScene {
+    override def unload(): Unit = {
+      lanListener.close()
+      super.unload()
+    }
+  }
   class AddServerMenu private extends MenuScene
   class ChoosePlayerNameMenu private extends MenuScene
   class MultiplayerMenu private extends MenuScene
@@ -135,7 +140,10 @@ object Menus {
       case GoBack
     }
 
-    def create(servers: Seq[(String, Int)]): (MenuScene, Channel.Receiver[Event]) = {
+    def create(
+        servers: Seq[(String, Int)],
+        lanListener: LanDiscovery.Listener
+    ): (MenuScene, Channel.Receiver[Event]) = {
       val (tx, rx) = Channel[Event]()
 
       val scrollPane = new ScrollPane(LocationInfo.from16x9(0.285f, 0.225f, 0.43f, 0.635f), 0.025f * 2)
@@ -166,26 +174,41 @@ object Menus {
         }
       }
 
+      var lanServers: Seq[LanDiscovery.DiscoveredServer] = Seq.empty
+
       def updateScrollPane(): Unit = {
-        for (((address, port), state), i) <- servers.zip(serverConnectionState).zipWithIndex do {
-          val (ready, title) = state match {
-            case ServerState.Connecting      => (false, s"Connecting to $address:$port...")
-            case ServerState.Unavailable     => (false, "Connection failed")
-            case ServerState.Available(name) => (true, name)
+        val savedServerButtons =
+          for ((address, port), state) <- servers.zip(serverConnectionState) yield {
+            val (ready, title) = state match {
+              case ServerState.Connecting      => (false, s"Connecting to $address:$port...")
+              case ServerState.Unavailable     => (false, "Connection failed")
+              case ServerState.Available(name) => (true, name)
+            }
+            (title, ready, address, port)
           }
+        val lanServerButtons =
+          for s <- lanServers yield (s"${s.worldName} (LAN)", true, s.address, s.port)
+
+        val buttons = savedServerButtons ++ lanServerButtons
+        for ((title, ready, address, port), i) <- buttons.zipWithIndex do {
           val buttonBounds = LocationInfo.from16x9(0.3f, 0.75f - 0.1f * i, 0.4f, 0.075f)
           val button = Button(title, buttonBounds, disabled = !ready) {
             tx.send(Event.Join(address, port))
           }
           scrollPane.replaceComponent(i, button)
         }
+        while scrollPane.componentCount > buttons.length do {
+          scrollPane.removeComponent(scrollPane.componentCount - 1)
+        }
       }
 
       updateScrollPane()
 
-      val menu = new JoinWorldChooserMenu
+      val menu = new JoinWorldChooserMenu(lanListener)
 
       menu.onTick {
+        var changed = false
+
         if stateUpdates.nonEmpty then {
           val updates = stateUpdates.synchronized {
             stateUpdates.removeAll()
@@ -193,8 +216,18 @@ object Menus {
 
           for (idx, state) <- updates do {
             serverConnectionState(idx) = state
-            updateScrollPane()
           }
+          changed = true
+        }
+
+        val newLanServers = lanListener.servers
+        if newLanServers != lanServers then {
+          lanServers = newLanServers
+          changed = true
+        }
+
+        if changed then {
+          updateScrollPane()
         }
       }
 

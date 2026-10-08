@@ -1,6 +1,7 @@
 package hexacraft.main
 
 import hexacraft.client.BlockTextureLoader
+import hexacraft.game.LanDiscovery
 import hexacraft.gui.Scene
 import hexacraft.infra.audio.AudioSystem
 import hexacraft.infra.fs.FileSystem
@@ -111,7 +112,7 @@ class MainRouter(
     case SceneRoute.JoinWorld =>
       import Menus.JoinWorldChooserMenu.Event
 
-      val (scene, rx) = Menus.JoinWorldChooserMenu.create(servers.toSeq)
+      val (scene, rx) = Menus.JoinWorldChooserMenu.create(servers.toSeq, LanDiscovery.Listener.start())
 
       rx.onEvent {
         case Event.Join(address, port) =>
