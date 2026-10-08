@@ -216,6 +216,7 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
         val sh = if side < 2 then blockShader else blockSideShader
         sh.enable()
         sh.setSide(side)
+        sh.setTranslucent(false)
         for h <- InlinedIterable(opaqueBlockRenderers(side).values) do {
           h.render()
         }
@@ -225,6 +226,7 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
         val sh = if side < 2 then blockShader else blockSideShader
         sh.enable()
         sh.setSide(side)
+        sh.setTranslucent(true)
         for h <- InlinedIterable(translucentBlockRenderers(side).values) do {
           h.render()
         }

@@ -37,6 +37,10 @@ class BlockShader(isSide: Boolean) {
     shader.setUniform1i("side", side)
   }
 
+  def setTranslucent(translucent: Boolean): Unit = {
+    shader.setUniform1i("translucent", if translucent then 1 else 0)
+  }
+
   def enable(): Unit = {
     shader.activate()
   }

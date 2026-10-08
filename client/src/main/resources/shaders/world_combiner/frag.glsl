@@ -27,4 +27,6 @@ void main() {
     color = worldColor;//vec4(mix(worldColor.rgb, vec3(0.0, 0.0, 0.5), 1.0 - exp(-0.2 * worldDepth)), 1.0);
     color.rgb *= visibility;
     color.a = sqrt(color.a);
+    // The color was premultiplied when blended into the (transparent) frame buffer, so undo that before blending again
+    if (color.a > 0.0) color.rgb /= color.a;
 }
