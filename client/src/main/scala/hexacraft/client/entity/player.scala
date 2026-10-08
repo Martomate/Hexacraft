@@ -6,14 +6,14 @@ import hexacraft.world.entity.{EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
-class PlayerAnimation(model: EntityModel) extends EntityAnimation {
-  private val base = model.part("base")
-  private val headYawBase = model.part("headYawBase")
-  private val headBase = model.part("headBase")
-  private val rightArm = model.part("rightArm")
-  private val leftArm = model.part("leftArm")
-  private val rightLeg = model.part("rightLeg")
-  private val leftLeg = model.part("leftLeg")
+class PlayerAnimation(pose: EntityPose) extends EntityAnimation {
+  private val base = pose.rotation("base")
+  private val headYawBase = pose.rotation("headYawBase")
+  private val headBase = pose.rotation("headBase")
+  private val rightArm = pose.rotation("rightArm")
+  private val leftArm = pose.rotation("leftArm")
+  private val rightLeg = pose.rotation("rightLeg")
+  private val leftLeg = pose.rotation("leftLeg")
 
   private var time = 0
 
@@ -31,15 +31,15 @@ class PlayerAnimation(model: EntityModel) extends EntityAnimation {
 
     val phase = time * (1f / 60) * 2 * math.Pi
 
-    rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
-    leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
+    rightArm.z = -0.5f * math.sin(phase).toFloat
+    leftArm.z = 0.5f * math.sin(phase).toFloat
 
     if sitting then {
-      rightLeg.rotation.z = math.Pi.toFloat * 0.5f
-      leftLeg.rotation.z = math.Pi.toFloat * 0.5f
+      rightLeg.z = math.Pi.toFloat * 0.5f
+      leftLeg.z = math.Pi.toFloat * 0.5f
     } else {
-      rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
-      leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+      rightLeg.z = 0.5f * math.sin(phase).toFloat
+      leftLeg.z = -0.5f * math.sin(phase).toFloat
     }
 
     // While sitting, the body faces the same way as the mount and only the head follows the look direction
@@ -49,10 +49,11 @@ class PlayerAnimation(model: EntityModel) extends EntityAnimation {
         math.max(-maxYaw, math.min(maxYaw, PlayerInputHandler.wrapAngle(rotation.y - mountRot.y)))
       case None => 0.0
     }
-    base.rotation.y = (math.Pi / 2 - headYaw).toFloat
-    headYawBase.rotation.y = headYaw.toFloat
+    // The body is turned back so that only the head turns
+    base.y = -headYaw.toFloat
+    headYawBase.y = headYaw.toFloat
 
-    headBase.rotation.z = -headDirection.map(_.x).getOrElse(0.0).toFloat
+    headBase.z = -headDirection.map(_.x).getOrElse(0.0).toFloat
   }
 }
 
@@ -72,7 +73,9 @@ object PlayerEntityModel {
     )
   )
 
-  def create(): EntityModel = {
+  val model: EntityModel = create()
+
+  private def create(): EntityModel = {
     val legLength = 48
     val legRadius = 8
     val bodyLength = 40
@@ -113,7 +116,7 @@ object PlayerEntityModel {
     val headBase = EntityPart("headBase", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parent = Some(headYawBase))
 
     EntityModel(
-      Seq(
+      IndexedSeq(
         base,
         headYawBase,
         headBase,

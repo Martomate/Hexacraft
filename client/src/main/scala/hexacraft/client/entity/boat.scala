@@ -10,7 +10,9 @@ object BoatEntityModel {
 
   val skin: EntitySkin = EntitySkin("boat", Map.empty) // all parts use the same part of the texture
 
-  def create(): EntityModel = {
+  val model: EntityModel = create()
+
+  private def create(): EntityModel = {
     val rodLength = 128
     val rodRadius = 4
     val bottomRodCount = 9 // should be odd so that the boat is symmetric
@@ -73,6 +75,6 @@ object BoatEntityModel {
       }
     }
 
-    EntityModel(Seq(body, crossBody) ++ rods)
+    EntityModel((Seq(body, crossBody) ++ rods).toIndexedSeq)
   }
 }

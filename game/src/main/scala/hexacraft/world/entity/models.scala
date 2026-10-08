@@ -3,51 +3,47 @@ package hexacraft.world.entity
 import hexacraft.world.HexBox
 import hexacraft.world.coord.CylCoords
 
-import org.joml.{Matrix4f, Vector3f}
+import org.joml.{Vector3f, Vector3fc}
 
 /** An entity model is a collection of hexagonal prisms (parts).
-  *
-  * Each part is placed relative to its parent part (if any). A part with an empty box is not rendered, it only serves
-  * as a pivot for its children.
+  * It is immutable, so it can be shared by all entities of the same type.
+  * Each part is placed relative to its parent part (if any).
+  * Parents have to come before their children in `parts`.
+  * A part with an empty box is not rendered, it only serves as a pivot for its children.
   */
-class EntityModel(val parts: Seq[EntityPart]) {
-  private val partsByName: Map[String, EntityPart] = parts.map(p => p.name -> p).toMap
-  require(partsByName.size == parts.size, "Part names must be unique")
+class EntityModel(val parts: IndexedSeq[EntityPart]) {
+  private val indicesByName: Map[String, Int] = parts.map(_.name).zipWithIndex.toMap
+  require(indicesByName.size == parts.size, "Part names must be unique")
 
-  def part(name: String): EntityPart = {
-    partsByName.getOrElse(name, throw new IllegalArgumentException(s"The model has no part named '$name'"))
+  /** The index of each part's parent, or -1 if the part has no parent */
+  val parentIndices: IndexedSeq[Int] = parts.zipWithIndex.map { (part, idx) =>
+    part.parent match {
+      case Some(parent) =>
+        val parentIdx = indicesByName.getOrElse(parent.name, -1)
+        require(parentIdx != -1 && parts(parentIdx) == parent, s"The parent of '${part.name}' is not in the model")
+        require(parentIdx < idx, s"The parent of '${part.name}' has to come before it")
+        parentIdx
+      case None => -1
+    }
   }
+
+  def indexOf(name: String): Int = {
+    indicesByName.getOrElse(name, throw new IllegalArgumentException(s"The model has no part named '$name'"))
+  }
+
+  def part(name: String): EntityPart = parts(indexOf(name))
 }
 
+/** A hexagonal prism placed at `position` relative to its parent, and rotated by `rotation` around that point. */
 class EntityPart(
     val name: String,
     val box: HexBox,
-    pos: CylCoords.Offset,
-    val rotation: Vector3f,
+    val position: CylCoords.Offset,
+    _rotation: Vector3fc,
     val parent: Option[EntityPart] = None
 ) {
+  val rotation: Vector3fc = new Vector3f(_rotation)
 
   /** Pivot parts (with an empty box) are not rendered */
   def isVisible: Boolean = box.radius > 0 && box.top > box.bottom
-
-  def baseTransform: Matrix4f = {
-    val base = parent.map(p => Matrix4f(p.baseTransform)).getOrElse(Matrix4f())
-
-    base
-      .translate(pos.toVector3f)
-      .rotateZ(rotation.z)
-      .rotateX(rotation.x)
-      .rotateY(rotation.y)
-      .translate(0, box.bottom, 0)
-  }
-
-  def transform: Matrix4f = {
-    baseTransform.scale(
-      new Vector3f(
-        box.radius,
-        box.top - box.bottom,
-        box.radius
-      )
-    )
-  }
 }

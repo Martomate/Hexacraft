@@ -5,11 +5,11 @@ import hexacraft.world.entity.{EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
-class SheepAnimation(model: EntityModel) extends EntityAnimation {
-  private val frontRightLeg = model.part("frontRightLeg")
-  private val frontLeftLeg = model.part("frontLeftLeg")
-  private val backRightLeg = model.part("backRightLeg")
-  private val backLeftLeg = model.part("backLeftLeg")
+class SheepAnimation(pose: EntityPose) extends EntityAnimation {
+  private val frontRightLeg = pose.rotation("frontRightLeg")
+  private val frontLeftLeg = pose.rotation("frontLeftLeg")
+  private val backRightLeg = pose.rotation("backRightLeg")
+  private val backLeftLeg = pose.rotation("backLeftLeg")
 
   private var time = 0f
 
@@ -25,11 +25,11 @@ class SheepAnimation(model: EntityModel) extends EntityAnimation {
 
     val phase = time * (1f / 60) * 2 * math.Pi
 
-    frontRightLeg.rotation.z = -0.5f * math.sin(phase).toFloat
-    frontLeftLeg.rotation.z = 0.5f * math.sin(phase).toFloat
+    frontRightLeg.z = -0.5f * math.sin(phase).toFloat
+    frontLeftLeg.z = 0.5f * math.sin(phase).toFloat
 
-    backRightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
-    backLeftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+    backRightLeg.z = 0.5f * math.sin(phase).toFloat
+    backLeftLeg.z = -0.5f * math.sin(phase).toFloat
   }
 }
 
@@ -48,7 +48,9 @@ object SheepEntityModel {
     )
   )
 
-  def create(): EntityModel = {
+  val model: EntityModel = create()
+
+  private def create(): EntityModel = {
     val legLength = 32
     val legRadius = 6
     val bodyLength = 48
@@ -83,7 +85,7 @@ object SheepEntityModel {
     val pi = math.Pi.toFloat
 
     EntityModel(
-      Seq(
+      IndexedSeq(
         EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2)),
         EntityPart("body", bodyBounds, bodyPos, Vector3f(0, pi / 2, -pi / 2)),
         EntityPart("frontRightLeg", legBounds, frontRightLegPos, Vector3f(pi, 0, 0)),

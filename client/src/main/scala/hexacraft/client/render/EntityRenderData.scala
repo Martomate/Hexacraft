@@ -2,7 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.client.entity.{EntitySkin, ModelComponent}
 import hexacraft.shaders.EntityShader
-import hexacraft.util.InlinedIterable
+import hexacraft.util.{InlinedIterable, Loop}
 import hexacraft.world.{BlocksInWorld, ChunkCache, CylinderSize}
 import hexacraft.world.coord.{CoordUtils, CylCoords}
 import hexacraft.world.entity.{Entity, EntityPart}
@@ -27,25 +27,31 @@ object EntityRenderData {
       modelComponent <- ent.accessComponent { case c: ModelComponent => c }
     } do {
       val baseT = ent.transform.transform
+      val parts = modelComponent.model.parts
+      val partTransforms = modelComponent.pose.partTransforms
 
-      for part <- InlinedIterable(modelComponent.model.parts) if part.isVisible do {
-        baseT.mul(part.transform, tr)
+      Loop.rangeUntil(0, parts.size) { idx =>
+        val part = parts(idx)
+        if part.isVisible then {
+          baseT.mul(partTransforms(idx), tr)
+          tr.scale(part.box.radius, part.box.top - part.box.bottom, part.box.radius)
 
-        val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
-        val blockCoords = CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords
-        val coords = CoordUtils.getEnclosingBlock(blockCoords)._1
-        val cCoords = coords.getChunkRelWorld
+          val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
+          val blockCoords = CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords
+          val coords = CoordUtils.getEnclosingBlock(blockCoords)._1
+          val cCoords = coords.getChunkRelWorld
 
-        val partChunk = chunkCache.getChunk(cCoords)
+          val partChunk = chunkCache.getChunk(cCoords)
 
-        val brightness: Float =
-          if partChunk != null then {
-            partChunk.getBrightness(coords.getBlockRelChunk)
-          } else {
-            0
-          }
+          val brightness: Float =
+            if partChunk != null then {
+              partChunk.getBrightness(coords.getBlockRelChunk)
+            } else {
+              0
+            }
 
-        pieces += EntityRenderData(new Matrix4f(tr), part, modelComponent.skin, brightness)
+          pieces += EntityRenderData(new Matrix4f(tr), part, modelComponent.skin, brightness)
+        }
       }
     }
 

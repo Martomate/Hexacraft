@@ -5,9 +5,11 @@ import hexacraft.world.entity.{EntityComponent, EntityModel}
 import org.joml.{Vector3d, Vector3dc}
 
 /** Everything the client needs to render an entity. The server knows nothing about this. */
-class ModelComponent(val model: EntityModel, val skin: EntitySkin, val animation: EntityAnimation)
+class ModelComponent(val pose: EntityPose, val skin: EntitySkin, val animation: EntityAnimation)
     extends EntityComponent {
   skin.partNames.foreach(model.part) // fails if the skin refers to a part that the model doesn't have
+
+  def model: EntityModel = pose.model
 }
 
 /** Moves the parts of a model based on what the entity is doing */

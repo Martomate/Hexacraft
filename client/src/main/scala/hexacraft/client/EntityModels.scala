@@ -7,13 +7,14 @@ import hexacraft.world.entity.Entity
 object EntityModels {
   def forType(entityType: String): Option[ModelComponent] = entityType match {
     case "player" =>
-      val model = PlayerEntityModel.create()
-      Some(ModelComponent(model, PlayerEntityModel.skin, PlayerAnimation(model)))
+      val pose = EntityPose(PlayerEntityModel.model)
+      Some(ModelComponent(pose, PlayerEntityModel.skin, PlayerAnimation(pose)))
     case "sheep" =>
-      val model = SheepEntityModel.create()
-      Some(ModelComponent(model, SheepEntityModel.skin, SheepAnimation(model)))
+      val pose = EntityPose(SheepEntityModel.model)
+      Some(ModelComponent(pose, SheepEntityModel.skin, SheepAnimation(pose)))
     case "boat" =>
-      Some(ModelComponent(BoatEntityModel.create(), BoatEntityModel.skin, EntityAnimation.none))
+      val pose = EntityPose(BoatEntityModel.model)
+      Some(ModelComponent(pose, BoatEntityModel.skin, EntityAnimation.none))
     case _ => None
   }
 
