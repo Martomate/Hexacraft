@@ -49,8 +49,8 @@ object LanDiscovery {
   private def multicastInterfaces(): Seq[NetworkInterface] = {
     val all = Try(NetworkInterface.networkInterfaces().iterator().asScala.toSeq).getOrElse(Seq.empty)
 
-    // Loopback is included so that servers on the same machine are found even if the process is not allowed to use
-    // the local network (e.g. due to the Local Network privacy setting on macOS). Duplicates are removed by the listener.
+    // Loopback is included so that several listeners on the same machine can find the server. Duplicates are removed
+    // by the listener.
     all.filter { i =>
       Try(i.isUp && i.supportsMulticast && !i.isVirtual).getOrElse(false) &&
       i.getInetAddresses.asScala.exists(_.isInstanceOf[Inet4Address])
@@ -78,6 +78,11 @@ object LanDiscovery {
         socket.setTimeToLive(1) // stay on the local network
         val packet = new DatagramPacket(payload, payload.length, GroupAddress, Port)
 
+        // Multicast is not allowed at all if the process may not use the local network (e.g. due to the Local Network
+        // privacy setting on macOS), so the server is also announced directly to this machine.
+        // Note: if several listeners share the port, only one of them receives this packet.
+        val loopbackPacket = new DatagramPacket(payload, payload.length, InetAddress.getByName("127.0.0.1"), Port)
+
         var interfaces = multicastInterfaces()
         val failingInterfaces = mutable.Set.empty[String]
         var lastInterfaceRefresh = System.currentTimeMillis()
@@ -101,6 +106,12 @@ object LanDiscovery {
                   println(s"Could not announce server on network interface ${i.getName}: ${e.getMessage}")
                 }
             }
+          }
+
+          try {
+            socket.send(loopbackPacket)
+          } catch {
+            case _: Exception => // multicast on the loopback interface might still work
           }
 
           try {
