@@ -19,8 +19,8 @@ class EntityModel(val parts: IndexedSeq[EntityPart]) {
   val parentIndices: IndexedSeq[Int] = parts.zipWithIndex.map { (part, idx) =>
     part.parent match {
       case Some(parent) =>
-        val parentIdx = indicesByName.getOrElse(parent.name, -1)
-        require(parentIdx != -1 && parts(parentIdx) == parent, s"The parent of '${part.name}' is not in the model")
+        val parentIdx = indicesByName.getOrElse(parent, -1)
+        require(parentIdx != -1, s"The parent of '${part.name}' ('$parent') is not in the model")
         require(parentIdx < idx, s"The parent of '${part.name}' has to come before it")
         parentIdx
       case None => -1
@@ -40,7 +40,7 @@ class EntityPart(
     val box: HexBox,
     val position: CylCoords.Offset,
     _rotation: Vector3fc,
-    val parent: Option[EntityPart] = None
+    val parent: Option[String] = None
 ) {
   val rotation: Vector3fc = new Vector3f(_rotation)
 

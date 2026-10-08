@@ -33,7 +33,7 @@ class EntityPoseTest extends FunSuite {
 
   test("children are placed relative to their posed parent") {
     val parent = EntityPart("pivot", HexBox(0, 0, 0), CylCoords.Offset(0, 1, 0), Vector3f())
-    val child = EntityPart("head", HexBox(0.1f, 0, 0.2f), CylCoords.Offset(0, 0, 0.5), Vector3f(), Some(parent))
+    val child = EntityPart("head", HexBox(0.1f, 0, 0.2f), CylCoords.Offset(0, 0, 0.5), Vector3f(), Some("pivot"))
     val pose = EntityPose(EntityModel(IndexedSeq(parent, child)))
     pose.rotation("pivot").y = pi / 2
 
@@ -54,8 +54,14 @@ class EntityPoseTest extends FunSuite {
 
   test("a model requires parents to come before their children") {
     val parent = EntityPart("pivot", HexBox(0, 0, 0), CylCoords.Offset(0, 0, 0), Vector3f())
-    val child = EntityPart("head", HexBox(0.1f, 0, 0.2f), CylCoords.Offset(0, 0, 0), Vector3f(), Some(parent))
+    val child = EntityPart("head", HexBox(0.1f, 0, 0.2f), CylCoords.Offset(0, 0, 0), Vector3f(), Some("pivot"))
 
     intercept[IllegalArgumentException](EntityModel(IndexedSeq(child, parent)))
+  }
+
+  test("a model requires the parent of each part to be in the model") {
+    val child = EntityPart("head", HexBox(0.1f, 0, 0.2f), CylCoords.Offset(0, 0, 0), Vector3f(), Some("pivot"))
+
+    intercept[IllegalArgumentException](EntityModel(IndexedSeq(child)))
   }
 }

@@ -57,11 +57,11 @@ object BoatEntityModel {
       HexBox(0, 0, 0),
       cylOffset(0, 8 - 4 * CylinderSize.y60, 0),
       Vector3f(0, pi / 2, 0),
-      parent = Some(body)
+      parent = Some("body")
     )
 
     val rods = rodPositions.map { (name, pos) =>
-      EntityPart(name, rodBounds, pos, Vector3f(0, 0, -pi / 2), Some(body))
+      EntityPart(name, rodBounds, pos, Vector3f(0, 0, -pi / 2), Some("body"))
     } ++ (0 until sideRowCount).flatMap { row =>
       val length = crossRodLength(row)
       val bounds = makeHexBox(rodRadius, -0.5f * length, length)
@@ -71,7 +71,7 @@ object BoatEntityModel {
         "front" -> (0.8 * rodLength - rodRadius * 0.5)
       ).map { (end, d) =>
         val pos = cylOffset(0, rowHeight * row, d)
-        EntityPart(s"${end}CrossRod_$row", bounds, pos, Vector3f(0, pi / 2, -pi / 2), Some(crossBody))
+        EntityPart(s"${end}CrossRod_$row", bounds, pos, Vector3f(0, pi / 2, -pi / 2), Some("crossBody"))
       }
     }
 
