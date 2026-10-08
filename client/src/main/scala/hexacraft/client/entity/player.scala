@@ -1,8 +1,8 @@
 package hexacraft.client.entity
 
 import hexacraft.game.PlayerInputHandler
-import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.entity.{EntityModel, EntityPart}
+import hexacraft.world.CylinderSize
+import hexacraft.world.entity.{EntityModel, EntityPart, HexPrism}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
@@ -85,48 +85,51 @@ object PlayerEntityModel {
     val headDepth = 20
     val headRadius = 16
 
-    val headBounds = makeHexBox(headRadius, -headDepth / 2f, headDepth)
-    val bodyBounds = makeHexBox(bodyRadius, 0, bodyLength)
-    val armBounds = makeHexBox(armRadius, -armRadius * CylinderSize.y60, armLength)
-    val legBounds = makeHexBox(legRadius, 0, legLength)
+    val headPrism = HexPrism(headRadius, headDepth)
+    val bodyPrism = HexPrism(bodyRadius, bodyLength)
+    val armPrism = HexPrism(armRadius, armLength)
+    val legPrism = HexPrism(legRadius, legLength)
+
+    val headPrismOffset = -headDepth / 2f
+    val armPrismOffset = (-armRadius * CylinderSize.y60).toFloat
 
     val headBaseY = bodyLength + legLength
     val headY = headRadius * CylinderSize.y60
-    val headBasePos = cylOffset(0, headBaseY, 0)
-    val headPos = cylOffset(0, headY, 0)
+    val headBasePos = pos(0, headBaseY, 0)
+    val headPos = pos(0, headY, 0)
 
     // The body halves are neighbouring hexagons, so are the arms and the body
-    val rightBodyPos = cylOffset(0, legLength, 0.5 * hexStep(bodyRadius))
-    val leftBodyPos = cylOffset(0, legLength, -0.5 * hexStep(bodyRadius))
+    val rightBodyPos = pos(0, legLength, 0.5 * hexStep(bodyRadius))
+    val leftBodyPos = pos(0, legLength, -0.5 * hexStep(bodyRadius))
 
     val armY = legLength + bodyLength - armRadius * CylinderSize.y60
-    val rightArmPos = cylOffset(0, armY, hexStep(bodyRadius + 0.5 * armRadius))
-    val leftArmPos = cylOffset(0, armY, -hexStep(bodyRadius + 0.5 * armRadius))
+    val rightArmPos = pos(0, armY, hexStep(bodyRadius + 0.5 * armRadius))
+    val leftArmPos = pos(0, armY, -hexStep(bodyRadius + 0.5 * armRadius))
 
     // The legs are moved a tiny bit apart to avoid z-fighting
-    val legGap = 0.001
-    val rightLegPos = cylOffset(0, legLength, 0.5 * hexStep(legRadius)).offset(0, 0, legGap)
-    val leftLegPos = cylOffset(0, legLength, -0.5 * hexStep(legRadius)).offset(0, 0, -legGap)
+    val legGap = 0.05
+    val rightLegPos = pos(0, legLength, 0.5 * hexStep(legRadius) + legGap)
+    val leftLegPos = pos(0, legLength, -0.5 * hexStep(legRadius) - legGap)
 
     val pi = math.Pi.toFloat
 
     // Pivots (not rendered)
-    val base = EntityPart("base", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(0, pi / 2, 0))
-    val headYawBase = EntityPart("headYawBase", HexBox(0, 0, 0), headBasePos, Vector3f(), parent = Some("base"))
-    val headBase = EntityPart("headBase", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parent = Some("headYawBase"))
+    val base = EntityPart("base", HexPrism.empty, pos(0, 0, 0), Vector3f(0, pi / 2, 0))
+    val headYawBase = EntityPart("headYawBase", HexPrism.empty, headBasePos, Vector3f(), Some("base"))
+    val headBase = EntityPart("headBase", HexPrism.empty, pos(0, 0, 0), Vector3f(), Some("headYawBase"))
 
     EntityModel(
       IndexedSeq(
         base,
         headYawBase,
         headBase,
-        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2), Some("headBase")),
-        EntityPart("leftBodyHalf", bodyBounds, leftBodyPos, Vector3f(0, 0, 0), Some("base")),
-        EntityPart("rightBodyHalf", bodyBounds, rightBodyPos, Vector3f(0, 0, 0), Some("base")),
-        EntityPart("rightArm", armBounds, rightArmPos, Vector3f(pi, 0, 0), Some("base")),
-        EntityPart("leftArm", armBounds, leftArmPos, Vector3f(pi, 0, 0), Some("base")),
-        EntityPart("rightLeg", legBounds, rightLegPos, Vector3f(pi, 0, 0), Some("base")),
-        EntityPart("leftLeg", legBounds, leftLegPos, Vector3f(pi, 0, 0), Some("base"))
+        EntityPart("head", headPrism, headPos, Vector3f(0, pi / 2, pi / 2), Some("headBase"), headPrismOffset),
+        EntityPart("leftBodyHalf", bodyPrism, leftBodyPos, Vector3f(0, 0, 0), Some("base")),
+        EntityPart("rightBodyHalf", bodyPrism, rightBodyPos, Vector3f(0, 0, 0), Some("base")),
+        EntityPart("rightArm", armPrism, rightArmPos, Vector3f(pi, 0, 0), Some("base"), armPrismOffset),
+        EntityPart("leftArm", armPrism, leftArmPos, Vector3f(pi, 0, 0), Some("base"), armPrismOffset),
+        EntityPart("rightLeg", legPrism, rightLegPos, Vector3f(pi, 0, 0), Some("base")),
+        EntityPart("leftLeg", legPrism, leftLegPos, Vector3f(pi, 0, 0), Some("base"))
       )
     )
   }

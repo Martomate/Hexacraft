@@ -41,6 +41,6 @@ class EntitySkin(
 }
 
 object EntitySkin {
-  private def radiusInPixels(part: EntityPart): Int = (part.box.radius * 32 / 0.5f).round
-  private def heightInPixels(part: EntityPart): Int = ((part.box.top - part.box.bottom) * 32 / 0.5f).round
+  private def radiusInPixels(part: EntityPart): Int = part.prism.radius
+  private def heightInPixels(part: EntityPart): Int = part.prism.length
 }

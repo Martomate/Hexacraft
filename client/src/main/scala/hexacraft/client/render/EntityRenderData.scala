@@ -28,13 +28,12 @@ object EntityRenderData {
     } do {
       val baseT = ent.transform.transform
       val parts = modelComponent.model.parts
-      val partTransforms = modelComponent.pose.partTransforms
+      val prismTransforms = modelComponent.pose.prismTransforms
 
       Loop.rangeUntil(0, parts.size) { idx =>
         val part = parts(idx)
         if part.isVisible then {
-          baseT.mul(partTransforms(idx), tr)
-          tr.scale(part.box.radius, part.box.top - part.box.bottom, part.box.radius)
+          baseT.mul(prismTransforms(idx), tr)
 
           val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))
           val blockCoords = CylCoords(coords4.x, coords4.y, coords4.z).toBlockCoords

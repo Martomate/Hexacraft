@@ -1,7 +1,7 @@
 package hexacraft.client.entity
 
 import hexacraft.world.CylinderSize
-import hexacraft.world.entity.{EntityModel, EntityPart}
+import hexacraft.world.entity.{EntityModel, EntityPart, HexPrism}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
@@ -63,9 +63,11 @@ object SheepEntityModel {
     val legSideOffset = 0.5 * bodyRadius
     val legYOffset = 3
 
-    val headBounds = makeHexBox(headRadius, -headDepth / 2f, headDepth)
-    val bodyBounds = makeHexBox(bodyRadius, 0, bodyLength)
-    val legBounds = makeHexBox(legRadius, 0, legLength)
+    val headPrism = HexPrism(headRadius, headDepth)
+    val bodyPrism = HexPrism(bodyRadius, bodyLength)
+    val legPrism = HexPrism(legRadius, legLength)
+
+    val headPrismOffset = -headDepth / 2f
 
     val headDistX = 0.5 * bodyLength + headOffset
     val bodyDistX = 0.5 * bodyLength
@@ -75,23 +77,23 @@ object SheepEntityModel {
     val bodyY = legLength + legYOffset
     val legY = legLength
 
-    val headPos = cylOffset(headDistX, headY, 0)
-    val bodyPos = cylOffset(-bodyDistX, bodyY, 0)
-    val frontRightLegPos = cylOffset(legDistX, legY, legSideOffset)
-    val frontLeftLegPos = cylOffset(legDistX, legY, -legSideOffset)
-    val backRightLegPos = cylOffset(-legDistX, legY, legSideOffset)
-    val backLeftLegPos = cylOffset(-legDistX, legY, -legSideOffset)
+    val headPos = pos(headDistX, headY, 0)
+    val bodyPos = pos(-bodyDistX, bodyY, 0)
+    val frontRightLegPos = pos(legDistX, legY, legSideOffset)
+    val frontLeftLegPos = pos(legDistX, legY, -legSideOffset)
+    val backRightLegPos = pos(-legDistX, legY, legSideOffset)
+    val backLeftLegPos = pos(-legDistX, legY, -legSideOffset)
 
     val pi = math.Pi.toFloat
 
     EntityModel(
       IndexedSeq(
-        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2)),
-        EntityPart("body", bodyBounds, bodyPos, Vector3f(0, pi / 2, -pi / 2)),
-        EntityPart("frontRightLeg", legBounds, frontRightLegPos, Vector3f(pi, 0, 0)),
-        EntityPart("frontLeftLeg", legBounds, frontLeftLegPos, Vector3f(pi, 0, 0)),
-        EntityPart("backRightLeg", legBounds, backRightLegPos, Vector3f(pi, 0, 0)),
-        EntityPart("backLeftLeg", legBounds, backLeftLegPos, Vector3f(pi, 0, 0))
+        EntityPart("head", headPrism, headPos, Vector3f(0, pi / 2, pi / 2), prismOffset = headPrismOffset),
+        EntityPart("body", bodyPrism, bodyPos, Vector3f(0, pi / 2, -pi / 2)),
+        EntityPart("frontRightLeg", legPrism, frontRightLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("frontLeftLeg", legPrism, frontLeftLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("backRightLeg", legPrism, backRightLegPos, Vector3f(pi, 0, 0)),
+        EntityPart("backLeftLeg", legPrism, backLeftLegPos, Vector3f(pi, 0, 0))
       )
     )
   }

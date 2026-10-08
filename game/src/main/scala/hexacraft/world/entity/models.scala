@@ -1,8 +1,5 @@
 package hexacraft.world.entity
 
-import hexacraft.world.HexBox
-import hexacraft.world.coord.CylCoords
-
 import org.joml.{Vector3f, Vector3fc}
 
 /** An entity model is a collection of hexagonal prisms (parts).
@@ -34,16 +31,38 @@ class EntityModel(val parts: IndexedSeq[EntityPart]) {
   def part(name: String): EntityPart = parts(indexOf(name))
 }
 
-/** A hexagonal prism placed at `position` relative to its parent, and rotated by `rotation` around that point. */
+object EntityModel {
+
+  /** The size of a model pixel in world units (1/32 of a block) */
+  val pixelSize: Double = 1.0 / 64
+}
+
+/** A hexagonal prism, with sizes in model pixels. `radius` is the big radius of the hexagon. */
+case class HexPrism(radius: Int, length: Int) {
+  def isEmpty: Boolean = radius == 0 || length == 0
+}
+
+object HexPrism {
+  val empty: HexPrism = HexPrism(0, 0)
+}
+
+/** A part of an entity model. All lengths are in model pixels.
+  *
+  * The part is attached to its parent at `position`, and rotated by `rotation` around that point.
+  * Rotations are applied in the order z, x, y.
+  * The `prismOffset` can be used to move the rotation point along the prism.
+  */
 class EntityPart(
     val name: String,
-    val box: HexBox,
-    val position: CylCoords.Offset,
+    val prism: HexPrism,
+    _position: Vector3fc,
     _rotation: Vector3fc,
-    val parent: Option[String] = None
+    val parent: Option[String] = None,
+    val prismOffset: Float = 0
 ) {
+  val position: Vector3fc = new Vector3f(_position)
   val rotation: Vector3fc = new Vector3f(_rotation)
 
-  /** Pivot parts (with an empty box) are not rendered */
-  def isVisible: Boolean = box.radius > 0 && box.top > box.bottom
+  /** Pivot parts (with an empty prism) are not rendered */
+  def isVisible: Boolean = !prism.isEmpty
 }
