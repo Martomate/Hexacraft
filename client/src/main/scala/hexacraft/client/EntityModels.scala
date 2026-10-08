@@ -1,17 +1,22 @@
 package hexacraft.client
 
-import hexacraft.client.entity.{BoatEntityModel, PlayerEntityModel, SheepEntityModel}
-import hexacraft.world.entity.{Entity, EntityModel, ModelComponent}
+import hexacraft.client.entity.*
+import hexacraft.world.entity.{Entity, EntityAnimation, ModelComponent}
 
 /** The models are only needed by the client, so entities are decoded without them and get them from here. */
 object EntityModels {
-  def forType(entityType: String): Option[EntityModel] = entityType match {
-    case "player" => Some(PlayerEntityModel.create("player"))
-    case "sheep"  => Some(SheepEntityModel.create("sheep"))
-    case "boat"   => Some(BoatEntityModel.create("boat"))
-    case _        => None
+  def forType(entityType: String): Option[ModelComponent] = entityType match {
+    case "player" =>
+      val model = PlayerEntityModel.create("player")
+      Some(ModelComponent(model, PlayerAnimation(model)))
+    case "sheep" =>
+      val model = SheepEntityModel.create("sheep")
+      Some(ModelComponent(model, SheepAnimation(model)))
+    case "boat" =>
+      Some(ModelComponent(BoatEntityModel.create("boat"), EntityAnimation.none))
+    case _ => None
   }
 
   def addModel(entity: Entity): Entity =
-    forType(entity.typeName).map(m => entity.withComponent(ModelComponent(m))).getOrElse(entity)
+    forType(entity.typeName).map(entity.withComponent).getOrElse(entity)
 }

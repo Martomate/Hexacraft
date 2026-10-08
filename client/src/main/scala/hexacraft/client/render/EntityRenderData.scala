@@ -27,7 +27,7 @@ object EntityRenderData {
     } do {
       val baseT = ent.transform.transform
 
-      for part <- InlinedIterable(model.parts) do {
+      for part <- InlinedIterable(model.parts) if part.isVisible do {
         baseT.mul(part.transform, tr)
 
         val coords4 = tr.transform(new Vector4f(0, 0.5f, 0, 1))

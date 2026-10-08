@@ -1,29 +1,14 @@
 package hexacraft.client.entity
 
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.entity.{BasicEntityPart, EntityModel, EntityPart}
+import hexacraft.world.entity.{EntityModel, EntityPart}
 
-import org.joml.{Vector3d, Vector3dc, Vector3f}
-
-class BoatEntityModel(
-    body: BasicEntityPart,
-    rods: Seq[BasicEntityPart],
-    val textureName: String
-) extends EntityModel {
-  override val parts: Seq[EntityPart] = body +: rods
-
-  override def tick(
-      walking: Boolean,
-      headDirection: Option[Vector3d],
-      rotation: Vector3dc,
-      mountRotation: Option[Vector3dc]
-  ): Unit = {}
-}
+import org.joml.Vector3f
 
 object BoatEntityModel {
   import ModelUnits.*
 
-  def create(textureName: String): BoatEntityModel = {
+  def create(textureName: String): EntityModel = {
     val rodLength = 128
     val rodRadius = 4
     val bottomRodCount = 9 // should be odd so that the boat is symmetric
@@ -47,7 +32,7 @@ object BoatEntityModel {
     val sideRods = (1 to sideRowCount).flatMap(row => Seq((-halfBottomRodCount - row, row), (halfBottomRodCount, row)))
 
     val rodPositions = (bottomRods ++ sideRods).map { case (col, row) =>
-      cylOffset(
+      s"rod_${col}_$row" -> cylOffset(
         -0.2 * rodLength, // centered along the rod's length
         rowHeight * row,
         rodSpacing * (col + 0.5 * row)
@@ -56,34 +41,36 @@ object BoatEntityModel {
 
     val pi = math.Pi.toFloat
 
-    val body = BasicEntityPart(
+    // Pivots (not rendered)
+    val body = EntityPart(
+      "body",
       HexBox(0, 0, 0),
       cylOffset(0, elevation, 0),
       Vector3f(0, pi / 2, 0)
     )
-    val crossBody = BasicEntityPart(
+    val crossBody = EntityPart(
+      "crossBody",
       HexBox(0, 0, 0),
       cylOffset(0, 8 - 4 * CylinderSize.y60, 0),
       Vector3f(0, pi / 2, 0),
-      parentPart = body
+      parent = Some(body)
     )
 
-    val rods = rodPositions.map { pos =>
-      BasicEntityPart(rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), parentPart = body)
+    val rods = rodPositions.map { (name, pos) =>
+      EntityPart(name, rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), Some(body))
     } ++ (0 until sideRowCount).flatMap { row =>
       val length = crossRodLength(row)
       val bounds = makeHexBox(rodRadius, -0.5f * length, length)
 
-      Seq(-0.2 * rodLength + rodRadius * 0.5, 0.8 * rodLength - rodRadius * 0.5).map { d =>
+      Seq(
+        "back" -> (-0.2 * rodLength + rodRadius * 0.5),
+        "front" -> (0.8 * rodLength - rodRadius * 0.5)
+      ).map { (end, d) =>
         val pos = cylOffset(0, rowHeight * row, d)
-        BasicEntityPart(bounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), parentPart = crossBody)
+        EntityPart(s"${end}CrossRod_$row", bounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), Some(crossBody))
       }
     }
 
-    new BoatEntityModel(
-      body = body,
-      rods = rods,
-      textureName = textureName
-    )
+    EntityModel(textureName, Seq(body, crossBody) ++ rods)
   }
 }

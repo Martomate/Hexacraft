@@ -1,0 +1,21 @@
+package hexacraft.client
+
+import munit.FunSuite
+import org.joml.Vector3d
+
+class EntityModelsTest extends FunSuite {
+  for entityType <- Seq("player", "sheep", "boat") do {
+    test(s"the model and animation for '$entityType' can be created and ticked") {
+      val component = EntityModels.forType(entityType).get
+
+      assert(component.model.parts.exists(_.isVisible))
+
+      component.animation.tick(true, Some(new Vector3d), new Vector3d, None)
+      component.animation.tick(false, None, new Vector3d, Some(new Vector3d))
+    }
+  }
+
+  test("forType returns None for unknown entity types") {
+    assertEquals(EntityModels.forType("unknown"), None)
+  }
+}

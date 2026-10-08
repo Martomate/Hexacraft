@@ -68,7 +68,7 @@ object HeadDirectionComponent {
   }
 }
 
-class ModelComponent(val model: EntityModel) extends EntityComponent
+class ModelComponent(val model: EntityModel, val animation: EntityAnimation) extends EntityComponent
 
 class AiComponent(val ai: EntityAI) extends EntityComponent
 

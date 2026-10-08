@@ -2,26 +2,20 @@ package hexacraft.client.entity
 
 import hexacraft.game.PlayerInputHandler
 import hexacraft.world.{CylinderSize, HexBox}
-import hexacraft.world.entity.{BasicEntityPart, EntityModel, EntityPart}
+import hexacraft.world.entity.{EntityAnimation, EntityModel, EntityPart}
 
 import org.joml.{Vector3d, Vector3dc, Vector3f}
 
-class PlayerEntityModel(
-    val base: BasicEntityPart, // not rendered
-    val headYawBase: BasicEntityPart, // not rendered
-    val headBase: BasicEntityPart, // not rendered
-    val head: BasicEntityPart,
-    val leftBodyHalf: BasicEntityPart,
-    val rightBodyHalf: BasicEntityPart,
-    val rightArm: BasicEntityPart,
-    val leftArm: BasicEntityPart,
-    val rightLeg: BasicEntityPart,
-    val leftLeg: BasicEntityPart,
-    val textureName: String
-) extends EntityModel {
-  override val parts: Seq[EntityPart] = Seq(head, leftBodyHalf, rightBodyHalf, rightArm, leftArm, rightLeg, leftLeg)
+class PlayerAnimation(model: EntityModel) extends EntityAnimation {
+  private val base = model.part("base")
+  private val headYawBase = model.part("headYawBase")
+  private val headBase = model.part("headBase")
+  private val rightArm = model.part("rightArm")
+  private val leftArm = model.part("leftArm")
+  private val rightLeg = model.part("rightLeg")
+  private val leftLeg = model.part("leftLeg")
 
-  private val animation = new PlayerAnimation(this)
+  private var time = 0
 
   override def tick(
       walking: Boolean,
@@ -29,14 +23,6 @@ class PlayerEntityModel(
       rotation: Vector3dc,
       mountRotation: Option[Vector3dc]
   ): Unit = {
-    animation.tick(walking, headDirection.getOrElse(new Vector3d), rotation, mountRotation)
-  }
-}
-
-class PlayerAnimation(model: PlayerEntityModel) {
-  private var time = 0
-
-  def tick(walking: Boolean, headDirection: Vector3d, rotation: Vector3dc, mountRotation: Option[Vector3dc]): Unit = {
     val sitting = mountRotation.isDefined
 
     if walking || time % 30 != 0 then {
@@ -45,15 +31,15 @@ class PlayerAnimation(model: PlayerEntityModel) {
 
     val phase = time * (1f / 60) * 2 * math.Pi
 
-    model.rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
-    model.leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
+    rightArm.rotation.z = -0.5f * math.sin(phase).toFloat
+    leftArm.rotation.z = 0.5f * math.sin(phase).toFloat
 
     if sitting then {
-      model.rightLeg.rotation.z = math.Pi.toFloat * 0.5f
-      model.leftLeg.rotation.z = math.Pi.toFloat * 0.5f
+      rightLeg.rotation.z = math.Pi.toFloat * 0.5f
+      leftLeg.rotation.z = math.Pi.toFloat * 0.5f
     } else {
-      model.rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
-      model.leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
+      rightLeg.rotation.z = 0.5f * math.sin(phase).toFloat
+      leftLeg.rotation.z = -0.5f * math.sin(phase).toFloat
     }
 
     // While sitting, the body faces the same way as the mount and only the head follows the look direction
@@ -63,17 +49,17 @@ class PlayerAnimation(model: PlayerEntityModel) {
         math.max(-maxYaw, math.min(maxYaw, PlayerInputHandler.wrapAngle(rotation.y - mountRot.y)))
       case None => 0.0
     }
-    model.base.rotation.y = (math.Pi / 2 - headYaw).toFloat
-    model.headYawBase.rotation.y = headYaw.toFloat
+    base.rotation.y = (math.Pi / 2 - headYaw).toFloat
+    headYawBase.rotation.y = headYaw.toFloat
 
-    model.headBase.rotation.z = -headDirection.x.toFloat
+    headBase.rotation.z = -headDirection.map(_.x).getOrElse(0.0).toFloat
   }
 }
 
 object PlayerEntityModel {
   import ModelUnits.*
 
-  def create(textureName: String): PlayerEntityModel = {
+  def create(textureName: String): EntityModel = {
     val legLength = 48
     val legRadius = 8
     val bodyLength = 40
@@ -108,24 +94,25 @@ object PlayerEntityModel {
 
     val pi = math.Pi.toFloat
 
-    val base = BasicEntityPart(HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(0, pi / 2, 0))
+    // Pivots (not rendered)
+    val base = EntityPart("base", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(0, pi / 2, 0))
+    val headYawBase = EntityPart("headYawBase", HexBox(0, 0, 0), headBasePos, Vector3f(), parent = Some(base))
+    val headBase = EntityPart("headBase", HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parent = Some(headYawBase))
 
-    val headYawBase = BasicEntityPart(HexBox(0, 0, 0), headBasePos, Vector3f(), parentPart = base)
-    val headBase = BasicEntityPart(HexBox(0, 0, 0), cylOffset(0, 0, 0), Vector3f(), parentPart = headYawBase)
-    val head = BasicEntityPart(headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), parentPart = headBase)
-
-    PlayerEntityModel(
-      base = base,
-      headYawBase = headYawBase,
-      headBase = headBase,
-      head = head,
-      leftBodyHalf = BasicEntityPart(bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120), parentPart = base),
-      rightBodyHalf = BasicEntityPart(bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120), parentPart = base),
-      rightArm = BasicEntityPart(armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64), parentPart = base),
-      leftArm = BasicEntityPart(armBounds, leftArmPos, Vector3f(pi, 0, 0), (0, 64), parentPart = base),
-      rightLeg = BasicEntityPart(legBounds, rightLegPos, Vector3f(pi, 0, 0), (48, 0), parentPart = base),
-      leftLeg = BasicEntityPart(legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0), parentPart = base),
-      textureName
+    EntityModel(
+      textureName,
+      Seq(
+        base,
+        headYawBase,
+        headBase,
+        EntityPart("head", headBounds, headPos, Vector3f(0, pi / 2, pi / 2), (0, 176), Some(headBase)),
+        EntityPart("leftBodyHalf", bodyBounds, leftBodyPos, Vector3f(0, 0, 0), (0, 120), Some(base)),
+        EntityPart("rightBodyHalf", bodyBounds, rightBodyPos, Vector3f(0, 0, 0), (48, 120), Some(base)),
+        EntityPart("rightArm", armBounds, rightArmPos, Vector3f(pi, 0, 0), (48, 64), Some(base)),
+        EntityPart("leftArm", armBounds, leftArmPos, Vector3f(pi, 0, 0), (0, 64), Some(base)),
+        EntityPart("rightLeg", legBounds, rightLegPos, Vector3f(pi, 0, 0), (48, 0), Some(base)),
+        EntityPart("leftLeg", legBounds, leftLegPos, Vector3f(pi, 0, 0), (0, 0), Some(base))
+      )
     )
   }
 }

@@ -5,9 +5,22 @@ import hexacraft.world.coord.CylCoords
 
 import org.joml.{Matrix4f, Vector3d, Vector3dc, Vector3f}
 
-trait EntityModel {
-  def parts: Seq[EntityPart]
-  def textureName: String
+/** An entity model is a collection of hexagonal prisms (parts).
+  *
+  * Each part is placed relative to its parent part (if any). A part with an empty box is not rendered, it only serves
+  * as a pivot for its children.
+  */
+class EntityModel(val textureName: String, val parts: Seq[EntityPart]) {
+  private val partsByName: Map[String, EntityPart] = parts.map(p => p.name -> p).toMap
+  require(partsByName.size == parts.size, s"Part names must be unique")
+
+  def part(name: String): EntityPart = {
+    partsByName.getOrElse(name, throw new IllegalArgumentException(s"The model has no part named '$name'"))
+  }
+}
+
+/** Moves the parts of a model based on what the entity is doing */
+trait EntityAnimation {
 
   /** @param rotation
     *   the rotation of the entity (i.e. the direction it is looking)
@@ -22,27 +35,26 @@ trait EntityModel {
   ): Unit
 }
 
-trait EntityPart {
-  def baseTransform: Matrix4f
-  def transform: Matrix4f
-  def box: HexBox
-  def texture(side: Int): Int
-  def textureOffset(side: Int): (Int, Int) = (0, 0)
-  def textureSize(side: Int): (Int, Int)
+object EntityAnimation {
+  val none: EntityAnimation = (_, _, _, _) => ()
 }
 
-class BasicEntityPart(
-    override val box: HexBox,
+class EntityPart(
+    val name: String,
+    val box: HexBox,
     pos: CylCoords.Offset,
     val rotation: Vector3f,
     textureBaseOffset: (Int, Int) = (0, 0),
-    parentPart: EntityPart = null
-) extends EntityPart {
+    val parent: Option[EntityPart] = None
+) {
   private val boxRadius = (box.radius * 32 / 0.5f).round
   private val boxHeight = ((box.top - box.bottom) * 32 / 0.5f).round
 
-  override def baseTransform: Matrix4f = {
-    val base = if parentPart != null then Matrix4f(parentPart.baseTransform) else Matrix4f()
+  /** Pivot parts (with an empty box) are not rendered */
+  def isVisible: Boolean = box.radius > 0 && box.top > box.bottom
+
+  def baseTransform: Matrix4f = {
+    val base = parent.map(p => Matrix4f(p.baseTransform)).getOrElse(Matrix4f())
 
     base
       .translate(pos.toVector3f)
@@ -52,7 +64,7 @@ class BasicEntityPart(
       .translate(0, box.bottom, 0)
   }
 
-  override def transform: Matrix4f = {
+  def transform: Matrix4f = {
     baseTransform.scale(
       new Vector3f(
         box.radius,
@@ -62,13 +74,13 @@ class BasicEntityPart(
     )
   }
 
-  override def texture(side: Int): Int = {
+  def texture(side: Int): Int = {
     val offset = if side < 2 then 0x12345 else 0
     val texID = 4
     offset << 12 | texID
   }
 
-  override def textureOffset(side: Int): (Int, Int) = {
+  def textureOffset(side: Int): (Int, Int) = {
     val (dx, dy) = side match {
       case 0 => (0, 0)
       case 1 => (0, boxRadius + boxHeight)
@@ -79,7 +91,7 @@ class BasicEntityPart(
     (sx + dx, sy + dy)
   }
 
-  override def textureSize(side: Int): (Int, Int) = {
+  def textureSize(side: Int): (Int, Int) = {
     if side < 2 then {
       (boxRadius, boxRadius)
     } else {
