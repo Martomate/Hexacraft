@@ -22,6 +22,7 @@ layout (location = 2) out vec4 color;
 uniform sampler2DArray texSampler;
 uniform int side;
 uniform int texSize = 32;
+uniform bool translucent;
 
 void main() {
 	float texSizef = float(texSize);
@@ -54,6 +55,14 @@ void main() {
 	normal = fragIn.normal;
 	color.rgb *= fragIn.brightness * 0.8 + 0.2;
 
-	if (color.a < 0.5) discard;
-	color.a = 1.0;
+	if (translucent) {
+		// Fresnel: surfaces like water get more opaque (reflective) when viewed at a shallow angle
+		vec3 viewDir = normalize(-fragIn.position);
+		float cosTheta = abs(dot(normalize(fragIn.normal), viewDir));
+		float fresnel = pow(1.0 - cosTheta, 5.0);
+		color.a = mix(color.a, 1.0, fresnel);
+	} else {
+		if (color.a < 0.5) discard;
+		color.a = 1.0;
+	}
 }
