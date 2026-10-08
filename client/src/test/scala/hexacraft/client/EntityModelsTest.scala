@@ -1,5 +1,8 @@
 package hexacraft.client
 
+import hexacraft.nbt.Nbt
+import hexacraft.world.entity.EntityModel
+
 import munit.FunSuite
 import org.joml.Vector3d
 
@@ -12,6 +15,12 @@ class EntityModelsTest extends FunSuite {
 
       component.animation.tick(true, Some(new Vector3d), new Vector3d, None)
       component.animation.tick(false, None, new Vector3d, Some(new Vector3d))
+    }
+
+    test(s"the model for '$entityType' survives a round trip through the codec") {
+      val model = EntityModels.forType(entityType).get.model
+
+      assertEquals(Nbt.decode[EntityModel](Nbt.encode(model)), Some(model))
     }
   }
 
