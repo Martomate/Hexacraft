@@ -43,7 +43,7 @@ object HighLatencyExperiment {
     val serverWorld = new ServerWorld(worldProvider, worldInfo, 10)
 
     val tcpServer = TcpServer.start(1298).unwrap()
-    val server = new GameServer(false, tcpServer, worldInfo, worldProvider, serverWorld)(using cylSize)
+    val server = new GameServer(false, tcpServer, None, worldInfo, worldProvider, serverWorld)(using cylSize)
 
     new Thread(() => {
       ToolUtils.runAtSteadyFps(60)(running) {

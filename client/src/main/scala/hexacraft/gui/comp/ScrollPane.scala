@@ -44,6 +44,15 @@ class ScrollPane(
     clampScroll()
   }
 
+  def removeComponent(idx: Int): Unit = {
+    require(idx >= 0 && idx < components.length)
+
+    components.remove(idx).unload()
+    clampScroll()
+  }
+
+  def componentCount: Int = components.length
+
   override def tick(ctx: TickContext): Unit = {
     super.tick(ctx)
     for c <- this.components do {

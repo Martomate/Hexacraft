@@ -32,13 +32,16 @@ object GameServer {
       .start(port)
       .unwrapWith(m => new IllegalStateException(s"Could not start server: $m"))
 
-    new GameServer(isOnline, tcpServer, worldInfo, worldProvider, world)(using world.size)
+    val lanAnnouncer = Option.when(isOnline)(LanDiscovery.Announcer.start(port, worldInfo.worldName))
+
+    new GameServer(isOnline, tcpServer, lanAnnouncer, worldInfo, worldProvider, world)(using world.size)
   }
 }
 
 class GameServer(
     isOnline: Boolean,
     server: TcpServer,
+    lanAnnouncer: Option[LanDiscovery.Announcer],
     worldInfo: WorldInfo,
     worldProvider: WorldProvider,
     world: ServerWorld
@@ -711,6 +714,7 @@ class GameServer(
   }
 
   private def stop(): Unit = {
+    lanAnnouncer.foreach(_.close())
     server.stop()
     serverThread.join()
   }
