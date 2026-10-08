@@ -27,22 +27,24 @@ object BoatEntityModel {
     val rodLength = 128
     val rodRadius = 4
     val bottomRodCount = 9 // should be odd so that the boat is symmetric
+    val sideRowCount = 2 // the number of rows of rods above the bottom row
 
     // Distances between the centers of neighbouring hexagonal rods
     val rodSpacing = hexStep(rodRadius) // within a row
     val rowHeight = 1.5 * rodRadius // between rows (each row is shifted half a rod sideways)
 
-    // The cross rods reach from the center of the leftmost bottom rod to the center of the rightmost one
-    val crossRodLength = ((bottomRodCount - 1) * rodSpacing).toFloat
+    // In each row the cross rods reach from the center of the leftmost rod to the center of the rightmost one.
+    // Every side row is half a rod wider on each side than the row below it.
+    def crossRodLength(row: Int): Float = ((bottomRodCount - 1 + row) * rodSpacing).toFloat
 
     val rodBounds = makeHexBox(rodRadius, 0, rodLength.toFloat)
-    val crossRodBounds = makeHexBox(rodRadius, -0.5f * crossRodLength, crossRodLength)
 
     val elevation = 6 // a hack that ensures that no water is in the boat
 
     val halfBottomRodCount = bottomRodCount / 2
     val bottomRods = (-halfBottomRodCount to halfBottomRodCount).map(col => (col, 0))
-    val sideRods = Seq((-halfBottomRodCount - 1, 1), (halfBottomRodCount, 1))
+    // Each side row sits half a rod further out than the row below it, so the sides lean outwards
+    val sideRods = (1 to sideRowCount).flatMap(row => Seq((-halfBottomRodCount - row, row), (halfBottomRodCount, row)))
 
     val rodPositions = (bottomRods ++ sideRods).map { case (col, row) =>
       cylOffset(
@@ -68,9 +70,14 @@ object BoatEntityModel {
 
     val rods = rodPositions.map { pos =>
       BasicEntityPart(rodBounds, pos, Vector3f(0, 0, -pi / 2), (0, 0), parentPart = body)
-    } ++ Seq(-0.2 * rodLength + rodRadius * 0.5, 0.8 * rodLength - rodRadius * 0.5).map { d =>
-      val pos = cylOffset(0, 0, d)
-      BasicEntityPart(crossRodBounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), parentPart = crossBody)
+    } ++ (0 until sideRowCount).flatMap { row =>
+      val length = crossRodLength(row)
+      val bounds = makeHexBox(rodRadius, -0.5f * length, length)
+
+      Seq(-0.2 * rodLength + rodRadius * 0.5, 0.8 * rodLength - rodRadius * 0.5).map { d =>
+        val pos = cylOffset(0, rowHeight * row, d)
+        BasicEntityPart(bounds, pos, Vector3f(0, pi / 2, -pi / 2), (0, 0), parentPart = crossBody)
+      }
     }
 
     new BoatEntityModel(
