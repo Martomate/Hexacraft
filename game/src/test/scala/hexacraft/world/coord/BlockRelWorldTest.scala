@@ -3,6 +3,7 @@ package hexacraft.world.coord
 import hexacraft.math.bits.{Int12, Int20}
 import hexacraft.world.CylinderSize
 import hexacraft.world.coord.BlockRelWorld
+
 import munit.FunSuite
 
 class BlockRelWorldTest extends FunSuite {

@@ -2,6 +2,7 @@ package hexacraft.world
 
 import hexacraft.world.{CylinderSize, HexBox}
 import hexacraft.world.coord.CylCoords
+
 import munit.FunSuite
 
 class HexBoxTest extends FunSuite {

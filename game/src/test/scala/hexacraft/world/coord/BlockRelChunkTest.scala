@@ -1,6 +1,7 @@
 package hexacraft.world.coord
 
 import hexacraft.world.coord.BlockRelChunk
+
 import munit.FunSuite
 
 class BlockRelChunkTest extends FunSuite {

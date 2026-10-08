@@ -4,6 +4,7 @@ import hexacraft.world.CylinderSize
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{ChunkStorage, LocalBlockState}
 import hexacraft.world.coord.{BlockRelChunk, BlockRelWorld, ChunkRelWorld}
+
 import munit.FunSuite
 
 abstract class ChunkStorageTest(makeStorage: => ChunkStorage) extends FunSuite {

@@ -1,6 +1,7 @@
 package hexacraft.math.bits
 
 import hexacraft.math.bits.{Int12, UInt12}
+
 import munit.FunSuite
 
 class Int12Test extends FunSuite {

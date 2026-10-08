@@ -1,6 +1,7 @@
 package hexacraft.util
 
 import hexacraft.math.MathUtils
+
 import munit.FunSuite
 
 class MathUtilsTest extends FunSuite {
