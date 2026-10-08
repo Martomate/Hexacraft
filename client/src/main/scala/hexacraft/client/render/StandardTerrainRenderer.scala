@@ -9,7 +9,7 @@ import hexacraft.util.{InlinedIterable, Loop, TickableTimer}
 import hexacraft.world.{Camera, CylinderSize}
 import hexacraft.world.coord.ChunkRelWorld
 
-import org.joml.Vector3f
+import org.joml.{Matrix4f, Vector3f}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable
@@ -34,11 +34,15 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
   private val chunkRenderUpdateQueueReorderingTimer: TickableTimer = TickableTimer(5) // only reorder every 5 ticks
   private val blockShader = new BlockShader(isSide = false)
   private val blockSideShader = new BlockShader(isSide = true)
+  private val shadowBlockShader = new BlockShader(isSide = false)
+  private val shadowBlockSideShader = new BlockShader(isSide = true)
   private val blockTexture = TextureArray.getTextureArray("blocks")
 
   override def onTotalSizeChanged(totalSize: Int): Unit = {
     blockShader.setTotalSize(totalSize)
     blockSideShader.setTotalSize(totalSize)
+    shadowBlockShader.setTotalSize(totalSize)
+    shadowBlockSideShader.setTotalSize(totalSize)
   }
 
   override def onProjMatrixChanged(camera: Camera): Unit = {
@@ -57,6 +61,28 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
 
   override def render(camera: Camera, sun: Vector3f, opaque: Boolean, eyeUnderWater: Boolean): Unit = {
     renderBlocks(camera, sun, opaque, eyeUnderWater)
+  }
+
+  private val identityMatrix = new Matrix4f()
+
+  override def renderShadowCasters(camera: Camera, lightMatrix: Matrix4f): Unit = {
+    for sh <- Seq(shadowBlockShader, shadowBlockSideShader) do {
+      sh.setProjectionMatrix(lightMatrix)
+      sh.setViewMatrix(identityMatrix)
+      sh.setCameraPosition(camera.position)
+      sh.setTranslucent(false)
+    }
+
+    blockTexture.bind()
+
+    Loop.rangeUntil(0, 8) { side =>
+      val sh = if side < 2 then shadowBlockShader else shadowBlockSideShader
+      sh.enable()
+      sh.setSide(side)
+      for h <- InlinedIterable(opaqueBlockRenderers(side).values) do {
+        h.render()
+      }
+    }
   }
 
   override def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult)(using
@@ -266,5 +292,7 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
 
     blockShader.free()
     blockSideShader.free()
+    shadowBlockShader.free()
+    shadowBlockSideShader.free()
   }
 }

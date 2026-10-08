@@ -56,7 +56,7 @@ object MainFrameBuffer {
       glTexImage2D(
         TextureTarget.Texture2D,
         0,
-        TextureInternalFormat.Rgba16f,
+        TextureInternalFormat.Rgba32f, // full precision is needed for the shadow map lookups
         frameBufferWidth,
         frameBufferHeight,
         0,

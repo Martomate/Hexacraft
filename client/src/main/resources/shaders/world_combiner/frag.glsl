@@ -12,6 +12,9 @@ uniform sampler2D worldDepthTexture;
 uniform sampler2D translucentPositionTexture;
 uniform sampler2D translucentNormalTexture;
 uniform sampler2D translucentColorTexture;
+uniform sampler2DArrayShadow shadowMap;
+uniform mat4 shadowMatrices[numShadowCascades];
+uniform float shadowTexelSizes[numShadowCascades];
 uniform float nearPlane;
 uniform float farPlane;
 uniform vec3 sun;
@@ -64,6 +67,45 @@ vec3 applyWaterFog(vec3 col, vec3 fogColor, float underwaterDist) {
     return mix(col * transmittance, fogColor, scattered);
 }
 
+#define ambientLight 0.65
+#define sunLight 0.45
+
+// 3x3 PCF, where each sample is also bilinearly filtered by the hardware
+float sampleShadowMap(vec3 coords, int cascade) {
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0).xy);
+    float lit = 0.0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            lit += texture(shadowMap, vec4(coords.xy + vec2(dx, dy) * texelSize, float(cascade), coords.z));
+        }
+    }
+    return lit / 9.0;
+}
+
+// Returns how much of the sunlight reaches the given position (1 = fully lit, 0 = fully in shadow)
+float sunVisibility(vec3 position, vec3 normal) {
+    for (int i = 0; i < numShadowCascades; i++) {
+        // Moving the position a bit along the normal avoids self-shadowing caused by the limited shadow map resolution
+        vec3 offsetPosition = position + normal * shadowTexelSizes[i] * 1.5;
+        vec4 p = shadowMatrices[i] * vec4(offsetPosition, 1);
+        vec3 coords = p.xyz * 0.5 + 0.5;
+
+        vec2 fromCenter = abs(coords.xy - 0.5) * 2.0;
+        float edge = max(fromCenter.x, fromCenter.y);
+
+        // the margin leaves room for the PCF samples
+        if (edge < 0.98 && coords.z <= 1.0) {
+            float lit = sampleShadowMap(coords, i);
+            if (i == numShadowCascades - 1) {
+                // there is nothing beyond the last cascade, so let the shadows fade out instead of ending abruptly
+                lit = mix(lit, 1.0, smoothstep(0.8, 0.98, edge));
+            }
+            return lit;
+        }
+    }
+    return 1.0;
+}
+
 struct Layer {
     vec3 position;
     vec3 normal;
@@ -83,8 +125,11 @@ Layer readLayer(sampler2D positionTexture, sampler2D normalTexture, sampler2D co
     layer.color = col.rgb / div;
 
     vec3 sunDir = normalize(sun);
-    float visibility = max(dot(layer.normal, sunDir), 0) * 0.2 + 0.8;
-    layer.color *= visibility;
+    float sunAmount = max(dot(layer.normal, sunDir), 0);
+    if (sunAmount > 0) {
+        sunAmount *= sunVisibility(layer.position, layer.normal);
+    }
+    layer.color *= ambientLight + sunLight * sunAmount;
     return layer;
 }
 
