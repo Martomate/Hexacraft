@@ -46,11 +46,10 @@ object HexPrism {
   val empty: HexPrism = HexPrism(0, 0)
 }
 
-/** A part of an entity model. All lengths are in model pixels.
-  *
-  * The part is attached to its parent at `position`, and rotated by `rotation` around that point.
-  * Rotations are applied in the order z, x, y.
-  * The `prismOffset` can be used to move the rotation point along the prism.
+/** A part defines a coordinate system: it is placed at `position` in its parent's coordinate system (or the entity's,
+  * if it has no parent) and rotated by `rotation` (in the order z, x, y) around that point. Its prism and its children
+  * are placed independently in this coordinate system: the prism starts `prismOffset` along the y-axis, and the
+  * children use their own `position` and `rotation`. All lengths are in model pixels.
   */
 class EntityPart(
     val name: String,
