@@ -28,5 +28,7 @@
   <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Hexacraft uses the local network to find and host multiplayer games on your LAN.</string>
 </dict>
 </plist>

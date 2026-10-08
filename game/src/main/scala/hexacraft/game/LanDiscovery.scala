@@ -16,8 +16,8 @@ import scala.util.Try
 object LanDiscovery {
 
   /** An administratively scoped (i.e. local) multicast address */
-  val GroupAddress: InetAddress = InetAddress.getByName("239.255.72.67")
-  val Port: Int = 44767
+  private val GroupAddress: InetAddress = InetAddress.getByName("239.255.72.67")
+  private val Port: Int = 44767
 
   private val Magic = "HEXACRAFT"
   private val ProtocolVersion = 1
@@ -78,11 +78,6 @@ object LanDiscovery {
         socket.setTimeToLive(1) // stay on the local network
         val packet = new DatagramPacket(payload, payload.length, GroupAddress, Port)
 
-        // Multicast is not allowed at all if the process may not use the local network (e.g. due to the Local Network
-        // privacy setting on macOS), so the server is also announced directly to this machine.
-        // Note: if several listeners share the port, only one of them receives this packet.
-        val loopbackPacket = new DatagramPacket(payload, payload.length, InetAddress.getByName("127.0.0.1"), Port)
-
         var interfaces = multicastInterfaces()
         val failingInterfaces = mutable.Set.empty[String]
         var lastInterfaceRefresh = System.currentTimeMillis()
@@ -106,12 +101,6 @@ object LanDiscovery {
                   println(s"Could not announce server on network interface ${i.getName}: ${e.getMessage}")
                 }
             }
-          }
-
-          try {
-            socket.send(loopbackPacket)
-          } catch {
-            case _: Exception => // multicast on the loopback interface might still work
           }
 
           try {
