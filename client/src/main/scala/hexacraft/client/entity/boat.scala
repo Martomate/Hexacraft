@@ -24,28 +24,27 @@ object BoatEntityModel {
   import ModelUnits.*
 
   def create(textureName: String): BoatEntityModel = {
-    val rodLength = 64
+    val rodLength = 128
     val rodRadius = 4
-    val crossRodLength = 8 * rodRadius * CylinderSize.y60.toFloat
+    val bottomRodCount = 9 // should be odd so that the boat is symmetric
 
     // Distances between the centers of neighbouring hexagonal rods
     val rodSpacing = hexStep(rodRadius) // within a row
     val rowHeight = 1.5 * rodRadius // between rows (each row is shifted half a rod sideways)
+
+    // The cross rods reach from the center of the leftmost bottom rod to the center of the rightmost one
+    val crossRodLength = ((bottomRodCount - 1) * rodSpacing).toFloat
 
     val rodBounds = makeHexBox(rodRadius, 0, rodLength.toFloat)
     val crossRodBounds = makeHexBox(rodRadius, -0.5f * crossRodLength, crossRodLength)
 
     val elevation = 6 // a hack that ensures that no water is in the boat
 
-    val rodPositions = Seq(
-      (-3, 1),
-      (-2, 0),
-      (-1, 0),
-      (0, 0),
-      (1, 0),
-      (2, 0),
-      (2, 1)
-    ).map { case (col, row) =>
+    val halfBottomRodCount = bottomRodCount / 2
+    val bottomRods = (-halfBottomRodCount to halfBottomRodCount).map(col => (col, 0))
+    val sideRods = Seq((-halfBottomRodCount - 1, 1), (halfBottomRodCount, 1))
+
+    val rodPositions = (bottomRods ++ sideRods).map { case (col, row) =>
       cylOffset(
         -0.2 * rodLength, // centered along the rod's length
         rowHeight * row,
