@@ -8,6 +8,14 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class LanDiscoveryTest extends FunSuite {
+  test("an announcement can be encoded") {
+    val uuid = UUID.randomUUID()
+    assertEquals(
+      String(LanDiscovery.encode(Announcement(uuid, 1234, "My world; with semicolons"))),
+      s"HEXACRAFT;1;$uuid;1234;My world; with semicolons"
+    )
+  }
+
   test("an announcement can be decoded after being encoded") {
     val announcement = Announcement(UUID.randomUUID(), 1234, "My world; with semicolons")
     assertEquals(LanDiscovery.decode(LanDiscovery.encode(announcement)), Some(announcement))

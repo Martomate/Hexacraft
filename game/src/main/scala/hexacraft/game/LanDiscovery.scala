@@ -48,14 +48,13 @@ object LanDiscovery {
   /** The network interfaces that multicast messages should be sent on and received from */
   private def multicastInterfaces(): Seq[NetworkInterface] = {
     val all = Try(NetworkInterface.networkInterfaces().iterator().asScala.toSeq).getOrElse(Seq.empty)
-    val usable = all.filter { i =>
+
+    // Loopback is included so that servers on the same machine are found even if the process is not allowed to use
+    // the local network (e.g. due to the Local Network privacy setting on macOS). Duplicates are removed by the listener.
+    all.filter { i =>
       Try(i.isUp && i.supportsMulticast && !i.isVirtual).getOrElse(false) &&
       i.getInetAddresses.asScala.exists(_.isInstanceOf[Inet4Address])
     }
-    val (loopback, other) = usable.partition(i => Try(i.isLoopback).getOrElse(false))
-
-    // Only use loopback if there is nothing else, otherwise local listeners would receive duplicates
-    if other.nonEmpty then other else loopback
   }
 
   object Announcer {
@@ -80,6 +79,7 @@ object LanDiscovery {
         val packet = new DatagramPacket(payload, payload.length, GroupAddress, Port)
 
         var interfaces = multicastInterfaces()
+        val failingInterfaces = mutable.Set.empty[String]
         var lastInterfaceRefresh = System.currentTimeMillis()
 
         while running do {
@@ -93,8 +93,13 @@ object LanDiscovery {
             try {
               socket.setNetworkInterface(i)
               socket.send(packet)
+              failingInterfaces -= i.getName
             } catch {
-              case _: Exception => // the interface might be down or not allowed to send, so just skip it
+              case e: Exception =>
+                // the interface might be down or not allowed to send, so just skip it (but only report it once)
+                if failingInterfaces.add(i.getName) then {
+                  println(s"Could not announce server on network interface ${i.getName}: ${e.getMessage}")
+                }
             }
           }
 
@@ -179,7 +184,11 @@ object LanDiscovery {
           for a <- decode(packet.getData.slice(packet.getOffset, packet.getOffset + packet.getLength)) do {
             val server = DiscoveredServer(packet.getAddress.getHostAddress, a.port, a.worldName)
             entries.synchronized {
-              entries(a.serverId) = Entry(server, System.currentTimeMillis())
+              // The same announcement can arrive both through loopback and a real network interface.
+              // Prefer the non-loopback address, so the listed address doesn't keep changing.
+              val keepOldAddress = packet.getAddress.isLoopbackAddress && entries.contains(a.serverId)
+              val newServer = if keepOldAddress then entries(a.serverId).server else server
+              entries(a.serverId) = Entry(newServer, System.currentTimeMillis())
             }
           }
         } catch {
