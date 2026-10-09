@@ -536,7 +536,8 @@ class GameClient(
     }
   }
 
-  private var tickFut: Option[Future[(Instant, Seq[Nbt])]] = None
+  /** The time of the request, the model IDs that were requested, and the responses */
+  private var tickFut: Option[Future[(Instant, Seq[String], Seq[Nbt])]] = None
 
   def tick(ctx: TickContext): Unit = {
     if isLoggingOut then return
@@ -557,18 +558,25 @@ class GameClient(
 
     // Act on the server info requested last tick, and send a new request to be used in the next tick
     val currentTickFut = tickFut
+    val modelIdsToRequest = world.modelIdsToRequest()
     tickFut = Some(Future {
       val packets =
         Seq(NetworkPacket.GetPlayerState, NetworkPacket.GetEvents, NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad))
-      Instant.now -> socket.sendMultiplePacketsAndWait(packets)
+      val modelPackets = if modelIdsToRequest.nonEmpty then Seq(NetworkPacket.GetModels(modelIdsToRequest)) else Seq()
+      (Instant.now, modelIdsToRequest, socket.sendMultiplePacketsAndWait(packets ++ modelPackets))
     })
     if currentTickFut.isEmpty then return // the first tick has no server data to act on
 
     var serverIsShuttingDown = false
 
     try {
-      val (time, Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt)) =
-        Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
+      val (time, requestedModelIds, responses) = Await.result(currentTickFut.get, Duration(1, TimeUnit.SECONDS))
+      val Seq(playerNbt, worldEventsNbtPacket, worldLoadingEventsNbt) = responses.take(3)
+
+      if requestedModelIds.nonEmpty then {
+        val models = responses(3).asMap.flatMap(_.getMap("models")).map(_.vs).getOrElse(Map.empty)
+        world.receiveModels(requestedModelIds, models.collect { case (id, model: Nbt.MapTag) => id -> model }.toMap)
+      }
 
       val userInteractionRedo = mutable.Stack.empty[(Instant, UserInteraction)]
       for (ts, undo) <- userInteractionUndo.popAll do {

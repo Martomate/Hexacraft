@@ -234,7 +234,7 @@ class GameServerTest extends FunSuite {
     }
   }
 
-  test("server sends the entity and model of a new player to existing players") {
+  test("server sends the entity of a new player to existing players, and they can fetch its model") {
     runServer(FakeWorldProvider(9876)) { s =>
       s.server.tick()
 
@@ -262,8 +262,13 @@ class GameServerTest extends FunSuite {
       val spawnEvents = ids.zip(events).collect { case (`player2Id`, e: EntityEvent.Spawned) => e }
       assertEquals(spawnEvents.size, 1)
 
-      val model = spawnEvents.head.model.flatMap(Nbt.decode[EntityModel])
-      assertEquals(model, Some(PlayerEntityModel.model))
+      val modelId = spawnEvents.head.modelId.get
+
+      socket1.send(NetworkPacket.GetModels(Seq(modelId, "unknown model")))
+      val models = socket1.receive().asMap.get.getMap("models").get
+
+      assertEquals(models.vs.keySet, Set(modelId)) // unknown models are left out
+      assertEquals(models.getMap(modelId).flatMap(Nbt.decode[EntityModel]), Some(PlayerEntityModel.model))
 
       socket2.send(NetworkPacket.Logout)
       socket1.send(NetworkPacket.Logout)

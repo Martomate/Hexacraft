@@ -1,16 +1,17 @@
 package hexacraft.server.entity
 
-import hexacraft.nbt.Nbt
 import hexacraft.world.EntityEvent
 import hexacraft.world.entity.Entity
 
 object EntitySpawnEvent {
 
-  /** The event that tells a client about an entity, including the entity's model so the client can render it */
+  /** The event that tells a client about an entity, including the ID of the entity's model so the client can fetch
+    * the model and render the entity
+    */
   def of(entity: Entity): EntityEvent = {
     EntityEvent.Spawned(
       Entity.encode(entity, includeAi = false),
-      EntityModels.forType(entity.typeName).map(Nbt.encode(_))
+      EntityModels.idForType(entity.typeName)
     )
   }
 }

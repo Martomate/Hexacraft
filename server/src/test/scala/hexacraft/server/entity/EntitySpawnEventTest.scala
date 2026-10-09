@@ -12,22 +12,20 @@ import java.util.UUID
 class EntitySpawnEventTest extends FunSuite {
   given CylinderSize = CylinderSize(8)
 
-  test("the spawn event contains the entity (without AI) and its model") {
+  test("the spawn event contains the entity (without AI) and the ID of its model") {
     val sheep = Entity
       .atStartPos(UUID.randomUUID(), CylCoords(1, 2, 3), "sheep")
       .unwrap()
       .withComponent(AiComponent(SimpleWalkAI.create))
 
-    assertEquals(
-      EntitySpawnEvent.of(sheep),
-      EntityEvent.Spawned(
-        Entity.encode(sheep, includeAi = false),
-        Some(Nbt.encode(SheepEntityModel.model))
-      )
-    )
+    val event = EntitySpawnEvent.of(sheep)
+    assertEquals(event, EntityEvent.Spawned(Entity.encode(sheep, includeAi = false), EntityModels.idForType("sheep")))
+
+    val modelId = event.asInstanceOf[EntityEvent.Spawned].modelId.get
+    assertEquals(EntityModels.encodedModel(modelId), Some(Nbt.encode(SheepEntityModel.model)))
   }
 
-  test("the spawn event has no model if the entity type has no model") {
+  test("the spawn event has no model ID if the entity type has no model") {
     val components =
       Seq(TransformComponent(CylCoords(0, 0, 0)), MotionComponent(), BoundsComponent(HexBox(0.5f, 0, 0.5f)))
     val unicorn = Entity(UUID.randomUUID(), "unicorn", components)

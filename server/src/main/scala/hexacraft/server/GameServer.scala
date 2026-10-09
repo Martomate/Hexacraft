@@ -3,7 +3,7 @@ package hexacraft.server
 import hexacraft.game.*
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
-import hexacraft.server.entity.EntitySpawnEvent
+import hexacraft.server.entity.{EntityModels, EntitySpawnEvent}
 import hexacraft.server.world.{ChunkLoadingPrioritizer, EntityFactory, ServerWorld, WorldProvider}
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
@@ -531,6 +531,12 @@ class GameServer(
         }
       case GetPlayerState =>
         Some(Nbt.encode(player))
+      case GetModels(ids) =>
+        val models = for {
+          id <- ids
+          model <- EntityModels.encodedModel(id)
+        } yield id -> model
+        Some(Nbt.makeMap("models" -> Nbt.makeMap(models*)))
       case GetEvents =>
         val updates = playerData.blockUpdatesWaitingToBeSent.synchronized {
           val updates = playerData.blockUpdatesWaitingToBeSent.toSeq
