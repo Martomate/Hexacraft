@@ -8,6 +8,7 @@ uniform vec3 sun;
 
 uniform vec3 waterFogColor;
 uniform vec3 waterAbsorption;
+uniform float waterScattering;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
 uniform float waterFogStrength; // 0 when there is no water around the eye, 1 when the eye is under water
 
@@ -42,8 +43,11 @@ void main() {
     vec3 col = sunBrightness * vec3(0.8, 0.65, 0.8) + sunGlow * vec3(0.8, 0.65, 0.8) + vec3(0.4, 0.7, 0.5) * (1 - abs(rayUp) * gradientFalloff) + vec3(0.0, 0.0, 0.7);
 
     if (waterFogStrength > 0.0) {
-        vec3 transmittance = exp(-waterAbsorption * underwaterDistance(ray) * waterFogStrength);
-        col = col * transmittance + waterFogColor * (1.0 - transmittance);
+        // Same as in the world combiner: absorption (red first) and then light scattered by the water itself
+        float dist = underwaterDistance(ray) * waterFogStrength;
+        vec3 transmittance = exp(-waterAbsorption * dist);
+        float scattered = 1.0 - exp(-waterScattering * dist);
+        col = mix(col * transmittance, waterFogColor, scattered);
     }
 
     color = vec4(col, 1);

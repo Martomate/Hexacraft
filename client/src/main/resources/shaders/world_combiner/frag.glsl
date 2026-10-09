@@ -16,6 +16,7 @@ uniform int totalSize;
 
 uniform vec3 waterFogColor;
 uniform vec3 waterAbsorption;
+uniform float waterScattering;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
 uniform float waterFogStrength; // 0 when there is no water around the eye, 1 when the eye is under water
 
@@ -48,9 +49,12 @@ float underwaterDistance(vec3 pos) {
     return h > 0.0 ? dist * t : dist * (1.0 - t);
 }
 
+// The light from the object is absorbed (red first), and is replaced by light scattered by the water itself
 vec3 applyWaterFog(vec3 col, float underwaterDist) {
-    vec3 transmittance = exp(-waterAbsorption * underwaterDist * waterFogStrength);
-    return col * transmittance + waterFogColor * (1.0 - transmittance);
+    float dist = underwaterDist * waterFogStrength;
+    vec3 transmittance = exp(-waterAbsorption * dist);
+    float scattered = 1.0 - exp(-waterScattering * dist);
+    return mix(col * transmittance, waterFogColor, scattered);
 }
 
 void main() {
