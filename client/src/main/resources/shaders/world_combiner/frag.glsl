@@ -17,6 +17,7 @@ uniform int totalSize;
 uniform vec3 waterFogColor;
 uniform vec3 waterAbsorption;
 uniform float waterScattering;
+uniform float waterDepthDarkening;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
 uniform float waterFogStrength; // 0 when there is no water around the eye, 1 when the eye is under water
 
@@ -37,10 +38,8 @@ float heightAboveEye(vec3 pos) {
     return 0.5 * radius * logOnePlusE;
 }
 
-// Returns how much of the straight line from the eye to the given point lies below the water surface
-float underwaterDistance(vec3 pos) {
-    float dist = length(pos);
-    float h = heightAboveEye(pos);
+// Returns how much of the straight line from the eye to a point (at distance dist and height h) lies below the water
+float underwaterDistance(float dist, float h) {
     float surface = waterSurfaceAboveEye;
 
     // The line goes from height 0 to height h, and the part below the surface is under water
@@ -49,12 +48,16 @@ float underwaterDistance(vec3 pos) {
     return h > 0.0 ? dist * t : dist * (1.0 - t);
 }
 
+// Returns how much of the sunlight is left after travelling down to the given depth below the surface
+vec3 lightAtDepth(float depth) {
+    return exp(-(waterAbsorption + waterDepthDarkening) * max(depth, 0.0));
+}
+
 // The light from the object is absorbed (red first), and is replaced by light scattered by the water itself
-vec3 applyWaterFog(vec3 col, float underwaterDist) {
-    float dist = underwaterDist * waterFogStrength;
-    vec3 transmittance = exp(-waterAbsorption * dist);
-    float scattered = 1.0 - exp(-waterScattering * dist);
-    return mix(col * transmittance, waterFogColor, scattered);
+vec3 applyWaterFog(vec3 col, vec3 fogColor, float underwaterDist) {
+    vec3 transmittance = exp(-waterAbsorption * underwaterDist);
+    float scattered = 1.0 - exp(-waterScattering * underwaterDist);
+    return mix(col * transmittance, fogColor, scattered);
 }
 
 void main() {
@@ -74,6 +77,14 @@ void main() {
 
     if (waterFogStrength > 0.0 && color.a > 0.0) {
         // The position was also blended into the frame buffer, so it has to be un-premultiplied as well
-        color.rgb = applyWaterFog(color.rgb, underwaterDistance(worldPosition / color.a));
+        vec3 pos = worldPosition / color.a;
+        float h = heightAboveEye(pos);
+        float s = waterFogStrength;
+
+        // Deep down there is less sunlight, both on the objects and in the water between them and the eye
+        vec3 objectColor = color.rgb * lightAtDepth((waterSurfaceAboveEye - h) * s);
+        vec3 fogColor = waterFogColor * lightAtDepth(waterSurfaceAboveEye * s);
+
+        color.rgb = applyWaterFog(objectColor, fogColor, underwaterDistance(length(pos), h) * s);
     }
 }
