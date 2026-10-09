@@ -17,6 +17,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkData}
 import hexacraft.world.coord.*
+import hexacraft.world.entity.Entity
 
 import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
 
@@ -869,7 +870,20 @@ class GameClient(
     for
       ray <- Ray.fromScreen(camera, screenCoords)
       hit <- new RayTracer(camera, 7).trace(ray, c => Some(world.getBlock(c)).filter(hitCheck))
+      if !isEntityInFrontOfBlock(hit._1, ray)
     yield MousePickerResult(world.getBlock(hit._1), hit._1, hit._2)
+  }
+
+  /** Whether the ray hits an entity before it hits the block (in which case the block should not be selected) */
+  private def isEntityInFrontOfBlock(coords: BlockRelWorld, ray: Ray): Boolean = {
+    val block = world.getBlock(coords)
+    val blockBox = PointHexagon.fromHexBox(block.blockType.bounds(block.metadata), BlockCoords(coords), camera)
+    val blockDistance = blockBox.distanceToBox(ray).getOrElse(0.0) // the camera might be inside the block
+
+    val entities = mutable.ArrayBuffer.empty[Entity]
+    world.foreachEntity(entities += _)
+
+    EntityPicking.closestEntityDistance(entities, camera, ray, blockDistance).isDefined
   }
 
   private def performLeftMouseClick(time: Instant): Unit = {
