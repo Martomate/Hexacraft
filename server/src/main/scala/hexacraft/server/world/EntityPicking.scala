@@ -4,7 +4,7 @@ import hexacraft.world.{Camera, CylinderSize, PointHexagon, Ray}
 import hexacraft.world.coord.CylCoords
 import hexacraft.world.entity.Entity
 
-import org.joml.{Matrix4d, Vector3d, Vector3dc}
+import org.joml.Vector3dc
 
 object EntityPicking {
 
@@ -31,21 +31,8 @@ object EntityPicking {
       camera: Camera,
       ray: Ray
   )(using CylinderSize): Option[Double] = {
-    val rotationMatrix = new Matrix4d().rotateZ(rotation.z).rotateX(rotation.x).rotateY(rotation.y)
-    val cameraPosition = CylCoords(camera.view.position)
-
-    // The ray starts at the camera, so the corners are converted to coordinates relative to the camera
-    def relativeToCamera(corner: Vector3dc): Vector3d = {
-      val offset = rotationMatrix.transformPosition(corner, new Vector3d)
-      position.offset(offset).toNormalCoords(cameraPosition).toVector3d
-    }
-
     placedModel.prismCorners.flatMap { corners =>
-      val prism = new PointHexagon(
-        corners.top.map(relativeToCamera).toArray,
-        corners.bottom.map(relativeToCamera).toArray
-      )
-      prism.distanceToBox(ray)
+      PointHexagon.fromEntityPrism(corners.top, corners.bottom, position, rotation, camera).distanceToBox(ray)
     }.minOption
   }
 }

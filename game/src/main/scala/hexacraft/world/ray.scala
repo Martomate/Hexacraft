@@ -5,7 +5,7 @@ import hexacraft.world.PointHexagon.{Region, Slice}
 import hexacraft.world.block.{Block, BlockState}
 import hexacraft.world.coord.*
 
-import org.joml.{Vector2fc, Vector3d, Vector4f}
+import org.joml.{Matrix4d, Vector2fc, Vector3d, Vector3dc, Vector4f}
 
 import scala.annotation.tailrec
 
@@ -136,6 +136,34 @@ object PointHexagon {
         .toVector3d
     )
     new PointHexagon(points.take(6).toArray, points.drop(6).toArray)
+  }
+
+  /** A hexagonal prism that is part of an entity, as seen from the camera.
+    *
+    * @param top
+    *   the 6 corners at the end of the prism, relative to the entity (before the entity is rotated)
+    * @param bottom
+    *   the 6 corners at the start of the prism, in the same order
+    * @param rotation
+    *   the rotation of the entity (applied in the order z, x, y)
+    */
+  def fromEntityPrism(
+      top: Seq[Vector3dc],
+      bottom: Seq[Vector3dc],
+      position: CylCoords,
+      rotation: Vector3dc,
+      camera: Camera
+  )(using CylinderSize): PointHexagon = {
+    val rotationMatrix = new Matrix4d().rotateZ(rotation.z).rotateX(rotation.x).rotateY(rotation.y)
+    val cameraPosition = CylCoords(camera.view.position)
+
+    // The ray starts at the camera, so the corners are converted to coordinates relative to the camera
+    def relativeToCamera(corner: Vector3dc): Vector3d = {
+      val offset = rotationMatrix.transformPosition(corner, new Vector3d)
+      position.offset(offset).toNormalCoords(cameraPosition).toVector3d
+    }
+
+    new PointHexagon(top.map(relativeToCamera).toArray, bottom.map(relativeToCamera).toArray)
   }
 
   type Slice = Int
