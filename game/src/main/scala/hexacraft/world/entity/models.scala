@@ -31,6 +31,8 @@ case class EntityModel(parts: IndexedSeq[EntityPart]) {
   }
 
   def part(name: String): EntityPart = parts(indexOf(name))
+
+  def hasPart(name: String): Boolean = indicesByName.contains(name)
 }
 
 object EntityModel {

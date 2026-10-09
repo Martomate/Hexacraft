@@ -7,9 +7,24 @@ import org.joml.{Matrix4f, Vector3f}
 /** The current pose of an entity, i.e. how much each part of the model is rotated away from its resting rotation. */
 class EntityPose(val model: EntityModel) {
   private val rotations = Array.fill(model.parts.size)(new Vector3f)
+  private var _missingPartNames: Set[String] = Set.empty
 
-  /** The (mutable) pose rotation of the given part */
-  def rotation(partName: String): Vector3f = rotations(model.indexOf(partName))
+  /** The (mutable) pose rotation of the given part.
+    *
+    * If the model has no such part a rotation that is not used for anything is returned, since the model comes from
+    * the server and might not have all the parts the animation expects.
+    */
+  def rotation(partName: String): Vector3f = {
+    if model.hasPart(partName) then {
+      rotations(model.indexOf(partName))
+    } else {
+      _missingPartNames += partName
+      new Vector3f
+    }
+  }
+
+  /** The names that have been passed to `rotation` but that are not in the model */
+  def missingPartNames: Set[String] = _missingPartNames
 
   /** The transform of each part's attachment point relative to the entity, in world units */
   def partTransforms: Array[Matrix4f] = {

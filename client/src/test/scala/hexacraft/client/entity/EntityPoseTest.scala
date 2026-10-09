@@ -70,6 +70,17 @@ class EntityPoseTest extends FunSuite {
     assertEquals(model.parts(0).rotation.z(), 0f)
   }
 
+  test("the rotation of a part that is not in the model is ignored, but the name is recorded") {
+    val model = EntityModel(IndexedSeq(EntityPart("leg", HexPrism(4, 32), Vector3f(), Vector3f())))
+    val pose = EntityPose(model)
+
+    pose.rotation("tail").z = 0.3f
+
+    assertEquals(pose.rotation("leg").z, 0f)
+    assertMatrixEquals(pose.partTransforms(0), Matrix4f())
+    assertEquals(pose.missingPartNames, Set("tail"))
+  }
+
   test("a model requires parents to come before their children") {
     val parent = EntityPart("pivot", HexPrism.empty, Vector3f(), Vector3f())
     val child = EntityPart("head", HexPrism(8, 16), Vector3f(), Vector3f(), Some("pivot"))

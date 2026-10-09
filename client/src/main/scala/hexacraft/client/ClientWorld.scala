@@ -36,6 +36,11 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   /** The entities are loaded separately from the chunks, so they are stored here rather than in the chunks */
   private val entities = mutable.ArrayBuffer.empty[Entity]
 
+  private val modelCache = new EntityModelCache
+
+  /** Entities that will be rendered once their model (by model ID) has been received from the server */
+  private val entitiesWaitingForModel = mutable.HashMap.empty[String, mutable.HashSet[UUID]]
+
   def getColumn(coords: ColumnRelWorld): Option[ChunkColumnHeightMap] = {
     columns.get(coords.value)
   }
@@ -229,11 +234,12 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
       allEntitiesById.get(id) match {
         case Some(e) =>
           event match {
-            case EntityEvent.Spawned(_) =>
+            case EntityEvent.Spawned(_, _) =>
               println(s"Received spawn event for an entity that already exists (id: $id)")
             case EntityEvent.Despawned =>
               removeEntity(e)
               allEntitiesById -= id
+              entitiesWaitingForModel.values.foreach(_ -= id)
             case EntityEvent.Position(pos) =>
               e.transform.position = pos
             case EntityEvent.Rotation(r) =>
@@ -247,9 +253,10 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
           }
         case None =>
           event match {
-            case EntityEvent.Spawned(data) =>
-              Entity.decode(data, includeAi = false).map(EntityModels.addModel) match {
-                case Some(e) =>
+            case EntityEvent.Spawned(data, modelId) =>
+              Entity.decode(data, includeAi = false) match {
+                case Some(entity) =>
+                  val e = withModelIfAvailable(entity, modelId)
                   addEntity(e)
                   allEntitiesById(id) = e
                 case None =>
@@ -277,6 +284,56 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     chunksNeedingRenderUpdate.clear()
 
     new WorldTickResult(r)
+  }
+
+  /** The IDs of the entity models that should be requested from the server (each ID is only returned once) */
+  def modelIdsToRequest(): Seq[String] = modelCache.takeIdsToRequest()
+
+  /** Handles the server's response to a request for the given model IDs, and renders the entities that were waiting
+    * for those models
+    */
+  def receiveModels(requestedIds: Seq[String], models: Map[String, Nbt.MapTag]): Unit = {
+    modelCache.receive(requestedIds, models)
+
+    for {
+      modelId <- requestedIds
+      waitingEntityIds <- entitiesWaitingForModel.remove(modelId)
+      entityId <- waitingEntityIds
+    } do {
+      val idx = entities.indexWhere(_.id == entityId) // the entity might have been removed while waiting
+      if idx != -1 then {
+        entities(idx) = withModelIfAvailable(entities(idx), Some(modelId))
+      }
+    }
+  }
+
+  /** Adds what is needed to render the entity if its model is available. If the model has not been received yet, the
+    * entity is added to the list of entities waiting for that model.
+    */
+  private def withModelIfAvailable(entity: Entity, modelId: Option[String]): Entity = {
+    import EntityModelCache.Lookup
+
+    modelId match {
+      case None =>
+        println(s"Received no model for entity of type '${entity.typeName}', so it will not be rendered")
+        entity
+      case Some(id) =>
+        modelCache.lookup(id) match {
+          case Lookup.Available(model) =>
+            EntityAppearances.modelComponent(entity.typeName, model) match {
+              case Some(component) =>
+                entity.withComponent(component)
+              case None =>
+                println(s"Don't know how to render entities of type '${entity.typeName}', so it will not be rendered")
+                entity
+            }
+          case Lookup.Pending =>
+            entitiesWaitingForModel.getOrElseUpdate(id, mutable.HashSet.empty) += entity.id
+            entity
+          case Lookup.Unavailable =>
+            entity // the reason has already been logged by the model cache
+        }
+    }
   }
 
   private def tickEntity(e: Entity, mountedOn: Option[Entity]): Unit = {

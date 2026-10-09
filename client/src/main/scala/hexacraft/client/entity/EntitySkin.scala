@@ -44,3 +44,33 @@ object EntitySkin {
   private def radiusInPixels(part: EntityPart): Int = part.prism.radius
   private def heightInPixels(part: EntityPart): Int = part.prism.length
 }
+
+/** The skins of all entity types. The parts are referred to by the names used in the models sent by the server. */
+object EntitySkins {
+  val player: EntitySkin = EntitySkin(
+    "player",
+    Map(
+      "head" -> (0, 176),
+      "leftBodyHalf" -> (0, 120),
+      "rightBodyHalf" -> (48, 120),
+      "rightArm" -> (48, 64),
+      "leftArm" -> (0, 64),
+      "rightLeg" -> (48, 0),
+      "leftLeg" -> (0, 0)
+    )
+  )
+
+  val sheep: EntitySkin = EntitySkin(
+    "sheep",
+    Map(
+      "head" -> (0, 168),
+      "body" -> (0, 88),
+      "frontRightLeg" -> (36, 44),
+      "frontLeftLeg" -> (0, 44),
+      "backRightLeg" -> (36, 0),
+      "backLeftLeg" -> (0, 0)
+    )
+  )
+
+  val boat: EntitySkin = EntitySkin("boat", Map.empty) // all parts use the same part of the texture
+}

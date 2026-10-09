@@ -84,6 +84,9 @@ enum NetworkPacket {
   case GetEvents
   case GetWorldLoadingEvents(maxChunksToLoad: Int)
 
+  /** Fetches the entity models with the given IDs. The response leaves out the models the server doesn't know. */
+  case GetModels(ids: Seq[String])
+
   case PlayerRightClicked
   case PlayerLeftClicked
   case PlayerToggledFlying
@@ -139,6 +142,9 @@ object NetworkPacket {
         case "get_world_loading_events" =>
           val maxChunksToLoad = root.getShort("max_chunks", 1)
           NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad)
+        case "get_models" =>
+          val ids = root.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
+          NetworkPacket.GetModels(ids)
         case "right_mouse_clicked" =>
           NetworkPacket.PlayerRightClicked
         case "left_mouse_clicked" =>
@@ -182,6 +188,7 @@ object NetworkPacket {
         case NetworkPacket.GetPlayerState               => "get_player_state"
         case NetworkPacket.GetEvents                    => "get_events"
         case NetworkPacket.GetWorldLoadingEvents(_)     => "get_world_loading_events"
+        case NetworkPacket.GetModels(_)                 => "get_models"
         case NetworkPacket.PlayerRightClicked           => "right_mouse_clicked"
         case NetworkPacket.PlayerLeftClicked            => "left_mouse_clicked"
         case NetworkPacket.PlayerToggledFlying          => "toggle_flying"
@@ -240,6 +247,10 @@ object NetworkPacket {
         case NetworkPacket.GetWorldLoadingEvents(maxChunksToLoad) =>
           Nbt.makeMap(
             "max_chunks" -> Nbt.ShortTag(maxChunksToLoad.toShort)
+          )
+        case NetworkPacket.GetModels(ids) =>
+          Nbt.makeMap(
+            "ids" -> Nbt.ListTag(ids.map(id => Nbt.StringTag(id)))
           )
       }
 

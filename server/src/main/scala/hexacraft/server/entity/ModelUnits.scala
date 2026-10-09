@@ -1,4 +1,4 @@
-package hexacraft.client.entity
+package hexacraft.server.entity
 
 import hexacraft.world.CylinderSize
 

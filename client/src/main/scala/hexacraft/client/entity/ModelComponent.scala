@@ -4,11 +4,14 @@ import hexacraft.world.entity.{EntityComponent, EntityModel}
 
 import org.joml.{Vector3d, Vector3dc}
 
-/** Everything the client needs to render an entity. The server knows nothing about this. */
+/** Everything the client needs to render an entity. The server knows nothing about this.
+  *
+  * The model is sent by the server, while the skin and the animation are defined by the client. They refer to the
+  * parts by name, and names that are not in the model are ignored, so a model change on the server can't crash the
+  * client.
+  */
 class ModelComponent(val pose: EntityPose, val skin: EntitySkin, val animation: EntityAnimation)
     extends EntityComponent {
-  skin.partNames.foreach(model.part) // fails if the skin refers to a part that the model doesn't have
-
   def model: EntityModel = pose.model
 }
 

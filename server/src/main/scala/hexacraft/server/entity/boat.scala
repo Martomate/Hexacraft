@@ -1,4 +1,4 @@
-package hexacraft.client.entity
+package hexacraft.server.entity
 
 import hexacraft.world.CylinderSize
 import hexacraft.world.entity.{EntityModel, EntityPart, HexPrism}
@@ -7,8 +7,6 @@ import org.joml.Vector3f
 
 object BoatEntityModel {
   import ModelUnits.*
-
-  val skin: EntitySkin = EntitySkin("boat", Map.empty) // all parts use the same part of the texture
 
   val model: EntityModel = create()
 
