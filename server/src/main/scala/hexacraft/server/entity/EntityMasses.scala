@@ -10,10 +10,12 @@ object EntityMasses {
     "boat" -> Density.fromSI(400)
   )
 
+  def densityForType(entityType: String): Option[Density] = densitiesByType.get(entityType)
+
   /** The mass in kg, or None if the entity type has no model or no density */
   def forType(entityType: String): Option[Double] = {
     for {
-      density <- densitiesByType.get(entityType)
+      density <- densityForType(entityType)
       volume <- VolumeSamples.forType(entityType)
     } yield volume.totalVolume * density.toSI
   }
