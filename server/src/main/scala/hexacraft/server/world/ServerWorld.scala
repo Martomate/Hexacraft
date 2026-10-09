@@ -539,7 +539,8 @@ class ServerWorld(
     e.motion.velocity.x *= friction
     e.motion.velocity.z *= friction
 
-    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox, drag)
+    val volume = VolumeSamples.forType(e.typeName).getOrElse(VolumeSamples.empty)
+    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox, volume, drag)
 
     entityEventsSinceLastTick += e.id -> EntityEvent.Position(e.transform.position)
     entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)
