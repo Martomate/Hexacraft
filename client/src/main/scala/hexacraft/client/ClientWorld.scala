@@ -9,7 +9,7 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{Entity, HeadDirectionComponent, MountComponent}
+import hexacraft.world.entity.{Entity, EntityModel, HeadDirectionComponent, MountComponent}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -229,7 +229,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
       allEntitiesById.get(id) match {
         case Some(e) =>
           event match {
-            case EntityEvent.Spawned(_) =>
+            case EntityEvent.Spawned(_, _) =>
               println(s"Received spawn event for an entity that already exists (id: $id)")
             case EntityEvent.Despawned =>
               removeEntity(e)
@@ -247,9 +247,10 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
           }
         case None =>
           event match {
-            case EntityEvent.Spawned(data) =>
-              Entity.decode(data, includeAi = false).map(EntityModels.addModel) match {
-                case Some(e) =>
+            case EntityEvent.Spawned(data, modelTag) =>
+              Entity.decode(data, includeAi = false) match {
+                case Some(entity) =>
+                  val e = withModelComponent(entity, modelTag)
                   addEntity(e)
                   allEntitiesById(id) = e
                 case None =>
@@ -277,6 +278,28 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     chunksNeedingRenderUpdate.clear()
 
     new WorldTickResult(r)
+  }
+
+  /** Adds what is needed to render the entity, if possible. Otherwise the entity is not rendered. */
+  private def withModelComponent(entity: Entity, modelTag: Option[Nbt.MapTag]): Entity = {
+    val entityType = entity.typeName
+
+    modelTag.map(t => Nbt.decode[EntityModel](t)) match {
+      case None =>
+        println(s"Received no model for entity of type '$entityType', so it will not be rendered")
+        entity
+      case Some(None) =>
+        println(s"Received an invalid model for entity of type '$entityType', so it will not be rendered")
+        entity
+      case Some(Some(model)) =>
+        EntityAppearances.modelComponent(entityType, model) match {
+          case Some(component) =>
+            entity.withComponent(component)
+          case None =>
+            println(s"Don't know how to render entities of type '$entityType', so it will not be rendered")
+            entity
+        }
+    }
   }
 
   private def tickEntity(e: Entity, mountedOn: Option[Entity]): Unit = {

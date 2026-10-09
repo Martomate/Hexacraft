@@ -2,6 +2,7 @@ package hexacraft.server.world
 
 import hexacraft.nbt.Nbt
 import hexacraft.physics.DragCoefficient
+import hexacraft.server.entity.EntitySpawnEvent
 import hexacraft.server.world.ServerWorld.WorldTickResult
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
@@ -124,7 +125,7 @@ class ServerWorld(
     chunkOfEntity(entity) match {
       case Some(chunk) =>
         chunk.addEntity(entity)
-        entityEventsSinceLastTick += entity.id -> EntityEvent.Spawned(Entity.encode(entity, includeAi = false))
+        entityEventsSinceLastTick += entity.id -> EntitySpawnEvent.of(entity)
       case None =>
     }
   }

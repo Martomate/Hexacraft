@@ -4,8 +4,10 @@ import hexacraft.game.NetworkPacket
 import hexacraft.nbt.Nbt
 import hexacraft.rs.RustLib
 import hexacraft.server.GameServerTest.randomPort
+import hexacraft.server.entity.PlayerEntityModel
 import hexacraft.server.world.FakeWorldProvider
-import hexacraft.world.CylinderSize
+import hexacraft.world.{CylinderSize, EntityEvent}
+import hexacraft.world.entity.EntityModel
 
 import munit.FunSuite
 
@@ -228,6 +230,42 @@ class GameServerTest extends FunSuite {
         )
       }
 
+      socket1.send(NetworkPacket.Logout)
+    }
+  }
+
+  test("server sends the entity and model of a new player to existing players") {
+    runServer(FakeWorldProvider(9876)) { s =>
+      s.server.tick()
+
+      val socket1 = s.connect()
+      socket1.send(NetworkPacket.Login(UUID.randomUUID(), "Player 1"))
+      socket1.receive()
+
+      socket1.send(NetworkPacket.GetEvents)
+      socket1.receive() // get the events now so we only get new events next time
+
+      val socket2 = s.connect()
+      val player2Id = UUID.randomUUID()
+      socket2.send(NetworkPacket.Login(player2Id, "Player 2"))
+      socket2.receive()
+
+      socket1.send(NetworkPacket.GetEvents)
+      val entityEvents = socket1.receive().asMap.get.getMap("entity_events").get
+
+      val ids = entityEvents.getList("ids").get.map {
+        case Nbt.StringTag(id) => UUID.fromString(id)
+        case t                 => fail(s"Expected an entity id, but got $t")
+      }
+      val events = entityEvents.getList("events").get.map(e => Nbt.decode[EntityEvent](e.asMap.get).get)
+
+      val spawnEvents = ids.zip(events).collect { case (`player2Id`, e: EntityEvent.Spawned) => e }
+      assertEquals(spawnEvents.size, 1)
+
+      val model = spawnEvents.head.model.flatMap(Nbt.decode[EntityModel])
+      assertEquals(model, Some(PlayerEntityModel.model))
+
+      socket2.send(NetworkPacket.Logout)
       socket1.send(NetworkPacket.Logout)
     }
   }
