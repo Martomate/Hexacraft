@@ -6,7 +6,7 @@ import hexacraft.world.block.Block
 import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 import hexacraft.world.entity.{EntityModel, EntityPart}
 
-import org.joml.{Matrix4d, Vector3d, Vector3dc}
+import org.joml.{Matrix4d, Matrix4dc, Vector3d, Vector3dc}
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -59,28 +59,16 @@ object VolumeSamples {
   }
 
   def fromModel(model: EntityModel, spacing: Double = DefaultSpacing): VolumeSamples = {
-    val px = EntityModel.pixelSize
-    val parts = model.parts
-    val partTransforms = new Array[Matrix4d](parts.size)
-    val samples = IndexedSeq.newBuilder[VolumeSample]
+    val placedModel = PlacedModel(model)
 
-    for idx <- parts.indices do {
-      val part = parts(idx)
-      val parentIdx = model.parentIndices(idx)
+    val samples = for {
+      idx <- model.parts.indices
+      part = model.parts(idx)
+      if part.isVisible
+      sample <- samplePrism(part, placedModel.partTransforms(idx), spacing)
+    } yield sample
 
-      // This must match how the client places the parts (in EntityPose) when it renders the model
-      partTransforms(idx) = (if parentIdx != -1 then Matrix4d(partTransforms(parentIdx)) else Matrix4d())
-        .translate(part.position.x * px, part.position.y * px, part.position.z * px)
-        .rotateZ(part.rotation.z)
-        .rotateX(part.rotation.x)
-        .rotateY(part.rotation.y)
-
-      if part.isVisible then {
-        samples ++= samplePrism(part, partTransforms(idx), spacing)
-      }
-    }
-
-    VolumeSamples(samples.result())
+    VolumeSamples(samples)
   }
 
   /** Samples the prism of the part, which is a hexagon along the y-axis.
@@ -88,7 +76,7 @@ object VolumeSamples {
     * The hexagon is split into its 6 triangles, which are split into m * m smaller triangles, and the points are placed
     * at the centers of those. This is repeated in n layers along the length of the prism.
     */
-  private def samplePrism(part: EntityPart, transform: Matrix4d, spacing: Double): Seq[VolumeSample] = {
+  private def samplePrism(part: EntityPart, transform: Matrix4dc, spacing: Double): Seq[VolumeSample] = {
     val px = EntityModel.pixelSize
     val radius = part.prism.radius.toDouble
     val length = part.prism.length.toDouble

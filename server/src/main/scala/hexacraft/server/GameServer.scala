@@ -4,7 +4,7 @@ import hexacraft.game.*
 import hexacraft.nbt.Nbt
 import hexacraft.server.TcpServer.Error
 import hexacraft.server.entity.{EntityModels, EntitySpawnEvent}
-import hexacraft.server.world.{ChunkLoadingPrioritizer, EntityFactory, ServerWorld, WorldProvider}
+import hexacraft.server.world.{ChunkLoadingPrioritizer, EntityFactory, EntityPicking, ServerWorld, WorldProvider}
 import hexacraft.util.{Result, SeqUtils}
 import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockState}
@@ -255,10 +255,8 @@ class GameServer(
   private def findClosestEntity(camera: Camera, ray: Ray): Option[(Hit, Double)] = {
     world
       .filterMapEntities { e =>
-        val coords = e.transform.position.toBlockCoords
-        val points = PointHexagon.fromHexBox(e.boundingBox, coords, camera)
-        points
-          .distanceToBox(ray)
+        EntityPicking
+          .distanceToEntity(e, camera, ray)
           .filter(_ < ReachDistance * CylinderSize.y60) // convert unit from blocks to meters
       }
       .map((e, d) => (Hit.OnEntity(e), d))

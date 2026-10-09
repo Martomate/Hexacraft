@@ -1,7 +1,7 @@
 package hexacraft.world
 
 import munit.FunSuite
-import org.joml.Vector3d
+import org.joml.{Matrix4d, Vector3d}
 
 class PointHexagonTest extends FunSuite {
   private val Eps = 1e-9
@@ -79,5 +79,35 @@ class PointHexagonTest extends FunSuite {
     val hex = hexagon(Vector3d(0, 2, 0))
 
     assertEquals(hex.distanceToBox(ray(0, -1, 0)), None)
+  }
+
+  /** A hexagonal prism (radius 1, height 1) that is first rotated and then moved so that the center of its base is at
+    * `center`. Before the rotation, the corners are at angles 0, 60, 120, ... and the prism goes from y = 0 to y = 1.
+    */
+  private def rotatedHexagon(center: Vector3d, rotation: Matrix4d): PointHexagon = {
+    def ring(y: Double) = Array.tabulate(6) { i =>
+      val angle = i * Math.PI / 3
+      rotation.transformPosition(Vector3d(Math.cos(angle), y, Math.sin(angle))).add(center)
+    }
+    new PointHexagon(ring(1), ring(0))
+  }
+
+  test("a ray hits a hexagon that is lying on its side") {
+    // Rotating around the z-axis makes the prism point along -x, with corners at the top (y = 1) and bottom (y = -1)
+    val hex = rotatedHexagon(Vector3d(0.5, -3, -0.3), Matrix4d().rotateZ(Math.PI / 2))
+
+    // The ray passes 0.3 from the axis, so it hits the side between the corners at the top and at 60 degrees
+    val hitHeight = 1 - 0.5 * 0.3 / Math.sin(Math.PI / 3)
+    assertDistance(hex.distanceToBox(ray(0, -1, 0)), 3 - hitHeight)
+  }
+
+  test("a ray hits a hexagon that is rotated around its own axis where it would otherwise miss") {
+    // A point 0.95 from the center in the direction 30 degrees is outside a hexagon with corners at 0, 60, 120, ...
+    // (whose sides are only sqrt(3) / 2 from the center), but inside one with corners at 30, 90, 150, ...
+    val direction = Math.PI / 6
+    val center = Vector3d(-0.95 * Math.cos(direction), -3, -0.95 * Math.sin(direction))
+
+    assertEquals(rotatedHexagon(center, Matrix4d()).distanceToBox(ray(0, -1, 0)), None)
+    assertDistance(rotatedHexagon(center, Matrix4d().rotateY(-direction)).distanceToBox(ray(0, -1, 0)), 2)
   }
 }
