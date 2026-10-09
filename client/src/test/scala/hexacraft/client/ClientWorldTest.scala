@@ -4,7 +4,7 @@ import hexacraft.client.entity.ModelComponent
 import hexacraft.nbt.Nbt
 import hexacraft.world.{CylinderSize, EntityEvent, WorldGenSettings, WorldInfo}
 import hexacraft.world.coord.CylCoords
-import hexacraft.world.entity.{Entity, EntityModel, EntityPart, HexPrism}
+import hexacraft.world.entity.{Entity, EntityModel, EntityPart, HexPrism, MountComponent}
 
 import munit.FunSuite
 import org.joml.Vector3f
@@ -25,12 +25,12 @@ class ClientWorldTest extends FunSuite {
   private def spawnSheep(world: ClientWorld, modelId: Option[String]): UUID = {
     val sheep = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
     val event = EntityEvent.Spawned(Entity.encode(sheep, includeAi = false), modelId)
-    world.tick(Seq.empty, Seq(sheep.id -> event))
+    world.applyEntityEvents(Seq(sheep.id -> event))
     sheep.id
   }
 
   private def despawn(world: ClientWorld, entityId: UUID): Unit = {
-    world.tick(Seq.empty, Seq(entityId -> EntityEvent.Despawned))
+    world.applyEntityEvents(Seq(entityId -> EntityEvent.Despawned))
   }
 
   /** Returns the entity's model, or None if it will not be rendered. Fails if the entity is not in the world. */
@@ -108,8 +108,8 @@ class ClientWorldTest extends FunSuite {
     val sheep = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
     val spawnEvent = EntityEvent.Spawned(Entity.encode(sheep, includeAi = false), Some(modelId))
 
-    world.tick(Seq.empty, Seq(sheep.id -> spawnEvent))
-    world.tick(Seq.empty, Seq(sheep.id -> EntityEvent.Despawned, sheep.id -> spawnEvent))
+    world.applyEntityEvents(Seq(sheep.id -> spawnEvent))
+    world.applyEntityEvents(Seq(sheep.id -> EntityEvent.Despawned, sheep.id -> spawnEvent))
 
     world.receiveModels(world.modelIdsToRequest(), Map(modelId -> Nbt.encode(model)))
 
@@ -125,5 +125,26 @@ class ClientWorldTest extends FunSuite {
 
     assertEquals(modelOf(world, sheepId), None)
     assertEquals(world.modelIdsToRequest(), Seq())
+  }
+
+  test("entitiesMountedBy returns the entities the given entity is mounted on") {
+    val world = makeWorld()
+    val playerId = UUID.randomUUID()
+    val boat = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "boat").unwrap()
+    val mountedBoat = boat.withComponent(MountComponent(playerId))
+    val sheepId = spawnSheep(world, None)
+
+    world.applyEntityEvents(Seq(boat.id -> EntityEvent.Spawned(Entity.encode(boat, includeAi = false), None)))
+    assertEquals(world.entitiesMountedBy(playerId), Seq())
+
+    // This is what the server sends when the player mounts the boat
+    world.applyEntityEvents(
+      Seq(
+        boat.id -> EntityEvent.Despawned,
+        boat.id -> EntityEvent.Spawned(Entity.encode(mountedBoat, includeAi = false), None)
+      )
+    )
+    assertEquals(world.entitiesMountedBy(playerId).map(_.id), Seq(boat.id))
+    assertEquals(world.entitiesMountedBy(sheepId), Seq())
   }
 }

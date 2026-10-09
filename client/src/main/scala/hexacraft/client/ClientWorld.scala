@@ -224,7 +224,15 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     chunkWasRemoved
   }
 
-  def tick(cameras: Seq[Camera], entityEvents: Seq[(UUID, EntityEvent)]): WorldTickResult = {
+  /** The entities that have the given entity (e.g. the player) mounted on them */
+  def entitiesMountedBy(id: UUID): Seq[Entity] = {
+    entities.filter(_.accessComponents { case c: MountComponent => c.mountedEntity }.contains(id)).toSeq
+  }
+
+  /** Applies the entity events from the server. This is done separately from `tick` so the player can be updated based
+    * on the latest entity positions (e.g. when sitting in a boat).
+    */
+  def applyEntityEvents(entityEvents: Seq[(UUID, EntityEvent)]): Unit = {
     val allEntitiesById = mutable.HashMap.empty[UUID, Entity]
     Loop.array(entities) { e =>
       allEntitiesById(e.id) = e
@@ -267,7 +275,9 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
           }
       }
     }
+  }
 
+  def tick(cameras: Seq[Camera]): WorldTickResult = {
     Loop.array(chunkList) { ch =>
       ch.optimizeStorage()
     }
