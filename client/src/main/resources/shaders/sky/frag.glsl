@@ -17,13 +17,15 @@ uniform float waterFogStrength; // 0 when there is no water around the eye, 1 wh
 // Returns how much of a ray from the eye in the given direction lies below the water surface (before reaching the sky)
 float underwaterDistance(vec3 ray) {
     float surface = waterSurfaceAboveEye;
-    if (surface > 0.0) {
-        // Under water: the ray is under water until it reaches the surface
-        return ray.y > 0.0 ? min(surface / ray.y, SKY_DISTANCE) : SKY_DISTANCE;
-    } else {
-        // Above water: the ray is under water after it reaches the surface
-        return ray.y < 0.0 ? max(SKY_DISTANCE - surface / ray.y, 0.0) : 0.0;
+    if (surface <= 0.0) {
+        // Above water: the sky is only visible where there is no terrain (i.e. beyond the render distance), and there
+        // is no way of knowing if there is any water there. The world also curves away, so rays slightly below the
+        // horizon would not reach the water anyway.
+        return 0.0;
     }
+
+    // Under water: the ray is under water until it reaches the surface
+    return ray.y > 0.0 ? min(surface / ray.y, SKY_DISTANCE) : SKY_DISTANCE;
 }
 
 void main() {
