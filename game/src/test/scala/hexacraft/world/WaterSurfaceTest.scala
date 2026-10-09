@@ -55,6 +55,38 @@ class WaterSurfaceTest extends FunSuite {
     assertEquals(WaterSurface.heightNear(eyeAt(14.5), world), None)
   }
 
+  test("heightNear finds the surface next to a block that is above the position") {
+    val underLedge = waterColumn(10, 12) + (BlockRelWorld(2, 13, 3) -> BlockState(Block.Stone))
+    val openWater = (10 to 14).map(y => BlockRelWorld(3, y, 3) -> water).toMap
+    val world = FakeBlocksInWorld.withBlocks(underLedge ++ openWater)
+
+    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 7.5, 1e-9)
+  }
+
+  test("heightNear finds the surface further away when swimming under a wide overhang") {
+    val stone = BlockState(Block.Stone)
+    // water from y = 10 to 12 below a stone ceiling at y = 13, for x = 0 to 5, and open water up to y = 14 at x = 6
+    val underOverhang = for x <- 0 to 5; y <- 10 to 13
+    yield BlockRelWorld(x, y, 3) -> (if y == 13 then stone else water)
+    val openWater = for y <- 10 to 14 yield BlockRelWorld(6, y, 3) -> water
+    val world = FakeBlocksInWorld.withBlocks((underOverhang ++ openWater).toMap)
+
+    assertEqualsDouble(WaterSurface.heightNear(BlockCoords(0, 10.5, 3).toCylCoords, world).get, 7.5, 1e-9)
+  }
+
+  test("heightNear uses the highest water when there is no air above any of it") {
+    val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12) + (BlockRelWorld(2, 13, 3) -> BlockState(Block.Stone)))
+
+    // the chunk around is otherwise air, so close it in to make it a flooded cave
+    val walls = for
+      off <- Seq((1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1))
+      y <- 10 to 12
+    yield BlockRelWorld(2 + off._1, y, 3 + off._2) -> BlockState(Block.Stone)
+    for (c, b) <- walls do world.addBlock(c, b)
+
+    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 6.5, 1e-9)
+  }
+
   test("heightNear returns None when there is no water") {
     val world = FakeBlocksInWorld.withBlocks(Map(BlockRelWorld(2, 10, 3) -> BlockState(Block.Dirt)))
 

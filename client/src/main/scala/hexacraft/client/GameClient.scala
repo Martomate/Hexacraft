@@ -255,6 +255,9 @@ class GameClient(
 
   private var selectedBlockAndSide: Option[MousePickerResult] = None
   private var selectedBlockAndSideIncludingWater: Option[MousePickerResult] = None
+
+  /** The height of the water surface near the camera, if the camera is in or close to water */
+  private var waterSurfaceHeight: Option[Double] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer(chatOverlay)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -496,11 +499,6 @@ class GameClient(
   }
 
   def render(context: RenderContext): Unit = {
-    // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
-    val waterSurfaceHeight =
-      if freeFly then None
-      else WaterSurface.heightNear(CylCoords(camera.position), world)
-
     worldRenderer.render(
       if freeFly then freeFlyCamera else camera,
       new Vector3f(0, 1, -1),
@@ -777,6 +775,11 @@ class GameClient(
       camera.setPositionAndRotation(player.position, player.rotation)
       camera.updateCoords()
       camera.updateViewMatrix()
+
+      // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
+      waterSurfaceHeight =
+        if freeFly then None
+        else WaterSurface.heightNear(CylCoords(camera.position), world)
 
       if !isPaused && freeFly then {
         val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)
