@@ -2,7 +2,7 @@ package hexacraft.server.world
 
 import hexacraft.nbt.Nbt
 import hexacraft.physics.DragCoefficient
-import hexacraft.server.entity.EntitySpawnEvent
+import hexacraft.server.entity.{EntityMasses, EntitySpawnEvent}
 import hexacraft.server.world.ServerWorld.WorldTickResult
 import hexacraft.server.world.plan.WorldPlanner
 import hexacraft.util.*
@@ -23,6 +23,9 @@ import scala.util.{Failure, Success}
 object ServerWorld {
   private val ticksBetweenBlockUpdates = 5
   private val ticksBetweenEntityRelocation = 120
+
+  /** The mass (in kg) of entities whose mass can't be calculated from their model */
+  private val defaultEntityMass = 75.0
 
   var shouldChillChunkLoader = false
 
@@ -540,7 +543,8 @@ class ServerWorld(
     e.motion.velocity.z *= friction
 
     val volume = VolumeSamples.forType(e.typeName).getOrElse(VolumeSamples.empty)
-    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox, volume, drag)
+    val mass = EntityMasses.forType(e.typeName).getOrElse(ServerWorld.defaultEntityMass)
+    entityPhysicsSystem.update(e.transform, e.motion, e.boundingBox, volume, mass, drag)
 
     entityEventsSinceLastTick += e.id -> EntityEvent.Position(e.transform.position)
     entityEventsSinceLastTick += e.id -> EntityEvent.Rotation(e.transform.rotation)

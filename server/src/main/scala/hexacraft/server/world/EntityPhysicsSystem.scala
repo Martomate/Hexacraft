@@ -13,23 +13,26 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
 
   /** @param volume
     *   the volume of the entity (from its model), used for buoyancy and drag
+    * @param mass
+    *   the mass of the entity in kg
     */
   def update(
       transform: TransformComponent,
       motion: MotionComponent,
       boundingBox: HexBox,
       volume: VolumeSamples,
+      mass: Double,
       coefficient: DragCoefficient
   ): Unit = {
     val volumeInWater = volume.volumeInWater(world, transform.position, transform.rotation)
 
-    applyBuoyancy(motion.velocity, 75, volumeInWater, Density.water)
+    applyBuoyancy(motion.velocity, mass, volumeInWater, Density.water)
 
     val isMoving = motion.velocity.lengthSquared > 0
     if isMoving && volume.totalVolume > 0 then {
       val totalArea = boundingBox.projectedAreaInDirection(motion.velocity)
       val adjustedArea = totalArea * (volumeInWater / volume.totalVolume)
-      applyDrag(motion.velocity, coefficient, 75, adjustedArea)
+      applyDrag(motion.velocity, coefficient, mass, adjustedArea)
     }
 
     if !motion.flying then {
