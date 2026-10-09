@@ -9,6 +9,9 @@ uniform sampler2D worldPositionTexture;
 uniform sampler2D worldNormalTexture;
 uniform sampler2D worldColorTexture;
 uniform sampler2D worldDepthTexture;
+uniform sampler2D translucentPositionTexture;
+uniform sampler2D translucentNormalTexture;
+uniform sampler2D translucentColorTexture;
 uniform float nearPlane;
 uniform float farPlane;
 uniform vec3 sun;
@@ -19,7 +22,7 @@ uniform vec3 waterAbsorption;
 uniform float waterScattering;
 uniform float waterDepthDarkening;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
-uniform float waterFogStrength; // 0 when there is no water around the eye, 1 when the eye is under water
+uniform float waterFogStrength; // 1 when the eye is under water, otherwise 0
 
 float linearize_depth(float d,float zNear,float zFar)
 {
@@ -60,31 +63,62 @@ vec3 applyWaterFog(vec3 col, vec3 fogColor, float underwaterDist) {
     return mix(col * transmittance, fogColor, scattered);
 }
 
-void main() {
-    vec3 worldPosition = texture(worldPositionTexture, textureCoords).rgb;
-    vec3 worldNormal = texture(worldNormalTexture, textureCoords).rgb;
-    vec4 worldColor = texture(worldColorTexture, textureCoords);
-    float worldDepth = linearize_depth(texture(worldDepthTexture, textureCoords).r, nearPlane, farPlane);
+struct Layer {
+    vec3 position;
+    vec3 normal;
+    vec3 color;
+    float alpha;
+};
+
+// Reads a layer from the G-buffer, and undoes the premultiplication that happened when it was blended into it
+Layer readLayer(sampler2D positionTexture, sampler2D normalTexture, sampler2D colorTexture) {
+    vec4 col = texture(colorTexture, textureCoords);
+    Layer layer;
+    layer.alpha = sqrt(col.a);
+    float div = layer.alpha > 0.0 ? layer.alpha : 1.0;
+    layer.position = texture(positionTexture, textureCoords).rgb / div;
+    layer.normal = texture(normalTexture, textureCoords).rgb;
+    layer.color = col.rgb / div;
 
     vec3 sunDir = normalize(sun);
-    float visibility = max(dot(worldNormal, sunDir), 0) * 0.2 + 0.8;
+    float visibility = max(dot(layer.normal, sunDir), 0) * 0.2 + 0.8;
+    layer.color *= visibility;
+    return layer;
+}
 
-    color = worldColor;
-    color.rgb *= visibility;
-    color.a = sqrt(color.a);
-    // The color was premultiplied when blended into the (transparent) frame buffer, so undo that before blending again
-    if (color.a > 0.0) color.rgb /= color.a;
+// Applies the fog of the water that the eye is in (if any) on the light coming from the given position
+vec3 applyEyeWaterFog(vec3 col, vec3 pos) {
+    if (waterFogStrength <= 0.0) return col;
 
-    if (waterFogStrength > 0.0 && color.a > 0.0) {
-        // The position was also blended into the frame buffer, so it has to be un-premultiplied as well
-        vec3 pos = worldPosition / color.a;
-        float h = heightAboveEye(pos);
-        float s = waterFogStrength;
+    float h = heightAboveEye(pos);
+    float s = waterFogStrength;
 
-        // Deep down there is less sunlight, both on the objects and in the water between them and the eye
-        vec3 objectColor = color.rgb * lightAtDepth((waterSurfaceAboveEye - h) * s);
-        vec3 fogColor = waterFogColor * lightAtDepth(waterSurfaceAboveEye * s);
+    // Deep down there is less sunlight, both on the objects and in the water between them and the eye
+    vec3 objectColor = col * lightAtDepth((waterSurfaceAboveEye - h) * s);
+    vec3 fogColor = waterFogColor * lightAtDepth(waterSurfaceAboveEye * s);
 
-        color.rgb = applyWaterFog(objectColor, fogColor, underwaterDistance(length(pos), h) * s);
+    return applyWaterFog(objectColor, fogColor, underwaterDistance(length(pos), h) * s);
+}
+
+void main() {
+    Layer opaque = readLayer(worldPositionTexture, worldNormalTexture, worldColorTexture);
+    Layer translucent = readLayer(translucentPositionTexture, translucentNormalTexture, translucentColorTexture);
+
+    vec3 opaqueColor = opaque.color;
+    if (opaque.alpha > 0.0 && translucent.alpha > 0.0) {
+        // If the front of the water is seen (e.g. the surface from above) the opaque thing behind it is under water
+        bool seenThroughWater = dot(translucent.normal, translucent.position) < 0.0;
+        if (seenThroughWater) {
+            float dist = max(length(opaque.position) - length(translucent.position), 0.0);
+            float depth = heightAboveEye(translucent.position) - heightAboveEye(opaque.position);
+            opaqueColor = applyWaterFog(opaqueColor * lightAtDepth(depth), waterFogColor, dist);
+        }
     }
+    opaqueColor = applyEyeWaterFog(opaqueColor, opaque.position);
+    vec3 translucentColor = applyEyeWaterFog(translucent.color, translucent.position);
+
+    // Put the translucent layer on top of the opaque layer, and the result will be put on top of the sky
+    float alpha = translucent.alpha + opaque.alpha * (1.0 - translucent.alpha);
+    vec3 premultiplied = translucentColor * translucent.alpha + opaqueColor * opaque.alpha * (1.0 - translucent.alpha);
+    color = vec4(alpha > 0.0 ? premultiplied / alpha : vec3(0.0), alpha);
 }

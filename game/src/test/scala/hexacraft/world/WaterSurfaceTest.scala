@@ -17,53 +17,40 @@ class WaterSurfaceTest extends FunSuite {
 
   private def eyeAt(y: Double) = BlockCoords(2, y, 3).toCylCoords
 
-  test("heightNear returns the top of the water column when the position is under water") {
+  test("heightAt returns the top of the water column when the position is under water") {
     val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12))
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 6.5, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(eyeAt(10.5), world).get, 6.5, 1e-9)
   }
 
-  test("heightNear takes the fluid level of the top block into account") {
+  test("heightAt takes the fluid level of the top block into account") {
     val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12, top = halfWater))
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 6.25, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(eyeAt(10.5), world).get, 6.25, 1e-9)
   }
 
-  test("heightNear finds the surface when the position is in a partially filled block but above the water") {
+  test("heightAt finds the surface when the position is in a partially filled block but above the water") {
     val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12, top = halfWater))
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(12.8), world).get, 6.25, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(eyeAt(12.8), world).get, 6.25, 1e-9)
   }
 
-  test("heightNear finds the surface when the position is slightly above the water") {
+  test("heightAt returns None when the position is above the water") {
     val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12))
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(13.5), world).get, 6.5, 1e-9)
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(14.9), world).get, 6.5, 1e-9)
+    assertEquals(WaterSurface.heightAt(eyeAt(13.5), world), None)
+    assertEquals(WaterSurface.heightAt(eyeAt(20), world), None)
   }
 
-  test("heightNear returns None when the position is far above the water") {
-    val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12))
-
-    assertEquals(WaterSurface.heightNear(eyeAt(15.1), world), None)
-    assertEquals(WaterSurface.heightNear(eyeAt(20), world), None)
-  }
-
-  test("heightNear returns None when there is something between the position and the water") {
-    val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12) + (BlockRelWorld(2, 13, 3) -> BlockState(Block.Stone)))
-
-    assertEquals(WaterSurface.heightNear(eyeAt(14.5), world), None)
-  }
-
-  test("heightNear finds the surface next to a block that is above the position") {
+  test("heightAt finds the surface next to a block that is above the position") {
     val underLedge = waterColumn(10, 12) + (BlockRelWorld(2, 13, 3) -> BlockState(Block.Stone))
     val openWater = (10 to 14).map(y => BlockRelWorld(3, y, 3) -> water).toMap
     val world = FakeBlocksInWorld.withBlocks(underLedge ++ openWater)
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 7.5, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(eyeAt(10.5), world).get, 7.5, 1e-9)
   }
 
-  test("heightNear finds the surface further away when swimming under a wide overhang") {
+  test("heightAt finds the surface further away when swimming under a wide overhang") {
     val stone = BlockState(Block.Stone)
     // water from y = 10 to 12 below a stone ceiling at y = 13, for x = 0 to 5, and open water up to y = 14 at x = 6
     val underOverhang = for x <- 0 to 5; y <- 10 to 13
@@ -71,10 +58,10 @@ class WaterSurfaceTest extends FunSuite {
     val openWater = for y <- 10 to 14 yield BlockRelWorld(6, y, 3) -> water
     val world = FakeBlocksInWorld.withBlocks((underOverhang ++ openWater).toMap)
 
-    assertEqualsDouble(WaterSurface.heightNear(BlockCoords(0, 10.5, 3).toCylCoords, world).get, 7.5, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(BlockCoords(0, 10.5, 3).toCylCoords, world).get, 7.5, 1e-9)
   }
 
-  test("heightNear uses the highest water when there is no air above any of it") {
+  test("heightAt uses the highest water when there is no air above any of it") {
     val world = FakeBlocksInWorld.withBlocks(waterColumn(10, 12) + (BlockRelWorld(2, 13, 3) -> BlockState(Block.Stone)))
 
     // the chunk around is otherwise air, so close it in to make it a flooded cave
@@ -84,12 +71,12 @@ class WaterSurfaceTest extends FunSuite {
     yield BlockRelWorld(2 + off._1, y, 3 + off._2) -> BlockState(Block.Stone)
     for (c, b) <- walls do world.addBlock(c, b)
 
-    assertEqualsDouble(WaterSurface.heightNear(eyeAt(10.5), world).get, 6.5, 1e-9)
+    assertEqualsDouble(WaterSurface.heightAt(eyeAt(10.5), world).get, 6.5, 1e-9)
   }
 
-  test("heightNear returns None when there is no water") {
+  test("heightAt returns None when there is no water") {
     val world = FakeBlocksInWorld.withBlocks(Map(BlockRelWorld(2, 10, 3) -> BlockState(Block.Dirt)))
 
-    assertEquals(WaterSurface.heightNear(eyeAt(11.5), world), None)
+    assertEquals(WaterSurface.heightAt(eyeAt(11.5), world), None)
   }
 }

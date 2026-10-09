@@ -16,7 +16,33 @@ object MainFrameBuffer {
     val frameBuffer =
       Helpers.makeMainFrameBuffer(positionTexture, normalTexture, colorTexture, depthTexture, width, height)
 
-    new MainFrameBuffer(positionTexture, normalTexture, colorTexture, depthTexture, frameBuffer)
+    new MainFrameBuffer(
+      positionTexture,
+      normalTexture,
+      colorTexture,
+      depthTexture,
+      frameBuffer,
+      ownsDepthTexture = true
+    )
+  }
+
+  /** Creates a frame buffer that uses the depth texture of another frame buffer, which will not be unloaded by this one */
+  def withDepthTextureOf(other: MainFrameBuffer): MainFrameBuffer = {
+    val size = other.size
+    val positionTexture = Helpers.makeMainPositionTexture(size.x, size.y)
+    val normalTexture = Helpers.makeMainNormalTexture(size.x, size.y)
+    val colorTexture = Helpers.makeMainColorTexture(size.x, size.y)
+    val frameBuffer =
+      Helpers.makeMainFrameBuffer(positionTexture, normalTexture, colorTexture, other.depthTexture, size.x, size.y)
+
+    new MainFrameBuffer(
+      positionTexture,
+      normalTexture,
+      colorTexture,
+      other.depthTexture,
+      frameBuffer,
+      ownsDepthTexture = false
+    )
   }
 
   private object Helpers {
@@ -151,7 +177,8 @@ class MainFrameBuffer private (
     val normalTexture: OpenGL.TextureId,
     val colorTexture: OpenGL.TextureId,
     val depthTexture: OpenGL.TextureId,
-    frameBuffer: FrameBuffer
+    frameBuffer: FrameBuffer,
+    ownsDepthTexture: Boolean
 ) {
   def size: Vector2ic = new Vector2i(frameBuffer.width, frameBuffer.height)
 
@@ -168,6 +195,8 @@ class MainFrameBuffer private (
     OpenGL.glDeleteTextures(positionTexture)
     OpenGL.glDeleteTextures(normalTexture)
     OpenGL.glDeleteTextures(colorTexture)
-    OpenGL.glDeleteTextures(depthTexture)
+    if ownsDepthTexture then {
+      OpenGL.glDeleteTextures(depthTexture)
+    }
   }
 }

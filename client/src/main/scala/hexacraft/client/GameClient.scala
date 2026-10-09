@@ -256,7 +256,7 @@ class GameClient(
   private var selectedBlockAndSide: Option[MousePickerResult] = None
   private var selectedBlockAndSideIncludingWater: Option[MousePickerResult] = None
 
-  /** The height of the water surface near the camera, if the camera is in or close to water */
+  /** The height of the surface of the water that the camera is in, if any */
   private var waterSurfaceHeight: Option[Double] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer(chatOverlay)
 
@@ -779,7 +779,7 @@ class GameClient(
       // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
       waterSurfaceHeight =
         if freeFly then None
-        else WaterSurface.heightNear(CylCoords(camera.position), world)
+        else WaterSurface.heightAt(CylCoords(camera.position), world)
 
       if !isPaused && freeFly then {
         val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)

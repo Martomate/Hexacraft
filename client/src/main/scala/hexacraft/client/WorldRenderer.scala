@@ -41,6 +41,8 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
   private val selectedBlockRenderer = SelectedBlockShader.createRenderer()
 
   private var mainFrameBuffer = MainFrameBuffer.fromSize(initialFrameBufferSize.x, initialFrameBufferSize.y)
+  // Translucent things are kept separate so that the things behind them can be seen while combining them
+  private var translucentFrameBuffer = MainFrameBuffer.withDepthTextureOf(mainFrameBuffer)
   private var nextFrameBufferSize: Option[Vector2ic] = None
 
   private var currentlySelectedBlockAndSide: Option[MousePickerResult] = None
@@ -100,8 +102,11 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
         nextFrameBufferSize = None
 
         val newFrameBuffer = MainFrameBuffer.fromSize(size.x, size.y)
+        val newTranslucentFrameBuffer = MainFrameBuffer.withDepthTextureOf(newFrameBuffer)
+        translucentFrameBuffer.unload()
         mainFrameBuffer.unload()
         mainFrameBuffer = newFrameBuffer
+        translucentFrameBuffer = newTranslucentFrameBuffer
       case None =>
     }
   }
@@ -121,7 +126,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     }
   }
 
-  /** @param waterSurfaceHeight the height of the water surface near the camera, if the camera is in or close to water */
+  /** @param waterSurfaceHeight the height of the surface of the water that the camera is in, if any */
   def render(
       camera: Camera,
       sun: Vector3f,
@@ -134,7 +139,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     updateSelectedBlockVao(selectedBlockAndSide)
     updateWaterSurface(camera, waterSurfaceHeight)
 
-    // Step 1.1: Render all opaque things to a FrameBuffer
+    // Step 1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
@@ -149,39 +154,32 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
 
     mainFrameBuffer.unbind()
 
-    // Step 2: Render everything to the screen (one could add post processing here in the future)
-    OpenGL.glViewport(0, 0, viewportSize.x, viewportSize.y)
-
-    OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
-
-    renderSky(camera, sun)
-
-    // Step 2.1: Render the FrameBuffer for opaque things
-    renderFrameBuffer(mainFrameBuffer, sun)
-
-    // Step 1.2: Render all translucent things to a FrameBuffer
-    mainFrameBuffer.bind()
+    // Step 2: Render all translucent things to another FrameBuffer (using the depth of the opaque things)
+    translucentFrameBuffer.bind()
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer)
     OpenGL.glDepthMask(false)
 
     terrainRenderer.render(camera, sun, false)
 
     OpenGL.glDepthMask(true)
-    mainFrameBuffer.unbind()
+    translucentFrameBuffer.unbind()
 
+    // Step 3: Render everything to the screen (one could add post processing here in the future)
     OpenGL.glViewport(0, 0, viewportSize.x, viewportSize.y)
 
-    // Step 2.2: Render the FrameBuffer for translucent things
-    renderFrameBuffer(mainFrameBuffer, sun)
+    OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
+
+    renderSky(camera, sun)
+    renderFrameBuffers(sun)
   }
 
   private def updateWaterSurface(camera: Camera, waterSurfaceHeight: Option[Double]): Unit = {
     val (surfaceAboveEye, strength) = waterSurfaceHeight match {
       case Some(h) =>
         val surfaceAboveEye = h - camera.position.y
-        // Fade out the fog as the eye moves away from the surface, so it does not suddenly disappear
-        val strength = math.min(math.max(1 + surfaceAboveEye / WaterSurface.maxHeightAbove, 0), 1)
-        (surfaceAboveEye.toFloat, strength.toFloat)
+        // Above the surface the fog is drawn wherever water is seen, so only the eye being under water matters here
+        val strength = if surfaceAboveEye > 0 then 1f else 0f
+        (surfaceAboveEye.toFloat, strength)
       case None =>
         (0f, 0f)
     }
@@ -190,12 +188,15 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     skyShader.setWaterSurface(surfaceAboveEye, strength)
   }
 
-  private def renderFrameBuffer(frameBuffer: MainFrameBuffer, sun: Vector3f): Unit = {
+  private def renderFrameBuffers(sun: Vector3f): Unit = {
     worldCombinerShader.bindTextures(
-      positionTexture = frameBuffer.positionTexture,
-      normalTexture = frameBuffer.normalTexture,
-      colorTexture = frameBuffer.colorTexture,
-      depthTexture = frameBuffer.depthTexture
+      positionTexture = mainFrameBuffer.positionTexture,
+      normalTexture = mainFrameBuffer.normalTexture,
+      colorTexture = mainFrameBuffer.colorTexture,
+      depthTexture = mainFrameBuffer.depthTexture,
+      translucentPositionTexture = translucentFrameBuffer.positionTexture,
+      translucentNormalTexture = translucentFrameBuffer.normalTexture,
+      translucentColorTexture = translucentFrameBuffer.colorTexture
     )
     worldCombinerShader.enable()
     worldCombinerShader.setSunPosition(sun)
@@ -275,6 +276,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
 
     terrainRenderer.unload()
 
+    translucentFrameBuffer.unload()
     mainFrameBuffer.unload()
 
     executorService.shutdown()
