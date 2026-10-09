@@ -70,13 +70,14 @@ struct Layer {
     float alpha;
 };
 
-// Reads a layer from the G-buffer, and undoes the premultiplication that happened when it was blended into it
+// Reads a layer from the G-buffer, and undoes the premultiplication of the color that happened when it was blended
+// into it. The position and normal are not blended (they are the ones of the last drawn translucent surface).
 Layer readLayer(sampler2D positionTexture, sampler2D normalTexture, sampler2D colorTexture) {
     vec4 col = texture(colorTexture, textureCoords);
     Layer layer;
     layer.alpha = sqrt(col.a);
     float div = layer.alpha > 0.0 ? layer.alpha : 1.0;
-    layer.position = texture(positionTexture, textureCoords).rgb / div;
+    layer.position = texture(positionTexture, textureCoords).rgb;
     layer.normal = texture(normalTexture, textureCoords).rgb;
     layer.color = col.rgb / div;
 
