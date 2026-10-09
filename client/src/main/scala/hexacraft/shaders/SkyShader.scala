@@ -14,6 +14,8 @@ class SkyShader {
       .withInputs("position")
   )
 
+  WaterFog.setConstants(shader)
+
   def setInverseProjectionMatrix(matrix: Matrix4f): Unit = {
     shader.setUniformMat4("invProjMatr", matrix)
   }
@@ -24,6 +26,13 @@ class SkyShader {
 
   def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
+
+  /** @param surfaceAboveEye the height of the water surface relative to the eye
+    * @param strength how strong the water fog should be (0 means no fog)
+    */
+  def setWaterSurface(surfaceAboveEye: Float, strength: Float): Unit = {
+    WaterFog.setSurface(shader, surfaceAboveEye, strength)
   }
 
   def enable(): Unit = {

@@ -77,6 +77,8 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     entityShader.setTotalSize(totalSize)
     entitySideShader.setTotalSize(totalSize)
     selectedBlockShader.setTotalSize(totalSize)
+
+    worldCombinerShader.setTotalSize(totalSize)
   }
 
   def onProjMatrixChanged(camera: Camera): Unit = {
@@ -119,11 +121,18 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     }
   }
 
-  def render(camera: Camera, sun: Vector3f, selectedBlockAndSide: Option[MousePickerResult]): Unit = {
+  /** @param waterSurfaceHeight the height of the water surface near the camera, if the camera is in or close to water */
+  def render(
+      camera: Camera,
+      sun: Vector3f,
+      selectedBlockAndSide: Option[MousePickerResult],
+      waterSurfaceHeight: Option[Double]
+  ): Unit = {
     val viewportSize = mainFrameBuffer.size
 
     replaceFrameBufferIfNeeded()
     updateSelectedBlockVao(selectedBlockAndSide)
+    updateWaterSurface(camera, waterSurfaceHeight)
 
     // Step 1.1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
@@ -164,6 +173,21 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
 
     // Step 2.2: Render the FrameBuffer for translucent things
     renderFrameBuffer(mainFrameBuffer, sun)
+  }
+
+  private def updateWaterSurface(camera: Camera, waterSurfaceHeight: Option[Double]): Unit = {
+    val (surfaceAboveEye, strength) = waterSurfaceHeight match {
+      case Some(h) =>
+        val surfaceAboveEye = h - camera.position.y
+        // Fade out the fog as the eye moves away from the surface, so it does not suddenly disappear
+        val strength = math.min(math.max(1 + surfaceAboveEye / WaterSurface.maxHeightAbove, 0), 1)
+        (surfaceAboveEye.toFloat, strength.toFloat)
+      case None =>
+        (0f, 0f)
+    }
+
+    worldCombinerShader.setWaterSurface(surfaceAboveEye, strength)
+    skyShader.setWaterSurface(surfaceAboveEye, strength)
   }
 
   private def renderFrameBuffer(frameBuffer: MainFrameBuffer, sun: Vector3f): Unit = {

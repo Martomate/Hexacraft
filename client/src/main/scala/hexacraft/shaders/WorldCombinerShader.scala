@@ -20,6 +20,8 @@ class WorldCombinerShader {
   shader.setUniform1i("worldColorTexture", 2)
   shader.setUniform1i("worldDepthTexture", 3)
 
+  WaterFog.setConstants(shader)
+
   private val positionTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(0)
   private val normalTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(1)
   private val colorTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(2)
@@ -59,6 +61,17 @@ class WorldCombinerShader {
 
   def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
+
+  def setTotalSize(totalSize: Int): Unit = {
+    shader.setUniform1i("totalSize", totalSize)
+  }
+
+  /** @param surfaceAboveEye the height of the water surface relative to the eye
+    * @param strength how strong the water fog should be (0 means no fog)
+    */
+  def setWaterSurface(surfaceAboveEye: Float, strength: Float): Unit = {
+    WaterFog.setSurface(shader, surfaceAboveEye, strength)
   }
 
   def enable(): Unit = {

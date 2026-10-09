@@ -496,10 +496,16 @@ class GameClient(
   }
 
   def render(context: RenderContext): Unit = {
+    // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
+    val waterSurfaceHeight =
+      if freeFly then None
+      else WaterSurface.heightNear(CylCoords(camera.position), world)
+
     worldRenderer.render(
       if freeFly then freeFlyCamera else camera,
       new Vector3f(0, 1, -1),
-      selectedBlockAndSide
+      selectedBlockAndSide,
+      waterSurfaceHeight
     )
 
     renderCrosshair()

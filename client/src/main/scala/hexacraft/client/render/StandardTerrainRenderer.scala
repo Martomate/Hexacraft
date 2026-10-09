@@ -20,6 +20,8 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
 ) extends TerrainRenderer {
   private val opaqueBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
   private val translucentBlockGpuState = GpuState.build(_.blend(true).cullFace(true))
+  // The top of a body of water should also be visible from below (when the player is under water)
+  private val translucentTopBottomGpuState = GpuState.build(_.blend(true).cullFace(false))
   private val futureRenderData: ArrayBuffer[(ChunkRelWorld, Future[ChunkRenderData])] = ArrayBuffer.empty
   private val opaqueBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
@@ -98,9 +100,11 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
       (g, clear.getOrElse(g, Seq()), update.getOrElse(g, Seq()))
     }
 
-    val gpuState = if transmissive then translucentBlockGpuState else opaqueBlockGpuState
-
     Loop.rangeUntil(0, 8) { s =>
+      val gpuState =
+        if !transmissive then opaqueBlockGpuState
+        else if s < 2 then translucentTopBottomGpuState
+        else translucentBlockGpuState
       val batchRenderers = if transmissive then translucentBlockRenderers(s) else opaqueBlockRenderers(s)
 
       for (g, clear, update) <- InlinedIterable(groupData) do {
