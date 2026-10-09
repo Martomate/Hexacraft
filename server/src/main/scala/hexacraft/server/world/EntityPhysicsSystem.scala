@@ -2,8 +2,7 @@ package hexacraft.server.world
 
 import hexacraft.physics.{Density, DragCoefficient, FluidDynamics}
 import hexacraft.world.{BlocksInWorld, CollisionDetector, CylinderSize, HexBox}
-import hexacraft.world.block.Block
-import hexacraft.world.coord.{BlockCoords, CylCoords}
+import hexacraft.world.coord.CylCoords
 import hexacraft.world.entity.{MotionComponent, TransformComponent}
 
 import org.joml.Vector3d
@@ -11,18 +10,25 @@ import org.joml.Vector3d
 class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDetector)(using
     CylinderSize
 ) {
+
+  /** @param volume
+    *   the volume of the entity (from its model), used for buoyancy and drag
+    */
   def update(
       transform: TransformComponent,
       motion: MotionComponent,
       boundingBox: HexBox,
+      volume: VolumeSamples,
       coefficient: DragCoefficient
   ): Unit = {
-    applyBuoyancy(motion.velocity, 75, volumeSubmergedInWater(boundingBox, transform.position), Density.water)
+    val volumeInWater = volume.volumeInWater(world, transform.position, transform.rotation)
+
+    applyBuoyancy(motion.velocity, 75, volumeInWater, Density.water)
 
     val isMoving = motion.velocity.lengthSquared > 0
-    if isMoving then {
+    if isMoving && volume.totalVolume > 0 then {
       val totalArea = boundingBox.projectedAreaInDirection(motion.velocity)
-      val adjustedArea = totalArea * (volumeSubmergedInWater(boundingBox, transform.position) / boundingBox.volume)
+      val adjustedArea = totalArea * (volumeInWater / volume.totalVolume)
       applyDrag(motion.velocity, coefficient, 75, adjustedArea)
     }
 
@@ -52,23 +58,6 @@ class EntityPhysicsSystem(world: BlocksInWorld, collisionDetector: CollisionDete
 
     // dv = a * dt = (F / m) * (1 / 60) = F / (m * 60)
     velocity.add(drag.div(objectMass * 60))
-  }
-
-  private def volumeSubmergedInWater(bounds: HexBox, position: CylCoords): Double = {
-    val solidBounds = bounds.scaledRadially(0.7)
-    solidBounds
-      .cover(position)
-      .map(c => c -> world.getBlock(c))
-      .filter((c, b) => b.blockType == Block.Water)
-      .map((c, b) =>
-        HexBox.approximateVolumeOfIntersection(
-          BlockCoords(c).toCylCoords,
-          b.blockType.bounds(b.metadata),
-          position,
-          solidBounds
-        )
-      )
-      .sum
   }
 
   private def applyBuoyancy(
