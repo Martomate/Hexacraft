@@ -404,7 +404,7 @@ class GameClient(
       socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
     case KeyboardKey.Letter('I') =>
       freeFlyCamera.setPositionAndRotation(player.position, player.rotation)
-      freeFlyOrigin.set(player.position)
+      freeFlyOrigin.set(freeFlyCamera.position)
       freeFly = !freeFly
       isInPopup = freeFly // TODO: replace this hack with proper solution for disabling player movement
     case _ =>
