@@ -133,19 +133,25 @@ class WorldRenderer(
     }
   }
 
-  /** @param waterSurfaceHeight the height of the surface of the water that the camera is in (or right above), if any */
+  /** @param waterSurfaceHeight the height of the surface of the water that the camera is in (or right above), if any
+    * @param waterEffects if the water fog and the distant ocean should be drawn. They assume that the eye is at the
+    *                     camera position, which is not the case in free fly mode.
+    */
   def render(
       camera: Camera,
       sun: Vector3f,
       selectedBlockAndSide: Option[MousePickerResult],
-      waterSurfaceHeight: Option[Double]
+      waterSurfaceHeight: Option[Double],
+      waterEffects: Boolean
   ): Unit = {
     val viewportSize = mainFrameBuffer.size
 
     replaceFrameBufferIfNeeded()
     updateSelectedBlockVao(selectedBlockAndSide)
-    updateWaterSurface(camera, waterSurfaceHeight)
-    val eyeUnderWater = waterSurfaceHeight.exists(h => h > camera.position.y)
+    worldCombinerShader.setWaterEffectsEnabled(waterEffects)
+    skyShader.setWaterEffectsEnabled(waterEffects)
+    updateWaterSurface(camera, if waterEffects then waterSurfaceHeight else None)
+    val eyeUnderWater = waterEffects && waterSurfaceHeight.exists(h => h > camera.position.y)
 
     // Step 1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()

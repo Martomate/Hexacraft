@@ -57,6 +57,11 @@ class SkyShader {
     WaterFog.setSurface(shader, surfaceAboveEye, strength)
   }
 
+  /** Turns off the water effects that assume that the eye is at the camera position (e.g. for free fly mode) */
+  def setWaterEffectsEnabled(enabled: Boolean): Unit = {
+    WaterFog.setEnabled(shader, enabled)
+  }
+
   def enable(): Unit = {
     shader.activate()
   }

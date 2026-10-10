@@ -22,6 +22,7 @@ uniform vec3 waterAbsorption;
 uniform float waterScattering;
 uniform float waterDepthDarkening;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
+uniform bool waterEffectsEnabled; // false when the eye is not at the camera position (e.g. in free fly mode)
 uniform float waterFogStrength; // 1 when the eye is under water (or right above the surface), otherwise 0
 
 float linearize_depth(float d,float zNear,float zFar)
@@ -107,7 +108,7 @@ void main() {
 
     vec3 opaqueColor = opaque.color;
     bool seenThroughWater = false;
-    if (opaque.alpha > 0.0 && translucent.alpha > 0.0) {
+    if (waterEffectsEnabled && opaque.alpha > 0.0 && translucent.alpha > 0.0) {
         // If the front of the water is seen (e.g. the surface from above) the opaque thing behind it is under water
         seenThroughWater = dot(translucent.normal, translucent.position) < 0.0;
         if (seenThroughWater) {

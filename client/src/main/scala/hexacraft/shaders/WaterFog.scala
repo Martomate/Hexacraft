@@ -28,6 +28,10 @@ object WaterFog {
     shader.setUniform1f("waterDepthDarkening", depthDarkening)
   }
 
+  private[shaders] def setEnabled(shader: Shader, enabled: Boolean): Unit = {
+    shader.setUniform1i("waterEffectsEnabled", if enabled then 1 else 0)
+  }
+
   private[shaders] def setSurface(shader: Shader, surfaceAboveEye: Float, strength: Float): Unit = {
     shader.setUniform1f("waterSurfaceAboveEye", surfaceAboveEye)
     shader.setUniform1f("waterFogStrength", strength)
