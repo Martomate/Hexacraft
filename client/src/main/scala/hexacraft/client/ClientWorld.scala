@@ -296,11 +296,6 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     new WorldTickResult(r)
   }
 
-  def getEntity(id: UUID): Option[Entity] = {
-    val idx = entities.indexWhere(_.id == id)
-    if idx != -1 then Some(entities(idx)) else None
-  }
-
   /** The IDs of the entity models that should be requested from the server (each ID is only returned once) */
   def modelIdsToRequest(): Seq[String] = modelCache.takeIdsToRequest()
 
