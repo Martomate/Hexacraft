@@ -232,7 +232,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   /** Applies the entity events from the server. This is done separately from `tick` so the player can be updated based
     * on the latest entity positions (e.g. when sitting in a boat).
     */
-  def handleEntityEvents(entityEvents: Seq[(UUID, EntityEvent)]): Unit = {
+  def applyEntityEvents(entityEvents: Seq[(UUID, EntityEvent)]): Unit = {
     val allEntitiesById = mutable.HashMap.empty[UUID, Entity]
     Loop.array(entities) { e =>
       allEntitiesById(e.id) = e

@@ -25,12 +25,12 @@ class ClientWorldTest extends FunSuite {
   private def spawnSheep(world: ClientWorld, modelId: Option[String]): UUID = {
     val sheep = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
     val event = EntityEvent.Spawned(Entity.encode(sheep, includeAi = false), modelId)
-    world.handleEntityEvents(Seq(sheep.id -> event))
+    world.applyEntityEvents(Seq(sheep.id -> event))
     sheep.id
   }
 
   private def despawn(world: ClientWorld, entityId: UUID): Unit = {
-    world.handleEntityEvents(Seq(entityId -> EntityEvent.Despawned))
+    world.applyEntityEvents(Seq(entityId -> EntityEvent.Despawned))
   }
 
   /** Returns the entity's model, or None if it will not be rendered. Fails if the entity is not in the world. */
@@ -108,8 +108,8 @@ class ClientWorldTest extends FunSuite {
     val sheep = Entity.atStartPos(UUID.randomUUID(), CylCoords(0, 0, 0), "sheep").unwrap()
     val spawnEvent = EntityEvent.Spawned(Entity.encode(sheep, includeAi = false), Some(modelId))
 
-    world.handleEntityEvents(Seq(sheep.id -> spawnEvent))
-    world.handleEntityEvents(Seq(sheep.id -> EntityEvent.Despawned, sheep.id -> spawnEvent))
+    world.applyEntityEvents(Seq(sheep.id -> spawnEvent))
+    world.applyEntityEvents(Seq(sheep.id -> EntityEvent.Despawned, sheep.id -> spawnEvent))
 
     world.receiveModels(world.modelIdsToRequest(), Map(modelId -> Nbt.encode(model)))
 

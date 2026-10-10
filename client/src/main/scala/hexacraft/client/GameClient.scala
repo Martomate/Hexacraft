@@ -697,7 +697,7 @@ class GameClient(
         world.setBlock(coords, blockState)
       }
 
-      world.handleEntityEvents(entityEvents)
+      world.applyEntityEvents(entityEvents)
 
       updateSoundListener()
 
