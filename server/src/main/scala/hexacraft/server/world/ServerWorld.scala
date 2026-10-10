@@ -134,12 +134,14 @@ class ServerWorld(
   }
 
   def removeEntity(entity: Entity): Unit = {
-    chunkOfEntity(entity) match {
-      case Some(chunk) =>
-        chunk.removeEntity(entity)
-        entityEventsSinceLastTick += entity.id -> EntityEvent.Despawned
-      case None =>
+    // The entity is stored in the chunk it was in at the last relocation, which might not be the chunk it's in now
+    chunkList.find(_.entities.contains(entity)) match {
+      case Some(chunk) => chunk.removeEntity(entity)
+      case None        =>
     }
+
+    // This is sent even if the entity is not in any chunk (e.g. a player's entity), since clients might know about it
+    entityEventsSinceLastTick += entity.id -> EntityEvent.Despawned
   }
 
   def removeAllEntities(): Unit = {

@@ -730,6 +730,12 @@ class GameClient(
         }
       }
 
+      // The entities are updated before the player so that the player uses the latest position of its mount (if any)
+      world.applyEntityEvents(entityEvents)
+
+      // The player is predicted the same way as on the server, otherwise the player will jitter when in a boat
+      val mounts = world.entitiesMountedBy(player.id)
+
       val playerCoords = CoordUtils.approximateIntCoords(CylCoords(player.position).toBlockCoords)
 
       val isInLoadedChunk = world.getChunk(playerCoords.getChunkRelWorld).isDefined
@@ -741,7 +747,7 @@ class GameClient(
 
         val positionBefore = Vector3d(player.position)
         val rotationBefore = Vector3d(player.rotation)
-        playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid, Seq.empty)
+        playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid, mounts)
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
         )
@@ -764,7 +770,7 @@ class GameClient(
           maxSpeed,
           PlayerPhysicsHandler.playerEffectiveViscosity(player, world),
           PlayerPhysicsHandler.playerVolumeSubmergedInWater(player, world),
-          Seq.empty
+          mounts
         )
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
@@ -813,7 +819,7 @@ class GameClient(
         performLeftMouseClick(time)
       }
 
-      val worldTickResult = world.tick(Seq(camera), entityEvents)
+      val worldTickResult = world.tick(Seq(camera))
       worldRenderer.tick(camera, world.renderDistance, worldTickResult)
 
       if debugOverlay.isDefined then {

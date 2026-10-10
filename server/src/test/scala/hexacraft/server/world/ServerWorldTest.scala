@@ -172,4 +172,48 @@ class ServerWorldTest extends FunSuite {
     val pos5 = entity.transform.position
     assertEquals(pos4, pos5)
   }
+
+  test("an entity can be removed even if it has moved into another chunk since it was added") {
+    val provider = new FakeWorldProvider(1234)
+    provider.saveColumnData(
+      Nbt.encode(ChunkColumnData(ChunkColumnHeightMap.from((_, _) => 0))),
+      ColumnRelWorld(0, 0)
+    )
+    val chunk1 = ChunkRelWorld(0, 0, 0)
+    val chunk2 = ChunkRelWorld(0, 0, 1)
+    for coords <- Seq(chunk1, chunk2) do {
+      provider.saveChunkData(
+        ChunkData.encode(ChunkData.fromStorage(new SparseChunkStorage), includeEntities = true),
+        coords
+      )
+    }
+
+    val world = ServerWorld(provider, provider.worldInfo, 10)
+    val camera = new Camera(new CameraProjection(70, 1.6f, 0.01f, 1000f))
+    camera.setPosition(BlockCoords(BlockRelWorld(8, 8, 8, chunk1)).toCylCoords.toVector3d)
+
+    assert(waitFor(20, 10)(world.getChunk(chunk1).isDefined && world.getChunk(chunk2).isDefined) {
+      world.tick(Seq(camera), Seq(chunk1, chunk2), Seq())
+    })
+
+    val entity = Entity(
+      UUID.randomUUID(),
+      "boat",
+      Seq(
+        TransformComponent(BlockCoords(BlockRelWorld(8, 8, 8, chunk1)).toCylCoords),
+        MotionComponent(),
+        BoundsComponent(HexBox(0.5f, 0, 0.5f))
+      )
+    )
+    world.addEntity(entity)
+
+    // The entity moves into the next chunk, but it's only moved to that chunk at the next relocation
+    entity.transform.position = BlockCoords(BlockRelWorld(8, 8, 8, chunk2)).toCylCoords
+
+    world.removeEntity(entity)
+
+    assertEquals(world.filterMapEntities(e => Some(e.id)).map(_._2), Seq())
+
+    world.unload()
+  }
 }
