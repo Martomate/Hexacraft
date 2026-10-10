@@ -762,7 +762,8 @@ class GameClient(
         socket.sendPacket(NetworkPacket.PlayerPressedKeys(Seq()))
       }
 
-      if (!isPaused || isOnline) && isInLoadedChunk then {
+      // The server keeps running while the game is paused, so the player has to be predicted anyway
+      if isInLoadedChunk then {
         val positionBefore = Vector3d(player.position)
         val rotationBefore = Vector3d(player.rotation)
         playerPhysicsHandler.tick(
