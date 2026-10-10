@@ -594,7 +594,7 @@ class GameServer(
           chunksLoadedPerPlayer.getOrElseUpdate(player.id, ChunkLoadingPrioritizer(world.renderDistance))
         }
 
-        val loadedChunks = mutable.ArrayBuffer.empty[(ChunkRelWorld, Nbt)]
+        val loadedChunks = mutable.ArrayBuffer.empty[Nbt.MapTag]
         val unloadedChunks = mutable.ArrayBuffer.empty[ChunkRelWorld]
 
         var chunksToLoad = maxChunksToLoad
@@ -604,7 +604,15 @@ class GameServer(
           prio.nextAddableChunk.flatMap(coords => world.getChunk(coords).map(coords -> _)) match {
             case Some(coords -> chunk) =>
               // The entities are sent separately from the chunk
-              loadedChunks += ((coords, ChunkData.encode(chunk.chunkData, includeEntities = false)))
+              var chunkNbt = Nbt.makeMap(
+                "coords" -> Nbt.LongTag(coords.value),
+                "data" -> ChunkData.encode(chunk.chunkData, includeEntities = false)
+              )
+              // The column is included so the client does not have to wait for it in a separate request
+              for column <- world.getColumn(coords.getColumnRelWorld) do {
+                chunkNbt = chunkNbt.withField("column", Nbt.encode(ChunkColumnData(column)))
+              }
+              loadedChunks += chunkNbt
               playerData.entityEventsWaitingToBeSent.synchronized {
                 for e <- chunk.entities do {
                   playerData.entityEventsWaitingToBeSent += e.id -> EntitySpawnEvent.of(e)
@@ -640,11 +648,7 @@ class GameServer(
 
         Some(
           Nbt.makeMap(
-            "chunks_loaded" -> Nbt.ListTag(
-              loadedChunks
-                .map((coords, data) => Nbt.makeMap("coords" -> Nbt.LongTag(coords.value), "data" -> data))
-                .toSeq
-            ),
+            "chunks_loaded" -> Nbt.ListTag(loadedChunks.toSeq),
             "chunks_unloaded" -> Nbt.ListTag(
               unloadedChunks
                 .map(coords => Nbt.LongTag(coords.value))

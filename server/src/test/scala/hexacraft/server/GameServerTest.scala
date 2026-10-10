@@ -8,6 +8,7 @@ import hexacraft.server.entity.PlayerEntityModel
 import hexacraft.server.world.FakeWorldProvider
 import hexacraft.util.TickLoop
 import hexacraft.world.{CylinderSize, EntityEvent}
+import hexacraft.world.chunk.ChunkColumnData
 import hexacraft.world.entity.EntityModel
 
 import munit.FunSuite
@@ -91,6 +92,31 @@ class GameServerTest extends FunSuite {
 
       s.server.tick()
       assert(socket.receive().asMap.get.getMap("general").isDefined)
+    }
+  }
+
+  test("loaded chunks are sent together with their column") {
+    runServer(FakeWorldProvider(9876)) { s =>
+      val socket = s.connect()
+      socket.send(NetworkPacket.Login(UUID.randomUUID(), "The Dude"))
+      socket.receive()
+
+      // The chunks are generated in the background, so it might take a while before they can be sent
+      val deadline = System.currentTimeMillis() + 10000
+      var loadedChunks = Seq.empty[Nbt]
+      while loadedChunks.isEmpty && System.currentTimeMillis() < deadline do {
+        socket.send(NetworkPacket.GetWorldLoadingEvents(5))
+        loadedChunks = socket.receive().asMap.get.getList("chunks_loaded").get
+        Thread.sleep(10)
+      }
+      assert(loadedChunks.nonEmpty, "no chunks were loaded")
+
+      for chunk <- loadedChunks do {
+        val column = chunk.asMap.get.getMap("column")
+        assert(column.flatMap(Nbt.decode[ChunkColumnData]).isDefined, s"the column could not be decoded: $column")
+      }
+
+      socket.send(NetworkPacket.Logout)
     }
   }
 
