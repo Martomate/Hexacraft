@@ -232,7 +232,7 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
   /** Applies the entity events from the server. This is done separately from `tick` so the player can be updated based
     * on the latest entity positions (e.g. when sitting in a boat).
     */
-  def applyEntityEvents(entityEvents: Seq[(UUID, EntityEvent)]): Unit = {
+  def handleEntityEvents(entityEvents: Seq[(UUID, EntityEvent)]): Unit = {
     val allEntitiesById = mutable.HashMap.empty[UUID, Entity]
     Loop.array(entities) { e =>
       allEntitiesById(e.id) = e
@@ -294,6 +294,11 @@ class ClientWorld(val worldInfo: WorldInfo, val renderDistance: Double) extends 
     chunksNeedingRenderUpdate.clear()
 
     new WorldTickResult(r)
+  }
+
+  def getEntity(id: UUID): Option[Entity] = {
+    val idx = entities.indexWhere(_.id == id)
+    if idx != -1 then Some(entities(idx)) else None
   }
 
   /** The IDs of the entity models that should be requested from the server (each ID is only returned once) */

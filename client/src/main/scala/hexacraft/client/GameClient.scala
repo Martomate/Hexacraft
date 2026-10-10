@@ -32,6 +32,7 @@ enum UserInteraction {
   case ReplaceBlock(coords: BlockRelWorld, block: BlockState)
   case MovePlayer(distance: CylCoords.Offset)
   case RotatePlayerHead(angles: Vector3d)
+  case MoveEntity(id: UUID, distance: CylCoords.Offset)
 }
 
 object GameClient {
@@ -281,6 +282,9 @@ class GameClient(
   private val freeFlyOrigin = Vector3d()
 
   private val userInteractionUndo = mutable.Stack.empty[(Instant, UserInteraction)]
+
+  /** The max number of ticks to predict an entity's movement without hearing from the server */
+  private val maxEntityPredictionTicks = 10
 
   def isReadyToPlay: Boolean = {
     this.world.getChunk(this.camera.blockCoords.getChunkRelWorld).isDefined
@@ -596,7 +600,20 @@ class GameClient(
         world.receiveModels(requestedModelIds, models.collect { case (id, model: Nbt.MapTag) => id -> model }.toMap)
       }
 
+      val worldEventsNbt = worldEventsNbtPacket.asMap.get
+
+      val entityEventsNbt = worldEventsNbt.getMap("entity_events").get
+      val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
+      val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
+      val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
+        (UUID.fromString(id), Nbt.decode[EntityEvent](eventNbt).get)
+      }
+
+      // The predicted movement of an entity is only replaced once the server has sent a new position for it
+      val entitiesWithNewPosition = entityEvents.collect { case (id, EntityEvent.Position(_)) => id }.toSet
+
       val userInteractionRedo = mutable.Stack.empty[(Instant, UserInteraction)]
+      val entitiesBeforeUndo = entitiesById()
       for (ts, undo) <- userInteractionUndo.popAll do {
         undo match {
           case UserInteraction.ReplaceBlock(coords, state) =>
@@ -605,9 +622,19 @@ class GameClient(
             player.position.set(CylCoords(player.position).offset(distance).toVector3d)
           case UserInteraction.RotatePlayerHead(angles) =>
             player.rotation.add(angles)
+          case UserInteraction.MoveEntity(id, distance) =>
+            for e <- entitiesBeforeUndo.get(id) do {
+              e.transform.position = e.transform.position.offset(distance)
+            }
         }
 
-        if ts.isAfter(time) then {
+        val shouldRedo = undo match {
+          case UserInteraction.MoveEntity(id, _) =>
+            entitiesBeforeUndo.contains(id) && (ts.isAfter(time) || !entitiesWithNewPosition.contains(id))
+          case _ => ts.isAfter(time)
+        }
+
+        if shouldRedo then {
           val redo = undo match {
             case UserInteraction.ReplaceBlock(coords, state) =>
               UserInteraction.ReplaceBlock(coords, world.getBlock(coords))
@@ -615,6 +642,8 @@ class GameClient(
               UserInteraction.MovePlayer(-distance)
             case UserInteraction.RotatePlayerHead(angles) =>
               UserInteraction.RotatePlayerHead(angles.negate(Vector3d()))
+            case UserInteraction.MoveEntity(id, distance) =>
+              UserInteraction.MoveEntity(id, -distance)
           }
 
           userInteractionRedo.push(ts -> redo)
@@ -629,7 +658,6 @@ class GameClient(
       player.velocity.set(syncedPlayer.velocity)
       player.flying = syncedPlayer.flying
 
-      val worldEventsNbt = worldEventsNbtPacket.asMap.get
       if worldEventsNbt.getBoolean("server_shutting_down", false) then {
         println("The server is shutting down")
         serverIsShuttingDown = true
@@ -662,12 +690,7 @@ class GameClient(
         world.setBlock(coords, blockState)
       }
 
-      val entityEventsNbt = worldEventsNbt.getMap("entity_events").get
-      val entityEventIds = entityEventsNbt.getList("ids").get.map(_.asInstanceOf[Nbt.StringTag].v)
-      val entityEventData = entityEventsNbt.getList("events").get.map(_.asMap.get)
-      val entityEvents = for (id, eventNbt) <- entityEventIds.zip(entityEventData) yield {
-        (UUID.fromString(id), Nbt.decode[EntityEvent](eventNbt).get)
-      }
+      world.handleEntityEvents(entityEvents)
 
       updateSoundListener()
 
@@ -721,6 +744,7 @@ class GameClient(
         world.removeChunk(chunkCoords)
       }
 
+      val entitiesBeforeRedo = entitiesById()
       for (_, redo) <- userInteractionRedo.popAll do {
         redo match {
           case UserInteraction.ReplaceBlock(coords, state) =>
@@ -729,8 +753,14 @@ class GameClient(
             player.position.set(CylCoords(player.position).offset(distance).toVector3d)
           case UserInteraction.RotatePlayerHead(angles) =>
             player.rotation.add(angles)
+          case UserInteraction.MoveEntity(id, distance) =>
+            for e <- entitiesBeforeRedo.get(id) do {
+              e.transform.position = e.transform.position.offset(distance)
+            }
         }
       }
+
+      predictEntityMovement(time)
 
       // The entities are updated before the player so that the player uses the latest position of its mount (if any)
       world.applyEntityEvents(entityEvents)
@@ -861,6 +891,31 @@ class GameClient(
 
     if serverIsShuttingDown then {
       logout()
+    }
+  }
+
+  private def entitiesById(): mutable.HashMap[UUID, Entity] = {
+    val result = mutable.HashMap.empty[UUID, Entity]
+    world.foreachEntity(e => result(e.id) = e)
+    result
+  }
+
+  /** Moves each entity one tick forward according to its velocity, so that it moves smoothly even if the updates from
+    * the server do not arrive at a steady pace. The prediction is undone once the server sends a new position.
+    */
+  private def predictEntityMovement(time: Instant): Unit = {
+    val predictedTicks = mutable.HashMap.empty[UUID, Int]
+    for case (_, UserInteraction.MoveEntity(id, _)) <- userInteractionUndo do {
+      predictedTicks(id) = predictedTicks.getOrElse(id, 0) + 1
+    }
+
+    world.foreachEntity { e =>
+      val velocity = e.motion.velocity
+      if velocity.lengthSquared() > 0 && predictedTicks.getOrElse(e.id, 0) < maxEntityPredictionTicks then {
+        val distance = CylCoords.Offset(velocity.x / 60, velocity.y / 60, velocity.z / 60)
+        e.transform.position = e.transform.position.offset(distance)
+        userInteractionUndo.push(time -> UserInteraction.MoveEntity(e.id, -distance))
+      }
     }
   }
 
