@@ -11,7 +11,7 @@ import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.Entity
 
-import org.joml.{Vector2i, Vector2ic, Vector3f, Vector4fc}
+import org.joml.{Matrix4f, Vector2i, Vector2ic, Vector3f, Vector4fc}
 import org.lwjgl.BufferUtils
 
 import java.util.concurrent.Executors
@@ -32,8 +32,10 @@ class WorldRenderer(
   private val skyShader = new SkyShader()
   private val entityShader = new EntityShader(isSide = false)
   private val entitySideShader = new EntityShader(isSide = true)
+  private val shadowEntityShader = new EntityShader(isSide = false)
+  private val shadowEntitySideShader = new EntityShader(isSide = true)
   private val selectedBlockShader = new SelectedBlockShader()
-  private val worldCombinerShader = new WorldCombinerShader()
+  private val worldCombinerShader = new WorldCombinerShader(ShadowCascades.splits.size)
 
   skyShader.setOcean(world.worldInfo.gen.generateOceans, waterSurfaceColor)
 
@@ -50,6 +52,9 @@ class WorldRenderer(
   // Translucent things are kept separate so that the things behind them can be seen while combining them
   private var translucentFrameBuffer = MainFrameBuffer.withDepthTextureOf(mainFrameBuffer)
   private var nextFrameBufferSize: Option[Vector2ic] = None
+
+  private val shadowMap = new ShadowMap(ShadowCascades.resolution, ShadowCascades.splits.size)
+  private val identityMatrix = new Matrix4f()
 
   private var currentlySelectedBlockAndSide: Option[MousePickerResult] = None
 
@@ -84,6 +89,8 @@ class WorldRenderer(
 
     entityShader.setTotalSize(totalSize)
     entitySideShader.setTotalSize(totalSize)
+    shadowEntityShader.setTotalSize(totalSize)
+    shadowEntitySideShader.setTotalSize(totalSize)
     selectedBlockShader.setTotalSize(totalSize)
 
     worldCombinerShader.setTotalSize(totalSize)
@@ -153,6 +160,12 @@ class WorldRenderer(
     updateWaterSurface(camera, if waterEffects then waterSurfaceHeight else None)
     val eyeUnderWater = waterEffects && waterSurfaceHeight.exists(h => h > camera.position.y)
 
+    val entityRenderData = collectEntityRenderData()
+
+    // Step 0: Render the shadow casters from the point of view of the sun
+    val shadowCascades = ShadowCascades.compute(camera.view.invMatrix, camera.proj.matrix, camera.position, sun)
+    renderShadowMap(camera, shadowCascades, entityRenderData)
+
     // Step 1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
@@ -160,7 +173,11 @@ class WorldRenderer(
     // World content
     terrainRenderer.render(camera, sun, true, eyeUnderWater)
 
-    renderEntities(camera, sun)
+    entityShader.setViewMatrix(camera.view.matrix)
+    entityShader.setCameraPosition(camera.position)
+    entitySideShader.setViewMatrix(camera.view.matrix)
+    entitySideShader.setCameraPosition(camera.position)
+    renderEntities(entityRenderData, entityShader, entitySideShader)
 
     if selectedBlockAndSide.flatMap(_.side).isDefined then {
       renderSelectedBlock(camera)
@@ -184,7 +201,37 @@ class WorldRenderer(
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     renderSky(camera, sun)
-    renderFrameBuffers(sun)
+    renderFrameBuffers(sun, shadowCascades)
+  }
+
+  private def renderShadowMap(
+      camera: Camera,
+      cascades: IndexedSeq[ShadowCascades.Cascade],
+      entityRenderData: Iterable[(String, IndexedSeq[EntityRenderData])]
+  ): Unit = {
+    // Rendering the back faces (seen from the sun) avoids most self-shadowing artifacts ("shadow acne") on lit faces,
+    // and depth clamping makes sure that shadow casters between the sun and the near plane are not clipped away
+    OpenGL.glCullFace(OpenGL.CullFaceMode.Front)
+    OpenGL.glEnable(OpenGL.State.DepthClamp)
+
+    for (cascade, i) <- cascades.zipWithIndex do {
+      shadowMap.bind(i)
+      OpenGL.glClear(OpenGL.ClearMask.depthBuffer)
+
+      terrainRenderer.renderShadowCasters(camera, cascade.matrix)
+
+      for sh <- Seq(shadowEntityShader, shadowEntitySideShader) do {
+        sh.setProjectionMatrix(cascade.matrix)
+        sh.setViewMatrix(identityMatrix)
+        sh.setCameraPosition(camera.position)
+      }
+      renderEntities(entityRenderData, shadowEntityShader, shadowEntitySideShader)
+    }
+
+    shadowMap.unbind()
+
+    OpenGL.glDisable(OpenGL.State.DepthClamp)
+    OpenGL.glCullFace(OpenGL.CullFaceMode.Back)
   }
 
   private def updateWaterSurface(camera: Camera, waterSurfaceHeight: Option[Double]): Unit = {
@@ -203,7 +250,7 @@ class WorldRenderer(
     skyShader.setSeaLevelAboveEye((seaLevel - camera.position.y).toFloat)
   }
 
-  private def renderFrameBuffers(sun: Vector3f): Unit = {
+  private def renderFrameBuffers(sun: Vector3f, shadowCascades: IndexedSeq[ShadowCascades.Cascade]): Unit = {
     worldCombinerShader.bindTextures(
       positionTexture = mainFrameBuffer.positionTexture,
       normalTexture = mainFrameBuffer.normalTexture,
@@ -211,10 +258,14 @@ class WorldRenderer(
       depthTexture = mainFrameBuffer.depthTexture,
       translucentPositionTexture = translucentFrameBuffer.positionTexture,
       translucentNormalTexture = translucentFrameBuffer.normalTexture,
-      translucentColorTexture = translucentFrameBuffer.colorTexture
+      translucentColorTexture = translucentFrameBuffer.colorTexture,
+      shadowMap = shadowMap.texture
     )
     worldCombinerShader.enable()
     worldCombinerShader.setSunPosition(sun)
+    for (c, i) <- shadowCascades.zipWithIndex do {
+      worldCombinerShader.setShadowCascade(i, c.matrix, c.texelSize)
+    }
     worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
     worldCombinerShader.unbindTextures()
   }
@@ -237,27 +288,28 @@ class WorldRenderer(
     nextFrameBufferSize = Some(Vector2i(width, height))
   }
 
-  private def renderEntities(camera: Camera, sun: Vector3f): Unit = {
-    entityShader.setViewMatrix(camera.view.matrix)
-    entityShader.setCameraPosition(camera.position)
-
-    entitySideShader.setViewMatrix(camera.view.matrix)
-    entitySideShader.setCameraPosition(camera.position)
-
+  /** @return the render data of all entities, grouped by texture name */
+  private def collectEntityRenderData(): Iterable[(String, IndexedSeq[EntityRenderData])] = {
     val allEntities = mutable.ArrayBuffer.empty[Entity]
     world.foreachEntity(allEntities += _)
     allEntities ++= players
 
-    val entityRenderDataPerModel = allEntities
+    allEntities
       .groupBy {
         _.accessComponent { case c: ModelComponent => c.skin.textureName }
       }
       .collect { case (Some(t), es) =>
         (t, EntityRenderData.fromEntities(es, world))
       }
+  }
 
+  private def renderEntities(
+      entityRenderDataPerModel: Iterable[(String, IndexedSeq[EntityRenderData])],
+      topBottomShader: EntityShader,
+      sideShader: EntityShader
+  ): Unit = {
     Loop.rangeUntil(0, 8) { side =>
-      val sh = if side < 2 then entityShader else entitySideShader
+      val sh = if side < 2 then topBottomShader else sideShader
       sh.enable()
       sh.setSide(side)
 
@@ -284,6 +336,8 @@ class WorldRenderer(
     worldCombinerShader.free()
     entityShader.free()
     entitySideShader.free()
+    shadowEntityShader.free()
+    shadowEntitySideShader.free()
 
     for r <- entityRenderers do {
       r.unload()
@@ -293,6 +347,7 @@ class WorldRenderer(
 
     translucentFrameBuffer.unload()
     mainFrameBuffer.unload()
+    shadowMap.unload()
 
     executorService.shutdown()
   }

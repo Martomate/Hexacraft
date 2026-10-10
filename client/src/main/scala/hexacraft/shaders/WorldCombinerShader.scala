@@ -5,14 +5,15 @@ import hexacraft.infra.gpu.OpenGL.ShaderType.{Fragment, Vertex}
 import hexacraft.infra.gpu.OpenGL.TextureId
 import hexacraft.renderer.*
 
-import org.joml.Vector3f
+import org.joml.{Matrix4f, Vector3f}
 
-class WorldCombinerShader {
+class WorldCombinerShader(numShadowCascades: Int) {
   private val shader = Shader.from(
     ShaderConfig()
       .withStage(Vertex, "world_combiner/vert.glsl")
       .withStage(Fragment, "world_combiner/frag.glsl")
       .withInputs("position")
+      .withDefines("numShadowCascades" -> numShadowCascades.toString)
   )
 
   shader.setUniform1i("worldPositionTexture", 0)
@@ -22,12 +23,16 @@ class WorldCombinerShader {
   shader.setUniform1i("translucentPositionTexture", 4)
   shader.setUniform1i("translucentNormalTexture", 5)
   shader.setUniform1i("translucentColorTexture", 6)
+  shader.setUniform1i("shadowMap", 7)
 
   WaterFog.setConstants(shader)
 
   private val textureSlots: IndexedSeq[OpenGL.TextureSlot] = (0 until 7).map(OpenGL.TextureSlot.ofSlot)
+  private val shadowMapSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(7)
 
-  /** Binds the G-buffer textures of the opaque things and of the translucent things (which are drawn on top) */
+  /** Binds the G-buffer textures of the opaque things and of the translucent things (which are drawn on top), and the
+    * shadow map
+    */
   def bindTextures(
       positionTexture: TextureId,
       normalTexture: TextureId,
@@ -35,7 +40,8 @@ class WorldCombinerShader {
       depthTexture: TextureId,
       translucentPositionTexture: TextureId,
       translucentNormalTexture: TextureId,
-      translucentColorTexture: TextureId
+      translucentColorTexture: TextureId,
+      shadowMap: TextureId
   ): Unit = {
     val textures = Seq(
       positionTexture,
@@ -50,9 +56,13 @@ class WorldCombinerShader {
       OpenGL.glActiveTexture(slot)
       OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, texture)
     }
+    OpenGL.glActiveTexture(shadowMapSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2DArray, shadowMap)
   }
 
   def unbindTextures(): Unit = {
+    OpenGL.glActiveTexture(shadowMapSlot)
+    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2DArray, OpenGL.TextureId.none)
     for slot <- textureSlots.reverse do {
       OpenGL.glActiveTexture(slot)
       OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
@@ -66,6 +76,11 @@ class WorldCombinerShader {
 
   def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
+
+  def setShadowCascade(index: Int, matrix: Matrix4f, texelSize: Float): Unit = {
+    shader.setUniformMat4(s"shadowMatrices[$index]", matrix)
+    shader.setUniform1f(s"shadowTexelSizes[$index]", texelSize)
   }
 
   def setTotalSize(totalSize: Int): Unit = {
