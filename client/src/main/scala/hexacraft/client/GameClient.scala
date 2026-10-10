@@ -19,7 +19,7 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkData}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.Entity
 
-import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f, Vector4f}
 
 import java.time.Instant
 import java.util.UUID
@@ -82,7 +82,9 @@ object GameClient {
 
     val terrainRenderer: TerrainRenderer = StandardTerrainRenderer(world, blockTextureIndices)
 
-    val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
+    val waterSurfaceColor = calculateAverageColor(blockTextureMapping.images(blockTextureIndices("water")(0) & 0xfff))
+    val worldRenderer: WorldRenderer =
+      new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer, waterSurfaceColor)
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
     val freeFlyCamera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
@@ -154,6 +156,16 @@ object GameClient {
   } catch {
     case e: Exception =>
       Result.Err(e.getMessage)
+  }
+
+  /** Returns the average color and alpha of the texture */
+  private def calculateAverageColor(texture: PixelArray): Vector4f = {
+    var a = 0L
+    for pix <- texture.pixels do {
+      a += (pix >> 24) & 0xff
+    }
+    val rgb = calculateTextureColor(texture)
+    Vector4f(rgb, a.toFloat / (texture.pixels.length * 255))
   }
 
   private def calculateTextureColor(texture: PixelArray): Vector3f = {

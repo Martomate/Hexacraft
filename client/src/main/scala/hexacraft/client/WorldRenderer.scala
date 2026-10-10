@@ -11,7 +11,7 @@ import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.Entity
 
-import org.joml.{Vector2i, Vector2ic, Vector3f}
+import org.joml.{Vector2i, Vector2ic, Vector3f, Vector4fc}
 import org.lwjgl.BufferUtils
 
 import java.util.concurrent.Executors
@@ -19,9 +19,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 
-class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terrainRenderer: TerrainRenderer)(using
-    CylinderSize
-) {
+/** @param waterSurfaceColor the average color and alpha of the texture of the water surface */
+class WorldRenderer(
+    world: ClientWorld,
+    initialFrameBufferSize: Vector2ic,
+    terrainRenderer: TerrainRenderer,
+    waterSurfaceColor: Vector4fc
+)(using CylinderSize) {
   private val executorService = Executors.newFixedThreadPool(8, NamedThreadFactory("render"))
   given ExecutionContext = ExecutionContext.fromExecutor(executorService)
 
@@ -30,6 +34,8 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
   private val entitySideShader = new EntityShader(isSide = true)
   private val selectedBlockShader = new SelectedBlockShader()
   private val worldCombinerShader = new WorldCombinerShader()
+
+  skyShader.setOcean(world.worldInfo.gen.generateOceans, waterSurfaceColor)
 
   private val skyVao: VAO = SkyShader.createVao()
   private val skyRenderer = SkyShader.createRenderer()
@@ -81,6 +87,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     selectedBlockShader.setTotalSize(totalSize)
 
     worldCombinerShader.setTotalSize(totalSize)
+    skyShader.setTotalSize(totalSize)
   }
 
   def onProjMatrixChanged(camera: Camera): Unit = {
@@ -185,6 +192,9 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
 
     worldCombinerShader.setWaterSurface(surfaceAboveEye, strength)
     skyShader.setWaterSurface(surfaceAboveEye, strength)
+
+    val seaLevel = WorldGenSettings.seaLevel * 0.5 // in CylCoords
+    skyShader.setSeaLevelAboveEye((seaLevel - camera.position.y).toFloat)
   }
 
   private def renderFrameBuffers(sun: Vector3f): Unit = {
