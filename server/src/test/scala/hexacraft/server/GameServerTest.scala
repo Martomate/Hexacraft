@@ -6,6 +6,7 @@ import hexacraft.rs.RustLib
 import hexacraft.server.GameServerTest.randomPort
 import hexacraft.server.entity.PlayerEntityModel
 import hexacraft.server.world.FakeWorldProvider
+import hexacraft.util.TickLoop
 import hexacraft.world.{CylinderSize, EntityEvent}
 import hexacraft.world.entity.EntityModel
 
@@ -36,14 +37,19 @@ class GameServerTest extends FunSuite {
     @throws[RuntimeException]
     def receive(): Nbt = {
       while true do {
-        RustLib.ClientSocket.tryReceive(socketHandle) match {
-          case null =>
+        tryReceive() match {
+          case None =>
             Thread.sleep(1)
-          case res =>
-            return Nbt.fromBinary(res)._2
+          case Some(res) =>
+            return res
         }
       }
       null
+    }
+
+    @throws[RuntimeException]
+    def tryReceive(): Option[Nbt] = {
+      Option(RustLib.ClientSocket.tryReceive(socketHandle)).map(res => Nbt.fromBinary(res)._2)
     }
 
     override def close(): Unit = {
@@ -60,15 +66,31 @@ class GameServerTest extends FunSuite {
     }
   }
 
-  private def runServer(worldProvider: FakeWorldProvider)(useServer: Session => Unit): Unit = {
+  /** Runs the server and ticks it continuously (unless `ticking` is false, in which case the test has to tick it) */
+  private def runServer(worldProvider: FakeWorldProvider, ticking: Boolean = true)(useServer: Session => Unit): Unit = {
     val port = randomPort()
 
     val server = GameServer.create(true, port, worldProvider.worldInfo, worldProvider, 10)
+    val tickLoop = Option.when(ticking)(TickLoop.start("test-server-tick", 60)(() => server.tick()))
 
     try {
       useServer(Session(server, port))
     } finally {
+      tickLoop.foreach(_.stop())
       server.unload()
+    }
+  }
+
+  test("packets are handled when the server ticks") {
+    runServer(FakeWorldProvider(9876), ticking = false) { s =>
+      val socket = s.connect()
+      socket.send(NetworkPacket.GetWorldInfo)
+
+      Thread.sleep(50)
+      assertEquals(socket.tryReceive(), None)
+
+      s.server.tick()
+      assert(socket.receive().asMap.get.getMap("general").isDefined)
     }
   }
 
@@ -76,8 +98,6 @@ class GameServerTest extends FunSuite {
     val seed = 9876
 
     runServer(FakeWorldProvider(seed)) { s =>
-      s.server.tick()
-
       val socket = s.connect()
 
       socket.send(NetworkPacket.GetWorldInfo)
@@ -112,8 +132,6 @@ class GameServerTest extends FunSuite {
     val seed = 9876
 
     runServer(FakeWorldProvider(seed)) { s =>
-      s.server.tick()
-
       val socket = s.connect()
 
       val playerId = UUID.randomUUID()
@@ -139,8 +157,6 @@ class GameServerTest extends FunSuite {
     val seed = 9876
 
     runServer(FakeWorldProvider(seed)) { s =>
-      s.server.tick()
-
       val socket = s.connect()
 
       val playerId = UUID.randomUUID()
@@ -169,8 +185,6 @@ class GameServerTest extends FunSuite {
     val seed = 9876
 
     runServer(FakeWorldProvider(seed)) { s =>
-      s.server.tick()
-
       val socket1 = s.connect()
 
       val player1Id = UUID.randomUUID()
@@ -236,8 +250,6 @@ class GameServerTest extends FunSuite {
 
   test("server sends the entity of a new player to existing players, and they can fetch its model") {
     runServer(FakeWorldProvider(9876)) { s =>
-      s.server.tick()
-
       val socket1 = s.connect()
       socket1.send(NetworkPacket.Login(UUID.randomUUID(), "Player 1"))
       socket1.receive()

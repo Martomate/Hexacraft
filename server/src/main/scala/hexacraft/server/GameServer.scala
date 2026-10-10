@@ -15,6 +15,7 @@ import hexacraft.world.entity.*
 import org.joml.{Vector2f, Vector3d}
 
 import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 
 object GameServer {
@@ -58,6 +59,11 @@ class GameServer(
   private val collisionDetector: CollisionDetector = new CollisionDetector(world)
   private val playerInputHandler: PlayerInputHandler = new PlayerInputHandler
   private val playerPhysicsHandler: PlayerPhysicsHandler = new PlayerPhysicsHandler(collisionDetector)
+
+  /** The packets that have been received but not yet handled. They are handled at the end of each tick (instead of
+    * when they are received) so that they do not interfere with the tick.
+    */
+  private val receivedPackets = ConcurrentLinkedQueue[(Long, NetworkPacket)]()
 
   private val serverThread: Thread = Thread(() => this.run())
   serverThread.start()
@@ -189,6 +195,33 @@ class GameServer(
     } catch {
       case e: NetworkException => println(e)
       case e                   => throw e
+    }
+
+    handleReceivedPackets()
+  }
+
+  /** Handles the packets that have been received so far, and sends the responses */
+  private def handleReceivedPackets(): Unit = {
+    // Packets that arrive while this is running are handled next time, so that this always finishes
+    val numPackets = receivedPackets.size()
+
+    for _ <- 0 until numPackets do {
+      val (clientId, packet) = receivedPackets.poll()
+
+      try {
+        handlePacket(clientId, packet) match {
+          case Some(res) =>
+            server.send(clientId, res) match {
+              case Result.Ok(_)                             =>
+              case Result.Err(Error.InvalidPacket(message)) =>
+                // This is a bug in the server, not invalid input, so it's best to shut down
+                throw new RuntimeException(s"Tried to send invalid packet: $message")
+            }
+          case None =>
+        }
+      } catch {
+        case e: NetworkException => println(e) // the other packets should still be handled
+      }
     }
   }
 
@@ -326,12 +359,14 @@ class GameServer(
   private def shutdown(): Unit = {
     isShuttingDown = true
 
-    // give clients a chance to logout
+    // give clients a chance to logout (the packets have to be handled here since the server is no longer ticking)
     for _ <- 1 to 100 if players.nonEmpty do {
+      handleReceivedPackets()
       Thread.sleep(10)
     }
   }
 
+  /** Note: this must not be called while `tick` is running */
   def unload(): Unit = {
     shutdown()
     stop()
@@ -342,36 +377,19 @@ class GameServer(
     world.unload()
   }
 
+  /** Receives packets from the clients until the server is stopped. The packets are handled in `tick`. */
   private def run(): Unit = {
-    val messagesToSend: mutable.ArrayBuffer[(Long, Nbt)] = mutable.ArrayBuffer.empty
-
     while server.running do {
       try {
         server.receive() match {
           case Result.Ok((clientId, packet)) =>
-            handlePacket(clientId, packet) match { // TODO: run this from the `tick` method to prevent race conditions
-              case Some(res) =>
-                messagesToSend += clientId -> res
-              case None =>
-            }
+            receivedPackets.add(clientId -> packet)
           case Result.Err(error) =>
             error match {
               case Error.InvalidPacket(message) =>
                 // Ignore the invalid packet, since it's up to the client to send correct data
                 println(s"Received invalid packet: $message")
             }
-        }
-
-        if server.running then {
-          for (clientId, data) <- messagesToSend do {
-            server.send(clientId, data) match {
-              case Result.Ok(_)                             =>
-              case Result.Err(Error.InvalidPacket(message)) =>
-                // This is a bug in the server, not invalid input, so it's best to shut down
-                throw new RuntimeException(s"Tried to send invalid packet: $message")
-            }
-          }
-          messagesToSend.clear()
         }
       } catch {
         case _: InterruptedException =>
@@ -415,8 +433,6 @@ class GameServer(
 
   private def handlePacket(clientId: Long, packet: NetworkPacket): Option[Nbt.MapTag] = {
     import NetworkPacket.*
-
-    // TODO: call this function from tick to reduce race conditions
 
     packet match {
       case Login(id, name) =>

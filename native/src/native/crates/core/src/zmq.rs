@@ -1,13 +1,13 @@
 use std::collections::VecDeque;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use bytes::Bytes;
 use tokio::sync::Mutex;
 use zeromq::prelude::*;
 use zeromq::util::PeerIdentity;
 use zeromq::{
-    DealerRecvHalf, DealerSendHalf, DealerSocket, RouterSocket, SocketOptions, ZmqError,
-    ZmqMessage, ZmqResult,
+    DealerRecvHalf, DealerSendHalf, DealerSocket, RouterRecvHalf, RouterSendHalf, RouterSocket,
+    SocketOptions, ZmqError, ZmqMessage, ZmqResult,
 };
 
 enum ClientSocketState {
@@ -92,7 +92,8 @@ impl ClientSocket {
 }
 
 pub struct ServerSocket {
-    socket: Mutex<RouterSocket>,
+    /// The socket is split (once it has been bound) so that sending does not have to wait for a pending receive
+    halves: OnceLock<(Mutex<RouterSendHalf>, Mutex<RouterRecvHalf>)>,
     received_frames: Mutex<VecDeque<Bytes>>,
     cancel_token: tokio_util::sync::CancellationToken,
 }
@@ -106,26 +107,28 @@ impl Drop for ServerSocket {
 impl ServerSocket {
     pub fn new() -> Self {
         Self {
-            socket: Mutex::new(RouterSocket::new()),
+            halves: OnceLock::new(),
             received_frames: Mutex::new(VecDeque::new()),
             cancel_token: tokio_util::sync::CancellationToken::new(),
         }
     }
 
     pub async fn bind(&self, port: u16) -> ZmqResult<()> {
-        self.socket
-            .lock()
-            .await
-            .bind(&format!("tcp://0.0.0.0:{port}"))
-            .await?;
-        Ok(())
+        let mut socket = RouterSocket::new();
+        socket.bind(&format!("tcp://0.0.0.0:{port}")).await?;
+
+        let (tx, rx) = socket.split();
+        self.halves
+            .set((Mutex::new(tx), Mutex::new(rx)))
+            .map_err(|_| ZmqError::Other("already bound"))
     }
 
     pub async fn receive(&self) -> ZmqResult<Vec<u8>> {
         let mut received_frames = self.received_frames.lock().await;
         if received_frames.is_empty() {
+            let (_, rx) = self.halves.get().ok_or(ZmqError::Other("not bound"))?;
             let msg = loop {
-                let mut socket = self.socket.lock().await;
+                let mut socket = rx.lock().await;
 
                 match tokio::select! {
                     _ = self.cancel_token.cancelled() => {
@@ -154,7 +157,9 @@ impl ServerSocket {
     pub async fn send(&self, client_id: Vec<u8>, data: Vec<u8>) -> ZmqResult<()> {
         let mut msg = ZmqMessage::from(client_id);
         msg.push_back(data.into());
-        self.socket.lock().await.send(msg).await
+
+        let (tx, _) = self.halves.get().ok_or(ZmqError::Other("not bound"))?;
+        tx.lock().await.send(msg).await
     }
 
     pub fn cancel(&self) {
@@ -207,6 +212,48 @@ mod tests {
         server.cancel();
 
         match server_rx.await {
+            Err(ZmqError::Other("cancelled")) => {}
+            res => panic!("got {res:?}"),
+        };
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn send_does_not_wait_for_pending_receive() -> ZmqResult<()> {
+        let client_id = vec![b'A', b'B', b'E'];
+
+        let server = Arc::new(zmq::ServerSocket::new());
+        server.bind(1236).await?;
+
+        let client = Arc::new(zmq::ClientSocket::new(client_id.clone()));
+        client.connect("localhost", 1236).await?;
+        client.send(vec![1, 2, 3]).await?;
+        tokio::spawn(client.clone().run_receiver());
+
+        assert_eq!(server.receive().await?, client_id);
+        assert_eq!(server.receive().await?, vec![1, 2, 3]);
+
+        // Wait for the next message in the background (the client will not send anything)
+        let pending_receive = tokio::spawn({
+            let server = server.clone();
+            async move { server.receive().await }
+        });
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        // Sending should still be possible while the receive is pending
+        tokio::time::timeout(
+            Duration::from_millis(1000),
+            server.send(client_id.clone(), vec![4, 5, 6]),
+        )
+        .await
+        .expect("send was blocked by the pending receive")?;
+
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        assert_eq!(client.try_receive().await.unwrap(), vec![4, 5, 6]);
+
+        server.cancel();
+        match pending_receive.await.unwrap() {
             Err(ZmqError::Other("cancelled")) => {}
             res => panic!("got {res:?}"),
         };
