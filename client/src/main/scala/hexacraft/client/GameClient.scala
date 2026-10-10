@@ -389,8 +389,6 @@ class GameClient(
       socket.sendPacket(NetworkPacket.RunCommand("kill", Seq("@e")))
     case KeyboardKey.Letter('I') =>
       freeFlyCamera.setPositionAndRotation(player.position, player.rotation)
-      // The camera wraps the z coordinate around the world (unlike the player), so the origin has to be taken from the
-      // camera. Otherwise the view would be moved a whole lap around the world if the player has a negative z.
       freeFlyOrigin.set(freeFlyCamera.position)
       freeFly = !freeFly
       isInPopup = freeFly // TODO: replace this hack with proper solution for disabling player movement
