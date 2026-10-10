@@ -15,7 +15,7 @@ class TickLoopTest extends FunSuite {
       latch.countDown()
     }
     try {
-      assert(latch.await(5, TimeUnit.SECONDS), "the loop did not tick 5 times")
+      assert(latch.await(1, TimeUnit.SECONDS), "the loop did not tick 5 times")
       assertNotEquals(tickThread, Thread.currentThread())
     } finally {
       loop.stop()
@@ -42,9 +42,9 @@ class TickLoopTest extends FunSuite {
       Thread.sleep(100)
       tickFinished = true
     }
-    assert(tickStarted.await(5, TimeUnit.SECONDS), "the loop did not tick")
+    assert(tickStarted.await(1, TimeUnit.SECONDS), "the loop did not tick")
+    assert(!tickFinished)
     loop.stop()
-
     assert(tickFinished)
   }
 

@@ -1,6 +1,6 @@
 package hexacraft.util
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
 object TickLoop {
 
@@ -31,7 +31,7 @@ object TickLoop {
   }
 }
 
-class TickLoop private (executor: java.util.concurrent.ScheduledExecutorService) {
+class TickLoop private (executor: ScheduledExecutorService) {
 
   /** Stops the loop and waits for the current tick (if any) to finish */
   def stop(): Unit = {
