@@ -2,6 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.client.ClientWorld
 import hexacraft.client.ClientWorld.WorldTickResult
+import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, TextureArray}
 import hexacraft.shaders.BlockShader
 import hexacraft.util.{InlinedIterable, Loop, TickableTimer}
@@ -20,8 +21,10 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
 ) extends TerrainRenderer {
   private val opaqueBlockGpuState = GpuState.build(_.blend(false).cullFace(true))
   private val translucentBlockGpuState = GpuState.build(_.blend(true).cullFace(true))
-  // The top of a body of water should also be visible from below (when the player is under water)
-  private val translucentTopBottomGpuState = GpuState.build(_.blend(true).cullFace(false))
+  // Face culling is decided when rendering, since the top of the water should only be visible from below when the eye
+  // is under water. Otherwise the underside of the surface further away can be seen through the water (since the
+  // world curves), which would give two water surfaces on top of each other.
+  private val translucentTopBottomGpuState = GpuState.build(_.blend(true))
   private val futureRenderData: ArrayBuffer[(ChunkRelWorld, Future[ChunkRenderData])] = ArrayBuffer.empty
   private val opaqueBlockRenderers: IndexedSeq[mutable.LongMap[BlockFaceBatchRenderer]] =
     IndexedSeq.tabulate(8)(s => new mutable.LongMap())
@@ -52,8 +55,8 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
   override def renderQueueLength: Int =
     chunkRenderUpdateQueue.length
 
-  override def render(camera: Camera, sun: Vector3f, opaque: Boolean): Unit = {
-    renderBlocks(camera, sun, opaque)
+  override def render(camera: Camera, sun: Vector3f, opaque: Boolean, eyeUnderWater: Boolean): Unit = {
+    renderBlocks(camera, sun, opaque, eyeUnderWater)
   }
 
   override def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult)(using
@@ -203,7 +206,7 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
     blockDataToUpdate
   }
 
-  private def renderBlocks(camera: Camera, sun: Vector3f, opaque: Boolean): Unit = {
+  private def renderBlocks(camera: Camera, sun: Vector3f, opaque: Boolean, eyeUnderWater: Boolean): Unit = {
     blockShader.setViewMatrix(camera.view.matrix)
     blockShader.setCameraPosition(camera.position)
 
@@ -211,10 +214,10 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
     blockSideShader.setCameraPosition(camera.position)
 
     blockTexture.bind()
-    renderBlocks(opaque)
+    renderBlocks(opaque, eyeUnderWater)
   }
 
-  private def renderBlocks(opaque: Boolean): Unit = {
+  private def renderBlocks(opaque: Boolean, eyeUnderWater: Boolean): Unit = {
     if opaque then {
       Loop.rangeUntil(0, 8) { side =>
         val sh = if side < 2 then blockShader else blockSideShader
@@ -231,9 +234,17 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
         sh.enable()
         sh.setSide(side)
         sh.setTranslucent(true)
+
+        val cullFaceWasEnabled = OpenGL.glIsEnabled(OpenGL.State.CullFace)
+        if side < 2 then {
+          if eyeUnderWater then OpenGL.glDisable(OpenGL.State.CullFace) else OpenGL.glEnable(OpenGL.State.CullFace)
+        }
+
         for h <- InlinedIterable(translucentBlockRenderers(side).values) do {
           h.render()
         }
+
+        if cullFaceWasEnabled then OpenGL.glEnable(OpenGL.State.CullFace) else OpenGL.glDisable(OpenGL.State.CullFace)
       }
     }
   }

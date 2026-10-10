@@ -138,13 +138,14 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     replaceFrameBufferIfNeeded()
     updateSelectedBlockVao(selectedBlockAndSide)
     updateWaterSurface(camera, waterSurfaceHeight)
+    val eyeUnderWater = waterSurfaceHeight.exists(h => h > camera.position.y)
 
     // Step 1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     // World content
-    terrainRenderer.render(camera, sun, true)
+    terrainRenderer.render(camera, sun, true, eyeUnderWater)
 
     renderEntities(camera, sun)
 
@@ -159,7 +160,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer)
     OpenGL.glDepthMask(false)
 
-    terrainRenderer.render(camera, sun, false)
+    terrainRenderer.render(camera, sun, false, eyeUnderWater)
 
     OpenGL.glDepthMask(true)
     translucentFrameBuffer.unbind()
