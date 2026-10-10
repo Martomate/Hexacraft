@@ -672,13 +672,13 @@ class GameClient(
       updateSoundListener()
 
       val worldLoadingEvents = worldLoadingEventsNbt.asMap.get
-      val loadedChunks = mutable.ArrayBuffer.empty[(ChunkRelWorld, Nbt)]
+      val loadedChunks = mutable.ArrayBuffer.empty[(ChunkRelWorld, Nbt, Option[Nbt.MapTag])]
       for e <- worldLoadingEvents.getList("chunks_loaded").getOrElse(Seq()) do {
         val m = e.asMap.get
         val coords = m.getLong("coords", -1L)
         val data = m.getMap("data")
         if coords != -1L && data.isDefined then {
-          loadedChunks += ChunkRelWorld(coords) -> data.get
+          loadedChunks += ((ChunkRelWorld(coords), data.get, m.getMap("column")))
         }
       }
       val unloadedChunks = mutable.ArrayBuffer.empty[ChunkRelWorld]
@@ -690,11 +690,13 @@ class GameClient(
         }
       }
 
-      for (chunkCoords, chunkNbt) <- loadedChunks do {
+      for (chunkCoords, chunkNbt, includedColumnNbt) <- loadedChunks do {
         var success = true
         val columnCoords = chunkCoords.getColumnRelWorld
         if world.getColumn(columnCoords).isEmpty then {
-          val columnNbt = socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords))
+          // The column is usually sent together with the chunk, otherwise it has to be requested (which is slow)
+          val columnNbt =
+            includedColumnNbt.getOrElse(socket.sendPacketAndWait(NetworkPacket.LoadColumnData(columnCoords)))
           if columnNbt != Nbt.emptyMap then {
             world.setColumn(columnCoords, Nbt.decode[ChunkColumnData](columnNbt.asInstanceOf[Nbt.MapTag]).get.heightMap)
           } else {
