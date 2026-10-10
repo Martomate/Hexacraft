@@ -33,6 +33,7 @@ enum UserInteraction {
   case MovePlayer(distance: CylCoords.Offset)
   case RotatePlayerHead(angles: Vector3d)
   case MoveEntity(id: UUID, distance: CylCoords.Offset)
+  case RotateEntity(id: UUID, angles: Vector3d)
 }
 
 object GameClient {
@@ -626,6 +627,10 @@ class GameClient(
             for e <- entitiesBeforeUndo.get(id) do {
               e.transform.position = e.transform.position.offset(distance)
             }
+          case UserInteraction.RotateEntity(id, angles) =>
+            for e <- entitiesBeforeUndo.get(id) do {
+              e.transform.rotation.add(angles)
+            }
         }
 
         val shouldRedo = undo match {
@@ -644,6 +649,8 @@ class GameClient(
               UserInteraction.RotatePlayerHead(angles.negate(Vector3d()))
             case UserInteraction.MoveEntity(id, distance) =>
               UserInteraction.MoveEntity(id, -distance)
+            case UserInteraction.RotateEntity(id, angles) =>
+              UserInteraction.RotateEntity(id, angles.negate(Vector3d()))
           }
 
           userInteractionRedo.push(ts -> redo)
@@ -757,6 +764,10 @@ class GameClient(
             for e <- entitiesBeforeRedo.get(id) do {
               e.transform.position = e.transform.position.offset(distance)
             }
+          case UserInteraction.RotateEntity(id, angles) =>
+            for e <- entitiesBeforeRedo.get(id) do {
+              e.transform.rotation.add(angles)
+            }
         }
       }
 
@@ -779,6 +790,7 @@ class GameClient(
 
         val positionBefore = Vector3d(player.position)
         val rotationBefore = Vector3d(player.rotation)
+        val mountRotationBefore = mounts.headOption.map(m => Vector3d(m.transform.rotation))
         playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid, mounts)
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
@@ -786,6 +798,12 @@ class GameClient(
         userInteractionUndo.push(
           time -> UserInteraction.RotatePlayerHead(rotationBefore.sub(player.rotation, Vector3d()))
         )
+        // The player can turn its mount, which has to be undone in the same way as the rotation of the player
+        for mount <- mounts.headOption; before <- mountRotationBefore do {
+          userInteractionUndo.push(
+            time -> UserInteraction.RotateEntity(mount.id, before.sub(mount.transform.rotation, Vector3d()))
+          )
+        }
 
         socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
         socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
