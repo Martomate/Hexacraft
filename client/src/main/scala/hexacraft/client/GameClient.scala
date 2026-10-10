@@ -32,6 +32,7 @@ enum UserInteraction {
   case ReplaceBlock(coords: BlockRelWorld, block: BlockState)
   case MovePlayer(distance: CylCoords.Offset)
   case RotatePlayerHead(angles: Vector3d)
+  case RotateEntity(id: UUID, angles: Vector3d)
 }
 
 object GameClient {
@@ -605,6 +606,12 @@ class GameClient(
             player.position.set(CylCoords(player.position).offset(distance).toVector3d)
           case UserInteraction.RotatePlayerHead(angles) =>
             player.rotation.add(angles)
+          case UserInteraction.RotateEntity(id, angles) =>
+            world.foreachEntity { e =>
+              if e.id == id then {
+                e.transform.rotation.add(angles)
+              }
+            }
         }
 
         if ts.isAfter(time) then {
@@ -615,6 +622,8 @@ class GameClient(
               UserInteraction.MovePlayer(-distance)
             case UserInteraction.RotatePlayerHead(angles) =>
               UserInteraction.RotatePlayerHead(angles.negate(Vector3d()))
+            case UserInteraction.RotateEntity(id, angles) =>
+              UserInteraction.RotateEntity(id, angles.negate(Vector3d()))
           }
 
           userInteractionRedo.push(ts -> redo)
@@ -729,6 +738,12 @@ class GameClient(
             player.position.set(CylCoords(player.position).offset(distance).toVector3d)
           case UserInteraction.RotatePlayerHead(angles) =>
             player.rotation.add(angles)
+          case UserInteraction.RotateEntity(id, angles) =>
+            world.foreachEntity { e =>
+              if e.id == id then {
+                e.transform.rotation.add(angles)
+              }
+            }
         }
       }
 
@@ -749,6 +764,7 @@ class GameClient(
 
         val positionBefore = Vector3d(player.position)
         val rotationBefore = Vector3d(player.rotation)
+        val mountRotationBefore = mounts.headOption.map(e => e -> Vector3d(e.transform.rotation))
         playerInputHandler.tick(player, pressedKeys, mouseMovement, maxSpeed, isInFluid, mounts)
         userInteractionUndo.push(
           time -> UserInteraction.MovePlayer(CylCoords.Offset(positionBefore.sub(player.position, Vector3d())))
@@ -756,6 +772,11 @@ class GameClient(
         userInteractionUndo.push(
           time -> UserInteraction.RotatePlayerHead(rotationBefore.sub(player.rotation, Vector3d()))
         )
+        mountRotationBefore.foreach { case (e, before) =>
+          userInteractionUndo.push(
+            time -> UserInteraction.RotateEntity(e.id, before.sub(e.transform.rotation, Vector3d()))
+          )
+        }
 
         socket.sendPacket(NetworkPacket.PlayerMovedMouse(mouseMovement))
         socket.sendPacket(NetworkPacket.PlayerPressedKeys(pressedKeys))
