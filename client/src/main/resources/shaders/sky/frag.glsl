@@ -15,6 +15,7 @@ uniform vec3 waterAbsorption;
 uniform float waterScattering;
 uniform float waterDepthDarkening;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
+uniform bool waterEffectsEnabled; // false when the eye is not at the camera position (e.g. in free fly mode)
 uniform float waterFogStrength; // 1 when the eye is under water (or right above the surface), otherwise 0
 
 uniform bool hasOcean;
@@ -76,7 +77,7 @@ void main() {
 
     vec3 seaNormal = seaLevelNormalHitBy(ray);
     bool eyeUnderWater = waterFogStrength > 0.0 && waterSurfaceAboveEye > 0.0;
-    if (!eyeUnderWater && seaNormal != vec3(0.0)) {
+    if (waterEffectsEnabled && !eyeUnderWater && seaNormal != vec3(0.0)) {
         // Look like the water surface (as drawn by the block shader and the world combiner) on top of deep water
         float cosTheta = abs(dot(seaNormal, ray));
         float fresnel = pow(1.0 - cosTheta, 5.0);

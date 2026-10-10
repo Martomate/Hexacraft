@@ -515,7 +515,8 @@ class GameClient(
       if freeFly then freeFlyCamera else camera,
       new Vector3f(0, 1, -1),
       selectedBlockAndSide,
-      waterSurfaceHeight
+      waterSurfaceHeight,
+      waterEffects = !freeFly
     )
 
     renderCrosshair()
@@ -788,10 +789,7 @@ class GameClient(
       camera.updateCoords()
       camera.updateViewMatrix()
 
-      // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
-      waterSurfaceHeight =
-        if freeFly then None
-        else WaterSurface.heightNear(CylCoords(camera.position), world)
+      waterSurfaceHeight = WaterSurface.heightNear(CylCoords(camera.position), world)
 
       if !isPaused && freeFly then {
         val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)
