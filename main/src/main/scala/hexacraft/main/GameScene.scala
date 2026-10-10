@@ -6,7 +6,7 @@ import hexacraft.infra.audio.AudioSystem
 import hexacraft.main.GameScene.Event.{CursorCaptured, CursorReleased, GameQuit}
 import hexacraft.server.GameServer
 import hexacraft.server.world.WorldProvider
-import hexacraft.util.{Channel, Result}
+import hexacraft.util.{Channel, Result, TickLoop}
 import hexacraft.world.{CylinderSize, WorldInfo}
 
 import java.util.UUID
@@ -40,13 +40,18 @@ object GameScene {
     val renderDistance = 8 * CylinderSize.y60
 
     val server = serverParams.map { s =>
-      GameServer.create(
+      val server = GameServer.create(
         c.isOnline,
         c.serverPort,
         s.worldInfo,
         s.worldProvider,
         renderDistance
       )
+
+      // The server runs on its own thread so the client can wait for the server without causing a deadlock
+      val tickLoop = TickLoop.start("server-tick", 60)(() => server.tick())
+
+      LocalServer(server, tickLoop)
     }
 
     val client =
@@ -65,9 +70,7 @@ object GameScene {
         ) match {
           case Result.Ok(res) => res
           case Result.Err(message) =>
-            if server.isDefined then {
-              server.get.unload()
-            }
+            server.foreach(_.unload())
             return Result.Err(s"failed to start game: $message")
         }
         clientEvents.onEvent {
@@ -86,7 +89,15 @@ object GameScene {
   }
 }
 
-class GameScene(val client: GameClient, server: Option[GameServer]) extends Scene {
+/** A server that is run by this game (i.e. not a remote server) */
+class LocalServer(server: GameServer, tickLoop: TickLoop) {
+  def unload(): Unit = {
+    tickLoop.stop()
+    server.unload()
+  }
+}
+
+class GameScene(val client: GameClient, server: Option[LocalServer]) extends Scene {
   override def handleEvent(event: Event): Boolean = {
     client.handleEvent(event)
   }
@@ -108,17 +119,12 @@ class GameScene(val client: GameClient, server: Option[GameServer]) extends Scen
   }
 
   override def tick(ctx: TickContext): Unit = {
-    if server.isDefined then {
-      server.get.tick()
-    }
     client.tick(ctx)
   }
 
   override def unload(): Unit = {
-    client.unload()
+    client.unload() // the server is still running so the client can log out
 
-    if server.isDefined then {
-      server.get.unload()
-    }
+    server.foreach(_.unload())
   }
 }
