@@ -14,7 +14,7 @@ trait TerrainRenderer {
   def regularChunkBufferFragmentation: IndexedSeq[Float]
   def transmissiveChunkBufferFragmentation: IndexedSeq[Float]
   def renderQueueLength: Int
-  def render(camera: Camera, sun: Vector3f, opaque: Boolean): Unit
+  def render(camera: Camera, sun: Vector3f, opaque: Boolean, eyeUnderWater: Boolean): Unit
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult)(using ExecutionContext): Unit
   def unload(): Unit
 }

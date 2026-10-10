@@ -15,8 +15,9 @@ struct FragIn {
 flat in FragInFlat fragInFlat;
 in FragIn fragIn;
 
-layout (location = 0) out vec3 position;
-layout (location = 1) out vec3 normal;
+// The alpha of 1 makes sure that blending (for translucent blocks) does not change the position and normal
+layout (location = 0) out vec4 position;
+layout (location = 1) out vec4 normal;
 layout (location = 2) out vec4 color;
 
 uniform sampler2DArray texSampler;
@@ -51,8 +52,8 @@ void main() {
 		dFdy(fragIn.texCoords / fragIn.mult));
 #endif
 
-	position = fragIn.position;
-	normal = fragIn.normal;
+	position = vec4(fragIn.position, 1.0);
+	normal = vec4(fragIn.normal, 1.0);
 	color.rgb *= fragIn.brightness * 0.8 + 0.2;
 
 	if (translucent) {

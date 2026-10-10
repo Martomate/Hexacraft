@@ -19,37 +19,44 @@ class WorldCombinerShader {
   shader.setUniform1i("worldNormalTexture", 1)
   shader.setUniform1i("worldColorTexture", 2)
   shader.setUniform1i("worldDepthTexture", 3)
+  shader.setUniform1i("translucentPositionTexture", 4)
+  shader.setUniform1i("translucentNormalTexture", 5)
+  shader.setUniform1i("translucentColorTexture", 6)
 
-  private val positionTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(0)
-  private val normalTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(1)
-  private val colorTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(2)
-  private val depthTextureSlot: OpenGL.TextureSlot = OpenGL.TextureSlot.ofSlot(3)
+  WaterFog.setConstants(shader)
 
+  private val textureSlots: IndexedSeq[OpenGL.TextureSlot] = (0 until 7).map(OpenGL.TextureSlot.ofSlot)
+
+  /** Binds the G-buffer textures of the opaque things and of the translucent things (which are drawn on top) */
   def bindTextures(
       positionTexture: TextureId,
       normalTexture: TextureId,
       colorTexture: TextureId,
-      depthTexture: TextureId
+      depthTexture: TextureId,
+      translucentPositionTexture: TextureId,
+      translucentNormalTexture: TextureId,
+      translucentColorTexture: TextureId
   ): Unit = {
-    OpenGL.glActiveTexture(positionTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, positionTexture)
-    OpenGL.glActiveTexture(normalTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, normalTexture)
-    OpenGL.glActiveTexture(colorTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, colorTexture)
-    OpenGL.glActiveTexture(depthTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, depthTexture)
+    val textures = Seq(
+      positionTexture,
+      normalTexture,
+      colorTexture,
+      depthTexture,
+      translucentPositionTexture,
+      translucentNormalTexture,
+      translucentColorTexture
+    )
+    for (slot, texture) <- textureSlots.zip(textures) do {
+      OpenGL.glActiveTexture(slot)
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, texture)
+    }
   }
 
   def unbindTextures(): Unit = {
-    OpenGL.glActiveTexture(depthTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(colorTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(normalTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
-    OpenGL.glActiveTexture(positionTextureSlot)
-    OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    for slot <- textureSlots.reverse do {
+      OpenGL.glActiveTexture(slot)
+      OpenGL.glBindTexture(OpenGL.TextureTarget.Texture2D, OpenGL.TextureId.none)
+    }
   }
 
   def setClipPlanes(nearPlane: Float, farPlane: Float): Unit = {
@@ -59,6 +66,17 @@ class WorldCombinerShader {
 
   def setSunPosition(sun: Vector3f): Unit = {
     shader.setUniform3f("sun", sun.x, sun.y, sun.z)
+  }
+
+  def setTotalSize(totalSize: Int): Unit = {
+    shader.setUniform1i("totalSize", totalSize)
+  }
+
+  /** @param surfaceAboveEye the height of the water surface relative to the eye
+    * @param strength how strong the water fog should be (0 means no fog)
+    */
+  def setWaterSurface(surfaceAboveEye: Float, strength: Float): Unit = {
+    WaterFog.setSurface(shader, surfaceAboveEye, strength)
   }
 
   def enable(): Unit = {

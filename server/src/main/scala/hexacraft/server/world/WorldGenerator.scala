@@ -63,7 +63,7 @@ class WorldGenerator(worldGenSettings: WorldGenSettings)(using cylSize: Cylinder
           val limit = limitForBlockNoise(yToGo)
           if noise > limit then {
             storage.setBlock(BlockRelChunk(i, j, k), new BlockState(getBlockAtDepth(yToGo)))
-          } else if y < 0 && worldGenSettings.generateOceans then {
+          } else if y < WorldGenSettings.seaLevel && worldGenSettings.generateOceans then {
             storage.setBlock(BlockRelChunk(i, j, k), new BlockState(Block.Water))
           }
         }

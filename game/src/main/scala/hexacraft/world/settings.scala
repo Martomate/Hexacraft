@@ -44,6 +44,10 @@ case class WorldGenSettings(
 )
 
 object WorldGenSettings {
+
+  /** When oceans are generated, the blocks below this height (and not in the terrain) are filled with water */
+  val seaLevel: Int = 0
+
   def fromSeed(seed: Long): WorldGenSettings = {
     Nbt.decode(Nbt.makeMap("seed" -> Nbt.LongTag(seed))).get
   }

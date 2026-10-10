@@ -19,7 +19,7 @@ import hexacraft.world.chunk.{Chunk, ChunkColumnData, ChunkData}
 import hexacraft.world.coord.*
 import hexacraft.world.entity.Entity
 
-import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f}
+import org.joml.{Matrix4f, Vector2f, Vector3d, Vector3f, Vector4f}
 
 import java.time.Instant
 import java.util.UUID
@@ -82,7 +82,9 @@ object GameClient {
 
     val terrainRenderer: TerrainRenderer = StandardTerrainRenderer(world, blockTextureIndices)
 
-    val worldRenderer: WorldRenderer = new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer)
+    val waterSurfaceColor = calculateAverageColor(blockTextureMapping.images(blockTextureIndices("water")(0) & 0xfff))
+    val worldRenderer: WorldRenderer =
+      new WorldRenderer(world, initialWindowSize.physicalSize, terrainRenderer, waterSurfaceColor)
 
     val camera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
     val freeFlyCamera: Camera = new Camera(makeCameraProjection(initialWindowSize, world.size.worldSize))
@@ -154,6 +156,16 @@ object GameClient {
   } catch {
     case e: Exception =>
       Result.Err(e.getMessage)
+  }
+
+  /** Returns the average color and alpha of the texture */
+  private def calculateAverageColor(texture: PixelArray): Vector4f = {
+    var a = 0L
+    for pix <- texture.pixels do {
+      a += (pix >> 24) & 0xff
+    }
+    val rgb = calculateTextureColor(texture)
+    Vector4f(rgb, a.toFloat / (texture.pixels.length * 255))
   }
 
   private def calculateTextureColor(texture: PixelArray): Vector3f = {
@@ -255,6 +267,9 @@ class GameClient(
 
   private var selectedBlockAndSide: Option[MousePickerResult] = None
   private var selectedBlockAndSideIncludingWater: Option[MousePickerResult] = None
+
+  /** The height of the surface of the water that the camera is in (or right above), if any */
+  private var waterSurfaceHeight: Option[Double] = None
   private val overlays: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer(chatOverlay)
 
   private val rightMouseButtonTimer: TickableTimer = TickableTimer(10, initEnabled = false)
@@ -499,7 +514,8 @@ class GameClient(
     worldRenderer.render(
       if freeFly then freeFlyCamera else camera,
       new Vector3f(0, 1, -1),
-      selectedBlockAndSide
+      selectedBlockAndSide,
+      waterSurfaceHeight
     )
 
     renderCrosshair()
@@ -771,6 +787,11 @@ class GameClient(
       camera.setPositionAndRotation(player.position, player.rotation)
       camera.updateCoords()
       camera.updateViewMatrix()
+
+      // The water fog assumes that the eye is at the camera position, which is not the case in free fly mode
+      waterSurfaceHeight =
+        if freeFly then None
+        else WaterSurface.heightNear(CylCoords(camera.position), world)
 
       if !isPaused && freeFly then {
         val velocity = freeFlyInputHandler.calculateVelocity(pressedKeys, freeFlyCamera.rotation)
