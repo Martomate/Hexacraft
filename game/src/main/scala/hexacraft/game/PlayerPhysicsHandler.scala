@@ -16,10 +16,13 @@ class PlayerPhysicsHandler(collisionDetector: CollisionDetector) {
       volumeSubmergedInWater: Double,
       mounts: Seq[Entity]
   ): Unit = {
-    mounts.headOption.foreach { mount =>
-      val offsetY = -player.bounds.bottom * 0.5 + 0.25
-      player.position.set(mount.transform.position.toVector3d.add(0, offsetY, 0))
-      player.velocity.set(mount.motion.velocity)
+    mounts.headOption match {
+      case Some(mount) =>
+        val offsetY = -player.bounds.bottom * 0.5 + 0.25
+        player.position.set(mount.transform.position.toVector3d.add(0, offsetY, 0))
+        player.velocity.set(mount.motion.velocity)
+        return
+      case _ =>
     }
 
     val velLen = math.hypot(player.velocity.x, player.velocity.z)
