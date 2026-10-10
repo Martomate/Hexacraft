@@ -10,14 +10,25 @@ object WaterSurface {
   /** How many water blocks to look through when searching for the surface */
   private val maxSearchedBlocks = 1024
 
-  /** Finds the height (in CylCoords) of the surface of the water at the given position, if it is in a water block.
+  /** How far above the water surface (in CylCoords) a position may be for the surface to still be found.
     *
-    * Note: the position can be above the surface if the water block is not full.
+    * It has to be larger than the near plane of the camera, since the closest part of the water surface is not drawn
+    * when the eye is closer to it than that. It should still be small, since only the water right below is known.
     */
-  def heightAt(position: CylCoords, world: BlocksInWorld)(using CylinderSize): Option[Double] = {
+  val maxHeightAbove: Double = 0.1
+
+  /** Finds the height (in CylCoords) of the surface of the water at the given position.
+    *
+    * The surface is only found if the position is under water, or at most `maxHeightAbove` above the surface.
+    */
+  def heightNear(position: CylCoords, world: BlocksInWorld)(using CylinderSize): Option[Double] = {
     val (coords, _) = CoordUtils.getEnclosingBlock(position.toBlockCoords)
 
-    if isWater(world, coords) then Some(surfaceOfWaterAt(coords, world)) else None
+    val waterBlock =
+      if isWater(world, coords) then Some(coords)
+      else Some(coords.offset(0, -1, 0)).filter(c => isWater(world, c))
+
+    waterBlock.map(c => surfaceOfWaterAt(c, world)).filter(h => position.y - h <= maxHeightAbove)
   }
 
   /** Returns the height of the surface of the body of water that the given (water) block is part of.

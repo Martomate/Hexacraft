@@ -22,7 +22,7 @@ uniform vec3 waterAbsorption;
 uniform float waterScattering;
 uniform float waterDepthDarkening;
 uniform float waterSurfaceAboveEye; // height of the water surface relative to the eye (in CylCoords)
-uniform float waterFogStrength; // 1 when the eye is under water, otherwise 0
+uniform float waterFogStrength; // 1 when the eye is under water (or right above the surface), otherwise 0
 
 float linearize_depth(float d,float zNear,float zFar)
 {
@@ -106,16 +106,21 @@ void main() {
     Layer translucent = readLayer(translucentPositionTexture, translucentNormalTexture, translucentColorTexture);
 
     vec3 opaqueColor = opaque.color;
+    bool seenThroughWater = false;
     if (opaque.alpha > 0.0 && translucent.alpha > 0.0) {
         // If the front of the water is seen (e.g. the surface from above) the opaque thing behind it is under water
-        bool seenThroughWater = dot(translucent.normal, translucent.position) < 0.0;
+        seenThroughWater = dot(translucent.normal, translucent.position) < 0.0;
         if (seenThroughWater) {
             float dist = max(length(opaque.position) - length(translucent.position), 0.0);
             float depth = heightAboveEye(translucent.position) - heightAboveEye(opaque.position);
             opaqueColor = applyWaterFog(opaqueColor * lightAtDepth(depth), waterFogColor, dist);
         }
     }
-    opaqueColor = applyEyeWaterFog(opaqueColor, opaque.position);
+    // When the eye is right above the surface both kinds of fog would apply here, and they give almost the same result.
+    // The eye fog is still needed for the closest part of the water, which is not drawn because of the near plane.
+    if (!seenThroughWater) {
+        opaqueColor = applyEyeWaterFog(opaqueColor, opaque.position);
+    }
     vec3 translucentColor = applyEyeWaterFog(translucent.color, translucent.position);
 
     // Put the translucent layer on top of the opaque layer, and the result will be put on top of the sky

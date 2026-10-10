@@ -126,7 +126,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     }
   }
 
-  /** @param waterSurfaceHeight the height of the surface of the water that the camera is in, if any */
+  /** @param waterSurfaceHeight the height of the surface of the water that the camera is in (or right above), if any */
   def render(
       camera: Camera,
       sun: Vector3f,
@@ -177,9 +177,7 @@ class WorldRenderer(world: ClientWorld, initialFrameBufferSize: Vector2ic, terra
     val (surfaceAboveEye, strength) = waterSurfaceHeight match {
       case Some(h) =>
         val surfaceAboveEye = h - camera.position.y
-        // Above the surface the fog is drawn wherever water is seen, so only the eye being under water matters here
-        val strength = if surfaceAboveEye > 0 then 1f else 0f
-        (surfaceAboveEye.toFloat, strength)
+        (surfaceAboveEye.toFloat, 1f)
       case None =>
         (0f, 0f)
     }
