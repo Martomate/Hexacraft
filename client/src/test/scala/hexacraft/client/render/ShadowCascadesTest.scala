@@ -1,5 +1,8 @@
 package hexacraft.client.render
 
+import hexacraft.world.CylinderSize
+import hexacraft.world.coord.{ChunkRelWorld, CylCoords}
+
 import munit.FunSuite
 import org.joml.{Matrix4f, Vector3d, Vector3f, Vector4f}
 
@@ -86,5 +89,49 @@ class ShadowCascadesTest extends FunSuite {
       assert(nearCornerDist <= radius + 1e-9)
       assert(farCornerDist <= radius + 1e-9)
     }
+  }
+
+  test("compensateForCameraMovement makes an old cascade usable from the new camera position") {
+    val circumference = 1000.0
+    val invView = invViewMatrix(0.3f, 0.4f)
+    for (camOld, camNew) <- Seq(
+        (new Vector3d(10, 20, 30), new Vector3d(10.7, 19.6, 31.2)),
+        (new Vector3d(10, 20, 999.5), new Vector3d(10, 20, 0.5)) // across the seam of the cylinder
+      )
+    do {
+      val cascade = ShadowCascades.compute(invView, projMatrix, camOld, sun, splits, 1024)(0)
+      val matrix = ShadowCascades.compensateForCameraMovement(cascade.matrix, camOld, camNew, circumference)
+
+      // A point that is fixed in the world, expressed relative to each camera
+      val worldPoint = new Vector3d(camOld).add(1.5, -2, -3)
+      val relOld = new Vector3f(worldPoint.sub(camOld, new Vector3d))
+      val relNew = new Vector3d(worldPoint).sub(camNew)
+      relNew.z -= math.floor(relNew.z / circumference + 0.5) * circumference
+
+      val expected = new Vector4f(relOld, 1).mul(cascade.matrix)
+      val actual = new Vector4f(new Vector3f(relNew), 1).mul(matrix)
+      assertEqualsFloat(actual.x, expected.x, 1e-4f)
+      assertEqualsFloat(actual.y, expected.y, 1e-4f)
+      assertEqualsFloat(actual.z, expected.z, 1e-4f)
+    }
+  }
+
+  test("chunkMayCastShadow keeps the chunks around the camera and towards the sun, but not the others") {
+    given cylSize: CylinderSize = CylinderSize(7)
+    val camera = new Vector3d(20, 30, 40)
+    val cascade = ShadowCascades.compute(invViewMatrix(0.3f, 0.4f), projMatrix, camera, sun, splits, 1024)(0)
+
+    def chunkAt(offset: Vector3d): ChunkRelWorld = {
+      val b = CylCoords(new Vector3d(camera).add(offset)).toBlockCoords
+      ChunkRelWorld(math.floor(b.x / 16).toLong, math.floor(b.y / 16).toInt, math.floor(b.z / 16).toInt)
+    }
+    def mayCastShadow(offset: Vector3d) = ShadowCascades.chunkMayCastShadow(chunkAt(offset), camera, cascade.matrix)
+
+    val towardsSun = new Vector3d(sun).normalize()
+
+    assert(mayCastShadow(new Vector3d(0, 0, 0)), "the chunk of the camera")
+    assert(mayCastShadow(new Vector3d(towardsSun).mul(60)), "a chunk between the camera and the sun")
+    assert(!mayCastShadow(new Vector3d(towardsSun).mul(-60)), "a chunk on the other side of the camera")
+    assert(!mayCastShadow(new Vector3d(80, 0, 0)), "a chunk to the side")
   }
 }

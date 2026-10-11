@@ -65,6 +65,8 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
 
   private val identityMatrix = new Matrix4f()
 
+  private val chunkCastsShadow = new mutable.LongMap[Boolean]()
+
   override def renderShadowCasters(camera: Camera, lightMatrix: Matrix4f): Unit = {
     for sh <- Seq(shadowBlockShader, shadowBlockSideShader) do {
       sh.setProjectionMatrix(lightMatrix)
@@ -80,9 +82,17 @@ class StandardTerrainRenderer(world: ClientWorld, blockTextureIndices: Map[Strin
       sh.enable()
       sh.setSide(side)
       for h <- InlinedIterable(opaqueBlockRenderers(side).values) do {
-        h.render()
+        // Each chunk needs its own draw call(s), but this is still much faster since most chunks can be skipped
+        h.render(coords =>
+          chunkCastsShadow.getOrElseUpdate(
+            coords.value,
+            ShadowCascades.chunkMayCastShadow(coords, camera.position, lightMatrix)
+          )
+        )
       }
     }
+
+    chunkCastsShadow.clear()
   }
 
   override def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult)(using

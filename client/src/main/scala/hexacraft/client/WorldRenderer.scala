@@ -11,7 +11,7 @@ import hexacraft.world.*
 import hexacraft.world.chunk.Chunk
 import hexacraft.world.entity.Entity
 
-import org.joml.{Matrix4f, Vector2i, Vector2ic, Vector3f, Vector4fc}
+import org.joml.{Matrix4f, Vector2i, Vector2ic, Vector3d, Vector3f, Vector4fc}
 import org.lwjgl.BufferUtils
 
 import java.util.concurrent.Executors
@@ -56,6 +56,11 @@ class WorldRenderer(
   private val shadowMap = new ShadowMap(ShadowCascades.resolution, ShadowCascades.splits.size)
   private val identityMatrix = new Matrix4f()
 
+  // The cascades that are currently in the shadow map, and where the camera was when each of them was rendered
+  private val renderedCascades = new Array[ShadowCascades.Cascade](ShadowCascades.splits.size)
+  private val renderedCascadeCameraPositions = Array.fill(ShadowCascades.splits.size)(new Vector3d)
+  private var shadowFrameCount: Long = 0
+
   private var currentlySelectedBlockAndSide: Option[MousePickerResult] = None
 
   private val entityRenderers = for s <- 0 until 8 yield BlockRenderer(EntityShader.createVao(s), GpuState())
@@ -95,6 +100,11 @@ class WorldRenderer(
 
     worldCombinerShader.setTotalSize(totalSize)
     skyShader.setTotalSize(totalSize)
+
+    // the shadow maps were rendered with the old size, so all of them have to be rendered again
+    for i <- renderedCascades.indices do {
+      renderedCascades(i) = null
+    }
   }
 
   def onProjMatrixChanged(camera: Camera): Unit = {
@@ -165,6 +175,7 @@ class WorldRenderer(
     // Step 0: Render the shadow casters from the point of view of the sun
     val shadowCascades = ShadowCascades.compute(camera.view.invMatrix, camera.proj.matrix, camera.position, sun)
     renderShadowMap(camera, shadowCascades, entityRenderData)
+    val shadowLookups = shadowLookupsFor(camera)
 
     // Step 1: Render all opaque things to a FrameBuffer
     mainFrameBuffer.bind()
@@ -201,7 +212,7 @@ class WorldRenderer(
     OpenGL.glClear(OpenGL.ClearMask.colorBuffer | OpenGL.ClearMask.depthBuffer)
 
     renderSky(camera, sun)
-    renderFrameBuffers(sun, shadowCascades)
+    renderFrameBuffers(sun, shadowLookups)
   }
 
   private def renderShadowMap(
@@ -209,12 +220,23 @@ class WorldRenderer(
       cascades: IndexedSeq[ShadowCascades.Cascade],
       entityRenderData: Iterable[(String, IndexedSeq[EntityRenderData])]
   ): Unit = {
-    // Rendering the back faces (seen from the sun) avoids most self-shadowing artifacts ("shadow acne") on lit faces,
-    // and depth clamping makes sure that shadow casters between the sun and the near plane are not clipped away
-    OpenGL.glCullFace(OpenGL.CullFaceMode.Front)
+    // Depth clamping makes sure that shadow casters between the sun and the near plane are not clipped away.
+    // Note: only the faces towards the sun are rendered. Rendering the back faces instead would avoid self-shadowing,
+    // but then the depth behind a solid block is where the sunlight would leave it (if anywhere), which lets light
+    // leak into corners. The self-shadowing is instead avoided by the normal offset in the world combiner.
     OpenGL.glEnable(OpenGL.State.DepthClamp)
 
-    for (cascade, i) <- cascades.zipWithIndex do {
+    // Rendering the shadow casters is expensive since the outer cascades cover most of the world. The nearest cascade is
+    // rendered every frame, while the others take turns. When looking up the shadows, the cascades that were rendered in
+    // an earlier frame are adjusted for how the camera moved since then (see shadowLookupsFor).
+    val lastCascade = cascades.size - 1
+    val cascadesToRender =
+      if renderedCascades.contains(null) || lastCascade < 2 then cascades.indices
+      else Seq(0, 1 + (shadowFrameCount % lastCascade).toInt)
+    shadowFrameCount += 1
+
+    for i <- cascadesToRender do {
+      val cascade = cascades(i)
       shadowMap.bind(i)
       OpenGL.glClear(OpenGL.ClearMask.depthBuffer)
 
@@ -226,12 +248,14 @@ class WorldRenderer(
         sh.setCameraPosition(camera.position)
       }
       renderEntities(entityRenderData, shadowEntityShader, shadowEntitySideShader)
+
+      renderedCascades(i) = cascade
+      renderedCascadeCameraPositions(i).set(camera.position)
     }
 
     shadowMap.unbind()
 
     OpenGL.glDisable(OpenGL.State.DepthClamp)
-    OpenGL.glCullFace(OpenGL.CullFaceMode.Back)
   }
 
   private def updateWaterSurface(camera: Camera, waterSurfaceHeight: Option[Double]): Unit = {
@@ -250,7 +274,23 @@ class WorldRenderer(
     skyShader.setSeaLevelAboveEye((seaLevel - camera.position.y).toFloat)
   }
 
-  private def renderFrameBuffers(sun: Vector3f, shadowCascades: IndexedSeq[ShadowCascades.Cascade]): Unit = {
+  /** @return the matrix and texel size to use for each cascade when looking up shadows for positions relative to the
+    *         camera. The matrices are adjusted for camera movement since the cascades might have been rendered earlier.
+    */
+  private def shadowLookupsFor(camera: Camera): IndexedSeq[(Matrix4f, Float)] = {
+    for i <- renderedCascades.indices yield {
+      val c = renderedCascades(i)
+      val matrix = ShadowCascades.compensateForCameraMovement(
+        c.matrix,
+        renderedCascadeCameraPositions(i),
+        camera.position,
+        summon[CylinderSize].circumference
+      )
+      (matrix, c.texelSize)
+    }
+  }
+
+  private def renderFrameBuffers(sun: Vector3f, shadowLookups: IndexedSeq[(Matrix4f, Float)]): Unit = {
     worldCombinerShader.bindTextures(
       positionTexture = mainFrameBuffer.positionTexture,
       normalTexture = mainFrameBuffer.normalTexture,
@@ -263,8 +303,8 @@ class WorldRenderer(
     )
     worldCombinerShader.enable()
     worldCombinerShader.setSunPosition(sun)
-    for (c, i) <- shadowCascades.zipWithIndex do {
-      worldCombinerShader.setShadowCascade(i, c.matrix, c.texelSize)
+    for ((matrix, texelSize), i) <- shadowLookups.zipWithIndex do {
+      worldCombinerShader.setShadowCascade(i, matrix, texelSize)
     }
     worldCombinerRenderer.render(worldCombinerVao, worldCombinerVao.maxCount)
     worldCombinerShader.unbindTextures()

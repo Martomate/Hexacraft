@@ -2,7 +2,7 @@ package hexacraft.client.render
 
 import hexacraft.infra.gpu.OpenGL
 import hexacraft.renderer.{GpuState, Renderer, VAO, VBO}
-import hexacraft.util.{Loop, Segment, SegmentSet}
+import hexacraft.util.{Loop, Segment}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
@@ -42,7 +42,7 @@ class BufferHandler[T <: RenderBuffer[T]](
     }
   }
 
-  def render(segments: SegmentSet): Unit = {
+  def render(segments: Iterable[Segment]): Unit = {
     Loop.iterate(segments.iterator) { s =>
       if s.length > 0 then {
         val lo = s.start

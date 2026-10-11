@@ -16,6 +16,15 @@ class BlockFaceBatchRenderer(bufferHandler: BufferHandler[?]) {
     bufferHandler.render(memorySegments.usedSegments)
   }
 
+  /** Renders only the chunks for which `shouldRender` returns true. This needs more draw calls than `render()`. */
+  def render(shouldRender: ChunkRelWorld => Boolean): Unit = {
+    Loop.iterate(memorySegments.keys.iterator) { coords =>
+      if shouldRender(coords) then {
+        bufferHandler.render(memorySegments.segmentsOf(coords))
+      }
+    }
+  }
+
   def update(
       chunksToClear: IndexedSeq[ChunkRelWorld],
       chunksToUpdate: IndexedSeq[(ChunkRelWorld, ByteBuffer)]

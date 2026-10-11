@@ -212,6 +212,13 @@ class KeyedSegment[K] {
     allSegments.clone()
   }
 
+  def keys: collection.Set[K] = keyedSegments.keySet
+
+  /** @return the segments used by the given key (which should not be modified while iterating) */
+  def segmentsOf(key: K): Iterable[Segment] = {
+    keyedSegments.getOrElse(key, Nil)
+  }
+
   def isEmpty: Boolean = {
     allSegments.totalLength == 0
   }

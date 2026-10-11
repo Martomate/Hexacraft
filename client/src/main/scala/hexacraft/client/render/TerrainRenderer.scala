@@ -17,7 +17,7 @@ trait TerrainRenderer {
   def render(camera: Camera, sun: Vector3f, opaque: Boolean, eyeUnderWater: Boolean): Unit
 
   /** Renders the opaque terrain from the point of view of a light, where `lightMatrix` replaces the view and
-    * projection matrices of the camera
+    * projection matrices of the camera. Chunks that cannot cast shadows into the shadow map are skipped.
     */
   def renderShadowCasters(camera: Camera, lightMatrix: Matrix4f): Unit
   def tick(camera: Camera, renderDistance: Double, worldTickResult: WorldTickResult)(using ExecutionContext): Unit

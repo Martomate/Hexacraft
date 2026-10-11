@@ -1,6 +1,9 @@
 package hexacraft.client.render
 
-import org.joml.{Matrix4f, Matrix4fc, Vector3dc, Vector3f, Vector3fc}
+import hexacraft.world.CylinderSize
+import hexacraft.world.coord.{BlockCoords, ChunkRelWorld}
+
+import org.joml.{Matrix4f, Matrix4fc, Vector3dc, Vector3f, Vector3fc, Vector4f}
 
 /** Cascaded shadow maps for the sun.
   *
@@ -89,6 +92,81 @@ object ShadowCascades {
 
       Cascade(matrix, texelSize.toFloat)
     }
+  }
+
+  /** Returns a matrix that does the same as `matrix` (which was made when the camera was at `renderedAt`), but for
+    * positions relative to the camera at `cameraPosition`. This makes it possible to reuse a shadow map for a few frames.
+    *
+    * Note: this ignores that the world is bent differently around the new camera position, which is fine for small
+    * movements.
+    */
+  def compensateForCameraMovement(
+      matrix: Matrix4fc,
+      renderedAt: Vector3dc,
+      cameraPosition: Vector3dc,
+      circumference: Double
+  ): Matrix4f = {
+    val dz = cameraPosition.z - renderedAt.z
+    val wrappedDz = dz - math.floor(dz / circumference + 0.5) * circumference
+    new Matrix4f(matrix).translate(
+      (cameraPosition.x - renderedAt.x).toFloat,
+      (cameraPosition.y - renderedAt.y).toFloat,
+      wrappedDz.toFloat
+    )
+  }
+
+  /** Returns false if nothing in the chunk can cast a shadow into the shadow map of `lightMatrix`, i.e. if the chunk is
+    * outside the shadow map when seen from the sun, or further away from the sun than the shadow map reaches. The chunk
+    * may be closer to the sun than the shadow map reaches since such shadow casters are kept by depth clamping.
+    *
+    * This is called for every loaded chunk, so it only bends the center of the chunk and uses a bounding sphere.
+    */
+  def chunkMayCastShadow(chunk: ChunkRelWorld, cameraPosition: Vector3dc, lightMatrix: Matrix4fc)(using
+      cylSize: CylinderSize
+  ): Boolean = {
+    val radius = cylSize.radius
+    val c = BlockCoords(chunk.X.toInt * 16 + 8, chunk.Y.toInt * 16 + 8, chunk.Z.toInt * 16 + 8).toCylCoords
+
+    // The same bending as in the vertex shaders
+    val dz = c.z - cameraPosition.z
+    val wrappedDz = dz - math.floor(dz / cylSize.circumference + 0.5) * cylSize.circumference
+    val angle = wrappedDz / radius
+    val mult = math.exp((c.y - cameraPosition.y) / radius)
+    val center = new Vector4f(
+      ((c.x - cameraPosition.x) * mult).toFloat,
+      (radius * mult * math.cos(angle) - radius).toFloat,
+      (radius * mult * math.sin(angle)).toFloat,
+      1f
+    ).mul(lightMatrix)
+
+    // The bending makes the chunk larger above the camera, which is included in the sphere
+    val sphereRadius = (chunkBoundingRadius * mult).toFloat
+
+    // How much the bounding sphere extends along each axis of the shadow map
+    val rx = sphereRadius * math.sqrt(sq(lightMatrix.m00()) + sq(lightMatrix.m10()) + sq(lightMatrix.m20())).toFloat
+    val ry = sphereRadius * math.sqrt(sq(lightMatrix.m01()) + sq(lightMatrix.m11()) + sq(lightMatrix.m21())).toFloat
+    val rz = sphereRadius * math.sqrt(sq(lightMatrix.m02()) + sq(lightMatrix.m12()) + sq(lightMatrix.m22())).toFloat
+
+    math.abs(center.x) <= 1 + rx && math.abs(center.y) <= 1 + ry && center.z - rz <= 1
+  }
+
+  private inline def sq(x: Float): Float = x * x
+
+  /** The radius of a sphere containing a chunk (with a margin of one block), measured from its center */
+  private lazy val chunkBoundingRadius: Double = {
+    // The size is the same for all chunks, so one far away from the edges (where z would wrap around) is used
+    given CylinderSize = CylinderSize(20)
+    val base = 1000
+    val center = BlockCoords(base + 8, base + 8, base + 8).toCylCoords
+    val corners = for {
+      x <- Seq(-1, 17)
+      y <- Seq(-1, 17)
+      z <- Seq(-1, 17)
+    } yield {
+      val c = BlockCoords(base + x, base + y, base + z).toCylCoords
+      math.sqrt(sq((c.x - center.x).toFloat) + sq((c.y - center.y).toFloat) + sq((c.z - center.z).toFloat))
+    }
+    corners.max
   }
 
   /** A rotation that makes the sun look along -z */

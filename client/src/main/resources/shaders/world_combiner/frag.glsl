@@ -85,8 +85,10 @@ float sampleShadowMap(vec3 coords, int cascade) {
 // Returns how much of the sunlight reaches the given position (1 = fully lit, 0 = fully in shadow)
 float sunVisibility(vec3 position, vec3 normal) {
     for (int i = 0; i < numShadowCascades; i++) {
-        // Moving the position a bit along the normal avoids self-shadowing caused by the limited shadow map resolution
-        vec3 offsetPosition = position + normal * shadowTexelSizes[i] * 1.5;
+        // Moving the position along the normal avoids self-shadowing caused by the limited shadow map resolution.
+        // The surface itself is in the shadow map, and the PCF samples reach 2 texels away, so for a flat surface at any
+        // angle to the sun the position has to be moved at least 2 texels away from it.
+        vec3 offsetPosition = position + normal * shadowTexelSizes[i] * 2.5;
         vec4 p = shadowMatrices[i] * vec4(offsetPosition, 1);
         vec3 coords = p.xyz * 0.5 + 0.5;
 
