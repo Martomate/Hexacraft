@@ -41,7 +41,7 @@ jobs:
         run: cargo install cargo-expand
 
       - name: Coursier cache
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@v7
 
       - name: Install Java
         uses: actions/setup-java@v6
