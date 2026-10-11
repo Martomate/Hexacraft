@@ -192,10 +192,12 @@ object OpenGL {
   enum FrameBufferAttachment {
     case ColorAttachment(index: Int)
     case DepthAttachment
+    case NoAttachment
 
     def toGL: Int = this match {
       case FrameBufferAttachment.ColorAttachment(index) => GL30.GL_COLOR_ATTACHMENT0 + index
       case FrameBufferAttachment.DepthAttachment        => GL30.GL_DEPTH_ATTACHMENT
+      case FrameBufferAttachment.NoAttachment           => GL11.GL_NONE
     }
   }
 
@@ -222,6 +224,16 @@ object OpenGL {
       level: Int
   ): Unit = {
     gl.glFramebufferTexture(target.toGL, attachment.toGL, texture, level)
+  }
+
+  def glFramebufferTextureLayer(
+      target: FrameBufferTarget,
+      attachment: FrameBufferAttachment,
+      texture: TextureId,
+      level: Int,
+      layer: Int
+  ): Unit = {
+    gl.glFramebufferTextureLayer(target.toGL, attachment.toGL, texture, level, layer)
   }
 
   def glDeleteFramebuffer(framebuffer: FrameBufferId): Unit = {
@@ -271,11 +283,13 @@ object OpenGL {
 
   enum TextureInternalFormat {
     case Rgba16f
+    case Rgba32f
     case Rgba
     case DepthComponent32
 
     def toGL: Int = this match {
       case TextureInternalFormat.Rgba16f          => GL30.GL_RGBA16F
+      case TextureInternalFormat.Rgba32f          => GL30.GL_RGBA32F
       case TextureInternalFormat.Rgba             => GL11.GL_RGBA
       case TextureInternalFormat.DepthComponent32 => GL14.GL_DEPTH_COMPONENT32
     }
@@ -431,6 +445,8 @@ object OpenGL {
     case TextureWrapS(wrap: TexWrap)
     case TextureWrapT(wrap: TexWrap)
     case TextureWrapR(wrap: TexWrap)
+    case CompareRefToTexture
+    case CompareFunc(func: DepthFunc)
 
     def toGL: (Int, Int) = this match {
       case TexIntParameter.MagFilter(filter)  => (GL11.GL_TEXTURE_MAG_FILTER, filter.toGL)
@@ -438,6 +454,9 @@ object OpenGL {
       case TexIntParameter.TextureWrapS(wrap) => (GL11.GL_TEXTURE_WRAP_S, wrap.toGL)
       case TexIntParameter.TextureWrapT(wrap) => (GL11.GL_TEXTURE_WRAP_T, wrap.toGL)
       case TexIntParameter.TextureWrapR(wrap) => (GL12.GL_TEXTURE_WRAP_R, wrap.toGL)
+      case TexIntParameter.CompareRefToTexture =>
+        (GL14.GL_TEXTURE_COMPARE_MODE, GL30.GL_COMPARE_REF_TO_TEXTURE)
+      case TexIntParameter.CompareFunc(func) => (GL14.GL_TEXTURE_COMPARE_FUNC, func.toGL)
     }
   }
 
@@ -547,6 +566,7 @@ object OpenGL {
     case CullFace
     case DebugOutput
     case MultiSample
+    case DepthClamp
 
     def toGL: Int = this match {
       case State.Blend       => GL11.GL_BLEND
@@ -555,6 +575,17 @@ object OpenGL {
       case State.CullFace    => GL11.GL_CULL_FACE
       case State.DebugOutput => GL43.GL_DEBUG_OUTPUT
       case State.MultiSample => GL13.GL_MULTISAMPLE
+      case State.DepthClamp  => GL32.GL_DEPTH_CLAMP
+    }
+  }
+
+  enum CullFaceMode {
+    case Front
+    case Back
+
+    def toGL: Int = this match {
+      case CullFaceMode.Front => GL11.GL_FRONT
+      case CullFaceMode.Back  => GL11.GL_BACK
     }
   }
 
@@ -631,6 +662,10 @@ object OpenGL {
 
   def glDepthFunc(func: DepthFunc): Unit = {
     gl.glDepthFunc(func.toGL)
+  }
+
+  def glCullFace(mode: CullFaceMode): Unit = {
+    gl.glCullFace(mode.toGL)
   }
 
   def glClear(mask: ClearMask): Unit = {
@@ -801,6 +836,7 @@ trait GLWrapper {
   def glDrawBuffer(buf: Int): Unit
   def glDrawBuffers(bufs: Array[Int]): Unit
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit
+  def glFramebufferTextureLayer(target: Int, attachment: Int, texture: Int, level: Int, layer: Int): Unit
   def glDeleteFramebuffers(framebuffer: Int): Unit
 
   def glDrawArrays(mode: Int, first: Int, count: Int): Unit
@@ -870,6 +906,7 @@ trait GLWrapper {
   def glClear(mask: Int): Unit
   def glDepthMask(flag: Boolean): Unit
   def glDepthFunc(func: Int): Unit
+  def glCullFace(mode: Int): Unit
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit
@@ -933,6 +970,7 @@ class StubGL extends GLWrapper {
   def glDrawBuffer(buf: Int): Unit = ()
   def glDrawBuffers(bufs: Array[Int]): Unit = ()
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit = ()
+  def glFramebufferTextureLayer(target: Int, attachment: Int, texture: Int, level: Int, layer: Int): Unit = ()
   def glDeleteFramebuffers(framebuffer: Int): Unit = ()
 
   def glDrawArrays(mode: Int, first: Int, count: Int): Unit = ()
@@ -1009,6 +1047,7 @@ class StubGL extends GLWrapper {
   def glClear(mask: Int): Unit = ()
   def glDepthMask(flag: Boolean): Unit = ()
   def glDepthFunc(func: Int): Unit = ()
+  def glCullFace(mode: Int): Unit = ()
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit = ()
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = ()
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = ()
@@ -1062,6 +1101,8 @@ object RealGL extends GLWrapper {
   def glDrawBuffers(bufs: Array[Int]): Unit = GL20.glDrawBuffers(bufs)
   def glFramebufferTexture(target: Int, attachment: Int, texture: Int, level: Int): Unit =
     GL32.glFramebufferTexture(target, attachment, texture, level)
+  def glFramebufferTextureLayer(target: Int, attachment: Int, texture: Int, level: Int, layer: Int): Unit =
+    GL30.glFramebufferTextureLayer(target, attachment, texture, level, layer)
   def glDeleteFramebuffers(framebuffer: Int): Unit = GL30.glDeleteFramebuffers(framebuffer)
 
   def glDrawArrays(mode: Int, first: Int, count: Int): Unit = GL11.glDrawArrays(mode, first, count)
@@ -1141,6 +1182,7 @@ object RealGL extends GLWrapper {
   def glClear(mask: Int): Unit = GL11.glClear(mask)
   def glDepthMask(flag: Boolean): Unit = GL11.glDepthMask(flag)
   def glDepthFunc(func: Int): Unit = GL11.glDepthFunc(func)
+  def glCullFace(mode: Int): Unit = GL11.glCullFace(mode)
   def glBlendFunc(sfactor: Int, dfactor: Int): Unit = GL11.glBlendFunc(sfactor, dfactor)
   def glScissor(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glScissor(x, y, width, height)
   def glViewport(x: Int, y: Int, width: Int, height: Int): Unit = GL11.glViewport(x, y, width, height)
