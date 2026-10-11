@@ -23,7 +23,7 @@ jobs:
             name: windows-x64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Rust
         id: setup-rust
