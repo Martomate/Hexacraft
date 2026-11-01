@@ -339,7 +339,6 @@ fn absmin(x: f64, circumference: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use approx::assert_relative_eq;
     use glam::DVec3;
 
     use crate::server::collision::CollisionDetector;
@@ -347,6 +346,7 @@ mod tests {
         BlockCoords, BlockRelChunk, BlockRelWorld, ChunkRelWorld, CylCoords, SkewCylCoords,
     };
     use crate::server::world::{Block, BlockState, ChunkData, CylinderSize, HexBox, World};
+    use crate::test_utils::assert_vec3_eq;
 
     const cylSize: CylinderSize = CylinderSize(8);
 
@@ -479,14 +479,14 @@ mod tests {
             None => (_pos + velocity, velocity),
         };
 
-        assert_relative_eq!(
-            new_pos.distance((expected_new_pos.convert() as CylCoords).to_vec3()),
-            0.0,
+        assert_vec3_eq!(
+            new_pos,
+            (expected_new_pos.convert() as CylCoords).to_vec3(),
             epsilon = 1e-6
         );
-        assert_relative_eq!(
-            new_vel.distance((expected_new_vel.convert() as CylCoords).to_vec3()),
-            0.0,
+        assert_vec3_eq!(
+            new_vel,
+            (expected_new_vel.convert() as CylCoords).to_vec3(),
             epsilon = 1e-6
         );
     }
