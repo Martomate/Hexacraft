@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use glam::{DVec3, Vec2};
+use uuid::Uuid;
 
 use crate::server::collision::CollisionDetector;
 use crate::server::coords::{BlockCoords, ChunkRelWorld, ColumnRelWorld, CylCoords};
@@ -11,7 +12,7 @@ use crate::server::world::{
     Block, BlockState, CylinderSize, HexBox, Inventory, NbtDecoder as _, NbtEncoder as _, Player,
     World, WorldGenSettings, WorldGenerator, WorldInfo, WorldProvider, WorldProviderPath,
 };
-use crate::server::{GracefulShutdown, RequestHandler, input, nbt};
+use crate::server::{GracefulShutdown, RequestHandler, input, models, nbt};
 use crate::server::{physics, response::*};
 
 pub struct GameState<P> {
@@ -25,11 +26,14 @@ pub struct GameState<P> {
     world: Mutex<World>,
     world_gen: WorldGenerator,
     world_provider: Mutex<P>,
+
+    entity_models: Mutex<HashMap<String, EntityModel>>,
 }
 
 struct PlayerConnectionState {
     player: Player,
     messages_to_send: VecDeque<ServerMessage>,
+    entity_events_to_send: VecDeque<(Uuid, EntityEvent)>,
     mouse_movement: Vec2,
     pressed_keys: Vec<String>,
 
@@ -77,6 +81,8 @@ impl<P: WorldProvider> GameState<P> {
             world: Mutex::new(World::new()),
             world_gen: WorldGenerator::new(gen_settings, world_size),
             world_provider: Mutex::new(world_provider),
+
+            entity_models: Mutex::new(HashMap::new()),
         }
     }
 
@@ -141,7 +147,7 @@ impl<P: WorldProvider> GameState<P> {
                         .unwrap_or(BlockState::AIR),
                 )
             })
-            .filter(|(c, b)| b.block_type == Block::Water)
+            .filter(|(_, b)| b.block_type == Block::Water)
             .map(|(c, b)| {
                 HexBox::approximateVolumeOfIntersection(
                     BlockCoords::from(c).convert() as CylCoords,
@@ -200,6 +206,45 @@ impl<P: WorldProvider> GameState<P> {
                             p.chunks_loaded.insert(c);
                             p.new_chunks_loaded.push(c);
                         }
+
+                        let boat_model_id = self.register_entity_model(models::boat_model());
+
+                        p.entity_events_to_send.push_back((
+                            Uuid::new_v4(),
+                            EntityEvent::Spawned {
+                                data: nbt::MapTag::new()
+                                    .set("type", nbt::Tag::String("boat".to_string()))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(0.0, -10.0, -5.0)))
+                                    .build(),
+                                model_id: Some(boat_model_id),
+                            },
+                        ));
+
+                        let player_model_id = self.register_entity_model(models::player_model());
+
+                        p.entity_events_to_send.push_back((
+                            Uuid::new_v4(),
+                            EntityEvent::Spawned {
+                                data: nbt::MapTag::new()
+                                    .set("type", nbt::Tag::String("player".to_string()))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(2.0, -10.0, -5.0)))
+                                    .build(),
+                                model_id: Some(player_model_id),
+                            },
+                        ));
+
+                        let sheep_model_id = self.register_entity_model(models::sheep_model());
+
+                        p.entity_events_to_send.push_back((
+                            Uuid::new_v4(),
+                            EntityEvent::Spawned {
+                                data: nbt::MapTag::new()
+                                    .set("type", nbt::Tag::String("sheep".to_string()))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(4.0, -10.0, -5.0)))
+                                    .build(),
+                                model_id: Some(sheep_model_id),
+                            },
+                        ));
                     }
                 }
             }
@@ -210,6 +255,12 @@ impl<P: WorldProvider> GameState<P> {
         let column_coords = ColumnRelWorld::new(x >> 4, z >> 4);
         let column_heights = self.world_gen.height_map_of_column(column_coords);
         column_heights[z as usize & 15][x as usize & 15]
+    }
+
+    fn register_entity_model(&self, model: EntityModel) -> String {
+        let id = model.content_hash();
+        self.entity_models.lock().unwrap().insert(id.clone(), model);
+        id
     }
 }
 
@@ -263,6 +314,7 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                                 PlayerConnectionState {
                                     player,
                                     messages_to_send: VecDeque::new(),
+                                    entity_events_to_send: VecDeque::new(),
                                     mouse_movement: Vec2::new(0.0, 0.0),
                                     pressed_keys: Vec::new(),
                                     chunks_loaded: HashSet::new(),
@@ -327,12 +379,16 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                 let new_messages = self.access_player_state(client_id, |p| {
                     p.messages_to_send.drain(..).collect::<Vec<_>>()
                 })?;
+                let entity_events = self.access_player_state(client_id, |p| {
+                    p.entity_events_to_send.drain(..).collect::<Vec<_>>()
+                })?;
 
                 Some(
                     GetEventsResponse {
                         // TODO: make proper shutdown feature
                         server_shutting_down: *self.is_shutting_down.lock().unwrap(),
                         new_messages,
+                        entity_events,
                     }
                     .into(),
                 )
@@ -361,6 +417,17 @@ impl<P: WorldProvider> RequestHandler for GameState<P> {
                 }
                 Some(GetWorldLoadingEventsResponse { loaded, unloaded }.into())
             }
+            NetworkPacket::GetModels { ids } => Some(
+                GetModelsResponse {
+                    models: {
+                        let entity_models = self.entity_models.lock().unwrap();
+                        ids.into_iter()
+                            .flat_map(|id| entity_models.get(&id).map(|m| (id, m.clone())))
+                            .collect()
+                    },
+                }
+                .into(),
+            ),
             NetworkPacket::PlayerRightClicked => {
                 // TODO: player right clicked
                 None

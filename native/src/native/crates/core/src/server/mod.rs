@@ -9,6 +9,7 @@ use crate::zmq::ServerSocket;
 mod collision;
 mod coords;
 mod input;
+mod models;
 mod nbt;
 mod noise;
 mod physics;

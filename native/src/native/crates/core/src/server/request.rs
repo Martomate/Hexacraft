@@ -17,6 +17,8 @@ pub enum NetworkPacket {
     GetEvents,
     GetWorldLoadingEvents { max_chunks_to_load: u16 },
 
+    GetModels { ids: Vec<String> },
+
     PlayerRightClicked,
     PlayerLeftClicked,
     PlayerToggledFlying,
@@ -66,6 +68,16 @@ impl NetworkPacket {
                     nbt::Tag::Short(v) => *v as u16,
                     _ => return Err("wrong type for max_chunks field")?,
                 },
+            },
+            "get_models" => NetworkPacket::GetModels {
+                ids: tag
+                    .get("ids")
+                    .ok_or("missing ids")?
+                    .as_list()
+                    .ok_or("wrong type for ids field")?
+                    .iter()
+                    .flat_map(|v| v.as_string().map(|s| s.to_string()))
+                    .collect(),
             },
             "right_mouse_clicked" => NetworkPacket::PlayerRightClicked,
             "left_mouse_clicked" => NetworkPacket::PlayerLeftClicked,

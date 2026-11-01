@@ -1,4 +1,10 @@
+use std::collections::HashMap;
+
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use glam::DVec3;
+use sha2::{Digest, Sha256};
+use uuid::Uuid;
 
 use crate::server::coords::{ChunkRelWorld, CylCoords};
 use crate::server::nbt;
@@ -107,49 +113,98 @@ impl<'r> From<GetPlayerStateResponse<'r>> for nbt::Tag {
 pub struct GetEventsResponse {
     pub server_shutting_down: bool,
     pub new_messages: Vec<ServerMessage>,
+    pub entity_events: Vec<(Uuid, EntityEvent)>,
+}
+
+pub enum EntityEvent {
+    Spawned {
+        data: nbt::Tag,
+        model_id: Option<String>,
+    },
+    Despawned,
+    Position(CylCoords),
+    Rotation(DVec3),
+    Velocity(DVec3),
+    Flying(bool),
+    HeadDirection(DVec3),
+}
+
+impl From<EntityEvent> for nbt::Tag {
+    fn from(e: EntityEvent) -> Self {
+        let name = match e {
+            EntityEvent::Spawned { .. } => "spawned",
+            EntityEvent::Despawned => "despawned",
+            EntityEvent::Position(_) => "position",
+            EntityEvent::Rotation(_) => "rotation",
+            EntityEvent::Velocity(_) => "velocity",
+            EntityEvent::Flying(_) => "flying",
+            EntityEvent::HeadDirection(_) => "head_direction",
+        };
+
+        let tag = nbt::MapTag::new().set("type", nbt::Tag::String(name.to_string()));
+
+        let tag = match e {
+            EntityEvent::Spawned { data, model_id } => tag
+                .set("data", data)
+                .set_opt("model_id", model_id.map(nbt::Tag::String)),
+            EntityEvent::Despawned => tag,
+            EntityEvent::Position(pos) => tag.set("pos", nbt::make_vector_tag(pos.into())),
+            EntityEvent::Rotation(r) => tag.set("r", nbt::make_vector_tag(r)),
+            EntityEvent::Velocity(v) => tag.set("v", nbt::make_vector_tag(v)),
+            EntityEvent::Flying(f) => tag.set("f", nbt::Tag::Byte(if f { 1 } else { 0 })),
+            EntityEvent::HeadDirection(d) => tag.set("d", nbt::make_vector_tag(d)),
+        };
+
+        tag.build()
+    }
 }
 
 impl From<GetEventsResponse> for nbt::Tag {
     fn from(res: GetEventsResponse) -> Self {
+        let entity_events = {
+            let (ids, events): (Vec<nbt::Tag>, Vec<nbt::Tag>) = res
+                .entity_events
+                .into_iter()
+                .map(|(id, e)| (nbt::Tag::String(id.to_string()), nbt::Tag::from(e)))
+                .unzip();
+
+            nbt::MapTag::new()
+                .set("ids", nbt::Tag::List(ids))
+                .set("events", nbt::Tag::List(events))
+                .build()
+        };
+
+        let messages = nbt::Tag::List(
+            res.new_messages
+                .iter()
+                .map(|m| {
+                    let text = nbt::Tag::String(m.text.clone());
+                    let sender = {
+                        let (kind, tag) = match &m.sender {
+                            ServerMessageSender::Server => ("server", nbt::MapTag::new()),
+                            ServerMessageSender::Player { name } => (
+                                "player",
+                                nbt::MapTag::new().set("name", nbt::Tag::String(name.to_string())),
+                            ),
+                        };
+                        tag.set("kind", nbt::Tag::String(kind.to_string())).build()
+                    };
+                    nbt::MapTag::new()
+                        .set("text", text)
+                        .set("sender", sender)
+                        .build()
+                })
+                .collect(),
+        );
+
         nbt::MapTag::new()
             .set("block_updates", nbt::Tag::List(Vec::new()))
-            .set(
-                "entity_events",
-                nbt::MapTag::new()
-                    .set("ids", nbt::Tag::List(Vec::new()))
-                    .set("events", nbt::Tag::List(Vec::new()))
-                    .build(),
-            )
+            .set("entity_events", entity_events)
             .set(
                 "server_shutting_down",
                 nbt::Tag::Byte(if res.server_shutting_down { 1 } else { 0 }),
             )
-            .set(
-                "messages",
-                nbt::Tag::List(
-                    res.new_messages
-                        .iter()
-                        .map(|m| {
-                            let text = nbt::Tag::String(m.text.clone());
-                            let sender = {
-                                let (kind, tag) = match &m.sender {
-                                    ServerMessageSender::Server => ("server", nbt::MapTag::new()),
-                                    ServerMessageSender::Player { name } => (
-                                        "player",
-                                        nbt::MapTag::new()
-                                            .set("name", nbt::Tag::String(name.to_string())),
-                                    ),
-                                };
-                                tag.set("kind", nbt::Tag::String(kind.to_string())).build()
-                            };
-                            nbt::MapTag::new()
-                                .set("text", text)
-                                .set("sender", sender)
-                                .build()
-                        })
-                        .collect(),
-                ),
-            )
+            .set("messages", messages)
             .build()
     }
 }
@@ -290,4 +345,71 @@ fn encode_inventory(inventory: &Inventory) -> nbt::Tag {
             ),
         )
         .build()
+}
+
+pub struct GetModelsResponse {
+    pub models: HashMap<String, EntityModel>,
+}
+
+#[derive(Clone)]
+pub struct EntityModel {
+    pub parts: Vec<ModelPart>,
+}
+
+#[derive(Clone)]
+pub struct ModelPart {
+    pub name: String,
+    pub prism: HexPrism,
+    pub position: DVec3,
+    pub rotation: DVec3,
+    pub parent: Option<String>,
+    pub prism_offset: f32,
+}
+
+#[derive(Clone)]
+pub struct HexPrism {
+    pub radius: u32,
+    pub length: u32,
+}
+
+impl EntityModel {
+    pub fn content_hash(&self) -> String {
+        let bytes = nbt::Tag::from(self.clone()).to_binary();
+        BASE64_STANDARD.encode(Sha256::digest(bytes))
+    }
+}
+
+impl From<ModelPart> for nbt::Tag {
+    fn from(part: ModelPart) -> Self {
+        let prism = nbt::MapTag::new()
+            .set("radius", nbt::Tag::Int(part.prism.radius as i32))
+            .set("length", nbt::Tag::Int(part.prism.length as i32))
+            .build();
+
+        nbt::MapTag::new()
+            .set("name", nbt::Tag::String(part.name))
+            .set("prism", prism)
+            .set("prism_offset", nbt::Tag::Float(part.prism_offset))
+            .set("position", nbt::make_vector_tag(part.position))
+            .set("rotation", nbt::make_vector_tag(part.rotation))
+            .build()
+    }
+}
+
+impl From<EntityModel> for nbt::Tag {
+    fn from(m: EntityModel) -> Self {
+        let parts = nbt::Tag::List(m.parts.into_iter().map(nbt::Tag::from).collect());
+
+        nbt::MapTag::new().set("parts", parts).build()
+    }
+}
+
+impl From<GetModelsResponse> for nbt::Tag {
+    fn from(res: GetModelsResponse) -> Self {
+        let mut models = nbt::MapTag::new();
+        for (id, m) in res.models {
+            models = models.set(&id, nbt::Tag::from(m));
+        }
+        nbt::MapTag::new().set("models", models.build()).build()
+    }
 }

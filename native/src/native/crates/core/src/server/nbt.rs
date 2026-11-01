@@ -66,6 +66,13 @@ impl Tag {
             tag.get("z")?.as_double()?,
         ))
     }
+
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            Tag::String(s) => Some(s),
+            _ => None,
+        }
+    }
 }
 
 impl Tag {
