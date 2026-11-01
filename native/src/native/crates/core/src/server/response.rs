@@ -392,6 +392,7 @@ impl From<ModelPart> for nbt::Tag {
             .set("prism_offset", nbt::Tag::Float(part.prism_offset))
             .set("position", nbt::make_vector_tag(part.position))
             .set("rotation", nbt::make_vector_tag(part.rotation))
+            .set_opt("parent", part.parent.map(nbt::Tag::String))
             .build()
     }
 }
