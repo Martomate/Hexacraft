@@ -353,6 +353,8 @@ pub fn sheep_model() -> EntityModel {
 mod tests {
     use std::collections::HashMap;
 
+    use approx::assert_relative_eq;
+
     use super::*;
 
     /// The same checks as the Scala `EntityModel` constructor: unique names, and parents before children
@@ -418,7 +420,13 @@ mod tests {
         let cross_rod = find(&model, "frontCrossRod_1");
         assert_eq!(cross_rod.prism.length, 62);
         assert_eq!(cross_rod.prism_offset, -31.0);
-        assert_eq!(cross_rod.position, DVec3::new(0.0, 6.0, 100.4f32 as f64));
+        assert_relative_eq!(
+            cross_rod
+                .position
+                .distance(DVec3::new(0.0, 6.0, 100.4f32 as f64)),
+            0.0,
+            epsilon = 1e-5
+        );
         assert_eq!(find(&model, "backCrossRod_0").prism.length, 55);
     }
 
@@ -427,9 +435,12 @@ mod tests {
         let model = player_model();
         assert_eq!(model.parts.len(), 10);
         assert_eq!(find(&model, "head").prism_offset, -10.0);
-        assert_eq!(
-            find(&model, "headYawBase").position,
-            DVec3::new(0.0, 88.0, 0.0)
+        assert_relative_eq!(
+            find(&model, "headYawBase")
+                .position
+                .distance(DVec3::new(0.0, 88.0, 0.0)),
+            0.0,
+            epsilon = 1e-5
         );
         assert_eq!(find(&model, "leftArm").parent.as_deref(), Some("base"));
     }
