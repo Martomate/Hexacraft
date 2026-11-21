@@ -7,7 +7,7 @@ class InlinedIterable[A](items: Iterable[A]) extends AnyVal {
   inline def foreach(inline f: A => Unit): Unit = {
     val it = items.iterator
     while it.hasNext do {
-      f(it.next)
+      f(it.next())
     }
   }
 
@@ -19,7 +19,7 @@ class InlinedIterable[A](items: Iterable[A]) extends AnyVal {
     val res = new ArrayBuffer[B](items.size)
     val it = items.iterator
     while it.hasNext do {
-      val item = it.next
+      val item = it.next()
       res += f(item)
     }
     res
@@ -34,7 +34,7 @@ object InlinedIterable {
 
       val it = items.iterator
       while it.hasNext do {
-        val item = it.next
+        val item = it.next()
         if filter(item) then {
           f(item)
         }
@@ -48,7 +48,7 @@ object InlinedIterable {
       val res = new ArrayBuffer[B](items.size)
       val it = items.iterator
       while it.hasNext do {
-        val item = it.next
+        val item = it.next()
         if filter(item) then {
           res += f(item)
         }

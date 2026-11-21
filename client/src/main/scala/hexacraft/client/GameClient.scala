@@ -598,7 +598,7 @@ class GameClient(
       }
 
       val userInteractionRedo = mutable.Stack.empty[(Instant, UserInteraction)]
-      for (ts, undo) <- userInteractionUndo.popAll do {
+      for (ts, undo) <- userInteractionUndo.popAll() do {
         undo match {
           case UserInteraction.ReplaceBlock(coords, state) =>
             world.setBlock(coords, state)
@@ -630,7 +630,7 @@ class GameClient(
           userInteractionUndo.push(ts -> undo)
         }
       }
-      userInteractionUndo.pushAll(userInteractionUndo.popAll.reverse)
+      userInteractionUndo.pushAll(userInteractionUndo.popAll().reverse)
 
       val syncedPlayer = Player.fromNBT(player.id, player.name, playerNbt.asInstanceOf[Nbt.MapTag])
       player.position.set(syncedPlayer.position)
@@ -730,7 +730,7 @@ class GameClient(
         world.removeChunk(chunkCoords)
       }
 
-      for (_, redo) <- userInteractionRedo.popAll do {
+      for (_, redo) <- userInteractionRedo.popAll() do {
         redo match {
           case UserInteraction.ReplaceBlock(coords, state) =>
             world.setBlock(coords, state)

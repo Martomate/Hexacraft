@@ -85,7 +85,7 @@ class MainRouter(
             0,
             worldName,
             CylinderSize(worldSize),
-            WorldGenSettings.fromSeed(new Random().nextLong)
+            WorldGenSettings.fromSeed(new Random().nextLong())
           )
           val worldProvider = WorldProviderFromFile(saveDir, fs)
           worldProvider.saveWorldData(Nbt.encode(worldInfo))

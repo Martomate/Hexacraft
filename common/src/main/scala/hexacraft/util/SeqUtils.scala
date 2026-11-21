@@ -34,7 +34,7 @@ object SeqUtils {
       Loop.iterate(its.iterator) { it =>
         if it.hasNext then {
           left = true
-          result += it.next
+          result += it.next()
         }
       }
     }

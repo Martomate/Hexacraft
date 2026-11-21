@@ -42,7 +42,7 @@ object Loop {
 
   inline def iterate[T](it: Iterator[T])(inline f: T => Unit): Unit = {
     while it.hasNext do {
-      f(it.next)
+      f(it.next())
     }
   }
 }

@@ -230,7 +230,7 @@ class ServerWorld(
         col.terrainHeight.setHeight(coords.cx, coords.cz, coords.y.toShort)
       } else {
         val newHeight = LazyList
-          .range((height - 1).toShort, Short.MinValue, -1.toShort)
+          .range((height - 1).toShort, Short.MinValue, (-1).toShort)
           .map(y =>
             chunks
               .get(ChunkRelWorld(coords.X.toInt, y >> 4, coords.Z.toInt).value)

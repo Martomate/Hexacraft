@@ -13,8 +13,8 @@ class VorbisDecoderTest extends FunSuite {
     assertEquals(buf.limit(), 11040)
 
     // these act as a regression test
-    assertEquals(buf.get(0), -9.toShort)
-    assertEquals(buf.get(123), -6.toShort)
+    assertEquals(buf.get(0), (-9).toShort)
+    assertEquals(buf.get(123), (-6).toShort)
     assertEquals(buf.get(buf.limit() / 2), 886.toShort)
     assertEquals(buf.get(buf.limit() - 1), 0.toShort)
   }

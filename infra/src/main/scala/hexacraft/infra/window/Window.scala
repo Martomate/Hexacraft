@@ -90,7 +90,7 @@ class Window(val id: Window.Id, glfw: GlfwWrapper) {
 
   def nextEvent: Option[CallbackEvent] = {
     eventQueue.synchronized {
-      if eventQueue.nonEmpty then Some(eventQueue.dequeue) else None
+      if eventQueue.nonEmpty then Some(eventQueue.dequeue()) else None
     }
   }
 }
