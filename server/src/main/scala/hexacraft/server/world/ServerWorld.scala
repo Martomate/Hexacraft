@@ -10,7 +10,9 @@ import hexacraft.world.*
 import hexacraft.world.block.{Block, BlockBehaviourFluid, BlockRepository, BlockState}
 import hexacraft.world.chunk.*
 import hexacraft.world.coord.*
-import hexacraft.world.entity.{AiComponent, Entity, HeadDirectionComponent, MountComponent}
+import hexacraft.world.entity.{AiComponent, Entity, EntityAI, HeadDirectionComponent, MountComponent}
+
+import org.joml.Vector3d
 
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
@@ -534,8 +536,24 @@ class ServerWorld(
   private def tickEntity(e: Entity): Unit = {
     e.accessComponent { case c: AiComponent =>
       val ai = c.ai
-      ai.tick(this, e.transform, e.motion, e.boundingBox)
-      e.motion.velocity.add(ai.acceleration)
+      val (tx, rx) = Channel[EntityAI.Event]()
+
+      ai.tick(this, e.id, e.transform, e.motion, entitiesMountedBy(e.id).headOption, e.boundingBox, tx)
+
+      entitiesMountedBy(e.id).headOption match {
+        case Some(m) =>
+          val acc = ai.acceleration
+          m.motion.velocity.add(Vector3d(acc.x, 0, acc.z))
+          e.motion.velocity.set(m.motion.velocity)
+          e.transform.position = m.transform.position
+          m.transform.rotation = e.transform.rotation
+        case None =>
+          e.motion.velocity.add(ai.acceleration)
+      }
+
+      rx.onEvent { case EntityAI.Event.SpawnEntity(newEntity) =>
+        addEntity(newEntity)
+      }
     }
 
     val friction = if e.typeName == "boat" then 0.99 else 0.9

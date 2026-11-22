@@ -44,7 +44,7 @@ object BoatEntityModel {
     val pi = math.Pi.toFloat
 
     // Pivots (not rendered)
-    val body = EntityPart("body", HexPrism.empty, pos(0, elevation, 0), Vector3f(0, pi / 2, 0))
+    val body = EntityPart("body", HexPrism.empty, pos(0, elevation, 0), Vector3f(0, 0, 0))
     val crossBody = EntityPart(
       "crossBody",
       HexPrism.empty,

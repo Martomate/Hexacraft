@@ -1,32 +1,27 @@
 package hexacraft.world.entity
 
 import hexacraft.nbt.{Nbt, NbtDecoder, NbtEncoder}
+import hexacraft.util.Channel
 import hexacraft.world.{BlocksInWorld, CylinderSize, HexBox}
 import hexacraft.world.block.Block
-import hexacraft.world.coord.{BlockRelWorld, CoordUtils, CylCoords}
+import hexacraft.world.coord.{BlockCoords, BlockRelWorld, CoordUtils, CylCoords}
 
 import org.joml.{Vector3d, Vector3dc}
+
+import java.util.UUID
 
 trait EntityAI {
   def tick(
       world: BlocksInWorld,
+      id: UUID,
       transform: TransformComponent,
       velocity: MotionComponent,
-      entityBoundingBox: HexBox
+      mounting: Option[Entity],
+      entityBoundingBox: HexBox,
+      events: Channel.Sender[EntityAI.Event]
   ): Unit
   def acceleration: Vector3dc
   def toNBT: Nbt.MapTag
-}
-
-class SimpleAIInput(using CylinderSize) {
-  def blockInFront(world: BlocksInWorld, position: CylCoords, rotation: Vector3d, dist: Double): Block = {
-    world.getBlock(blockInFrontCoords(position, rotation, dist)).blockType
-  }
-
-  private def blockInFrontCoords(position: CylCoords, rotation: Vector3d, dist: Double): BlockRelWorld = {
-    val coords = position.offset(dist * math.cos(rotation.y), 0, dist * -math.sin(rotation.y))
-    CoordUtils.getEnclosingBlock(coords.toBlockCoords)._1
-  }
 }
 
 class SimpleWalkAI(using CylinderSize) extends EntityAI {
@@ -36,50 +31,87 @@ class SimpleWalkAI(using CylinderSize) extends EntityAI {
   private[entity] var timeout: Int = 0
 
   private val timeLimit: Int = 5 * 60
-  private val reach: Double = 5
   private val speed = 0.2
-
-  private val input: SimpleAIInput = new SimpleAIInput
 
   def tick(
       world: BlocksInWorld,
+      id: UUID,
       transform: TransformComponent,
       velocity: MotionComponent,
-      entityBoundingBox: HexBox
+      mounting: Option[Entity],
+      entityBoundingBox: HexBox,
+      events: Channel.Sender[EntityAI.Event]
   ): Unit = {
     val distSq = transform.position.distanceXZSq(target)
 
-    movingForce.set(0)
+    val reach = if mounting.isDefined then 15 else 5
 
-    if distSq < speed * speed || timeout == 0 then {
+    movingForce.set(0)
+    if timeout > 5 && velocity.velocity.lengthSquared() < speed then {
+      timeout = 5
+    }
+
+    if distSq < speed * speed || timeout <= 0 then {
       // new goal
       val angle = math.random() * 2 * math.Pi
       val targetX = transform.position.x + reach * math.cos(angle)
-      val targetZ = transform.position.z + reach * -math.sin(angle)
+      val targetZ = transform.position.z + reach * math.sin(angle)
       target = CylCoords(targetX, 0, targetZ)
 
       timeout = timeLimit
     } else {
       // move towards goal
-      val blockInFront =
-        input.blockInFront(
-          world,
-          transform.position,
-          transform.rotation,
-          entityBoundingBox.radius + speed * 4
-        )
+      val blockInFrontCoords = coordsInFront(
+        transform.position,
+        transform.rotation,
+        entityBoundingBox.radius + speed * 4
+      )
+
+      val blockInFrontBelowCoords = coordsInFront(
+        transform.position,
+        transform.rotation,
+        entityBoundingBox.radius + speed * 4
+      ).offset(0, -1, 0)
+
+      val blockInFrontAheadCoords = coordsInFront(
+        transform.position,
+        transform.rotation,
+        entityBoundingBox.radius + speed * 8
+      )
+
+      val blockInFront = world.getBlock(blockInFrontCoords).blockType
+      val blockInFrontBelow = world.getBlock(blockInFrontBelowCoords).blockType
 
       if blockInFront != Block.Air && velocity.velocity.y == 0 then {
         movingForce.y = 3.5
+      } else if blockInFront == Block.Air && blockInFrontBelow == Block.Water && mounting.isEmpty then {
+        events.send(
+          EntityAI.Event.SpawnEntity(
+            Entity
+              .atStartPos(
+                UUID.randomUUID(),
+                BlockCoords(blockInFrontAheadCoords).toCylCoords,
+                "boat",
+                transform.rotation
+              )
+              .unwrap()
+              .withComponent(MountComponent(id))
+          )
+        )
       }
       val angle = transform.position.angleXZ(target)
 
       movingForce.x = speed * math.cos(angle)
-      movingForce.z = speed * math.sin(angle)
-      transform.rotation.y = -angle
+      movingForce.z = -speed * math.sin(angle)
+      transform.rotation.y = angle
     }
 
     timeout -= 1
+  }
+
+  private def coordsInFront(position: CylCoords, rotation: Vector3d, dist: Double): BlockRelWorld = {
+    val coords = position.offset(dist * math.cos(rotation.y), 0, dist * -math.sin(rotation.y))
+    CoordUtils.getEnclosingBlock(coords.toBlockCoords)._1
   }
 
   override def acceleration: Vector3dc = movingForce
@@ -95,6 +127,10 @@ object EntityAI {
         case _                     => None
       }
     }
+  }
+
+  enum Event {
+    case SpawnEntity(e: Entity)
   }
 }
 

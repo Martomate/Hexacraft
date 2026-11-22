@@ -214,7 +214,7 @@ impl<P: WorldProvider> GameState<P> {
                             EntityEvent::Spawned {
                                 data: nbt::MapTag::new()
                                     .set("type", nbt::Tag::String("boat".to_string()))
-                                    .set("pos", nbt::make_vector_tag(DVec3::new(0.0, -10.0, -5.0)))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(0.0, -10.0, -8.0)))
                                     .build(),
                                 model_id: Some(boat_model_id),
                             },
@@ -227,7 +227,7 @@ impl<P: WorldProvider> GameState<P> {
                             EntityEvent::Spawned {
                                 data: nbt::MapTag::new()
                                     .set("type", nbt::Tag::String("player".to_string()))
-                                    .set("pos", nbt::make_vector_tag(DVec3::new(2.0, -10.0, -5.0)))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(0.0, -10.0, -5.0)))
                                     .build(),
                                 model_id: Some(player_model_id),
                             },
@@ -240,7 +240,7 @@ impl<P: WorldProvider> GameState<P> {
                             EntityEvent::Spawned {
                                 data: nbt::MapTag::new()
                                     .set("type", nbt::Tag::String("sheep".to_string()))
-                                    .set("pos", nbt::make_vector_tag(DVec3::new(4.0, -10.0, -5.0)))
+                                    .set("pos", nbt::make_vector_tag(DVec3::new(0.0, -10.0, -2.0)))
                                     .build(),
                                 model_id: Some(sheep_model_id),
                             },

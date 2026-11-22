@@ -49,17 +49,17 @@ class PlayerInputHandler:
   ): Unit = {
     import GameKeyboard.Key.*
 
-    val cosMove = Math.cos(-mount.transform.rotation.y) * maxSpeed * 0.05
-    val sinMove = Math.sin(-mount.transform.rotation.y) * maxSpeed * 0.05
+    val cosMove = Math.cos(mount.transform.rotation.y) * maxSpeed * 0.05
+    val sinMove = Math.sin(mount.transform.rotation.y) * maxSpeed * 0.05
 
     if pressedKeys.contains(MoveForward) then {
-      mount.motion.velocity.z -= cosMove
-      mount.motion.velocity.x += sinMove
+      mount.motion.velocity.x += cosMove
+      mount.motion.velocity.z -= sinMove
     }
 
     if pressedKeys.contains(MoveBackward) then {
-      mount.motion.velocity.z += cosMove
-      mount.motion.velocity.x -= sinMove
+      mount.motion.velocity.x -= cosMove
+      mount.motion.velocity.z += sinMove
     }
 
     if pressedKeys.contains(MoveRight) then {
@@ -75,12 +75,12 @@ class PlayerInputHandler:
 
   /** Keeps the player looking roughly in the direction of the mount, since only the head can turn while sitting */
   private def limitYawRelativeToMount(rotation: Vector3d, mountRotation: Vector3dc, maxYaw: Double): Unit = {
-    // The player faces the same way as the mount when `rotation.y == -mountRotation.y`
-    val relativeYaw = PlayerInputHandler.wrapAngle(rotation.y + mountRotation.y)
+    // The player faces the same way as the mount when `rotation.y == Pi / 2 - mountRotation.y`
+    val relativeYaw = PlayerInputHandler.wrapAngle(rotation.y + mountRotation.y - math.Pi / 2)
     val limitedYaw = math.max(-maxYaw, math.min(maxYaw, relativeYaw))
 
     if limitedYaw != relativeYaw then {
-      rotation.y = PlayerInputHandler.wrapAngle(limitedYaw - mountRotation.y)
+      rotation.y = PlayerInputHandler.wrapAngle(limitedYaw - mountRotation.y + math.Pi / 2)
       if rotation.y < 0 then {
         rotation.y += math.Pi * 2
       }

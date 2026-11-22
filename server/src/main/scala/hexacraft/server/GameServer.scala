@@ -260,7 +260,7 @@ class GameServer(
             world.addEntity(entity.withComponent(MountComponent(player.id)))
 
             // Look in the forward direction of the boat
-            player.rotation.y = PlayerInputHandler.wrapAngle(-entity.transform.rotation.y)
+            player.rotation.y = PlayerInputHandler.wrapAngle(-entity.transform.rotation.y + math.Pi / 2)
             if player.rotation.y < 0 then {
               player.rotation.y += math.Pi * 2
             }
@@ -318,7 +318,7 @@ class GameServer(
 
   /** The rotation an entity needs to face the same way as the player */
   private def entityRotationFacingLikePlayer(player: Player): Vector3d =
-    Vector3d(0, -player.rotation.y, 0)
+    Vector3d(0, -player.rotation.y + math.Pi / 2, 0)
 
   private def tryPlacingBlockAt(coords: BlockRelWorld, player: Player): Unit = {
     if world.getBlock(coords).blockType.isSolid then {

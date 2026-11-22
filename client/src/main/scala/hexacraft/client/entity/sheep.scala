@@ -16,16 +16,26 @@ class SheepAnimation(pose: EntityPose) extends EntityAnimation {
       rotation: Vector3dc,
       mountRotation: Option[Vector3dc]
   ): Unit = {
+    val sitting = mountRotation.isDefined
+
     if walking || time % 30 != 0 then {
       time += 1
     }
 
     val phase = time * (1f / 60) * 2 * math.Pi
 
-    frontRightLeg.z = -0.5f * math.sin(phase).toFloat
-    frontLeftLeg.z = 0.5f * math.sin(phase).toFloat
+    if sitting then {
+      frontRightLeg.z = 0.0f
+      frontLeftLeg.z = 0.0f
 
-    backRightLeg.z = 0.5f * math.sin(phase).toFloat
-    backLeftLeg.z = -0.5f * math.sin(phase).toFloat
+      backRightLeg.z = 0.0f
+      backLeftLeg.z = 0.0f
+    } else {
+      frontRightLeg.z = -0.5f * math.sin(phase).toFloat
+      frontLeftLeg.z = 0.5f * math.sin(phase).toFloat
+
+      backRightLeg.z = 0.5f * math.sin(phase).toFloat
+      backLeftLeg.z = -0.5f * math.sin(phase).toFloat
+    }
   }
 }

@@ -49,7 +49,7 @@ object PlayerEntityModel {
     val pi = math.Pi.toFloat
 
     // Pivots (not rendered)
-    val base = EntityPart("base", HexPrism.empty, pos(0, 0, 0), Vector3f(0, pi / 2, 0))
+    val base = EntityPart("base", HexPrism.empty, pos(0, 0, 0), Vector3f(0, 0, 0))
     val headYawBase = EntityPart("headYawBase", HexPrism.empty, headBasePos, Vector3f(), Some("base"))
     val headBase = EntityPart("headBase", HexPrism.empty, pos(0, 0, 0), Vector3f(), Some("headYawBase"))
 
