@@ -22,7 +22,7 @@ object OceanExperiment {
 
     val fs = FileSystem.create()
     val windowSystem = WindowSystem.create()
-    val audioSystem = AudioSystem.createNull()
+    val audioSystem = AudioSystem.create()
 
     var running = true
 
