@@ -44,10 +44,8 @@ impl<S: 'static> Handle<S> {
             println!("Using handle: {}", self.raw);
         }
         assert_handle_type::<S>(HANDLES.lock().unwrap().get(&self.raw));
-        let state: Box<S> = unsafe { Box::from_raw(self.raw as *mut S) };
-        let res = f(&state);
-        std::mem::forget(state);
-        res
+        let state: &S = unsafe { &*(self.raw as *const S) };
+        f(state)
     }
 
     pub fn use_handles<R>(handles: &[Handle<S>], f: impl FnOnce(&[&S]) -> R) -> R {
@@ -60,14 +58,11 @@ impl<S: 'static> Handle<S> {
         for h in handles {
             assert_handle_type::<S>(HANDLES.lock().unwrap().get(&h.raw));
         }
-        let state: Vec<Box<S>> = handles
+        let state_refs: Vec<&S> = handles
             .iter()
-            .map(|handle| unsafe { Box::from_raw(handle.raw as *mut S) })
+            .map(|handle| unsafe { &*(handle.raw as *const S) })
             .collect();
-        let state_refs: Vec<&S> = state.iter().map(|s| s.as_ref()).collect();
-        let res = f(&state_refs);
-        std::mem::forget(state);
-        res
+        f(&state_refs)
     }
 
     /// Drops the data and invalidates the handle
